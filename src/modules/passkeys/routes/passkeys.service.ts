@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { createHash } from 'node:crypto';
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   HttpException,
   HttpStatus,
   Inject,
   Injectable,
+  NotFoundException,
   ServiceUnavailableException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -23,6 +25,10 @@ import type { RegisterPasskeyDto } from '@/modules/passkeys/routes/entities/regi
 export type RegisterOutcome =
   | { status: HttpStatus.CREATED; body: PasskeyRecordResponse }
   | { status: HttpStatus.OK; body: PasskeyRecordResponse };
+
+// Decoded credentialId byte length cap from WebAuthn L3.
+const CREDENTIAL_ID_MAX_BYTES = 1023;
+const CREDENTIAL_ID_MIN_BYTES = 1;
 
 @Injectable()
 export class PasskeysService {
@@ -93,6 +99,49 @@ export class PasskeysService {
         throw new ConflictException({ code: 'PASSKEY_CROSS_RP_CONFLICT' });
     }
   }
+
+  public async lookup(credentialIdB64Url: string): Promise<{
+    body: PasskeyRecordResponse;
+    etag: string;
+  }> {
+    const credentialId = decodeCredentialId(credentialIdB64Url);
+    const record = await this.passkeysRepository.findByCredentialId(
+      credentialId,
+    );
+    if (!record) {
+      throw new NotFoundException({ code: 'PASSKEY_NOT_FOUND' });
+    }
+    return {
+      body: serialize(record),
+      // ETag = first 16 bytes of credentialId; rows are immutable so the bytes
+      // alone are sufficient for cache-validation and never leak data the
+      // client did not already supply on the request URL.
+      etag: `"${record.credentialId.subarray(0, 16).toString('hex')}"`,
+    };
+  }
+}
+
+function decodeCredentialId(value: string): Buffer {
+  // Reject anything that is not strictly base64url. We also bound the encoded
+  // length to ceil(1023 * 4 / 3) = 1364 — anything longer can never decode to
+  // a credentialId within the WebAuthn L3 limits.
+  const ENCODED_MAX = Math.ceil((CREDENTIAL_ID_MAX_BYTES * 4) / 3);
+  if (
+    typeof value !== 'string' ||
+    value.length === 0 ||
+    value.length > ENCODED_MAX ||
+    !/^[A-Za-z0-9_-]+$/.test(value)
+  ) {
+    throw new BadRequestException({ code: 'PASSKEY_INVALID_CREDENTIAL_ID' });
+  }
+  const buf = Buffer.from(value, 'base64url');
+  if (
+    buf.length < CREDENTIAL_ID_MIN_BYTES ||
+    buf.length > CREDENTIAL_ID_MAX_BYTES
+  ) {
+    throw new BadRequestException({ code: 'PASSKEY_INVALID_CREDENTIAL_ID' });
+  }
+  return buf;
 }
 
 /**

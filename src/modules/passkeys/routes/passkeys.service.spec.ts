@@ -202,6 +202,53 @@ describe('PasskeysService.register', () => {
     });
   });
 
+  it('round-trips a credentialId via lookup', async () => {
+    const { repo, service } = buildService();
+    const credentialId = Buffer.from('round-trip-credential-id');
+    const x = Buffer.alloc(32, 0x01);
+    const y = Buffer.alloc(32, 0x02);
+    const verifiers = Buffer.alloc(22, 0x03);
+    repo.findByCredentialId.mockResolvedValue({
+      credentialId,
+      x,
+      y,
+      verifiers,
+      rpId: 'app.safe.global',
+      createdAt: new Date('2026-01-01T00:00:00Z'),
+    });
+
+    const { body, etag } = await service.lookup(
+      credentialId.toString('base64url'),
+    );
+
+    expect(body.credentialId).toBe(credentialId.toString('base64url'));
+    expect(body.x).toBe(`0x${'01'.repeat(32)}`);
+    expect(body.y).toBe(`0x${'02'.repeat(32)}`);
+    expect(body.verifiers).toBe(`0x${'03'.repeat(22)}`);
+    expect(etag).toBe(`"${credentialId.subarray(0, 16).toString('hex')}"`);
+  });
+
+  it('returns 404 PASSKEY_NOT_FOUND when no record exists', async () => {
+    const { repo, service } = buildService();
+    repo.findByCredentialId.mockResolvedValue(null);
+    await expect(service.lookup('AQID')).rejects.toMatchObject({
+      status: HttpStatus.NOT_FOUND,
+      response: { code: 'PASSKEY_NOT_FOUND' },
+    });
+  });
+
+  it.each([
+    ['empty', ''],
+    ['non-base64url', 'not valid!'],
+    ['too long', 'a'.repeat(2000)],
+  ])('returns 400 PASSKEY_INVALID_CREDENTIAL_ID for %s input', async (_, val) => {
+    const { service } = buildService();
+    await expect(service.lookup(val)).rejects.toMatchObject({
+      status: HttpStatus.BAD_REQUEST,
+      response: { code: 'PASSKEY_INVALID_CREDENTIAL_ID' },
+    });
+  });
+
   it('maps unexpected attestation errors to 500 PASSKEY_INTERNAL_ERROR', async () => {
     const { attestation, service } = buildService();
     attestation.verify.mockRejectedValue(new Error('boom'));

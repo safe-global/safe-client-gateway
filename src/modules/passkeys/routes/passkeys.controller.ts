@@ -2,10 +2,13 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Res,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -13,8 +16,10 @@ import {
   ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiServiceUnavailableResponse,
   ApiTags,
   ApiTooManyRequestsResponse,
@@ -26,6 +31,7 @@ import {
   RegisterPasskeyDtoEntity,
   RegisterPasskeySchema,
 } from '@/modules/passkeys/routes/entities/register-passkey.dto.entity';
+import { PasskeysLookupCacheInterceptor } from '@/modules/passkeys/routes/interceptors/passkeys-lookup-cache.interceptor';
 import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -84,5 +90,31 @@ export class PasskeysController {
     const outcome = await this.passkeysService.register(dto);
     res.status(outcome.status);
     return outcome.body;
+  }
+
+  @ApiOperation({
+    summary: 'Look up passkey coordinates',
+    description:
+      'Returns the canonical (x, y, verifiers, rpId) record for a credentialId. Rows are immutable, so successful responses are aggressively cacheable; misses return 404 with no-store to avoid stale-negative caching during first-launch flows.',
+  })
+  @ApiParam({
+    name: 'credentialId',
+    description:
+      'WebAuthn credentialId, base64url-encoded (no padding). 1..1023 decoded bytes.',
+  })
+  @ApiOkResponse({ type: PasskeyRecordResponse })
+  @ApiBadRequestResponse({ description: 'Malformed credentialId.' })
+  @ApiNotFoundResponse({ description: 'No record for this credentialId.' })
+  @ApiTooManyRequestsResponse({ description: 'Per-IP rate limit exceeded.' })
+  @Get(':credentialId')
+  @UseInterceptors(PasskeysLookupCacheInterceptor)
+  public async lookup(
+    @Param('credentialId') credentialId: string,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<PasskeyRecordResponse> {
+    const { body, etag } = await this.passkeysService.lookup(credentialId);
+    res.setHeader('ETag', etag);
+    res.setHeader('Vary', 'Accept-Encoding');
+    return body;
   }
 }
