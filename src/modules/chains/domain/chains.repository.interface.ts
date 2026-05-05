@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Page } from '@/domain/entities/page.entity';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import type { Page } from '@/domain/entities/page.entity';
-import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import type { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
+import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
 
 export const IChainsRepository = Symbol('IChainsRepository');
 

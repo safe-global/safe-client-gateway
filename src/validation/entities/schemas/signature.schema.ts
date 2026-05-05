@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Hex } from 'viem';
 import { SIGNATURE_HEX_LENGTH } from '@/domain/common/utils/signatures';
 import { HEX_PREFIX_LENGTH } from '@/routes/common/constants';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
-import type { Hex } from 'viem';
 
 // We only validate the likeness of a signature, e.g. that it is at least
 // an EOA but maybe a contract signature or an unknown concatenation of

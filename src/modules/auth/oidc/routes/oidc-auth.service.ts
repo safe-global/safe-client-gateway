@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
+import {
+  type OidcState,
+  OidcStateSchema,
+} from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
+import {
+  getRedirectConfig,
+  type RedirectConfig,
+  resolveAndValidateRedirectUrl,
+} from '@/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
-import {
-  getRedirectConfig,
-  resolveAndValidateRedirectUrl,
-  type RedirectConfig,
-} from '@/modules/auth/utils/auth-redirect.helper';
-import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  OidcState,
-  OidcStateSchema,
-} from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
-import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { getMillisecondsUntil } from '@/domain/common/utils/time';
 
 type OidcAuthTokenResponse = {
   accessToken: string;

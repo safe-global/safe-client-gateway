@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import {
+  NoFeeCampaignConfiguration,
+  RelayFeeConfiguration,
+} from '@/modules/relay/domain/entities/relay.configuration';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  RelayFeeConfiguration,
-  NoFeeCampaignConfiguration,
-} from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
 export class RelayManager implements IRelayManager {
@@ -71,7 +71,7 @@ export class RelayManager implements IRelayManager {
     }
 
     const noFeeCampaignConfigurationPerChain =
-      this.noFeeCampaignConfiguration[parseInt(chainId)];
+      this.noFeeCampaignConfiguration[Number.parseInt(chainId, 10)];
 
     // If chain has no-fee campaign configuration, use no-fee campaign relayer
     if (noFeeCampaignConfigurationPerChain !== undefined) {

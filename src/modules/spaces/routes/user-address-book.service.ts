@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
 import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
-import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 @Injectable()
 export class UserAddressBookService {

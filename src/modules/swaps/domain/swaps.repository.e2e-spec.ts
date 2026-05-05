@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import '@/__tests__/matchers/to-be-string-or-null';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
-import { SwapsModule } from '@/modules/swaps/swaps.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ConfigurationModule } from '@/config/configuration.module';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import type { Order } from '@/modules/swaps/domain/entities/order.entity';
-import configuration from '@/config/entities/configuration';
-import type { Server } from 'net';
+import type { Server } from 'node:net';
 import type { Address } from 'viem';
+import { ConfigurationModule } from '@/config/configuration.module';
+import configuration from '@/config/entities/configuration';
+import { CacheKeyPrefix } from '@/datasources/cache/constants';
+import { NetworkModule } from '@/datasources/network/network.module';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import type { Order } from '@/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
+import { SwapsModule } from '@/modules/swaps/swaps.module';
 
 const orderIds = {
   '1': {
@@ -132,9 +133,9 @@ describe('CowSwap E2E tests', () => {
     await app.close();
   });
 
-  Object.entries(orderIds).forEach(([chainId, transactions]) => {
+  for (const [chainId, transactions] of Object.entries(orderIds)) {
     describe(`Chain ID ${chainId}`, () => {
-      Object.entries(transactions).forEach(([orderId, expectedObject]) => {
+      for (const [orderId, expectedObject] of Object.entries(transactions)) {
         it(`Transaction ID: ${orderId}`, async () => {
           const actual: Order = await repository.getOrder(
             chainId,
@@ -146,7 +147,7 @@ describe('CowSwap E2E tests', () => {
             fullAppData: JSON.parse(expectedObject.fullAppData as string),
           });
         });
-      });
+      }
     });
-  });
+  }
 });

@@ -1,30 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { sign } from 'jsonwebtoken';
 import request from 'supertest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
-import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
-import { faker } from '@faker-js/faker';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
-import type { Server } from 'net';
-import { sign } from 'jsonwebtoken';
 import {
   type Auth0JwksFixture,
   getAuth0JwksFixture,
   mockAuth0Jwks,
   signAuth0Jwt,
 } from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { UsersModule } from '@/modules/users/users.module';
+import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
+import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import {
-  NetworkService,
-  type INetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { TestingModule } from '@nestjs/testing';
+import { UsersModule } from '@/modules/users/users.module';
 import { rawify } from '@/validation/entities/raw.entity';
 
 describe('OidcAuthController', () => {
@@ -295,7 +296,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should return 422 when redirect_url exceeds max length', async () => {
-        const longUrl = '/' + 'a'.repeat(2048);
+        const longUrl = `/${'a'.repeat(2048)}`;
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/authorize')
           .query({ redirect_url: longUrl })

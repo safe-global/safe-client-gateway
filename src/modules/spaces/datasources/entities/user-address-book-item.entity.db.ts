@@ -1,9 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { UserAddressBookItem as DomainUserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
+
 import {
   Column,
   Entity,
@@ -14,6 +10,11 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { UserAddressBookItem as DomainUserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 @Entity('user_address_book_items')
 @Unique('UQ_UABI_space_creator_address', ['space', 'creator', 'address'])
@@ -24,20 +25,28 @@ export class UserAddressBookItem implements DomainUserAddressBookItem {
   })
   id!: number;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_UABI_space_id',
   })
   public readonly space!: Space;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'creator_id',
     foreignKeyConstraintName: 'FK_UABI_creator_id',

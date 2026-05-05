@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Hash, Hex } from 'viem';
 import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
-import type { Hash, Hex } from 'viem';
+import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export enum MessageStatus {
   NeedsConfirmation = 'NEEDS_CONFIRMATION',

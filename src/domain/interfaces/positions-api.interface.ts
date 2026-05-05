@@ -1,7 +1,8 @@
-import type { Position } from '@/modules/positions/domain/entities/position.entity';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Position } from '@/modules/positions/domain/entities/position.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 export const IPositionsApi = Symbol('IPositionsApi');
 

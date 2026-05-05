@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { asError } from '@/logging/utils';
 
 describe('asError', () => {
@@ -8,11 +9,7 @@ describe('asError', () => {
   });
 
   it('should return the same error if thrown is a superset of Error', () => {
-    class CustomError extends Error {
-      constructor(message: string) {
-        super(message);
-      }
-    }
+    class CustomError extends Error {}
     const thrown = new CustomError('test error');
 
     expect(asError(thrown)).toEqual(new CustomError('test error'));

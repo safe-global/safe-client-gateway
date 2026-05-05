@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { ILoggingService } from '@/logging/logging.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
-import type { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
-import { JobType } from '@/datasources/job-queue/types/job-types';
-import { pushNotificationEventJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-event-job-data.builder';
-import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
+
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
+import { JobType } from '@/datasources/job-queue/types/job-types';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
+import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
+import { pushNotificationEventJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-event-job-data.builder';
+import type { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -84,11 +85,11 @@ describe('PushNotificationConsumer', () => {
       expect(result).toEqual({ delivered: true });
     });
 
-    it('should throw on unknown job type', async () => {
+    it('should throw on unknown job type', () => {
       const unknownJobType = 'unknown-job-type';
       const job = createMockJob(unknownJobType, {} as never);
 
-      await expect(consumer.process(job)).rejects.toThrow(
+      expect(() => consumer.process(job)).toThrow(
         `Unknown job type: ${unknownJobType}`,
       );
     });

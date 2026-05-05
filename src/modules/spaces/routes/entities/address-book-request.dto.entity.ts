@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
 import type { Address } from 'viem';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { AddressBookRequestStatus } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { z } from 'zod';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { AddressBookRequestStatus } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export class AddressBookRequestItemDto {
   @ApiProperty()
@@ -44,9 +44,9 @@ export const CreateAddressBookRequestSchema = z.object({
   address: AddressSchema,
 });
 
-export class CreateAddressBookRequestDto implements z.infer<
-  typeof CreateAddressBookRequestSchema
-> {
+export class CreateAddressBookRequestDto
+  implements z.infer<typeof CreateAddressBookRequestSchema>
+{
   @ApiProperty({
     type: String,
     description: 'Address of the private contact to request adding to space',

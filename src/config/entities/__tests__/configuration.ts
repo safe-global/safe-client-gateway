@@ -335,8 +335,8 @@ export default (): ReturnType<typeof configuration> => ({
     dailyLimitRelayerChainsIds: [],
     noFeeCampaign: {
       1: {
-        startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
-        endsAtTimeStamp: new Date().getTime() / 1000 + 1_000_000,
+        startsAtTimeStamp: Date.now() / 1000 - 10_000,
+        endsAtTimeStamp: Date.now() / 1000 + 1_000_000,
         safeTokenAddress: faker.finance.ethereumAddress(),
         maxGasLimit: faker.number.int({ min: 1 }),
         relayRules: [
@@ -364,8 +364,8 @@ export default (): ReturnType<typeof configuration> => ({
         ],
       },
       11155111: {
-        startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
-        endsAtTimeStamp: new Date().getTime() / 1000 + 1000_000,
+        startsAtTimeStamp: Date.now() / 1000 - 10_000,
+        endsAtTimeStamp: Date.now() / 1000 + 1000_000,
         maxGasLimit: faker.number.int({ min: 1 }),
         safeTokenAddress: faker.finance.ethereumAddress(),
         relayRules: [

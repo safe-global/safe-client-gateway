@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+
+import { ApiProperty } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
-import { ApiProperty } from '@nestjs/swagger';
 
 class UserDto extends User {
   @ApiProperty({ type: Number })
-  declare public id: User['id'];
+  public declare id: User['id'];
 }
 
 class SpaceMemberDto {

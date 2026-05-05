@@ -1,14 +1,15 @@
-import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
+import { NotificationType as NotificationTypeEnum } from '@/modules/notifications/domain/v2/entities/notification.entity';
 
 export const NotificationTypeResponseSchema = z.object({
   name: z.enum(NotificationTypeEnum),
 });
 
-export class NotificationTypeResponseDto implements z.infer<
-  typeof NotificationTypeResponseSchema
-> {
+export class NotificationTypeResponseDto
+  implements z.infer<typeof NotificationTypeResponseSchema>
+{
   @ApiProperty({
     type: NotificationTypeEnum,
     enum: NotificationTypeEnum,

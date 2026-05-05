@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -8,15 +9,15 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
-import { RecoveryService } from '@/modules/recovery/routes/recovery.service';
-import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import type { Address } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import type { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
+import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
+import { RecoveryService } from '@/modules/recovery/routes/recovery.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('recovery')
 @Controller({
@@ -29,7 +30,7 @@ export class RecoveryController {
   @HttpCode(200)
   @Post()
   @UseGuards(AuthGuard)
-  async addRecoveryModule(
+  addRecoveryModule(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -48,7 +49,7 @@ export class RecoveryController {
   @HttpCode(204)
   @Delete('/:moduleAddress')
   @UseGuards(AuthGuard)
-  async deleteRecoveryModule(
+  deleteRecoveryModule(
     @Param('chainId') chainId: string,
     @Param('moduleAddress', new ValidationPipe(AddressSchema))
     moduleAddress: Address,

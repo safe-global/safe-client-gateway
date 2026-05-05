@@ -1,3 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, concat, getAddress, type Hash } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   dedicatedStakingStatsBuilder,
   dedicatedStakingStatsGrossApyBuilder,
@@ -12,10 +20,6 @@ import {
   transactionStatusReceiptLogBuilder,
 } from '@/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
 import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
-import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   batchWithdrawCLFeeEncoder,
   depositEventEventBuilder,
@@ -24,14 +28,11 @@ import {
 } from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { NULL_ADDRESS } from '@/routes/common/constants';
 import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';
 import { KilnNativeStakingHelper } from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 import { NativeStakingMapper } from '@/modules/transactions/routes/mappers/common/native-staking.mapper';
-import { faker } from '@faker-js/faker';
-import { type Address, concat, getAddress, type Hash } from 'viem';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 
 const mockStakingRepository = jest.mocked({
   getDeployment: jest.fn(),
@@ -573,9 +574,9 @@ describe('NativeStakingMapper', () => {
         expect.objectContaining({
           type: 'NativeStakingWithdraw',
           value: (
-            +stakes[0].net_claimable_consensus_rewards! +
-            +stakes[1].net_claimable_consensus_rewards! +
-            +stakes[2].net_claimable_consensus_rewards!
+            +(stakes[0].net_claimable_consensus_rewards as string) +
+            +(stakes[1].net_claimable_consensus_rewards as string) +
+            +(stakes[2].net_claimable_consensus_rewards as string)
           ).toString(),
           tokenInfo: {
             address: NULL_ADDRESS,
@@ -788,7 +789,7 @@ describe('NativeStakingMapper', () => {
       expect(actual).toBe('NOT_STAKED');
     });
 
-    [
+    const orderedStates = [
       StakeState.Unknown,
       StakeState.Unstaked,
       StakeState.PendingQueued,
@@ -802,8 +803,9 @@ describe('NativeStakingMapper', () => {
       StakeState.WithdrawalDone,
       StakeState.ActiveSlashed,
       StakeState.ExitedSlashed,
-    ].map((state, i, arr) => {
-      const nextState = arr[i + 1];
+    ];
+    for (const [i, state] of orderedStates.entries()) {
+      const nextState = orderedStates[i + 1];
 
       it(`should return ${statusMap[state]} if ${state} is the earliest state in returned Stakes`, async () => {
         const chainId = faker.string.numeric();
@@ -825,6 +827,6 @@ describe('NativeStakingMapper', () => {
 
         expect(actual).toBe(statusMap[state]);
       });
-    });
+    }
   });
 });

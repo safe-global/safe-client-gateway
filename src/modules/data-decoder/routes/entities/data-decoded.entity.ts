@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { Address, Hex } from 'viem';
 import {
-  BaseDataDecoded as DomainBaseDataDecoded,
-  MultiSend as DomainMultiSend,
-  DataDecoded as DomainDataDecoded,
-  DataDecodedParameter as DomainDataDecodedParameter,
   DataDecodedAccuracy,
+  type BaseDataDecoded as DomainBaseDataDecoded,
+  type DataDecoded as DomainDataDecoded,
+  type DataDecodedParameter as DomainDataDecodedParameter,
+  type MultiSend as DomainMultiSend,
 } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { Address, Hex } from 'viem';
 
 class BaseDataDecoded implements DomainBaseDataDecoded {
   @ApiProperty()

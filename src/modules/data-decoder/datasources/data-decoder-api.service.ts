@@ -1,14 +1,15 @@
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
-import type { Page } from '@/domain/entities/page.entity';
-import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import type { Raw } from '@/validation/entities/raw.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { Address } from 'viem';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { Page } from '@/domain/entities/page.entity';
+import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
+import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class DataDecoderApi implements IDataDecoderApi {
@@ -127,7 +128,7 @@ export class DataDecoderApi implements IDataDecoderApi {
 
   private setCacheExpirationTimes(
     chainId: string,
-    isContract: boolean = false,
+    isContract = false,
   ): {
     notFoundExpireTimeSeconds: number;
     expireTimeSeconds: number;

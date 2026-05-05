@@ -1,5 +1,6 @@
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { EthereumTransactionTypeSchema } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
 import { ModuleTransactionTypeSchema } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransactionTypeSchema } from '@/modules/safe/domain/entities/multisig-transaction.entity';

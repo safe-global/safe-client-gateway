@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import type { Address, Hex } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
@@ -6,9 +10,6 @@ import {
   withdrawalEventBuilder,
 } from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker';
-import type { Address, Hex } from 'viem';
 
 const mockLoggingService = {
   debug: jest.fn(),

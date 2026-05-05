@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress, type Hash } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -5,6 +8,7 @@ import type { ICacheService } from '@/datasources/cache/cache.service.interface'
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { dedicatedStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
 import { defiVaultStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
@@ -15,11 +19,8 @@ import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__test
 import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import { transactionStatusBuilder } from '@/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
 import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress, type Hash } from 'viem';
 
 const dataSource = {
   get: jest.fn(),

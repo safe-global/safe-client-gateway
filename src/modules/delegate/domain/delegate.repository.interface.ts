@@ -1,9 +1,10 @@
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { Page } from '@/domain/entities/page.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { DelegateRepository } from '@/modules/delegate/domain/delegate.repository';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { DelegateRepository } from '@/modules/delegate/domain/delegate.repository';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 
 export const IDelegateRepository = Symbol('IDelegateRepository');
 

@@ -1,16 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { CounterfactualSafesService } from '@/modules/counterfactual-safes/routes/counterfactual-safes.service';
-import { CounterfactualSafesSchema } from '@/modules/counterfactual-safes/routes/entities/counterfactual-safe.dto.entity';
-import { CreateCounterfactualSafesDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
-import {
-  DeleteCounterfactualSafesDto,
-  DeleteCounterfactualSafesSchema,
-} from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
-import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+
 import {
   Body,
   Controller,
@@ -27,10 +16,22 @@ import {
   ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
+  ApiOperation,
   ApiTags,
   ApiUnauthorizedResponse,
-  ApiOperation,
 } from '@nestjs/swagger';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { CounterfactualSafesService } from '@/modules/counterfactual-safes/routes/counterfactual-safes.service';
+import { CounterfactualSafesSchema } from '@/modules/counterfactual-safes/routes/entities/counterfactual-safe.dto.entity';
+import { CreateCounterfactualSafesDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
+import {
+  type DeleteCounterfactualSafesDto,
+  DeleteCounterfactualSafesSchema,
+} from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
+import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('counterfactual-safes')
 @Controller({

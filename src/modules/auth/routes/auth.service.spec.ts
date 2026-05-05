@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthService } from '@/modules/auth/routes/auth.service';
-import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+
 import { faker } from '@faker-js/faker';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
-import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { Hex } from 'viem';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthMethod,
   AuthPayload,
   type AuthPayloadDto,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
-import {
-  oidcAuthPayloadDtoBuilder,
-  siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthService } from '@/modules/auth/routes/auth.service';
+import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
+import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 const siweRepositoryMock = {
   generateNonce: jest.fn(),

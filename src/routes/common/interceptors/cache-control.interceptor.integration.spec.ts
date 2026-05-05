@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import {
   Controller,
   Get,
-  INestApplication,
+  type INestApplication,
   Res,
   UseInterceptors,
 } from '@nestjs/common';
-import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { Test } from '@nestjs/testing';
+import type { Response } from 'express';
 import request from 'supertest';
-import { Server } from 'net';
-import { Response } from 'express';
+import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 
 @Controller()
 @UseInterceptors(CacheControlInterceptor)

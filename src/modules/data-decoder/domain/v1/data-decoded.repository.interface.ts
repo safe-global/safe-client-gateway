@@ -1,5 +1,6 @@
-import type { DataDecoded } from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
 
 export const IDataDecodedRepository = Symbol('IDataDecodedRepository');
 

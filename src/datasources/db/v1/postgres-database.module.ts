@@ -1,12 +1,13 @@
-import postgres from 'postgres';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import fs from 'node:fs';
 import { Module } from '@nestjs/common';
-import { PostgresDatabaseShutdownHook } from '@/datasources/db/v1/postgres-database.shutdown.hook';
+import postgres from 'postgres';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseMigrationHook } from '@/datasources/db/v1/postgres-database.migration.hook';
-import fs from 'fs';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
+import { ICachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver.interface';
+import { PostgresDatabaseMigrationHook } from '@/datasources/db/v1/postgres-database.migration.hook';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { PostgresDatabaseShutdownHook } from '@/datasources/db/v1/postgres-database.shutdown.hook';
 
 function dbFactory(configurationService: IConfigurationService): postgres.Sql {
   const caPath = configurationService.get<string>(

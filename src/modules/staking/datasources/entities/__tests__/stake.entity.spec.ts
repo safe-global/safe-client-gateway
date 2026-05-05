@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import {
   StakeSchema,
   StakeState,
 } from '@/modules/staking/datasources/entities/stake.entity';
-import { faker } from '@faker-js/faker';
 
 describe('StakeSchema', () => {
   it('should validate a Stake object', () => {
@@ -54,21 +55,21 @@ describe('StakeSchema', () => {
     });
   });
 
-  it.each(['rewards' as const, 'net_claimable_consensus_rewards' as const])(
-    'should not validate non-numeric string %s values',
-    (key) => {
-      const stake = stakeBuilder().with(key, faker.lorem.word()).build();
+  it.each([
+    'rewards' as const,
+    'net_claimable_consensus_rewards' as const,
+  ])('should not validate non-numeric string %s values', (key) => {
+    const stake = stakeBuilder().with(key, faker.lorem.word()).build();
 
-      const result = StakeSchema.safeParse(stake);
+    const result = StakeSchema.safeParse(stake);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'custom',
-        message: 'Invalid base-10 numeric string',
-        path: [key],
-      });
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid base-10 numeric string',
+      path: [key],
+    });
+  });
 
   it('should not validate an invalid Stake object', () => {
     const stake = { invalid: 'Stake' };
