@@ -1,32 +1,47 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
 import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
+  NameSchema,
 } from '@/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-const InviteUserDtoSchema = z
-  .array(
-    z.object({
-      address: AddressSchema,
-      role: z.enum(getStringEnumKeys(MemberRole)),
-      name: z.string().max(255),
-    }),
-  )
-  .min(1);
+const InviteUserSchema = z
+  .object({
+    address: AddressSchema.optional(),
+    email: z.email().max(255).optional(),
+    role: z.enum(getStringEnumKeys(MemberRole)),
+    name: NameSchema,
+  })
+  .superRefine((value, ctx) => {
+    const identifiers = [value.address, value.email].filter(Boolean);
+
+    if (identifiers.length !== 1) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Exactly one of address or email is required.',
+        path: ['address'],
+      });
+    }
+  });
+
+const InviteUserDtoSchema = z.array(InviteUserSchema).min(1);
 
 export const InviteUsersDtoSchema = z.object({
   users: InviteUserDtoSchema,
 });
 
 export class InviteUserDto {
-  @ApiProperty()
-  public readonly address!: Address;
+  @ApiPropertyOptional()
+  public readonly address?: Address;
+
+  @ApiPropertyOptional()
+  public readonly email?: string;
 
   @ApiProperty({
     type: String,

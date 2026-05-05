@@ -72,7 +72,7 @@ export class MembersController {
   })
   @ApiBody({
     type: InviteUsersDto,
-    description: 'List of wallet addresses to invite to the space',
+    description: 'List of wallet addresses or email addresses to invite',
   })
   @ApiOkResponse({
     description: 'Users invited successfully',
@@ -185,6 +185,52 @@ export class MembersController {
     return await this.membersService.declineInvite({
       authPayload,
       spaceId,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Resend space invitation',
+    description:
+      'Resends an invitation and resets its expiration. Only space admins can resend invitations.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID containing the invitation',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the invited member',
+    example: 123,
+  })
+  @ApiOkResponse({
+    description: 'Invitation resent successfully',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to resend invitations',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or invitation not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User is not active or not an admin of this space',
+  })
+  @Post('/:spaceId/members/:userId/resend')
+  @UseGuards(AuthGuard)
+  public async resendInvite(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: number,
+  ): Promise<void> {
+    return await this.membersService.resendInvite({
+      authPayload,
+      spaceId,
+      userId,
     });
   }
 

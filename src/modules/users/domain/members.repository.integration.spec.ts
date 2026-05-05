@@ -36,6 +36,8 @@ import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
+const INVITE_EXPIRES_AT = new Date('2026-05-01T00:00:00.000Z');
+
 const mockLoggingService = {
   debug: jest.fn(),
   error: jest.fn(),
@@ -286,6 +288,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -338,6 +341,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -410,6 +414,7 @@ describe('MembersRepository', () => {
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
         {
@@ -420,6 +425,7 @@ describe('MembersRepository', () => {
           role: memberRole2,
           status: memberStatus2,
           invitedBy: member2InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -491,6 +497,7 @@ describe('MembersRepository', () => {
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
         {
@@ -501,6 +508,7 @@ describe('MembersRepository', () => {
           role: memberRole2,
           status: member2Status,
           invitedBy: member2InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -554,6 +562,7 @@ describe('MembersRepository', () => {
       const member = await membersRepository.inviteUsers({
         authPayload,
         spaceId,
+        inviteExpiresAt: INVITE_EXPIRES_AT,
         users,
       });
 
@@ -566,6 +575,7 @@ describe('MembersRepository', () => {
             role: user.role,
             status: 'INVITED',
             invitedBy: authPayloadDto.signer_address,
+            inviteExpiresAt: INVITE_EXPIRES_AT,
           };
         }),
       );
@@ -602,6 +612,7 @@ describe('MembersRepository', () => {
       const member = await membersRepository.inviteUsers({
         authPayload,
         spaceId,
+        inviteExpiresAt: INVITE_EXPIRES_AT,
         users,
       });
 
@@ -614,9 +625,133 @@ describe('MembersRepository', () => {
             role: user.role,
             status: 'INVITED',
             invitedBy: null,
+            inviteExpiresAt: INVITE_EXPIRES_AT,
           };
         }),
       );
+    });
+
+    it('should invite an email by creating a pending stub user', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const invitedEmail = faker.internet.email().toLowerCase();
+      const invitedName = faker.person.firstName();
+      const {
+        user: owner,
+        authPayload,
+        authPayloadDto,
+      } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      const invitation = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        inviteExpiresAt: INVITE_EXPIRES_AT,
+        users: [
+          {
+            email: invitedEmail,
+            role: 'MEMBER',
+            name: invitedName,
+          },
+        ],
+      });
+
+      expect(invitation).toEqual([
+        {
+          userId: expect.any(Number),
+          spaceId,
+          name: invitedName,
+          role: 'MEMBER',
+          status: 'INVITED',
+          invitedBy: authPayloadDto.signer_address,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
+        },
+      ]);
+
+      await expect(
+        dbUserRepo.findOneOrFail({
+          where: { id: invitation[0].userId },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: invitation[0].userId,
+          email: invitedEmail,
+          extUserId: null,
+          status: 'PENDING',
+        }),
+      );
+    });
+
+    it('should reuse an existing email-matched user for email invites', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const invitedEmail = faker.internet.email().toLowerCase();
+      const invitedName = faker.person.firstName();
+      const {
+        user: owner,
+        authPayload,
+        authPayloadDto,
+      } = await createSiweUser();
+      const existingUser = await dbUserRepo.insert({
+        status: 'ACTIVE',
+        email: invitedEmail,
+      });
+      const existingUserId = existingUser.identifiers[0].id as number;
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      const invitation = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        inviteExpiresAt: INVITE_EXPIRES_AT,
+        users: [
+          {
+            email: invitedEmail,
+            role: 'MEMBER',
+            name: invitedName,
+          },
+        ],
+      });
+
+      expect(invitation).toEqual([
+        {
+          userId: existingUserId,
+          spaceId,
+          name: invitedName,
+          role: 'MEMBER',
+          status: 'INVITED',
+          invitedBy: authPayloadDto.signer_address,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
+        },
+      ]);
+      await expect(
+        dbUserRepo.find({
+          where: { email: invitedEmail },
+        }),
+      ).resolves.toHaveLength(1);
     });
 
     it('should not create PENDING users for existing ones', async () => {
@@ -650,6 +785,7 @@ describe('MembersRepository', () => {
       await membersRepository.inviteUsers({
         authPayload,
         spaceId,
+        inviteExpiresAt: INVITE_EXPIRES_AT,
         users: [
           {
             address: memberWallet,
@@ -699,6 +835,7 @@ describe('MembersRepository', () => {
         membersRepository.inviteUsers({
           authPayload: new AuthPayload(),
           spaceId,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
           users,
         }),
       ).rejects.toThrow('Not authenticated');
@@ -736,6 +873,7 @@ describe('MembersRepository', () => {
         membersRepository.inviteUsers({
           authPayload,
           spaceId,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
           users,
         }),
       ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
@@ -773,6 +911,7 @@ describe('MembersRepository', () => {
         membersRepository.inviteUsers({
           authPayload,
           spaceId,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
           users,
         }),
       ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
@@ -815,6 +954,7 @@ describe('MembersRepository', () => {
         membersRepository.inviteUsers({
           authPayload,
           spaceId: targetSpaceId,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
           users,
         }),
       ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
@@ -836,6 +976,7 @@ describe('MembersRepository', () => {
         membersRepository.inviteUsers({
           authPayload,
           spaceId,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
           users,
         }),
       ).rejects.toThrow('Space not found.');
@@ -878,6 +1019,7 @@ describe('MembersRepository', () => {
         membersRepository.inviteUsers({
           authPayload: invitedAdminAuthPayload,
           spaceId,
+          inviteExpiresAt: INVITE_EXPIRES_AT,
           users,
         }),
       ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
@@ -944,6 +1086,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1083,6 +1226,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1097,6 +1241,59 @@ describe('MembersRepository', () => {
         status: 'ACTIVE', // No longer PENDING
         updatedAt: expect.any(Date),
       });
+    });
+
+    it('should not accept an expired invite', async () => {
+      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const { user: admin } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser({
+        status: 'PENDING',
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: memberInvitedBy,
+      });
+      const member = await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: 'MEMBER',
+        status: 'INVITED',
+        invitedBy: memberInvitedBy,
+        inviteExpiresAt: new Date(Date.now() - 1_000),
+      });
+      const memberId = member.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.acceptInvite({
+          authPayload,
+          spaceId,
+          payload: { name: nameBuilder() },
+        }),
+      ).rejects.toThrow('Invite has expired.');
+
+      await expect(
+        dbMembersRepository.findOneOrFail({
+          where: { id: memberId },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          status: 'INVITED',
+          name: memberName,
+        }),
+      );
     });
 
     it('should not accept the invite if the user was not invited', async () => {
@@ -1333,6 +1530,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'DECLINED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1605,6 +1803,7 @@ describe('MembersRepository', () => {
           role: memberRole,
           status: 'ACTIVE',
           invitedBy: memberInvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
@@ -2010,6 +2209,7 @@ describe('MembersRepository', () => {
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: expect.any(String),
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
         space: expect.objectContaining({ id: spaceId }),
       });
@@ -2030,6 +2230,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: expect.any(String),
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
         space: expect.objectContaining({ id: space2Id }),
       });
@@ -2399,6 +2600,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: member2InvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -2770,6 +2972,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: signerMember2InvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });

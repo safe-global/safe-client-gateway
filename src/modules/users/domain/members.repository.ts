@@ -2,6 +2,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   Inject,
   Injectable,
   NotFoundException,
@@ -23,7 +24,10 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
+import {
+  type Member,
+  MemberStatus,
+} from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -91,9 +95,11 @@ export class MembersRepository implements IMembersRepository {
   public async inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
+    inviteExpiresAt: Member['inviteExpiresAt'];
     users: Array<{
       name: Member['name'];
-      address: Address;
+      address?: Address;
+      email?: string;
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
@@ -116,11 +122,16 @@ export class MembersRepository implements IMembersRepository {
       throw new ForbiddenException('User is not an active admin.');
     }
 
-    const invitedAddresses = args.users.map((user) => user.address);
-    const invitedWallets = await this.walletsRepository.find({
-      where: { address: In(invitedAddresses) },
-      relations: { user: true },
-    });
+    const invitedAddresses = args.users.flatMap((user) =>
+      user.address ? [user.address] : [],
+    );
+    const invitedWallets =
+      invitedAddresses.length > 0
+        ? await this.walletsRepository.find({
+            where: { address: In(invitedAddresses) },
+            relations: { user: true },
+          })
+        : [];
     const invitations: Array<Invitation> = [];
 
     // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
@@ -131,16 +142,11 @@ export class MembersRepository implements IMembersRepository {
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
-        // Find existing User via Wallet or create new User and Wallet.
-        const wallet = invitedWallets.find((wallet) => {
-          return isAddressEqual(wallet.address, userToInvite.address);
+        const userIdToInvite = await this.getUserIdToInvite({
+          entityManager,
+          userToInvite,
+          invitedWallets,
         });
-        const userIdToInvite = wallet
-          ? wallet.user.id
-          : await this.createUserAndWallet({
-              entityManager,
-              address: userToInvite.address,
-            });
 
         try {
           await entityManager.insert(DbMember, {
@@ -150,11 +156,12 @@ export class MembersRepository implements IMembersRepository {
             role: userToInvite.role,
             status: 'INVITED',
             invitedBy,
+            inviteExpiresAt: args.inviteExpiresAt,
           });
         } catch (err) {
           if (isUniqueConstraintError(err)) {
             throw new UniqueConstraintError(
-              `${userToInvite.address} is already in this space or has a pending invite.`,
+              'User is already in this space or has a pending invite.',
             );
           }
           throw err;
@@ -167,6 +174,7 @@ export class MembersRepository implements IMembersRepository {
           role: userToInvite.role,
           status: 'INVITED',
           invitedBy,
+          inviteExpiresAt: args.inviteExpiresAt,
         });
       }
     });
@@ -187,6 +195,44 @@ export class MembersRepository implements IMembersRepository {
     return userId;
   }
 
+  private async getUserIdToInvite(args: {
+    entityManager: EntityManager;
+    userToInvite: {
+      name: Member['name'];
+      address?: Address;
+      email?: string;
+      role: Member['role'];
+    };
+    invitedWallets: Array<{
+      address: Address;
+      user: { id: User['id'] };
+    }>;
+  }): Promise<User['id']> {
+    const address = args.userToInvite.address;
+    if (address) {
+      const wallet = args.invitedWallets.find((wallet) => {
+        return isAddressEqual(wallet.address, address);
+      });
+
+      return (
+        wallet?.user.id ??
+        (await this.createUserAndWallet({
+          entityManager: args.entityManager,
+          address,
+        }))
+      );
+    }
+
+    if (args.userToInvite.email) {
+      return await this.usersRepository.findOrCreateInviteeByEmail(
+        args.userToInvite.email,
+        args.entityManager,
+      );
+    }
+
+    throw new ConflictException('Invitee address or email is required.');
+  }
+
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
@@ -203,10 +249,15 @@ export class MembersRepository implements IMembersRepository {
     });
     const member = space.members[0];
 
+    if (member.inviteExpiresAt && member.inviteExpiresAt <= new Date()) {
+      throw new GoneException('Invite has expired.');
+    }
+
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
         name: args.payload.name,
+        inviteExpiresAt: null,
       });
 
       await this.usersRepository.updateStatus({
@@ -237,6 +288,38 @@ export class MembersRepository implements IMembersRepository {
         status: 'DECLINED',
       });
     });
+  }
+
+  public async resendInvite(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+    inviteExpiresAt: Member['inviteExpiresAt'];
+  }): Promise<void> {
+    const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
+
+    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    const updateResult = await membersRepository
+      .createQueryBuilder()
+      .update(DbMember)
+      .set({
+        status: 'INVITED',
+        inviteExpiresAt: args.inviteExpiresAt,
+      })
+      .where('user_id = :userId', { userId: args.userId })
+      .andWhere('space_id = :spaceId', { spaceId: args.spaceId })
+      .andWhere('status IN (:...statuses)', {
+        statuses: [MemberStatus.INVITED, MemberStatus.DECLINED],
+      })
+      .execute();
+
+    if (updateResult.affected === 0) {
+      throw new NotFoundException('Invitation not found.');
+    }
   }
 
   public async findAuthorizedMembersOrFail(args: {

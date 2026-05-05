@@ -30,7 +30,7 @@ export interface IUsersRepository {
   create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: string },
   ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
@@ -56,6 +56,11 @@ export interface IUsersRepository {
   findByWalletAddress(address: Address): Promise<User | undefined>;
 
   findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
+
+  findOrCreateInviteeByEmail(
+    email: string,
+    entityManager: EntityManager,
+  ): Promise<User['id']>;
 
   findOrCreateByExtUserIdWithEmail(
     extUserId: string,

@@ -35,8 +35,10 @@ export interface IMembersRepository {
   inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
+    inviteExpiresAt: Member['inviteExpiresAt'];
     users: Array<{
-      address: Address;
+      address?: Address;
+      email?: string;
       role: Member['role'];
       name: Member['name'];
     }>;
@@ -46,6 +48,13 @@ export interface IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     payload: Pick<Member, 'name'>;
+  }): Promise<void>;
+
+  resendInvite(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+    inviteExpiresAt: Member['inviteExpiresAt'];
   }): Promise<void>;
 
   declineInvite(args: {

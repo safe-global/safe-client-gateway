@@ -432,6 +432,7 @@ export default (): ReturnType<typeof configuration> => ({
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
+    inviteExpirySeconds: faker.number.int({ min: 100, max: 200 }),
     rateLimit: {
       creation: {
         max: faker.number.int({ min: 100, max: 200 }),

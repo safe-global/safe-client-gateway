@@ -127,6 +127,7 @@ describe('MembersController', () => {
               role: 'ADMIN',
               status: 'INVITED',
               invitedBy: authPayloadDto.signer_address,
+              inviteExpiresAt: expect.any(String),
             },
             {
               userId: expect.any(Number),
@@ -135,6 +136,54 @@ describe('MembersController', () => {
               role: 'MEMBER',
               status: 'INVITED',
               invitedBy: authPayloadDto.signer_address,
+              inviteExpiresAt: expect.any(String),
+            },
+          ]),
+        );
+    });
+
+    it('should invite users by email', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const invitedEmail = faker.internet.email().toLowerCase();
+      const invitedName = faker.person.firstName();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              email: invitedEmail,
+              name: invitedName,
+            },
+          ],
+        })
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual([
+            {
+              userId: expect.any(Number),
+              spaceId,
+              name: invitedName,
+              role: 'MEMBER',
+              status: 'INVITED',
+              invitedBy: authPayloadDto.signer_address,
+              inviteExpiresAt: expect.any(String),
             },
           ]),
         );
@@ -587,9 +636,74 @@ describe('MembersController', () => {
         })
         .expect(409)
         .expect({
-          message: `${memberAddress} is already in this space or has a pending invite.`,
+          message: 'User is already in this space or has a pending invite.',
           error: 'Conflict',
           statusCode: 409,
+        });
+    });
+  });
+
+  describe('POST /v1/spaces/:spaceId/members/:userId/resend', () => {
+    it('should resend an invitation', async () => {
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+      const userId = inviteUsersResponse.body[0].userId;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/decline`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/${userId}/resend`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(201)
+        .expect({});
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                status: 'INVITED',
+                inviteExpiresAt: expect.any(String),
+                user: expect.objectContaining({ id: userId }),
+              }),
+            ]),
+          );
         });
     });
   });

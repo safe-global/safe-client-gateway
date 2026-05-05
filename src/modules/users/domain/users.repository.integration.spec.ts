@@ -966,6 +966,36 @@ describe('UsersRepository', () => {
       expect(user.email).toBe(email.toLowerCase());
     });
 
+    it('should link a verified OIDC login to a pending email invite user', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const extUserId = faker.string.uuid();
+      const email = faker.internet.email().toLowerCase();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'PENDING',
+        email,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+
+      await expect(
+        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: true,
+        }),
+      ).resolves.toBe(userId);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user).toEqual(
+        expect.objectContaining({
+          email,
+          extUserId,
+          status: 'PENDING',
+        }),
+      );
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+    });
+
     it('should not overwrite an existing email for the same user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();

@@ -20,6 +20,7 @@ import { IUsersRepository } from '@/modules/users/domain/users.repository.interf
         // Plain functions (not jest.fn) so they survive jest.resetAllMocks()
         // in tests that call getAccessToken → findOrCreate*.
         findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
+        findOrCreateInviteeByEmail: jest.fn().mockResolvedValue(1),
         findOrCreateByExtUserIdWithEmail: (): Promise<number> =>
           Promise.resolve(1),
         findEmailById: jest.fn().mockResolvedValue(undefined),

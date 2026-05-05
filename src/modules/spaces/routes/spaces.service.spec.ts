@@ -89,6 +89,10 @@ describe('SpacesService', () => {
           safeCount: 3,
         },
       ]);
+      expect(membersRepositoryMock.find).toHaveBeenCalledWith({
+        where: { user: { id: userId }, status: expect.anything() },
+        relations: ['space'],
+      });
     });
 
     it.each([

@@ -27,4 +27,7 @@ export class Invitation {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   invitedBy!: Member['invitedBy'];
+
+  @ApiProperty({ type: Date })
+  inviteExpiresAt!: Member['inviteExpiresAt'];
 }

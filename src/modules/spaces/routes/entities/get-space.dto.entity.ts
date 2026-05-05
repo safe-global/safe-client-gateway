@@ -31,6 +31,9 @@ class SpaceMemberDto {
   })
   public status!: Member['status'];
 
+  @ApiProperty({ type: Date, nullable: true })
+  public inviteExpiresAt!: Member['inviteExpiresAt'];
+
   @ApiProperty({ type: UserDto })
   public user!: Partial<UserDto>;
 }

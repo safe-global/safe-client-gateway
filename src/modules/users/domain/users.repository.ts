@@ -6,8 +6,12 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
-import { EntityManager } from 'typeorm';
+import type {
+  FindOptionsRelations,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
+import { EntityManager, IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -73,11 +77,12 @@ export class UsersRepository implements IUsersRepository {
   public async create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: string },
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
       status,
       ...(options?.extUserId && { extUserId: options.extUserId }),
+      ...(options?.email && { email: options.email.trim().toLowerCase() }),
     });
 
     return userInsertResult.identifiers[0].id;
@@ -220,8 +225,39 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
+  public async findOrCreateInviteeByEmail(
+    email: string,
+    entityManager: EntityManager,
+  ): Promise<User['id']> {
+    const userRepository = entityManager.getRepository(DbUser);
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const existingUser = await userRepository.findOne({
+      where: { email: normalizedEmail },
+    });
+    if (existingUser) {
+      return existingUser.id;
+    }
+
+    try {
+      return await this.create('PENDING', entityManager, {
+        email: normalizedEmail,
+      });
+    } catch (error) {
+      if (!this.isUniqueConstraintViolation(error, 'idx_users_email')) {
+        throw error;
+      }
+
+      const user = await userRepository.findOneOrFail({
+        where: { email: normalizedEmail },
+      });
+      return user.id;
+    }
+  }
+
   /**
-   * Finds or creates an OIDC user, then validates or persists the optional email claim.
+   * Finds or creates an OIDC user, linking verified email invites when possible.
+   * The optional email claim is validated or persisted after the user is resolved.
    */
   public async findOrCreateByExtUserIdWithEmail(
     extUserId: string,
@@ -240,6 +276,18 @@ export class UsersRepository implements IUsersRepository {
         await this.handleUserEmail(existingUser.id, email);
       }
       return existingUser.id;
+    }
+
+    if (email?.verified) {
+      const invitedUserId = await this.linkPendingInviteeByVerifiedEmail(
+        extUserId,
+        email.address,
+        userRepository,
+      );
+
+      if (invitedUserId !== null) {
+        return invitedUserId;
+      }
     }
 
     let userId: User['id'];
@@ -265,6 +313,55 @@ export class UsersRepository implements IUsersRepository {
     await this.handleUserEmail(userId, email);
 
     return userId;
+  }
+
+  private async linkPendingInviteeByVerifiedEmail(
+    extUserId: string,
+    email: string,
+    userRepository: Repository<DbUser>,
+  ): Promise<User['id'] | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const invitedUser = await userRepository.findOne({
+      where: {
+        email: normalizedEmail,
+        extUserId: IsNull(),
+        status: 'PENDING',
+      },
+      select: { id: true },
+    });
+
+    if (!invitedUser) {
+      return null;
+    }
+
+    try {
+      const updateResult = await userRepository.update(
+        { id: invitedUser.id, extUserId: IsNull() },
+        { extUserId },
+      );
+
+      if (updateResult.affected === 1) {
+        return invitedUser.id;
+      }
+
+      // Another callback may have linked the pending invitee after our lookup.
+      const user = await userRepository.findOne({
+        where: { extUserId },
+        select: { id: true },
+      });
+      return user?.id ?? null;
+    } catch (error) {
+      if (!this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
+        throw error;
+      }
+
+      // A concurrent OIDC callback may have linked the pending invitee first.
+      const user = await userRepository.findOneOrFail({
+        where: { extUserId },
+        select: { id: true },
+      });
+      return user.id;
+    }
   }
 
   private async handleUserEmail(

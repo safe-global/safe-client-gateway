@@ -15,6 +15,7 @@ describe('UsersRepository', () => {
   let userRepository: {
     findOne: jest.Mock;
     findOneOrFail: jest.Mock;
+    update: jest.Mock;
   };
   let target: UsersRepository;
 
@@ -24,6 +25,7 @@ describe('UsersRepository', () => {
     userRepository = {
       findOne: jest.fn(),
       findOneOrFail: jest.fn(),
+      update: jest.fn(),
     };
 
     postgresDatabaseService = {
@@ -101,6 +103,60 @@ describe('UsersRepository', () => {
           verified: false,
         }),
       ).resolves.toBe(userId);
+    });
+
+    it('should link a verified OIDC login to a pending email invite user', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      const email = faker.internet.email();
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: userId });
+      userRepository.update.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        target.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: true,
+        }),
+      ).resolves.toBe(userId);
+
+      expect(userRepository.findOne).toHaveBeenNthCalledWith(2, {
+        where: {
+          email: email.toLowerCase(),
+          extUserId: expect.anything(),
+          status: 'PENDING',
+        },
+        select: { id: true },
+      });
+      expect(userRepository.update).toHaveBeenCalledWith(
+        { id: userId, extUserId: expect.anything() },
+        { extUserId },
+      );
+    });
+
+    it('should return a concurrently linked verified OIDC user id', async () => {
+      const invitedUserId = faker.number.int({ min: 1 });
+      const linkedUserId = faker.number.int({ min: invitedUserId + 1 });
+      const extUserId = faker.string.uuid();
+      const email = faker.internet.email();
+      userRepository.findOne
+        .mockResolvedValueOnce(null)
+        .mockResolvedValueOnce({ id: invitedUserId })
+        .mockResolvedValueOnce({ id: linkedUserId });
+      userRepository.update.mockResolvedValue({ affected: 0 });
+
+      await expect(
+        target.findOrCreateByExtUserIdWithEmail(extUserId, {
+          address: email,
+          verified: true,
+        }),
+      ).resolves.toBe(linkedUserId);
+
+      expect(userRepository.findOne).toHaveBeenNthCalledWith(3, {
+        where: { extUserId },
+        select: { id: true },
+      });
     });
 
     it('should throw when an unverified email belongs to a different user', async () => {

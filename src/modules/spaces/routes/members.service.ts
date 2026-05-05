@@ -2,6 +2,7 @@
 import { ConflictException, Inject } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
 import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
@@ -12,11 +13,13 @@ import type {
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 export class MembersService {
   private readonly maxInvites: number;
+  private readonly inviteExpirySeconds: number;
 
   public constructor(
     @Inject(IMembersRepository)
@@ -26,6 +29,9 @@ export class MembersService {
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('spaces.maxInvites');
+    this.inviteExpirySeconds = this.configurationService.getOrThrow<number>(
+      'spaces.inviteExpirySeconds',
+    );
   }
 
   public async inviteUser(args: {
@@ -39,7 +45,21 @@ export class MembersService {
     return await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
+      inviteExpiresAt: this.getInviteExpiresAt(),
       users: args.inviteUsersDto.users,
+    });
+  }
+
+  public async resendInvite(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+  }): Promise<void> {
+    return await this.membersRepository.resendInvite({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+      userId: args.userId,
+      inviteExpiresAt: this.getInviteExpiresAt(),
     });
   }
 
@@ -69,20 +89,25 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const members = await this.membersRepository.findAuthorizedMembersOrFail({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+    const isAdmin = members.some((member) => {
+      return (
+        member.user.id === userId &&
+        member.status === 'ACTIVE' &&
+        member.role === 'ADMIN'
+      );
+    });
+
     return {
-      members: (
-        await this.membersRepository.findAuthorizedMembersOrFail({
-          authPayload: args.authPayload,
-          spaceId: args.spaceId,
-        })
-      ).map((member) => ({
-        ...member,
-        user: {
-          ...member.user,
-          // Only expose email once the member accepted the invite.
-          email: member.status === 'ACTIVE' ? member.user.email : null,
-        },
-      })),
+      members: members
+        .filter((member) => isAdmin || member.status === 'ACTIVE')
+        .map((member) =>
+          this.toMemberDto(member, { includeInvitedEmail: isAdmin }),
+        ),
     };
   }
 
@@ -142,5 +167,25 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+  }
+
+  private toMemberDto(
+    member: Member,
+    options: { includeInvitedEmail?: boolean } = {},
+  ): MemberDto {
+    return {
+      ...member,
+      user: {
+        ...member.user,
+        email:
+          member.status === 'ACTIVE' || options.includeInvitedEmail === true
+            ? member.user.email
+            : null,
+      },
+    };
+  }
+
+  private getInviteExpiresAt(): Date {
+    return new Date(Date.now() + this.inviteExpirySeconds * 1_000);
   }
 }
