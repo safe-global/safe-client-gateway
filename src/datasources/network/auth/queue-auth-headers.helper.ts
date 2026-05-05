@@ -23,7 +23,7 @@ export function getQueueAuthHeaders(
   );
 
   const isQueueAuthEnabled = isDevelopment && !useVpcUrl;
-  if (!isQueueAuthEnabled || !apiKey) {
+  if (!(isQueueAuthEnabled && apiKey)) {
     return undefined;
   }
 

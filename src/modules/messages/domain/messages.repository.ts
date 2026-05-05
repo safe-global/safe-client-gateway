@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { Page } from '@/domain/entities/page.entity';
+import type { Address, Hash, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import {
   Message,
   MessagePageSchema,
   MessageSchema,
 } from '@/modules/messages/domain/entities/message.entity';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import { IQueue } from '@/modules/queue/queue.interface';
-import type { Address, Hash, Hex } from 'viem';
+import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
+import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
 import {
   QueueMessagePageSchema,
   QueueMessageSchema,
 } from '@/modules/queue/entities/message.entity';
 import { mapQueueToMessage } from '@/modules/queue/mappers/message.mapper';
+import { IQueue } from '@/modules/queue/queue.interface';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {

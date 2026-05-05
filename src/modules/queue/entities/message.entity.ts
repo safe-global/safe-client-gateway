@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+
+import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -9,7 +11,6 @@ import {
   NullableHexSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
-import { z } from 'zod';
 
 export type QueueMessageConfirmation = z.infer<
   typeof QueueMessageConfirmationSchema

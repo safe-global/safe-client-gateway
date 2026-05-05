@@ -4,10 +4,9 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
 
 @Injectable()

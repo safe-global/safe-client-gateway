@@ -1,25 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { createMockQueueService } from '@/modules/queue/__tests__/queue.mock';
+
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import {
-  multisigTransactionBuilder,
-  toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { createMockQueueService } from '@/modules/queue/__tests__/queue.mock';
+import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
@@ -28,9 +23,15 @@ import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
-import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
+import {
+  multisigTransactionBuilder,
+  toJson as multisigTransactionToJson,
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
   getApi: jest.fn(),
@@ -226,11 +227,11 @@ describe('SafeRepository', () => {
           .build(),
       );
 
-      pages.forEach((page) => {
+      for (const page of pages) {
         mockTransactionApi.getSafesByOwnerV2.mockResolvedValueOnce(
           rawify(page),
         );
-      });
+      }
 
       const result = await repository.getSafesByOwnerV2({
         chainId,
