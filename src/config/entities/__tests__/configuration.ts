@@ -200,6 +200,7 @@ export default (): ReturnType<typeof configuration> => ({
     oidc_auth: false,
     counterfactualBalances: false,
     users: false,
+    passkeys: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
     signatureVerification: {
@@ -424,6 +425,22 @@ export default (): ReturnType<typeof configuration> => ({
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
+  },
+  passkeys: {
+    rpIdAllowlist: ['app.safe.global'],
+    originAllowlist: ['https://app.safe.global'],
+    verifiersAllowlist: [`0x${'0'.repeat(44)}`],
+    rateLimit: {
+      registration: {
+        max: faker.number.int({ min: 10, max: 100 }),
+        windowSeconds: 600,
+      },
+      lookup: {
+        max: faker.number.int({ min: 100, max: 500 }),
+        windowSeconds: 600,
+      },
+    },
+    verificationTimeoutMs: 500,
   },
   spaces: {
     addressBooks: {

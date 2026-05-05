@@ -384,6 +384,7 @@ export default () => ({
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
+    passkeys: process.env.FF_PASSKEYS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
@@ -738,6 +739,49 @@ export default () => ({
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
+  },
+  passkeys: {
+    rpIdAllowlist: (
+      process.env.PASSKEYS_RP_ID_ALLOWLIST ?? 'app.safe.global,safe.global'
+    )
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    originAllowlist: (
+      process.env.PASSKEYS_ORIGIN_ALLOWLIST ?? 'https://app.safe.global'
+    )
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    // P256.Verifiers allowlist — known-valid uint176 packed values
+    // (precompile addr upper 2 bytes ‖ FCL fallback addr lower 20 bytes).
+    // NOT Ethereum addresses. Wire format: `0x`-prefixed 44-char lowercase hex.
+    verifiersAllowlist: (process.env.PASSKEYS_VERIFIERS_ALLOWLIST ?? '')
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean),
+    rateLimit: {
+      registration: {
+        max: Number.parseInt(
+          process.env.PASSKEYS_REGISTRATION_RATE_LIMIT_MAX ?? `${20}`,
+          10,
+        ),
+        windowSeconds: 600,
+      },
+      lookup: {
+        max: Number.parseInt(
+          process.env.PASSKEYS_LOOKUP_RATE_LIMIT_MAX ?? `${120}`,
+          10,
+        ),
+        windowSeconds: 600,
+      },
+    },
+    // Wall-clock cap on attestation verification. Protects worker thread
+    // from cert-chain stalls in `tpm` / `android-safetynet` formats.
+    verificationTimeoutMs: Number.parseInt(
+      process.env.PASSKEYS_VERIFICATION_TIMEOUT_MS ?? `${500}`,
+      10,
+    ),
   },
   spaces: {
     addressBooks: {
