@@ -39,7 +39,7 @@ import type {
 } from '@/modules/balances/domain/entities/balance.entity';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Position } from '@/modules/positions/domain/entities/position.entity';
-import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
