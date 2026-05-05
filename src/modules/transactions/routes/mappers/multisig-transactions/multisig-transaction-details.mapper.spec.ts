@@ -13,12 +13,12 @@ import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegat
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import { safeAppInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/safe-app-info.builder';
 import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { multisigExecutionDetailsBuilder } from '@/modules/transactions/routes/mappers/__tests__/multisig-execution-details.builder';
-import type { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import type { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
 import type { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-details.mapper';

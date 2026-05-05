@@ -2,14 +2,14 @@
 import { Injectable } from '@nestjs/common';
 import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import type { MessageConfirmation as DomainMessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
-import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
 import {
   Message,
   MessageStatus,
 } from '@/modules/messages/routes/entities/message.entity';
-import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
+import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
+import { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Injectable()

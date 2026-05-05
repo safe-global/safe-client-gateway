@@ -1,4 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { Inject, Injectable } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -8,24 +11,22 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  QueueMultisigTransactionListSchema,
-  QueueMultisigTransactionSchema,
-} from '@/modules/queue/entities/multisig-transaction.entity';
-import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
-import { QueueMessage } from '@/modules/queue/entities/message.entity';
-import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
-import {
-  NetworkService,
   INetworkService,
+  NetworkService,
 } from '@/datasources/network/network.service.interface';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { QueueMessage } from '@/modules/queue/entities/message.entity';
+import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import {
+  QueueMultisigTransactionListSchema,
+  QueueMultisigTransactionSchema,
+} from '@/modules/queue/entities/multisig-transaction.entity';
+import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
 import type { IQueue } from '@/modules/queue/queue.interface';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { Inject, Injectable } from '@nestjs/common';
-import type { Address, Hex } from 'viem';
+import { rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class QueueService implements IQueue {

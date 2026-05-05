@@ -41,7 +41,7 @@ export function buildOrigin(
   originName: string | null,
   originUrl: string | null,
 ): string | null {
-  if (!originName && !originUrl) {
+  if (!(originName || originUrl)) {
     return null;
   }
   return JSON.stringify({ name: originName, url: originUrl });

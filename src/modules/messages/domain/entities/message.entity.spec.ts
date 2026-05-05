@@ -82,7 +82,7 @@ describe('Message entity schemas', () => {
 
     it('should allow undefined preparedSignature, defaulting to null', () => {
       const message: Partial<Message> = messageBuilder().build();
-      delete message.preparedSignature;
+      message.preparedSignature = undefined;
 
       const result = MessageSchema.safeParse(message);
 

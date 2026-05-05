@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+
+import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
 import {
@@ -9,10 +13,7 @@ import {
   NullableHexSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
-import { z } from 'zod';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 
 export type QueueConfirmation = z.infer<typeof QueueConfirmationSchema>;
 

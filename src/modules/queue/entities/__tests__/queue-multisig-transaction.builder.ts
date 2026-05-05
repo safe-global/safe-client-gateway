@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { Hex } from 'viem';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { getAddress } from 'viem';
-import type { Hex } from 'viem';
 
 export function queueMultisigTransactionBuilder(): IBuilder<QueueMultisigTransactionEntity> {
   return new Builder<QueueMultisigTransactionEntity>()

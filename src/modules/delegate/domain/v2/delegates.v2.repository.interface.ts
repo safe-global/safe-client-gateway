@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { QueueModule } from '@/modules/queue/queue.module';
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
-import { Page } from '@/domain/entities/page.entity';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
+import { Page } from '@/domain/entities/page.entity';
+import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
+import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
+import { QueueModule } from '@/modules/queue/queue.module';
 
 export const IDelegatesV2Repository = Symbol('IDelegatesV2Repository');
 

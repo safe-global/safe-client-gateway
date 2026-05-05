@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { IQueue } from '@/modules/queue/queue.interface';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { Page } from '@/domain/entities/page.entity';
+
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { QueueDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
+import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { QueueDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
+import { IQueue } from '@/modules/queue/queue.interface';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {

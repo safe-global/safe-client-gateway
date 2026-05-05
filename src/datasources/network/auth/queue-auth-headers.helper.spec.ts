@@ -67,19 +67,20 @@ describe('getQueueAuthHeaders', () => {
       useVpcUrl: true,
       apiKey: 'test-key',
     },
-  ])(
-    'should return undefined when $description',
-    ({ isDevelopment, useVpcUrl, apiKey }) => {
-      mockConfigService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'application.isDevelopment') return isDevelopment;
-        if (key === 'queueService.useVpcUrl') return useVpcUrl;
-        throw new Error(`Unexpected key: ${key}`);
-      });
-      mockConfigService.get.mockReturnValue(apiKey);
+  ])('should return undefined when $description', ({
+    isDevelopment,
+    useVpcUrl,
+    apiKey,
+  }) => {
+    mockConfigService.getOrThrow.mockImplementation((key: string) => {
+      if (key === 'application.isDevelopment') return isDevelopment;
+      if (key === 'queueService.useVpcUrl') return useVpcUrl;
+      throw new Error(`Unexpected key: ${key}`);
+    });
+    mockConfigService.get.mockReturnValue(apiKey);
 
-      const result = getQueueAuthHeaders(mockConfigService);
+    const result = getQueueAuthHeaders(mockConfigService);
 
-      expect(result).toBeUndefined();
-    },
-  );
+    expect(result).toBeUndefined();
+  });
 });

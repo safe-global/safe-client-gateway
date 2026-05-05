@@ -19,8 +19,6 @@ import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
-import { TestQueueModule } from '@/modules/queue/__tests__/test.queue.module';
-import { QueueModule } from '@/modules/queue/queue.module';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
@@ -34,6 +32,8 @@ import {
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { TestQueueModule } from '@/modules/queue/__tests__/test.queue.module';
+import { QueueModule } from '@/modules/queue/queue.module';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
