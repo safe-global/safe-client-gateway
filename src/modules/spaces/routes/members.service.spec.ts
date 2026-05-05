@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { MembersService } from '@/modules/spaces/routes/members.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { faker } from '@faker-js/faker';
 
 const MAX_INVITES = 10;
 
