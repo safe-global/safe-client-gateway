@@ -642,7 +642,7 @@ describe('MembersController', () => {
     });
   });
 
-  describe('POST /v1/spaces/:spaceId/members/:userId/resend', () => {
+  describe('POST /v1/spaces/:spaceId/members/resend', () => {
     it('should resend an invitation', async () => {
       const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
@@ -684,8 +684,9 @@ describe('MembersController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/${userId}/resend`)
+        .post(`/v1/spaces/${spaceId}/members/resend`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
+        .send({ address: inviteeAuthPayloadDto.signer_address })
         .expect(201)
         .expect({});
 

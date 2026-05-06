@@ -105,14 +105,18 @@ describe('MembersService', () => {
           oidcAuthPayloadDtoBuilder().build(),
         );
         const spaceId = faker.number.int({ min: 1 });
-        const userId = faker.number.int({ min: 1 });
+        const email = faker.internet.email().toLowerCase();
 
-        await service.resendInvite({ authPayload, spaceId, userId });
+        await service.resendInvite({
+          authPayload,
+          spaceId,
+          resendInviteDto: { email },
+        });
 
         expect(membersRepositoryMock.resendInvite).toHaveBeenCalledWith({
           authPayload,
           spaceId,
-          userId,
+          email,
           inviteExpiresAt: EXPECTED_INVITE_EXPIRES_AT,
         });
       } finally {

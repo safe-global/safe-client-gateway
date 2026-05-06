@@ -777,6 +777,17 @@ export default () => ({
           10,
         ),
       },
+      resendInvite: {
+        max: Number.parseInt(
+          process.env.SPACES_RESEND_INVITE_RATE_LIMIT_MAX ?? `${50}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.SPACES_RESEND_INVITE_RATE_LIMIT_WINDOW_SECONDS ??
+            `${600}`,
+          10,
+        ),
+      },
     },
   },
   staking: {

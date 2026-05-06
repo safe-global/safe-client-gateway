@@ -25,7 +25,6 @@ const InviteUserSchema = z
       ctx.addIssue({
         code: 'custom',
         message: 'Exactly one of address or email is required.',
-        path: ['address'],
       });
     }
   });

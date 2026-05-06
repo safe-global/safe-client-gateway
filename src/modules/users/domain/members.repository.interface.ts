@@ -53,7 +53,8 @@ export interface IMembersRepository {
   resendInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
+    address?: Address;
+    email?: string;
     inviteExpiresAt: Member['inviteExpiresAt'];
   }): Promise<void>;
 

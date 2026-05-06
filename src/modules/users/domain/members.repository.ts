@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   GoneException,
@@ -14,7 +15,7 @@ import type {
   FindOptionsWhere,
 } from 'typeorm';
 import { In } from 'typeorm';
-import { type Address, isAddressEqual } from 'viem';
+import { type Address, getAddress, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -235,7 +236,7 @@ export class MembersRepository implements IMembersRepository {
       );
     }
 
-    throw new ConflictException('Invitee address or email is required.');
+    throw new BadRequestException('Invitee address or email is required.');
   }
 
   public async acceptInvite(args: {
@@ -298,7 +299,8 @@ export class MembersRepository implements IMembersRepository {
   public async resendInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
+    address?: Address;
+    email?: string;
     inviteExpiresAt: Member['inviteExpiresAt'];
   }): Promise<void> {
     const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
@@ -308,19 +310,35 @@ export class MembersRepository implements IMembersRepository {
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
-    const updateResult = await membersRepository
+    const queryBuilder = membersRepository
       .createQueryBuilder()
       .update(DbMember)
       .set({
         status: 'INVITED',
         inviteExpiresAt: args.inviteExpiresAt,
       })
-      .where('user_id = :userId', { userId: args.userId })
-      .andWhere('space_id = :spaceId', { spaceId: args.spaceId })
+      .where('space_id = :spaceId', { spaceId: args.spaceId })
       .andWhere('status IN (:...statuses)', {
         statuses: [MemberStatus.INVITED, MemberStatus.DECLINED],
-      })
-      .execute();
+      });
+
+    if (args.email) {
+      queryBuilder.andWhere(
+        'user_id IN (SELECT id FROM users WHERE email = :email)',
+        { email: args.email.trim().toLowerCase() },
+      );
+    } else if (args.address) {
+      queryBuilder.andWhere(
+        'user_id IN (SELECT user_id FROM wallets WHERE address = :address)',
+        { address: getAddress(args.address) },
+      );
+    } else {
+      throw new BadRequestException(
+        'Exactly one of address or email is required.',
+      );
+    }
+
+    const updateResult = await queryBuilder.execute();
 
     if (updateResult.affected === 0) {
       throw new NotFoundException('Invitation not found.');

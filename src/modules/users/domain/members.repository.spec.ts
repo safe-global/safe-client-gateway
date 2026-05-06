@@ -173,11 +173,11 @@ describe('MembersRepository', () => {
     );
   });
 
-  it('should resend invitations by resetting status and expiration', async () => {
+  it('should resend email invitations by resetting status and expiration', async () => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const authPayload = new AuthPayload(authPayloadDto);
     const spaceId = faker.number.int({ min: 1 });
-    const userId = faker.number.int({ min: 1 });
+    const email = faker.internet.email().toLowerCase();
 
     membersOrmRepository.find.mockResolvedValue([
       {
@@ -191,7 +191,7 @@ describe('MembersRepository', () => {
     await target.resendInvite({
       authPayload,
       spaceId,
-      userId,
+      email,
       inviteExpiresAt: INVITE_EXPIRES_AT,
     });
 
@@ -199,15 +199,55 @@ describe('MembersRepository', () => {
       status: 'INVITED',
       inviteExpiresAt: INVITE_EXPIRES_AT,
     });
-    expect(queryBuilder.where).toHaveBeenCalledWith('user_id = :userId', {
-      userId,
-    });
-    expect(queryBuilder.andWhere).toHaveBeenCalledWith('space_id = :spaceId', {
+    expect(queryBuilder.where).toHaveBeenCalledWith('space_id = :spaceId', {
       spaceId,
     });
     expect(queryBuilder.andWhere).toHaveBeenCalledWith(
       'status IN (:...statuses)',
       { statuses: [MemberStatus.INVITED, MemberStatus.DECLINED] },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'user_id IN (SELECT id FROM users WHERE email = :email)',
+      { email },
+    );
+  });
+
+  it('should resend address invitations by resetting status and expiration', async () => {
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const authPayload = new AuthPayload(authPayloadDto);
+    const spaceId = faker.number.int({ min: 1 });
+    const address = getAddress(faker.finance.ethereumAddress());
+
+    membersOrmRepository.find.mockResolvedValue([
+      {
+        user: { id: Number(authPayloadDto.sub) },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    ]);
+    queryBuilder.execute.mockResolvedValue({ affected: 1 });
+
+    await target.resendInvite({
+      authPayload,
+      spaceId,
+      address,
+      inviteExpiresAt: INVITE_EXPIRES_AT,
+    });
+
+    expect(queryBuilder.set).toHaveBeenCalledWith({
+      status: 'INVITED',
+      inviteExpiresAt: INVITE_EXPIRES_AT,
+    });
+    expect(queryBuilder.where).toHaveBeenCalledWith('space_id = :spaceId', {
+      spaceId,
+    });
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'status IN (:...statuses)',
+      { statuses: [MemberStatus.INVITED, MemberStatus.DECLINED] },
+    );
+    expect(queryBuilder.andWhere).toHaveBeenCalledWith(
+      'user_id IN (SELECT user_id FROM wallets WHERE address = :address)',
+      { address },
     );
   });
 

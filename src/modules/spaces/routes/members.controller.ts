@@ -41,6 +41,10 @@ import {
   MembersDto,
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import {
+  ResendInviteDto,
+  ResendInviteDtoSchema,
+} from '@/modules/spaces/routes/entities/resend-invite.dto.entity';
+import {
   type UpdateMemberAliasDto,
   UpdateMemberAliasDtoSchema,
 } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
@@ -48,6 +52,7 @@ import {
   UpdateRoleDto,
   UpdateRoleDtoSchema,
 } from '@/modules/spaces/routes/entities/update-role.dto.entity';
+import { SpacesResendInviteRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-resend-invite-rate-limit.guard';
 import { MembersService } from '@/modules/spaces/routes/members.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -199,11 +204,9 @@ export class MembersController {
     description: 'Space ID containing the invitation',
     example: 1,
   })
-  @ApiParam({
-    name: 'userId',
-    type: 'number',
-    description: 'User ID of the invited member',
-    example: 123,
+  @ApiBody({
+    type: ResendInviteDto,
+    description: 'Wallet address or email address of the invited member',
   })
   @ApiOkResponse({
     description: 'Invitation resent successfully',
@@ -218,19 +221,19 @@ export class MembersController {
   @ApiUnauthorizedResponse({
     description: 'User is not active or not an admin of this space',
   })
-  @Post('/:spaceId/members/:userId/resend')
-  @UseGuards(AuthGuard)
+  @Post('/:spaceId/members/resend')
+  @UseGuards(AuthGuard, SpacesResendInviteRateLimitGuard)
   public async resendInvite(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    userId: number,
+    @Body(new ValidationPipe(ResendInviteDtoSchema))
+    resendInviteDto: ResendInviteDto,
   ): Promise<void> {
     return await this.membersService.resendInvite({
       authPayload,
       spaceId,
-      userId,
+      resendInviteDto,
     });
   }
 

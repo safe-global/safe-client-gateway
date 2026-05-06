@@ -11,6 +11,7 @@ import type {
   MemberDto,
   MembersDto,
 } from '@/modules/spaces/routes/entities/members.dto.entity';
+import type { ResendInviteDto } from '@/modules/spaces/routes/entities/resend-invite.dto.entity';
 import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
@@ -53,12 +54,13 @@ export class MembersService {
   public async resendInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    userId: User['id'];
+    resendInviteDto: ResendInviteDto;
   }): Promise<void> {
     return await this.membersRepository.resendInvite({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
-      userId: args.userId,
+      address: args.resendInviteDto.address,
+      email: args.resendInviteDto.email,
       inviteExpiresAt: this.getInviteExpiresAt(),
     });
   }
@@ -115,10 +117,13 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MemberDto> {
-    return await this.membersRepository.findSelfMembershipOrFail({
+    const member = await this.membersRepository.findSelfMembershipOrFail({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+
+    // Self-view can expose the caller's own invited email.
+    return member;
   }
 
   public async updateRole(args: {

@@ -11,6 +11,7 @@ export class AddMemberInviteExpiresAt1777000000000
       `ALTER TABLE "members" ADD COLUMN "invite_expires_at" timestamp with time zone`,
     );
     await queryRunner.query(
+      // MemberStatus enum values at migration time: 0 = INVITED, 2 = DECLINED.
       `UPDATE "members" SET "invite_expires_at" = "created_at" + interval '7 days' WHERE "status" IN (0, 2)`,
     );
   }

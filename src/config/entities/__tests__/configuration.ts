@@ -442,6 +442,10 @@ export default (): ReturnType<typeof configuration> => ({
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
+      resendInvite: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
     },
   },
   staking: {
