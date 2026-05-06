@@ -4,6 +4,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { PasskeyCoordinates } from '@/modules/passkeys/datasources/entities/passkey-coordinates.entity.db';
 import type {
   PasskeyRecord,
+  PasskeyRecordInput,
   WriteOutcome,
 } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import type { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
@@ -15,7 +16,7 @@ export class PasskeysRepository implements IPasskeysRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
-  public async create(record: PasskeyRecord): Promise<WriteOutcome> {
+  public async create(input: PasskeyRecordInput): Promise<WriteOutcome> {
     const repo =
       await this.postgresDatabaseService.getRepository(PasskeyCoordinates);
 
@@ -24,11 +25,11 @@ export class PasskeysRepository implements IPasskeysRepository {
       .insert()
       .into(PasskeyCoordinates)
       .values({
-        credentialId: record.credentialId,
-        x: record.x,
-        y: record.y,
-        verifiers: record.verifiers,
-        rpId: record.rpId,
+        credentialId: input.credentialId,
+        x: input.x,
+        y: input.y,
+        verifiers: input.verifiers,
+        rpId: input.rpId,
       })
       .orIgnore()
       .returning('*')
@@ -41,14 +42,14 @@ export class PasskeysRepository implements IPasskeysRepository {
       // negligible — the cold path is gated behind 500 ms attestation
       // verification.
       const inserted = await repo.findOneByOrFail({
-        credentialId: record.credentialId,
+        credentialId: input.credentialId,
       });
       return { status: 'created', record: toRecord(inserted) };
     }
 
     // PK conflict — re-select to distinguish identical / conflict / cross-RP.
     const existing = await repo.findOneBy({
-      credentialId: record.credentialId,
+      credentialId: input.credentialId,
     });
     if (!existing) {
       // Extremely unlikely: row vanished between INSERT and SELECT.
@@ -56,16 +57,23 @@ export class PasskeysRepository implements IPasskeysRepository {
       return { status: 'conflict' };
     }
 
+    // rpId mismatch is the most specific signal — the credentialId is
+    // RP-scoped per WebAuthn, so any rpId divergence is a cross-RP collision
+    // regardless of whether the coords also differ. Clients that see
+    // PASSKEY_CROSS_RP_CONFLICT can show "this credential is registered to a
+    // different domain"; PASSKEY_CONFLICT covers the same-RP coord-mismatch
+    // case ("registered with different keys").
+    if (existing.rpId !== input.rpId) {
+      return { status: 'cross_rp_conflict' };
+    }
+
     const coordsMatch =
-      bufferEquals(existing.x, record.x) &&
-      bufferEquals(existing.y, record.y) &&
-      bufferEquals(existing.verifiers, record.verifiers);
+      bufferEquals(existing.x, input.x) &&
+      bufferEquals(existing.y, input.y) &&
+      bufferEquals(existing.verifiers, input.verifiers);
 
     if (!coordsMatch) {
       return { status: 'conflict' };
-    }
-    if (existing.rpId !== record.rpId) {
-      return { status: 'cross_rp_conflict' };
     }
     return { status: 'identical', record: toRecord(existing) };
   }

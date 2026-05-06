@@ -14,6 +14,12 @@ export interface PasskeyRecord {
   createdAt: Date;
 }
 
+/**
+ * Input shape for write operations. `createdAt` is server-assigned by the DB
+ * (`DEFAULT now()`), so callers don't supply it.
+ */
+export type PasskeyRecordInput = Omit<PasskeyRecord, 'createdAt'>;
+
 export type WriteOutcome =
   | { status: 'created'; record: PasskeyRecord }
   | { status: 'identical'; record: PasskeyRecord }

@@ -27,7 +27,10 @@ export const RegisterPasskeySchema = z.object({
   // address; upper 2 bytes = on-chain precompile address (RIP-7212). NOT an
   // Ethereum address — no EIP-55 checksum applies. Lowercased on the wire.
   verifiers: z.string().regex(VERIFIERS_HEX),
-  origin: z.string().min(1).max(512),
+  // The origin allowlist in the service is the load-bearing check, but URL
+  // parsing here strips control characters / whitespace / non-URL strings at
+  // the framework boundary as defense-in-depth.
+  origin: z.string().min(1).max(512).url(),
   challenge: z.string().min(1).max(256).regex(BASE64URL),
 });
 

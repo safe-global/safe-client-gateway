@@ -87,17 +87,13 @@ export class PasskeysService {
       throw this.mapAttestationError(err);
     }
 
-    const verifiers = Buffer.from(stripHex(verifiersNormalised), 'hex');
-    const record: PasskeyRecord = {
+    const outcome = await this.passkeysRepository.create({
       credentialId: verified.credentialId,
       x: verified.x,
       y: verified.y,
-      verifiers,
+      verifiers: Buffer.from(stripHex(verifiersNormalised), 'hex'),
       rpId: verified.rpId,
-      createdAt: new Date(),
-    };
-
-    const outcome = await this.passkeysRepository.create(record);
+    });
     switch (outcome.status) {
       case 'created':
         return { status: HttpStatus.CREATED, body: serialize(outcome.record) };

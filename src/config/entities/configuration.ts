@@ -760,6 +760,10 @@ export default () => ({
       .split(',')
       .map((s) => s.trim().toLowerCase())
       .filter(Boolean),
+    // `windowSeconds` is intentionally hardcoded at 10 minutes for both
+    // budgets — the burst profile is fixed by the use case (one registration
+    // per device, ~3-5 lookups per first-launch). The `max` knob is
+    // sufficient for environment-level tuning.
     rateLimit: {
       registration: {
         max: Number.parseInt(

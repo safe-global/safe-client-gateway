@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type {
   PasskeyRecord,
+  PasskeyRecordInput,
   WriteOutcome,
 } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 
@@ -11,12 +12,12 @@ export interface IPasskeysRepository {
    * Idempotent insert. If a row with the same `credentialId` already exists,
    * the outcome distinguishes:
    *   - identical          → re-POST of the exact same record
-   *   - conflict           → same credentialId, different (x, y) or verifiers
-   *   - cross_rp_conflict  → matching coordinates but different rpId
+   *   - cross_rp_conflict  → credentialId already registered to a different RP
+   *   - conflict           → same RP, different (x, y) or verifiers
    *
    * The repository never overwrites — the first write wins.
    */
-  create(record: PasskeyRecord): Promise<WriteOutcome>;
+  create(input: PasskeyRecordInput): Promise<WriteOutcome>;
 
   findByCredentialId(credentialId: Buffer): Promise<PasskeyRecord | null>;
 }
