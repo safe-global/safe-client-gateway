@@ -97,7 +97,7 @@ export class QueueService implements IQueue {
     safeTxHash: string;
   }): Promise<Raw<QueueMultisigTransactionEntity>> {
     try {
-      const cacheDir = CacheRouter.getMultisigTransactionCacheDir({
+      const cacheDir = CacheRouter.getQueueMultisigTransactionCacheDir({
         chainId: args.chainId,
         safeTransactionHash: args.safeTxHash,
       });
@@ -204,7 +204,7 @@ export class QueueService implements IQueue {
     offset?: number;
   }): Promise<Raw<Page<Delegate>>> {
     try {
-      const cacheDir = CacheRouter.getDelegatesCacheDir(args);
+      const cacheDir = CacheRouter.getQueueDelegatesCacheDir(args);
       const url = `${this.baseUri}/api/v1/delegates`;
       const data = await this.dataSource.get({
         cacheDir,
@@ -283,7 +283,7 @@ export class QueueService implements IQueue {
     messageHash: string;
   }): Promise<Raw<QueueMessage>> {
     try {
-      const cacheDir = CacheRouter.getMessageByHashCacheDir({
+      const cacheDir = CacheRouter.getQueueMessageByHashCacheDir({
         chainId: args.chainId,
         messageHash: args.messageHash,
       });
@@ -307,7 +307,7 @@ export class QueueService implements IQueue {
     offset?: number;
   }): Promise<Raw<Page<QueueMessage>>> {
     try {
-      const cacheDir = CacheRouter.getMessagesBySafeCacheDir({
+      const cacheDir = CacheRouter.getQueueMessagesBySafeCacheDir({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         limit: args.limit,
@@ -380,7 +380,7 @@ export class QueueService implements IQueue {
     chainId: string;
     safeTxHash: string;
   }): Promise<void> {
-    const key = CacheRouter.getMultisigTransactionCacheKey({
+    const key = CacheRouter.getQueueMultisigTransactionCacheKey({
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
     });
@@ -391,7 +391,7 @@ export class QueueService implements IQueue {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getAllTransactionsKey({
+    const key = CacheRouter.getQueueMultisigTransactionsCacheKey({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
@@ -402,7 +402,7 @@ export class QueueService implements IQueue {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getMessagesBySafeCacheKey({
+    const key = CacheRouter.getQueueMessagesBySafeCacheKey({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
@@ -413,7 +413,7 @@ export class QueueService implements IQueue {
     chainId: string;
     messageHash: string;
   }): Promise<void> {
-    const key = CacheRouter.getMessageByHashCacheKey({
+    const key = CacheRouter.getQueueMessageByHashCacheKey({
       chainId: args.chainId,
       messageHash: args.messageHash,
     });
@@ -424,7 +424,7 @@ export class QueueService implements IQueue {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    const key = CacheRouter.getDelegatesCacheKey({
+    const key = CacheRouter.getQueueDelegatesCacheKey({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });

@@ -32,6 +32,13 @@ export class CacheRouter {
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
+  private static readonly QUEUE_DELEGATES_KEY = 'queue_delegates';
+  private static readonly QUEUE_MESSAGE_KEY = 'queue_message';
+  private static readonly QUEUE_MESSAGES_KEY = 'queue_messages';
+  private static readonly QUEUE_MULTISIG_TRANSACTION_KEY =
+    'queue_multisig_transaction';
+  private static readonly QUEUE_MULTISIG_TRANSACTIONS_KEY =
+    'queue_multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
@@ -249,6 +256,28 @@ export class CacheRouter {
     );
   }
 
+  static getQueueDelegatesCacheKey(args: {
+    chainId: string;
+    safeAddress?: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.QUEUE_DELEGATES_KEY}_${args.safeAddress}`;
+  }
+
+  static getQueueDelegatesCacheDir(args: {
+    chainId: string;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getQueueDelegatesCacheKey(args),
+      `${args.delegate}_${args.delegator}_${args.label}_${args.limit}_${args.offset}`,
+    );
+  }
+
   static getFirebaseOAuth2TokenCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.FIREBASE_OAUTH2_TOKEN_KEY, '');
   }
@@ -374,6 +403,13 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
+  static getQueueMultisigTransactionsCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.QUEUE_MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
+  }
+
   static getQueuedTransactionsCacheDir(args: {
     chainId: string;
     safeAddress: Address;
@@ -382,7 +418,7 @@ export class CacheRouter {
     offset?: number;
   }): CacheDir {
     return new CacheDir(
-      CacheRouter.getMultisigTransactionsCacheKey(args),
+      CacheRouter.getQueueMultisigTransactionsCacheKey(args),
       `queue_${args.ordering}_${args.limit}_${args.offset}`,
     );
   }
@@ -399,6 +435,23 @@ export class CacheRouter {
     safeTransactionHash: string;
   }): string {
     return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${args.safeTransactionHash}`;
+  }
+
+  static getQueueMultisigTransactionCacheKey(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.QUEUE_MULTISIG_TRANSACTION_KEY}_${args.safeTransactionHash}`;
+  }
+
+  static getQueueMultisigTransactionCacheDir(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getQueueMultisigTransactionCacheKey(args),
+      '',
+    );
   }
 
   static getCreationTransactionCacheDir(args: {
@@ -546,6 +599,20 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getMessageByHashCacheKey(args), '');
   }
 
+  static getQueueMessageByHashCacheKey(args: {
+    chainId: string;
+    messageHash: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.QUEUE_MESSAGE_KEY}_${args.messageHash}`;
+  }
+
+  static getQueueMessageByHashCacheDir(args: {
+    chainId: string;
+    messageHash: string;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getQueueMessageByHashCacheKey(args), '');
+  }
+
   static getMessagesBySafeCacheKey(args: {
     chainId: string;
     safeAddress: Address;
@@ -561,6 +628,25 @@ export class CacheRouter {
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getMessagesBySafeCacheKey(args),
+      `${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getQueueMessagesBySafeCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.QUEUE_MESSAGES_KEY}_${args.safeAddress}`;
+  }
+
+  static getQueueMessagesBySafeCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getQueueMessagesBySafeCacheKey(args),
       `${args.limit}_${args.offset}`,
     );
   }
