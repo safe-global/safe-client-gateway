@@ -41,13 +41,35 @@ export class SpacesService {
     return await this.spacesRepository.create({ userId, ...args });
   }
 
-  public async getActiveOrInvitedSpaces(
+  public getActiveOrInvitedSpaces(
     authPayload: AuthPayload,
+  ): Promise<Array<GetSpaceResponse>> {
+    return this.findSpaces(authPayload);
+  }
+
+  public async getActiveOrInvitedSpace(
+    id: number,
+    authPayload: AuthPayload,
+  ): Promise<GetSpaceResponse> {
+    const [space] = await this.findSpaces(authPayload, id);
+    if (!space) {
+      throw new NotFoundException('Space not found.');
+    }
+    return space;
+  }
+
+  private async findSpaces(
+    authPayload: AuthPayload,
+    spaceId?: number,
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const members = await this.membersRepository.find({
-      where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
+      where: {
+        user: { id: userId },
+        status: In(['ACTIVE', 'INVITED']),
+        ...(spaceId != null && { space: { id: spaceId } }),
+      },
       relations: ['space'],
     });
     if (members.length === 0) {
@@ -72,33 +94,26 @@ export class SpacesService {
 
     const invitedByNames = await this.resolveInvitedByNames(spaces);
 
-    return spaces.map((space) => ({
-      id: space.id,
-      name: space.name,
-      members: space.members.map((member) => ({
-        ...member,
-        // populate the invitedByName only for INVITED members
-        // whose inviter is still a member of the same space (wallet or email)
-        ...(member.status === 'INVITED' &&
-          member.invitedBy != null &&
-          invitedByNames.has(member.invitedBy) && {
-            invitedByName: invitedByNames.get(member.invitedBy),
-          }),
-      })),
-      safeCount: space.safes?.length ?? 0,
-    }));
-  }
+    return spaces.map((space) => {
+      const memberUserIds = new Set(
+        space.members.map((member) => member.user.id),
+      );
 
-  public async getActiveOrInvitedSpace(
-    id: number,
-    authPayload: AuthPayload,
-  ): Promise<GetSpaceResponse> {
-    const spaces = await this.getActiveOrInvitedSpaces(authPayload);
-    const space = spaces.find((space) => space.id === id);
-    if (!space) {
-      throw new NotFoundException('Space not found.');
-    }
-    return space;
+      return {
+        id: space.id,
+        name: space.name,
+        members: space.members.map((member) => ({
+          ...member,
+          ...(member.status === 'INVITED' &&
+            member.invitedBy != null &&
+            memberUserIds.has(member.invitedBy) &&
+            invitedByNames.has(member.invitedBy) && {
+              invitedByName: invitedByNames.get(member.invitedBy),
+            }),
+        })),
+        safeCount: space.safes?.length ?? 0,
+      };
+    });
   }
 
   public async update(args: {
@@ -113,9 +128,11 @@ export class SpacesService {
   }
 
   /**
-   * Collects unique invitedBy user IDs from INVITED members across spaces
-   * and resolves each to a display identifier: wallet address (preferred) or email.
-   * Only resolves inviters who are still members of the same space.
+   * Resolves display names for valid inviters only:
+   * - invited member has invitedBy set
+   * - inviter is still a member of the same space
+   *
+   * Wallet address is preferred over email.
    */
   private async resolveInvitedByNames(
     spaces: Array<Space>,

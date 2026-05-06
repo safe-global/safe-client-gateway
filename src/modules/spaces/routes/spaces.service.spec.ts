@@ -337,6 +337,80 @@ describe('SpacesService', () => {
       expect(usersRepositoryMock.findEmailsByIds).not.toHaveBeenCalled();
     });
 
+    it('should not leak invitedByName across spaces when inviter is only a member of one', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const inviter = userBuilder().with('id', inviterUserId).build();
+      const spaceA = spaceBuilder().build();
+      const spaceB = spaceBuilder().build();
+
+      // Space A: inviter is still a member → invitedByName should be populated
+      const callerMemberA = memberBuilder()
+        .with('user', caller)
+        .with('space', spaceA)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+      const inviterMemberA = memberBuilder()
+        .with('user', inviter)
+        .with('space', spaceA)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', null)
+        .build();
+
+      // Space B: inviter has left → invitedByName must NOT be populated
+      const callerMemberB = memberBuilder()
+        .with('user', caller)
+        .with('space', spaceB)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([
+        callerMemberA,
+        callerMemberB,
+      ]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', spaceA.id)
+          .with('name', spaceA.name)
+          .with('members', [inviterMemberA, callerMemberA])
+          .with('safes', [])
+          .build(),
+        spaceBuilder()
+          .with('id', spaceB.id)
+          .with('name', spaceB.name)
+          .with('members', [callerMemberB]) // inviter is NOT a member here
+          .with('safes', [])
+          .build(),
+      ]);
+      walletsRepositoryMock.find.mockResolvedValue([
+        { address: walletAddress, user: { id: inviterUserId } } as Wallet,
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      // Space A: inviter present → invitedByName populated
+      const spaceAResult = result.find((s) => s.id === spaceA.id)!;
+      const invitedInA = spaceAResult.members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedInA).toEqual(
+        expect.objectContaining({ invitedByName: walletAddress }),
+      );
+
+      // Space B: inviter absent → invitedByName must NOT leak from Space A
+      const spaceBResult = result.find((s) => s.id === spaceB.id)!;
+      const invitedInB = spaceBResult.members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedInB).not.toHaveProperty('invitedByName');
+    });
+
     it('should throw UnauthorizedException for unauthenticated payload', async () => {
       const authPayload = new AuthPayload();
 
@@ -380,18 +454,8 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should throw NotFoundException when space ID not found for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      const userId = Number(authPayload.sub);
-      const space = spaceBuilder()
-        .with('members', [])
-        .with('safes', [])
-        .build();
-      const member = memberBuilder()
-        .with('user', userBuilder().with('id', userId).build())
-        .with('space', space)
-        .build();
 
-      membersRepositoryMock.find.mockResolvedValue([member]);
-      spacesRepositoryMock.find.mockResolvedValue([space]);
+      membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
         service.getActiveOrInvitedSpace(999999, authPayload),
