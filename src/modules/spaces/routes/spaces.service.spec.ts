@@ -6,6 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { getAddress } from 'viem';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -19,6 +20,8 @@ import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/me
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 const spacesRepositoryMock = {
   create: jest.fn(),
@@ -36,7 +39,12 @@ const membersRepositoryMock = {
 const usersRepositoryMock = {
   findOneOrFail: jest.fn(),
   activateIfPending: jest.fn(),
+  findEmailsByIds: jest.fn(),
 } as jest.MockedObjectDeep<IUsersRepository>;
+
+const walletsRepositoryMock = {
+  find: jest.fn(),
+} as jest.MockedObjectDeep<IWalletsRepository>;
 
 describe('SpacesService', () => {
   let service: SpacesService;
@@ -47,6 +55,7 @@ describe('SpacesService', () => {
       usersRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
+      walletsRepositoryMock,
     );
   });
 
@@ -196,6 +205,138 @@ describe('SpacesService', () => {
       expect(result[1].safeCount).toBe(1);
     });
 
+    it('should populate invitedByName with wallet address for INVITED member', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const inviter = userBuilder().with('id', inviterUserId).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+      const inviterMember = memberBuilder()
+        .with('user', inviter)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', null)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', space.name)
+          .with('members', [inviterMember, callerMember])
+          .with('safes', [])
+          .build(),
+      ]);
+      walletsRepositoryMock.find.mockResolvedValue([
+        { address: walletAddress, user: { id: inviterUserId } } as Wallet,
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      const invitedMember = result[0].members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedMember).toEqual(
+        expect.objectContaining({
+          invitedByName: walletAddress,
+        }),
+      );
+    });
+
+    it('should populate invitedByName with email for OIDC inviter (no wallet)', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+      const inviterEmail = faker.internet.email().toLowerCase();
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const inviter = userBuilder().with('id', inviterUserId).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+      const inviterMember = memberBuilder()
+        .with('user', inviter)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', null)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', space.name)
+          .with('members', [inviterMember, callerMember])
+          .with('safes', [])
+          .build(),
+      ]);
+      walletsRepositoryMock.find.mockResolvedValue([]);
+      usersRepositoryMock.findEmailsByIds.mockResolvedValue(
+        new Map([[inviterUserId, inviterEmail]]),
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      const invitedMember = result[0].members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedMember).toEqual(
+        expect.objectContaining({
+          invitedByName: inviterEmail,
+        }),
+      );
+    });
+
+    it('should not populate invitedByName when inviter left the space', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', space.name)
+          .with('members', [callerMember])
+          .with('safes', [])
+          .build(),
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      const invitedMember = result[0].members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedMember).not.toHaveProperty('invitedByName');
+      expect(walletsRepositoryMock.find).not.toHaveBeenCalled();
+      expect(usersRepositoryMock.findEmailsByIds).not.toHaveBeenCalled();
+    });
+
     it('should throw UnauthorizedException for unauthenticated payload', async () => {
       const authPayload = new AuthPayload();
 
@@ -214,7 +355,10 @@ describe('SpacesService', () => {
     ])('should return a space by ID for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
-      const space = spaceBuilder().build();
+      const space = spaceBuilder()
+        .with('members', [])
+        .with('safes', [])
+        .build();
       const member = memberBuilder()
         .with('user', userBuilder().with('id', userId).build())
         .with('space', space)
@@ -237,7 +381,10 @@ describe('SpacesService', () => {
     ])('should throw NotFoundException when space ID not found for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
-      const space = spaceBuilder().build();
+      const space = spaceBuilder()
+        .with('members', [])
+        .with('safes', [])
+        .build();
       const member = memberBuilder()
         .with('user', userBuilder().with('id', userId).build())
         .with('space', space)

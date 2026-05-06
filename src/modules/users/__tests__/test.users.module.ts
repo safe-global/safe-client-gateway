@@ -22,7 +22,8 @@ import { IUsersRepository } from '@/modules/users/domain/users.repository.interf
         findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
         findOrCreateByExtUserIdWithEmail: (): Promise<number> =>
           Promise.resolve(1),
-        findEmailById: jest.fn().mockResolvedValue(undefined),
+        findEmailById: jest.fn(),
+        findEmailsByIds: jest.fn(),
         update: jest.fn(),
         updateStatus: jest.fn(),
         activateIfPending: jest.fn(),

@@ -88,10 +88,11 @@ describe('MembersController', () => {
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
+      const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
+      const userId = createUserResponse.body.id;
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -126,7 +127,7 @@ describe('MembersController', () => {
               name: user1Name,
               role: 'ADMIN',
               status: 'INVITED',
-              invitedBy: authPayloadDto.signer_address,
+              invitedBy: userId,
             },
             {
               userId: expect.any(Number),
@@ -134,7 +135,7 @@ describe('MembersController', () => {
               name: user2Name,
               role: 'MEMBER',
               status: 'INVITED',
-              invitedBy: authPayloadDto.signer_address,
+              invitedBy: userId,
             },
           ]),
         );
@@ -1205,10 +1206,11 @@ describe('MembersController', () => {
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
+      const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
+      const adminUserId = createUserResponse.body.id;
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -1249,11 +1251,11 @@ describe('MembersController', () => {
                 status: 'ACTIVE',
                 name: `${spaceName} creator`,
                 alias: null,
-                invitedBy: null, // Space creator's `invitedBy` field value is null
+                invitedBy: null,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
-                  id: expect.any(Number),
+                  id: adminUserId,
                   status: 'ACTIVE',
                   email: null,
                   createdAt: expect.any(String),
@@ -1266,7 +1268,7 @@ describe('MembersController', () => {
                 status: 'INVITED',
                 name: user1Name,
                 alias: null,
-                invitedBy: authPayloadDto.signer_address,
+                invitedBy: adminUserId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -1283,7 +1285,7 @@ describe('MembersController', () => {
                 status: 'INVITED',
                 name: user2Name,
                 alias: null,
-                invitedBy: authPayloadDto.signer_address,
+                invitedBy: adminUserId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {

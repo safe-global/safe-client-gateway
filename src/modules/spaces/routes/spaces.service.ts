@@ -15,6 +15,7 @@ import type {
 import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 export class SpacesService {
   public constructor(
@@ -24,6 +25,8 @@ export class SpacesService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async create(args: {
@@ -67,10 +70,21 @@ export class SpacesService {
       relations: { members: { user: true }, safes: true },
     });
 
+    const invitedByNames = await this.resolveInvitedByNames(spaces);
+
     return spaces.map((space) => ({
       id: space.id,
       name: space.name,
-      members: space.members,
+      members: space.members.map((member) => ({
+        ...member,
+        // populate the invitedByName only for INVITED members
+        // whose inviter is still a member of the same space (wallet or email)
+        ...(member.status === 'INVITED' &&
+          member.invitedBy != null &&
+          invitedByNames.has(member.invitedBy) && {
+            invitedByName: invitedByNames.get(member.invitedBy),
+          }),
+      })),
       safeCount: space.safes?.length ?? 0,
     }));
   }
@@ -96,6 +110,59 @@ export class SpacesService {
     await assertAdmin(this.spacesRepository, args.id, userId);
 
     return await this.spacesRepository.update(args);
+  }
+
+  /**
+   * Collects unique invitedBy user IDs from INVITED members across spaces
+   * and resolves each to a display identifier: wallet address (preferred) or email.
+   * Only resolves inviters who are still members of the same space.
+   */
+  private async resolveInvitedByNames(
+    spaces: Array<Space>,
+  ): Promise<Map<number, string>> {
+    const userIds = Array.from(
+      new Set(
+        spaces.flatMap((space) => {
+          const memberUserIds = new Set(
+            space.members.map((member) => member.user.id),
+          );
+
+          return space.members.flatMap((member): Array<number> => {
+            return member.status === 'INVITED' &&
+              member.invitedBy != null &&
+              memberUserIds.has(member.invitedBy)
+              ? [member.invitedBy]
+              : [];
+          });
+        }),
+      ),
+    );
+
+    if (!userIds.length) {
+      return new Map();
+    }
+    const result = new Map<number, string>();
+
+    // Batch 1: resolve via wallets (preferred)
+    const wallets = await this.walletsRepository.find({
+      where: { user: { id: In(userIds) } },
+      select: { address: true, user: { id: true } },
+      relations: { user: true },
+    });
+    for (const wallet of wallets) {
+      if (!result.has(wallet.user.id)) {
+        result.set(wallet.user.id, wallet.address);
+      }
+    }
+
+    // Batch 2: resolve remaining via email (OIDC-only users)
+    const unresolvedIds = userIds.filter((id) => !result.has(id));
+    if (unresolvedIds.length > 0) {
+      const emails = await this.usersRepository.findEmailsByIds(unresolvedIds);
+      return new Map([...result, ...emails]);
+    }
+
+    return result;
   }
 
   public async delete(args: {

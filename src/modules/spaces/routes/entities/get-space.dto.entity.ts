@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -24,6 +24,9 @@ class SpaceMemberDto {
 
   @ApiProperty({ type: Number, nullable: true })
   public invitedBy!: Member['invitedBy'];
+
+  @ApiPropertyOptional({ type: String })
+  public invitedByName?: string;
 
   @ApiProperty({
     type: String,

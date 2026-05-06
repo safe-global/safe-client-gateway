@@ -36,7 +36,7 @@ export const MemberSchema: z.ZodType<
   alias: NameSchema.nullable(),
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),
-  invitedBy: z.number().int().nullable(),
+  invitedBy: z.number().int().positive().nullable(),
 });
 
 export type Member = z.infer<typeof MemberSchema>;

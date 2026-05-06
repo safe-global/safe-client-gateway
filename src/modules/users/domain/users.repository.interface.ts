@@ -69,6 +69,8 @@ export interface IUsersRepository {
 
   findEmailById(userId: User['id']): Promise<string | undefined>;
 
+  findEmailsByIds(userIds: Array<User['id']>): Promise<Map<User['id'], string>>;
+
   update(args: {
     userId: User['id'];
     user: Partial<User>;

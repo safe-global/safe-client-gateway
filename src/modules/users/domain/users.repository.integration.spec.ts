@@ -1152,4 +1152,64 @@ describe('UsersRepository', () => {
       expect(users[1].extUserId).toBe(extUserId2);
     });
   });
+
+  describe('findEmailsByIds', () => {
+    it('should return emails for users that have them', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email1 = faker.internet.email().toLowerCase();
+      const email2 = faker.internet.email().toLowerCase();
+      const user1 = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: email1,
+      });
+      const user2 = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: email2,
+      });
+      const userId1 = user1.identifiers[0].id as number;
+      const userId2 = user2.identifiers[0].id as number;
+
+      const result = await usersRepository.findEmailsByIds([userId1, userId2]);
+
+      expect(result).toEqual(
+        new Map([
+          [userId1, email1],
+          [userId2, email2],
+        ]),
+      );
+    });
+
+    it('should skip users with no email', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+      const userWithEmail = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userWithoutEmail = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userIdWithEmail = userWithEmail.identifiers[0].id as number;
+      const userIdWithoutEmail = userWithoutEmail.identifiers[0].id as number;
+
+      const result = await usersRepository.findEmailsByIds([
+        userIdWithEmail,
+        userIdWithoutEmail,
+      ]);
+
+      expect(result).toEqual(new Map([[userIdWithEmail, email]]));
+    });
+
+    it('should return empty map for non-existent user IDs', async () => {
+      const result = await usersRepository.findEmailsByIds([999999]);
+
+      expect(result).toEqual(new Map());
+    });
+
+    it('should return empty map for empty input', async () => {
+      const result = await usersRepository.findEmailsByIds([]);
+
+      expect(result).toEqual(new Map());
+    });
+  });
 });
