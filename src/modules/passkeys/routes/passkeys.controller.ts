@@ -69,8 +69,7 @@ export class PasskeysController {
     type: PasskeyErrorResponse,
   })
   @ApiForbiddenResponse({
-    description:
-      'rpId, origin, or verifiers value is not in the configured allowlist.',
+    description: 'rpId or origin is not in the configured allowlist.',
     type: PasskeyErrorResponse,
   })
   @ApiUnprocessableEntityResponse({

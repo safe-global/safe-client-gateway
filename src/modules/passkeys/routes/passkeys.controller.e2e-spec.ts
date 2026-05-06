@@ -46,10 +46,7 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 
-// The test configuration uses an all-zero verifiers value; align the e2e
-// payload so the allowlist check passes.
 const VERIFIERS_ALLOW = `0x${'0'.repeat(44)}`;
-const VERIFIERS_OTHER = `0x${'b2'.repeat(22)}`;
 
 function fakeAttestation(): { verify: jest.Mock } {
   return { verify: jest.fn() };
@@ -237,17 +234,6 @@ describe('PasskeysController (HTTP)', () => {
         .post('/v1/passkeys')
         .send(dto());
       expect(res.status).toBe(200);
-    });
-
-    it('returns 403 PASSKEY_VERIFIERS_NOT_ALLOWED for unlisted verifiers', async () => {
-      const res = await request(h.app.getHttpServer())
-        .post('/v1/passkeys')
-        .send(dto({ verifiers: VERIFIERS_OTHER }));
-      expect(res.status).toBe(403);
-      expect(res.body.code).toBe('PASSKEY_VERIFIERS_NOT_ALLOWED');
-      // The attestation service must not be called when the cheap allowlist
-      // check rejects first.
-      expect(h.attestation.verify).not.toHaveBeenCalled();
     });
 
     it('returns 422 for an invalid attestation', async () => {

@@ -39,7 +39,6 @@ const CREDENTIAL_ID_MIN_BYTES = 1;
 export class PasskeysService {
   private readonly rpIdAllowlist: ReadonlyArray<string>;
   private readonly originAllowlist: ReadonlyArray<string>;
-  private readonly verifiersAllowlist: ReadonlyArray<string>;
 
   public constructor(
     @Inject(IConfigurationService) configurationService: IConfigurationService,
@@ -55,19 +54,10 @@ export class PasskeysService {
     this.originAllowlist = configurationService.getOrThrow<
       ReadonlyArray<string>
     >('passkeys.originAllowlist');
-    this.verifiersAllowlist = configurationService.getOrThrow<
-      ReadonlyArray<string>
-    >('passkeys.verifiersAllowlist');
   }
 
   public async register(dto: RegisterPasskeyDto): Promise<RegisterOutcome> {
     const verifiersNormalised = dto.verifiers.toLowerCase();
-    if (!this.verifiersAllowlist.includes(verifiersNormalised)) {
-      throw new ForbiddenException({
-        code: 'PASSKEY_VERIFIERS_NOT_ALLOWED',
-        message: 'verifiers value is not in the configured allowlist',
-      });
-    }
 
     let verified: VerifiedPasskey;
     try {

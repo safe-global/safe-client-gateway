@@ -16,16 +16,12 @@ function buildConfig(
   overrides: Partial<{
     rpIdAllowlist: ReadonlyArray<string>;
     originAllowlist: ReadonlyArray<string>;
-    verifiersAllowlist: ReadonlyArray<string>;
   }> = {},
 ): IConfigurationService {
   const values: Record<string, ReadonlyArray<string>> = {
     'passkeys.rpIdAllowlist': overrides.rpIdAllowlist ?? ['app.safe.global'],
     'passkeys.originAllowlist': overrides.originAllowlist ?? [
       'https://app.safe.global',
-    ],
-    'passkeys.verifiersAllowlist': overrides.verifiersAllowlist ?? [
-      VERIFIERS_HEX,
     ],
   };
   return {
@@ -131,19 +127,6 @@ describe('PasskeysService.register', () => {
 
     const outcome = await service.register(buildDto());
     expect(outcome.status).toBe(HttpStatus.OK);
-  });
-
-  it('returns 403 PASSKEY_VERIFIERS_NOT_ALLOWED when verifiers is not allowlisted', async () => {
-    const { attestation, service } = buildService();
-    const dto = buildDto({ verifiers: `0x${'00'.repeat(22)}` });
-    await expect(service.register(dto)).rejects.toMatchObject({
-      status: HttpStatus.FORBIDDEN,
-      response: {
-        code: 'PASSKEY_VERIFIERS_NOT_ALLOWED',
-        message: expect.any(String),
-      },
-    });
-    expect(attestation.verify).not.toHaveBeenCalled();
   });
 
   it.each([

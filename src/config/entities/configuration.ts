@@ -753,13 +753,6 @@ export default () => ({
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
-    // P256.Verifiers allowlist — known-valid uint176 packed values
-    // (precompile addr upper 2 bytes ‖ FCL fallback addr lower 20 bytes).
-    // NOT Ethereum addresses. Wire format: `0x`-prefixed 44-char lowercase hex.
-    verifiersAllowlist: (process.env.PASSKEYS_VERIFIERS_ALLOWLIST ?? '')
-      .split(',')
-      .map((s) => s.trim().toLowerCase())
-      .filter(Boolean),
     // `windowSeconds` is intentionally hardcoded at 10 minutes for both
     // budgets — the burst profile is fixed by the use case (one registration
     // per device, ~3-5 lookups per first-launch). The `max` knob is

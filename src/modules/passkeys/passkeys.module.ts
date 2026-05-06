@@ -65,11 +65,7 @@ export class PasskeysModule implements NestModule, OnModuleInit {
   }
 
   public onModuleInit(): void {
-    for (const key of [
-      'passkeys.rpIdAllowlist',
-      'passkeys.originAllowlist',
-      'passkeys.verifiersAllowlist',
-    ]) {
+    for (const key of ['passkeys.rpIdAllowlist', 'passkeys.originAllowlist']) {
       const list =
         this.configurationService.getOrThrow<ReadonlyArray<string>>(key);
       if (list.length === 0) {

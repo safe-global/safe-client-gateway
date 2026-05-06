@@ -429,7 +429,6 @@ export default (): ReturnType<typeof configuration> => ({
   passkeys: {
     rpIdAllowlist: ['app.safe.global'],
     originAllowlist: ['https://app.safe.global'],
-    verifiersAllowlist: [`0x${'0'.repeat(44)}`],
     rateLimit: {
       registration: {
         max: faker.number.int({ min: 10, max: 100 }),
