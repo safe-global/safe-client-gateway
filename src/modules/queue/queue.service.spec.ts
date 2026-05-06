@@ -213,6 +213,53 @@ describe('QueueService', () => {
     });
   });
 
+  describe('getMultisigTransactionsBatch chunking', () => {
+    // Each `safe_tx_hash=0x<64 hex>&` query pair is ~81 bytes. nginx's default
+    // `large_client_header_buffers 4 8k` rejects request lines over ~8KB, AWS
+    // ALB caps at 16KB, and many WAFs cap at 8KB. With 200 hashes the URL grows
+    // past 16KB. Chunking at 50 keeps each request under ~4KB.
+    it('chunks a 200-hash batch across multiple parallel calls under the URL safety threshold', async () => {
+      const hashes = Array.from({ length: 200 }, () =>
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      networkService.get.mockResolvedValue({ data: rawify([]), status: 200 });
+
+      await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(networkService.get).toHaveBeenCalledTimes(4);
+    });
+
+    it('issues a single call when input fits within one chunk', async () => {
+      const hashes = Array.from({ length: 30 }, () =>
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      networkService.get.mockResolvedValueOnce({
+        data: rawify([]),
+        status: 200,
+      });
+
+      await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(networkService.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('returns empty without hitting the network when input is empty', async () => {
+      const result = await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: [],
+      });
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(result).toEqual([]);
+    });
+  });
+
   describe('circuit breaker', () => {
     const withCircuitBreakerKey = expect.objectContaining({
       networkRequest: expect.objectContaining({

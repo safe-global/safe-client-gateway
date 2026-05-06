@@ -31,6 +31,12 @@ import { rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class QueueService implements IQueue {
+  // Chunk size for multisig batch fetches. Each `safe_tx_hash=0x<64 hex>&`
+  // pair is ~81 bytes; nginx's default `large_client_header_buffers 4 8k`
+  // and many WAFs reject request lines beyond 8KB, so we cap each call at
+  // 50 hashes (~4KB URL) to stay safely under that limit.
+  private static readonly MAX_BATCH_HASHES_PER_CALL = 50;
+
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
@@ -130,20 +136,35 @@ export class QueueService implements IQueue {
     safeTxHashes: ReadonlyArray<string>;
   }): Promise<Raw<Array<QueueMultisigTransactionEntity>>> {
     try {
-      const query = new URLSearchParams();
-      for (const hash of args.safeTxHashes) {
-        query.append('safe_tx_hash', hash);
+      if (args.safeTxHashes.length === 0) {
+        return rawify([]);
       }
-      const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
-      const { data } = await this.networkService.get({
-        url,
-        networkRequest: {
-          circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
-          },
-        },
-      });
-      return rawify(QueueMultisigTransactionListSchema.parse(data));
+      const chunkSize = QueueService.MAX_BATCH_HASHES_PER_CALL;
+      const chunks: Array<ReadonlyArray<string>> = [];
+      for (let i = 0; i < args.safeTxHashes.length; i += chunkSize) {
+        chunks.push(args.safeTxHashes.slice(i, i + chunkSize));
+      }
+      const responses = await Promise.all(
+        chunks.map((chunk) => {
+          const query = new URLSearchParams();
+          for (const hash of chunk) {
+            query.append('safe_tx_hash', hash);
+          }
+          const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
+          return this.networkService.get({
+            url,
+            networkRequest: {
+              circuitBreaker: {
+                key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+              },
+            },
+          });
+        }),
+      );
+      const merged = responses.flatMap(({ data }) =>
+        QueueMultisigTransactionListSchema.parse(data),
+      );
+      return rawify(merged);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
