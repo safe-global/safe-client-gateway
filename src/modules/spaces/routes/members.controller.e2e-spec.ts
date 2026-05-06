@@ -177,7 +177,6 @@ describe('MembersController', () => {
         .expect(({ body }) =>
           expect(body).toEqual([
             {
-              userId: expect.any(Number),
               spaceId,
               name: invitedName,
               role: 'MEMBER',

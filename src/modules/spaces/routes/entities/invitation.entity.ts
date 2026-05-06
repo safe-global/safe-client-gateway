@@ -10,8 +10,8 @@ import {
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export class Invitation {
-  @ApiProperty({ type: Number })
-  userId!: User['id'];
+  @ApiPropertyOptional({ type: Number })
+  userId?: User['id'];
 
   @ApiProperty({ type: String })
   name!: Member['name'];

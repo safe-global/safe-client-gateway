@@ -130,7 +130,6 @@ describe('MembersRepository', () => {
     });
     expect(result).toEqual([
       {
-        userId: inviteeUserId,
         spaceId,
         name,
         role: 'MEMBER',

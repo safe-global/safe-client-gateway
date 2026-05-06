@@ -670,7 +670,6 @@ describe('MembersRepository', () => {
 
       expect(invitation).toEqual([
         {
-          userId: expect.any(Number),
           spaceId,
           name: invitedName,
           role: 'MEMBER',
@@ -682,11 +681,10 @@ describe('MembersRepository', () => {
 
       await expect(
         dbUserRepo.findOneOrFail({
-          where: { id: invitation[0].userId },
+          where: { email: invitedEmail },
         }),
       ).resolves.toEqual(
         expect.objectContaining({
-          id: invitation[0].userId,
           email: invitedEmail,
           extUserId: null,
           status: 'PENDING',
@@ -704,11 +702,10 @@ describe('MembersRepository', () => {
         authPayload,
         authPayloadDto,
       } = await createSiweUser();
-      const existingUser = await dbUserRepo.insert({
+      await dbUserRepo.insert({
         status: 'ACTIVE',
         email: invitedEmail,
       });
-      const existingUserId = existingUser.identifiers[0].id as number;
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -738,7 +735,6 @@ describe('MembersRepository', () => {
 
       expect(invitation).toEqual([
         {
-          userId: existingUserId,
           spaceId,
           name: invitedName,
           role: 'MEMBER',
