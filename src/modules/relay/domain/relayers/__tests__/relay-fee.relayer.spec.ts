@@ -7,7 +7,7 @@ import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interfa
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import type { Address, Hex } from 'viem';
- import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { RelayFeeRelayer } from '../relay-fee.relayer';
