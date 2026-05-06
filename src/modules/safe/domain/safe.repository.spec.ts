@@ -46,6 +46,9 @@ const mockTransactionApi = {
   getMultisigTransactionWithNoCache: vi.fn(),
   getMultisigTransactions: vi.fn(),
   getMultisigTransactionsWithNoCache: vi.fn(),
+  deleteTransaction: vi.fn(),
+  clearMultisigTransaction: vi.fn(),
+  clearMultisigTransactions: vi.fn(),
 } as MockedObject<ITransactionApi>;
 
 const mockLoggingService = {
@@ -1094,6 +1097,102 @@ describe('SafeRepository', () => {
       expect(
         mockQueueService.getMultisigTransactionsBatch,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteTransaction', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('should clear both tx-service and queue caches when FF_QUEUE_SERVICE is on', async () => {
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const signature = faker.string.hexadecimal({ length: 16 });
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.deleteTransaction.mockResolvedValue(undefined);
+
+      await repository.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+
+      expect(mockQueueService.deleteTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+      expect(mockTransactionApi.deleteTransaction).not.toHaveBeenCalled();
+      expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
+        tx.safeTxHash,
+      );
+      expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
+        tx.safe,
+      );
+      expect(mockQueueService.clearMultisigTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+      });
+      expect(mockQueueService.clearAllTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress: tx.safe,
+      });
+    });
+
+    it('should only clear tx-service cache when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const signature = faker.string.hexadecimal({ length: 16 });
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockTransactionApi.deleteTransaction.mockResolvedValue(undefined);
+
+      await repo.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+
+      expect(mockTransactionApi.deleteTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+      expect(mockQueueService.deleteTransaction).not.toHaveBeenCalled();
+      expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
+        tx.safeTxHash,
+      );
+      expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
+        tx.safe,
+      );
+      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should warn with chainId, safeTxHash and error when fire-and-forget cache clear fails', async () => {
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const signature = faker.string.hexadecimal({ length: 16 });
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockQueueService.clearMultisigTransaction.mockRejectedValue(
+        new Error('cache down'),
+      );
+
+      await repository.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+      // Yield one microtask tick so the fire-and-forget Promise.all .catch runs
+      await Promise.resolve();
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Failed to immediately clear deleted transaction from cache. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=Error: cache down`,
+      );
     });
   });
 });
