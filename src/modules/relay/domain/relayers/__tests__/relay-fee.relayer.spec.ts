@@ -9,9 +9,9 @@ import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
+import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { RelayFeeRelayer } from '../relay-fee.relayer';
-import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -407,7 +407,6 @@ describe('RelayFeeRelayer', () => {
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
     });
-
   });
 
   describe('getRelaysRemaining', () => {
