@@ -1,28 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import {
-  getSafeSingletonDeployments,
-  getSafeL2SingletonDeployments,
-  getMultiSendCallOnlyDeployments,
-  getMultiSendDeployments,
-  getProxyFactoryDeployments,
-  getSignerFactoryDeployments,
-} from '@/domain/common/utils/deployments';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import type { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
-import Safe141 from '@/abis/safe/v1.4.1/Safe.abi';
-import Safe150 from '@/abis/safe/v1.5.0/Safe.abi';
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address, Hex } from 'viem';
 import {
@@ -31,6 +8,29 @@ import {
   keccak256,
   parseAbiParameters,
 } from 'viem';
+import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
+import Safe141 from '@/abis/safe/v1.4.1/Safe.abi';
+import Safe150 from '@/abis/safe/v1.5.0/Safe.abi';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
+  getProxyFactoryDeployments,
+  getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
+  getSignerFactoryDeployments,
+} from '@/domain/common/utils/deployments';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
 type SafeAbi = typeof Safe130 | typeof Safe141 | typeof Safe150;
 
@@ -462,12 +462,14 @@ export class RelayTransactionHelper {
       const execTransactionData = decoded.args[2];
 
       if (
-        !this.safeDecoder.helpers.isAddOwnerWithThreshold(
-          execTransactionData,
-        ) &&
-        !this.safeDecoder.helpers.isRemoveOwner(execTransactionData) &&
-        !this.safeDecoder.helpers.isSwapOwner(execTransactionData) &&
-        !this.safeDecoder.helpers.isChangeThreshold(execTransactionData)
+        !(
+          this.safeDecoder.helpers.isAddOwnerWithThreshold(
+            execTransactionData,
+          ) ||
+          this.safeDecoder.helpers.isRemoveOwner(execTransactionData) ||
+          this.safeDecoder.helpers.isSwapOwner(execTransactionData) ||
+          this.safeDecoder.helpers.isChangeThreshold(execTransactionData)
+        )
       ) {
         return false;
       }

@@ -1,5 +1,6 @@
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class SafeOverview {
   @ApiProperty()

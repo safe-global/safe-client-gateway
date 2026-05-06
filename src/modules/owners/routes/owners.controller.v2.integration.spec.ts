@@ -1,29 +1,30 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { getAddress } from 'viem';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
 } from '@/domain/entities/__tests__/page.builder';
-import type { Server } from 'net';
-import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
-import { rawify } from '@/validation/entities/raw.entity';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { createTestModule } from '@/__tests__/testing-module';
+import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   creationTransactionBuilder,
   toJson,
 } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -162,13 +163,13 @@ describe('Owners Controller (Unit)', () => {
       ];
 
       networkService.get.mockImplementation(({ url, networkRequest }) => {
-        if (url === chainsUrl && !networkRequest!.params!.offset) {
+        if (url === chainsUrl && !networkRequest?.params?.offset) {
           return Promise.resolve({
             data: rawify(chainsPage1),
             status: 200,
           });
         }
-        if (url === chainsUrl && networkRequest!.params!.offset === offset) {
+        if (url === chainsUrl && networkRequest?.params?.offset === offset) {
           return Promise.resolve({
             data: rawify(chainsPage2),
             status: 200,

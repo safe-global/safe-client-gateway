@@ -1,6 +1,7 @@
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
 import type { Address } from 'viem';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 /**
  * Uses a real class instead of a mock object (like TestNetworkModule does) due to:

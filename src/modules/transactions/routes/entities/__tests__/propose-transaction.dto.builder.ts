@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { getAddress, type Hash, type Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
+import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/routes/entities/propose-transaction.dto.entity';
-import { type Hash, type Hex, getAddress } from 'viem';
 
 export function proposeTransactionDtoBuilder(): IBuilder<ProposeTransactionDto> {
   return new Builder<ProposeTransactionDto>()

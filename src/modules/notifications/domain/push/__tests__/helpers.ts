@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { getAddress, type Address } from 'viem';
-import type { UUID } from 'crypto';
+import { type Address, getAddress } from 'viem';
 
 export function addr(): Address {
   return getAddress(faker.finance.ethereumAddress());

@@ -1,18 +1,19 @@
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
+import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
   getApi: jest.fn(),
@@ -191,11 +192,11 @@ describe('SafeRepository', () => {
           .build(),
       );
 
-      pages.forEach((page) => {
+      for (const page of pages) {
         mockTransactionApi.getSafesByOwnerV2.mockResolvedValueOnce(
           rawify(page),
         );
-      });
+      }
 
       const result = await repository.getSafesByOwnerV2({
         chainId,

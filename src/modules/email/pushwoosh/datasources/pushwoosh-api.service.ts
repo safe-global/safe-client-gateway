@@ -6,8 +6,8 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { CreateEmailMessageDto } from '@/modules/email/pushwoosh/domain/entities/create-email-message.dto.entity';
 import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { CreateEmailMessageDto } from '@/modules/email/pushwoosh/domain/entities/create-email-message.dto.entity';
 
 @Injectable()
 export class PushwooshApi implements IEmailApi {

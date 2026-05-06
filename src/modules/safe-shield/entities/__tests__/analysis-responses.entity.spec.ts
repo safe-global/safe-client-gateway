@@ -1,33 +1,34 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import {
-  RecipientAnalysisResponseSchema,
   ContractAnalysisResponseSchema,
   CounterpartyAnalysisResponseSchema,
-  ThreatAnalysisResponseSchema,
   DeadlockAnalysisResponseSchema,
+  RecipientAnalysisResponseSchema,
+  ThreatAnalysisResponseSchema,
 } from '../analysis-responses.entity';
-import {
-  recipientAnalysisResponseBuilder,
-  contractAnalysisResponseBuilder,
-  counterpartyAnalysisResponseBuilder,
-  threatAnalysisResponseBuilder,
-  deadlockAnalysisResponseBuilder,
-} from './builders/analysis-responses.builder';
-import {
-  contractAnalysisResultBuilder,
-  recipientAnalysisResultBuilder,
-  threatAnalysisResultBuilder,
-  deadlockAnalysisResultBuilder,
-} from './builders/analysis-result.builder';
-import { faker } from '@faker-js/faker';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from '../status-group.entity';
-import { getAddress } from 'viem';
+import {
+  contractAnalysisResponseBuilder,
+  counterpartyAnalysisResponseBuilder,
+  deadlockAnalysisResponseBuilder,
+  recipientAnalysisResponseBuilder,
+  threatAnalysisResponseBuilder,
+} from './builders/analysis-responses.builder';
+import {
+  contractAnalysisResultBuilder,
+  deadlockAnalysisResultBuilder,
+  recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
+} from './builders/analysis-result.builder';
 
 describe('Analysis Response Schemas', () => {
   describe('Response Schemas', () => {
@@ -257,11 +258,11 @@ describe('Analysis Response Schemas', () => {
           threatAnalysisResponseBuilder(threat).build(),
         );
 
-        safeThreats.forEach((threat) => {
+        for (const threat of safeThreats) {
           const result = ThreatAnalysisResponseSchema.safeParse(threat);
 
           expect(result.success && result.data).toStrictEqual(threat);
-        });
+        }
       });
 
       it('should validate empty THREAT and BALANCE_CHANGE arrays', () => {

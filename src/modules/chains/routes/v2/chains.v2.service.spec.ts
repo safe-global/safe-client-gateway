@@ -1,11 +1,12 @@
-import { ChainsV2Service } from './chains.v2.service';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { Page } from '@/domain/entities/page.entity';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { ChainsV2Service } from './chains.v2.service';
 
 describe('ChainsV2Service', () => {
   let service: ChainsV2Service;

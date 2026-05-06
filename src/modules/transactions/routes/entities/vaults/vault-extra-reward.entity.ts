@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 
 export class VaultExtraReward {
   @ApiProperty()

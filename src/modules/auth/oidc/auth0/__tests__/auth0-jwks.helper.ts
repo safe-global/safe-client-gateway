@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { generateKeyPairSync } from 'node:crypto';
-import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { faker } from '@faker-js/faker';
 import jwt from 'jsonwebtoken';
+import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 
 export type Auth0JwksFixture = {
   privateKey: string;

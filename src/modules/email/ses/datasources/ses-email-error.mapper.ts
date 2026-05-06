@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  PermanentEmailError,
-  TransientEmailError,
-} from '@/modules/email/ses/domain/errors/email.errors';
+
 import {
   LimitExceededException,
   SESv2ServiceException,
   TooManyRequestsException,
 } from '@aws-sdk/client-sesv2';
+import {
+  PermanentEmailError,
+  TransientEmailError,
+} from '@/modules/email/ses/domain/errors/email.errors';
 
 export class SesEmailErrorMapper {
   static fromSesError(
     error: unknown,
   ): TransientEmailError | PermanentEmailError {
-    const message = this.getMessage(error);
+    const message = SesEmailErrorMapper.getMessage(error);
     const cause = error instanceof Error ? error : undefined;
 
-    if (this.isTransientSesError(error)) {
+    if (SesEmailErrorMapper.isTransientSesError(error)) {
       return new TransientEmailError(
         `AWS SES transient failure: ${message}`,
         cause,
@@ -44,12 +45,12 @@ export class SesEmailErrorMapper {
     // within BullMQ retry windows.
     return Boolean(
       error instanceof TooManyRequestsException ||
-      error instanceof LimitExceededException ||
-      error.$retryable ||
-      error.$fault === 'server' ||
-      statusCode === 408 ||
-      statusCode === 429 ||
-      (statusCode !== undefined && statusCode >= 500),
+        error instanceof LimitExceededException ||
+        error.$retryable ||
+        error.$fault === 'server' ||
+        statusCode === 408 ||
+        statusCode === 429 ||
+        (statusCode !== undefined && statusCode >= 500),
     );
   }
 

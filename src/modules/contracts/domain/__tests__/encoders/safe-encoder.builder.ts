@@ -2,10 +2,10 @@
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { encodeFunctionData, getAddress, pad } from 'viem';
+import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import { Builder } from '@/__tests__/builder';
 import type { SafeTransactionWithSignature } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
 const ZERO_ADDRESS = pad('0x0', { size: 20 });

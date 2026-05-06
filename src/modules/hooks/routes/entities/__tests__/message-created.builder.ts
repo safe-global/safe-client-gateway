@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type { MessageCreated } from '@/modules/hooks/routes/entities/message-created.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 
 export function messageCreatedEventBuilder(): IBuilder<MessageCreated> {
   return new Builder<MessageCreated>()

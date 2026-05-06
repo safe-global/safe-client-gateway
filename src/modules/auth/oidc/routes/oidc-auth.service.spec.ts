@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 const authRepositoryMock = {
   signToken: jest.fn(),

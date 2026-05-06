@@ -1,24 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type {
-  MasterCopyChangeThreatAnalysisResult,
-  MaliciousOrModerateThreatAnalysisResult,
-  UnofficialFallbackHandlerAnalysisResult,
-} from '../../analysis-result.entity';
-import {
-  type RecipientAnalysisResult,
-  type ContractAnalysisResult,
-  type ThreatAnalysisResult,
-} from '../../analysis-result.entity';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
-import type { AnalysisResult } from '../../analysis-result.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import type {
+  AnalysisResult,
+  ContractAnalysisResult,
+  MaliciousOrModerateThreatAnalysisResult,
+  MasterCopyChangeThreatAnalysisResult,
+  RecipientAnalysisResult,
+  ThreatAnalysisResult,
+  UnofficialFallbackHandlerAnalysisResult,
+} from '../../analysis-result.entity';
 
 /**
  * Builder for RecipientAnalysisResult entities

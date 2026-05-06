@@ -1,11 +1,12 @@
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import {
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { ApiProperty } from '@nestjs/swagger';
+import type { Address, Hash, Hex } from 'viem';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type {
   Confirmation,
   MultisigTransaction as DomainMultisigTransaction,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { ApiProperty } from '@nestjs/swagger';
-import type { Address, Hash, Hex } from 'viem';
 
 export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()

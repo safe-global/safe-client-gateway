@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { tokenBuilder } from '@/modules/bridge/domain/entities/__tests__/token.builder';
@@ -36,15 +37,15 @@ describe('TokenSchema', () => {
     );
   });
 
-  it.each(['coinKey' as const, 'logoURI' as const])(
-    '%s should default to null',
-    (key) => {
-      const token = tokenBuilder().build();
-      delete token[key];
+  it.each([
+    'coinKey' as const,
+    'logoURI' as const,
+  ])('%s should default to null', (key) => {
+    const token = tokenBuilder().build();
+    delete token[key];
 
-      const result = TokenSchema.safeParse(token);
+    const result = TokenSchema.safeParse(token);
 
-      expect(result.success && result.data[key]).toBe(null);
-    },
-  );
+    expect(result.success && result.data[key]).toBe(null);
+  });
 });

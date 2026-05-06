@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
+import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
 import { UnofficialMultiSendError } from '@/modules/relay/domain/errors/unofficial-multisend.error';
-import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
-import type { Address, Hex } from 'viem';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
 @Injectable()

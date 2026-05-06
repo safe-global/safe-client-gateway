@@ -1,23 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-// eslint-disable-next-line no-restricted-imports
 import {
+  getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
   getMultiSendCallOnlyDeployments as _getMultiSendCallOnlyDeployments,
   getMultiSendDeployments as _getMultiSendDeployments,
   getProxyFactoryDeployments as _getProxyFactoryDeployments,
   getSafeL2SingletonDeployments as _getSafeL2SingletonDeployments,
-  getSafeSingletonDeployments as _getSafeSingletonDeployments,
-  getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
-  getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
-  getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeMigrationDeployments as _getSafeMigrationDeployments,
+  getSafeSingletonDeployments as _getSafeSingletonDeployments,
+  getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
+  getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
 } from '@safe-global/safe-deployments';
-// eslint-disable-next-line no-restricted-imports
-import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
 import {
-  _SAFE_DEPLOYMENTS,
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
+  _SAFE_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
-import { getAddress, type Address, type parseAbi } from 'viem';
+import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
+import { type Address, getAddress, type parseAbi } from 'viem';
 
 type Filter = {
   chainId: string;

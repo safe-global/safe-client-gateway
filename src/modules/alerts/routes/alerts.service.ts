@@ -1,7 +1,11 @@
-import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
+import type { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
 
 @Injectable()
 export class AlertsService {

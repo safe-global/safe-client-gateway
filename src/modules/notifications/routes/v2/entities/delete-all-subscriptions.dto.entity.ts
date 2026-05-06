@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { ApiProperty } from '@nestjs/swagger';
-import type { UUID } from 'crypto';
-import { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 import type { Address } from 'viem';
+import type { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 
 export class DeleteAllSubscriptionItemDto {
   @ApiProperty()
@@ -26,7 +27,9 @@ export class DeleteAllSubscriptionItemDto {
   public readonly signerAddress?: Address | null;
 }
 
-export class DeleteAllSubscriptionsDto implements DomainDeleteAllSubscriptionsDto {
+export class DeleteAllSubscriptionsDto
+  implements DomainDeleteAllSubscriptionsDto
+{
   @ApiProperty({
     isArray: true,
     type: DeleteAllSubscriptionItemDto,

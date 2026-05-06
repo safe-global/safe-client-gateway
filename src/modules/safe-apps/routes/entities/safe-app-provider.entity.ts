@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { SafeAppProvider as DomainSafeAppProvider } from '@/modules/safe-apps/domain/entities/safe-app-provider.entity';
+import type { SafeAppProvider as DomainSafeAppProvider } from '@/modules/safe-apps/domain/entities/safe-app-provider.entity';
 
 export class SafeAppProvider implements DomainSafeAppProvider {
   @ApiProperty()

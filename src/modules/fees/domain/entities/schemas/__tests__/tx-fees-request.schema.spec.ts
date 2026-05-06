@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { TxFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-request.schema';
+
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
+import { TxFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-request.schema';
 
 describe('TxFeesRequestSchema', () => {
   it('should validate a valid tx-fees request', () => {

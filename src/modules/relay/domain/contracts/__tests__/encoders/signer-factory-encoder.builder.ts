@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Hex, encodeFunctionData, parseAbi } from 'viem';
-import type { IEncoder } from '@/__tests__/encoder-builder';
+import { encodeFunctionData, type Hex, parseAbi } from 'viem';
 import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 
 const SignerFactoryAbi = parseAbi([
   'function createSigner(uint256 x, uint256 y, uint176 verifiers) returns (address signer)',

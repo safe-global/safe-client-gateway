@@ -2,13 +2,16 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
-  NetworkService,
   type INetworkService,
+  NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { TurnstileVerifyResponseSchema } from '@/routes/captcha/entities/turnstile-verify-response.entity';
-import { asError } from '@/logging/utils';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import { TurnstileVerifyResponseSchema } from '@/routes/captcha/entities/turnstile-verify-response.entity';
 
 @Injectable()
 export class CaptchaService {

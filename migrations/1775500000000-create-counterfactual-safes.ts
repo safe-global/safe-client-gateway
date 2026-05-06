@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateCounterfactualSafes1775500000000 implements MigrationInterface {
+export class CreateCounterfactualSafes1775500000000
+  implements MigrationInterface
+{
   public async up(queryRunner: QueryRunner): Promise<void> {
     // Drop the orphaned table left over from the deprecated Knex "accounts"
     // module (removed in #2804). That schema is incompatible with the one

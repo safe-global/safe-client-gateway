@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import type { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import { Auth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository';
 import type { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
 
 const auth0ApiMock = {
   getAuthorizationUrl: jest.fn(),

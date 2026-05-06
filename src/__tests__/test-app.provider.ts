@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
 import { TestingModule } from '@nestjs/testing';
 import {
   AppProvider,
-  DEFAULT_CONFIGURATION,
   configureShutdownHooks,
+  DEFAULT_CONFIGURATION,
 } from '@/app.provider';
 
 /**

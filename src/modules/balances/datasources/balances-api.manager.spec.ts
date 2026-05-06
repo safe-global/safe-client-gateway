@@ -1,17 +1,18 @@
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
+import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const configurationService = {
@@ -78,7 +79,7 @@ beforeEach(() => {
     if (key === 'features.zerionBalancesEnabled') return false;
     if (key === 'features.counterfactualBalances') return true;
     // TODO: Remove after Vault decoding has been released
-    else if (key === 'application.isProduction') return true;
+    if (key === 'application.isProduction') return true;
   });
 });
 
@@ -127,14 +128,14 @@ describe('Balances API Manager Tests', () => {
       const notFoundExpireTimeSeconds = faker.number.int();
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
         if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-        else if (key === 'expirationTimeInSeconds.default')
+        if (key === 'expirationTimeInSeconds.default')
           return expirationTimeInSeconds;
-        else if (key === 'expirationTimeInSeconds.notFound.default')
+        if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
-        else if (key === 'features.zerionBalancesEnabled') return false;
-        else if (key === 'features.counterfactualBalances') return true;
+        if (key === 'features.zerionBalancesEnabled') return false;
+        if (key === 'features.counterfactualBalances') return true;
         // TODO: Remove after Vault decoding has been released
-        else if (key === 'application.isProduction') return true;
+        if (key === 'application.isProduction') return true;
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));

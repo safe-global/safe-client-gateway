@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
+
 import { z } from 'zod';
+import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 
 // Auth0 ID token claims:
 // https://auth0.com/docs/tokens/references/id-token-structure

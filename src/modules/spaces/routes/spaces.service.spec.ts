@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+
+import { faker } from '@faker-js/faker';
 import {
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import {
-  siweAuthPayloadDtoBuilder,
   oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { SpacesService } from '@/modules/spaces/routes/spaces.service';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 const spacesRepositoryMock = {
   create: jest.fn(),
@@ -93,119 +94,107 @@ describe('SpacesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should return safeCount 0 when %s space has no safes',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const space = spaceBuilder().build();
-        const member = memberBuilder()
-          .with('user', userBuilder().with('id', userId).build())
-          .with('space', space)
-          .build();
+    ])('should return safeCount 0 when %s space has no safes', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .build();
 
-        membersRepositoryMock.find.mockResolvedValue([member]);
-        spacesRepositoryMock.find.mockResolvedValue([
-          spaceBuilder()
-            .with('id', space.id)
-            .with('members', [])
-            .with('safes', [])
-            .build(),
-        ]);
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('members', [])
+          .with('safes', [])
+          .build(),
+      ]);
 
-        const result = await service.getActiveOrInvitedSpaces(authPayload);
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-        expect(result).toHaveLength(1);
-        expect(result[0].safeCount).toBe(0);
-      },
-    );
+      expect(result).toHaveLength(1);
+      expect(result[0].safeCount).toBe(0);
+    });
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should return safeCount 0 when %s space.safes is undefined',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const space = spaceBuilder().build();
-        const member = memberBuilder()
-          .with('user', userBuilder().with('id', userId).build())
-          .with('space', space)
-          .build();
+    ])('should return safeCount 0 when %s space.safes is undefined', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .build();
 
-        membersRepositoryMock.find.mockResolvedValue([member]);
-        spacesRepositoryMock.find.mockResolvedValue([
-          spaceBuilder().with('id', space.id).with('members', []).build(),
-        ]);
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder().with('id', space.id).with('members', []).build(),
+      ]);
 
-        const result = await service.getActiveOrInvitedSpaces(authPayload);
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-        expect(result).toHaveLength(1);
-        expect(result[0].safeCount).toBe(0);
-      },
-    );
+      expect(result).toHaveLength(1);
+      expect(result[0].safeCount).toBe(0);
+    });
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should return empty array when %s user has no memberships',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
+    ])('should return empty array when %s user has no memberships', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
 
-        membersRepositoryMock.find.mockResolvedValue([]);
+      membersRepositoryMock.find.mockResolvedValue([]);
 
-        const result = await service.getActiveOrInvitedSpaces(authPayload);
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-        expect(result).toEqual([]);
-        expect(spacesRepositoryMock.find).not.toHaveBeenCalled();
-      },
-    );
+      expect(result).toEqual([]);
+      expect(spacesRepositoryMock.find).not.toHaveBeenCalled();
+    });
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should return multiple spaces with correct safeCount for %s user',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const user = userBuilder().with('id', userId).build();
-        const space1 = spaceBuilder().build();
-        const space2 = spaceBuilder().build();
-        const member1 = memberBuilder()
-          .with('user', user)
-          .with('space', space1)
-          .with('status', 'ACTIVE')
-          .build();
-        const member2 = memberBuilder()
-          .with('user', user)
-          .with('space', space2)
-          .with('status', 'INVITED')
-          .build();
+    ])('should return multiple spaces with correct safeCount for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const user = userBuilder().with('id', userId).build();
+      const space1 = spaceBuilder().build();
+      const space2 = spaceBuilder().build();
+      const member1 = memberBuilder()
+        .with('user', user)
+        .with('space', space1)
+        .with('status', 'ACTIVE')
+        .build();
+      const member2 = memberBuilder()
+        .with('user', user)
+        .with('space', space2)
+        .with('status', 'INVITED')
+        .build();
 
-        membersRepositoryMock.find.mockResolvedValue([member1, member2]);
-        spacesRepositoryMock.find.mockResolvedValue([
-          spaceBuilder()
-            .with('id', space1.id)
-            .with('members', [])
-            .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
-            .build(),
-          spaceBuilder()
-            .with('id', space2.id)
-            .with('members', [])
-            .with('safes', [{ id: 3 } as SpaceSafe])
-            .build(),
-        ]);
+      membersRepositoryMock.find.mockResolvedValue([member1, member2]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space1.id)
+          .with('members', [])
+          .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
+          .build(),
+        spaceBuilder()
+          .with('id', space2.id)
+          .with('members', [])
+          .with('safes', [{ id: 3 } as SpaceSafe])
+          .build(),
+      ]);
 
-        const result = await service.getActiveOrInvitedSpaces(authPayload);
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-        expect(result).toHaveLength(2);
-        expect(result[0].safeCount).toBe(2);
-        expect(result[1].safeCount).toBe(1);
-      },
-    );
+      expect(result).toHaveLength(2);
+      expect(result[0].safeCount).toBe(2);
+      expect(result[1].safeCount).toBe(1);
+    });
 
     it('should throw UnauthorizedException for unauthenticated payload', async () => {
       const authPayload = new AuthPayload();
@@ -245,41 +234,35 @@ describe('SpacesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should throw NotFoundException when space ID not found for %s user',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const space = spaceBuilder().build();
-        const member = memberBuilder()
-          .with('user', userBuilder().with('id', userId).build())
-          .with('space', space)
-          .build();
+    ])('should throw NotFoundException when space ID not found for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .build();
 
-        membersRepositoryMock.find.mockResolvedValue([member]);
-        spacesRepositoryMock.find.mockResolvedValue([space]);
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([space]);
 
-        await expect(
-          service.getActiveOrInvitedSpace(999999, authPayload),
-        ).rejects.toThrow(new NotFoundException('Space not found.'));
-      },
-    );
+      await expect(
+        service.getActiveOrInvitedSpace(999999, authPayload),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should throw NotFoundException when %s user has no spaces',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
+    ])('should throw NotFoundException when %s user has no spaces', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
 
-        membersRepositoryMock.find.mockResolvedValue([]);
+      membersRepositoryMock.find.mockResolvedValue([]);
 
-        await expect(
-          service.getActiveOrInvitedSpace(1, authPayload),
-        ).rejects.toThrow(new NotFoundException('Space not found.'));
-      },
-    );
+      await expect(
+        service.getActiveOrInvitedSpace(1, authPayload),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
   });
 
   describe('create', () => {
@@ -312,52 +295,46 @@ describe('SpacesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should activate a PENDING %s user when creating space',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const expectedResponse = {
-          id: faker.number.int(),
-          name: faker.word.noun(),
-        };
+    ])('should activate a PENDING %s user when creating space', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const expectedResponse = {
+        id: faker.number.int(),
+        name: faker.word.noun(),
+      };
 
-        spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
+      spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
 
-        await service.create({
-          name: expectedResponse.name,
-          status: 'ACTIVE',
-          authPayload,
-        });
+      await service.create({
+        name: expectedResponse.name,
+        status: 'ACTIVE',
+        authPayload,
+      });
 
-        expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
-          userId,
-        );
-      },
-    );
+      expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
+        userId,
+      );
+    });
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
-    ])(
-      'should throw NotFoundException when %s user no longer exists',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        usersRepositoryMock.findOneOrFail.mockRejectedValue(
-          new NotFoundException('User not found.'),
-        );
+    ])('should throw NotFoundException when %s user no longer exists', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      usersRepositoryMock.findOneOrFail.mockRejectedValue(
+        new NotFoundException('User not found.'),
+      );
 
-        await expect(
-          service.create({
-            name: faker.word.noun(),
-            status: 'ACTIVE',
-            authPayload,
-          }),
-        ).rejects.toThrow(new NotFoundException('User not found.'));
-        expect(usersRepositoryMock.activateIfPending).not.toHaveBeenCalled();
-        expect(spacesRepositoryMock.create).not.toHaveBeenCalled();
-      },
-    );
+      await expect(
+        service.create({
+          name: faker.word.noun(),
+          status: 'ACTIVE',
+          authPayload,
+        }),
+      ).rejects.toThrow(new NotFoundException('User not found.'));
+      expect(usersRepositoryMock.activateIfPending).not.toHaveBeenCalled();
+      expect(spacesRepositoryMock.create).not.toHaveBeenCalled();
+    });
 
     it('should throw UnauthorizedException for unauthenticated payload', async () => {
       await expect(

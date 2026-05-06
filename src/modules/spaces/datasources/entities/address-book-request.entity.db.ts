@@ -1,14 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import {
-  AddressBookRequest as DomainAddressBookRequest,
-  AddressBookRequestStatus,
-} from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+
 import {
   Column,
   Entity,
@@ -19,6 +10,16 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import {
+  AddressBookRequestStatus,
+  AddressBookRequest as DomainAddressBookRequest,
+} from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 @Entity('address_book_requests')
 @Unique('UQ_ABR_space_requester_address', ['space', 'requestedBy', 'address'])
@@ -29,20 +30,28 @@ export class AddressBookRequest implements DomainAddressBookRequest {
   })
   id!: number;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_ABR_space_id',
   })
   public readonly space!: Space;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    onDelete: 'CASCADE',
-    nullable: false,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'requested_by',
     foreignKeyConstraintName: 'FK_ABR_requested_by',

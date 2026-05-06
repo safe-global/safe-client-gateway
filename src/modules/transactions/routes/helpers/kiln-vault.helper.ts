@@ -1,20 +1,21 @@
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Injectable, Module } from '@nestjs/common';
+import {
+  type Address,
+  type ContractFunctionName,
+  type DecodeFunctionDataReturnType,
+  erc4626Abi,
+  getAbiItem,
+  toFunctionSelector,
+} from 'viem';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import { Erc4262Decoder } from '@/modules/transactions/routes/decoders/erc4262-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,
 } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { Injectable, Module } from '@nestjs/common';
-import {
-  Address,
-  ContractFunctionName,
-  DecodeFunctionDataReturnType,
-  erc4626Abi,
-  getAbiItem,
-  toFunctionSelector,
-} from 'viem';
 
 @Injectable()
 export class KilnVaultHelper extends Erc4262Decoder {
@@ -97,7 +98,7 @@ export class KilnVaultHelper extends Erc4262Decoder {
     };
     args: DecodeFunctionDataReturnType<TAbi, TFunctionName>['args'];
   } | null {
-    if (!args.transaction.data || !args.transaction.value) {
+    if (!(args.transaction.data && args.transaction.value)) {
       return null;
     }
 

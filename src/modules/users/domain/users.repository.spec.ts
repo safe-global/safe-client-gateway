@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import {
   EMAIL_IN_USE_ERROR_CODE,
   UserEmailAlreadyInUseError,
 } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UsersRepository } from '@/modules/users/domain/users.repository';
+import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 describe('UsersRepository', () => {
   const walletsRepository = {} as jest.MockedObjectDeep<IWalletsRepository>;
