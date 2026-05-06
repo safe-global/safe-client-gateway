@@ -214,7 +214,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(args.safeTxHash);
     }
 
-    // Safe creation — no on-chain hash to verify; fee service decides when hash is available
+    // Safe creation — no on-chain hash to verify; fee service is called when hash is available
     if (args.safeTxHash) {
       const feeServiceResult = await this.feeServiceApi.canRelay({
         chainId,

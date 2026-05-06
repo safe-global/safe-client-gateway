@@ -350,7 +350,7 @@ export class RelayTransactionHelper {
    * @param {string} args.to - Transaction recipient
    * @param {string} args.data - Transaction data
    *
-   * @returns {string | null} - Safe address being recovered, if valid
+   * @returns {Address | null} - Safe address being recovered, if valid
    */
   async getSafeBeingRecovered(args: {
     chainId: string;

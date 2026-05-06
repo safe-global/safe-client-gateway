@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import {
@@ -44,9 +44,9 @@ export class DailyLimitRelayer implements IRelayer {
     version: string;
     chainId: string;
     to: Address;
-    data: Address;
+    data: Hex;
     gasLimit: bigint | null;
-    safeTxHash?: string;
+    safeTxHash?: Hex;
   }): Promise<Relay> {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);
