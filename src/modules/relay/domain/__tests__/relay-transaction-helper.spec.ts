@@ -1,49 +1,48 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { Hex, PublicClient } from 'viem';
 import { getAddress } from 'viem';
-import type { Hex } from 'viem';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import {
-  erc20TransferEncoder,
-  erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import {
-  execTransactionEncoder,
-  addOwnerWithThresholdEncoder,
-  removeOwnerEncoder,
-  swapOwnerEncoder,
-  changeThresholdEncoder,
-  setupEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import {
-  multiSendEncoder,
-  multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import configuration from '@/config/entities/configuration';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
-  getSafeSingletonDeployments,
   getSafeL2SingletonDeployments,
+  getSafeSingletonDeployments,
 } from '@/domain/common/utils/deployments';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
-import configuration from '@/config/entities/configuration';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import type { PublicClient } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import {
+  addOwnerWithThresholdEncoder,
+  changeThresholdEncoder,
+  execTransactionEncoder,
+  removeOwnerEncoder,
+  setupEncoder,
+  swapOwnerEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import {
+  erc20TransferEncoder,
+  erc20TransferFromEncoder,
+} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
 

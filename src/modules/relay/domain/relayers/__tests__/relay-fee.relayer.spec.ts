@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
-import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import type { Address, Hex } from 'viem';
+import { getAddress } from 'viem';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
+import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
+import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { RelayFeeRelayer } from '../relay-fee.relayer';
 
 const mockLoggingService = jest.mocked({

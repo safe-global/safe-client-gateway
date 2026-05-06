@@ -26,10 +26,10 @@ import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exceptio
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
 import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
+import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
 import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
-import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
 import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-signer-factory.exception-filter';
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';

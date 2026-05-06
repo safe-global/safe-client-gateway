@@ -16,10 +16,10 @@ import {
 } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
+import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
-import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {

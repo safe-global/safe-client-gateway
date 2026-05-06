@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import type { ArgumentsHost } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
