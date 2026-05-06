@@ -1,17 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { type EntityManager } from 'typeorm';
 import type {
   DeleteResult,
+  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
   InsertResult,
 } from 'typeorm';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { Address } from 'viem';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { User } from '@/modules/users/domain/entities/user.entity';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class WalletsRepository implements IWalletsRepository {
@@ -78,7 +79,7 @@ export class WalletsRepository implements IWalletsRepository {
     const wallet = await this.findOneByAddress(address, relations);
 
     if (!wallet) {
-      throw new NotFoundException('Wallet not found. Address=' + address);
+      throw new NotFoundException(`Wallet not found. Address=${address}`);
     }
 
     return wallet;

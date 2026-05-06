@@ -1,4 +1,5 @@
-import { faker } from '@faker-js/faker/.';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 
 // Note: regular expression is simplified because faker has limited support for regex.
 // https://fakerjs.dev/api/helpers#fromregexp

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  TxDataResponseSchema,
-  PricingContextSnapshotSchema,
-  TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
-import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
+import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import {
+  PricingContextSnapshotSchema,
+  TxDataResponseSchema,
+  TxFeesResponseSchema,
+} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 
 describe('TxDataResponseSchema', () => {
   it('should validate valid tx data', () => {
@@ -106,7 +107,6 @@ describe('TxFeesResponseSchema', () => {
 
   it('should not allow a missing relayCostUsd', () => {
     const response = txFeesResponseBuilder().build();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { relayCostUsd: _, ...withoutRelayCostUsd } = response;
 
     const result = TxFeesResponseSchema.safeParse(withoutRelayCostUsd);

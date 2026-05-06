@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 export class CreateEmailMessageDto {
   to!: Array<string>;
   template!: string;

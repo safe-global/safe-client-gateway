@@ -1,34 +1,35 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import request from 'supertest';
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { addRecoveryModuleDtoBuilder } from '@/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
-  AlertsApiConfigurationModule,
   ALERTS_API_CONFIGURATION_MODULE,
-  AlertsConfigurationModule,
   ALERTS_CONFIGURATION_MODULE,
+  AlertsApiConfigurationModule,
+  AlertsConfigurationModule,
 } from '@/modules/alerts/alerts.module';
 import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
 import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { RecoveryController } from '@/modules/recovery/routes/recovery.controller';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { addRecoveryModuleDtoBuilder } from '@/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
+import { RecoveryController } from '@/modules/recovery/routes/recovery.controller';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Recovery Controller', () => {
   let app: INestApplication<Server>;
@@ -96,7 +97,9 @@ describe('Recovery Controller', () => {
         RecoveryController.prototype.addRecoveryModule,
         RecoveryController.prototype.deleteRecoveryModule,
       ];
-      protectedEndpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+      for (const fn of protectedEndpoints) {
+        checkGuardIsApplied(AuthGuard, fn);
+      }
     });
   });
 

@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type Server } from 'http';
-import request from 'supertest';
+
+import { type Server } from 'node:http';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { CounterfactualSafesController } from '@/modules/counterfactual-safes/routes/counterfactual-safes.controller';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { CounterfactualSafesController } from '@/modules/counterfactual-safes/routes/counterfactual-safes.controller';
+import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 
 function buildCounterfactualSafe(chainId?: string): Record<string, unknown> {
   const cfSafe = counterfactualSafeBuilder()
@@ -80,10 +81,11 @@ describe('CounterfactualSafesController', () => {
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(
       CounterfactualSafesController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    ) as Array<Function>;
+    ) as Array<(...args: Array<any>) => unknown>;
 
-    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+    for (const fn of endpoints) {
+      checkGuardIsApplied(AuthGuard, fn);
+    }
   });
 
   describe('POST /v1/users/counterfactual-safes', () => {
@@ -120,7 +122,7 @@ describe('CounterfactualSafesController', () => {
         .expect(201);
     });
 
-    it('Should fail on duplicate chainId + address', async () => {
+    it('Should be idempotent when the same user re-submits identical init params', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const cfSafe = buildCounterfactualSafe();
@@ -139,7 +141,70 @@ describe('CounterfactualSafesController', () => {
         .post('/v1/users/counterfactual-safes')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ safes: [cfSafe] })
+        .expect(201);
+    });
+
+    it('Should return 409 when (chainId, address) collides with different init params', async () => {
+      const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
+      const accessToken1 = jwtService.sign(authPayloadDto1);
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
+      const accessToken2 = jwtService.sign(authPayloadDto2);
+      const cfSafe = buildCounterfactualSafe();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken1}`]);
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken2}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken1}`])
+        .send({ safes: [cfSafe] })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .send({
+          safes: [{ ...cfSafe, threshold: (cfSafe.threshold as number) + 1 }],
+        })
         .expect(409);
+    });
+
+    it('Should allow a second user to attach to an existing counterfactual safe with matching init params', async () => {
+      const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
+      const accessToken1 = jwtService.sign(authPayloadDto1);
+      const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();
+      const accessToken2 = jwtService.sign(authPayloadDto2);
+      const cfSafe = buildCounterfactualSafe();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken1}`]);
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken2}`]);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken1}`])
+        .send({ safes: [cfSafe] })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .send({ safes: [cfSafe] })
+        .expect(201);
+
+      const getResponse = await request(app.getHttpServer())
+        .get('/v1/users/counterfactual-safes')
+        .set('Cookie', [`access_token=${accessToken2}`])
+        .expect(200);
+
+      expect(getResponse.body.safes[cfSafe.chainId as string]).toHaveLength(1);
     });
 
     it('Should return 422 for invalid data (non-hex data field)', async () => {
@@ -223,10 +288,11 @@ describe('CounterfactualSafesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
+      const chainId = cfSafe.chainId as string;
       expect(getResponse.body.safes).toBeDefined();
-      expect(getResponse.body.safes[cfSafe.chainId]).toBeDefined();
-      expect(getResponse.body.safes[cfSafe.chainId]).toHaveLength(1);
-      expect(getResponse.body.safes[cfSafe.chainId][0]).toMatchObject({
+      expect(getResponse.body.safes[chainId]).toBeDefined();
+      expect(getResponse.body.safes[chainId]).toHaveLength(1);
+      expect(getResponse.body.safes[chainId][0]).toMatchObject({
         address: cfSafe.address,
         factoryAddress: cfSafe.factoryAddress,
         masterCopy: cfSafe.masterCopy,
@@ -347,7 +413,7 @@ describe('CounterfactualSafesController', () => {
         .expect(404);
     });
 
-    it("Should not allow deleting another user's safe", async () => {
+    it("Should not allow deleting a safe the caller isn't associated with", async () => {
       const authPayloadDto1 = siweAuthPayloadDtoBuilder().build();
       const accessToken1 = jwtService.sign(authPayloadDto1);
       const authPayloadDto2 = siweAuthPayloadDtoBuilder().build();

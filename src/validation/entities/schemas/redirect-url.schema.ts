@@ -1,13 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
-// eslint-disable-next-line no-control-regex
-const CONTROL_CHARS_REGEX = /[\x00-\x1f\x7f]/;
+function hasControlChars(str: string): boolean {
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if ((code >= 0x00 && code <= 0x1f) || code === 0x7f) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export const RedirectUrlSchema = z
   .string()
   .max(2048, 'redirect_url exceeds max length')
-  .refine((val) => !CONTROL_CHARS_REGEX.test(val), {
+  .refine((val) => !hasControlChars(val), {
     message: 'redirect_url contains invalid characters',
   })
   .optional();

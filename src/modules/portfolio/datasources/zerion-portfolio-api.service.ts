@@ -1,37 +1,41 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { groupBy } from 'lodash';
+import { get, groupBy } from 'lodash';
 import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
+import { ZodError } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  CacheService,
+  ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
-import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
-import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { getNumberString } from '@/domain/common/utils/utils';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
+import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
+import {
+  getZerionHeaders,
+  normalizeZerionBalances,
+} from '@/modules/balances/datasources/zerion-api.helpers';
 import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
 import type {
   AppPosition,
   AppPositionGroup,
 } from '@/modules/portfolio/domain/entities/app-position.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { rawify, type Raw } from '@/validation/entities/raw.entity';
-import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { ZodError } from 'zod';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
-import {
-  getZerionHeaders,
-  normalizeZerionBalances,
-} from '@/modules/balances/datasources/zerion-api.helpers';
+import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
+import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
+import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
 import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 /**
  * Zerion portfolio API integration.
@@ -63,7 +67,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(CacheService) private readonly cacheService: ICacheService,
+    @Inject(CacheService) readonly _cacheService: ICacheService,
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
@@ -123,7 +127,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       }
 
       if (args.sync) {
-        params['sync'] = 'true';
+        params.sync = 'true';
       }
 
       const networkRequest = {
@@ -140,11 +144,45 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
       return normalizeZerionBalances(response.data);
     } catch (error) {
+      this._logPortfolioRequestError({ ...args, error });
+
       if (error instanceof ZodError) {
         throw error;
       }
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  private _logPortfolioRequestError(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+    sync?: boolean;
+    error: unknown;
+  }): void {
+    this.loggingService.error({
+      type: LogType.PortfolioRequestError,
+      source: 'ZerionPortfolioApi',
+      event: 'Portfolio request failed',
+      safeAddress: args.address,
+      fiatCode: args.fiatCode,
+      trusted: Boolean(args.trusted),
+      sync: Boolean(args.sync),
+      isTestnet: Boolean(args.isTestnet),
+      request_status:
+        args.error instanceof NetworkResponseError
+          ? args.error.response.status
+          : undefined,
+      detail:
+        args.error instanceof NetworkResponseError
+          ? String(
+              get(args.error.data, 'errors[0].detail') ??
+                get(args.error.data, 'errors[0].title') ??
+                args.error.response.statusText,
+            )
+          : asError(args.error).message,
+    });
   }
 
   /**
@@ -272,7 +310,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<Array<AppBalance>>} Promise that resolves to app balance entities
    */
-  private async _buildAppBalances(
+  private _buildAppBalances(
     positions: Array<ZerionBalance>,
     isTestnet: boolean,
   ): Promise<Array<AppBalance>> {
@@ -286,7 +324,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       if (!groupedByApp.has(appName)) {
         groupedByApp.set(appName, []);
       }
-      groupedByApp.get(appName)!.push(position);
+      groupedByApp.get(appName)?.push(position);
     }
 
     return Promise.all(
@@ -444,7 +482,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
    * @param {boolean} isTestnet - Whether this is a testnet request
    * @returns {Promise<string | undefined>} Promise that resolves to chain ID, or undefined if network is unknown
    */
-  private async _mapNetworkToChainId(
+  private _mapNetworkToChainId(
     network: string,
     isTestnet: boolean,
   ): Promise<string | undefined> {

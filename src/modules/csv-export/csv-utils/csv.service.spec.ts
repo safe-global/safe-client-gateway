@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Readable, Writable } from 'node:stream';
 import { faker } from '@faker-js/faker';
 import type { CsvOptions } from './csv.service';
 import { CsvService } from './csv.service';
-import { Readable, Writable } from 'stream';
 
 type MaybeArray<T> = T | Array<T>;
 type AsyncOrSyncIterable<T> = Iterable<T> | AsyncIterable<T>;
@@ -136,14 +137,10 @@ describe('CsvExportService', () => {
       const lines = csv.trim().split(/\r?\n/);
       expect(lines.length).toBe(3);
       expect(lines[0]).toBe('name,age,active,tags,details');
-      /* eslint-disable no-useless-escape */
       expect(lines[1]).toBe(
-        `${name},${age},1,\"[\"\"${tag}\"\",\"\"${tag}\"\"]\",\"{\"\"foo\"\":\"\"${val}\"\"}\"`,
+        `${name},${age},1,"[""${tag}"",""${tag}""]","{""foo"":""${val}""}"`,
       );
-      expect(lines[2]).toBe(
-        `${name},${age},,[],\"{\"\"bar\"\":\"\"${val}\"\"}\"`,
-      );
-      /* eslint-enable no-useless-escape */
+      expect(lines[2]).toBe(`${name},${age},,[],"{""bar"":""${val}""}"`);
     });
 
     it('handles nested objects', async () => {

@@ -1,10 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
-import {
-  TransactionInfo,
-  TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import { AddOwner } from '@/modules/transactions/routes/entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
@@ -14,7 +10,12 @@ import { EnableModule } from '@/modules/transactions/routes/entities/settings-ch
 import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
 import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
+import { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
+import {
+  TransactionInfo,
+  TransactionInfoType,
+} from '@/modules/transactions/routes/entities/transaction-info.entity';
 
 @ApiExtraModels(
   AddOwner,

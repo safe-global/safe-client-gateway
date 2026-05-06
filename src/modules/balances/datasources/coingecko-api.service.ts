@@ -1,36 +1,40 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
-import {
-  AssetPrice,
-  getAssetPriceSchema,
-} from '@/modules/balances/datasources/entities/asset-price.entity';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import {
-  NetworkService,
-  INetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { Cache } from 'cache-manager';
+import chunk from 'lodash/chunk';
 import difference from 'lodash/difference';
 import get from 'lodash/get';
-import random from 'lodash/random';
-import { LoggingService, ILoggingService } from '@/logging/logging.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { asError } from '@/logging/utils';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { z } from 'zod';
-import { rawify, type Raw } from '@/validation/entities/raw.entity';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import chunk from 'lodash/chunk';
 import merge from 'lodash/merge';
+import random from 'lodash/random';
+import { z } from 'zod';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import {
+  type AssetPrice,
+  getAssetPriceSchema,
+} from '@/modules/balances/datasources/entities/asset-price.entity';
+import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 /**
  * TODO: Refactor away the return of currency codes from public methods, e.g.
@@ -111,9 +115,9 @@ export class CoingeckoApi implements IPricesApi {
       );
     // Coingecko expects the token addresses to be lowercase, so lowercase addresses are enforced here.
     this.highRefreshRateTokens = this.configurationService
-      .getOrThrow<
-        Array<string>
-      >('balances.providers.safe.prices.highRefreshRateTokens')
+      .getOrThrow<Array<string>>(
+        'balances.providers.safe.prices.highRefreshRateTokens',
+      )
       .map((tokenAddress) => tokenAddress.toLowerCase());
 
     this.highRefreshRateTokensTtlSeconds =
@@ -224,7 +228,7 @@ export class CoingeckoApi implements IPricesApi {
       });
       const notCachedTokenPrices = difference(
         lowerCaseTokenAddresses,
-        pricesFromCache.map((assetPrice) => Object.keys(assetPrice)).flat(),
+        pricesFromCache.flatMap((assetPrice) => Object.keys(assetPrice)),
       );
       const pricesFromNetwork = notCachedTokenPrices.length
         ? await this._getTokenPricesFromNetwork({

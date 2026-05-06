@@ -1,7 +1,8 @@
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { ConsumeMessage } from 'amqplib';
+import type { ConsumeMessage } from 'amqplib';
+import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
+import type { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
 
 @Injectable()
 export class QueuesRepository implements IQueuesRepository {
@@ -9,7 +10,7 @@ export class QueuesRepository implements IQueuesRepository {
     @Inject(IQueuesApiService) private readonly queuesApi: IQueuesApiService,
   ) {}
 
-  async subscribe(
+  subscribe(
     queueName: string,
     fn: (msg: ConsumeMessage) => Promise<void>,
   ): Promise<void> {

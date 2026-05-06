@@ -1,11 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
 
 export function addressBookItemBuilder(): IBuilder<AddressBookItem> {
   return new Builder<AddressBookItem>()

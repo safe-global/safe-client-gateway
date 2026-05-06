@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { encodeFunctionData, getAddress, pad } from 'viem';
+import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import { Builder } from '@/__tests__/builder';
 
 const ZERO_ADDRESS = pad('0x0', { size: 20 });
 const SENTINEL_ADDRESS = pad('0x1', { dir: 'left', size: 20 });

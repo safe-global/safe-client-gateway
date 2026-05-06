@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import {
-  Relay,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import {
+  type Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
-import { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
@@ -44,8 +47,10 @@ export class RelayFeeRelayer implements IRelayer {
     safeTxHash?: Hex;
   }): Promise<RelayEligibility> {
     if (
-      !this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) ||
-      !args.safeTxHash
+      !(
+        this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) &&
+        args.safeTxHash
+      )
     ) {
       return { result: false, currentCount: 0, limit: 0 };
     }

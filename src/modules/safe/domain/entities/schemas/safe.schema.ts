@@ -1,7 +1,8 @@
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
 
 const SafeBaseSchema = z.object({

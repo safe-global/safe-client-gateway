@@ -1,13 +1,4 @@
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
-import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import {
-  Member as DomainMember,
-  MemberRole,
-  MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Column,
   Entity,
@@ -18,6 +9,16 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
+import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
+import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import {
+  type Member as DomainMember,
+  MemberRole,
+  MemberStatus,
+} from '@/modules/users/domain/entities/member.entity';
 
 @Entity('members')
 @Unique('UQ_members', ['user', 'space'])
@@ -29,20 +30,28 @@ export class Member implements DomainMember {
   })
   id!: number;
 
-  @ManyToOne(() => User, (user: User) => user.id, {
-    cascade: true,
-    nullable: false,
-  })
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      cascade: true,
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'user_id',
     foreignKeyConstraintName: 'FK_members_user_id',
   })
   user!: User;
 
-  @ManyToOne(() => Space, (space: Space) => space.id, {
-    cascade: true,
-    nullable: false,
-  })
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      cascade: true,
+      nullable: false,
+    },
+  )
   @JoinColumn({
     name: 'space_id',
     foreignKeyConstraintName: 'FK_members_space_id',

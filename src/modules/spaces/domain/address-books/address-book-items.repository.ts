@@ -1,14 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+
 import {
   BadRequestException,
   ForbiddenException,
@@ -16,9 +7,19 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
+import { type Address, isAddressEqual } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
+import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { isAddressEqual } from 'viem';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -52,6 +53,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
+    createdByOverride?: Address;
   }): Promise<Array<AddressBookDbItem>> {
     const space = await this.getSpaceAs({
       ...args,
@@ -78,6 +80,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         addressBookItems: newAddressBookItems,
         space,
         authPayload: args.authPayload,
+        createdByOverride: args.createdByOverride,
       });
     });
     return repository.findBy({ space: { id: space.id } });
@@ -107,7 +110,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }): Promise<Space> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    return this.spacesRepository.findOneOrFail({
+    return await this.spacesRepository.findOneOrFail({
       where: {
         id: args.spaceId,
         members: {
@@ -156,6 +159,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
+    createdByOverride?: Address;
   }): Promise<Array<DbAddressBookItem['id']>> {
     if (!args.authPayload.isSiwe()) {
       throw new ForbiddenException(
@@ -170,7 +174,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         address: addressBookItem.address,
         name: addressBookItem.name,
         chainIds: addressBookItem.chainIds,
-        createdBy: args.authPayload.signer_address,
+        createdBy: args.createdByOverride ?? args.authPayload.signer_address,
         lastUpdatedBy: args.authPayload.signer_address,
       })),
     );

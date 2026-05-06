@@ -14,18 +14,18 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import type { Address } from 'viem';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import {
   JobStatusDto,
   JobStatusErrorDto,
-  JobStatusResponseDto,
+  type JobStatusResponseDto,
 } from '@/modules/csv-export/v1/entities/job-status.dto';
 import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
 import { TransactionExportDto } from '@/modules/csv-export/v1/entities/transaction-export-request';
-import type { Address } from 'viem';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('export')
 @Controller({
@@ -42,7 +42,7 @@ export class CsvExportController {
     required: false,
   })
   @Post('chains/:chainId/:safeAddress')
-  async launchExport(
+  launchExport(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -66,7 +66,7 @@ export class CsvExportController {
     type: JobStatusErrorDto,
   })
   @Get('/:jobId/status')
-  async getExportStatus(
+  getExportStatus(
     @Param('jobId', ParseUUIDPipe) jobId: string,
   ): Promise<JobStatusResponseDto> {
     return this.csvExportService.getExportJobStatus(jobId);

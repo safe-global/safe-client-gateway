@@ -1,26 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 describe('MembersController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
+  let usersRepository: IUsersRepository;
   let maxInvites: number;
 
   beforeAll(async () => {
@@ -48,6 +54,7 @@ describe('MembersController', () => {
     });
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
+    usersRepository = moduleFixture.get<IUsersRepository>(IUsersRepository);
     const configService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -62,12 +69,13 @@ describe('MembersController', () => {
   });
 
   it('should require authentication for every endpoint', () => {
-    const endpoints = Object.values(
-      MembersController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    ) as Array<Function>;
+    const endpoints = Object.values(MembersController.prototype) as Array<
+      (...args: Array<unknown>) => unknown
+    >;
 
-    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+    for (const fn of endpoints) {
+      checkGuardIsApplied(AuthGuard, fn);
+    }
   });
 
   describe('POST /v1/spaces/:spaceId/members/invite', () => {
@@ -1247,6 +1255,7 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'ACTIVE',
+                  email: null,
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                 },
@@ -1263,6 +1272,7 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  email: null,
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                 },
@@ -1279,12 +1289,108 @@ describe('MembersController', () => {
                 user: {
                   id: expect.any(Number),
                   status: 'PENDING',
+                  email: null,
                   createdAt: expect.any(String),
                   updatedAt: expect.any(String),
                 },
               },
             ],
           });
+        });
+    });
+
+    it('should return email for active members', async () => {
+      const spaceName = nameBuilder();
+      const email = faker.internet.email().toLowerCase();
+
+      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+        faker.string.uuid(),
+        { address: email, verified: true },
+      );
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                status: 'ACTIVE',
+                user: expect.objectContaining({
+                  id: userId,
+                  email,
+                }),
+              }),
+            ]),
+          );
+        });
+    });
+
+    it('should hide email for invited members', async () => {
+      const spaceName = nameBuilder();
+      const invitedAddress = getAddress(faker.finance.ethereumAddress());
+      const invitedName = faker.person.firstName();
+      const email = faker.internet.email().toLowerCase();
+
+      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+        faker.string.uuid(),
+        { address: email, verified: true },
+      );
+      const authPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', userId.toString())
+        .build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: invitedAddress,
+              name: invitedName,
+            },
+          ],
+        })
+        .expect(201);
+      const invitedUser =
+        await usersRepository.findByWalletAddressOrFail(invitedAddress);
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                status: 'INVITED',
+                user: expect.objectContaining({
+                  id: invitedUser.id,
+                  email: null,
+                }),
+              }),
+            ]),
+          );
         });
     });
 

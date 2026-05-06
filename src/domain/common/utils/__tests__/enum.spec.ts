@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   databaseEnumTransformer,
   getEnumKey,
@@ -5,8 +6,8 @@ import {
 } from '@/domain/common/utils/enum';
 
 enum NumericEnum {
-  A,
-  B,
+  A = 0,
+  B = 1,
 }
 
 enum NumericEnumExplicit {

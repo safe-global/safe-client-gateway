@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 import type { Address, Hex } from 'viem';
+import { getAddress } from 'viem';
 import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { TransactionExportSchema } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 

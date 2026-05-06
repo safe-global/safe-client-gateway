@@ -1,30 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import configuration from '@/config/entities/__tests__/configuration';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { setPreSignatureEncoder } from '@/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
-import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
 } from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { setPreSignatureEncoder } from '@/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
+import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Preview transaction - CoW Swap - Transactions Controller', () => {
   let app: INestApplication<Server>;

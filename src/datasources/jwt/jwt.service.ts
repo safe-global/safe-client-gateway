@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { Inject, Injectable } from '@nestjs/common';
+import type { Algorithm, JwtPayload } from 'jsonwebtoken';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { JWT_HS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { JwtClient } from '@/datasources/jwt/jwt.module';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { Algorithm, JwtPayload } from 'jsonwebtoken';
-import { JWT_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 
 @Injectable()
 export class JwtService implements IJwtService {
@@ -39,7 +40,7 @@ export class JwtService implements IJwtService {
       },
       {
         secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-        algorithm: options?.algorithm ?? JWT_ALGORITHM,
+        algorithm: options?.algorithm ?? JWT_HS_ALGORITHM,
       },
     );
   }
@@ -57,7 +58,7 @@ export class JwtService implements IJwtService {
       issuer: options?.issuer ?? this.issuer,
       audience: options?.audience ?? this.issuer,
       secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-      algorithms: options?.algorithms ?? [JWT_ALGORITHM],
+      algorithms: options?.algorithms ?? [JWT_HS_ALGORITHM],
     });
   }
 
@@ -74,7 +75,7 @@ export class JwtService implements IJwtService {
       issuer: options?.issuer ?? this.issuer,
       audience: options?.audience ?? this.issuer,
       secretOrPrivateKey: options?.secretOrPrivateKey ?? this.secret,
-      algorithms: options?.algorithms ?? [JWT_ALGORITHM],
+      algorithms: options?.algorithms ?? [JWT_HS_ALGORITHM],
     });
   }
 

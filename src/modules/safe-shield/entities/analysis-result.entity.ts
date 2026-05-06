@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { SeveritySchema, type Severity } from './severity.entity';
-import {
-  RecipientStatusSchema,
-  type RecipientStatus,
-} from './recipient-status.entity';
-import { BridgeStatusSchema, type BridgeStatus } from './bridge-status.entity';
-import { ContractStatus, ContractStatusSchema } from './contract-status.entity';
-import { ThreatStatus, ThreatStatusSchema } from './threat-status.entity';
-import {
-  DeadlockStatusSchema,
-  type DeadlockStatus,
-} from './deadlock-status.entity';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { type BridgeStatus, BridgeStatusSchema } from './bridge-status.entity';
+import { ContractStatus, ContractStatusSchema } from './contract-status.entity';
+import {
+  type DeadlockStatus,
+  DeadlockStatusSchema,
+} from './deadlock-status.entity';
+import {
+  type RecipientStatus,
+  RecipientStatusSchema,
+} from './recipient-status.entity';
+import { type Severity, SeveritySchema } from './severity.entity';
+import { ThreatStatus, ThreatStatusSchema } from './threat-status.entity';
 
 /**
  * Common status code available for all analysis types.

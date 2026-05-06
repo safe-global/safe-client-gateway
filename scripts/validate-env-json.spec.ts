@@ -1,18 +1,19 @@
-import * as fs from 'fs';
-import * as path from 'path';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import {
-  findTsFiles,
-  extractProcessEnvVariables,
-  checkDuplicates,
-} from './validate-env-json';
-import {
-  readDirectory,
-  PROJECT_ROOT,
-  type EnvVariable,
   type DirectoryEntry,
+  type EnvVariable,
+  PROJECT_ROOT,
+  readDirectory,
 } from './env-json-helpers';
+import {
+  checkDuplicates,
+  extractProcessEnvVariables,
+  findTsFiles,
+} from './validate-env-json';
 
-jest.mock('fs');
+jest.mock('node:fs');
 jest.mock('./env-json-helpers', () => ({
   ...jest.requireActual('./env-json-helpers'),
   readDirectory: jest.fn(),

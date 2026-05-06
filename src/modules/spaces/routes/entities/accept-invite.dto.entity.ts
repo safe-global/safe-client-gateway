@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { ApiProperty } from '@nestjs/swagger';
+import { z } from 'zod';
 import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
 } from '@/domain/common/schemas/name.schema';
-import { ApiProperty } from '@nestjs/swagger';
-import { z } from 'zod';
 
 export const AcceptInviteDtoSchema = z.object({
   name: z.string().max(255),

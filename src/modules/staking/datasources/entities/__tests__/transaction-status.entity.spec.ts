@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import type { Address } from 'viem';
 import {
   transactionStatusReceiptBuilder,
   transactionStatusReceiptLogBuilder,
@@ -7,8 +11,6 @@ import {
   TransactionStatusReceiptSchema,
   TransactionStatusSchema,
 } from '@/modules/staking/datasources/entities/transaction-status.entity';
-import { faker } from '@faker-js/faker/.';
-import type { Address } from 'viem';
 
 describe('TransactionStatus', () => {
   describe('TransactionStatusReceiptLogSchema', () => {

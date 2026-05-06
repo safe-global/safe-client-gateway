@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { MemberSchema } from '@/modules/users/domain/entities/member.entity';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { SpaceSafeSchema } from '@/modules/spaces/domain/entities/space-safe.entity';
-import type { Space as DbSpace } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { NameSchema } from '@/domain/common/schemas/name.schema';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { Space as DbSpace } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceSafeSchema } from '@/modules/spaces/domain/entities/space-safe.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
+import { MemberSchema } from '@/modules/users/domain/entities/member.entity';
 
 export enum SpaceStatus {
   ACTIVE = 1,

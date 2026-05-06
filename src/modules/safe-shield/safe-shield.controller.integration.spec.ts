@@ -1,22 +1,23 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import { rawify } from '@/validation/entities/raw.entity';
 import { threatAnalysisRequestBuilder } from './entities/__tests__/builders/analysis-requests.builder';
-import { FF_RISK_MITIGATION } from './threat-analysis/blockaid/blockaid-api.constants';
-import { BlockaidApiModule } from './threat-analysis/blockaid/blockaid-api.module';
 import { TestBlockaidApiModule } from './threat-analysis/blockaid/__tests__/test.blockaid-api.module';
+import { FF_RISK_MITIGATION } from './threat-analysis/blockaid/blockaid-api.constants';
 import { IBlockaidApi } from './threat-analysis/blockaid/blockaid-api.interface';
-import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { BlockaidApiModule } from './threat-analysis/blockaid/blockaid-api.module';
 
 describe('SafeShieldController', () => {
   let app: INestApplication<Server>;

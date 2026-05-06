@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type {
-  User,
-  UserStatus,
-} from '@/modules/users/domain/entities/user.entity';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+
 import type {
   EntityManager,
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
 import type { Address } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+import type {
+  User,
+  UserStatus,
+} from '@/modules/users/domain/entities/user.entity';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
@@ -56,7 +57,12 @@ export interface IUsersRepository {
 
   findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
 
-  findOrCreateByExtUserId(extUserId: string): Promise<User['id']>;
+  findOrCreateByExtUserIdWithEmail(
+    extUserId: string,
+    email?: { address: string; verified: boolean },
+  ): Promise<User['id']>;
+
+  findEmailById(userId: User['id']): Promise<string | undefined>;
 
   update(args: {
     userId: User['id'];

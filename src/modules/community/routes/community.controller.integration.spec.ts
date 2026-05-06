@@ -1,42 +1,43 @@
-import request from 'supertest';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.identity-api.module';
+import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import {
-  lockEventItemBuilder,
-  unlockEventItemBuilder,
-  withdrawEventItemBuilder,
-  toJson as lockingEventToJson,
-} from '@/modules/community/domain/entities/__tests__/locking-event.builder';
-import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import { getAddress } from 'viem';
-import { lockingRankBuilder } from '@/modules/community/domain/entities/__tests__/locking-rank.builder';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
 import {
   campaignBuilder,
   toJson as campaignToJson,
 } from '@/modules/community/domain/entities/__tests__/campaign.builder';
-import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
-import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
-import type { Server } from 'net';
 import {
   campaignActivityBuilder,
   toJson as campaignActivityToJson,
 } from '@/modules/community/domain/entities/__tests__/campaign-activity.builder';
-import { eligibilityRequestBuilder } from '@/modules/community/domain/entities/__tests__/eligibility-request.builder';
-import { IdentityApiModule } from '@/datasources/locking-api/identity-api.module';
-import { TestIdentityApiModule } from '@/datasources/locking-api/__tests__/test.identity-api.module';
-import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
+import { campaignRankBuilder } from '@/modules/community/domain/entities/__tests__/campaign-rank.builder';
 import { eligibilityBuilder } from '@/modules/community/domain/entities/__tests__/eligibility.builder';
+import { eligibilityRequestBuilder } from '@/modules/community/domain/entities/__tests__/eligibility-request.builder';
+import {
+  lockEventItemBuilder,
+  toJson as lockingEventToJson,
+  unlockEventItemBuilder,
+  withdrawEventItemBuilder,
+} from '@/modules/community/domain/entities/__tests__/locking-event.builder';
+import { lockingRankBuilder } from '@/modules/community/domain/entities/__tests__/locking-rank.builder';
+import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
+import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
+import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Community Controller', () => {
   let app: INestApplication<Server>;

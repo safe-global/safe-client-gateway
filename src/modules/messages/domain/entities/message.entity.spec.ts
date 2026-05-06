@@ -1,12 +1,13 @@
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import {
-  MessageSchema,
   MessagePageSchema,
+  MessageSchema,
 } from '@/modules/messages/domain/entities/message.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 
 describe('Message entity schemas', () => {
   describe('MessageSchema', () => {
@@ -18,55 +19,53 @@ describe('Message entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['created' as const, 'modified' as const])(
-      'should coerce %s to a date',
-      (key) => {
-        const message = messageBuilder().build();
+    it.each([
+      'created' as const,
+      'modified' as const,
+    ])('should coerce %s to a date', (key) => {
+      const message = messageBuilder().build();
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toStrictEqual(
-          new Date(message[key]),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toStrictEqual(
+        new Date(message[key]),
+      );
+    });
 
-    it.each(['safe' as const, 'proposedBy' as const])(
-      'should checksum the %s',
-      (key) => {
-        const nonChecksummedAddress = faker.finance
-          .ethereumAddress()
-          .toLowerCase() as Address;
-        const message = messageBuilder()
-          .with(key, nonChecksummedAddress)
-          .build();
+    it.each([
+      'safe' as const,
+      'proposedBy' as const,
+    ])('should checksum the %s', (key) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const message = messageBuilder().with(key, nonChecksummedAddress).build();
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toBe(
-          getAddress(nonChecksummedAddress),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
 
-    it.each(['messageHash' as const, 'preparedSignature' as const])(
-      'should not allow non-hex %s',
-      (key) => {
-        const message = messageBuilder()
-          .with(key, faker.string.numeric() as Address)
-          .build();
+    it.each([
+      'messageHash' as const,
+      'preparedSignature' as const,
+    ])('should not allow non-hex %s', (key) => {
+      const message = messageBuilder()
+        .with(key, faker.string.numeric() as Address)
+        .build();
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(!result.success && result.error.issues).toEqual([
-          {
-            code: 'custom',
-            message: 'Invalid "0x" notated hex string',
-            path: [key],
-          },
-        ]);
-      },
-    );
+      expect(!result.success && result.error.issues).toEqual([
+        {
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: [key],
+        },
+      ]);
+    });
 
     it.each([
       ['string', faker.lorem.sentence()],
@@ -80,17 +79,17 @@ describe('Message entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['safeAppId' as const, 'preparedSignature' as const])(
-      'should allow undefined %s, defaulting to null',
-      (key) => {
-        const message = messageBuilder().build();
-        delete message[key];
+    it.each([
+      'safeAppId' as const,
+      'preparedSignature' as const,
+    ])('should allow undefined %s, defaulting to null', (key) => {
+      const message = messageBuilder().build();
+      delete message[key];
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[key]).toBe(null);
+    });
 
     it('should allow empty confirmations', () => {
       const message = messageBuilder().with('confirmations', []).build();

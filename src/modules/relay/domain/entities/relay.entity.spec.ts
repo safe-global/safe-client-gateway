@@ -1,5 +1,6 @@
-import { RelaySchema } from '@/modules/relay/domain/entities/relay.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { RelaySchema } from '@/modules/relay/domain/entities/relay.entity';
 
 // Note: no builder exists for Relay as it is only tested here
 describe('RelaySchema', () => {

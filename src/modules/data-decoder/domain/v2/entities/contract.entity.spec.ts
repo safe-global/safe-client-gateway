@@ -1,4 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import {
   abiBuilder,
   contractBuilder,
@@ -9,7 +11,6 @@ import {
   ContractSchema,
   ProjectSchema,
 } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
-import { type Address, getAddress } from 'viem';
 
 describe('Contract', () => {
   describe('ProjectSchema', () => {

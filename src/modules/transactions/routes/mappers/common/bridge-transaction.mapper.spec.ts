@@ -1,14 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { Address, Hash, Hex } from 'viem';
 import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
+import type { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { BridgeTransactionMapper } from './bridge-transaction.mapper';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { SwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Address, Hash, Hex } from 'viem';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 
 describe('BridgeTransactionMapper (Unit)', () => {
   let mapper: BridgeTransactionMapper;

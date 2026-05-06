@@ -1,7 +1,8 @@
-import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
-import { Erc721TransferSchema } from '@/modules/safe/domain/entities/schemas/erc721-transfer.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
+import { Erc721TransferSchema } from '@/modules/safe/domain/entities/schemas/erc721-transfer.schema';
 
 describe('Erc721TransferSchema', () => {
   it('should validate a Erc721Transfer', () => {
@@ -34,21 +35,20 @@ describe('Erc721TransferSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it.each(['to' as const, 'from' as const, 'tokenAddress' as const])(
-    `should checksum the %s`,
-    (field) => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const erc20Transfer = erc721TransferBuilder()
-        .with(field, nonChecksummedAddress as Address)
-        .build();
+  it.each([
+    'to' as const,
+    'from' as const,
+    'tokenAddress' as const,
+  ])(`should checksum the %s`, (field) => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toLowerCase();
+    const erc20Transfer = erc721TransferBuilder()
+      .with(field, nonChecksummedAddress as Address)
+      .build();
 
-      const result = Erc721TransferSchema.safeParse(erc20Transfer);
+    const result = Erc721TransferSchema.safeParse(erc20Transfer);
 
-      expect(result.success && result.data[field]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[field]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 });

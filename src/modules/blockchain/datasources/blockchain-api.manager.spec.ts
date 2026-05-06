@@ -1,14 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { hexToNumber, toHex } from 'viem';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { BlockchainApiManager } from '@/modules/blockchain/datasources/blockchain-api.manager';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { BlockchainApiManager } from '@/modules/blockchain/datasources/blockchain-api.manager';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-uri.builder';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
-import { hexToNumber, toHex } from 'viem';
 
 const configApiMock = jest.mocked({
   getChain: jest.fn(),
@@ -107,7 +108,6 @@ describe('BlockchainApiManager', () => {
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = jest.spyOn(global, 'fetch');
       const chainId = toHex(chain.chainId);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
           headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -149,7 +149,7 @@ describe('BlockchainApiManager', () => {
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
-      expect(JSON.parse(cached!)).toBe(chainId);
+      expect(JSON.parse(cached as string)).toBe(chainId);
 
       fetchSpy.mockRestore();
     });
@@ -166,7 +166,6 @@ describe('BlockchainApiManager', () => {
         number: null,
         totalDifficulty: null,
       };
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
           headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -212,7 +211,7 @@ describe('BlockchainApiManager', () => {
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
-      expect(JSON.parse(cached!)).toStrictEqual(blockByNumber);
+      expect(JSON.parse(cached as string)).toStrictEqual(blockByNumber);
 
       fetchSpy.mockRestore();
     });

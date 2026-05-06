@@ -1,24 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getMillisecondsUntil } from '@/domain/common/utils/time';
-import {
-  ACCESS_TOKEN_COOKIE_NAME,
-  getCookieOptions,
-} from '@/modules/auth/utils/auth-cookie.utils';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AuthService } from '@/modules/auth/routes/auth.service';
-import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
-import {
-  SiweDto,
-  SiweDtoSchema,
-} from '@/modules/auth/routes/entities/siwe.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+
 import {
   Body,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   Inject,
@@ -28,22 +12,38 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiConsumes,
-  ApiOkResponse,
-  ApiTags,
-  ApiOperation,
-  ApiBody,
-  ApiUnauthorizedResponse,
   ApiBadRequestResponse,
+  ApiBody,
+  ApiConsumes,
   ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
   ApiResponse,
+  ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { type CookieOptions, Request, Response } from 'express';
-import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+import type { CookieOptions, Request, Response } from 'express';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AuthService } from '@/modules/auth/routes/auth.service';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
 import {
   LogoutDto,
   LogoutDtoSchema,
 } from '@/modules/auth/routes/entities/logout.dto.entity';
+import {
+  SiweDto,
+  SiweDtoSchema,
+} from '@/modules/auth/routes/entities/siwe.dto.entity';
+import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  getCookieOptions,
+} from '@/modules/auth/utils/auth-cookie.utils';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 /**
  * The AuthController is responsible for handling SiWe authentication:
@@ -83,17 +83,8 @@ export class AuthController {
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('me')
-  getMe(@Auth() authPayload: AuthPayload): UserSession {
-    if (!authPayload.isAuthenticated()) {
-      throw new ForbiddenException('Not authenticated');
-    }
-    return {
-      id: authPayload.sub,
-      authMethod: authPayload.auth_method,
-      ...(authPayload.isSiwe() && {
-        signerAddress: authPayload.signer_address,
-      }),
-    };
+  async getMe(@Auth() authPayload: AuthPayload): Promise<UserSession> {
+    return await this.authService.getUserSession(authPayload);
   }
 
   @ApiOperation({
@@ -106,7 +97,7 @@ export class AuthController {
     description: 'Unique nonce generated for authentication',
   })
   @Get('nonce')
-  async getNonce(): Promise<AuthNonce> {
+  getNonce(): Promise<AuthNonce> {
     return this.authService.getNonce();
   }
 

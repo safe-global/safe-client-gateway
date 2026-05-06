@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import type { Address } from 'viem';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
+import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
@@ -64,7 +68,7 @@ export class AddressInfoHelper {
    * @param address - the address of the source to which we want to retrieve its metadata
    * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
-  async getOrDefault(
+  getOrDefault(
     chainId: string,
     address: Address,
     sources: Array<Source>,
@@ -81,7 +85,7 @@ export class AddressInfoHelper {
    * @param addresses - the collection of addresses to which we want to retrieve the respective metadata
    * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
-  async getCollection(
+  getCollection(
     chainId: string,
     addresses: Array<Address>,
     sources: Array<Source>,
@@ -90,13 +94,13 @@ export class AddressInfoHelper {
       addresses.map((address) => this.getOrDefault(chainId, address, sources)),
     ).then((results) =>
       results.map((result) => {
-        if (result.status == 'fulfilled') return result.value;
-        else throw new Error('Error processing address collection');
+        if (result.status === 'fulfilled') return result.value;
+        throw new Error('Error processing address collection');
       }),
     );
   }
 
-  private async _getFromSource(
+  private _getFromSource(
     chainId: string,
     address: Address,
     source: Source,

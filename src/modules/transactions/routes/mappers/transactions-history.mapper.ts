@@ -1,31 +1,32 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import {
   isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isMultisigTransaction,
-  Transaction as TransactionDomain,
+  type Transaction as TransactionDomain,
 } from '@/modules/safe/domain/entities/transaction.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { DateLabel } from '@/routes/common/entities/date-label.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
-import { CreationTransactionMapper } from '@/modules/transactions/routes/mappers/creation-transaction/creation-transaction.mapper';
-import { ModuleTransactionMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
-import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import { TransferMapper } from '@/modules/transactions/routes/mappers/transfers/transfer.mapper';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { TransferImitationMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-imitation.mapper';
 import {
   calculateTimezoneOffset,
   convertToTimezone,
 } from '@/modules/transactions/routes/helpers/timezone.helper';
-import { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
+import { CreationTransactionMapper } from '@/modules/transactions/routes/mappers/creation-transaction/creation-transaction.mapper';
+import { ModuleTransactionMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
+import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import { TransferMapper } from '@/modules/transactions/routes/mappers/transfers/transfer.mapper';
+import { TransferImitationMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-imitation.mapper';
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import type { Address } from 'viem';
+import { DateLabel } from '@/routes/common/entities/date-label.entity';
 
 @Injectable()
 export class TransactionsHistoryMapper {
@@ -58,7 +59,7 @@ export class TransactionsHistoryMapper {
     showImitations: boolean,
     timezone?: string,
   ): Promise<Array<TransactionItem | DateLabel>> {
-    if (transactionsDomain.length == 0) {
+    if (transactionsDomain.length === 0) {
       return [];
     }
 
@@ -69,6 +70,7 @@ export class TransactionsHistoryMapper {
     });
 
     let previousTransaction: TransactionItem | undefined;
+    let transactions = transactionsDomain;
 
     /**
      * We insert a {@link DateLabel} between transactions on different days.
@@ -84,11 +86,11 @@ export class TransactionsHistoryMapper {
       });
 
       // Remove first transaction that was requested to get previous day timestamp
-      transactionsDomain = transactionsDomain.slice(1);
+      transactions = transactionsDomain.slice(1);
     }
 
     const mappedTransactions = await this.getMappedTransactions({
-      transactionsDomain,
+      transactionsDomain: transactions,
       chainId,
       safe,
       previousTransaction,
@@ -111,7 +113,7 @@ export class TransactionsHistoryMapper {
         // If the current group is a follow-up from the previous page,
         // or the group is empty, the date label shouldn't be added.
         const isFollowUp =
-          timestamp == previousTransaction?.transaction.timestamp;
+          timestamp === previousTransaction?.transaction.timestamp;
         if (!isFollowUp && transactionsOnDay.length > 0 && timestamp) {
           transactionList.push(new DateLabel(timestamp));
         }
@@ -289,7 +291,8 @@ export class TransactionsHistoryMapper {
           dataDecoded,
         ),
       );
-    } else if (isModuleTransaction(transaction)) {
+    }
+    if (isModuleTransaction(transaction)) {
       return new TransactionItem(
         await this.moduleTransactionMapper.mapTransaction(
           chainId,
@@ -297,7 +300,8 @@ export class TransactionsHistoryMapper {
           dataDecoded,
         ),
       );
-    } else if (isEthereumTransaction(transaction)) {
+    }
+    if (isEthereumTransaction(transaction)) {
       const transfers = transaction.transfers;
       if (transfers != null) {
         return await this.mapTransfers(transfers, chainId, safe, onlyTrusted);

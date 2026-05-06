@@ -1,27 +1,28 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { INetworkService } from '@/datasources/network/network.service.interface';
-import {
-  Balance,
-  BalancesSchema,
-} from '@/modules/balances/domain/entities/balance.entity';
-import { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { Page } from '@/domain/entities/page.entity';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { rawify, type Raw } from '@/validation/entities/raw.entity';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
+import { ZodError } from 'zod';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { getNumberString } from '@/domain/common/utils/utils';
+import type { Page } from '@/domain/entities/page.entity';
+import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import {
-  AssetPrice,
+  type AssetPrice,
   getAssetPricesSchema,
 } from '@/modules/balances/datasources/entities/asset-price.entity';
-import { ZodError } from 'zod';
-import { type Address, isAddressEqual, zeroAddress } from 'viem';
+import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+import {
+  type Balance,
+  BalancesSchema,
+} from '@/modules/balances/domain/entities/balance.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {
@@ -228,7 +229,7 @@ export class SafeBalancesApi implements IBalancesApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  async getFiatCodes(): Promise<Raw<Array<string>>> {
+  getFiatCodes(): Promise<Raw<Array<string>>> {
     return this.coingeckoApi.getFiatCodes();
   }
 

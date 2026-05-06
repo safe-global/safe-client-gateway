@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { DedicatedStakingStats } from '@/modules/staking/datasources/entities/dedicated-staking-stats.entity';
-import { faker } from '@faker-js/faker';
 
 export function dedicatedStakingStatsGrossApyBuilder(): IBuilder<
   DedicatedStakingStats['gross_apy']

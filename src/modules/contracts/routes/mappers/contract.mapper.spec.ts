@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { ContractMapper } from '@/modules/contracts/routes/mappers/contract.mapper';
 import {
   abiBuilder,
   contractBuilder as dataDecodedContractBuilder,
 } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { ContractMapper } from '@/modules/contracts/routes/mappers/contract.mapper';
 
 describe('Contract Mapper', () => {
   let mapper: ContractMapper;

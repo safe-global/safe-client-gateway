@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import {
   Transfer,
   TransferType,
 } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import type { Address } from 'viem';
 
 export class Erc721Transfer extends Transfer {
   @ApiProperty({ enum: [TransferType.Erc721] })

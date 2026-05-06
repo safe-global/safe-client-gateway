@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Address } from 'viem';
-import { ThreatAnalysisRequest } from '../analysis-requests.entity';
+import type { Address } from 'viem';
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
+import type { ThreatAnalysisRequest } from '../analysis-requests.entity';
 /**
  * DTO for threat analysis request.
  *

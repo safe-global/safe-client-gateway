@@ -1,19 +1,20 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { getAddress } from 'viem';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
   multisendBuilder,
 } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   CustomTransactionInfo,
   MultiSendTransactionInfo,
 } from '@/modules/transactions/routes/entities/custom-transaction.entity';
 import { CustomTransactionMapper } from '@/modules/transactions/routes/mappers/common/custom-transaction.mapper';
-import { getAddress } from 'viem';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '@/routes/common/constants';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

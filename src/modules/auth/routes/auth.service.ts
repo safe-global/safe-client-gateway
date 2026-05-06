@@ -1,25 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import {
+  AuthMethod,
+  AuthPayload,
+  AuthPayloadDto,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
+import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
+import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+import {
+  buildAuth0LogoutBaseUrl,
+  getRedirectConfig,
+  type RedirectConfig,
+  resolveAndValidateRedirectUrl,
+} from '@/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
-import {
-  buildAuth0LogoutBaseUrl,
-  getRedirectConfig,
-  resolveAndValidateRedirectUrl,
-  type RedirectConfig,
-} from '@/modules/auth/utils/auth-redirect.helper';
-import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
 import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
-import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import {
-  AuthMethod,
-  AuthPayloadDto,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 type AuthTokenResponse = {
@@ -101,6 +103,30 @@ export class AuthService {
     accessToken: string,
   ): JwtPayloadWithClaims<AuthPayloadDto> {
     return this.authRepository.decodeToken(accessToken);
+  }
+
+  public async getUserSession(authPayload: AuthPayload): Promise<UserSession> {
+    if (!authPayload.isAuthenticated()) {
+      throw new ForbiddenException('Not authenticated');
+    }
+
+    if (authPayload.isSiwe()) {
+      return {
+        id: authPayload.sub,
+        authMethod: authPayload.auth_method,
+        signerAddress: authPayload.signer_address,
+      };
+    }
+
+    const email = await this.usersRepository.findEmailById(
+      Number(authPayload.sub),
+    );
+
+    return {
+      id: authPayload.sub,
+      authMethod: authPayload.auth_method,
+      ...(email && { email }),
+    };
   }
 
   public getLogoutRedirectUrl(
