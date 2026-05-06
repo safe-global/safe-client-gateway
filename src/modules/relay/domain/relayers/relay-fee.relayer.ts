@@ -105,10 +105,15 @@ export class RelayFeeRelayer implements IRelayer {
     const { version, chainId, to, data } = args;
     const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
 
+    // The relay request must match one of the supported transaction.
+    // Each branch below handles one possible classification of the decoded data:
     if (
       decoded !== null &&
       this.relayTransactionHelper.isValidDecodedExecTransaction({ to, decoded })
     ) {
+      // Branch 1: a valid execTransaction call on a Safe.
+      // Verify the safeTxHash matches the decoded payload and that the fee
+      // service permits relaying this specific transaction.
       await this.validateExecTransaction({
         version,
         chainId,
@@ -117,6 +122,8 @@ export class RelayFeeRelayer implements IRelayer {
         safeTxHash: args.safeTxHash,
       });
     } else if (decoded !== null) {
+      // Branch 2: the data decoded as execTransaction but failed validity rules.
+      // e.g. Fee service rejected relaying because of not enough signatures.
       this.denyInvalidExecTransaction({
         to,
         chainId,
@@ -129,12 +136,18 @@ export class RelayFeeRelayer implements IRelayer {
         data,
       })
     ) {
+      // Branch 3: a Safe creation call (createProxyWithNonce) on a known
+      // ProxyFactory. Confirm the target is an official deployment for the
+      // given version + chain before relaying.
       this.validateSafeCreation({
         version,
         chainId,
         to,
       });
     } else {
+      // Branch 4: data does not match any supported transaction types.
+      // 1. Not a valid execTransaction call
+      // 2. Not a valid createProxyWithNonce call.
       this.denyUnrecognisedTxType({ to, chainId, safeTxHash: args.safeTxHash });
     }
 
