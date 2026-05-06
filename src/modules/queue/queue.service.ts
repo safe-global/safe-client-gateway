@@ -9,6 +9,7 @@ import {
   CacheService,
   ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   INetworkService,
@@ -86,6 +87,11 @@ export class QueueService implements IQueue {
           originUrl,
           signatures: dto.signature ? [dto.signature] : [],
         },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -107,6 +113,11 @@ export class QueueService implements IQueue {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
       return rawify(QueueMultisigTransactionSchema.parse(data));
     } catch (error) {
@@ -124,7 +135,14 @@ export class QueueService implements IQueue {
         query.append('safe_tx_hash', hash);
       }
       const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
-      const { data } = await this.networkService.get({ url });
+      const { data } = await this.networkService.get({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
+      });
       return rawify(QueueMultisigTransactionListSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -154,6 +172,9 @@ export class QueueService implements IQueue {
             limit: args.limit,
             offset: args.offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
         },
       });
     } catch (error) {
@@ -171,6 +192,11 @@ export class QueueService implements IQueue {
       const { data } = await this.networkService.post<unknown>({
         url,
         data: { signatures: [args.signature] },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
       return data;
     } catch (error) {
@@ -188,6 +214,11 @@ export class QueueService implements IQueue {
       await this.networkService.delete({
         url,
         data: { signature: args.signature },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -220,6 +251,9 @@ export class QueueService implements IQueue {
             limit: args.limit,
             offset: args.offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
         },
       });
       return data;
@@ -248,6 +282,11 @@ export class QueueService implements IQueue {
           safe: args.safeAddress ?? undefined,
           label: args.label,
         },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -272,6 +311,11 @@ export class QueueService implements IQueue {
           chainId: Number(args.chainId),
           safe: args.safeAddress ?? undefined,
         },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -293,6 +337,11 @@ export class QueueService implements IQueue {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
       return data;
     } catch (error) {
@@ -325,6 +374,9 @@ export class QueueService implements IQueue {
             limit: args.limit,
             offset: args.offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
         },
       });
       return data;
@@ -352,6 +404,11 @@ export class QueueService implements IQueue {
           originName,
           originUrl,
         },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
       return data;
     } catch (error) {
@@ -369,6 +426,11 @@ export class QueueService implements IQueue {
       const { data } = await this.networkService.post({
         url,
         data: { signatures: [args.signature] },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
       });
       return data;
     } catch (error) {

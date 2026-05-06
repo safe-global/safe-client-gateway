@@ -5,12 +5,14 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
 import { QueueService } from '@/modules/queue/queue.service';
+import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
@@ -208,6 +210,188 @@ describe('QueueService', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_queue_delegates_${safeAddress}`,
       );
+    });
+  });
+
+  describe('circuit breaker', () => {
+    const withCircuitBreakerKey = expect.objectContaining({
+      networkRequest: expect.objectContaining({
+        circuitBreaker: {
+          key: CircuitBreakerKeys.getQueueServiceKey(chainId),
+        },
+      }),
+    });
+
+    it('proposeTransaction includes the queue circuit breaker key', async () => {
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: proposeTransactionDtoBuilder().build(),
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('getMultisigTransaction includes the queue circuit breaker key', async () => {
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify(queueMultisigTransactionBuilder().build()),
+      );
+
+      await service.getMultisigTransaction({ chainId, safeTxHash });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('getMultisigTransactionsBatch includes the queue circuit breaker key', async () => {
+      networkService.get.mockResolvedValueOnce({
+        data: rawify([]),
+        status: 200,
+      });
+
+      await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: [safeTxHash],
+      });
+
+      expect(networkService.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('getTransactionQueue includes the queue circuit breaker key', async () => {
+      mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
+
+      await service.getTransactionQueue({ chainId, safeAddress });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('postConfirmation includes the queue circuit breaker key', async () => {
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 200,
+      });
+
+      await service.postConfirmation({
+        chainId,
+        safeTxHash,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('deleteTransaction includes the queue circuit breaker key', async () => {
+      networkService.delete.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 204,
+      });
+
+      await service.deleteTransaction({
+        chainId,
+        safeTxHash,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+
+      expect(networkService.delete).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('getDelegates includes the queue circuit breaker key', async () => {
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify({ results: [delegateBuilder().build()] }),
+      );
+
+      await service.getDelegates({ chainId, safeAddress });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('postDelegate includes the queue circuit breaker key', async () => {
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 201,
+      });
+
+      await service.postDelegate({
+        chainId,
+        safeAddress,
+        delegate: getAddress(faker.finance.ethereumAddress()),
+        delegator: getAddress(faker.finance.ethereumAddress()),
+        signature: faker.string.hexadecimal({ length: 16 }),
+        label: faker.lorem.word(),
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('deleteDelegate includes the queue circuit breaker key', async () => {
+      networkService.delete.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 204,
+      });
+
+      await service.deleteDelegate({
+        chainId,
+        delegate: getAddress(faker.finance.ethereumAddress()),
+        delegator: getAddress(faker.finance.ethereumAddress()),
+        safeAddress,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+
+      expect(networkService.delete).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('getMessageByHash includes the queue circuit breaker key', async () => {
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify(messageBuilder().build()),
+      );
+
+      await service.getMessageByHash({ chainId, messageHash });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('getMessagesBySafe includes the queue circuit breaker key', async () => {
+      mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
+
+      await service.getMessagesBySafe({ chainId, safeAddress });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('postMessage includes the queue circuit breaker key', async () => {
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 201,
+      });
+
+      await service.postMessage({
+        chainId,
+        safeAddress,
+        message: faker.lorem.sentence(),
+        signature: faker.string.hexadecimal({ length: 16 }),
+        origin: null,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);
+    });
+
+    it('postMessageSignature includes the queue circuit breaker key', async () => {
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 200,
+      });
+
+      await service.postMessageSignature({
+        chainId,
+        messageHash,
+        signature: faker.string.hexadecimal({ length: 16 }) as `0x${string}`,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);
     });
   });
 });
