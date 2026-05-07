@@ -71,7 +71,7 @@ export class SpacesService {
     return spaces.map((space) => ({
       id: space.id,
       name: space.name,
-      members: this.getVisibleMembersForUser(space.members ?? [], userId),
+      members: this.getVisibleMembersForUser(space.members, userId),
       safeCount: space.safes?.length ?? 0,
     }));
   }

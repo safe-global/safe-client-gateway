@@ -276,7 +276,9 @@ describe('SpacesService', () => {
         .build();
 
       membersRepositoryMock.find.mockResolvedValue([member]);
-      spacesRepositoryMock.find.mockResolvedValue([space]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder().with('id', space.id).with('members', [member]).build(),
+      ]);
 
       const result = await service.getActiveOrInvitedSpace(
         space.id,
@@ -299,7 +301,9 @@ describe('SpacesService', () => {
         .build();
 
       membersRepositoryMock.find.mockResolvedValue([member]);
-      spacesRepositoryMock.find.mockResolvedValue([space]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder().with('id', space.id).with('members', [member]).build(),
+      ]);
 
       await expect(
         service.getActiveOrInvitedSpace(999999, authPayload),
