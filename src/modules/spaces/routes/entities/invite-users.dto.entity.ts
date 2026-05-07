@@ -28,10 +28,16 @@ export const InviteUsersDtoSchema = z.object({
 });
 
 export class InviteUserDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'Wallet address to invite. Provide either address or email, but not both.',
+  })
   public readonly address?: Address;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({
+    description:
+      'Email address to invite. Provide either email or address, but not both.',
+  })
   public readonly email?: string;
 
   @ApiProperty({

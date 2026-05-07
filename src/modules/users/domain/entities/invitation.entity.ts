@@ -10,10 +10,14 @@ type InvitationIdentifier = {
 };
 
 export type AddressInvitationIdentifier = InvitationIdentifier &
-  Required<Pick<InvitationIdentifier, 'address'>>;
+  Required<Pick<InvitationIdentifier, 'address'>> & {
+    email?: never;
+  };
 
 export type EmailInvitationIdentifier = InvitationIdentifier &
-  Required<Pick<InvitationIdentifier, 'email'>>;
+  Required<Pick<InvitationIdentifier, 'email'>> & {
+    address?: never;
+  };
 
 export type Invitation = {
   userId?: User['id'];

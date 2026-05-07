@@ -319,19 +319,15 @@ export class MembersRepository implements IMembersRepository {
         statuses: [MemberStatus.INVITED, MemberStatus.DECLINED],
       });
 
-    if (args.email) {
+    if (args.email !== undefined) {
       queryBuilder.andWhere(
         'user_id IN (SELECT id FROM users WHERE email = :email)',
         { email: args.email.trim().toLowerCase() },
       );
-    } else if (args.address) {
+    } else {
       queryBuilder.andWhere(
         'user_id IN (SELECT user_id FROM wallets WHERE address = :address)',
         { address: getAddress(args.address) },
-      );
-    } else {
-      throw new BadRequestException(
-        'Exactly one of address or email is required.',
       );
     }
 
