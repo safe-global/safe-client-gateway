@@ -8,7 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { EligibilityRequestSchema } from '@/modules/community/domain/entities/eligibility-request.entity';
 import { CommunityService } from '@/modules/community/routes/community.service';
@@ -18,7 +18,7 @@ import type { CampaignActivityPage } from '@/modules/community/routes/entities/c
 import { CampaignRank } from '@/modules/community/routes/entities/campaign-rank.entity';
 import { CampaignRankPage } from '@/modules/community/routes/entities/campaign-rank.page.entity';
 import { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
-import type { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
+import { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
 import { LockingEventPage } from '@/modules/community/routes/entities/locking-event.page.entity';
 import { LockingRank } from '@/modules/community/routes/entities/locking-rank.entity';
 import { LockingRankPage } from '@/modules/community/routes/entities/locking-rank.page.entity';
@@ -104,6 +104,7 @@ export class CommunityController {
   }
 
   @ApiOkResponse({ type: Eligibility })
+  @ApiBody({ type: EligibilityRequest })
   @HttpCode(200)
   @Post('/eligibility')
   checkEligibility(

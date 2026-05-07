@@ -29,7 +29,7 @@ import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/delete-all-subscriptions.dto.entity';
+import { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/delete-all-subscriptions.dto.entity';
 import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
 import { UpsertSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
@@ -187,6 +187,7 @@ export class NotificationsControllerV2 {
   @ApiUnprocessableEntityResponse({
     description: 'The request body is invalid',
   })
+  @ApiBody({ type: DeleteAllSubscriptionsDto })
   @Delete('notifications/subscriptions')
   public deleteAllSubscriptions(
     @Body(new ValidationPipe(DeleteAllSubscriptionsDtoSchema))
