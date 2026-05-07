@@ -4,7 +4,7 @@ import {
   SettingsChange,
   SettingsChangeType,
 } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
-import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class DisableModule extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.DisableModule] })

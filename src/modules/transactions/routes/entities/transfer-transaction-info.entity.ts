@@ -8,7 +8,7 @@ import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/
 import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
 import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export enum TransferDirection {
   Incoming = 'INCOMING',

@@ -6,14 +6,14 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type {
+import {
   BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
-  BeaconChainExplorerUriTemplate,
+  type BeaconChainExplorerUriTemplate,
 } from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
-import type { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
-import type {
+import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
+import {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
-  BlockExplorerUriTemplate,
+  type BlockExplorerUriTemplate,
 } from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
 import {
   GasPriceFixed as ApiGasPriceFixed,
@@ -27,17 +27,17 @@ import {
   GasPriceOracle as ApiGasPriceOracle,
   type GasPriceOracle,
 } from '@/modules/chains/routes/entities/gas-price-oracle.entity';
-import type {
+import {
   NativeCurrency as ApiNativeCurrency,
-  NativeCurrency,
+  type NativeCurrency,
 } from '@/modules/chains/routes/entities/native-currency.entity';
-import type {
+import {
   RpcUri as ApiRpcUri,
-  RpcUri,
+  type RpcUri,
 } from '@/modules/chains/routes/entities/rpc-uri.entity';
-import type {
+import {
   Theme as ApiTheme,
-  Theme,
+  type Theme,
 } from '@/modules/chains/routes/entities/theme.entity';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
