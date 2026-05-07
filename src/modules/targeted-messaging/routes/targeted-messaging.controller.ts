@@ -11,6 +11,7 @@ import {
   Res,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiCreatedResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -21,7 +22,7 @@ import type { Address } from 'viem';
 import { TargetedSafeSchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 import {
-  type CreateSubmissionDto,
+  CreateSubmissionDto,
   CreateSubmissionDtoSchema,
 } from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
 import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
@@ -92,6 +93,7 @@ export class TargetedMessagingController {
     }
   }
 
+  @ApiBody({ type: CreateSubmissionDto })
   @ApiCreatedResponse({ type: Submission })
   @Post(
     ':outreachId/chains/:chainId/safes/:safeAddress/signers/:signerAddress/submissions',
