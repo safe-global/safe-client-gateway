@@ -145,6 +145,57 @@ describe('SpacesService', () => {
       expect(result[0].safeCount).toBe(0);
     });
 
+    it('should hide invited members from non-admins', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const callerMember = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .build();
+      const activeMember = memberBuilder().with('status', 'ACTIVE').build();
+      const invitedMember = memberBuilder().with('status', 'INVITED').build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('members', [callerMember, activeMember, invitedMember])
+          .build(),
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].members).toEqual([callerMember, activeMember]);
+    });
+
+    it('should show invited members to active admins', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const adminMember = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      const invitedMember = memberBuilder().with('status', 'INVITED').build();
+
+      membersRepositoryMock.find.mockResolvedValue([adminMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('members', [adminMember, invitedMember])
+          .build(),
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].members).toEqual([adminMember, invitedMember]);
+    });
+
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,

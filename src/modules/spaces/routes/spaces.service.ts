@@ -71,9 +71,26 @@ export class SpacesService {
     return spaces.map((space) => ({
       id: space.id,
       name: space.name,
-      members: space.members,
+      members: this.getVisibleMembersForUser(space.members ?? [], userId),
       safeCount: space.safes?.length ?? 0,
     }));
+  }
+
+  private getVisibleMembersForUser(
+    members: Space['members'],
+    userId: number,
+  ): Space['members'] {
+    const isActiveAdmin = members.some((member) => {
+      return (
+        member.user.id === userId &&
+        member.status === 'ACTIVE' &&
+        member.role === 'ADMIN'
+      );
+    });
+
+    return members.filter((member) => {
+      return isActiveAdmin || member.status === 'ACTIVE';
+    });
   }
 
   public async getActiveOrInvitedSpace(
