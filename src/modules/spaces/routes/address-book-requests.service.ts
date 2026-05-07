@@ -148,7 +148,7 @@ export class AddressBookRequestsService {
             chainIds: request.chainIds,
           },
         ],
-        createdByOverride: request.requestedByWallet,
+        createdByOverride: request.requestedBy.id,
       });
     } catch (err) {
       // Compensate so the request can be retried if the upsert fails.

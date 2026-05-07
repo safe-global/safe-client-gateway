@@ -22,6 +22,11 @@ export interface IUsersRepository {
     relations?: FindOptionsRelations<DbUser>,
   ): Promise<DbUser>;
 
+  find(
+    where: Array<FindOptionsWhere<DbUser>> | FindOptionsWhere<DbUser>,
+    relations?: FindOptionsRelations<DbUser>,
+  ): Promise<Array<DbUser>>;
+
   createWithWallet(args: {
     status: keyof typeof UserStatus;
     authPayload: AuthPayload;

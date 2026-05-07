@@ -45,7 +45,7 @@ import {
   ResendInviteDtoSchema,
 } from '@/modules/spaces/routes/entities/resend-invite.dto.entity';
 import {
-  type UpdateMemberAliasDto,
+  UpdateMemberAliasDto,
   UpdateMemberAliasDtoSchema,
 } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
 import {
@@ -373,6 +373,7 @@ export class MembersController {
   @ApiNotFoundResponse({
     description: 'Space or member not found',
   })
+  @ApiBody({ type: UpdateMemberAliasDto })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
   public async updateAlias(

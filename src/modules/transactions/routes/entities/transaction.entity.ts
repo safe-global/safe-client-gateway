@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import type { Hash } from 'viem';
 import { BaseTransaction } from '@/modules/transactions/routes/entities/base-transaction.entity';
-import type { ExecutionInfo } from '@/modules/transactions/routes/entities/execution-info.entity';
+import { ExecutionInfo } from '@/modules/transactions/routes/entities/execution-info.entity';
 import { ModuleExecutionInfo } from '@/modules/transactions/routes/entities/module-execution-info.entity';
 import { MultisigExecutionInfo } from '@/modules/transactions/routes/entities/multisig-execution-info.entity';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
