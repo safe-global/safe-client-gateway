@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
 import { AddOwner } from '@/modules/transactions/routes/entities/settings-changes/add-owner.entity';
 import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
