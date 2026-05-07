@@ -77,7 +77,8 @@ export class MembersController {
   })
   @ApiBody({
     type: InviteUsersDto,
-    description: 'List of wallet addresses or email addresses to invite',
+    description:
+      'List of wallet addresses or email addresses to invite to the space',
   })
   @ApiOkResponse({
     description: 'Users invited successfully',

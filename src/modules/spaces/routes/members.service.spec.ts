@@ -10,29 +10,21 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { MembersService } from '@/modules/spaces/routes/members.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { type IMembersRepository as IMembersRepositoryInterface } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
-const MAX_INVITES = 10;
-const INVITE_EXPIRY_SECONDS = 7 * 24 * 60 * 60;
-const INVITE_CREATED_AT = new Date('2026-04-24T00:00:00.000Z');
+const MAX_INVITES = faker.number.int({ min: 5, max: 10 });
+const INVITE_EXPIRY_SECONDS = faker.number.int({ min: 100, max: 200 });
+const INVITE_CREATED_AT = faker.date.anytime();
 const EXPECTED_INVITE_EXPIRES_AT = new Date(
   INVITE_CREATED_AT.getTime() + INVITE_EXPIRY_SECONDS * 1_000,
 );
 
-type MembersRepositoryMock = Pick<
-  jest.Mocked<IMembersRepositoryInterface>,
-  | 'inviteUsers'
-  | 'resendInvite'
-  | 'findAuthorizedMembersOrFail'
-  | 'findSelfMembershipOrFail'
->;
-
-const membersRepositoryMock: MembersRepositoryMock = {
+const membersRepositoryMock = {
   inviteUsers: jest.fn(),
   resendInvite: jest.fn(),
   findAuthorizedMembersOrFail: jest.fn(),
   findSelfMembershipOrFail: jest.fn(),
-};
+} as jest.MockedObjectDeep<IMembersRepository>;
 
 const configurationServiceMock: jest.Mocked<IConfigurationService> = {
   get: jest.fn(),
@@ -55,73 +47,74 @@ describe('MembersService', () => {
     jest.resetAllMocks();
     mockConfiguration();
     service = new MembersService(
-      membersRepositoryMock as MembersRepositoryMock &
-        IMembersRepositoryInterface,
+      membersRepositoryMock,
       configurationServiceMock,
     );
   });
 
   describe('inviteUser', () => {
-    it('sets the configured invite expiration', async () => {
+    beforeEach(() => {
       jest.useFakeTimers().setSystemTime(INVITE_CREATED_AT);
-      try {
-        const authPayload = new AuthPayload(
-          oidcAuthPayloadDtoBuilder().build(),
-        );
-        const spaceId = faker.number.int({ min: 1 });
-        const users = [
-          {
-            email: faker.internet.email().toLowerCase(),
-            name: faker.person.firstName(),
-            role: 'MEMBER' as const,
-          },
-        ];
+    });
 
-        membersRepositoryMock.inviteUsers.mockResolvedValue([]);
+    afterEach(() => {
+      jest.useRealTimers();
+    });
 
-        await service.inviteUser({
-          authPayload,
-          spaceId,
-          inviteUsersDto: { users },
-        });
+    it('sets the configured invite expiration', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const users = [
+        {
+          email: faker.internet.email().toLowerCase(),
+          name: faker.person.firstName(),
+          role: 'MEMBER' as const,
+        },
+      ];
 
-        expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
-          authPayload,
-          spaceId,
-          users,
-          inviteExpiresAt: EXPECTED_INVITE_EXPIRES_AT,
-        });
-      } finally {
-        jest.useRealTimers();
-      }
+      membersRepositoryMock.inviteUsers.mockResolvedValue([]);
+
+      await service.inviteUser({
+        authPayload,
+        spaceId,
+        inviteUsersDto: { users },
+      });
+
+      expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
+        authPayload,
+        spaceId,
+        users,
+        inviteExpiresAt: EXPECTED_INVITE_EXPIRES_AT,
+      });
     });
   });
 
   describe('resendInvite', () => {
-    it('resets the configured invite expiration', async () => {
+    beforeEach(() => {
       jest.useFakeTimers().setSystemTime(INVITE_CREATED_AT);
-      try {
-        const authPayload = new AuthPayload(
-          oidcAuthPayloadDtoBuilder().build(),
-        );
-        const spaceId = faker.number.int({ min: 1 });
-        const email = faker.internet.email().toLowerCase();
+    });
 
-        await service.resendInvite({
-          authPayload,
-          spaceId,
-          resendInviteDto: { email },
-        });
+    afterEach(() => {
+      jest.useRealTimers();
+    });
 
-        expect(membersRepositoryMock.resendInvite).toHaveBeenCalledWith({
-          authPayload,
-          spaceId,
-          email,
-          inviteExpiresAt: EXPECTED_INVITE_EXPIRES_AT,
-        });
-      } finally {
-        jest.useRealTimers();
-      }
+    it('resets the configured invite expiration', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const email = faker.internet.email().toLowerCase();
+
+      await service.resendInvite({
+        authPayload,
+        spaceId,
+        resendInviteDto: { email },
+      });
+
+      expect(membersRepositoryMock.resendInvite).toHaveBeenCalledWith({
+        authPayload,
+        spaceId,
+        email,
+        inviteExpiresAt: EXPECTED_INVITE_EXPIRES_AT,
+      });
     });
   });
 

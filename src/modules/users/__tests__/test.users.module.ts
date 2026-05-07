@@ -17,10 +17,10 @@ import { IUsersRepository } from '@/modules/users/domain/users.repository.interf
         deleteWalletFromUser: jest.fn(),
         findByWalletAddressOrFail: jest.fn(),
         findByWalletAddress: jest.fn(),
+        findOrCreateInviteeByEmail: jest.fn(),
         // Plain functions (not jest.fn) so they survive jest.resetAllMocks()
         // in tests that call getAccessToken → findOrCreate*.
         findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
-        findOrCreateInviteeByEmail: (): Promise<number> => Promise.resolve(1),
         findOrCreateByExtUserIdWithEmail: (): Promise<number> =>
           Promise.resolve(1),
         findEmailById: jest.fn().mockResolvedValue(undefined),

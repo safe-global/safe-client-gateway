@@ -68,14 +68,12 @@ export class SpacesService {
       relations: { members: { user: true }, safes: true },
     });
 
-    return spaces.map((space) => {
-      return {
-        id: space.id,
-        name: space.name,
-        members: space.members,
-        safeCount: space.safes?.length ?? 0,
-      };
-    });
+    return spaces.map((space) => ({
+      id: space.id,
+      name: space.name,
+      members: space.members,
+      safeCount: space.safes?.length ?? 0,
+    }));
   }
 
   public async getActiveOrInvitedSpace(

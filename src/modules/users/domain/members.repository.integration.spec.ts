@@ -36,7 +36,7 @@ import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
-const INVITE_EXPIRES_AT = new Date('2026-05-01T00:00:00.000Z');
+const INVITE_EXPIRES_AT = faker.date.future();
 
 const mockLoggingService = {
   debug: jest.fn(),

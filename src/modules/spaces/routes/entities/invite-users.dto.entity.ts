@@ -11,23 +11,15 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-const InviteUserSchema = z
-  .object({
-    address: AddressSchema.optional(),
-    email: z.email().max(255).optional(),
-    role: z.enum(getStringEnumKeys(MemberRole)),
-    name: NameSchema,
-  })
-  .superRefine((value, ctx) => {
-    const identifiers = [value.address, value.email].filter(Boolean);
+const SharedInviteFields = {
+  role: z.enum(getStringEnumKeys(MemberRole)),
+  name: NameSchema,
+};
 
-    if (identifiers.length !== 1) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Exactly one of address or email is required.',
-      });
-    }
-  });
+const InviteUserSchema = z.union([
+  z.object({ address: AddressSchema, ...SharedInviteFields }).strict(),
+  z.object({ email: z.email().max(255), ...SharedInviteFields }).strict(),
+]);
 
 const InviteUserDtoSchema = z.array(InviteUserSchema).min(1);
 
@@ -55,7 +47,7 @@ export class InviteUserDto {
   public readonly role!: keyof typeof MemberRole;
 }
 
-export class InviteUsersDto implements z.infer<typeof InviteUsersDtoSchema> {
+export class InviteUsersDto {
   @ApiProperty({
     type: InviteUserDto,
     isArray: true,
