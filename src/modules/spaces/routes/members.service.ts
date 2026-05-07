@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, ConflictException, Inject } from '@nestjs/common';
+import { ConflictException, Inject } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -73,10 +73,6 @@ export class MembersService {
         inviteExpiresAt: this.getInviteExpiresAt(),
       });
     }
-
-    throw new BadRequestException(
-      'Exactly one of address or email is required.',
-    );
   }
 
   public async acceptInvite(args: {

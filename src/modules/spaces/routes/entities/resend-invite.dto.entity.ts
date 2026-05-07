@@ -4,23 +4,12 @@ import type { Address } from 'viem';
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-export const ResendInviteDtoSchema = z
-  .object({
-    address: AddressSchema.optional(),
-    email: z.email().max(255).optional(),
-  })
-  .superRefine((value, ctx) => {
-    const identifiers = [value.address, value.email].filter(Boolean);
+export const ResendInviteDtoSchema = z.union([
+  z.object({ address: AddressSchema }).strict(),
+  z.object({ email: z.email().max(255) }).strict(),
+]);
 
-    if (identifiers.length !== 1) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'Exactly one of address or email is required.',
-      });
-    }
-  });
-
-export class ResendInviteDto implements z.infer<typeof ResendInviteDtoSchema> {
+export class ResendInviteDto {
   @ApiPropertyOptional()
   public readonly address?: Address;
 
