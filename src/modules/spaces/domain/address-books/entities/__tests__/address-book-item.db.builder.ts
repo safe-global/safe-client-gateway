@@ -21,6 +21,11 @@ export function addressBookItemBuilder(): IBuilder<AddressBookItem> {
     )
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('name', nameBuilder())
-    .with('createdBy', getAddress(faker.finance.ethereumAddress()))
-    .with('lastUpdatedBy', getAddress(faker.finance.ethereumAddress()));
+    .with('createdBy', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
+    .with(
+      'lastUpdatedBy',
+      faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
+    )
+    .with('createdAt', new Date())
+    .with('updatedAt', new Date());
 }

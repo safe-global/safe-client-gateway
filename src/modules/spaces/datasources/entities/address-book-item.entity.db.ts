@@ -63,21 +63,17 @@ export class AddressBookItem implements DomainAddressBookItem {
 
   @Column({
     name: 'created_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: false,
-    transformer: databaseAddressTransformer,
   })
-  createdBy!: Address;
+  createdBy!: number;
 
   @Column({
     name: 'last_updated_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: false,
-    transformer: databaseAddressTransformer,
   })
-  lastUpdatedBy!: Address;
+  lastUpdatedBy!: number;
 
   @Column({
     name: 'created_at',

@@ -114,7 +114,8 @@ describe('AddressBooksController', () => {
     });
 
     it('should get a Space Address Book with items as admin', async () => {
-      const { spaceId, accessToken } = await createSpace();
+      const { spaceId, accessToken, signerAddress, userId } =
+        await createSpace();
       const { mockName, mockAddress, mockChainIds } =
         await createAddressBookItem({
           spaceId,
@@ -133,8 +134,10 @@ describe('AddressBooksController', () => {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
-                createdBy: expect.any(String),
-                lastUpdatedBy: expect.any(String),
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -168,7 +171,9 @@ describe('AddressBooksController', () => {
                 address: mockAddress,
                 name: mockName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -264,7 +269,8 @@ describe('AddressBooksController', () => {
 
   describe('PUT /spaces/:spaceId/address-book', () => {
     it('should add Space Address Book Items', async () => {
-      const { spaceId, accessToken } = await createSpace();
+      const { spaceId, accessToken, signerAddress, userId } =
+        await createSpace();
       const mockAddress = getAddress(faker.finance.ethereumAddress());
       const mockName = nameBuilder();
       const mockChainIds = faker.helpers.multiple(
@@ -295,8 +301,10 @@ describe('AddressBooksController', () => {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
-                createdBy: expect.any(String),
-                lastUpdatedBy: expect.any(String),
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -326,7 +334,9 @@ describe('AddressBooksController', () => {
                 address: mockAddress,
                 name: mockName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -361,7 +371,9 @@ describe('AddressBooksController', () => {
                 address: mockAddress,
                 name: mockNewName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -414,14 +426,18 @@ describe('AddressBooksController', () => {
               {
                 ...updatedFirstItem,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
               {
                 ...secondItem,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -662,7 +678,9 @@ describe('AddressBooksController', () => {
                 name: mockName,
                 chainIds: mockChainIds,
                 createdBy: authPayload2.signer_address,
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: authPayload2.signer_address,
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -761,11 +779,13 @@ describe('AddressBooksController', () => {
   const createSpace = async (): Promise<{
     spaceId: string;
     accessToken: string;
+    signerAddress: string;
+    userId: number;
   }> => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign(authPayloadDto);
     const spaceName = nameBuilder();
-    await request(app.getHttpServer())
+    const userWithWalletResponse = await request(app.getHttpServer())
       .post('/v1/users/wallet')
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(201);
@@ -775,7 +795,12 @@ describe('AddressBooksController', () => {
       .send({ name: spaceName })
       .expect(201);
     const spaceId = createSpaceResponse.body.id;
-    return { spaceId, accessToken };
+    return {
+      spaceId,
+      accessToken,
+      signerAddress: authPayloadDto.signer_address as string,
+      userId: userWithWalletResponse.body.id,
+    };
   };
 
   const inviteMember = async (args: {

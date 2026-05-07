@@ -44,6 +44,15 @@ export class UsersRepository implements IUsersRepository {
     return user;
   }
 
+  public async find(
+    where: Array<FindOptionsWhere<DbUser>> | FindOptionsWhere<DbUser>,
+    relations?: FindOptionsRelations<DbUser>,
+  ): Promise<Array<DbUser>> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    return userRepository.find({ where, relations });
+  }
+
   public async createWithWallet(args: {
     status: keyof typeof UserStatus;
     authPayload: AuthPayload;

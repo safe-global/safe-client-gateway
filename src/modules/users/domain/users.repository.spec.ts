@@ -13,6 +13,7 @@ describe('UsersRepository', () => {
 
   let postgresDatabaseService: jest.MockedObjectDeep<PostgresDatabaseService>;
   let userRepository: {
+    find: jest.Mock;
     findOne: jest.Mock;
     findOneOrFail: jest.Mock;
   };
@@ -22,6 +23,7 @@ describe('UsersRepository', () => {
     jest.resetAllMocks();
 
     userRepository = {
+      find: jest.fn(),
       findOne: jest.fn(),
       findOneOrFail: jest.fn(),
     };
@@ -142,6 +144,43 @@ describe('UsersRepository', () => {
       userRepository.findOne.mockResolvedValue(null);
 
       await expect(target.findEmailById(userId)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('find', () => {
+    it('should return users matching the where clause', async () => {
+      const users = [
+        { id: 1, email: 'a@test.com' },
+        { id: 2, email: 'b@test.com' },
+      ];
+      userRepository.find.mockResolvedValue(users);
+
+      const result = await target.find({ id: 1 as never });
+
+      expect(result).toEqual(users);
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: undefined,
+      });
+    });
+
+    it('should pass relations to the query', async () => {
+      userRepository.find.mockResolvedValue([]);
+
+      await target.find({ id: 1 as never }, { wallets: true });
+
+      expect(userRepository.find).toHaveBeenCalledWith({
+        where: { id: 1 },
+        relations: { wallets: true },
+      });
+    });
+
+    it('should return an empty array when no users match', async () => {
+      userRepository.find.mockResolvedValue([]);
+
+      const result = await target.find({ id: 999 as never });
+
+      expect(result).toEqual([]);
     });
   });
 });
