@@ -1,0 +1,672 @@
+[
+  {
+    "id": "RL-20260506-001",
+    "title": "Test filename suffixes carry meaning: .spec.ts for unit-style specs, .integration.spec.ts for...",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2886,
+      2884
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2742620457,
+      2742720670
+    ],
+    "reviewIds": [
+      3723406538
+    ],
+    "issueCommentIds": [],
+    "learning": "Test filename suffixes carry meaning: `*.spec.ts` for unit-style specs, `*.integration.spec.ts` for integration specs that boot Nest modules or hit a DB. Match the suffix to the test layer rather than to existing siblings.",
+    "ruleIds": [
+      "NAME-01",
+      "TEST-02"
+    ]
+  },
+  {
+    "id": "RL-20260506-002",
+    "title": "When the same shaped object is constructed in more than one test with small field overrides,...",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2884,
+      2883
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2736467627,
+      2736470098,
+      2741044502,
+      2742007765,
+      2742011818,
+      2742041552
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When the same shaped object is constructed in more than one test with small field overrides, introduce a builder rather than copy-pasting literals. The repo's `Builder<T>.with(field, value)` pattern is the default for entity-like fixtures.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20260506-003",
+    "title": "Before hardcoding a knob (limit, page cap, threshold), search the repo for the same concern i...",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2883
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2728482403,
+      2735846566
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      3806400197
+    ],
+    "learning": "Before hardcoding a knob (limit, page cap, threshold), search the repo for the same concern in another repository/manager. If a precedent exists (ChainsRepository, ContractsRepository), follow the configuration-driven pattern instead of introducing a hardcoded copy.",
+    "ruleIds": [
+      "CONFIG-03",
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20260506-004",
+    "title": "When adding a required field to the configuration schema, update every invalidConfiguration t...",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2873
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2705249006
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When adding a required field to the configuration schema, update every `invalidConfiguration` test fixture used by other tests, not only `validConfiguration`. Otherwise tests asserting on unrelated invalid fields start failing on the new field instead of the intended one.",
+    "ruleIds": [
+      "CONFIG-02",
+      "TEST-04"
+    ]
+  },
+  {
+    "id": "RL-20260506-005",
+    "title": "Destructuring with the same name as an outer let variable shadows it.",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2883
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2737760960,
+      2740775660
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Destructuring with the same name as an outer `let` variable shadows it. `let next = null; const { next, results } = parsed` keeps the outer `next` at `null`. Either rename in the destructure (`const { next: nextUrl, ... }`) or reassign explicitly to the outer variable.",
+    "ruleIds": [
+      "STYLE-01",
+      "TYPE-06"
+    ]
+  },
+  {
+    "id": "RL-20260506-006",
+    "title": "When paginating large objects but only one field flows downstream, extract that field per pag...",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2883
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2735843106,
+      2741041264
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When paginating large objects but only one field flows downstream, extract that field per page (push addresses, not whole `SafeV2`s) rather than accumulating full objects in memory across pages.",
+    "ruleIds": [
+      "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20260506-007",
+    "title": "Migration runners must not use the recorded last migration id as an array index.",
+    "sourceWindowId": "CLOSED-20260129-20260205",
+    "prNumbers": [
+      2804
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      3549324887,
+      3549325995
+    ],
+    "issueCommentIds": [],
+    "learning": "Migration runners must not use the recorded last migration `id` as an array index. Once migrations get deleted and IDs become non-contiguous, `migrations.slice(lastId)` returns the wrong slice. Filter by `migration.id > lastId` instead, and add an integration test for the gap case.",
+    "ruleIds": [
+      "DB-05"
+    ]
+  },
+  {
+    "id": "RL-20260128-001",
+    "title": "Expiry-only caches need code comments",
+    "sourceWindowId": "CLOSED-20260122-20260129",
+    "prNumbers": [
+      2882
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2728130628,
+      2728143160
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Datasource methods with no invalidation hook should document that cached data lives until the configured expiration, so future maintainers do not assume active invalidation exists.",
+    "ruleIds": [
+      "CACHE-03",
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20260128-002",
+    "title": "Architecture docs must allow real module exceptions",
+    "sourceWindowId": "CLOSED-20260122-20260129",
+    "prNumbers": [
+      2881
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      2726990802,
+      2726994863,
+      2726998145,
+      2727039119
+    ],
+    "reviewIds": [
+      3705348497
+    ],
+    "issueCommentIds": [],
+    "learning": "Architecture/spec docs should describe the module shapes that actually exist, including versioned or optional folders, instead of enforcing a single strict tree that several features do not follow.",
+    "ruleIds": [
+      "PR-02",
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20260123-001",
+    "title": "Normalize cached external payloads exactly once",
+    "sourceWindowId": "CLOSED-20260122-20260129",
+    "prNumbers": [
+      2864
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2683454504,
+      2683488076
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      3739945491
+    ],
+    "learning": "When external payloads are normalized before caching, cache-hit code must not normalize them again; tests should cover cache-hit and cache-miss paths for transformations with signs or other non-idempotent changes.",
+    "ruleIds": [
+      "CACHE-03",
+      "TEST-07",
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20260123-002",
+    "title": "Internal boolean query params should be strict",
+    "sourceWindowId": "CLOSED-20260122-20260129",
+    "prNumbers": [
+      2812
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2721207920,
+      2721413585
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Internal API boolean query params should validate explicit `true`/`false` strings and default intentionally instead of accepting arbitrary strings and transforming every non-true value to false.",
+    "ruleIds": [
+      "ROUTE-02",
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260116-001",
+    "title": "Migration metadata should preserve ownership semantics",
+    "sourceWindowId": "CLOSED-20260115-20260122",
+    "prNumbers": [
+      2870
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2695264837
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Campaign and data migrations should preserve ownership/reporting metadata from the existing campaign unless the ownership change is intentional and documented; copy-pasted template fields need review.",
+    "ruleIds": [
+      "DB-05",
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20260121-001",
+    "title": "Cache format changes need versioning or invalidation",
+    "sourceWindowId": "CLOSED-20260115-20260122",
+    "prNumbers": [
+      2863,
+      2869
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2690891868,
+      2690910432,
+      2690923158,
+      2690917832,
+      2690960629
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Changing a cache payload format under the same key can crash or misroute cache-hit callers after deploy; version or invalidate the key, and do not silently return plausible empty data when cold-cache fetches fail.",
+    "ruleIds": [
+      "CACHE-02",
+      "CACHE-03",
+      "LOG-01",
+      "TEST-07"
+    ]
+  },
+  {
+    "id": "RL-20260116-002",
+    "title": "Empty external error strings should normalize to absence",
+    "sourceWindowId": "CLOSED-20260115-20260122",
+    "prNumbers": [
+      2866
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2694636816,
+      2698535543,
+      2698616002,
+      2698944295
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When mapping optional external error strings, treat empty strings as absent if they carry no user-facing information, and keep the return type honest by returning `undefined` instead of an empty message.",
+    "ruleIds": [
+      "TYPE-02",
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20260114-001",
+    "title": "Cache router fields should match service ownership",
+    "sourceWindowId": "CLOSED-20260108-20260115",
+    "prNumbers": [
+      2863
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2685383866,
+      2685533588
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Cache router helpers should not set misleading default fields when a service owns multiple hash fields; either pass the field explicitly or leave field selection to the service.",
+    "ruleIds": [
+      "CACHE-02",
+      "CACHE-03"
+    ]
+  },
+  {
+    "id": "RL-20260114-002",
+    "title": "Unknown chain mappings should not default to plausible chains",
+    "sourceWindowId": "CLOSED-20260108-20260115",
+    "prNumbers": [
+      2863
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2687271378,
+      2689453302
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When an external chain mapping is missing, return absence or fall back to the non-provider path rather than defaulting to mainnet or zero balances that look valid.",
+    "ruleIds": [
+      "LOG-01",
+      "ROUTE-03",
+      "TEST-07"
+    ]
+  },
+  {
+    "id": "RL-20260108-001",
+    "title": "Env renames need backward-compatible fallback",
+    "sourceWindowId": "CLOSED-20260108-20260115",
+    "prNumbers": [
+      2851
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2668149003
+    ],
+    "reviewIds": [
+      3623157133
+    ],
+    "issueCommentIds": [
+      3718547737
+    ],
+    "learning": "Renaming an environment variable for clarity must keep the old variable as a fallback for at least one release when the PR claims backwards compatibility.",
+    "ruleIds": [
+      "CHANGE-04",
+      "CONFIG-05"
+    ]
+  },
+  {
+    "id": "RL-20260108-002",
+    "title": "Provider-specific filters must be documented or removed",
+    "sourceWindowId": "CLOSED-20260108-20260115",
+    "prNumbers": [
+      2840
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2603172016,
+      2603172058,
+      2669174008,
+      2669180308,
+      2669193798,
+      2671642118
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "If query parameters such as trusted/spam filters only apply on one provider path, the public contract must document that limitation or remove unsupported parameters from the endpoint.",
+    "ruleIds": [
+      "ROUTE-01",
+      "TYPE-04",
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20260108-003",
+    "title": "Swagger names must match real standards and hide providers",
+    "sourceWindowId": "CLOSED-20260108-20260115",
+    "prNumbers": [
+      2840
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2606254285,
+      2606263668,
+      2606268948
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Public API docs should not name internal providers or claim a standard format such as CAIP-10 when the implementation accepts a different shape.",
+    "ruleIds": [
+      "ROUTE-01",
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20260113-001",
+    "title": "Portfolio totals preserve signed filtered data",
+    "sourceWindowId": "CLOSED-20260108-20260115",
+    "prNumbers": [
+      2799
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      2546172582,
+      2546172598
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Portfolio dust filters should preserve negative balances by magnitude, and totals must be computed after dropping unsupported or invalid positions so aggregates match returned items.",
+    "ruleIds": [
+      "DATA-01",
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20251222-001",
+    "title": "Debug logs and internal errors stay out of production responses",
+    "sourceWindowId": "CLOSED-20251218-20251225",
+    "prNumbers": [
+      2856
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2639487396,
+      2640182878,
+      2640192475,
+      2640398165
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      3681726317
+    ],
+    "learning": "Temporary `console.log` statements and raw internal error messages must not ship in production or user-facing failure responses; keep generic user copy unless the error is intentionally mapped.",
+    "ruleIds": [
+      "STYLE-01",
+      "ROUTE-01",
+      "LOG-04"
+    ]
+  },
+  {
+    "id": "RL-20251223-001",
+    "title": "Schemas and DTOs should reuse exported enum contracts intentionally",
+    "sourceWindowId": "CLOSED-20251218-20251225",
+    "prNumbers": [
+      2854,
+      2856
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2639320597,
+      2639325703,
+      2639683893,
+      2639686631,
+      2639669047,
+      2639905090
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "DTO/Swagger enum values and Zod literals should reuse canonical enum/status definitions where possible, and private intermediate schemas should not be exported unless consumers or tests use them.",
+    "ruleIds": [
+      "TYPE-04",
+      "MOD-04"
+    ]
+  },
+  {
+    "id": "RL-20251223-002",
+    "title": "Security analysis branches need edge-case tests",
+    "sourceWindowId": "CLOSED-20251218-20251225",
+    "prNumbers": [
+      2854
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2642606410,
+      2642647609,
+      2642658105
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Security analysis logic that extracts handlers or classifies official/unofficial contracts needs negative-path tests for wrong parameter names, invalid addresses, missing parameters, and official-safe false-positive paths.",
+    "ruleIds": [
+      "TEST-04",
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20251219-001",
+    "title": "Auth headers must be overrideable and non-leaking",
+    "sourceWindowId": "CLOSED-20251218-20251225",
+    "prNumbers": [
+      2829
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2598282812,
+      2598288823,
+      2598360430
+    ],
+    "reviewIds": [
+      3544944494
+    ],
+    "issueCommentIds": [
+      3612746991,
+      3617417471
+    ],
+    "learning": "Network auth header injection should allow per-request overrides, avoid logging secrets directly or inside request objects, and keep cache keys/log output from exposing authorization material.",
+    "ruleIds": [
+      "SEC-02",
+      "LOG-04",
+      "TEST-04"
+    ]
+  },
+  {
+    "id": "RL-20251219-002",
+    "title": "Config env tests restore process state and trim secrets",
+    "sourceWindowId": "CLOSED-20251218-20251225",
+    "prNumbers": [
+      2829
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2626364128,
+      2626368357,
+      2626483638,
+      2626512878,
+      2627141859
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Configuration validation tests that mutate `process.env.NODE_ENV` must restore it, and API-key validators should trim whitespace so blank strings cannot pass as configured secrets.",
+    "ruleIds": [
+      "CONFIG-02",
+      "TEST-05"
+    ]
+  },
+  {
+    "id": "RL-20251211-001",
+    "title": "Drive-by test seed/race fixes split into their own PR",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "prNumbers": [
+      2845
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2610764523
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When a feature PR also includes an unrelated test infrastructure fix (faker seed reset, race-condition shim, lint-only edits), split that fix into its own PR. The mixed scope hides whichever of the two the review actually verified, and bisecting later treats the feature commit as the cause of any regression in the unrelated cleanup.",
+    "ruleIds": [
+      "CHANGE-02"
+    ]
+  },
+  {
+    "id": "RL-20251215-001",
+    "title": "Cache key includes the circuit-breaker or behavior-toggle flag",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "prNumbers": [
+      2803
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2607863045,
+      2607864170,
+      2610860655
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When an in-flight request cache or memoizer is gated by a behavior toggle (circuit breaker on/off, trusted/spam filters, sync/async), the cache key must include that toggle. Otherwise a request issued with the toggle off populates the cache and a later call with the toggle on returns the cached promise, silently bypassing the very protection the toggle was meant to add.",
+    "ruleIds": [
+      "CACHE-02"
+    ]
+  },
+  {
+    "id": "RL-20251215-002",
+    "title": "Resilience policy semantics: classify failures, scope keys, do not count blocked attempts",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "prNumbers": [
+      2803
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2607863052,
+      2607863054,
+      2609746105,
+      2610211225,
+      2610211229,
+      2610859943,
+      2609922540
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Circuit breakers, retries, and rate limiters need careful semantic design. Failure classification must enumerate every failure type the policy intends to count (network/timeout errors, not just HTTP 5xx). Policy keys are scoped per-service (hostname or service base URL), not per full URL, so an outage of one upstream trips the breaker for that upstream and not for every endpoint independently. Policy-blocked attempts (CircuitBreakerException) are not recorded as policy failures - that conflates blocked traffic with downstream failure and prevents stale circuits from cleaning up. Stale-cleanup math distinguishes absolute timestamps from durations: multiply durations, never timestamps. Error wrapping at the policy boundary stays consistent regardless of whether the policy is enabled (URL parsing still surfaces as the framework's NetworkRequestError, not a raw TypeError).",
+    "ruleIds": [
+      "RESILIENCE-01"
+    ]
+  },
+  {
+    "id": "RL-20251215-003",
+    "title": ".env.sample comments document encoding and format constraints",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "prNumbers": [
+      2849
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2614796476,
+      2614819134
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When an env var has a non-obvious encoding or format (base64, URL-encoded, comma-separated, signed JWT), document that constraint in the `.env.sample` comment alongside the variable, not only in a separate README. Operators copy `.env.sample` into local files and only consult the README when something already broke.",
+    "ruleIds": [
+      "CONFIG-05"
+    ]
+  },
+  {
+    "id": "RL-20251216-001",
+    "title": "Use safe-deployments for version lists, do not hardcode",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "prNumbers": [
+      2850
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      2620124229,
+      2620149820
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When code needs the set of supported Safe contract versions or fallback handler versions, derive it from `@safe-global/safe-deployments` rather than hardcoding the array. The deployments package is the single source of truth and is updated on every contract release; a hardcoded list silently lags behind.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20251216-002",
+    "title": "Do not export symbols that are not consumed externally",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "prNumbers": [
+      2850
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      2619982037,
+      2620243381
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists.",
+    "ruleIds": [
+      "MOD-04"
+    ]
+  }
+]
