@@ -402,7 +402,7 @@ describe('MembersService', () => {
       );
     });
 
-    it('returns the stored email for invited self memberships', async () => {
+    it('redacts email for invited self memberships', async () => {
       const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
       const email = faker.internet.email().toLowerCase();
       const member = memberBuilder()
@@ -426,7 +426,7 @@ describe('MembersService', () => {
           status: 'INVITED',
           user: expect.objectContaining({
             id: member.user.id,
-            email,
+            email: null,
           }),
         }),
       );

@@ -59,8 +59,9 @@ export class MembersService {
     return await this.membersRepository.resendInvite({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
-      address: args.resendInviteDto.address,
-      email: args.resendInviteDto.email,
+      ...(args.resendInviteDto.email
+        ? { email: args.resendInviteDto.email }
+        : { address: args.resendInviteDto.address }),
       inviteExpiresAt: this.getInviteExpiresAt(),
     });
   }
@@ -122,8 +123,7 @@ export class MembersService {
       spaceId: args.spaceId,
     });
 
-    // Self-view can expose the caller's own invited email.
-    return member;
+    return this.toMemberDto(member);
   }
 
   public async updateRole(args: {

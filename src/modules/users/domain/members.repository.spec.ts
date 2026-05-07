@@ -15,7 +15,7 @@ import type { IUsersRepository } from '@/modules/users/domain/users.repository.i
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
-const INVITE_EXPIRES_AT = new Date('2026-05-01T00:00:00.000Z');
+const INVITE_EXPIRES_AT = faker.date.future();
 
 describe('MembersRepository', () => {
   const usersRepositoryMock = {
@@ -46,7 +46,7 @@ describe('MembersRepository', () => {
     andWhere: jest.Mock;
     execute: jest.Mock;
   };
-  let entityManager: { insert: jest.Mock };
+  let entityManager: { insert: jest.Mock; update: jest.Mock };
   let postgresDatabaseService: jest.MockedObjectDeep<PostgresDatabaseService>;
   let target: MembersRepository;
 
@@ -68,6 +68,7 @@ describe('MembersRepository', () => {
     };
     entityManager = {
       insert: jest.fn(),
+      update: jest.fn(),
     };
     postgresDatabaseService = {
       getRepository: jest.fn().mockResolvedValue(membersOrmRepository),
@@ -170,6 +171,41 @@ describe('MembersRepository', () => {
       expect.objectContaining({
         relations: { user: true },
       }),
+    );
+  });
+
+  it('should clear invite expiration when declining an invite', async () => {
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const authPayload = new AuthPayload(authPayloadDto);
+    const spaceId = faker.number.int({ min: 1 });
+    const memberId = faker.number.int({ min: 1 });
+
+    spacesRepositoryMock.findOneOrFail.mockResolvedValue({
+      members: [{ id: memberId }],
+    } as unknown as Space);
+
+    await target.declineInvite({
+      authPayload,
+      spaceId,
+    });
+
+    expect(spacesRepositoryMock.findOneOrFail).toHaveBeenCalledWith({
+      where: {
+        id: spaceId,
+        members: {
+          user: { id: Number(authPayloadDto.sub) },
+          status: 'INVITED',
+        },
+      },
+      relations: { members: { user: true } },
+    });
+    expect(entityManager.update).toHaveBeenCalledWith(
+      expect.any(Function),
+      memberId,
+      {
+        status: 'DECLINED',
+        inviteExpiresAt: null,
+      },
     );
   });
 

@@ -292,6 +292,7 @@ export class MembersRepository implements IMembersRepository {
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'DECLINED',
+        inviteExpiresAt: null,
       });
     });
   }
