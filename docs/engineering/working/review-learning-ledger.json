@@ -1,0 +1,20 @@
+{
+  "dateField": "closedAt",
+  "state": "closed",
+  "coveredClosedAtRange": {
+    "start": "2025-12-11T00:00:00Z",
+    "end": "2026-05-05T13:48:12Z"
+  },
+  "overlapHours": 2,
+  "lastRun": {
+    "mode": "backfill",
+    "repo": "safe-global/safe-client-gateway",
+    "sourceWindowId": "CLOSED-20251211-20251218",
+    "since": "2025-12-11T00:00:00Z",
+    "until": "2025-12-18T02:00:00Z",
+    "prs": 6,
+    "comments": 29,
+    "learnings": 6,
+    "fetchedAt": "2026-05-07T16:15:49Z"
+  }
+}
