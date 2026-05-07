@@ -297,13 +297,9 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
-  public async resendInvite(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-    address?: Address;
-    email?: string;
-    inviteExpiresAt: Member['inviteExpiresAt'];
-  }): Promise<void> {
+  public async resendInvite(
+    args: Parameters<IMembersRepository['resendInvite']>[0],
+  ): Promise<void> {
     const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
     const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
 

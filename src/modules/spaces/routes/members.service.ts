@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, Inject } from '@nestjs/common';
+import { BadRequestException, ConflictException, Inject } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -56,14 +56,27 @@ export class MembersService {
     spaceId: Space['id'];
     resendInviteDto: ResendInviteDto;
   }): Promise<void> {
-    return await this.membersRepository.resendInvite({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-      ...(args.resendInviteDto.email
-        ? { email: args.resendInviteDto.email }
-        : { address: args.resendInviteDto.address }),
-      inviteExpiresAt: this.getInviteExpiresAt(),
-    });
+    if (args.resendInviteDto.email) {
+      return await this.membersRepository.resendInvite({
+        authPayload: args.authPayload,
+        spaceId: args.spaceId,
+        email: args.resendInviteDto.email,
+        inviteExpiresAt: this.getInviteExpiresAt(),
+      });
+    }
+
+    if (args.resendInviteDto.address) {
+      return await this.membersRepository.resendInvite({
+        authPayload: args.authPayload,
+        spaceId: args.spaceId,
+        address: args.resendInviteDto.address,
+        inviteExpiresAt: this.getInviteExpiresAt(),
+      });
+    }
+
+    throw new BadRequestException(
+      'Exactly one of address or email is required.',
+    );
   }
 
   public async acceptInvite(args: {

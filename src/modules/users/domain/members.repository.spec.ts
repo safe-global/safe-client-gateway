@@ -91,6 +91,10 @@ describe('MembersRepository', () => {
     );
   });
 
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
   it('should invite email users via stub-user lookup and skip wallet lookup', async () => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const authPayload = new AuthPayload(authPayloadDto);
@@ -293,26 +297,22 @@ describe('MembersRepository', () => {
     const inviteExpiresAt = new Date('2026-04-30T00:00:00.000Z');
 
     jest.useFakeTimers().setSystemTime(new Date('2026-05-01T00:00:00.000Z'));
-    try {
-      spacesRepositoryMock.findOneOrFail.mockResolvedValue(
-        spaceBuilder()
-          .with('members', [
-            memberBuilder().with('inviteExpiresAt', inviteExpiresAt).build(),
-          ])
-          .build(),
-      );
+    spacesRepositoryMock.findOneOrFail.mockResolvedValue(
+      spaceBuilder()
+        .with('members', [
+          memberBuilder().with('inviteExpiresAt', inviteExpiresAt).build(),
+        ])
+        .build(),
+    );
 
-      await expect(
-        target.acceptInvite({
-          authPayload,
-          spaceId: faker.number.int({ min: 1 }),
-          payload: { name: faker.person.firstName() },
-        }),
-      ).rejects.toThrow('Invite has expired.');
+    await expect(
+      target.acceptInvite({
+        authPayload,
+        spaceId: faker.number.int({ min: 1 }),
+        payload: { name: faker.person.firstName() },
+      }),
+    ).rejects.toThrow('Invite has expired.');
 
-      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
-    } finally {
-      jest.useRealTimers();
-    }
+    expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
   });
 });
