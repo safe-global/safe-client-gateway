@@ -668,5 +668,19 @@
     "ruleIds": [
       "MOD-04"
     ]
+  },
+  {
+    "id": "RL-20260508-001",
+    "title": "Push negative paths to the lowest layer; e2e proves wiring once per route, not per branch",
+    "sourceWindowId": "HIST-20260508",
+    "prNumbers": [],
+    "prState": "n/a",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "When adding negative-path coverage for a new endpoint, route to the lowest layer that can prove the property: zod union/`.strict()` rejections belong in a schema unit spec; service/repo branches (auth assertions, affected=0, error mapping) belong in service/repo unit specs; one representative 4xx mapping smoke per route at e2e is enough to cover the global exception filter wiring. Stacking the same negative scenarios at unit, integration, and e2e duplicates effort and slows CI without adding signal. Concrete trigger: a PR added 403/404/422×2 negative cases at e2e for a new resend endpoint, but each one had a strictly cheaper home — repo unit spec for the branch logic, schema unit spec for the zod rejections — and the existing happy-path e2e already covered the wiring/filter-mapping smoke claim.",
+    "ruleIds": [
+      "TEST-02"
+    ]
   }
 ]
