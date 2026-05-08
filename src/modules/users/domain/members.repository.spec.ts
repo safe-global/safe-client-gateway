@@ -291,6 +291,54 @@ describe('MembersRepository', () => {
     );
   });
 
+  it('should reject resend when caller is not an active admin', async () => {
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const authPayload = new AuthPayload(authPayloadDto);
+    const otherAdminUserId = Number(authPayloadDto.sub) + 1;
+
+    membersOrmRepository.find.mockResolvedValue([
+      {
+        user: { id: otherAdminUserId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    ]);
+
+    await expect(
+      target.resendInvite({
+        authPayload,
+        spaceId: faker.number.int({ min: 1 }),
+        address: getAddress(faker.finance.ethereumAddress()),
+        inviteExpiresAt: INVITE_EXPIRES_AT,
+      }),
+    ).rejects.toThrow('User is not an active admin.');
+
+    expect(queryBuilder.execute).not.toHaveBeenCalled();
+  });
+
+  it('should throw NotFoundException when no invitation row matches the resend target', async () => {
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const authPayload = new AuthPayload(authPayloadDto);
+
+    membersOrmRepository.find.mockResolvedValue([
+      {
+        user: { id: Number(authPayloadDto.sub) },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+    ]);
+    queryBuilder.execute.mockResolvedValue({ affected: 0 });
+
+    await expect(
+      target.resendInvite({
+        authPayload,
+        spaceId: faker.number.int({ min: 1 }),
+        address: getAddress(faker.finance.ethereumAddress()),
+        inviteExpiresAt: INVITE_EXPIRES_AT,
+      }),
+    ).rejects.toThrow('Invitation not found.');
+  });
+
   it('should reject expired invites', async () => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const authPayload = new AuthPayload(authPayloadDto);
