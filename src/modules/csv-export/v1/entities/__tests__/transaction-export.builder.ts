@@ -29,16 +29,28 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('note', faker.lorem.sentence())
     .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hash)
     .with('contractAddress', getAddress(faker.finance.ethereumAddress()))
-    .with('nonce', faker.number.int().toString());
+    .with('nonce', faker.number.int().toString())
+    .with('gasToken', getAddress(faker.finance.ethereumAddress()))
+    .with('payment', faker.number.bigInt().toString())
+    .with('gasTokenSymbol', faker.finance.currencyCode())
+    .with('gasTokenDecimals', faker.number.int({ min: 0, max: 18 }));
 }
 
 /**
- * Transforms transaction export's amount field to user-friendly format
+ * Transforms transaction export's amount and payment and gasToken fields to user-friendly format
  */
 export function transformTransactionExport(
   data: TransactionExport,
 ): TransactionExport {
-  const { amount, assetDecimals, ...rest } = data;
-  const convertedAmount = formatUnits(BigInt(amount), assetDecimals ?? 0);
-  return { ...rest, amount: convertedAmount, assetDecimals };
+  const { amount, assetDecimals, payment, gasTokenDecimals, ...rest } = data;
+  return {
+    ...rest,
+    assetDecimals,
+    amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
+    gasTokenDecimals: gasTokenDecimals ?? null,
+    payment:
+      payment != null
+        ? formatUnits(BigInt(payment), gasTokenDecimals ?? 0)
+        : null,
+  };
 }

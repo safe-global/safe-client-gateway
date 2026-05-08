@@ -400,6 +400,31 @@ describe('CsvExportService', () => {
       );
     });
 
+    it('should stream null payment fields when fee is paid from signer wallet', async () => {
+      const mockTransactionExportNoFee = transactionExportBuilder()
+        .with('payment', null)
+        .with('gasToken', null)
+        .with('gasTokenSymbol', null)
+        .with('gasTokenDecimals', null)
+        .build();
+
+      const mockPageNoFee = pageBuilder()
+        .with('results', [mockTransactionExportNoFee])
+        .with('next', null)
+        .build();
+
+      mockExportApi.export.mockResolvedValueOnce(rawify(mockPageNoFee));
+
+      await service.export(exportArgs);
+
+      expect(streamData).toHaveLength(1);
+      expect(streamData[0]).toEqual(
+        transformTransactionExport(mockTransactionExportNoFee),
+      );
+      expect(streamData[0].payment).toBeNull();
+      expect(streamData[0].gasTokenSymbol).toBeNull();
+    });
+
     it('should handle pagination with default values', async () => {
       const exportArgsNoPagination = {
         ...exportArgs,

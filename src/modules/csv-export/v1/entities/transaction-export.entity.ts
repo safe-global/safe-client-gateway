@@ -24,12 +24,23 @@ export const TransactionExportSchema = z
     transactionHash: HexSchema,
     contractAddress: AddressSchema.nullable(),
     nonce: z.string().nullable(),
+    gasToken: AddressSchema.nullish(),
+    payment: NumericStringSchema.nullish(),
+    gasTokenSymbol: z.string().nullish(),
+    gasTokenDecimals: z.number().nullish(),
   })
-  .transform(({ amount, assetDecimals, ...rest }) => ({
-    ...rest,
-    assetDecimals,
-    amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
-  }));
+  .transform(
+    ({ amount, assetDecimals, payment, gasTokenDecimals, ...rest }) => ({
+      ...rest,
+      assetDecimals,
+      amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
+      gasTokenDecimals: gasTokenDecimals ?? null,
+      payment:
+        payment != null
+          ? formatUnits(BigInt(payment), gasTokenDecimals ?? 0)
+          : null,
+    }),
+  );
 
 export const TransactionExportPageSchema = buildPageSchema(
   TransactionExportSchema,
