@@ -48,7 +48,7 @@
 | [`CONFIG-05`](#config-05) | Env metadata matches runtime | general / config |
 | [`PERF-01`](#perf-01) | Batch and parallelize I/O | general / performance |
 | [`TEST-01`](#test-01) | Use builders and fakes | general / tests |
-| [`TEST-02`](#test-02) | Right test layer | general / tests |
+| [`TEST-02`](#test-02) | Right test layer (pyramid) | general / tests |
 | [`TEST-03`](#test-03) | No internal mock chains | general / tests |
 | [`TEST-04`](#test-04) | Cover security paths | general / tests |
 | [`TEST-05`](#test-05) | Scoped test cleanup | general / tests |
@@ -2141,15 +2141,15 @@ for each shape and lets a test override only what matters to that case.
 ---
 
 <a id="test-02"></a>
-### `TEST-02` Right test layer
+### `TEST-02` Right test layer (pyramid)
 
-> **general** · tests · 1 example · ↩ `RL-20260506-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001`
 
 **📜 Rule**\
-Each assertion is at the right layer. Filename suffix matches: `*.spec.ts` for unit, `*.integration.spec.ts` for DB/Nest-bootstrapped. Tests in `src/__tests__/` are reserved for shared resources, not specs. Test private methods through their public callers; if direct testing is required, extract the helper. Unit tests must not require Redis/Postgres/RabbitMQ.
+Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test.
 
 **✅ Check**\
-> Is each assertion tested at the right layer?
+> Does each assertion live at the lowest layer that can prove it, and did I avoid duplicating the same scenario across unit, integration, and e2e?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-02-suffix-matches-the-test-layer</em></summary>
