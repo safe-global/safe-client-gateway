@@ -6,7 +6,7 @@ import {
   StakingStatus,
   type StakingTimeInfo,
 } from '@/modules/transactions/routes/entities/staking/staking.entity';
-import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,

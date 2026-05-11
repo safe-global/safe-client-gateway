@@ -27,7 +27,7 @@ import { CounterfactualSafesService } from '@/modules/counterfactual-safes/route
 import { CounterfactualSafesSchema } from '@/modules/counterfactual-safes/routes/entities/counterfactual-safe.dto.entity';
 import { CreateCounterfactualSafesDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
 import {
-  type DeleteCounterfactualSafesDto,
+  DeleteCounterfactualSafesDto,
   DeleteCounterfactualSafesSchema,
 } from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
 import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';

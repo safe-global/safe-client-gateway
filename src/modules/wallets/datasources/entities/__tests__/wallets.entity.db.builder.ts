@@ -12,6 +12,6 @@ export function walletBuilder(): IBuilder<Wallet> {
     .with('id', faker.number.int())
     .with('user', userBuilder().build())
     .with('address', getAddress(faker.finance.ethereumAddress()))
-    .with('created_at', new Date())
-    .with('updated_at', new Date());
+    .with('createdAt', new Date())
+    .with('updatedAt', new Date());
 }
