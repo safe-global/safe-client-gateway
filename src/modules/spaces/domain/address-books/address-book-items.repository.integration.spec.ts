@@ -667,7 +667,7 @@ describe('AddressBookItemsRepository', () => {
       name: nameBuilder(),
       status: 'ACTIVE',
       role: 'ADMIN',
-      invitedBy: getAddress(faker.finance.ethereumAddress()),
+      invitedBy: null,
     });
     return { spaceId: space.generatedMaps[0].id, authPayload };
   };

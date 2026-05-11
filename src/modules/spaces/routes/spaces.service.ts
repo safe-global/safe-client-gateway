@@ -133,6 +133,10 @@ export class SpacesService {
    * - inviter is still a member of the same space
    *
    * Wallet address is preferred over email.
+   *
+   * Note: the returned map is keyed by user ID across all spaces. Callers must
+   * re-check per-space membership before applying a name, since the same user
+   * may be a valid inviter in one space and not a member of another.
    */
   private async resolveInvitedByNames(
     spaces: Array<Space>,

@@ -411,6 +411,49 @@ describe('SpacesService', () => {
       expect(invitedInB).not.toHaveProperty('invitedByName');
     });
 
+    it('should not populate invitedByName for ACTIVE members even when invitedBy is set', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const inviter = userBuilder().with('id', inviterUserId).build();
+      const space = spaceBuilder().build();
+
+      // Caller previously accepted the invite — ACTIVE but invitedBy is still set
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', inviterUserId)
+        .build();
+      const inviterMember = memberBuilder()
+        .with('user', inviter)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', null)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', space.name)
+          .with('members', [inviterMember, callerMember])
+          .with('safes', [])
+          .build(),
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      const activeCaller = result[0].members.find(
+        (m) => m.user.id === callerUserId,
+      );
+      expect(activeCaller).not.toHaveProperty('invitedByName');
+      expect(walletsRepositoryMock.find).not.toHaveBeenCalled();
+      expect(usersRepositoryMock.findEmailsByIds).not.toHaveBeenCalled();
+    });
+
     it('should throw UnauthorizedException for unauthenticated payload', async () => {
       const authPayload = new AuthPayload();
 
