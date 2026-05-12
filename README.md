@@ -39,6 +39,26 @@ The project requires some ABIs that are generated after install. In order to man
 yarn generate-abis
 ```
 
+### Development with Dev Containers
+
+If you have Docker and the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you can develop the project without installing Node, Yarn, or any of the backing services on your host:
+
+1. Open the repository in VS Code.
+2. Run **Dev Containers: Reopen in Container** from the command palette.
+
+On first build the container will:
+
+- Install dependencies with `yarn install --immutable`.
+- Generate a `.env` file from `.env.sample.json` if one does not already exist.
+
+The following services start automatically alongside the dev container: Postgres (`db`), Postgres test DB (`db-test`), Redis (`redis`), and RabbitMQ (`rabbitmq`). The `web`, `nginx`, and `pgadmin` services from `docker-compose.yml` are NOT auto-started; if you need them, run them from the host with:
+
+```bash
+docker compose up <service>
+```
+
+VS Code installs Biome, Jest, and EditorConfig extensions automatically inside the container. You will also be prompted to install the recommended AI extensions (Claude Code, ChatGPT) — accept or dismiss as you prefer.
+
 ## Setup your env
 
 We recommend using what is available in the .env.sample file:

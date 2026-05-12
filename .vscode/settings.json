@@ -1,6 +1,6 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
-  "[typescript]": {
-    "typescript.preferences.importModuleSpecifier": "non-relative"
-  }
+  "editor.defaultFormatter": "biomejs.biome",
+  "editor.formatOnSave": true,
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
+  "remote.autoForwardPortsFallback": 0
 }

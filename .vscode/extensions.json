@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "biomejs.biome",
+    "Anthropic.claude-code",
+    "openai.chatgpt"
+  ]
+}
