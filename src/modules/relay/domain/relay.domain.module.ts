@@ -13,6 +13,12 @@ import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import { RelayClassifier } from '@/modules/relay/domain/validation/relay-classifier';
+import { CreateProxyRule } from '@/modules/relay/domain/validation/rules/create-proxy.rule';
+import { CreateSignerRule } from '@/modules/relay/domain/validation/rules/create-signer.rule';
+import { ExecTransactionRule } from '@/modules/relay/domain/validation/rules/exec-transaction.rule';
+import { MultiSendRule } from '@/modules/relay/domain/validation/rules/multi-send.rule';
+import { RecoveryRule } from '@/modules/relay/domain/validation/rules/recovery.rule';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 
 @Module({
@@ -26,6 +32,12 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
   ],
   providers: [
     RelayTransactionHelper,
+    RecoveryRule,
+    ExecTransactionRule,
+    MultiSendRule,
+    CreateProxyRule,
+    CreateSignerRule,
+    RelayClassifier,
     LimitAddressesMapper,
     RelayRepository,
     DailyLimitRelayer,

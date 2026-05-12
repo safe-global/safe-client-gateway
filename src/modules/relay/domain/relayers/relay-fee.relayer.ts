@@ -17,9 +17,9 @@ import {
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
-import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import { RelayClassifier } from '@/modules/relay/domain/validation/relay-classifier';
 import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
 @Injectable()
@@ -32,6 +32,7 @@ export class RelayFeeRelayer implements IRelayer {
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
+    private readonly classifier: RelayClassifier,
   ) {
     this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
   }
@@ -40,11 +41,6 @@ export class RelayFeeRelayer implements IRelayer {
    * Checks whether the fee service permits relaying for the given Safe.
    * Requires a safeTxHash to query the fee service eligibility endpoint.
    * Count-based limits are not tracked — the FeeService API is authoritative.
-   *
-   * @param args.chainId - Chain ID
-   * @param args.address - Safe address to check
-   * @param args.safeTxHash - Safe transaction hash for relay-fee eligibility
-   * @returns Result with currentCount=0 and limit=1 when eligible, or all zeros when denied
    */
   async canRelay(args: {
     chainId: string;
@@ -73,7 +69,6 @@ export class RelayFeeRelayer implements IRelayer {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
-    // relay-fee does not track count-based limits - the FeeService API is authoritative.
     // currentCount=0, limit=1 mirrors getRelaysRemaining.
     return { result: true, currentCount: 0, limit: 1 };
   }
@@ -81,18 +76,14 @@ export class RelayFeeRelayer implements IRelayer {
   /**
    * Relays a transaction after verifying eligibility via the fee service.
    *
-   * @param args.version - Safe contract version
-   * @param args.chainId - Chain ID
-   * @param args.to - Transaction recipient address
-   * @param args.data - Encoded transaction data
-   * @param args.gasLimit - Gas limit, or null for automatic estimation
-   * @param args.safeTxHash - Safe transaction hash for relay-fee eligibility
-   * @returns Relay result from the relay API
-   * @throws {@link RelayTxDeniedError} if no safeTxHash is provided for an execTransaction, the
-   *   fee service rejects the safeTxHash, the execTransaction fails validity rules, the proxy
-   *   factory is not an official deployment, or the transaction type is not recognised
-   * @throws {@link SafeTxHashMismatchError} if the provided safeTxHash does not match the
-   *   on-chain hash computed from the decoded execTransaction
+   * Validation goes through the shared {@link RelayClassifier} so domain
+   * errors (e.g. unofficial multiSend, mismatched batch recipients) surface
+   * with the same HTTP status (422) as for the daily-limit / no-fee-campaign
+   * relayers. Once classified, relay-fee only sponsors execTransaction (with
+   * a fee-service-approved safeTxHash) and createProxyWithNonce. Other valid
+   * transaction shapes (recovery, multiSend, createSigner) are denied with
+   * {@link RelayTxDeniedError} (403) — the classifier guarantees they're
+   * structurally valid; we just don't sponsor them.
    */
   async relay(args: {
     version: string;
@@ -102,53 +93,37 @@ export class RelayFeeRelayer implements IRelayer {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
   }): Promise<Relay> {
-    const { version, chainId, to, data } = args;
-    const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
+    const { version, chainId, to, data, safeTxHash } = args;
+    const classification = await this.classifier.classify({
+      version,
+      chainId,
+      to,
+      data,
+    });
 
-    // The relay request must match one of the supported transaction.
-    // Each branch below handles one possible classification of the decoded data:
-    if (
-      decoded !== null &&
-      this.relayTransactionHelper.isValidDecodedExecTransaction({ to, decoded })
-    ) {
-      // Branch 1: a valid execTransaction call on a Safe.
-      // Verify the safeTxHash matches the decoded payload and that the fee
-      // service permits relaying this specific transaction.
-      await this.validateExecTransaction({
-        version,
-        chainId,
-        to,
-        decoded,
-        safeTxHash: args.safeTxHash,
-      });
-    } else if (decoded !== null) {
-      // Branch 2: the data decoded as execTransaction but failed validity rules.
-      // e.g. Fee service rejected relaying because of not enough signatures.
-      this.denyInvalidExecTransaction({
-        to,
-        chainId,
-        safeTxHash: args.safeTxHash,
-      });
-    } else if (
-      this.relayTransactionHelper.isValidCreateProxyWithNonceCall({
-        version,
-        chainId,
-        data,
-      })
-    ) {
-      // Branch 3: a Safe creation call (createProxyWithNonce) on a known
-      // ProxyFactory. Confirm the target is an official deployment for the
-      // given version + chain before relaying.
-      this.validateSafeCreation({
-        version,
-        chainId,
-        to,
-      });
-    } else {
-      // Branch 4: data does not match any supported transaction types.
-      // 1. Not a valid execTransaction call
-      // 2. Not a valid createProxyWithNonce call.
-      this.denyUnrecognisedTxType({ to, chainId, safeTxHash: args.safeTxHash });
+    switch (classification.kind) {
+      case 'execTransaction':
+        await this.validateExecTransaction({
+          version,
+          chainId,
+          to,
+          decoded: classification.decoded,
+          safeTxHash,
+        });
+        break;
+      case 'createProxy':
+        // The CreateProxyRule already verified the proxy factory is official;
+        // no relay-fee-specific check is needed for Safe creation.
+        break;
+      case 'recovery':
+      case 'multiSend':
+      case 'createSigner':
+        // Structurally valid but relay-fee doesn't sponsor these flows.
+        this.loggingService.warn({
+          type: LogType.TxRelayEligibility,
+          message: `relay-fee relay denied for unsupported tx kind ${classification.kind}: to=${to} on chain ${chainId}`,
+        });
+        throw new RelayTxDeniedError(safeTxHash);
     }
 
     return this.relayApi
@@ -199,60 +174,10 @@ export class RelayFeeRelayer implements IRelayer {
     }
   }
 
-  private denyInvalidExecTransaction(args: {
-    to: Address;
-    chainId: string;
-    safeTxHash: Hex | undefined;
-  }): never {
-    this.loggingService.warn({
-      type: LogType.TxRelayEligibility,
-      message: `relay-fee relay denied for invalid execTransaction: to=${args.to} on chain ${args.chainId}`,
-    });
-    throw new RelayTxDeniedError(args.safeTxHash);
-  }
-
-  private validateSafeCreation(args: {
-    version: string;
-    chainId: string;
-    to: Address;
-  }): void {
-    const { version, chainId, to } = args;
-
-    if (
-      !this.relayTransactionHelper.isOfficialProxyFactoryDeployment({
-        version,
-        chainId,
-        address: to,
-      })
-    ) {
-      this.loggingService.warn({
-        type: LogType.TxRelayEligibility,
-        message: `relay-fee relay denied for unofficial proxy factory ${to} on chain ${chainId}`,
-      });
-      throw new UnofficialProxyFactoryError();
-    }
-  }
-
-  private denyUnrecognisedTxType(args: {
-    to: Address;
-    chainId: string;
-    safeTxHash: Hex | undefined;
-  }): never {
-    this.loggingService.warn({
-      type: LogType.TxRelayEligibility,
-      message: `relay-fee relay denied for unrecognised tx type: to=${args.to} on chain ${args.chainId}`,
-    });
-    throw new RelayTxDeniedError(args.safeTxHash);
-  }
-
   /**
    * Returns a simplified relay budget view for the given Safe.
    * Returns `remaining=1, limit=1` when the chain is enabled, or `0, 0` when not.
    * Per-transaction eligibility requires a safeTxHash and is checked in relay().
-   *
-   * @param args.chainId - Chain ID
-   * @param args.address - Safe address to query
-   * @returns Remaining relay count and limit (each 0 or 1)
    */
   async getRelaysRemaining(args: {
     chainId: string;
@@ -269,8 +194,6 @@ export class RelayFeeRelayer implements IRelayer {
       return { remaining: 1, limit: 1 };
     }
 
-    // For relay-fee, the FeeService API is the authority on relay eligibility.
-    // We report a simplified view: remaining=1 if eligible, 0 if not.
     const feeServiceResult = await this.feeServiceApi.canRelay({
       chainId: args.chainId,
       safeTxHash: args.safeTxHash,

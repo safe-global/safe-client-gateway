@@ -53,6 +53,12 @@ import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/p
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import { RelayClassifier } from '@/modules/relay/domain/validation/relay-classifier';
+import { CreateProxyRule } from '@/modules/relay/domain/validation/rules/create-proxy.rule';
+import { CreateSignerRule } from '@/modules/relay/domain/validation/rules/create-signer.rule';
+import { ExecTransactionRule } from '@/modules/relay/domain/validation/rules/exec-transaction.rule';
+import { MultiSendRule } from '@/modules/relay/domain/validation/rules/multi-send.rule';
+import { RecoveryRule } from '@/modules/relay/domain/validation/rules/recovery.rule';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
@@ -106,7 +112,15 @@ describe('LimitAddressesMapper', () => {
       new SignerFactoryDecoder(),
     );
 
-    target = new LimitAddressesMapper(relayTransactionHelper);
+    const classifier = new RelayClassifier(
+      new RecoveryRule(relayTransactionHelper),
+      new ExecTransactionRule(relayTransactionHelper),
+      new MultiSendRule(relayTransactionHelper),
+      new CreateProxyRule(relayTransactionHelper),
+      new CreateSignerRule(relayTransactionHelper),
+    );
+
+    target = new LimitAddressesMapper(classifier);
   });
 
   describe('Recovery', () => {

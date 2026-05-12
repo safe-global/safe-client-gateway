@@ -20,11 +20,14 @@ import {
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
 } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
+import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
+import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multiSendEncoder,
@@ -54,6 +57,10 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import { rawify } from '@/validation/entities/raw.entity';
 
 const allSupportedChainIds = Object.keys(configuration().relay.apiKey);
+
+// Pin the relay-fee chain to Arbitrum (42161)
+const relayFeeChainId = '42161';
+
 const noFeeCampaignChains = Object.keys(
   configuration().relay.noFeeCampaign || {},
 );
@@ -61,10 +68,9 @@ const nonnoFeeCampaignChainIds = allSupportedChainIds.filter(
   (chainId) => !noFeeCampaignChains.includes(chainId),
 );
 
-const dailyLimitChainIds = faker.helpers.arrayElements(
-  nonnoFeeCampaignChainIds,
-  1,
-);
+const dailyLimitChainIds = faker.helpers
+  .arrayElements(nonnoFeeCampaignChainIds, 1)
+  .filter((id) => id !== relayFeeChainId);
 
 const noFeeCampaignSupportedChainIds = faker.helpers.arrayElements(
   noFeeCampaignChains,
@@ -72,8 +78,9 @@ const noFeeCampaignSupportedChainIds = faker.helpers.arrayElements(
 );
 
 const supportedChainIds = [
-  ...dailyLimitChainIds,
-  ...noFeeCampaignSupportedChainIds,
+   ...dailyLimitChainIds,
+   ...noFeeCampaignSupportedChainIds,
+  relayFeeChainId,
 ];
 
 const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
@@ -105,24 +112,43 @@ describe('Relay controller', () => {
   let configurationService: jest.MockedObjectDeep<IConfigurationService>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let balancesService: jest.MockedObjectDeep<BalancesService>;
+  let blockchainApiManager: jest.MockedObjectDeep<IBlockchainApiManager>;
   let safeConfigUrl: string;
   let relayUrl: string;
+  let relayFeeBaseUri: string;
   let relayLimit: number;
 
   beforeEach(async () => {
     jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
+    relayFeeBaseUri = faker.internet.url({ appendSlash: false });
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
       relay: {
         ...defaultConfiguration.relay,
         limit: 5,
+        // Enable the relay-fee path for a single chain id; the matching
+        // `Common Tests` describe iteration runs through RelayFeeRelayer.
+        fee: {
+          ...defaultConfiguration.relay.fee,
+          enabledChainIds: [relayFeeChainId],
+          baseUri: relayFeeBaseUri,
+        },
       },
     });
 
     const moduleFixture = await createTestModule({
       config: testConfiguration,
+      // RelayFeeRelayer.validateExecTransaction calls into BlockchainApiManager
+      // to verify the on-chain safeTxHash. Replace it with the fake so tests
+      // can stub `readContract` without making real RPC calls.
+      modules: [
+        {
+          originalModule: BlockchainModule,
+          testModule: TestBlockchainApiManagerModule,
+        },
+      ],
     });
 
     configurationService = moduleFixture.get(IConfigurationService);
@@ -131,6 +157,7 @@ describe('Relay controller', () => {
     relayLimit = configurationService.getOrThrow('relay.limit');
     networkService = moduleFixture.get(NetworkService);
     balancesService = moduleFixture.get(BalancesService);
+    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -3606,6 +3633,174 @@ describe('Relay controller', () => {
           message: 'Unofficial SafeWebAuthnSignerFactory contract.',
           statusCode: 422,
         });
+    });
+  });
+
+  // RelayFeeRelayer is selected when the chain is in `relay.fee.enabledChainIds`.
+  // The outer `beforeEach` already enables it for `relayFeeChainId` and swaps
+  // BlockchainModule for the fake (so `isSafeTxHashValid` doesn't hit a real RPC).
+  describe(`Relay-fee tests [${relayFeeChainId}]`, () => {
+    // Version with both Safe and ProxyFactory deployments on Arbitrum (42161).
+    const version = '1.3.0';
+
+    it('should return 201 for execTransaction when fee service approves and on-chain hash matches', async () => {
+      const chain = chainBuilder().with('chainId', relayFeeChainId).build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .encode();
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const taskId = faker.string.uuid();
+
+      // RelayTransactionHelper.isSafeTxHashValid calls `nonce()` then
+      // `getTransactionHash(...)`; returning the request's safeTxHash from the
+      // second call makes the equality check pass.
+      const readContract = jest
+        .fn()
+        .mockResolvedValueOnce(BigInt(0))
+        .mockResolvedValueOnce(safeTxHash);
+      blockchainApiManager.getApi.mockResolvedValue({
+        readContract,
+      } as never);
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${relayFeeChainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case `${relayFeeBaseUri}/v1/chains/${relayFeeChainId}/transactions/${safeTxHash}/can-relay`:
+            return Promise.resolve({
+              data: rawify({ canRelay: true }),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${relayUrl}/rpc`:
+            return Promise.resolve({
+              data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${relayFeeChainId}/relay`)
+        .send({
+          version,
+          to: safeAddress,
+          data,
+          safeTxHash,
+        })
+        .expect(201)
+        .expect({ taskId });
+    });
+
+    it('should return 422 (SafeTxHashMismatch) when the on-chain hash differs from the provided safeTxHash', async () => {
+      const chain = chainBuilder().with('chainId', relayFeeChainId).build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .encode();
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const onChainHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+
+      const readContract = jest
+        .fn()
+        .mockResolvedValueOnce(BigInt(0))
+        .mockResolvedValueOnce(onChainHash);
+      blockchainApiManager.getApi.mockResolvedValue({
+        readContract,
+      } as never);
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${relayFeeChainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${relayFeeChainId}/relay`)
+        .send({
+          version,
+          to: safeAddress,
+          data,
+          safeTxHash,
+        })
+        .expect(422);
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 (RelayTxDenied) when fee service rejects the safeTxHash', async () => {
+      const chain = chainBuilder().with('chainId', relayFeeChainId).build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .encode();
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+
+      const readContract = jest
+        .fn()
+        .mockResolvedValueOnce(BigInt(0))
+        .mockResolvedValueOnce(safeTxHash);
+      blockchainApiManager.getApi.mockResolvedValue({
+        readContract,
+      } as never);
+
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${relayFeeChainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case `${relayFeeBaseUri}/v1/chains/${relayFeeChainId}/transactions/${safeTxHash}/can-relay`:
+            return Promise.resolve({
+              data: rawify({ canRelay: false }),
+              status: 200,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${relayFeeChainId}/relay`)
+        .send({
+          version,
+          to: safeAddress,
+          data,
+          safeTxHash,
+        })
+        .expect(403);
+
+      expect(networkService.post).not.toHaveBeenCalled();
     });
   });
 });
