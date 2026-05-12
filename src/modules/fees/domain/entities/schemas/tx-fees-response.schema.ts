@@ -19,7 +19,7 @@ export const PricingContextSnapshotSchema = z.object({
   phase: z.number(),
   priceSource: z.enum(PriceSource),
   priceTimestamp: z.number(),
-  gasVolatilityBuffer: z.number(),
+  gasPriceVolatilityBuffer: z.number(),
 });
 
 export const TxFeesResponseSchema = z.object({

@@ -51,7 +51,7 @@ describe('PricingContextSnapshotSchema', () => {
       phase: 1,
       priceSource: 'COINGECKO',
       priceTimestamp: 1700000000,
-      gasVolatilityBuffer: 1.3,
+      gasPriceVolatilityBuffer: 1.3,
     };
 
     const result = PricingContextSnapshotSchema.safeParse(pricingContext);
@@ -64,7 +64,7 @@ describe('PricingContextSnapshotSchema', () => {
       phase: 1,
       priceSource: 'INVALID_SOURCE',
       priceTimestamp: 1700000000,
-      gasVolatilityBuffer: 1.3,
+      gasPriceVolatilityBuffer: 1.3,
     };
 
     const result = PricingContextSnapshotSchema.safeParse(pricingContext);
@@ -89,7 +89,7 @@ describe('TxFeesResponseSchema', () => {
         phase: 1,
         priceSource: 'COINGECKO',
         priceTimestamp: 1700000000,
-        gasVolatilityBuffer: 1.3,
+        gasPriceVolatilityBuffer: 1.3,
       },
     };
 
