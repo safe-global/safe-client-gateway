@@ -22,8 +22,21 @@ export const PricingContextSnapshotSchema = z.object({
   gasVolatilityBuffer: z.number(),
 });
 
-export const TxFeesResponseSchema = z.object({
+export const RelayCostSchema = z.object({
+  fiatCode: z.string(),
+  fiatValue: z.string(),
+});
+
+const TxFeesResponseBaseSchema = z.object({
   txData: TxDataResponseSchema,
-  relayCostUsd: z.number(),
   pricingContextSnapshot: PricingContextSnapshotSchema,
 });
+
+export const LegacyTxFeesResponseSchema = TxFeesResponseBaseSchema.extend({
+  relayCostUsd: z.number(),
+});
+
+export const TxFeesResponseSchema = z.union([
+  TxFeesResponseBaseSchema.extend({ relayCost: RelayCostSchema }),
+  LegacyTxFeesResponseSchema,
+]);

@@ -11,7 +11,10 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import {
+  legacyTxFeesResponseBuilder,
+  txFeesResponseBuilder,
+} from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -88,12 +91,15 @@ describe('Fees Controller', () => {
       });
   });
 
-  it('should return fee preview when relay-fee is enabled', async () => {
+  it('should return fee preview with relayCost when fee service returns new format', async () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const feePreviewDto = feePreviewTransactionDtoBuilder()
       .with('value', '1000000000000000000')
+      .with('fiatCode', 'EUR')
       .build();
-    const mockFeeResponse = txFeesResponseBuilder().build();
+    const mockFeeResponse = txFeesResponseBuilder()
+      .with('relayCost', { fiatCode: 'EUR', fiatValue: '0.0025' })
+      .build();
 
     networkService.post.mockImplementation(({ url }) => {
       if (
@@ -110,7 +116,48 @@ describe('Fees Controller', () => {
       .send(feePreviewDto)
       .expect(200)
       .expect(({ body }) => {
-        expect(body).toMatchObject(mockFeeResponse);
+        expect(body.relayCost).toEqual({
+          fiatCode: 'EUR',
+          fiatValue: '0.0025',
+        });
+        expect(body.txData).toBeDefined();
+        expect(body.pricingContextSnapshot).toBeDefined();
+      });
+  });
+
+  it('should normalize legacy relayCostUsd to relayCost when fee service returns old format', async () => {
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const feePreviewDto = feePreviewTransactionDtoBuilder()
+      .with('value', '1000000000000000000')
+      .build();
+    const mockLegacyFeeResponse = legacyTxFeesResponseBuilder()
+      .with('relayCostUsd', 0.0025)
+      .build();
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (
+        url ===
+        `${feeServiceBaseUri}/v1/chains/${ENABLED_CHAIN_ID}/safes/${safeAddress}/transactions/relay-fees`
+      ) {
+        return Promise.resolve({
+          data: rawify(mockLegacyFeeResponse),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${ENABLED_CHAIN_ID}/fees/${safeAddress}/preview`)
+      .send(feePreviewDto)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.relayCost).toEqual({
+          fiatCode: 'USD',
+          fiatValue: '0.0025',
+        });
+        expect(body.txData).toBeDefined();
+        expect(body.pricingContextSnapshot).toBeDefined();
       });
   });
 

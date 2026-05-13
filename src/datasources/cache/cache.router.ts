@@ -1096,10 +1096,11 @@ export class CacheRouter {
     operation: number;
     gasToken: Address;
     threshold: number;
+    fiatCode?: string;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.fiatCode ?? 'USD'}`,
     );
     return new CacheDir(
       CacheRouter.getRelayFeePreviewCacheKey(args),
