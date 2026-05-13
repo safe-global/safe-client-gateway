@@ -10,8 +10,7 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import type {
-  AddressInvitationIdentifier,
-  EmailInvitationIdentifier,
+  InvitationIdentifier,
   Invitation,
 } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
@@ -59,7 +58,7 @@ export interface IMembersRepository {
       authPayload: AuthPayload;
       spaceId: Space['id'];
       inviteExpiresAt: Member['inviteExpiresAt'];
-    } & (AddressInvitationIdentifier | EmailInvitationIdentifier),
+    } & InvitationIdentifier,
   ): Promise<void>;
 
   declineInvite(args: {

@@ -169,7 +169,7 @@ export class MembersRepository implements IMembersRepository {
         }
 
         const invitation: Invitation = {
-          userId: userIdToInvite,
+          userId: userToInvite.email ? undefined : userIdToInvite,
           spaceId: space.id,
           name: userToInvite.name,
           role: userToInvite.role,
@@ -177,10 +177,6 @@ export class MembersRepository implements IMembersRepository {
           invitedBy,
           inviteExpiresAt: args.inviteExpiresAt,
         };
-        if (userToInvite.email) {
-          // Avoid exposing internal user IDs for email-based invite probes.
-          invitation.userId = undefined;
-        }
         invitations.push(invitation);
       }
     });
