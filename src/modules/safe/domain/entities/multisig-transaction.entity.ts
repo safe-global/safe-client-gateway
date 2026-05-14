@@ -52,6 +52,7 @@ export const MultisigTransactionSchema = TransactionBaseSchema.extend({
   ethGasPrice: NullableNumericStringSchema,
   gasUsed: NullableNumberSchema,
   fee: NullableNumericStringSchema,
+  payment: NullableNumericStringSchema,
   origin: NullableStringSchema,
   confirmationsRequired: z.number(),
   confirmations: z.array(ConfirmationSchema).nullish().default(null),

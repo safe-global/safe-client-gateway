@@ -83,6 +83,7 @@ export function multisigTransactionBuilder(): BuilderWithConfirmations<MultisigT
       .with('executor', getAddress(faker.finance.ethereumAddress()))
       .with('executionDate', faker.date.recent())
       .with('fee', faker.string.numeric())
+      .with('payment', faker.string.numeric())
       .with('gasPrice', faker.string.numeric())
       .with('gasToken', getAddress(faker.finance.ethereumAddress()))
       .with('gasUsed', faker.number.int())
