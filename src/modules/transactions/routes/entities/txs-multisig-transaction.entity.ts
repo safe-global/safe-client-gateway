@@ -64,6 +64,8 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
   fee: string | null;
   @ApiProperty()
+  payment: string | null;
+  @ApiProperty()
   origin: string | null;
   @ApiProperty()
   confirmationsRequired: number;
@@ -101,6 +103,7 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     ethGasPrice: string | null;
     gasUsed: number | null;
     fee: string | null;
+    payment: string | null;
     origin: string | null;
     confirmationsRequired: number;
     confirmations: Array<Confirmation> | null;
@@ -132,6 +135,7 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     this.ethGasPrice = args.ethGasPrice;
     this.gasUsed = args.gasUsed;
     this.fee = args.fee;
+    this.payment = args.payment;
     this.origin = args.origin;
     this.confirmationsRequired = args.confirmationsRequired;
     this.confirmations = args.confirmations;

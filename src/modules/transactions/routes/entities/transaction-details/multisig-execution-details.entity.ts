@@ -52,6 +52,10 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   @ApiProperty()
   gasToken: string;
   @ApiProperty()
+  fee: string;
+  @ApiProperty()
+  payment: string;
+  @ApiProperty()
   refundReceiver: AddressInfo;
   @ApiProperty()
   safeTxHash: string;
@@ -88,6 +92,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     baseGas: string,
     gasPrice: string,
     gasToken: string,
+    fee: string,
+    payment: string,
     refundReceiver: AddressInfo,
     safeTxHash: string,
     executor: AddressInfo | null,
@@ -107,6 +113,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     this.baseGas = baseGas;
     this.gasPrice = gasPrice;
     this.gasToken = gasToken;
+    this.fee = fee;
+    this.payment = payment;
     this.refundReceiver = refundReceiver;
     this.safeTxHash = safeTxHash;
     this.executor = executor;
