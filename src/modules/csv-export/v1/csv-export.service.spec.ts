@@ -17,6 +17,9 @@ import type { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
@@ -69,6 +72,11 @@ const loggingService = {
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 const mockLoggingService = jest.mocked(loggingService);
+
+const chainsRepository = {
+  getChain: jest.fn(),
+} as jest.MockedObjectDeep<IChainsRepository>;
+const mockChainsRepository = jest.mocked(chainsRepository);
 
 describe('CsvExportService', () => {
   let service: CsvExportService;
@@ -144,6 +152,13 @@ describe('CsvExportService', () => {
       }
     });
 
+    mockChainsRepository.getChain.mockResolvedValue({
+      nativeCurrency: nativeCurrencyBuilder()
+        .with('decimals', 18)
+        .with('symbol', 'ETH')
+        .build(),
+    } as Chain);
+
     setupCsvServiceMock();
   };
 
@@ -160,6 +175,7 @@ describe('CsvExportService', () => {
         mockCloudStorageApiService,
         mockConfigurationService,
         mockLoggingService,
+        mockChainsRepository,
       );
     });
 
@@ -423,6 +439,39 @@ describe('CsvExportService', () => {
       );
       expect(streamData[0].payment).toBeNull();
       expect(streamData[0].gasTokenSymbol).toBeNull();
+    });
+
+    it('should format payment using chain native currency when gasToken is zero address', async () => {
+      const nativeDecimals = 18;
+      const nativeSymbol = 'ETH';
+      const rawPayment = '13147530168800274'; // ~0.0131 ETH in wei
+
+      mockChainsRepository.getChain.mockResolvedValue({
+        nativeCurrency: nativeCurrencyBuilder()
+          .with('decimals', nativeDecimals)
+          .with('symbol', nativeSymbol)
+          .build(),
+      } as Chain);
+
+      const mockTxWithNativeGasToken = transactionExportBuilder()
+        .with('gasToken', '0x0000000000000000000000000000000000000000')
+        .with('payment', rawPayment)
+        .with('gasTokenSymbol', null)
+        .with('gasTokenDecimals', null)
+        .build();
+
+      const mockPageNative = pageBuilder()
+        .with('results', [mockTxWithNativeGasToken])
+        .with('next', null)
+        .build();
+
+      mockExportApi.export.mockResolvedValueOnce(rawify(mockPageNative));
+
+      await service.export(exportArgs);
+
+      expect(streamData).toHaveLength(1);
+      expect(streamData[0].payment).toBe('0.013147530168800274');
+      expect(streamData[0].gasTokenSymbol).toBe(nativeSymbol);
     });
 
     it('should handle pagination with default values', async () => {
@@ -699,6 +748,12 @@ describe('CsvExportService', () => {
             return 3600;
         }
       });
+      mockChainsRepository.getChain.mockResolvedValue({
+        nativeCurrency: nativeCurrencyBuilder()
+          .with('decimals', 18)
+          .with('symbol', 'ETH')
+          .build(),
+      } as Chain);
     };
 
     beforeEach(async () => {
@@ -714,6 +769,7 @@ describe('CsvExportService', () => {
         mockCloudStorageApiService,
         mockConfigurationService,
         mockLoggingService,
+        mockChainsRepository,
       );
     });
 

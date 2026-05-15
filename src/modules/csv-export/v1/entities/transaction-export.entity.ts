@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { formatUnits } from 'viem';
+import { formatUnits, isAddressEqual, zeroAddress } from 'viem';
 import { z } from 'zod';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -29,21 +29,40 @@ export const TransactionExportSchema = z
     gasTokenSymbol: z.string().nullish(),
     gasTokenDecimals: z.number().nullish(),
   })
-  .transform(
-    ({ amount, assetDecimals, payment, gasTokenDecimals, ...rest }) => ({
-      ...rest,
-      assetDecimals,
-      amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
-      gasTokenDecimals: gasTokenDecimals ?? null,
-      payment:
-        payment != null
-          ? formatUnits(BigInt(payment), gasTokenDecimals ?? 0)
-          : null,
-    }),
-  );
+  .transform(({ amount, assetDecimals, ...rest }) => ({
+    ...rest,
+    assetDecimals,
+    amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
+  }));
 
 export const TransactionExportPageSchema = buildPageSchema(
   TransactionExportSchema,
 );
 
 export type TransactionExport = z.infer<typeof TransactionExportSchema>;
+
+/**
+ * Formats the gas fee payment amount using the correct decimals and symbol.
+ * When gasToken is the zero address (native token), uses chain nativeCurrency
+ * values instead of the null gasTokenDecimals/gasTokenSymbol from the API.
+ */
+export function formatTransactionExportGasFees(
+  tx: TransactionExport,
+  nativeDecimals: number,
+  nativeSymbol: string,
+): TransactionExport {
+  const { payment, gasToken, gasTokenDecimals, gasTokenSymbol } = tx;
+
+  if (gasToken == null || payment == null) {
+    return { ...tx, payment: null };
+  }
+
+  const isNativeToken = isAddressEqual(gasToken, zeroAddress);
+  const decimals = isNativeToken ? nativeDecimals : (gasTokenDecimals ?? 0);
+
+  return {
+    ...tx,
+    payment: formatUnits(BigInt(payment), decimals),
+    gasTokenSymbol: isNativeToken ? nativeSymbol : (gasTokenSymbol ?? null),
+  };
+}

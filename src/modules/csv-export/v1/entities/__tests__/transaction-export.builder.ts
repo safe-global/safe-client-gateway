@@ -4,7 +4,10 @@ import type { Hash } from 'viem';
 import { formatUnits, getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
+import {
+  formatTransactionExportGasFees,
+  type TransactionExport,
+} from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
 /**
  * Creates a builder for transaction export data
@@ -37,20 +40,23 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
 }
 
 /**
- * Transforms transaction export's amount and payment and gasToken fields to user-friendly format
+ * Simulates the full two-step transformation applied by the service:
+ * schema transform (amount formatting) + gas fees formatting with native currency.
  */
 export function transformTransactionExport(
   data: TransactionExport,
+  nativeDecimals = 18,
+  nativeSymbol = 'ETH',
 ): TransactionExport {
-  const { amount, assetDecimals, payment, gasTokenDecimals, ...rest } = data;
-  return {
+  const { amount, assetDecimals, ...rest } = data;
+  const schemaTransformed: TransactionExport = {
     ...rest,
     assetDecimals,
     amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
-    gasTokenDecimals: gasTokenDecimals ?? null,
-    payment:
-      payment != null
-        ? formatUnits(BigInt(payment), gasTokenDecimals ?? 0)
-        : null,
   };
+  return formatTransactionExportGasFees(
+    schemaTransformed,
+    nativeDecimals,
+    nativeSymbol,
+  );
 }

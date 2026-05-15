@@ -135,9 +135,9 @@ describe('TransactionExportSchema', () => {
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.gasToken).toBeUndefined();
-      expect(result.data.payment).toBeNull();
+      expect(result.data.payment).toBeUndefined();
       expect(result.data.gasTokenSymbol).toBeUndefined();
-      expect(result.data.gasTokenDecimals).toBeNull();
+      expect(result.data.gasTokenDecimals).toBeUndefined();
     }
   });
 
@@ -311,9 +311,8 @@ describe('TransactionExportSchema', () => {
     });
   });
 
-  it('should transform payment using gasTokenDecimals', () => {
-    const rawPayment = '1000000000000000000'; // 1 token in wei
-    const expectedPayment = '1';
+  it('should keep payment as raw numeric string (formatting happens in service)', () => {
+    const rawPayment = '1000000000000000000';
 
     const transactionExport = transactionExportBuilder()
       .with('payment', rawPayment)
@@ -323,7 +322,7 @@ describe('TransactionExportSchema', () => {
     const result = TransactionExportSchema.safeParse(transactionExport);
 
     expect(result.success).toBe(true);
-    expect(result.data?.payment).toBe(expectedPayment);
+    expect(result.data?.payment).toBe(rawPayment);
   });
 
   it('should set payment to null when payment is null', () => {
@@ -338,9 +337,8 @@ describe('TransactionExportSchema', () => {
     expect(result.data?.payment).toBeNull();
   });
 
-  it('should not transform payment when gasTokenDecimals is null (defaults to 0)', () => {
+  it('should keep payment as raw numeric string when gasTokenDecimals is null', () => {
     const rawPayment = '100';
-    const expectedPayment = '100';
 
     const transactionExport = transactionExportBuilder()
       .with('payment', rawPayment)
@@ -350,7 +348,7 @@ describe('TransactionExportSchema', () => {
     const result = TransactionExportSchema.safeParse(transactionExport);
 
     expect(result.success).toBe(true);
-    expect(result.data?.payment).toBe(expectedPayment);
+    expect(result.data?.payment).toBe(rawPayment);
   });
 
   it('should validate gasToken as a valid address', () => {
