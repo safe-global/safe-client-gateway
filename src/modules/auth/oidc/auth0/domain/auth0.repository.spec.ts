@@ -5,6 +5,7 @@ import type { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.
 import { Auth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository';
 import type { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import { rawify } from '@/validation/entities/raw.entity';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const auth0ApiMock = {
   getAuthorizationUrl: jest.fn(),
@@ -63,7 +64,7 @@ describe('Auth0Repository', () => {
         iat: faker.date.past(),
         nbf: faker.date.recent(),
         exp: faker.date.future(),
-        email: faker.internet.email().toLowerCase(),
+        email: fakeEmailAddress(),
         email_verified: true,
       };
 

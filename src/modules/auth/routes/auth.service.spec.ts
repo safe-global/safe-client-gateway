@@ -20,6 +20,7 @@ import { AuthService } from '@/modules/auth/routes/auth.service';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const siweRepositoryMock = {
   generateNonce: jest.fn(),
@@ -317,7 +318,7 @@ describe('AuthService', () => {
 
     it('should return email for OIDC sessions when email is stored', async () => {
       const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       usersRepositoryMock.findEmailById.mockResolvedValue(email);
 
       await expect(target.getUserSession(authPayload)).resolves.toEqual({

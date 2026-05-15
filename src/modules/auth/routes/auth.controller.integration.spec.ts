@@ -26,6 +26,7 @@ import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siw
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { UsersModule } from '@/modules/users/users.module';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;
@@ -714,7 +715,7 @@ describe('AuthController', () => {
     it('should return 200 with email for a valid OIDC access token when stored', async () => {
       const authPayloadDto = oidcAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       usersRepository.findEmailById.mockResolvedValue(email);
 
       await request(app.getHttpServer())

@@ -16,6 +16,7 @@ import { UserIdentityResolverService } from '@/modules/users/domain/user-identit
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const repositoryMock = {
   findAllBySpaceId: jest.fn(),
@@ -130,7 +131,7 @@ describe('AddressBooksService', () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
       const userId = faker.number.int({ min: 1, max: 1000 });
-      const email = faker.internet.email();
+      const email = fakeEmailAddress();
       const items = [
         addressBookItemBuilder()
           .with('createdBy', userId)
@@ -191,7 +192,7 @@ describe('AddressBooksService', () => {
     it('should resolve different identities for different creators', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      const user1Email = faker.internet.email();
+      const user1Email = fakeEmailAddress();
       const user1 = userBuilder().with('email', user1Email).build();
       const user2 = userBuilder().with('email', null).build();
       const user2Wallet = walletBuilder().with('user', user2).build();
