@@ -71,6 +71,8 @@ export class MultisigTransactionExecutionDetailsMapper {
       transaction.baseGas?.toString() ?? '0',
       transaction.gasPrice?.toString() ?? '0',
       gasToken,
+      transaction.fee ?? '0',
+      transaction.payment ?? '0',
       refundReceiver,
       transaction.safeTxHash,
       executor,
