@@ -27,16 +27,8 @@ export const RelayCostSchema = z.object({
   fiatValue: z.string(),
 });
 
-const TxFeesResponseBaseSchema = z.object({
+export const TxFeesResponseSchema = z.object({
   txData: TxDataResponseSchema,
+  relayCost: RelayCostSchema,
   pricingContextSnapshot: PricingContextSnapshotSchema,
 });
-
-export const LegacyTxFeesResponseSchema = TxFeesResponseBaseSchema.extend({
-  relayCostUsd: z.number(),
-});
-
-export const TxFeesResponseSchema = z.union([
-  TxFeesResponseBaseSchema.extend({ relayCost: RelayCostSchema }),
-  LegacyTxFeesResponseSchema,
-]);

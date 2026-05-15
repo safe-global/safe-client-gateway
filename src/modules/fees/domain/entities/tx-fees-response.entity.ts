@@ -2,7 +2,6 @@
 
 import type { z } from 'zod';
 import type {
-  LegacyTxFeesResponseSchema,
   PricingContextSnapshotSchema,
   RelayCostSchema,
   TxDataResponseSchema,
@@ -16,7 +15,5 @@ export type PricingContextSnapshot = z.infer<
 >;
 
 export type RelayCost = z.infer<typeof RelayCostSchema>;
-
-export type LegacyTxFeesResponse = z.infer<typeof LegacyTxFeesResponseSchema>;
 
 export type TxFeesResponse = z.infer<typeof TxFeesResponseSchema>;

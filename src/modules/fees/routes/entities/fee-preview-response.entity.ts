@@ -109,17 +109,9 @@ export class FeePreviewResponse {
 
   constructor(txFeesResponse: TxFeesResponse) {
     this.txData = new FeePreviewTxData(txFeesResponse.txData);
+    this.relayCost = new FeePreviewRelayCost(txFeesResponse.relayCost);
     this.pricingContextSnapshot = new FeePreviewPricingContext(
       txFeesResponse.pricingContextSnapshot,
     );
-
-    const relayCost =
-      'relayCost' in txFeesResponse
-        ? txFeesResponse.relayCost
-        : {
-            fiatCode: 'USD',
-            fiatValue: txFeesResponse.relayCostUsd.toString(),
-          };
-    this.relayCost = new FeePreviewRelayCost(relayCost);
   }
 }

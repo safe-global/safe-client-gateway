@@ -2,10 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import {
-  legacyTxFeesResponseBuilder,
-  txFeesResponseBuilder,
-} from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import {
   PricingContextSnapshotSchema,
   TxDataResponseSchema,
@@ -77,7 +74,7 @@ describe('PricingContextSnapshotSchema', () => {
 });
 
 describe('TxFeesResponseSchema', () => {
-  it('should validate a response with relayCost', () => {
+  it('should validate a valid tx-fees response', () => {
     const response = txFeesResponseBuilder().build();
 
     const result = TxFeesResponseSchema.safeParse(response);
@@ -85,45 +82,26 @@ describe('TxFeesResponseSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should validate a legacy response with relayCostUsd', () => {
-    const response = legacyTxFeesResponseBuilder().build();
-
-    const result = TxFeesResponseSchema.safeParse(response);
-
-    expect(result.success).toBe(true);
-  });
-
   it('should not allow a missing txData', () => {
-    const response = {
-      relayCost: { fiatCode: 'USD', fiatValue: '38.22' },
-      pricingContextSnapshot: {
-        phase: 1,
-        priceSource: 'COINGECKO',
-        priceTimestamp: 1700000000,
-        gasVolatilityBuffer: 1.3,
-      },
-    };
+    const { relayCost, pricingContextSnapshot } =
+      txFeesResponseBuilder().build();
 
-    const result = TxFeesResponseSchema.safeParse(response);
+    const result = TxFeesResponseSchema.safeParse({
+      relayCost,
+      pricingContextSnapshot,
+    });
 
     expect(!result.success && result.error.issues).toStrictEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: 'invalid_union',
-          errors: expect.arrayContaining([
-            expect.arrayContaining([
-              expect.objectContaining({
-                code: 'invalid_type',
-                path: ['txData'],
-              }),
-            ]),
-          ]),
+          code: 'invalid_type',
+          path: ['txData'],
         }),
       ]),
     );
   });
 
-  it('should not allow a response missing both relayCost and relayCostUsd', () => {
+  it('should not allow a missing relayCost', () => {
     const { txData, pricingContextSnapshot } = txFeesResponseBuilder().build();
 
     const result = TxFeesResponseSchema.safeParse({

@@ -5,10 +5,10 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import type {
-  LegacyTxFeesResponse,
   PricingContextSnapshot,
   RelayCost,
   TxDataResponse,
+  TxFeesResponse,
 } from '@/modules/fees/domain/entities/tx-fees-response.entity';
 
 export function txDataResponseBuilder(): IBuilder<TxDataResponse> {
@@ -37,20 +37,9 @@ export function relayCostBuilder(): IBuilder<RelayCost> {
     .with('fiatValue', faker.number.float({ min: 0, max: 100 }).toString());
 }
 
-export function txFeesResponseBuilder() {
-  return new Builder<{
-    txData: TxDataResponse;
-    relayCost: RelayCost;
-    pricingContextSnapshot: PricingContextSnapshot;
-  }>()
+export function txFeesResponseBuilder(): IBuilder<TxFeesResponse> {
+  return new Builder<TxFeesResponse>()
     .with('txData', txDataResponseBuilder().build())
     .with('relayCost', relayCostBuilder().build())
-    .with('pricingContextSnapshot', pricingContextSnapshotBuilder().build());
-}
-
-export function legacyTxFeesResponseBuilder(): IBuilder<LegacyTxFeesResponse> {
-  return new Builder<LegacyTxFeesResponse>()
-    .with('txData', txDataResponseBuilder().build())
-    .with('relayCostUsd', faker.number.float({ min: 0, max: 100 }))
     .with('pricingContextSnapshot', pricingContextSnapshotBuilder().build());
 }
