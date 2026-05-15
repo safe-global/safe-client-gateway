@@ -12,6 +12,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
 import { CsvExportController } from '@/modules/csv-export/v1/csv-export.controller';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
@@ -41,6 +42,7 @@ import { CsvService } from '../csv-utils/csv.service';
       'csvExport.fileStorage.aws.basePath',
     ),
     ExportApiManagerModule,
+    ChainsModule,
   ],
   controllers: [CsvExportController],
   providers: [

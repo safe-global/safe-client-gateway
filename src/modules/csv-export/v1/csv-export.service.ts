@@ -19,6 +19,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
@@ -29,6 +30,7 @@ import {
   toJobStatusDto,
 } from '@/modules/csv-export/v1/entities/job-status.dto';
 import {
+  formatTransactionExportGasFees,
   type TransactionExport,
   TransactionExportPageSchema,
 } from '@/modules/csv-export/v1/entities/transaction-export.entity';
@@ -56,6 +58,8 @@ export class CsvExportService {
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {
     this.signedUrlTtlSeconds = this.configurationService.getOrThrow<number>(
       'csvExport.signedUrlTtlSeconds',
@@ -175,7 +179,11 @@ export class CsvExportService {
     let pageCount = 0;
     let totalProcessed = 0;
 
-    const api = await this.exportApiManager.getApi(chainId);
+    const [api, chain] = await Promise.all([
+      this.exportApiManager.getApi(chainId),
+      this.chainsRepository.getChain(chainId),
+    ]);
+    const { nativeCurrency } = chain;
 
     do {
       try {
@@ -200,9 +208,12 @@ export class CsvExportService {
           hasNext: !!page.next,
         });
 
-        // Yield each record individually
         for (const r of page.results) {
-          yield r;
+          yield formatTransactionExportGasFees(
+            r,
+            nativeCurrency.decimals,
+            nativeCurrency.symbol,
+          );
         }
 
         nextUrl = page.next;
