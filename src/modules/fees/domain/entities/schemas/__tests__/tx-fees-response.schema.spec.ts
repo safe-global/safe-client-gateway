@@ -83,17 +83,13 @@ describe('TxFeesResponseSchema', () => {
   });
 
   it('should not allow a missing txData', () => {
-    const response = {
-      relayCostUsd: 38.22,
-      pricingContextSnapshot: {
-        phase: 1,
-        priceSource: 'COINGECKO',
-        priceTimestamp: 1700000000,
-        gasPriceVolatilityBuffer: 1.3,
-      },
-    };
+    const { relayCost, pricingContextSnapshot } =
+      txFeesResponseBuilder().build();
 
-    const result = TxFeesResponseSchema.safeParse(response);
+    const result = TxFeesResponseSchema.safeParse({
+      relayCost,
+      pricingContextSnapshot,
+    });
 
     expect(!result.success && result.error.issues).toStrictEqual(
       expect.arrayContaining([
@@ -105,11 +101,13 @@ describe('TxFeesResponseSchema', () => {
     );
   });
 
-  it('should not allow a missing relayCostUsd', () => {
-    const response = txFeesResponseBuilder().build();
-    const { relayCostUsd: _, ...withoutRelayCostUsd } = response;
+  it('should not allow a missing relayCost', () => {
+    const { txData, pricingContextSnapshot } = txFeesResponseBuilder().build();
 
-    const result = TxFeesResponseSchema.safeParse(withoutRelayCostUsd);
+    const result = TxFeesResponseSchema.safeParse({
+      txData,
+      pricingContextSnapshot,
+    });
 
     expect(result.success).toBe(false);
   });

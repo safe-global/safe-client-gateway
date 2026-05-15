@@ -7,4 +7,5 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 export const FeePreviewTransactionDtoSchema = TransactionBaseSchema.extend({
   gasToken: AddressSchema,
   numberSignatures: z.number().int().min(1),
+  fiatCode: z.string().optional(),
 });

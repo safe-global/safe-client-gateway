@@ -12,4 +12,5 @@ export const TxFeesRequestSchema = z.object({
   operation: z.enum(Operation),
   numberSignatures: z.number().int().min(1),
   gasToken: AddressSchema,
+  fiatCode: z.string().optional(),
 });

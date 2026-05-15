@@ -37,6 +37,14 @@ export class FeePreviewTransactionDto
   })
   numberSignatures: number;
 
+  @ApiProperty({
+    description:
+      'Fiat currency code for relay cost conversion (e.g. EUR, GBP). Defaults to USD.',
+    example: 'EUR',
+    required: false,
+  })
+  fiatCode?: string;
+
   constructor(dto: z.infer<typeof FeePreviewTransactionDtoSchema>) {
     this.to = dto.to;
     this.value = dto.value;
@@ -44,5 +52,6 @@ export class FeePreviewTransactionDto
     this.operation = dto.operation;
     this.gasToken = dto.gasToken;
     this.numberSignatures = dto.numberSignatures;
+    this.fiatCode = dto.fiatCode;
   }
 }

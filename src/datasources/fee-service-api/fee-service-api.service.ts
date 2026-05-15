@@ -78,6 +78,7 @@ export class FeeServiceApi implements IFeeServiceApi {
       operation: args.request.operation,
       gasToken: args.request.gasToken,
       threshold: args.request.numberSignatures,
+      fiatCode: args.request.fiatCode,
     });
     const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
 

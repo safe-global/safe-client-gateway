@@ -88,12 +88,15 @@ describe('Fees Controller', () => {
       });
   });
 
-  it('should return fee preview when relay-fee is enabled', async () => {
+  it('should return fee preview with relayCost when fee service returns new format', async () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const feePreviewDto = feePreviewTransactionDtoBuilder()
       .with('value', '1000000000000000000')
+      .with('fiatCode', 'EUR')
       .build();
-    const mockFeeResponse = txFeesResponseBuilder().build();
+    const mockFeeResponse = txFeesResponseBuilder()
+      .with('relayCost', { fiatCode: 'EUR', fiatValue: '0.0025' })
+      .build();
 
     networkService.post.mockImplementation(({ url }) => {
       if (
@@ -110,7 +113,12 @@ describe('Fees Controller', () => {
       .send(feePreviewDto)
       .expect(200)
       .expect(({ body }) => {
-        expect(body).toMatchObject(mockFeeResponse);
+        expect(body.relayCost).toEqual({
+          fiatCode: 'EUR',
+          fiatValue: '0.0025',
+        });
+        expect(body.txData).toBeDefined();
+        expect(body.pricingContextSnapshot).toBeDefined();
       });
   });
 
