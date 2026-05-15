@@ -13,6 +13,7 @@ import type {
   UserStatus,
 } from '@/modules/users/domain/entities/user.entity';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
@@ -64,10 +65,10 @@ export interface IUsersRepository {
 
   findOrCreateByExtUserIdWithEmail(
     extUserId: string,
-    email?: { address: string; verified: boolean },
+    email?: { address: EmailAddress; verified: boolean },
   ): Promise<User['id']>;
 
-  findEmailById(userId: User['id']): Promise<string | undefined>;
+  findEmailById(userId: User['id']): Promise<EmailAddress | undefined>;
 
   update(args: {
     userId: User['id'];

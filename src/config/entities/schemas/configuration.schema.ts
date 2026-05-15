@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
 const relayRulesValidator = z
   .string()
@@ -65,7 +66,7 @@ export const RootConfigurationSchema = z
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
-    AWS_SES_FROM_EMAIL: z.email().optional(),
+    AWS_SES_FROM_EMAIL: EmailAddressSchema.optional(),
     AWS_SES_FROM_NAME: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
@@ -103,7 +104,7 @@ export const RootConfigurationSchema = z
       .optional(),
     // TODO: Reassess EMAIL_ keys after email integration
     EMAIL_API_APPLICATION_CODE: z.string(),
-    EMAIL_API_FROM_EMAIL: z.email(),
+    EMAIL_API_FROM_EMAIL: EmailAddressSchema,
     EMAIL_API_KEY: z.string(),
     EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
     FINGERPRINT_ENCRYPTION_KEY: z.string(),
@@ -111,7 +112,7 @@ export const RootConfigurationSchema = z
     JWT_ISSUER: z.string(),
     JWT_SECRET: z.string(),
     PUSH_NOTIFICATIONS_API_PROJECT: z.string(),
-    PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: z.email(),
+    PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: EmailAddressSchema,
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY: z.string(),
     PUSH_NOTIFICATIONS_API_OAUTH2_TOKEN_TTL_BUFFER_IN_SECONDS: z.coerce
       .number()

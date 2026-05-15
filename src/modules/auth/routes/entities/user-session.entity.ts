@@ -3,6 +3,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 export class UserSession {
   @ApiProperty()
@@ -21,5 +22,5 @@ export class UserSession {
     description:
       'Verified email address. Present only for OIDC-authenticated users when stored.',
   })
-  email?: string;
+  email?: EmailAddress;
 }

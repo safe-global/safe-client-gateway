@@ -20,6 +20,7 @@ import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-e
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {
@@ -234,7 +235,7 @@ export class UsersRepository implements IUsersRepository {
    */
   public async findOrCreateByExtUserIdWithEmail(
     extUserId: string,
-    email?: { address: string; verified: boolean },
+    email?: { address: EmailAddress; verified: boolean },
   ): Promise<User['id']> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
@@ -278,7 +279,7 @@ export class UsersRepository implements IUsersRepository {
 
   private async handleUserEmail(
     userId: User['id'],
-    email?: { address: string; verified: boolean },
+    email?: { address: EmailAddress; verified: boolean },
   ): Promise<void> {
     if (!email) {
       return;
@@ -293,17 +294,16 @@ export class UsersRepository implements IUsersRepository {
 
   private async persistVerifiedEmail(
     userId: User['id'],
-    email: string,
+    email: EmailAddress,
   ): Promise<void> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const normalizedEmail = email.trim().toLowerCase();
 
     try {
       await userRepository
         .createQueryBuilder()
         .update(DbUser)
-        .set({ email: normalizedEmail })
+        .set({ email })
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
@@ -317,15 +317,14 @@ export class UsersRepository implements IUsersRepository {
 
   private async assertEmailNotTaken(
     userId: User['id'],
-    email: string,
+    email: EmailAddress,
   ): Promise<void> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const normalizedEmail = email.trim().toLowerCase();
     // The DB unique index is the integrity guard for verified writes; this
     // check blocks unverified duplicate emails before minting a CGW session.
     const user = await userRepository.findOne({
-      where: { email: normalizedEmail },
+      where: { email },
       select: { id: true },
     });
 
@@ -334,7 +333,9 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  public async findEmailById(userId: User['id']): Promise<string | undefined> {
+  public async findEmailById(
+    userId: User['id'],
+  ): Promise<EmailAddress | undefined> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
     const user = await userRepository.findOne({
