@@ -27,7 +27,7 @@ export function pricingContextSnapshotBuilder(): IBuilder<PricingContextSnapshot
     .with('phase', faker.number.int({ min: 1, max: 3 }))
     .with('priceSource', PriceSource.COINGECKO)
     .with('priceTimestamp', faker.number.int())
-    .with('gasVolatilityBuffer', faker.number.float({ min: 1, max: 2 }));
+    .with('gasPriceVolatilityBuffer', faker.number.float({ min: 1, max: 2 }));
 }
 
 export function txFeesResponseBuilder(): IBuilder<TxFeesResponse> {

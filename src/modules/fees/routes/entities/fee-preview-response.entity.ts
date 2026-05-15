@@ -68,16 +68,16 @@ export class FeePreviewPricingContext {
   priceTimestamp: number;
 
   @ApiProperty({
-    description: 'Gas volatility buffer multiplier',
+    description: 'Gas price volatility buffer multiplier',
     example: 1.3,
   })
-  gasVolatilityBuffer: number;
+  gasPriceVolatilityBuffer: number;
 
   constructor(pricingContext: TxFeesResponse['pricingContextSnapshot']) {
     this.phase = pricingContext.phase;
     this.priceSource = pricingContext.priceSource;
     this.priceTimestamp = pricingContext.priceTimestamp;
-    this.gasVolatilityBuffer = pricingContext.gasVolatilityBuffer;
+    this.gasPriceVolatilityBuffer = pricingContext.gasPriceVolatilityBuffer;
   }
 }
 
