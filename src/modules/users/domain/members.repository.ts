@@ -114,18 +114,9 @@ export class MembersRepository implements IMembersRepository {
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });
-    const activeAdmin = await this.findActiveAdmin({
-      userId,
-      spaceId: args.spaceId,
-    });
-    if (!activeAdmin) {
-      throw new ForbiddenException('User is not an active admin.');
-    }
 
     const invitedAddresses = args.users.map((user) => user.address);
     const invitedWallets = await this.walletsRepository.find({
