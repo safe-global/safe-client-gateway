@@ -32,6 +32,11 @@ export interface IMembersRepository {
 
   find(args?: FindManyOptions<DbMember>): Promise<Array<DbMember>>;
 
+  findActiveAdmin(args: {
+    userId: User['id'];
+    spaceId: Space['id'];
+  }): Promise<DbMember | null>;
+
   inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

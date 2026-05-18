@@ -88,6 +88,23 @@ export class MembersRepository implements IMembersRepository {
     return await membersRepository.find(args);
   }
 
+  public async findActiveAdmin(args: {
+    userId: User['id'];
+    spaceId: Space['id'];
+  }): Promise<DbMember | null> {
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+
+    return await membersRepository.findOne({
+      where: {
+        user: { id: args.userId },
+        space: { id: args.spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      },
+    });
+  }
+
   public async inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
@@ -102,15 +119,9 @@ export class MembersRepository implements IMembersRepository {
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    const activeAdmin = await membersRepository.findOne({
-      where: {
-        user: { id: userId },
-        space: { id: args.spaceId },
-        status: 'ACTIVE',
-        role: 'ADMIN',
-      },
+    const activeAdmin = await this.findActiveAdmin({
+      userId,
+      spaceId: args.spaceId,
     });
     if (!activeAdmin) {
       throw new ForbiddenException('User is not an active admin.');
