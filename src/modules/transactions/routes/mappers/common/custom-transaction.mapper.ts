@@ -89,20 +89,20 @@ export class CustomTransactionMapper {
         safeTxGas,
       } = transaction;
 
-      const isEmptyTx =
+      const isEmptySelfCall =
         to === safe &&
         dataSize === 0 &&
         (!value || Number(value) === 0) &&
         operation === Operation.CALL;
 
       return (
-        (isEmptyTx &&
+        (isEmptySelfCall &&
           (!baseGas || Number(baseGas) === 0) &&
           (!gasPrice || Number(gasPrice) === 0) &&
           (!gasToken || gasToken === NULL_ADDRESS) &&
           (!refundReceiver || refundReceiver === NULL_ADDRESS) &&
           (!safeTxGas || safeTxGas === 0)) ||
-        (isEmptyTx &&
+        (isEmptySelfCall &&
           baseGas !== null &&
           Number(baseGas) !== 0 &&
           gasPrice !== null &&
