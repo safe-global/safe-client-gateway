@@ -20,6 +20,7 @@ import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
+import { UserEmailNotVerifiedError } from '@/modules/users/domain/errors/user-email-not-verified.error';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 type OidcAuthTokenResponse = {
@@ -73,6 +74,10 @@ export class OidcAuthService {
         maxExpirationTime,
         this.maxValidityPeriodInSeconds,
       );
+    }
+
+    if (email && !emailVerified) {
+      throw new UserEmailNotVerifiedError();
     }
 
     const userId = await this.usersRepository.findOrCreateByExtUserIdWithEmail(
