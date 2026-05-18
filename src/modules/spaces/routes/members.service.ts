@@ -34,14 +34,10 @@ export class MembersService {
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const activeAdmin = await this.membersRepository.findActiveAdmin({
-      userId,
+    await this.assertActiveAdmin({
+      authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
-    if (!activeAdmin) {
-      throw new ForbiddenException('User is not an active admin.');
-    }
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
@@ -151,5 +147,19 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+  }
+
+  private async assertActiveAdmin(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const activeAdmin = await this.membersRepository.findActiveAdmin({
+      userId,
+      spaceId: args.spaceId,
+    });
+    if (!activeAdmin) {
+      throw new ForbiddenException('User is not an active admin.');
+    }
   }
 }
