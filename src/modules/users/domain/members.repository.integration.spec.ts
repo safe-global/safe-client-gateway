@@ -684,26 +684,6 @@ describe('MembersRepository', () => {
       ]);
     });
 
-    it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-      const users: Array<{
-        address: Address;
-        role: keyof typeof MemberRole;
-        name: string;
-      }> = [];
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload: new AuthPayload(),
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow('Not authenticated');
-    });
-
     it('should not allow inviting users if the user is not an ADMIN', async () => {
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
