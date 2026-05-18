@@ -518,6 +518,31 @@ describe('MembersRepository', () => {
     });
   });
 
+  describe('findActiveAdmin', () => {
+    it('should return null when the user is a MEMBER, not an ADMIN', async () => {
+      const { userId, user } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: space.generatedMaps[0].id,
+        }),
+      ).resolves.toBeNull();
+    });
+  });
+
   describe('inviteUsers', () => {
     it('should invite users to a space and return the members', async () => {
       const spaceName = nameBuilder();
@@ -682,43 +707,6 @@ describe('MembersRepository', () => {
           },
         },
       ]);
-    });
-
-    it('should not allow inviting users if the user is not an ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const { user: owner, authPayload } = await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: owner,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const users = faker.helpers.multiple(
-        () => {
-          return {
-            address: getAddress(faker.finance.ethereumAddress()),
-            role: faker.helpers.arrayElement(MemberRoleKeys),
-            name: faker.person.firstName(),
-          };
-        },
-        { count: { min: 2, max: 5 } },
-      );
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload,
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
 
     it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
