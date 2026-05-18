@@ -97,5 +97,31 @@ describe('MembersService', () => {
       ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
       expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
     });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
+    ] as const)('should call inviteUsers when the %s caller is an active admin', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const inviteUsersDto: InviteUsersDto = { users: [] };
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.inviteUsers.mockResolvedValue([]);
+
+      await expect(
+        service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
+      ).resolves.toEqual([]);
+      expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
+      expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
+        authPayload,
+        spaceId,
+        users: [],
+      });
+    });
   });
 });

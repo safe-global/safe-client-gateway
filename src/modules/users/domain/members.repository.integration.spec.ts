@@ -519,6 +519,34 @@ describe('MembersRepository', () => {
   });
 
   describe('findActiveAdmin', () => {
+    it('should return the member when the user is an ACTIVE ADMIN of the space', async () => {
+      const { spaceId, userId } = await createSpaceAsAdmin();
+
+      await expect(
+        membersRepository.findActiveAdmin({ userId, spaceId }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        }),
+      );
+    });
+
+    it('should return null when the user has no member record in the space', async () => {
+      const { userId } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: space.generatedMaps[0].id,
+        }),
+      ).resolves.toBeNull();
+    });
+
     it('should return null when the user is a MEMBER, not an ADMIN', async () => {
       const { userId, user } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
@@ -598,6 +626,18 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.findActiveAdmin({ userId, spaceId }),
+      ).resolves.toBeNull();
+    });
+
+    it('should return null when the caller is an ACTIVE ADMIN of a different space, even if the queried space has its own ACTIVE admin', async () => {
+      const { userId } = await createSpaceAsAdmin();
+      const { spaceId: otherSpaceId } = await createSpaceAsAdmin();
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: otherSpaceId,
+        }),
       ).resolves.toBeNull();
     });
   });
@@ -788,7 +828,6 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow('Space not found.');
     });
-
   });
 
   describe('acceptInvite', () => {
