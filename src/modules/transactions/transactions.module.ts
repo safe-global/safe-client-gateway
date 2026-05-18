@@ -130,6 +130,10 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
       useClass: TransactionsRepository,
     },
   ],
-  exports: [ITransactionsRepository, TransactionsService],
+  exports: [
+    ITransactionsRepository,
+    MultisigTransactionMapper,
+    TransactionsService,
+  ],
 })
 export class TransactionsModule {}
