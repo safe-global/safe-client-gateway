@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
 # Override file for the dev container.
 # Used together with the root docker-compose.yml via the file list in
 # .devcontainer/devcontainer.json.

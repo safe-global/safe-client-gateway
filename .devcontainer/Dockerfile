@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
 # Dev container image for safe-client-gateway.
 # Production image is unchanged and lives at the repo-root Dockerfile.
 # Note: Microsoft only publishes major-version tags for this image, so the
