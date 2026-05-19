@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
@@ -15,12 +18,17 @@ import { SpaceTransactionsService } from '@/modules/spaces/routes/space-transact
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
 import { TransactionQueuedItem } from '@/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
 import type { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import type { Page } from '@/routes/common/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 const hex = (bytes: number): `0x${string}` =>
   `0x${faker.string.hexadecimal({ length: bytes * 2, casing: 'lower', prefix: '' })}` as `0x${string}`;
+
+const buildAuthPayload = (): AuthPayload =>
+  new AuthPayload(siweAuthPayloadDtoBuilder().build());
 
 const spaceSafesRepositoryMock = {
   findBySpaceId: jest.fn(),
@@ -39,6 +47,10 @@ const safeRepositoryMock = {
 const dataDecoderRepositoryMock = {
   getTransactionDataDecoded: jest.fn(),
 } as unknown as jest.Mocked<IDataDecoderRepository>;
+
+const membersRepositoryMock = {
+  findOne: jest.fn(),
+} as unknown as jest.Mocked<IMembersRepository>;
 
 const multisigTransactionMapperMock = {
   mapTransaction: jest.fn(),
@@ -102,16 +114,48 @@ describe('SpaceTransactionsService', () => {
       spaceQueueApiMock,
       safeRepositoryMock,
       dataDecoderRepositoryMock,
+      membersRepositoryMock,
       multisigTransactionMapperMock,
     );
+    membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
   });
 
   describe('getTransactionQueue', () => {
+    it('throws Unauthorized when the caller is not authenticated', async () => {
+      await expect(
+        service.getTransactionQueue({
+          spaceId: 1,
+          authPayload: new AuthPayload(),
+          routeUrl: routeUrl(),
+          paginationData: new PaginationData(20, 0),
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
+    });
+
+    it('throws Forbidden when the caller is not a member of the space', async () => {
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.getTransactionQueue({
+          spaceId: 1,
+          authPayload: buildAuthPayload(),
+          routeUrl: routeUrl(),
+          paginationData: new PaginationData(20, 0),
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
+    });
+
     it('returns an empty page without calling the upstream when the space has no safes', async () => {
       spaceSafesRepositoryMock.findBySpaceId.mockResolvedValue([]);
 
       const result = await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -140,6 +184,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 42,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(40, 10),
         paginationData: new PaginationData(10, 40),
       });
@@ -154,32 +199,80 @@ describe('SpaceTransactionsService', () => {
       });
     });
 
-    it('loads the Safe entity for each (chainId, address) pair', async () => {
+    it('only loads Safe entities for safes that appear in the upstream page', async () => {
       const safeA = addr();
       const safeB = addr();
+      const safeC = addr();
       spaceSafesRepositoryMock.findBySpaceId.mockResolvedValue([
         { chainId: '1', address: safeA },
         { chainId: '137', address: safeB },
+        { chainId: '10', address: safeC },
       ]);
       spaceQueueApiMock.getQueuedTransactions.mockResolvedValue(
-        upstreamPage([]),
+        upstreamPage([
+          upstreamTxBuilder('1', safeA),
+          upstreamTxBuilder('1', safeA),
+        ]),
       );
-      safeRepositoryMock.getSafe.mockResolvedValue(safeBuilder().build());
+      safeRepositoryMock.getSafe.mockResolvedValue(
+        safeBuilder().with('address', safeA).build(),
+      );
+      dataDecoderRepositoryMock.getTransactionDataDecoded.mockResolvedValue(
+        null,
+      );
+      multisigTransactionMapperMock.mapTransaction.mockResolvedValue(
+        {} as never,
+      );
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
 
-      expect(safeRepositoryMock.getSafe).toHaveBeenCalledTimes(2);
+      expect(safeRepositoryMock.getSafe).toHaveBeenCalledTimes(1);
       expect(safeRepositoryMock.getSafe).toHaveBeenCalledWith({
         chainId: '1',
         address: safeA,
       });
-      expect(safeRepositoryMock.getSafe).toHaveBeenCalledWith({
-        chainId: '137',
-        address: safeB,
+    });
+
+    it('skips upstream transactions whose (chainId, safe) is not a space safe', async () => {
+      const knownSafe = addr();
+      const strayChainId = '999';
+      const straySafe = addr();
+      spaceSafesRepositoryMock.findBySpaceId.mockResolvedValue([
+        { chainId: '1', address: knownSafe },
+      ]);
+      spaceQueueApiMock.getQueuedTransactions.mockResolvedValue(
+        upstreamPage([
+          upstreamTxBuilder('1', knownSafe),
+          upstreamTxBuilder(strayChainId, straySafe),
+        ]),
+      );
+      safeRepositoryMock.getSafe.mockResolvedValue(
+        safeBuilder().with('address', knownSafe).build(),
+      );
+      dataDecoderRepositoryMock.getTransactionDataDecoded.mockResolvedValue(
+        null,
+      );
+      multisigTransactionMapperMock.mapTransaction.mockResolvedValue(
+        {} as never,
+      );
+
+      const result = await service.getTransactionQueue({
+        spaceId: 1,
+        authPayload: buildAuthPayload(),
+        routeUrl: routeUrl(),
+        paginationData: new PaginationData(20, 0),
+      });
+
+      expect(result.results).toHaveLength(1);
+      expect(safeRepositoryMock.getSafe).toHaveBeenCalledTimes(1);
+      expect(safeRepositoryMock.getSafe).not.toHaveBeenCalledWith({
+        chainId: strayChainId,
+        address: straySafe,
       });
     });
 
@@ -202,6 +295,7 @@ describe('SpaceTransactionsService', () => {
 
       const result = await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -253,6 +347,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -313,6 +408,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -356,6 +452,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -397,6 +494,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -439,6 +537,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -472,6 +571,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -509,6 +609,7 @@ describe('SpaceTransactionsService', () => {
 
       await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(),
         paginationData: new PaginationData(20, 0),
       });
@@ -538,6 +639,7 @@ describe('SpaceTransactionsService', () => {
 
       const result = await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(20, 10),
         paginationData: new PaginationData(10, 20),
       });
@@ -573,12 +675,42 @@ describe('SpaceTransactionsService', () => {
 
       const result = await service.getTransactionQueue({
         spaceId: 1,
+        authPayload: buildAuthPayload(),
         routeUrl: routeUrl(0, 20),
         paginationData: new PaginationData(20, 0),
       });
 
       expect(result.previous).toBeNull();
       expect(result.next).toBeNull();
+    });
+
+    it('does not throw when the upstream returns a null count', async () => {
+      const safeAddress = addr();
+      spaceSafesRepositoryMock.findBySpaceId.mockResolvedValue([
+        { chainId: '1', address: safeAddress },
+      ]);
+      safeRepositoryMock.getSafe.mockResolvedValue(
+        safeBuilder().with('address', safeAddress).build(),
+      );
+      spaceQueueApiMock.getQueuedTransactions.mockResolvedValue(
+        upstreamPage([upstreamTxBuilder('1', safeAddress)], null),
+      );
+      dataDecoderRepositoryMock.getTransactionDataDecoded.mockResolvedValue(
+        null,
+      );
+      multisigTransactionMapperMock.mapTransaction.mockResolvedValue(
+        {} as never,
+      );
+
+      const result = await service.getTransactionQueue({
+        spaceId: 1,
+        authPayload: buildAuthPayload(),
+        routeUrl: routeUrl(),
+        paginationData: new PaginationData(20, 0),
+      });
+
+      expect(result.count).toBeNull();
+      expect(result.results).toHaveLength(1);
     });
 
     it('propagates errors raised by the queue API', async () => {
@@ -591,6 +723,7 @@ describe('SpaceTransactionsService', () => {
       await expect(
         service.getTransactionQueue({
           spaceId: 1,
+          authPayload: buildAuthPayload(),
           routeUrl: routeUrl(),
           paginationData: new PaginationData(20, 0),
         }),

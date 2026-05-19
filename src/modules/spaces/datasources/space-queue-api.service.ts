@@ -45,7 +45,7 @@ export class SpaceQueueApi implements ISpaceQueueApi {
     try {
       const url = new URL(`${this.baseUrl}/api/v1/multisig-transactions/queue`);
       for (const { address, chainId } of args.safes) {
-        url.searchParams.append('safes', `${address}:${chainId}`);
+        url.searchParams.append('safes', `${chainId}:${address}`);
       }
       url.searchParams.set('nonce_order', 'asc');
       url.searchParams.set('limit', String(args.limit));

@@ -1,14 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, Inject, Param, ParseIntPipe } from '@nestjs/common';
 import {
+  Controller,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceTransactionsService } from '@/modules/spaces/routes/space-transactions.service';
 import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
@@ -24,6 +36,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
   path: 'spaces/:spaceId/transactions',
   version: '1',
 })
+@UseGuards(AuthGuard)
 export class SpaceTransactionsController {
   public constructor(
     @Inject(SpaceTransactionsService)
@@ -51,6 +64,13 @@ export class SpaceTransactionsController {
     type: QueuedItemPage,
     description: 'Paginated list of queued transactions for the space',
   })
+  @ApiUnauthorizedResponse({
+    description:
+      'Authentication required or user unauthorized to access this space',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not a member of this space',
+  })
   @ApiNotFoundResponse({
     description: 'Space not found',
   })
@@ -60,9 +80,11 @@ export class SpaceTransactionsController {
     spaceId: Space['id'],
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
+    @Auth() authPayload: AuthPayload,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.spaceTransactionsService.getTransactionQueue({
       spaceId,
+      authPayload,
       routeUrl,
       paginationData,
     });

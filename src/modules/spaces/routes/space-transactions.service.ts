@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { getAddress } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type {
   Confirmation,
@@ -14,10 +15,12 @@ import type { Space } from '@/modules/spaces/datasources/entities/space.entity.d
 import type { SpaceQueueTransaction } from '@/modules/spaces/datasources/entities/space-queue-transaction.entity';
 import { ISpaceQueueApi } from '@/modules/spaces/datasources/space-queue-api.service';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
 import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
 import { TransactionQueuedItem } from '@/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import type { Page } from '@/routes/common/entities/page.entity';
 import {
   buildNextPageURL,
@@ -36,14 +39,20 @@ export class SpaceTransactionsService {
     private readonly safeRepository: SafeRepository,
     @Inject(IDataDecoderRepository)
     private readonly dataDecoderRepository: IDataDecoderRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
     private readonly multisigTransactionMapper: MultisigTransactionMapper,
   ) {}
 
   public async getTransactionQueue(args: {
     spaceId: Space['id'];
+    authPayload: AuthPayload;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
   }): Promise<Page<QueuedItem>> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertMember(this.membersRepository, args.spaceId, userId);
+
     const spaceSafes = await this.spaceSafesRepository.findBySpaceId(
       args.spaceId,
     );
@@ -51,6 +60,12 @@ export class SpaceTransactionsService {
     if (spaceSafes.length === 0) {
       return { count: 0, next: null, previous: null, results: [] };
     }
+
+    const knownSafeKeys = new Set(
+      spaceSafes.map(({ chainId, address }) =>
+        this.makeSafeKey(chainId, address),
+      ),
+    );
 
     const queuePage = await this.spaceQueueApi.getQueuedTransactions({
       safes: spaceSafes.map(({ chainId, address }) => ({
@@ -61,30 +76,37 @@ export class SpaceTransactionsService {
       offset: args.paginationData.offset,
     });
 
-    const safesByKey = await this.loadSafes(spaceSafes);
+    const pageSafes = queuePage.results
+      .filter((tx) => knownSafeKeys.has(this.makeSafeKey(tx.chainId, tx.safe)))
+      .map((tx) => ({ chainId: tx.chainId, address: tx.safe }));
+    const safesByKey = await this.loadSafes(pageSafes);
 
-    const results = await Promise.all(
-      queuePage.results.map(async (upstreamTx) => {
-        const safe = safesByKey.get(
-          this.makeSafeKey(upstreamTx.chainId, upstreamTx.safe),
-        ) as Safe;
-        const tx = this.toMultisigTransaction(upstreamTx, safe);
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: upstreamTx.chainId,
-            transaction: tx,
-          });
-        const transaction = await this.multisigTransactionMapper.mapTransaction(
-          upstreamTx.chainId,
-          tx,
-          safe,
-          dataDecoded,
-        );
-        return new TransactionQueuedItem(transaction, ConflictType.None);
-      }),
-    );
+    const results: Array<TransactionQueuedItem> = [];
+    for (const upstreamTx of queuePage.results) {
+      const safe = safesByKey.get(
+        this.makeSafeKey(upstreamTx.chainId, upstreamTx.safe),
+      );
+      if (!safe) {
+        continue;
+      }
+      const tx = this.toMultisigTransaction(upstreamTx, safe);
+      const dataDecoded =
+        await this.dataDecoderRepository.getTransactionDataDecoded({
+          chainId: upstreamTx.chainId,
+          transaction: tx,
+        });
+      const transaction = await this.multisigTransactionMapper.mapTransaction(
+        upstreamTx.chainId,
+        tx,
+        safe,
+        dataDecoded,
+      );
+      results.push(new TransactionQueuedItem(transaction, ConflictType.None));
+    }
 
-    const nextURL = buildNextPageURL(args.routeUrl, queuePage.count);
+    const itemsCount =
+      queuePage.count ?? results.length + args.paginationData.offset;
+    const nextURL = buildNextPageURL(args.routeUrl, itemsCount);
     const previousURL = buildPreviousPageURL(args.routeUrl);
 
     return {
@@ -96,14 +118,18 @@ export class SpaceTransactionsService {
   }
 
   private async loadSafes(
-    spaceSafes: Array<{ chainId: string; address: string }>,
+    pageSafes: Array<{ chainId: string; address: Address }>,
   ): Promise<Map<string, Safe>> {
+    const uniqueByKey = new Map<
+      string,
+      { chainId: string; address: Address }
+    >();
+    for (const { chainId, address } of pageSafes) {
+      uniqueByKey.set(this.makeSafeKey(chainId, address), { chainId, address });
+    }
     const entries = await Promise.all(
-      spaceSafes.map(async ({ chainId, address }) => {
-        const safe = await this.safeRepository.getSafe({
-          chainId,
-          address: getAddress(address) as Address,
-        });
+      Array.from(uniqueByKey.values()).map(async ({ chainId, address }) => {
+        const safe = await this.safeRepository.getSafe({ chainId, address });
         return [this.makeSafeKey(chainId, safe.address), safe] as const;
       }),
     );
