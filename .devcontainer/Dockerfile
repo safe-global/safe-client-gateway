@@ -2,9 +2,11 @@
 
 # Dev container image for safe-client-gateway.
 # Production image is unchanged and lives at the repo-root Dockerfile.
-# Note: Microsoft only publishes major-version tags for this image, so the
-# Node version floats within 24.x; production currently uses 24.11.0.
-FROM mcr.microsoft.com/devcontainers/typescript-node:24-bookworm
+# Microsoft only publishes major-version tags for this image, so we pin by
+# digest to keep dev environments reproducible. Production currently uses
+# Node 24.11.0; refresh the digest periodically (or via Renovate/Dependabot)
+# to pick up the latest 24.x patch.
+FROM mcr.microsoft.com/devcontainers/typescript-node:24-bookworm@sha256:14484cf5f183867fbdddd69db1991ee9a82fc50ff378f40344dcc31824eb834e
 
 # Microsoft's image runs as the `node` user by default; switch to root
 # for system installs and to enable Corepack.

@@ -15,9 +15,16 @@ services:
       - .:/workspaces/safe-client-gateway:cached
       # Persist Claude Code auth/config across container rebuilds.
       # If the host directory does not exist Docker creates an empty one.
-      - ${HOME}/.claude-docker:/home/node/.claude
+      # ${HOME:?...} fails fast with a clear error if HOME is unset (e.g. CI).
+      - ${HOME:?HOME must be set to mount the Claude config volume}/.claude-docker:/home/node/.claude
+      # SSH agent forwarding:
+      #   - Docker Desktop (macOS/Windows): SSH_AUTH_SOCK is unset on the host,
+      #     so the default /run/host-services/ssh-auth.sock magic path is used.
+      #   - Linux: export SSH_AUTH_SOCK on the host (usually already set by your
+      #     agent) and Compose bind-mounts it into the container.
+      - ${SSH_AUTH_SOCK:-/run/host-services/ssh-auth.sock}:/ssh-agent
     environment:
-      - SSH_AUTH_SOCK=/run/host-services/ssh-auth.sock
+      - SSH_AUTH_SOCK=/ssh-agent
       - ALERTS_PROVIDER_ACCOUNT
       - ALERTS_PROVIDER_API_BASE_URI
       - ALERTS_PROVIDER_API_KEY
@@ -98,9 +105,6 @@ services:
       - SAFE_DATA_DECODER_BASE_URI
       - STAKING_API_KEY
       - STAKING_TESTNET_API_KEY
-      - TEST_ENV
-      - TEST_ENV_2
-      # - TEST_ENV_3
       - TX_SERVICE_API_KEY
     # Keep the container alive for VS Code to attach to.
     command: sleep infinity
