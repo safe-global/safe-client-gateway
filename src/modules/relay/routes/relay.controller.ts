@@ -26,7 +26,7 @@ import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exceptio
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
 import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
-import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
+import { RelayerNotAvailableExceptionFilter } from '@/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
 import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
 import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
@@ -42,6 +42,7 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
 
 @ApiTags('relay')
 @Controller({
@@ -129,6 +130,7 @@ export class RelayController {
     RelayLimitReachedExceptionFilter,
     RelayDeniedExceptionFilter,
     SafeTxHashMismatchExceptionFilter,
+    RelayerNotAvailableExceptionFilter,
     InvalidMultiSendExceptionFilter,
     InvalidTransferExceptionFilter,
     UnofficialMasterCopyExceptionFilter,
@@ -207,6 +209,7 @@ export class RelayController {
     description: 'Remaining relay quota retrieved successfully',
   })
   @Get(':safeAddress')
+  @UseFilters(RelayerNotAvailableExceptionFilter)
   async getRelaysRemaining(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))

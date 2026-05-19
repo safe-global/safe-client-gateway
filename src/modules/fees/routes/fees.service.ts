@@ -4,13 +4,15 @@ import type { Address } from 'viem';
 import type { Page } from '@/domain/entities/page.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
-import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
 import type { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { GasToken } from '@/modules/fees/routes/entities/gas-token.entity';
 import {
   cursorUrlFromLimitAndOffset,
   type PaginationData,
 } from '@/routes/common/pagination/pagination.data';
+import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 
 @Injectable()
 export class FeesService {
@@ -19,6 +21,8 @@ export class FeesService {
     private readonly feeServiceApi: IFeeServiceApi,
     @Inject(IGasTokensRepository)
     private readonly gasTokensRepository: IGasTokensRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
   async getGasTokens(
@@ -48,7 +52,8 @@ export class FeesService {
     safeAddress: Address;
     feePreviewDto: FeePreviewTransactionDto;
   }): Promise<FeePreviewResponse> {
-    if (!this.feeServiceApi.isPayWithSafeEnabled(args.chainId)) {
+    const chain = await this.chainsRepository.getChain(args.chainId);
+    if (chain.relayerType !== RelayerType.RELAY_FEE) {
       throw new BadRequestException(
         'Pay with Safe not available for this chain',
       );

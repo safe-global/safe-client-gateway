@@ -4,11 +4,12 @@ import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-api.module';
 import { GasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository';
 import { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { FeesController } from '@/modules/fees/routes/fees.controller';
 import { FeesService } from '@/modules/fees/routes/fees.service';
 
 @Module({
-  imports: [FeeServiceApiModule, ConfigApiModule],
+  imports: [FeeServiceApiModule, ConfigApiModule, ChainsModule],
   controllers: [FeesController],
   providers: [
     FeesService,

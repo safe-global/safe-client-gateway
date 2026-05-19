@@ -10,10 +10,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type {
-  RelayFeeConfiguration,
-  RelaySimulationConfiguration,
-} from '@/modules/relay/domain/entities/relay.configuration';
+import type { RelaySimulationConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import {
   type Relay,
   RelaySchema,
@@ -39,7 +36,6 @@ const SIMULATION_SENDER_SENTINEL: Address =
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
-  private readonly relayFeeConfiguration: RelayFeeConfiguration;
   private readonly relaySimulationConfiguration: RelaySimulationConfiguration;
 
   constructor(
@@ -51,7 +47,6 @@ export class RelayFeeRelayer implements IRelayer {
     private readonly tenderlySimulationApi: ITenderlySimulationApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {
-    this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
     this.relaySimulationConfiguration =
       configurationService.getOrThrow('relay.simulation');
   }
@@ -71,12 +66,7 @@ export class RelayFeeRelayer implements IRelayer {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<RelayEligibility> {
-    if (
-      !(
-        this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) &&
-        args.safeTxHash
-      )
-    ) {
+    if (!args.safeTxHash) {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
@@ -342,10 +332,6 @@ export class RelayFeeRelayer implements IRelayer {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
-    if (!this.relayFeeConfiguration.enabledChainIds.includes(args.chainId)) {
-      return { remaining: 0, limit: 0 };
-    }
-
     // Without a safeTxHash we cannot query the fee service; report optimistically
     // since per-transaction eligibility is enforced in relay().
     if (!args.safeTxHash) {
