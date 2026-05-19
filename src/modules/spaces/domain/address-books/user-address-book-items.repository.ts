@@ -2,7 +2,7 @@
 
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { type EntityManager, In } from 'typeorm';
-import { type Address, isAddressEqual } from 'viem';
+import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UserAddressBookItem as DbUserAddressBookItem } from '@/modules/spaces/datasources/entities/user-address-book-item.entity.db';
@@ -55,7 +55,6 @@ export class UserAddressBookItemsRepository
   public async upsertMany(args: {
     spaceId: Space['id'];
     creatorId: User['id'];
-    signerAddress: Address;
     items: Array<AddressBookItem>;
   }): Promise<Array<UserAddressBookItem>> {
     const repository = await this.db.getRepository(DbUserAddressBookItem);
@@ -84,7 +83,6 @@ export class UserAddressBookItemsRepository
           newItems.map((item) => ({
             space: { id: args.spaceId },
             creator: { id: args.creatorId },
-            createdBy: args.signerAddress,
             address: item.address,
             name: item.name,
             chainIds: item.chainIds,

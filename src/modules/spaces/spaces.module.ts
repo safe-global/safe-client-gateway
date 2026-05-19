@@ -42,9 +42,8 @@ import { UserAddressBookController } from '@/modules/spaces/routes/user-address-
 import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Module({
   imports: [
@@ -62,6 +61,7 @@ import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.
     DataDecoderModule,
     SafeRepositoryModule,
     TransactionsModule,
+    UserIdentityResolverModule,
   ],
   controllers: [
     AddressBooksController,
@@ -104,10 +104,6 @@ import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.
     {
       provide: IAddressBookRequestsRepository,
       useClass: AddressBookRequestsRepository,
-    },
-    {
-      provide: IWalletsRepository,
-      useClass: WalletsRepository,
     },
   ],
   exports: [

@@ -11,7 +11,6 @@ import {
 } from 'typeorm';
 import type { Address } from 'viem';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
-import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
@@ -68,15 +67,6 @@ export class AddressBookRequest implements DomainAddressBookRequest {
   public readonly chainIds!: Array<string>;
 
   @Column({
-    name: 'requested_by_wallet',
-    type: 'varchar',
-    length: 42,
-    nullable: false,
-    transformer: databaseAddressTransformer,
-  })
-  requestedByWallet!: Address;
-
-  @Column({
     name: 'address',
     type: 'varchar',
     length: 42,
@@ -99,12 +89,10 @@ export class AddressBookRequest implements DomainAddressBookRequest {
 
   @Column({
     name: 'reviewed_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: true,
-    transformer: nullableDatabaseAddressTransformer,
   })
-  reviewedBy!: Address | null;
+  reviewedBy!: number | null;
 
   @Column({
     name: 'created_at',
