@@ -17,6 +17,7 @@ import { User as DbUser } from '@/modules/users/datasources/entities/users.entit
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEmailMismatchError } from '@/modules/users/domain/errors/user-email-mismatch.error';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -83,11 +84,12 @@ export class UsersRepository implements IUsersRepository {
   public async create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: string },
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
       status,
       ...(options?.extUserId && { extUserId: options.extUserId }),
+      ...(options?.email && { email: options.email.trim().toLowerCase() }),
     });
 
     return userInsertResult.identifiers[0].id;
@@ -231,11 +233,11 @@ export class UsersRepository implements IUsersRepository {
   }
 
   /**
-   * Finds or creates an OIDC user, then validates or persists the optional email claim.
+   * Finds or creates an OIDC user with the given verified email.
    */
   public async findOrCreateByExtUserIdWithEmail(
     extUserId: string,
-    email?: { address: EmailAddress; verified: boolean },
+    email: { address: EmailAddress },
   ): Promise<User['id']> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
@@ -246,68 +248,37 @@ export class UsersRepository implements IUsersRepository {
     });
 
     if (existingUser) {
-      if (!existingUser.email && email) {
-        await this.handleUserEmail(existingUser.id, email);
+      if (
+        existingUser.email &&
+        existingUser.email !== email.address.trim().toLowerCase()
+      ) {
+        throw new UserEmailMismatchError();
+      }
+      if (!existingUser.email) {
+        await this.persistEmail(existingUser.id, email.address);
       }
       return existingUser.id;
     }
 
-    let userId: User['id'];
     try {
-      userId = await this.postgresDatabaseService.transaction(
+      return await this.postgresDatabaseService.transaction(
         async (entityManager) => {
-          return await this.create('ACTIVE', entityManager, { extUserId });
+          return await this.create('ACTIVE', entityManager, {
+            extUserId,
+            email: email.address,
+          });
         },
       );
     } catch (error) {
-      // Handle race condition: a concurrent call may have created the
-      // user between our find and insert, causing a unique constraint
-      // violation. Retry the lookup in that case.
-      if (!this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
-        throw error;
+      // A concurrent call may have created the user between our find
+      // and insert, causing a unique constraint violation. Retry the
+      // lookup in that case.
+      if (this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
+        const user = await userRepository.findOneOrFail({
+          where: { extUserId },
+        });
+        return user.id;
       }
-      const user = await userRepository.findOneOrFail({
-        where: { extUserId },
-      });
-      userId = user.id;
-    }
-
-    await this.handleUserEmail(userId, email);
-
-    return userId;
-  }
-
-  private async handleUserEmail(
-    userId: User['id'],
-    email?: { address: EmailAddress; verified: boolean },
-  ): Promise<void> {
-    if (!email) {
-      return;
-    }
-
-    if (email.verified) {
-      await this.persistVerifiedEmail(userId, email.address);
-    } else {
-      await this.assertEmailNotTaken(userId, email.address);
-    }
-  }
-
-  private async persistVerifiedEmail(
-    userId: User['id'],
-    email: EmailAddress,
-  ): Promise<void> {
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
-
-    try {
-      await userRepository
-        .createQueryBuilder()
-        .update(DbUser)
-        .set({ email })
-        .where('id = :userId', { userId })
-        .andWhere('email IS NULL')
-        .execute();
-    } catch (error) {
       if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();
       }
@@ -315,21 +286,35 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  private async assertEmailNotTaken(
-    userId: User['id'],
-    email: EmailAddress,
-  ): Promise<void> {
+  private async persistEmail(userId: User['id'], email: EmailAddress): Promise<void> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    // The DB unique index is the integrity guard for verified writes; this
-    // check blocks unverified duplicate emails before minting a CGW session.
-    const user = await userRepository.findOne({
-      where: { email },
-      select: { id: true },
-    });
 
-    if (user && user.id !== userId) {
-      throw new UserEmailAlreadyInUseError();
+    try {
+      const result = await userRepository
+        .createQueryBuilder()
+        .update(DbUser)
+        .set({ email })
+        .where('id = :userId', { userId })
+        .andWhere('email IS NULL')
+        .execute();
+      if (result.affected === 1) {
+        return;
+      }
+    } catch (error) {
+      if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
+        throw new UserEmailAlreadyInUseError();
+      }
+      throw error;
+    }
+
+    // Race: a concurrent caller set the email between our find and update.
+    const fresh = await userRepository.findOne({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (fresh?.email !== normalizedEmail) {
+      throw new UserEmailMismatchError();
     }
   }
 

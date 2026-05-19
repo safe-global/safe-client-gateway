@@ -1306,7 +1306,7 @@ describe('MembersController', () => {
 
       const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
         faker.string.uuid(),
-        { address: email, verified: true },
+        { address: email },
       );
       const authPayloadDto = oidcAuthPayloadDtoBuilder()
         .with('sub', userId.toString())
@@ -1347,7 +1347,7 @@ describe('MembersController', () => {
 
       const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
         faker.string.uuid(),
-        { address: email, verified: true },
+        { address: email },
       );
       const authPayloadDto = oidcAuthPayloadDtoBuilder()
         .with('sub', userId.toString())

@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import {
-  EMAIL_IN_USE_ERROR_CODE,
-  UserEmailAlreadyInUseError,
-} from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEmailMismatchError } from '@/modules/users/domain/errors/user-email-mismatch.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
@@ -38,22 +35,20 @@ describe('UsersRepository', () => {
   });
 
   describe('findOrCreateByExtUserIdWithEmail', () => {
-    it('should return an existing user id without email handling', async () => {
+    it('should return an existing user id without re-persisting when the stored email matches', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
-      userRepository.findOne.mockResolvedValue({ id: userId, email: null });
+      const email = faker.internet.email().toLowerCase();
+      userRepository.findOne.mockResolvedValue({ id: userId, email });
 
       await expect(
-        target.findOrCreateByExtUserIdWithEmail(extUserId),
+        target.findOrCreateByExtUserIdWithEmail(extUserId, { address: email }),
       ).resolves.toBe(userId);
 
-      expect(userRepository.findOne).toHaveBeenCalledWith({
-        where: { extUserId },
-        select: { email: true, id: true },
-      });
+      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
     });
 
-    it('should return an existing user id without email handling when email is already stored', async () => {
+    it('should throw UserEmailMismatchError when the stored email differs from the OIDC email', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
       userRepository.findOne.mockResolvedValue({
@@ -64,66 +59,8 @@ describe('UsersRepository', () => {
       await expect(
         target.findOrCreateByExtUserIdWithEmail(extUserId, {
           address: fakeEmailAddress(),
-          verified: true,
         }),
-      ).resolves.toBe(userId);
-
-      expect(userRepository.findOne).toHaveBeenCalledTimes(1);
-    });
-
-    it('should return when an unverified email is unused', async () => {
-      const userId = faker.number.int({ min: 1 });
-      const extUserId = faker.string.uuid();
-      const email = fakeEmailAddress();
-      userRepository.findOne
-        .mockResolvedValueOnce({ id: userId })
-        .mockResolvedValueOnce(null);
-
-      await expect(
-        target.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: email,
-          verified: false,
-        }),
-      ).resolves.toBe(userId);
-
-      expect(userRepository.findOne).toHaveBeenNthCalledWith(2, {
-        where: { email: email.toLowerCase() },
-        select: { id: true },
-      });
-    });
-
-    it('should return when an unverified email belongs to the same user', async () => {
-      const userId = faker.number.int({ min: 1 });
-      userRepository.findOne
-        .mockResolvedValueOnce({ id: userId })
-        .mockResolvedValueOnce({ id: userId });
-
-      await expect(
-        target.findOrCreateByExtUserIdWithEmail(faker.string.uuid(), {
-          address: fakeEmailAddress(),
-          verified: false,
-        }),
-      ).resolves.toBe(userId);
-    });
-
-    it('should throw when an unverified email belongs to a different user', async () => {
-      const userId = faker.number.int({ min: 1 });
-      userRepository.findOne
-        .mockResolvedValueOnce({ id: userId })
-        .mockResolvedValueOnce({ id: userId + 1 });
-
-      const result = target.findOrCreateByExtUserIdWithEmail(
-        faker.string.uuid(),
-        { address: fakeEmailAddress(), verified: false },
-      );
-
-      await expect(result).rejects.toThrow(UserEmailAlreadyInUseError);
-      await expect(result).rejects.toMatchObject({
-        response: expect.objectContaining({
-          code: EMAIL_IN_USE_ERROR_CODE,
-          statusCode: 409,
-        }),
-      });
+      ).rejects.toThrow(UserEmailMismatchError);
     });
   });
 
