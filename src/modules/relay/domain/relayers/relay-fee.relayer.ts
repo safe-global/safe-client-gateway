@@ -1,32 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
-import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
+import { Inject, Injectable } from "@nestjs/common";
+import type { Address, Hex } from "viem";
+import { IConfigurationService } from "@/config/configuration.service.interface";
+import { LogType } from "@/domain/common/entities/log-type.entity";
+import { IFeeServiceApi } from "@/domain/interfaces/fee-service-api.interface";
+import { IRelayApi } from "@/domain/interfaces/relay-api.interface";
+import { ITenderlySimulationApi } from "@/domain/interfaces/tenderly-simulation-api.interface";
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type {
-  RelayFeeConfiguration,
-  RelaySimulationConfiguration,
-} from '@/modules/relay/domain/entities/relay.configuration';
+} from "@/logging/logging.interface";
+import type { RelaySimulationConfiguration } from "@/modules/relay/domain/entities/relay.configuration";
 import {
   type Relay,
   RelaySchema,
-} from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
-import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
-import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
-import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
-import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
+} from "@/modules/relay/domain/entities/relay.entity";
+import type { RelayEligibility } from "@/modules/relay/domain/entities/relay-eligibility.entity";
+import { RelaySimulationFailedError } from "@/modules/relay/domain/errors/relay-simulation-failed.error";
+import { RelaySimulationIndeterminateError } from "@/modules/relay/domain/errors/relay-simulation-indeterminate.error";
+import { RelayTxDeniedError } from "@/modules/relay/domain/errors/relay-tx-denied.error";
+import { SafeTxHashMismatchError } from "@/modules/relay/domain/errors/safe-tx-hash-mismatch.error";
+import { UnofficialProxyFactoryError } from "@/modules/relay/domain/errors/unofficial-proxy-factory.error";
+import type { IRelayer } from "@/modules/relay/domain/interfaces/relayer.interface";
+import { RelayTransactionHelper } from "@/modules/relay/domain/relay-transaction-helper";
+import { SafeTransaction } from "@/modules/transactions/domain/entities/safe-transaction.entity";
 
 /**
  * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
@@ -35,11 +32,10 @@ import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-tra
  * flows debit the Safe to a third party (as they would in production).
  */
 const SIMULATION_SENDER_SENTINEL: Address =
-  '0x000000000000000000000000000000000000dEaD';
+  "0x000000000000000000000000000000000000dEaD";
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
-  private readonly relayFeeConfiguration: RelayFeeConfiguration;
   private readonly relaySimulationConfiguration: RelaySimulationConfiguration;
 
   constructor(
@@ -51,9 +47,8 @@ export class RelayFeeRelayer implements IRelayer {
     private readonly tenderlySimulationApi: ITenderlySimulationApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {
-    this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
     this.relaySimulationConfiguration =
-      configurationService.getOrThrow('relay.simulation');
+      configurationService.getOrThrow("relay.simulation");
   }
 
   /**
@@ -71,12 +66,7 @@ export class RelayFeeRelayer implements IRelayer {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<RelayEligibility> {
-    if (
-      !(
-        this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) &&
-        args.safeTxHash
-      )
-    ) {
+    if (!args.safeTxHash) {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
@@ -254,7 +244,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(safeTxHash);
     }
 
-    if (simulation?.status === 'failed') {
+    if (simulation?.status === "failed") {
       // Tenderly confirmed the transaction would revert => Block relay
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
@@ -263,7 +253,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
     }
 
-    if (simulation?.status === 'indeterminate') {
+    if (simulation?.status === "indeterminate") {
       if (!acceptUnverifiedSimulation) {
         this.loggingService.warn({
           type: LogType.TxRelayEligibility,
@@ -342,10 +332,6 @@ export class RelayFeeRelayer implements IRelayer {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
-    if (!this.relayFeeConfiguration.enabledChainIds.includes(args.chainId)) {
-      return { remaining: 0, limit: 0 };
-    }
-
     // Without a safeTxHash we cannot query the fee service; report optimistically
     // since per-transaction eligibility is enforced in relay().
     if (!args.safeTxHash) {

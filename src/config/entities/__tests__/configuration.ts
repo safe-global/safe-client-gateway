@@ -337,7 +337,6 @@ export default (): ReturnType<typeof configuration> => ({
       81457: faker.string.hexadecimal({ length: 32 }),
       11155111: faker.string.hexadecimal({ length: 32 }),
     },
-    dailyLimitRelayerChainsIds: [],
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: Date.now() / 1000 - 10_000,
@@ -399,7 +398,6 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
     fee: {
-      enabledChainIds: [],
       baseUri: faker.internet.url({ appendSlash: false }),
       feePreviewTtlSeconds: 60,
     },

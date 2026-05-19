@@ -95,9 +95,4 @@ export class FeeServiceApi implements IFeeServiceApi {
       throw this.httpErrorFactory.from(error);
     }
   }
-
-  /** @inheritdoc */
-  isPayWithSafeEnabled(chainId: string): boolean {
-    return this.relayFeeConfiguration.enabledChainIds.includes(chainId);
-  }
 }

@@ -14,6 +14,7 @@ import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests_
 import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 
 export function chainBuilder(): IBuilder<Chain> {
   return new Builder<Chain>()
@@ -47,5 +48,12 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('ensRegistryAddress', faker.finance.ethereumAddress() as Address)
     .with('disabledWallets', [faker.word.sample(), faker.word.sample()])
     .with('features', [faker.word.sample(), faker.word.sample()])
-    .with('recommendedMasterCopyVersion', faker.system.semver());
+    .with('recommendedMasterCopyVersion', faker.system.semver())
+    .with(
+      'relayerType',
+      faker.helpers.arrayElement([
+        ...Object.values(RelayerType),
+        null,
+      ]) as Chain['relayerType'],
+    );
 }

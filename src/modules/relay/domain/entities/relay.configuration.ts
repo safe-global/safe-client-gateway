@@ -22,8 +22,6 @@ export type RelayRules = Array<RelayRule>;
 
 /** Configuration for the relay-fee (Pay with Safe) relayer and fee service integration. */
 export type RelayFeeConfiguration = {
-  /** Chain IDs for which Pay with Safe / relay-fee is enabled */
-  enabledChainIds: Array<string>;
   /** Base URL of the fee service API */
   baseUri: string;
   /** TTL in seconds for cached fee preview responses; set to 0 to disable caching */

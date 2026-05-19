@@ -57,17 +57,13 @@ function fakeAddress(): Address {
 describe('RelayFeeRelayer', () => {
   let target: RelayFeeRelayer;
   let fakeConfigurationService: FakeConfigurationService;
-  let enabledChainId: string;
+  let chainId: string;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
+    chainId = faker.string.numeric();
     fakeConfigurationService = new FakeConfigurationService();
-    enabledChainId = faker.string.numeric();
-    fakeConfigurationService.set('relay.fee', {
-      enabledChainIds: [enabledChainId],
-      baseUri: faker.internet.url({ appendSlash: false }),
-    });
     fakeConfigurationService.set('relay.simulation', {
       enabledChainIds: [],
     });
@@ -83,19 +79,9 @@ describe('RelayFeeRelayer', () => {
   });
 
   describe('canRelay', () => {
-    it('should return false for chains not enabled for relay-fee', async () => {
-      const result = await target.canRelay({
-        chainId: faker.string.numeric({ length: 5 }),
-        address: fakeAddress(),
-      });
-
-      expect(result).toEqual({ result: false, currentCount: 0, limit: 0 });
-      expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
-    });
-
     it('should return false when no safeTxHash is provided', async () => {
       const result = await target.canRelay({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
       });
 
@@ -108,14 +94,14 @@ describe('RelayFeeRelayer', () => {
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
 
       const result = await target.canRelay({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
         safeTxHash,
       });
 
       expect(result).toEqual({ result: true, currentCount: 0, limit: 1 });
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
-        chainId: enabledChainId,
+        chainId,
         safeTxHash,
       });
     });
@@ -125,7 +111,7 @@ describe('RelayFeeRelayer', () => {
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
 
       const result = await target.canRelay({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
         safeTxHash,
       });
@@ -164,7 +150,7 @@ describe('RelayFeeRelayer', () => {
       await expect(
         target.relay({
           version: '1.3.0',
-          chainId: enabledChainId,
+          chainId,
           to: fakeAddress(),
           data: '0x' as Hex,
           gasLimit: null,
@@ -195,7 +181,7 @@ describe('RelayFeeRelayer', () => {
 
       const result = await target.relay({
         version: '1.3.0',
-        chainId: enabledChainId,
+        chainId,
         to: safeAddress,
         data: '0x' as Hex,
         gasLimit: null,
@@ -205,18 +191,18 @@ describe('RelayFeeRelayer', () => {
       expect(result).toEqual({ taskId });
       expect(mockRelayTransactionHelper.isSafeTxHashValid).toHaveBeenCalledWith(
         {
-          chainId: enabledChainId,
+          chainId,
           safeAddress,
           decoded: fakeDecoded,
           safeTxHash,
         },
       );
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
-        chainId: enabledChainId,
+        chainId,
         safeTxHash,
       });
       expect(mockRelayApi.relay).toHaveBeenCalledWith({
-        chainId: enabledChainId,
+        chainId,
         to: safeAddress,
         data: '0x',
       });
@@ -236,7 +222,7 @@ describe('RelayFeeRelayer', () => {
       await expect(
         target.relay({
           version: '1.3.0',
-          chainId: enabledChainId,
+          chainId,
           to: fakeAddress(),
           data: '0x' as Hex,
           gasLimit: null,
@@ -264,7 +250,7 @@ describe('RelayFeeRelayer', () => {
       await expect(
         target.relay({
           version: '1.3.0',
-          chainId: enabledChainId,
+          chainId,
           to: safeAddress,
           data: '0x' as Hex,
           gasLimit: null,
@@ -296,7 +282,7 @@ describe('RelayFeeRelayer', () => {
 
       const result = await target.relay({
         version: '1.3.0',
-        chainId: enabledChainId,
+        chainId,
         to: safeAddress,
         data: '0x' as Hex,
         gasLimit: null,
@@ -325,7 +311,7 @@ describe('RelayFeeRelayer', () => {
 
       const result = await target.relay({
         version: '1.3.0',
-        chainId: enabledChainId,
+        chainId,
         to: fakeAddress(),
         data: '0x' as Hex,
         gasLimit: null,
@@ -350,7 +336,7 @@ describe('RelayFeeRelayer', () => {
       await expect(
         target.relay({
           version: '1.3.0',
-          chainId: enabledChainId,
+          chainId,
           to,
           data: '0x' as Hex,
           gasLimit: null,
@@ -377,7 +363,7 @@ describe('RelayFeeRelayer', () => {
       await expect(
         target.relay({
           version: '1.3.0',
-          chainId: enabledChainId,
+          chainId,
           to: fakeAddress(),
           data: '0x' as Hex,
           gasLimit: null,
@@ -406,7 +392,7 @@ describe('RelayFeeRelayer', () => {
       await expect(
         target.relay({
           version: '1.3.0',
-          chainId: enabledChainId,
+          chainId,
           to: fakeAddress(),
           data: '0x' as Hex,
           gasLimit: null,
@@ -447,10 +433,6 @@ describe('RelayFeeRelayer', () => {
       }
 
       it('skips simulation when chainId is not in relay.simulation.enabledChainIds', async () => {
-        fakeConfigurationService.set('relay.fee', {
-          enabledChainIds: [simulationChainId],
-          baseUri: faker.internet.url({ appendSlash: false }),
-        });
         configureSimulationEnabled([]); // empty -> gate disabled for every chain
         arrangeValidExecTransaction();
         const taskId = faker.string.uuid();
@@ -471,10 +453,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('runs simulation and relays when the simulation succeeds', async () => {
-        fakeConfigurationService.set('relay.fee', {
-          enabledChainIds: [simulationChainId],
-          baseUri: faker.internet.url({ appendSlash: false }),
-        });
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
@@ -504,10 +482,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('throws RelaySimulationFailedError and never relays when the simulation fails', async () => {
-        fakeConfigurationService.set('relay.fee', {
-          enabledChainIds: [simulationChainId],
-          baseUri: faker.internet.url({ appendSlash: false }),
-        });
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
@@ -538,10 +512,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('throws RelaySimulationIndeterminateError when simulation is indeterminate and the user has not acknowledged it', async () => {
-        fakeConfigurationService.set('relay.fee', {
-          enabledChainIds: [simulationChainId],
-          baseUri: faker.internet.url({ appendSlash: false }),
-        });
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
@@ -572,10 +542,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('relays despite an indeterminate simulation when the user has acknowledged it', async () => {
-        fakeConfigurationService.set('relay.fee', {
-          enabledChainIds: [simulationChainId],
-          baseUri: faker.internet.url({ appendSlash: false }),
-        });
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
@@ -606,10 +572,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('throws RelaySimulationFailedError whith acceptUnverifiedSimulation not overriding a confirmed simulation failure', async () => {
-        fakeConfigurationService.set('relay.fee', {
-          enabledChainIds: [simulationChainId],
-          baseUri: faker.internet.url({ appendSlash: false }),
-        });
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
@@ -635,9 +597,9 @@ describe('RelayFeeRelayer', () => {
   });
 
   describe('getRelaysRemaining', () => {
-    it('should return optimistic 1 when no safeTxHash is provided on an enabled chain', async () => {
+    it('should return optimistic 1 when no safeTxHash is provided', async () => {
       const result = await target.getRelaysRemaining({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
       });
 
@@ -645,21 +607,11 @@ describe('RelayFeeRelayer', () => {
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
     });
 
-    it('should return 0 for chains not enabled for relay-fee', async () => {
-      const result = await target.getRelaysRemaining({
-        chainId: faker.string.numeric({ length: 5 }),
-        address: fakeAddress(),
-        safeTxHash: fakeSafeTxHash(),
-      });
-
-      expect(result).toEqual({ remaining: 0, limit: 0 });
-    });
-
-    it('should return 1 remaining for enabled chains when FeeService approves', async () => {
+    it('should return 1 remaining when FeeService approves', async () => {
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
 
       const result = await target.getRelaysRemaining({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
         safeTxHash: fakeSafeTxHash(),
       });
@@ -673,23 +625,23 @@ describe('RelayFeeRelayer', () => {
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
 
       const result = await target.getRelaysRemaining({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
         safeTxHash,
       });
 
       expect(result).toEqual({ remaining: 1, limit: 1 });
       expect(mockFeeServiceApi.canRelay).toHaveBeenCalledWith({
-        chainId: enabledChainId,
+        chainId,
         safeTxHash,
       });
     });
 
-    it('should return 0 remaining for enabled chains when Fee Service denies', async () => {
+    it('should return 0 remaining when Fee Service denies', async () => {
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: false });
 
       const result = await target.getRelaysRemaining({
-        chainId: enabledChainId,
+        chainId,
         address: fakeAddress(),
         safeTxHash: fakeSafeTxHash(),
       });

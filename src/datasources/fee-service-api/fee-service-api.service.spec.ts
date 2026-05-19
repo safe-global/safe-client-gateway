@@ -44,7 +44,6 @@ describe('FeeServiceApi', () => {
     // Configure relay-fee settings
     fakeConfigurationService.set('relay.fee', {
       baseUri,
-      enabledChainIds: ['1', '137', '8453'],
       feePreviewTtlSeconds: 60,
     });
     fakeConfigurationService.set(
@@ -204,20 +203,6 @@ describe('FeeServiceApi', () => {
           request,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
-    });
-  });
-
-  describe('isPayWithSafeEnabled', () => {
-    it('should return true for enabled chain IDs', () => {
-      expect(target.isPayWithSafeEnabled('1')).toBe(true);
-      expect(target.isPayWithSafeEnabled('137')).toBe(true);
-      expect(target.isPayWithSafeEnabled('8453')).toBe(true);
-    });
-
-    it('should return false for disabled chain IDs', () => {
-      expect(target.isPayWithSafeEnabled('42161')).toBe(false);
-      expect(target.isPayWithSafeEnabled('10')).toBe(false);
-      expect(target.isPayWithSafeEnabled('999999')).toBe(false);
     });
   });
 });

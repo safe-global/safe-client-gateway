@@ -628,8 +628,6 @@ export default () => ({
       process.env.RELAY_THROTTLE_TTL_SECONDS ?? `${60 * 60 * 24}`,
       10,
     ),
-    dailyLimitRelayerChainsIds:
-      process.env.RELAY_DAILY_LIMIT_CHAIN_IDS?.split(',') ?? [],
     apiKey: {
       // Ethereum Mainnet
       1: process.env.RELAY_PROVIDER_API_KEY_MAINNET,
@@ -702,7 +700,6 @@ export default () => ({
       },
     },
     fee: {
-      enabledChainIds: process.env.RELAY_FEE_CHAIN_IDS?.split(',') ?? [],
       baseUri: process.env.FEE_SERVICE_BASE_URI,
       feePreviewTtlSeconds: Number.parseInt(
         process.env.RELAY_FEE_PREVIEW_TTL_SECONDS ?? `${10}`,

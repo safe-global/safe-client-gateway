@@ -134,17 +134,7 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_UNICHAIN: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
-    RELAY_DAILY_LIMIT_CHAIN_IDS: z
-      .string()
-      .transform((value) => value.split(',').map((item) => item.trim()))
-      .pipe(z.array(z.string()))
-      .optional(),
     // Relay-fee configuration
-    RELAY_FEE_CHAIN_IDS: z
-      .string()
-      .transform((value) => value.split(',').map((item) => item.trim()))
-      .pipe(z.array(z.string()))
-      .optional(),
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
