@@ -3,13 +3,9 @@ import { z } from 'zod';
 
 export const EMAIL_ADDRESS_MAX_LENGTH = 255;
 
-export type EmailAddress = string & { readonly __brand: 'EmailAddress' };
-
 export const EmailAddressSchema = z
-  .string()
-  .trim()
+  .email()
   .toLowerCase()
-  .pipe(
-    z.email({ error: 'Invalid email address' }).max(EMAIL_ADDRESS_MAX_LENGTH),
-  )
-  .transform((value) => value as EmailAddress);
+  .max(EMAIL_ADDRESS_MAX_LENGTH);
+
+export type EmailAddress = z.infer<typeof EmailAddressSchema>;
