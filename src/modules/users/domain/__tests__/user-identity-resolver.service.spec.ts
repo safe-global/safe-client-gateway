@@ -7,6 +7,7 @@ import { UserIdentityResolverService } from '@/modules/users/domain/user-identit
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet as DbWallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockUsersRepository = jest.mocked({
   find: jest.fn(),
@@ -49,7 +50,7 @@ describe('UserIdentityResolverService', () => {
   it('prefers wallet address when present', async () => {
     const wallet = getAddress(faker.finance.ethereumAddress());
     mockUsersRepository.find.mockResolvedValue([
-      buildUser({ id: 1, email: 'a@b.com' }),
+      buildUser({ id: 1, email: fakeEmailAddress() }),
     ]);
     mockWalletsRepository.find.mockResolvedValue([
       buildWallet({ user: buildUser({ id: 1 }), address: wallet }),
@@ -60,13 +61,12 @@ describe('UserIdentityResolverService', () => {
   });
 
   it('falls back to email when no wallet', async () => {
-    mockUsersRepository.find.mockResolvedValue([
-      buildUser({ id: 2, email: 'c@d.com' }),
-    ]);
+    const email = fakeEmailAddress();
+    mockUsersRepository.find.mockResolvedValue([buildUser({ id: 2, email })]);
     mockWalletsRepository.find.mockResolvedValue([]);
 
     const result = await service.resolveMany([2]);
-    expect(result.get(2)).toBe('c@d.com');
+    expect(result.get(2)).toBe(email);
   });
 
   it('returns "Unknown user" when no wallet and no email', async () => {
