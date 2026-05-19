@@ -10,13 +10,18 @@ import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 describe('UserAddressBookController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
+  let usersRepository: IUsersRepository;
 
   const defaultConfiguration = configuration();
 
@@ -45,6 +50,7 @@ describe('UserAddressBookController', () => {
     });
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
+    usersRepository = moduleFixture.get<IUsersRepository>(IUsersRepository);
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
     return app;
@@ -91,6 +97,7 @@ describe('UserAddressBookController', () => {
                 address: mockAddress,
                 name: mockName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -144,6 +151,7 @@ describe('UserAddressBookController', () => {
                 address: mockAddress,
                 name: mockName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -158,6 +166,43 @@ describe('UserAddressBookController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/address-book/private`)
         .expect(403);
+    });
+
+    it('should return private address book entries for an OIDC user', async () => {
+      const { spaceId, accessToken, userId, email } =
+        await createSpaceAsOidcAdmin();
+
+      // Seed an entry.
+      const mockAddress = getAddress(faker.finance.ethereumAddress());
+      const mockName = nameBuilder();
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [{ name: mockName, address: mockAddress, chainIds: ['1'] }],
+        })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect((res) => {
+          expect(res.body).toEqual({
+            spaceId: spaceId.toString(),
+            data: [
+              expect.objectContaining({
+                name: mockName,
+                address: mockAddress,
+                chainIds: ['1'],
+                createdBy: email,
+                createdByUserId: userId,
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+              }),
+            ],
+          });
+        });
     });
   });
 
@@ -207,6 +252,38 @@ describe('UserAddressBookController', () => {
           items: [{ name: mockName, address: mockAddress, chainIds: ['1'] }],
         })
         .expect(200);
+    });
+
+    it('should upsert private address book entries for an OIDC user', async () => {
+      const { spaceId, accessToken, userId } = await createSpaceAsOidcAdmin();
+      const mockAddress = getAddress(faker.finance.ethereumAddress());
+      const mockName = nameBuilder();
+      const mockChainIds = ['1', '100'];
+
+      const response = await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            { name: mockName, address: mockAddress, chainIds: mockChainIds },
+          ],
+        })
+        .expect(200);
+
+      expect(response.body).toEqual({
+        spaceId: spaceId.toString(),
+        data: [
+          expect.objectContaining({
+            name: mockName,
+            address: mockAddress,
+            chainIds: mockChainIds,
+            createdBy: expect.any(String),
+            createdByUserId: userId,
+            createdAt: expect.any(String),
+            updatedAt: expect.any(String),
+          }),
+        ],
+      });
     });
 
     it('should update an existing private contact', async () => {
@@ -260,6 +337,32 @@ describe('UserAddressBookController', () => {
         .expect(200)
         .expect({ spaceId: spaceId.toString(), data: [] });
     });
+
+    it('should delete a private address book entry for an OIDC user', async () => {
+      const { spaceId, accessToken } = await createSpaceAsOidcAdmin();
+      const mockAddress = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            { name: nameBuilder(), address: mockAddress, chainIds: ['1'] },
+          ],
+        })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .delete(`/v1/spaces/${spaceId}/address-book/private/${mockAddress}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect({ spaceId: spaceId.toString(), data: [] });
+    });
   });
 
   // Utility functions
@@ -282,6 +385,34 @@ describe('UserAddressBookController', () => {
       .expect(201);
     const spaceId = createSpaceResponse.body.id;
     return { spaceId, accessToken };
+  };
+
+  const createSpaceAsOidcAdmin = async (): Promise<{
+    spaceId: string;
+    accessToken: string;
+    userId: number;
+    email: string;
+  }> => {
+    const email = faker.internet.email().toLowerCase();
+    const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+      faker.string.uuid(),
+      { address: email, verified: true },
+    );
+    const authPayloadDto = oidcAuthPayloadDtoBuilder()
+      .with('sub', userId.toString())
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
+    const createSpaceResponse = await request(app.getHttpServer())
+      .post('/v1/spaces')
+      .set('Cookie', [`access_token=${accessToken}`])
+      .send({ name: nameBuilder() })
+      .expect(201);
+    return {
+      spaceId: createSpaceResponse.body.id,
+      accessToken,
+      userId,
+      email,
+    };
   };
 
   const inviteMember = async (args: {

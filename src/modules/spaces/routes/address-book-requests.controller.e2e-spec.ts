@@ -10,13 +10,18 @@ import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 describe('AddressBookRequestsController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
+  let usersRepository: IUsersRepository;
 
   const defaultConfiguration = configuration();
 
@@ -45,6 +50,7 @@ describe('AddressBookRequestsController', () => {
     });
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
+    usersRepository = moduleFixture.get<IUsersRepository>(IUsersRepository);
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
     return app;
@@ -83,6 +89,9 @@ describe('AddressBookRequestsController', () => {
               address: mockAddress,
               status: 'PENDING',
               requestedBy: expect.any(String),
+              requestedByUserId: expect.any(Number),
+              reviewedBy: null,
+              reviewedByUserId: null,
               createdAt: expect.any(String),
               updatedAt: expect.any(String),
             }),
@@ -113,6 +122,35 @@ describe('AddressBookRequestsController', () => {
         .post(`/v1/spaces/${spaceId}/address-book/requests`)
         .send({ address: fakeAddress })
         .expect(403);
+    });
+
+    it('should create a request as an OIDC member (admin of own space)', async () => {
+      const { spaceId, accessToken, userId } = await createSpaceAsOidcAdmin();
+      const { mockName, mockAddress, mockChainIds } =
+        await createPrivateContact({
+          spaceId,
+          accessToken,
+        });
+
+      const response = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/address-book/requests`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ address: mockAddress })
+        .expect(201);
+
+      expect(response.body).toEqual({
+        id: expect.any(Number),
+        name: mockName,
+        address: mockAddress,
+        chainIds: mockChainIds,
+        requestedBy: expect.any(String),
+        requestedByUserId: userId,
+        reviewedBy: null,
+        reviewedByUserId: null,
+        status: 'PENDING',
+        createdAt: expect.any(String),
+        updatedAt: expect.any(String),
+      });
     });
   });
 
@@ -275,6 +313,51 @@ describe('AddressBookRequestsController', () => {
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(403);
     });
+
+    it('should approve a request as an OIDC admin', async () => {
+      const {
+        spaceId,
+        accessToken: adminToken,
+        userId: adminUserId,
+      } = await createSpaceAsOidcAdmin();
+      const { memberAccessToken } = await inviteMember({
+        spaceId,
+        adminAccessToken: adminToken,
+      });
+      const { mockAddress } = await createPrivateContact({
+        spaceId,
+        accessToken: memberAccessToken,
+      });
+      const createResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/address-book/requests`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({ address: mockAddress })
+        .expect(201);
+      const requestId = createResponse.body.id;
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/requests/${requestId}/approve`)
+        .set('Cookie', [`access_token=${adminToken}`])
+        .expect(200);
+
+      // Approved requests are no longer in the PENDING list, but the shared
+      // space address book should now contain the entry.
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${adminToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.data).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                address: mockAddress,
+                createdByUserId: expect.any(Number),
+                lastUpdatedByUserId: adminUserId,
+              }),
+            ]),
+          );
+        });
+    });
   });
 
   describe('PUT /spaces/:spaceId/address-book/requests/:id/reject', () => {
@@ -352,6 +435,37 @@ describe('AddressBookRequestsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(400);
     });
+
+    it('should reject a request as an OIDC admin', async () => {
+      const { spaceId, accessToken: adminToken } =
+        await createSpaceAsOidcAdmin();
+      const { memberAccessToken } = await inviteMember({
+        spaceId,
+        adminAccessToken: adminToken,
+      });
+      const { mockAddress } = await createPrivateContact({
+        spaceId,
+        accessToken: memberAccessToken,
+      });
+      const createResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/address-book/requests`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({ address: mockAddress })
+        .expect(201);
+      const requestId = createResponse.body.id;
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/requests/${requestId}/reject`)
+        .set('Cookie', [`access_token=${adminToken}`])
+        .expect(200);
+
+      // Rejected requests are not in the PENDING list; member sees an empty list.
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book/requests`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .expect(200)
+        .expect({ spaceId: spaceId.toString(), data: [] });
+    });
   });
 
   // Utility functions
@@ -374,6 +488,34 @@ describe('AddressBookRequestsController', () => {
       .expect(201);
     const spaceId = createSpaceResponse.body.id;
     return { spaceId, accessToken };
+  };
+
+  const createSpaceAsOidcAdmin = async (): Promise<{
+    spaceId: string;
+    accessToken: string;
+    userId: number;
+    email: string;
+  }> => {
+    const email = faker.internet.email().toLowerCase();
+    const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+      faker.string.uuid(),
+      { address: email, verified: true },
+    );
+    const authPayloadDto = oidcAuthPayloadDtoBuilder()
+      .with('sub', userId.toString())
+      .build();
+    const accessToken = jwtService.sign(authPayloadDto);
+    const createSpaceResponse = await request(app.getHttpServer())
+      .post('/v1/spaces')
+      .set('Cookie', [`access_token=${accessToken}`])
+      .send({ name: nameBuilder() })
+      .expect(201);
+    return {
+      spaceId: createSpaceResponse.body.id,
+      accessToken,
+      userId,
+      email,
+    };
   };
 
   const inviteMember = async (args: {
