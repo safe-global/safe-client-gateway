@@ -54,15 +54,6 @@ export class UserAddressBookItem implements DomainUserAddressBookItem {
   public readonly creator!: User;
 
   @Column({
-    name: 'created_by',
-    type: 'varchar',
-    length: 42,
-    nullable: false,
-    transformer: databaseAddressTransformer,
-  })
-  createdBy!: Address;
-
-  @Column({
     name: 'chain_ids',
     type: 'varchar',
     length: 32,

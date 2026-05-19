@@ -2,7 +2,6 @@
 
 import {
   BadRequestException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -26,6 +25,7 @@ import {
   isAdmin,
 } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
 
 @Injectable()
 export class AddressBookRequestsService {
@@ -40,6 +40,8 @@ export class AddressBookRequestsService {
     private readonly membersRepository: IMembersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(UserIdentityResolverService)
+    private readonly identityResolver: UserIdentityResolverService,
   ) {}
 
   public async findPending(
@@ -70,16 +72,9 @@ export class AddressBookRequestsService {
     spaceId: Space['id'],
     address: Address,
   ): Promise<AddressBookRequestItemDto> {
-    if (!authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
 
-    // Look up the private contact
     const privateContact =
       await this.privateRepository.findOneBySpaceCreatorAndAddress({
         spaceId,
@@ -96,7 +91,6 @@ export class AddressBookRequestsService {
     const request = await this.requestsRepository.create({
       spaceId,
       requestedById: userId,
-      requestedByWallet: authPayload.signer_address,
       item: {
         name: privateContact.name,
         address: privateContact.address,
@@ -104,7 +98,8 @@ export class AddressBookRequestsService {
       },
     });
 
-    return this.mapRequestItem(request);
+    const { data } = await this.mapRequests(spaceId, [request]);
+    return data[0];
   }
 
   public async approve(
@@ -112,12 +107,6 @@ export class AddressBookRequestsService {
     spaceId: Space['id'],
     requestId: number,
   ): Promise<void> {
-    if (!authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertAdmin(this.spacesRepository, spaceId, userId);
 
@@ -126,12 +115,11 @@ export class AddressBookRequestsService {
       spaceId,
     });
 
-    // Atomically claim the request so concurrent approvals cannot both proceed.
     const claimed = await this.requestsRepository.transitionFromPending({
       id: requestId,
       spaceId,
       toStatus: 'APPROVED',
-      reviewedBy: authPayload.signer_address,
+      reviewedBy: userId,
     });
     if (!claimed) {
       throw new BadRequestException('Only pending requests can be approved.');
@@ -151,7 +139,6 @@ export class AddressBookRequestsService {
         createdByOverride: request.requestedBy.id,
       });
     } catch (err) {
-      // Compensate so the request can be retried if the upsert fails.
       await this.requestsRepository.revertToPending({
         id: requestId,
         spaceId,
@@ -165,12 +152,6 @@ export class AddressBookRequestsService {
     spaceId: Space['id'],
     requestId: number,
   ): Promise<void> {
-    if (!authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertAdmin(this.spacesRepository, spaceId, userId);
 
@@ -178,32 +159,50 @@ export class AddressBookRequestsService {
       id: requestId,
       spaceId,
       toStatus: 'REJECTED',
-      reviewedBy: authPayload.signer_address,
+      reviewedBy: userId,
     });
     if (!rejected) {
       throw new BadRequestException('Only pending requests can be rejected.');
     }
   }
 
-  private mapRequests(
+  private async mapRequests(
     spaceId: Space['id'],
     requests: Array<AddressBookRequest>,
-  ): AddressBookRequestsDto {
+  ): Promise<AddressBookRequestsDto> {
+    const identityMap = await this.identityResolver.resolveMany(
+      requests.flatMap((r) =>
+        r.reviewedBy !== null
+          ? [r.requestedBy.id, r.reviewedBy]
+          : [r.requestedBy.id],
+      ),
+    );
+
     return {
       spaceId: spaceId.toString(),
-      data: requests.map((request) => this.mapRequestItem(request)),
+      data: requests.map((request) => this.toDto(request, identityMap)),
     };
   }
 
-  private mapRequestItem(
+  private toDto(
     request: AddressBookRequest,
+    identityMap: Map<number, string>,
   ): AddressBookRequestItemDto {
     return {
       id: request.id,
       name: request.name,
       address: request.address,
       chainIds: request.chainIds,
-      requestedBy: request.requestedByWallet,
+      requestedBy:
+        identityMap.get(request.requestedBy.id) ??
+        UserIdentityResolverService.DELETED_USER_LABEL,
+      requestedByUserId: request.requestedBy.id,
+      reviewedBy:
+        request.reviewedBy === null
+          ? null
+          : (identityMap.get(request.reviewedBy) ??
+            UserIdentityResolverService.DELETED_USER_LABEL),
+      reviewedByUserId: request.reviewedBy,
       status: request.status,
       createdAt: request.createdAt,
       updatedAt: request.updatedAt,
