@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -19,6 +20,7 @@ import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfo
 import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
 import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
+import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -83,6 +85,7 @@ export class PortfolioController {
   })
   @ApiOkResponse({ type: Portfolio })
   @Get('/portfolio/:address')
+  @UseGuards(CaptchaGuard)
   public getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
