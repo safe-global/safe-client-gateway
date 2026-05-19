@@ -1,0 +1,28 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
+
+export const SurveyOptionSchema = z.object({
+  key: z.string().min(1).max(64),
+  label: z.string().min(1).max(255),
+  description: z.string().max(500).optional(),
+  icon: z.string().min(1).max(64).optional(),
+});
+export type SurveyOption = z.infer<typeof SurveyOptionSchema>;
+
+export const SurveyContentSchema = z.object({
+  multiSelect: z.boolean(),
+  options: z.array(SurveyOptionSchema).min(1).max(64),
+});
+export type SurveyContent = z.infer<typeof SurveyContentSchema>;
+
+export const SurveySchema = z.object({
+  id: z.number().int(),
+  slug: z.string().min(1).max(64),
+  version: z.number().int().positive(),
+  title: z.string().min(1).max(255),
+  subtitle: z.string().min(1).max(255).nullable(),
+  surveyContent: SurveyContentSchema,
+  isActive: z.boolean(),
+  createdAt: z.date(),
+});
+export type Survey = z.infer<typeof SurveySchema>;
