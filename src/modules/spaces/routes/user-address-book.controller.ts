@@ -94,8 +94,7 @@ export class UserAddressBookController {
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
-    description:
-      'User is not a member of this space or wallet authentication required',
+    description: 'User is not a member of this space',
   })
   @Put('/:spaceId/address-book/private')
   @UseGuards(AuthGuard)
@@ -130,7 +129,7 @@ export class UserAddressBookController {
   })
   @ApiNotFoundResponse({ description: 'Entry not found' })
   @ApiForbiddenResponse({
-    description: 'User is not a member or wallet authentication required',
+    description: 'User is not a member of this space',
   })
   @Delete('/:spaceId/address-book/private/:address')
   @UseGuards(AuthGuard)

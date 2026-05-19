@@ -12,6 +12,7 @@ import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/addres
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -44,8 +45,10 @@ describe('AddressBooksService', () => {
     walletsRepositoryMock.find.mockResolvedValue([]);
     service = new AddressBooksService(
       repositoryMock,
-      usersRepositoryMock,
-      walletsRepositoryMock,
+      new UserIdentityResolverService(
+        usersRepositoryMock,
+        walletsRepositoryMock,
+      ),
       configurationServiceMock,
     );
   });

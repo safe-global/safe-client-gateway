@@ -65,8 +65,15 @@ export class UserAddressBookItemDto {
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: UserAddressBookItem['chainIds'];
 
-  @ApiProperty({ type: String })
-  public createdBy!: UserAddressBookItem['createdBy'];
+  @ApiProperty({
+    type: String,
+    description:
+      'Email or wallet address of the creator, "Unknown user" if the user has no display identity, or "Deleted user"',
+  })
+  public createdBy!: string;
+
+  @ApiProperty({ type: Number, description: 'User ID of the creator' })
+  public createdByUserId!: number;
 
   @ApiProperty()
   public createdAt!: UserAddressBookItem['createdAt'];

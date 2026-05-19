@@ -23,22 +23,20 @@ export const AddressBookRequestSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     space: Space;
     requestedBy: User;
-    requestedByWallet: Address;
     chainIds: Array<string>;
     address: Address;
     name: string;
     status: keyof typeof AddressBookRequestStatus;
-    reviewedBy: Address | null;
+    reviewedBy: number | null;
   }
 > = RowSchema.extend({
   space: z.lazy(() => SpaceSchema),
   requestedBy: z.lazy(() => UserSchema),
-  requestedByWallet: AddressSchema as z.ZodType<Address>,
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
   status: z.enum(getStringEnumKeys(AddressBookRequestStatus)),
-  reviewedBy: (AddressSchema as z.ZodType<Address>).nullable(),
+  reviewedBy: z.number().int().nullable(),
 });
 
 export type AddressBookRequest = z.infer<typeof AddressBookRequestSchema>;
