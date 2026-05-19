@@ -20,8 +20,8 @@ import type {
   SurveyDto,
   SurveyStateDto,
 } from '@/modules/surveys/routes/entities/survey-state.dto.entity';
-import {
-  type SubmitSurveyResponseDto,
+import type {
+  SubmitSurveyResponseDto,
   SurveyResponseResultDto,
 } from '@/modules/surveys/routes/entities/submit-survey-response.dto.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
