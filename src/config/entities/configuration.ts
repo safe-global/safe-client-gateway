@@ -728,7 +728,7 @@ export default () => ({
   },
   safeQueue: {
     baseUri:
-      process.env.SAFE_QUEUE_BASE_URI || 'https://safe-queue.safe.global',
+      process.env.SAFE_QUEUE_BASE_URI || 'https://api.5afe.dev/queue',
   },
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
