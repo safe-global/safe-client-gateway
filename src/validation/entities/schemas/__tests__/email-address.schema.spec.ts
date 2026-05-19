@@ -46,6 +46,8 @@ describe('EmailAddressSchema', () => {
     // @ts-expect-error: plain string must not be assignable to EmailAddress
     const _plain: EmailAddress = 'user@example.com';
 
+    // Runtime assertions only exist to keep the bindings used; the real test
+    // is the @ts-expect-error directive above.
     expect(_branded).toBe('user@example.com');
     expect(_plain).toBe('user@example.com');
   });
