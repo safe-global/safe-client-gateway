@@ -12,9 +12,9 @@ import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
 import { PositionsService } from '@/modules/positions/routes/positions.service';
+import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 
 @ApiTags('positions')
 @Controller({
