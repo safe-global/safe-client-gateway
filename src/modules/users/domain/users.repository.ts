@@ -239,26 +239,44 @@ export class UsersRepository implements IUsersRepository {
     extUserId: string,
     email: { address: EmailAddress },
   ): Promise<User['id']> {
+    const existingId = await this.findExistingByExtUserIdAndEnsureEmail(
+      extUserId,
+      email,
+    );
+    if (existingId) return existingId;
+
+    return this.createByExtUserIdAndStoreEmail(extUserId, email);
+  }
+
+  private async findExistingByExtUserIdAndEnsureEmail(
+    extUserId: string,
+    email: { address: string },
+  ): Promise<User['id'] | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-
-    const existingUser = await userRepository.findOne({
+    const existing = await userRepository.findOne({
       where: { extUserId },
       select: { email: true, id: true },
     });
-
-    if (existingUser) {
-      if (
-        existingUser.email &&
-        existingUser.email !== email.address.trim().toLowerCase()
-      ) {
-        throw new UserEmailMismatchError();
-      }
-      if (!existingUser.email) {
-        await this.persistEmail(existingUser.id, email.address);
-      }
-      return existingUser.id;
+    if (!existing) return null;
+    if (
+      existing.email &&
+      existing.email !== email.address.trim().toLowerCase()
+    ) {
+      throw new UserEmailMismatchError();
     }
+    if (!existing.email) {
+      await this.persistEmail(existing.id, email.address);
+    }
+    return existing.id;
+  }
+
+  private async createByExtUserIdAndStoreEmail(
+    extUserId: string,
+    email: { address: string },
+  ): Promise<User['id']> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
 
     try {
       return await this.postgresDatabaseService.transaction(
@@ -270,9 +288,6 @@ export class UsersRepository implements IUsersRepository {
         },
       );
     } catch (error) {
-      // A concurrent call may have created the user between our find
-      // and insert, causing a unique constraint violation. Retry the
-      // lookup in that case.
       if (this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
         const user = await userRepository.findOneOrFail({
           where: { extUserId },
