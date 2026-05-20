@@ -497,9 +497,9 @@ describe('AddressBookRequestsController', () => {
     email: string;
   }> => {
     const email = faker.internet.email().toLowerCase();
-    const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+    const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
       faker.string.uuid(),
-      { address: email, verified: true },
+      email,
     );
     const authPayloadDto = oidcAuthPayloadDtoBuilder()
       .with('sub', userId.toString())
