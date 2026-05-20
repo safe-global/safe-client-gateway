@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
 import type {
   SurveyResponse,
   SurveyResponseSelections,
 } from '@/modules/surveys/domain/entities/survey-response.entity';
-import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const ISurveysRepository = Symbol('ISurveysRepository');

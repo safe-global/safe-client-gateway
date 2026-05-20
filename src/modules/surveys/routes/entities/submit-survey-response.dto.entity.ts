@@ -2,9 +2,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SurveyResponseSelectionsSchema } from '@/modules/surveys/domain/entities/survey-response.entity';
-import type { SurveyResponseSelections } from '@/modules/surveys/domain/entities/survey-response.entity';
 import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
+import type { SurveyResponseSelections } from '@/modules/surveys/domain/entities/survey-response.entity';
+import { SurveyResponseSelectionsSchema } from '@/modules/surveys/domain/entities/survey-response.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const SubmitSurveyResponseDtoSchema = z.object({

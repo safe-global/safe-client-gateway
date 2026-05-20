@@ -46,6 +46,15 @@ export class CreateSurveys1779100947599 implements MigrationInterface {
       `CREATE INDEX "idx_survey_responses_selections" ON "survey_responses" USING GIN ("selections")`,
     );
 
+    // Match the convention used by every other timestamped table in this repo:
+    // a BEFORE-UPDATE trigger that bumps updated_at on every row update,
+    // independent of whether the writer remembered to set it explicitly.
+    await queryRunner.query(
+      `CREATE TRIGGER update_updated_at
+        BEFORE UPDATE ON survey_responses
+        FOR EACH ROW EXECUTE PROCEDURE update_updated_at();`,
+    );
+
     // Seed onboarding v1. survey.title / survey.subtitle are admin-facing metadata
     // (used as the Mixpanel event label, future admin UI, etc.). The user-facing
     // headers live on the page itself.

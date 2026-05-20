@@ -243,7 +243,10 @@ describe('SurveysController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: {} })
         .expect((res) => {
-          // Empty object fails Zod's z.record min check too — accept 400 or 422
+          // The 400 comes from the service-level "Missing answers for page(s)"
+          // check; z.record does not enforce a minimum number of keys, so the
+          // Zod ValidationPipe lets the empty object through. Accept 422 too
+          // in case the Zod schema is tightened later with a .refine().
           expect([400, 422]).toContain(res.status);
         });
     });

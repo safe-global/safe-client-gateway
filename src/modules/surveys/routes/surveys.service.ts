@@ -10,23 +10,23 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type {
-  SurveyResponse,
-  SurveyResponseSelections,
-} from '@/modules/surveys/domain/entities/survey-response.entity';
-import type {
   Survey,
   SurveyPage,
 } from '@/modules/surveys/domain/entities/survey.entity';
+import type {
+  SurveyResponse,
+  SurveyResponseSelections,
+} from '@/modules/surveys/domain/entities/survey-response.entity';
 import { ISurveysRepository } from '@/modules/surveys/domain/surveys.repository.interface';
+import type {
+  SubmitSurveyResponseDto,
+  SurveyResponseResultDto,
+} from '@/modules/surveys/routes/entities/submit-survey-response.dto.entity';
 import type {
   SpaceSurveyResponseDto,
   SurveyDto,
   SurveyStateDto,
 } from '@/modules/surveys/routes/entities/survey-state.dto.entity';
-import type {
-  SubmitSurveyResponseDto,
-  SurveyResponseResultDto,
-} from '@/modules/surveys/routes/entities/submit-survey-response.dto.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 @Injectable()

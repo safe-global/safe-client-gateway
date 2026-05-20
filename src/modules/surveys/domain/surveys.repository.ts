@@ -2,13 +2,13 @@
 import { Injectable } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SurveyResponse as DbSurveyResponse } from '@/modules/surveys/datasources/entities/survey-response.entity.db';
 import { Survey as DbSurvey } from '@/modules/surveys/datasources/entities/survey.entity.db';
+import { SurveyResponse as DbSurveyResponse } from '@/modules/surveys/datasources/entities/survey-response.entity.db';
+import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
 import type {
   SurveyResponse,
   SurveyResponseSelections,
 } from '@/modules/surveys/domain/entities/survey-response.entity';
-import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
 import type { ISurveysRepository } from '@/modules/surveys/domain/surveys.repository.interface';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
@@ -51,14 +51,14 @@ export class SurveysRepository implements ISurveysRepository {
 
     // Single atomic statement (Postgres `INSERT ... ON CONFLICT DO UPDATE`)
     // — eliminates the find-then-write race that two concurrent admin
-    // submissions would otherwise hit.
+    // submissions would otherwise hit. `updated_at` is bumped by the
+    // `update_updated_at` BEFORE-UPDATE trigger installed in the migration.
     await repo.upsert(
       {
         space: { id: args.spaceId },
         survey: { id: args.surveyId },
         answeredBy: { id: args.answeredByUserId },
         selections: args.selections,
-        updatedAt: new Date(),
       },
       {
         conflictPaths: ['space', 'survey'],
