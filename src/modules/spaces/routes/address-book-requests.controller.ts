@@ -96,7 +96,7 @@ export class AddressBookRequestsController {
     description: 'Private contact not found',
   })
   @ApiForbiddenResponse({
-    description: 'User is not a member or wallet authentication required',
+    description: 'User is not a member of this space',
   })
   @Post('/:spaceId/address-book/requests')
   @UseGuards(AuthGuard)
@@ -132,7 +132,7 @@ export class AddressBookRequestsController {
     description: 'Only pending requests can be approved',
   })
   @ApiForbiddenResponse({
-    description: 'User is not an admin or wallet authentication required',
+    description: 'User is not an admin of this space',
   })
   @Put('/:spaceId/address-book/requests/:requestId/approve')
   @UseGuards(AuthGuard)
@@ -168,7 +168,7 @@ export class AddressBookRequestsController {
     description: 'Only pending requests can be rejected',
   })
   @ApiForbiddenResponse({
-    description: 'User is not an admin or wallet authentication required',
+    description: 'User is not an admin of this space',
   })
   @Put('/:spaceId/address-book/requests/:requestId/reject')
   @UseGuards(AuthGuard)

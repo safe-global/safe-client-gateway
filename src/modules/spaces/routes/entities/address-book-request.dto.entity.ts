@@ -19,8 +19,30 @@ export class AddressBookRequestItemDto {
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: Array<string>;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    description:
+      'Email or wallet address of the requester, "Unknown user" if the user has no display identity, or "Deleted user"',
+  })
   public requestedBy!: string;
+
+  @ApiProperty({ type: Number, description: 'User ID of the requester' })
+  public requestedByUserId!: number;
+
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Email or wallet address of the reviewing admin, "Unknown user", "Deleted user", or null when still PENDING',
+  })
+  public reviewedBy!: string | null;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description: 'User ID of the reviewing admin, null when still PENDING',
+  })
+  public reviewedByUserId!: number | null;
 
   @ApiProperty({ enum: getStringEnumKeys(AddressBookRequestStatus) })
   public status!: keyof typeof AddressBookRequestStatus;

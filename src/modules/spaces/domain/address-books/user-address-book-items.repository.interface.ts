@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { Address } from 'viem';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -25,7 +24,6 @@ export interface IUserAddressBookItemsRepository {
   upsertMany(args: {
     spaceId: Space['id'];
     creatorId: User['id'];
-    signerAddress: Address;
     items: Array<AddressBookItem>;
   }): Promise<Array<UserAddressBookItem>>;
 
