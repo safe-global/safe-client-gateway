@@ -146,7 +146,6 @@ describe('SurveysService', () => {
           authPayload,
           spaceId,
           slug: 'onboarding',
-          // missing team_size
           body: { selections: { use_cases: ['hold_assets'] } },
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
