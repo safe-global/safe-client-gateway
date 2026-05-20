@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -10,6 +10,7 @@ import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-addre
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
 
 @Injectable()
 export class UserAddressBookService {
@@ -18,6 +19,8 @@ export class UserAddressBookService {
     private readonly repository: IUserAddressBookItemsRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(UserIdentityResolverService)
+    private readonly identityResolver: UserIdentityResolverService,
   ) {}
 
   public async findAll(
@@ -32,7 +35,7 @@ export class UserAddressBookService {
       creatorId: userId,
     });
 
-    return this.mapItems(spaceId, items);
+    return this.mapItems(spaceId, userId, items);
   }
 
   public async upsertMany(
@@ -40,23 +43,16 @@ export class UserAddressBookService {
     spaceId: Space['id'],
     dto: UpsertAddressBookItemsDto,
   ): Promise<UserAddressBookDto> {
-    if (!authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
 
     const items = await this.repository.upsertMany({
       spaceId,
       creatorId: userId,
-      signerAddress: authPayload.signer_address,
       items: dto.items,
     });
 
-    return this.mapItems(spaceId, items);
+    return this.mapItems(spaceId, userId, items);
   }
 
   public async deleteByAddress(args: {
@@ -64,12 +60,6 @@ export class UserAddressBookService {
     spaceId: Space['id'];
     address: UserAddressBookItem['address'];
   }): Promise<void> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
@@ -80,22 +70,26 @@ export class UserAddressBookService {
     });
   }
 
-  private mapItems(
+  private async mapItems(
     spaceId: Space['id'],
+    userId: number,
     items: Array<UserAddressBookItem>,
-  ): UserAddressBookDto {
-    const data = items.map((item) => ({
-      name: item.name,
-      address: item.address,
-      chainIds: item.chainIds,
-      createdBy: item.createdBy,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    }));
+  ): Promise<UserAddressBookDto> {
+    const identityMap = await this.identityResolver.resolveMany([userId]);
+    const createdBy =
+      identityMap.get(userId) ?? UserIdentityResolverService.DELETED_USER_LABEL;
 
     return {
       spaceId: spaceId.toString(),
-      data,
+      data: items.map((item) => ({
+        name: item.name,
+        address: item.address,
+        chainIds: item.chainIds,
+        createdBy,
+        createdByUserId: userId,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      })),
     };
   }
 }

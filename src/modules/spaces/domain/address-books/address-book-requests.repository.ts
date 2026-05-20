@@ -2,7 +2,6 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
 import type { FindOptionsWhere, InsertResult } from 'typeorm';
-import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -81,7 +80,6 @@ export class AddressBookRequestsRepository
   public async create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
-    requestedByWallet: Address;
     item: AddressBookItem;
   }): Promise<AddressBookRequest> {
     const repository = await this.db.getRepository(DbAddressBookRequest);
@@ -90,7 +88,6 @@ export class AddressBookRequestsRepository
       result = await repository.insert({
         space: { id: args.spaceId },
         requestedBy: { id: args.requestedById },
-        requestedByWallet: args.requestedByWallet,
         address: args.item.address,
         name: args.item.name,
         chainIds: args.item.chainIds,
@@ -112,7 +109,7 @@ export class AddressBookRequestsRepository
     id: AddressBookRequest['id'];
     spaceId: Space['id'];
     toStatus: 'APPROVED' | 'REJECTED';
-    reviewedBy: Address;
+    reviewedBy: User['id'];
   }): Promise<boolean> {
     const repository = await this.db.getRepository(DbAddressBookRequest);
     const result = await repository.update(

@@ -16,7 +16,6 @@ export const UserAddressBookItemSchema: z.ZodType<
   z.infer<typeof RowSchema> & {
     space: Space;
     creator: User;
-    createdBy: Address;
     chainIds: Array<string>;
     address: Address;
     name: string;
@@ -24,7 +23,6 @@ export const UserAddressBookItemSchema: z.ZodType<
 > = RowSchema.extend({
   space: z.lazy(() => SpaceSchema),
   creator: z.lazy(() => UserSchema),
-  createdBy: AddressSchema as z.ZodType<Address>,
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
