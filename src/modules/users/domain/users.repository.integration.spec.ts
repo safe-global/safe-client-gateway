@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -21,8 +21,6 @@ import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.ent
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
-import { UserEmailMismatchError } from '@/modules/users/domain/errors/user-email-mismatch.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
@@ -915,7 +913,7 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserIdWithEmail', () => {
+  describe('findOrCreateByExtUserIdAndEmail', () => {
     it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const email = faker.internet.email().toLowerCase();
@@ -956,9 +954,7 @@ describe('UsersRepository', () => {
       const userId = userInsertResult.identifiers[0].id as number;
       const email = faker.internet.email();
 
-      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-        address: email,
-      });
+      await usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email);
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
@@ -977,13 +973,11 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: email,
-        }),
-      ).rejects.toThrow(UserEmailAlreadyInUseError);
+        usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email),
+      ).rejects.toThrow(/idx_users_email/);
     });
 
-    it('should throw UserEmailMismatchError when the stored email differs from the OIDC email', async () => {
+    it('should throw UnauthorizedException when the stored email differs from the OIDC email', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const storedEmail = faker.internet.email().toLowerCase();
       const extUserId = faker.string.uuid();
@@ -994,10 +988,11 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: faker.internet.email(),
-        }),
-      ).rejects.toThrow(UserEmailMismatchError);
+        usersRepository.findOrCreateByExtUserIdAndEmail(
+          extUserId,
+          faker.internet.email(),
+        ),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

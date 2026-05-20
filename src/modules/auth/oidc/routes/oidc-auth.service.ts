@@ -20,7 +20,6 @@ import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
-import { UserEmailRequiredError } from '@/modules/users/domain/errors/user-email-required.error';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 type OidcAuthTokenResponse = {
@@ -77,12 +76,14 @@ export class OidcAuthService {
     }
 
     if (!(email && emailVerified)) {
-      throw new UserEmailRequiredError();
+      throw new UnauthorizedException(
+        'A verified email is required to sign in',
+      );
     }
 
-    const userId = await this.usersRepository.findOrCreateByExtUserIdWithEmail(
+    const userId = await this.usersRepository.findOrCreateByExtUserIdAndEmail(
       extUserId,
-      { address: email },
+      email,
     );
     const accessToken = this.authRepository.signToken(
       {

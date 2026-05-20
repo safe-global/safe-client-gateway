@@ -11,7 +11,6 @@ import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.inte
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import { UserEmailRequiredError } from '@/modules/users/domain/errors/user-email-required.error';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 const authRepositoryMock = {
@@ -21,7 +20,7 @@ const authRepositoryMock = {
 } as jest.MockedObjectDeep<IAuthRepository>;
 
 const usersRepositoryMock = {
-  findOrCreateByExtUserIdWithEmail: jest.fn(),
+  findOrCreateByExtUserIdAndEmail: jest.fn(),
 } as jest.MockedObjectDeep<IUsersRepository>;
 
 const auth0RepositoryMock = {
@@ -90,7 +89,7 @@ describe('OidcAuthService', () => {
         nbf,
         iat,
       });
-      usersRepositoryMock.findOrCreateByExtUserIdWithEmail.mockResolvedValue(
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
         userId,
       );
       authRepositoryMock.signToken.mockReturnValue(accessToken);
@@ -112,8 +111,8 @@ describe('OidcAuthService', () => {
         },
       );
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
-      ).toHaveBeenCalledWith(extUserId, { address: email });
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
+      ).toHaveBeenCalledWith(extUserId, email);
     });
 
     it('should use max expiration time when OIDC token has no exp', async () => {
@@ -137,7 +136,7 @@ describe('OidcAuthService', () => {
         nbf: undefined,
         iat: undefined,
       });
-      usersRepositoryMock.findOrCreateByExtUserIdWithEmail.mockResolvedValue(
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
         userId,
       );
       authRepositoryMock.signToken.mockReturnValue(accessToken);
@@ -159,8 +158,8 @@ describe('OidcAuthService', () => {
         },
       );
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
-      ).toHaveBeenCalledWith(extUserId, { address: email });
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
+      ).toHaveBeenCalledWith(extUserId, email);
     });
 
     it('should pass a verified email when finding or creating the user', async () => {
@@ -179,7 +178,7 @@ describe('OidcAuthService', () => {
         nbf: undefined,
         iat: undefined,
       });
-      usersRepositoryMock.findOrCreateByExtUserIdWithEmail.mockResolvedValue(
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
         userId,
       );
       authRepositoryMock.signToken.mockReturnValue('token');
@@ -187,11 +186,11 @@ describe('OidcAuthService', () => {
       await target.authenticateWithOidc(faker.string.alphanumeric(32));
 
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
-      ).toHaveBeenCalledWith(extUserId, { address: email });
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
+      ).toHaveBeenCalledWith(extUserId, email);
     });
 
-    it('should throw UserEmailRequiredError when the email is not verified', async () => {
+    it('should throw UnauthorizedException when the email is not verified', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
@@ -209,15 +208,15 @@ describe('OidcAuthService', () => {
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
-      ).rejects.toThrow(UserEmailRequiredError);
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
       ).not.toHaveBeenCalled();
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
-    it('should throw UserEmailRequiredError when email_verified is undefined', async () => {
+    it('should throw UnauthorizedException when email_verified is undefined', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
@@ -234,10 +233,10 @@ describe('OidcAuthService', () => {
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
-      ).rejects.toThrow(UserEmailRequiredError);
+      ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should throw UserEmailRequiredError when the email claim is missing', async () => {
+    it('should throw UnauthorizedException when the email claim is missing', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
@@ -253,10 +252,10 @@ describe('OidcAuthService', () => {
 
       await expect(
         target.authenticateWithOidc(faker.string.alphanumeric(32)),
-      ).rejects.toThrow(UserEmailRequiredError);
+      ).rejects.toThrow(UnauthorizedException);
 
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
       ).not.toHaveBeenCalled();
     });
 
@@ -276,7 +275,7 @@ describe('OidcAuthService', () => {
         nbf: undefined,
         iat: undefined,
       });
-      usersRepositoryMock.findOrCreateByExtUserIdWithEmail.mockRejectedValue(
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockRejectedValue(
         error,
       );
 
@@ -285,8 +284,8 @@ describe('OidcAuthService', () => {
       ).rejects.toThrow(error);
 
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
-      ).toHaveBeenCalledWith(extUserId, { address: email });
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
+      ).toHaveBeenCalledWith(extUserId, email);
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
@@ -311,7 +310,7 @@ describe('OidcAuthService', () => {
       ).rejects.toThrow(ForbiddenException);
 
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
       ).not.toHaveBeenCalled();
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
@@ -333,7 +332,7 @@ describe('OidcAuthService', () => {
         nbf: undefined,
         iat: undefined,
       });
-      usersRepositoryMock.findOrCreateByExtUserIdWithEmail.mockResolvedValue(
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
         userId,
       );
       authRepositoryMock.signToken.mockReturnValue('token');
@@ -354,12 +353,12 @@ describe('OidcAuthService', () => {
       ).rejects.toThrow(error);
 
       expect(
-        usersRepositoryMock.findOrCreateByExtUserIdWithEmail,
+        usersRepositoryMock.findOrCreateByExtUserIdAndEmail,
       ).not.toHaveBeenCalled();
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
 
-    it('should propagate errors from findOrCreateByExtUserIdWithEmail', async () => {
+    it('should propagate errors from findOrCreateByExtUserIdAndEmail', async () => {
       const now = new Date();
       jest.setSystemTime(now);
 
@@ -375,7 +374,7 @@ describe('OidcAuthService', () => {
         iat: undefined,
       });
       const error = new Error('Database connection failed');
-      usersRepositoryMock.findOrCreateByExtUserIdWithEmail.mockRejectedValue(
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockRejectedValue(
         error,
       );
 

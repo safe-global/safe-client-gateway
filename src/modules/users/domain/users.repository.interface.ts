@@ -62,9 +62,9 @@ export interface IUsersRepository {
 
   findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
 
-  findOrCreateByExtUserIdWithEmail(
+  findOrCreateByExtUserIdAndEmail(
     extUserId: string,
-    email: { address: string },
+    email: string,
   ): Promise<User['id']>;
 
   findEmailById(userId: User['id']): Promise<string | undefined>;
