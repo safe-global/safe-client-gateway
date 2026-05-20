@@ -18,9 +18,7 @@ export class SurveysRepository implements ISurveysRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
-  public async findActiveBySlug(
-    slug: Survey['slug'],
-  ): Promise<Survey | null> {
+  public async findActiveBySlug(slug: Survey['slug']): Promise<Survey | null> {
     const repo = await this.postgresDatabaseService.getRepository(DbSurvey);
     return await repo.findOne({
       where: { slug, isActive: true },
@@ -48,41 +46,32 @@ export class SurveysRepository implements ISurveysRepository {
     answeredByUserId: User['id'];
     selections: SurveyResponseSelections;
   }): Promise<SurveyResponse> {
-    return await this.postgresDatabaseService.transaction(
-      async (entityManager) => {
-        const repo = entityManager.getRepository(DbSurveyResponse);
+    const repo =
+      await this.postgresDatabaseService.getRepository(DbSurveyResponse);
 
-        const existing = await repo.findOne({
-          where: {
-            space: { id: args.spaceId },
-            survey: { id: args.surveyId },
-          },
-        });
-
-        if (existing) {
-          await repo.update(existing.id, {
-            selections: args.selections,
-            answeredBy: { id: args.answeredByUserId },
-            updatedAt: new Date(),
-          });
-          return await repo.findOneOrFail({
-            where: { id: existing.id },
-            relations: { space: true, survey: true, answeredBy: true },
-          });
-        }
-
-        const insertResult = await repo.insert({
-          space: { id: args.spaceId },
-          survey: { id: args.surveyId },
-          answeredBy: { id: args.answeredByUserId },
-          selections: args.selections,
-        });
-        const newId = insertResult.identifiers[0].id as number;
-        return await repo.findOneOrFail({
-          where: { id: newId },
-          relations: { space: true, survey: true, answeredBy: true },
-        });
+    // Single atomic statement (Postgres `INSERT ... ON CONFLICT DO UPDATE`)
+    // — eliminates the find-then-write race that two concurrent admin
+    // submissions would otherwise hit.
+    await repo.upsert(
+      {
+        space: { id: args.spaceId },
+        survey: { id: args.surveyId },
+        answeredBy: { id: args.answeredByUserId },
+        selections: args.selections,
+        updatedAt: new Date(),
+      },
+      {
+        conflictPaths: ['space', 'survey'],
+        skipUpdateIfNoValuesChanged: false,
       },
     );
+
+    return await repo.findOneOrFail({
+      where: {
+        space: { id: args.spaceId },
+        survey: { id: args.surveyId },
+      },
+      relations: { space: true, survey: true, answeredBy: true },
+    });
   }
 }

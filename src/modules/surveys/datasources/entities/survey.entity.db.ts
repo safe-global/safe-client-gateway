@@ -1,11 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  Column,
-  Entity,
-  Index,
-  PrimaryGeneratedColumn,
-  Unique,
-} from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type {
   Survey as DomainSurvey,
   SurveyContent,

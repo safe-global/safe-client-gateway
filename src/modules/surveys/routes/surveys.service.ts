@@ -119,9 +119,7 @@ export class SurveysService {
       );
     }
 
-    const unknownPages = [...submittedIds].filter(
-      (id) => !requiredIds.has(id),
-    );
+    const unknownPages = [...submittedIds].filter((id) => !requiredIds.has(id));
     if (unknownPages.length > 0) {
       throw new BadRequestException(
         `Unknown page id(s): ${unknownPages.join(', ')}`,
@@ -169,9 +167,7 @@ export class SurveysService {
     return userId;
   }
 
-  private async findActiveSurveyOrFail(
-    slug: Survey['slug'],
-  ): Promise<Survey> {
+  private async findActiveSurveyOrFail(slug: Survey['slug']): Promise<Survey> {
     const survey = await this.surveysRepository.findActiveBySlug(slug);
     if (!survey) {
       throw new NotFoundException(`No active survey for slug "${slug}".`);
@@ -190,9 +186,7 @@ export class SurveysService {
     };
   }
 
-  private toSpaceResponseDto(
-    response: SurveyResponse,
-  ): SpaceSurveyResponseDto {
+  private toSpaceResponseDto(response: SurveyResponse): SpaceSurveyResponseDto {
     return {
       surveyVersion: response.survey.version,
       selections: response.selections,

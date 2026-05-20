@@ -113,7 +113,12 @@ export class AppModule implements NestModule {
         NotificationsModule,
         MessagesModule,
         ...(isUsersFeatureEnabled
-          ? [UsersModule, SpacesModule, CounterfactualSafesModule, SurveysModule]
+          ? [
+              UsersModule,
+              SpacesModule,
+              CounterfactualSafesModule,
+              SurveysModule,
+            ]
           : []),
         OwnersModule,
         RelayModule,
