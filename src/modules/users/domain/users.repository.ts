@@ -299,7 +299,10 @@ export class UsersRepository implements IUsersRepository {
     }
   }
 
-  private async persistEmail(userId: User['id'], email: EmailAddress): Promise<void> {
+  private async persistEmail(
+    userId: User['id'],
+    email: EmailAddress,
+  ): Promise<void> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 

@@ -74,7 +74,7 @@ describe('OidcAuthService', () => {
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const exp = new Date(
         now.getTime() + (maxValidityPeriodInSeconds - 60) * 1_000,
       );
@@ -122,7 +122,7 @@ describe('OidcAuthService', () => {
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const accessToken = faker.string.alphanumeric(64);
 
       const maxExpiration = new Date(
@@ -222,7 +222,7 @@ describe('OidcAuthService', () => {
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,
@@ -322,7 +322,7 @@ describe('OidcAuthService', () => {
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const exp = new Date(now.getTime() + maxValidityPeriodInSeconds * 1_000);
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
@@ -364,7 +364,7 @@ describe('OidcAuthService', () => {
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,

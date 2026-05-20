@@ -38,7 +38,7 @@ describe('UsersRepository', () => {
     it('should return an existing user id without re-persisting when the stored email matches', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       userRepository.findOne.mockResolvedValue({ id: userId, email });
 
       await expect(
@@ -57,10 +57,7 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        target.findOrCreateByExtUserIdAndEmail(
-          extUserId,
-          fakeEmailAddress(),
-        ),
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
       ).rejects.toThrow(UnauthorizedException);
     });
   });
