@@ -16,6 +16,7 @@ import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/dom
 import { SurveysController } from '@/modules/surveys/routes/surveys.controller';
 
 const ONBOARDING_SLUG = 'onboarding';
+const USE_CASES_PAGE = 'use_cases';
 
 async function registerWalletAndCreateSpace(
   app: INestApplication<Server>,
@@ -98,13 +99,18 @@ describe('SurveysController', () => {
               id: expect.any(Number),
               slug: ONBOARDING_SLUG,
               version: 1,
-              title: 'How will you use Safe?',
-              subtitle: expect.any(String),
+              title: expect.any(String),
               surveyContent: expect.objectContaining({
-                multiSelect: true,
-                options: expect.arrayContaining([
-                  expect.objectContaining({ key: 'hold_assets' }),
-                  expect.objectContaining({ key: 'run_payments' }),
+                pages: expect.arrayContaining([
+                  expect.objectContaining({
+                    id: USE_CASES_PAGE,
+                    title: 'How will you use Safe?',
+                    multiSelect: true,
+                    options: expect.arrayContaining([
+                      expect.objectContaining({ key: 'hold_assets' }),
+                      expect.objectContaining({ key: 'run_payments' }),
+                    ]),
+                  }),
                 ]),
               }),
             }),
@@ -121,7 +127,9 @@ describe('SurveysController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ selections: ['hold_assets', 'run_payments'] })
+        .send({
+          selections: { [USE_CASES_PAGE]: ['hold_assets', 'run_payments'] },
+        })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -132,10 +140,12 @@ describe('SurveysController', () => {
           expect(body.spaceResponse).toEqual(
             expect.objectContaining({
               surveyVersion: 1,
-              selections: expect.arrayContaining([
-                'hold_assets',
-                'run_payments',
-              ]),
+              selections: {
+                [USE_CASES_PAGE]: expect.arrayContaining([
+                  'hold_assets',
+                  'run_payments',
+                ]),
+              },
               answeredByUserId: expect.any(Number),
             }),
           );
@@ -181,7 +191,7 @@ describe('SurveysController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ selections: ['hold_assets'] })
+        .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
         .expect(201)
         .expect(({ body }) => {
           expect(body).toEqual(
@@ -189,7 +199,7 @@ describe('SurveysController', () => {
               spaceId,
               surveySlug: ONBOARDING_SLUG,
               surveyVersion: 1,
-              selections: ['hold_assets'],
+              selections: { [USE_CASES_PAGE]: ['hold_assets'] },
               answeredByUserId: expect.any(Number),
             }),
           );
@@ -198,16 +208,18 @@ describe('SurveysController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ selections: ['run_payments', 'hold_assets'] })
+        .send({
+          selections: { [USE_CASES_PAGE]: ['run_payments', 'hold_assets'] },
+        })
         .expect(201)
         .expect(({ body }) => {
-          expect(body.selections).toEqual(
+          expect(body.selections[USE_CASES_PAGE]).toEqual(
             expect.arrayContaining(['run_payments', 'hold_assets']),
           );
         });
     });
 
-    it('returns 400/422 for empty selections (mandatory)', async () => {
+    it('returns 400/422 for an empty page (mandatory)', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
@@ -215,13 +227,13 @@ describe('SurveysController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ selections: [] })
+        .send({ selections: { [USE_CASES_PAGE]: [] } })
         .expect((res) => {
           expect([400, 422]).toContain(res.status);
         });
     });
 
-    it('returns 400 for unknown selection keys', async () => {
+    it('returns 400 when a required page is missing', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
@@ -229,7 +241,38 @@ describe('SurveysController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ selections: ['hold_assets', 'totally_made_up_key'] })
+        .send({ selections: {} })
+        .expect((res) => {
+          // Empty object fails Zod's z.record min check too — accept 400 or 422
+          expect([400, 422]).toContain(res.status);
+        });
+    });
+
+    it('returns 400 for an unknown page id', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceId = await registerWalletAndCreateSpace(app, accessToken);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ selections: { not_a_real_page: ['hold_assets'] } })
+        .expect(400);
+    });
+
+    it('returns 400 for unknown selection keys within a page', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceId = await registerWalletAndCreateSpace(app, accessToken);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          selections: {
+            [USE_CASES_PAGE]: ['hold_assets', 'totally_made_up_key'],
+          },
+        })
         .expect(400);
     });
 
@@ -248,7 +291,7 @@ describe('SurveysController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${outsiderToken}`])
-        .send({ selections: ['hold_assets'] })
+        .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
         .expect(403);
     });
 
@@ -259,7 +302,7 @@ describe('SurveysController', () => {
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
-        .send({ selections: ['hold_assets'] })
+        .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
         .expect((res) => {
           expect([401, 403]).toContain(res.status);
         });

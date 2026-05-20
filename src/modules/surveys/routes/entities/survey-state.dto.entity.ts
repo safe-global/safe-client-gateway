@@ -4,7 +4,9 @@ import type {
   Survey,
   SurveyContent,
   SurveyOption,
+  SurveyPage,
 } from '@/modules/surveys/domain/entities/survey.entity';
+import type { SurveyResponseSelections } from '@/modules/surveys/domain/entities/survey-response.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 class SurveyOptionDto implements SurveyOption {
@@ -21,12 +23,26 @@ class SurveyOptionDto implements SurveyOption {
   icon?: SurveyOption['icon'];
 }
 
-class SurveyContentDto implements SurveyContent {
+class SurveyPageDto implements SurveyPage {
+  @ApiProperty({ type: String })
+  id!: SurveyPage['id'];
+
+  @ApiProperty({ type: String })
+  title!: SurveyPage['title'];
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  subtitle?: SurveyPage['subtitle'];
+
   @ApiProperty({ type: Boolean })
-  multiSelect!: SurveyContent['multiSelect'];
+  multiSelect!: SurveyPage['multiSelect'];
 
   @ApiProperty({ type: SurveyOptionDto, isArray: true })
   options!: Array<SurveyOptionDto>;
+}
+
+class SurveyContentDto implements SurveyContent {
+  @ApiProperty({ type: SurveyPageDto, isArray: true })
+  pages!: Array<SurveyPageDto>;
 }
 
 export class SurveyDto
@@ -55,8 +71,12 @@ export class SpaceSurveyResponseDto {
   @ApiProperty({ type: Number })
   surveyVersion!: Survey['version'];
 
-  @ApiProperty({ type: String, isArray: true })
-  selections!: Array<string>;
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'array', items: { type: 'string' } },
+    description: 'Map from page id → selected option keys',
+  })
+  selections!: SurveyResponseSelections;
 
   @ApiProperty()
   submittedAt!: Date;

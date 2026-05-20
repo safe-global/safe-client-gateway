@@ -2,18 +2,25 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SurveyResponseSelectionsSchema } from '@/modules/surveys/domain/entities/survey-response.entity';
+import type { SurveyResponseSelections } from '@/modules/surveys/domain/entities/survey-response.entity';
 import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const SubmitSurveyResponseDtoSchema = z.object({
-  selections: z.array(z.string().min(1).max(64)).min(1).max(64),
+  selections: SurveyResponseSelectionsSchema,
 });
 
 export class SubmitSurveyResponseDto
   implements z.infer<typeof SubmitSurveyResponseDtoSchema>
 {
-  @ApiProperty({ type: String, isArray: true })
-  selections!: Array<string>;
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'array', items: { type: 'string' } },
+    description: 'Map from page id → selected option keys',
+    example: { use_cases: ['run_payments', 'hold_assets'] },
+  })
+  selections!: SurveyResponseSelections;
 }
 
 export class SurveyResponseResultDto {
@@ -29,8 +36,11 @@ export class SurveyResponseResultDto {
   @ApiProperty({ type: Number })
   surveyVersion!: Survey['version'];
 
-  @ApiProperty({ type: String, isArray: true })
-  selections!: Array<string>;
+  @ApiProperty({
+    type: 'object',
+    additionalProperties: { type: 'array', items: { type: 'string' } },
+  })
+  selections!: SurveyResponseSelections;
 
   @ApiProperty()
   submittedAt!: Date;

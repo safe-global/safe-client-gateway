@@ -46,23 +46,32 @@ export class CreateSurveys1779100947599 implements MigrationInterface {
       `CREATE INDEX "idx_survey_responses_selections" ON "survey_responses" USING GIN ("selections")`,
     );
 
-    // Seed onboarding v1
+    // Seed onboarding v1. survey.title / survey.subtitle are admin-facing metadata
+    // (used as the Mixpanel event label, future admin UI, etc.). The user-facing
+    // headers live on the page itself.
     await queryRunner.query(`
       INSERT INTO "surveys" ("slug", "version", "title", "subtitle", "survey_content", "is_active")
       VALUES (
         'onboarding',
         1,
-        'How will you use Safe?',
-        'Select all that apply. We''ll tailor your setup.',
+        'Space Onboarding Survey',
+        'Per-Space onboarding questionnaire',
         '{
-          "multiSelect": true,
-          "options": [
-            {"key": "operate_protocol",  "label": "Operate a protocol",         "description": "Contract admin, upgrades, and governance.",   "icon": "terminal"},
-            {"key": "distribute_tokens", "label": "Distribute tokens",          "description": "Vesting schedules, grants, and incentives.",  "icon": "gift"},
-            {"key": "run_payments",      "label": "Run payments",               "description": "Payroll, vendors, and recurring payouts.",    "icon": "cash"},
-            {"key": "earn_yield",        "label": "Earn yield",                 "description": "Stake, lend, and run DeFi strategies.",       "icon": "sprout"},
-            {"key": "trade_liquidity",   "label": "Trade and provide liquidity","description": "Frequent swaps and market-making.",           "icon": "swap"},
-            {"key": "hold_assets",       "label": "Hold assets",                "description": "Long-term custody with minimal movement.",    "icon": "bank"}
+          "pages": [
+            {
+              "id": "use_cases",
+              "title": "How will you use Safe?",
+              "subtitle": "Select all that apply. We''ll tailor your setup.",
+              "multiSelect": true,
+              "options": [
+                {"key": "operate_protocol",  "label": "Operate a protocol",         "description": "Contract admin, upgrades, and governance.",   "icon": "terminal"},
+                {"key": "distribute_tokens", "label": "Distribute tokens",          "description": "Vesting schedules, grants, and incentives.",  "icon": "gift"},
+                {"key": "run_payments",      "label": "Run payments",               "description": "Payroll, vendors, and recurring payouts.",    "icon": "cash"},
+                {"key": "earn_yield",        "label": "Earn yield",                 "description": "Stake, lend, and run DeFi strategies.",       "icon": "sprout"},
+                {"key": "trade_liquidity",   "label": "Trade and provide liquidity","description": "Frequent swaps and market-making.",           "icon": "swap"},
+                {"key": "hold_assets",       "label": "Hold assets",                "description": "Long-term custody with minimal movement.",    "icon": "bank"}
+              ]
+            }
           ]
         }'::jsonb,
         true

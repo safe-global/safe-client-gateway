@@ -9,9 +9,17 @@ export const SurveyOptionSchema = z.object({
 });
 export type SurveyOption = z.infer<typeof SurveyOptionSchema>;
 
-export const SurveyContentSchema = z.object({
+export const SurveyPageSchema = z.object({
+  id: z.string().min(1).max(64),
+  title: z.string().min(1).max(255),
+  subtitle: z.string().min(1).max(255).nullable().optional(),
   multiSelect: z.boolean(),
   options: z.array(SurveyOptionSchema).min(1).max(64),
+});
+export type SurveyPage = z.infer<typeof SurveyPageSchema>;
+
+export const SurveyContentSchema = z.object({
+  pages: z.array(SurveyPageSchema).min(1).max(20),
 });
 export type SurveyContent = z.infer<typeof SurveyContentSchema>;
 

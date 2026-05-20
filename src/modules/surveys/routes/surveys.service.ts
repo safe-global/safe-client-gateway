@@ -9,10 +9,13 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { SurveyResponse } from '@/modules/surveys/domain/entities/survey-response.entity';
+import type {
+  SurveyResponse,
+  SurveyResponseSelections,
+} from '@/modules/surveys/domain/entities/survey-response.entity';
 import type {
   Survey,
-  SurveyOption,
+  SurveyPage,
 } from '@/modules/surveys/domain/entities/survey.entity';
 import { ISurveysRepository } from '@/modules/surveys/domain/surveys.repository.interface';
 import type {
@@ -70,22 +73,16 @@ export class SurveysService {
 
     const survey = await this.findActiveSurveyOrFail(args.slug);
 
-    const validKeys = new Set(
-      survey.surveyContent.options.map((o: SurveyOption) => o.key),
-    );
-    const deduped = Array.from(new Set(args.body.selections));
-    const unknown = deduped.filter((k) => !validKeys.has(k));
-    if (unknown.length > 0) {
-      throw new BadRequestException(
-        `Unknown selection keys: ${unknown.join(', ')}`,
-      );
-    }
+    const validatedSelections = this.validateSelections({
+      pages: survey.surveyContent.pages,
+      submitted: args.body.selections,
+    });
 
     const response = await this.surveysRepository.upsertResponse({
       spaceId: args.spaceId,
       surveyId: survey.id,
       answeredByUserId: userId,
-      selections: deduped,
+      selections: validatedSelections,
     });
 
     return {
@@ -97,6 +94,60 @@ export class SurveysService {
       submittedAt: response.submittedAt,
       answeredByUserId: response.answeredBy?.id ?? null,
     };
+  }
+
+  /**
+   * Validates the submitted selections against the active survey's pages.
+   * - Every page in the survey must be present as a key.
+   * - No unknown page ids allowed.
+   * - Each page's selections must be a subset of that page's option keys.
+   * - Single-select pages may only have 1 selection.
+   * Returns a normalised, deduped selections map.
+   */
+  private validateSelections(args: {
+    pages: Array<SurveyPage>;
+    submitted: SurveyResponseSelections;
+  }): SurveyResponseSelections {
+    const pagesById = new Map(args.pages.map((p) => [p.id, p]));
+    const requiredIds = new Set(args.pages.map((p) => p.id));
+    const submittedIds = new Set(Object.keys(args.submitted));
+
+    const missing = [...requiredIds].filter((id) => !submittedIds.has(id));
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `Missing answers for page(s): ${missing.join(', ')}`,
+      );
+    }
+
+    const unknownPages = [...submittedIds].filter(
+      (id) => !requiredIds.has(id),
+    );
+    if (unknownPages.length > 0) {
+      throw new BadRequestException(
+        `Unknown page id(s): ${unknownPages.join(', ')}`,
+      );
+    }
+
+    const result: SurveyResponseSelections = {};
+    for (const [pageId, submittedKeys] of Object.entries(args.submitted)) {
+      const page = pagesById.get(pageId);
+      if (!page) continue; // unreachable after the check above
+      const validKeys = new Set(page.options.map((o) => o.key));
+      const deduped = Array.from(new Set(submittedKeys));
+      const unknown = deduped.filter((k) => !validKeys.has(k));
+      if (unknown.length > 0) {
+        throw new BadRequestException(
+          `Unknown selection key(s) on page "${pageId}": ${unknown.join(', ')}`,
+        );
+      }
+      if (!page.multiSelect && deduped.length > 1) {
+        throw new BadRequestException(
+          `Page "${pageId}" is single-select but received ${deduped.length} selections`,
+        );
+      }
+      result[pageId] = deduped;
+    }
+    return result;
   }
 
   private async assertActiveAdmin(args: {

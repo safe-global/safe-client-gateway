@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { SurveyResponse } from '@/modules/surveys/domain/entities/survey-response.entity';
+import type {
+  SurveyResponse,
+  SurveyResponseSelections,
+} from '@/modules/surveys/domain/entities/survey-response.entity';
 import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
@@ -18,6 +21,6 @@ export interface ISurveysRepository {
     spaceId: Space['id'];
     surveyId: Survey['id'];
     answeredByUserId: User['id'];
-    selections: Array<string>;
+    selections: SurveyResponseSelections;
   }): Promise<SurveyResponse>;
 }

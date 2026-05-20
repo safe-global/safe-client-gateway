@@ -54,7 +54,7 @@ export class SurveyResponse implements DomainSurveyResponse {
   answeredBy!: User | null;
 
   @Column({ type: 'jsonb' })
-  selections!: Array<string>;
+  selections!: Record<string, Array<string>>;
 
   @Column({
     name: 'submitted_at',
