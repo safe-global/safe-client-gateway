@@ -8,7 +8,7 @@ The organized path through the testing rules. Read top-to-bottom when you're abo
 
 Three layers exist in this repo: **unit** (`*.spec.ts`), **integration** (`*.integration.spec.ts`), **e2e** (`*.e2e-spec.ts`). The cross-cutting rule above everything else: **push every property to the lowest layer that can prove it.** Wiring is proved once per route at e2e; per-branch coverage lives at unit. Re-testing branches through higher layers multiplies maintenance cost and proves nothing the unit didn't already prove. (`TEST-02`)
 
-Every section ends with cross-references: `Rule:` points at the entry in [`rules.json`](../rules.json); `Examples:` points at the PR-sourced receipts in [`examples/testing.md`](../examples/testing.md).
+Every section ends with cross-references: `Rule:` points at the entry in [`rules.json`](../sources/rules.json); `Examples:` points at the PR-sourced receipts in [`examples/testing.md`](../sources/examples/testing.md).
 
 ## Contents
 
@@ -66,7 +66,7 @@ Rejected:
 - *"Add this new negative path to the e2e suite for safety."* — Negative paths live at the layer that owns the branch. The e2e suite asserts the route returns 404 once; the unit asserts every `affected=0` and missing-membership case.
 - *"Boot Nest in this unit spec just to be safe."* — Hides the dependency the test should expose and turns a sub-second spec into multi-second.
 
-Rule: [`TEST-02` Right test layer (pyramid)](../rules.json) · Examples: [`testing.md#TEST-02`](../examples/testing.md)
+Rule: [`TEST-02` Right test layer (pyramid)](../sources/rules.json) · Examples: [`testing.md#TEST-02`](../sources/examples/testing.md)
 
 ---
 
@@ -89,7 +89,7 @@ Rejected:
 - `foo.service.unit.spec.ts` — `.spec.ts` already means unit. Only `.integration.spec.ts` and `.e2e-spec.ts` add meaning.
 - `foo.controller.v1.spec.ts` to mirror controller version suffixes — version the controller file, not the spec suffix.
 
-Rule: [`TEST-02`](../rules.json) · Examples: [`testing.md#TEST-02`](../examples/testing.md)
+Rule: [`TEST-02`](../sources/rules.json) · Examples: [`testing.md#TEST-02`](../sources/examples/testing.md)
 
 ---
 
@@ -112,7 +112,7 @@ Rejected:
 - `Test.createTestingModule({ providers: [FooService, { provide: IBar, useValue: mockBar }] }).compile()` — booting Nest's DI for a single class is dead weight and hides the constructor signature you're trying to exercise. (`TEST-01`)
 - Wrapping construction in a `setupService()` factory used by every `describe` — let the constructor call live at `describe`-scope; readers should see exactly what is injected.
 
-Rule: [`TEST-01` Use builders and fakes](../rules.json) · Examples: [`testing.md#TEST-01`](../examples/testing.md)
+Rule: [`TEST-01` Use builders and fakes](../sources/rules.json) · Examples: [`testing.md#TEST-01`](../sources/examples/testing.md)
 
 ### 3.2 Mocks
 
@@ -149,7 +149,7 @@ Rejected:
 - `jest.mock('@/totally-unused-thing')` — leftover mocks rot; only mock what's used. (`TEST-01`)
 - `as Partial<IBar>` for a mock — `Partial` makes every method optional, including ones the unit relies on. Use `MockedObjectDeep` plus the explicit method list.
 
-Rule: [`TEST-01`](../rules.json), [`TEST-03` No internal mock chains](../rules.json)
+Rule: [`TEST-01`](../sources/rules.json), [`TEST-03` No internal mock chains](../sources/rules.json)
 
 ### 3.3 Builders for entity fixtures
 
@@ -179,7 +179,7 @@ Rejected:
 - One shared `const member = memberBuilder().build()` at file scope mutated inside tests. Build fresh per `it()`, override with `.with(...)`.
 - `as Partial<MemberDto>` plus a few fields — same trap as `Partial` mocks: missing required fields slip through.
 
-Rule: [`TEST-01`](../rules.json) · Examples: [`testing.md#TEST-01`](../examples/testing.md)
+Rule: [`TEST-01`](../sources/rules.json) · Examples: [`testing.md#TEST-01`](../sources/examples/testing.md)
 
 ### 3.4 Global state and teardown
 
@@ -206,7 +206,7 @@ Rejected:
 - `jest.useFakeTimers()` without a matching `jest.useRealTimers()` in teardown.
 - `jest.clearAllMocks()` when you needed `jest.resetAllMocks()` — `clear` only wipes call history; `reset` also drops fake implementations.
 
-Rule: [`TEST-05` Scoped test cleanup](../rules.json) · Examples: [`testing.md#TEST-05`](../examples/testing.md)
+Rule: [`TEST-05` Scoped test cleanup](../sources/rules.json) · Examples: [`testing.md#TEST-05`](../sources/examples/testing.md)
 
 ### 3.5 `it()` blocks and naming
 
@@ -227,7 +227,7 @@ Rejected:
 - One mega-`it()` with five `expect()` calls for five unrelated assertions — when one fails the others never run.
 - `expect(success).toBe(true); if (success) { expect(success.x).toBe(42) }` — the `if` swallows the failure when `success` is false and the inner expectations silently never run. Assert directly: `expect(result).toEqual({ x: 42 })`. (`TEST-08`)
 
-Rule: [`TEST-04` Cover security paths](../rules.json), [`TEST-08` Test names match assertions](../rules.json), [`TEST-09` Cover edges and determinism](../rules.json) · Examples: [`testing.md#TEST-09`](../examples/testing.md)
+Rule: [`TEST-04` Cover security paths](../sources/rules.json), [`TEST-08` Test names match assertions](../sources/rules.json), [`TEST-09` Cover edges and determinism](../sources/rules.json) · Examples: [`testing.md#TEST-09`](../sources/examples/testing.md)
 
 ### 3.6 Assertions
 
@@ -274,7 +274,7 @@ Rejected:
 - Asserting through the repository under test (calling `addressBookItemsRepository.findAll` to prove `addressBookItemsRepository.insert` worked). Use a raw `dataSource.getRepository(...)` for assertions so the test fails when *either* method breaks, not just when both break together.
 - `beforeAll` migrations against a long-lived database — the spec stops being reproducible the moment a prior migration changes.
 
-Rule: [`TEST-02`](../rules.json)
+Rule: [`TEST-02`](../sources/rules.json)
 
 ### 4.2 What to mock; what to boot
 
@@ -302,7 +302,7 @@ Rejected:
 - Mocking a sibling repository "to keep the test simple" — that turns an integration spec into a unit-with-extra-bootstrap. If a sibling repo's behaviour matters, exercise it for real; if it doesn't, push the test down to unit.
 - Booting the whole Nest application graph (`TestingModule` + `AppModule`) for a repository test — you don't need the controllers, guards, or filter chain. Use the DataSource + `PostgresDatabaseService` directly.
 
-Rule: [`TEST-01`](../rules.json), [`TEST-02`](../rules.json)
+Rule: [`TEST-01`](../sources/rules.json), [`TEST-02`](../sources/rules.json)
 
 ### 4.3 What does not belong here
 
@@ -311,7 +311,7 @@ Rule: [`TEST-01`](../rules.json), [`TEST-02`](../rules.json)
 - **Multi-controller "user story" tests** — e2e narratives go in e2e specs; integration owns a single repo or module.
 - **Performance / load** — out of scope; the integration suite runs per branch.
 
-Rule: [`TEST-02`](../rules.json)
+Rule: [`TEST-02`](../sources/rules.json)
 
 ---
 
@@ -353,7 +353,7 @@ Rejected:
 - `it('returns 403 when the member is INVITED', …)` plus `it('returns 403 when the member is DECLINED', …)` plus `it('returns 403 when the user is null', …)` in an e2e spec — three branches; pick one representative 403 case for the e2e suite and prove the rest at unit.
 - Setting up multiple chained HTTP requests to mimic a user journey ("invite → accept → list → leave") — out of scope; integration/unit own the building blocks, and e2e owns one round-trip per route.
 
-Rule: [`TEST-02`](../rules.json) · Examples: [`testing.md#TEST-02`](../examples/testing.md)
+Rule: [`TEST-02`](../sources/rules.json) · Examples: [`testing.md#TEST-02`](../sources/examples/testing.md)
 
 ---
 
@@ -363,19 +363,19 @@ Rule: [`TEST-02`](../rules.json) · Examples: [`testing.md#TEST-02`](../examples
 
 Builders are layer-agnostic. The same `<entity>.builder.ts` is used by unit, integration, and e2e specs. They live at `src/<area>/entities/__tests__/<entity>.builder.ts`. If a builder doesn't exist for an entity you test, create it — it's a 20-line addition that prevents copy-paste drift.
 
-Rule: [`TEST-01`](../rules.json) · Examples: [`testing.md#TEST-01`](../examples/testing.md)
+Rule: [`TEST-01`](../sources/rules.json) · Examples: [`testing.md#TEST-01`](../sources/examples/testing.md)
 
 ### 6.2 Test descriptions
 
 Across all layers: the `it()` description names the assertion, not the scenario. (Section [3.5](#35-it-blocks-and-naming) covers this in detail.)
 
-Rule: [`TEST-08`](../rules.json)
+Rule: [`TEST-08`](../sources/rules.json)
 
 ### 6.3 Fixtures fail loudly
 
 If your spec needs a deployment, an env var, or pre-seeded data, assert that prerequisite at the top of the file and fail with a clear message. Do **not** silently `it.skip(...)`, `xdescribe(...)`, or wrap the body in `if (!process.env.FOO) return`. Silent skips are how dead tests creep in — green forever, regression-blind.
 
-Rule: [`TEST-06` Fixtures fail loudly](../rules.json)
+Rule: [`TEST-06` Fixtures fail loudly](../sources/rules.json)
 
 ---
 
@@ -406,9 +406,9 @@ After your test passes:
 
 When a PR review surfaces a new mistake or a confirmed-good pattern:
 
-1. Log it in [`working/review-learnings.json`](../working/review-learnings.json) as today (the existing `RL-YYYYMMDD-NNN` flow).
+1. Log it in [`working/review-learnings.json`](../sources/working/review-learnings.json) as today (the existing `RL-YYYYMMDD-NNN` flow).
 2. Tag the learning with the section anchor: `"conventionsAnchor": "testing.md#3.2-mocks"`.
 3. Either fold it in as a new bullet under the section's **Rejected** list (most common — new alternative to ban), or promote a new subsection if the mistake reveals a missing decision (rare — restructure the flow).
-4. If the related rule already exists in [`rules.json`](../rules.json), add the `TEST-NN` reference; if it doesn't, file the new rule first.
+4. If the related rule already exists in [`rules.json`](../sources/rules.json), add the `TEST-NN` reference; if it doesn't, file the new rule first.
 
 Today this is manual. The `code-conventions` skill can later run an agent pass over new review-learnings tagged with `conventionsAnchor` to propose doc diffs for review.
