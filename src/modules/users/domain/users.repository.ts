@@ -17,7 +17,6 @@ import { User as DbUser } from '@/modules/users/datasources/entities/users.entit
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
-import { UserEmailMismatchError } from '@/modules/users/domain/errors/user-email-mismatch.error';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -235,9 +234,9 @@ export class UsersRepository implements IUsersRepository {
   /**
    * Finds or creates an OIDC user with the given verified email.
    */
-  public async findOrCreateByExtUserIdWithEmail(
+  public async findOrCreateByExtUserIdAndEmail(
     extUserId: string,
-    email: { address: EmailAddress },
+    email: EmailAddress,
   ): Promise<User['id']> {
     const existingId = await this.findExistingByExtUserIdAndEnsureEmail(
       extUserId,
@@ -250,7 +249,7 @@ export class UsersRepository implements IUsersRepository {
 
   private async findExistingByExtUserIdAndEnsureEmail(
     extUserId: string,
-    email: { address: string },
+    email: EmailAddress,
   ): Promise<User['id'] | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
@@ -259,21 +258,20 @@ export class UsersRepository implements IUsersRepository {
       select: { email: true, id: true },
     });
     if (!existing) return null;
-    if (
-      existing.email &&
-      existing.email !== email.address.trim().toLowerCase()
-    ) {
-      throw new UserEmailMismatchError();
+    if (existing.email && existing.email !== email) {
+      throw new UnauthorizedException(
+        'Email does not match the registered email for this account',
+      );
     }
     if (!existing.email) {
-      await this.persistEmail(existing.id, email.address);
+      await this.persistEmail(existing.id, email);
     }
     return existing.id;
   }
 
   private async createByExtUserIdAndStoreEmail(
     extUserId: string,
-    email: { address: string },
+    email: EmailAddress,
   ): Promise<User['id']> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
@@ -283,7 +281,7 @@ export class UsersRepository implements IUsersRepository {
         async (entityManager) => {
           return await this.create('ACTIVE', entityManager, {
             extUserId,
-            email: email.address,
+            email,
           });
         },
       );
@@ -306,30 +304,18 @@ export class UsersRepository implements IUsersRepository {
       await this.postgresDatabaseService.getRepository(DbUser);
 
     try {
-      const result = await userRepository
+      await userRepository
         .createQueryBuilder()
         .update(DbUser)
         .set({ email })
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
-      if (result.affected === 1) {
-        return;
-      }
     } catch (error) {
       if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
-    }
-
-    // Race: a concurrent caller set the email between our find and update.
-    const fresh = await userRepository.findOne({
-      where: { id: userId },
-      select: { email: true },
-    });
-    if (fresh?.email !== normalizedEmail) {
-      throw new UserEmailMismatchError();
     }
   }
 

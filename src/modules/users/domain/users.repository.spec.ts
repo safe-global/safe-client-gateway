@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { UnauthorizedException } from '@nestjs/common';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UserEmailMismatchError } from '@/modules/users/domain/errors/user-email-mismatch.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
@@ -34,7 +34,7 @@ describe('UsersRepository', () => {
     target = new UsersRepository(postgresDatabaseService, walletsRepository);
   });
 
-  describe('findOrCreateByExtUserIdWithEmail', () => {
+  describe('findOrCreateByExtUserIdAndEmail', () => {
     it('should return an existing user id without re-persisting when the stored email matches', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
@@ -42,13 +42,13 @@ describe('UsersRepository', () => {
       userRepository.findOne.mockResolvedValue({ id: userId, email });
 
       await expect(
-        target.findOrCreateByExtUserIdWithEmail(extUserId, { address: email }),
+        target.findOrCreateByExtUserIdAndEmail(extUserId, email),
       ).resolves.toBe(userId);
 
       expect(userRepository.findOne).toHaveBeenCalledTimes(1);
     });
 
-    it('should throw UserEmailMismatchError when the stored email differs from the OIDC email', async () => {
+    it('should throw UnauthorizedException when the stored email differs from the OIDC email', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
       userRepository.findOne.mockResolvedValue({
@@ -57,10 +57,11 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        target.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: fakeEmailAddress(),
-        }),
-      ).rejects.toThrow(UserEmailMismatchError);
+        target.findOrCreateByExtUserIdAndEmail(
+          extUserId,
+          fakeEmailAddress(),
+        ),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 

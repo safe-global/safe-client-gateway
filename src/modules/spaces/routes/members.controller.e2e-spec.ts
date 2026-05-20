@@ -1304,9 +1304,9 @@ describe('MembersController', () => {
       const spaceName = nameBuilder();
       const email = fakeEmailAddress();
 
-      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+      const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
         faker.string.uuid(),
-        { address: email },
+        email,
       );
       const authPayloadDto = oidcAuthPayloadDtoBuilder()
         .with('sub', userId.toString())
@@ -1345,9 +1345,9 @@ describe('MembersController', () => {
       const invitedName = faker.person.firstName();
       const email = fakeEmailAddress();
 
-      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+      const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
         faker.string.uuid(),
-        { address: email },
+        email,
       );
       const authPayloadDto = oidcAuthPayloadDtoBuilder()
         .with('sub', userId.toString())
