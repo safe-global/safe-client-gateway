@@ -4,7 +4,7 @@
   "service": "devcontainer",
   "workspaceFolder": "/workspaces/safe-client-gateway",
   "remoteUser": "node",
-  "forwardPorts": [3000],
+  "forwardPorts": [3030],
   "postCreateCommand": ".devcontainer/post-create.sh",
   "customizations": {
     "vscode": {

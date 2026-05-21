@@ -25,6 +25,7 @@ services:
       - ${SSH_AUTH_SOCK:-/run/host-services/ssh-auth.sock}:/ssh-agent
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
+      - APPLICATION_PORT=3030
       - ALERTS_PROVIDER_ACCOUNT
       - ALERTS_PROVIDER_API_BASE_URI
       - ALERTS_PROVIDER_API_KEY
