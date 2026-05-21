@@ -17,12 +17,13 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { PasskeyRecord } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import {
-  PasskeyAttestationError,
-  PasskeyAttestationService,
-  type VerifiedPasskey,
-} from '@/modules/passkeys/domain/passkey-attestation.service';
+  type PasskeyRecord,
+  WriteOutcomeStatus,
+} from '@/modules/passkeys/domain/entities/passkey-record.entity';
+import type { VerifiedPasskey } from '@/modules/passkeys/domain/entities/verified-passkey.entity';
+import { PasskeyAttestationError } from '@/modules/passkeys/domain/errors/passkey-attestation.error';
+import { PasskeyAttestationService } from '@/modules/passkeys/domain/passkey-attestation.service';
 import { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 import type { PasskeyRecordResponse } from '@/modules/passkeys/routes/entities/passkey-record.dto.entity';
 import type { RegisterPasskeyDto } from '@/modules/passkeys/routes/entities/register-passkey.dto.entity';
@@ -68,7 +69,7 @@ export class PasskeysService {
           attestationObject: dto.attestationObject,
           clientDataJSON: dto.clientDataJSON,
           challenge: dto.challenge,
-          expectedChallenge: () => deriveStatelessChallenge(dto),
+          expectedChallenge: () => this.deriveStatelessChallenge(dto),
         },
         this.rpIdAllowlist,
         this.originAllowlist,
@@ -81,20 +82,23 @@ export class PasskeysService {
       credentialId: verified.credentialId,
       x: verified.x,
       y: verified.y,
-      verifiers: Buffer.from(stripHex(verifiersNormalised), 'hex'),
+      verifiers: Buffer.from(this.stripHex(verifiersNormalised), 'hex'),
       rpId: verified.rpId,
     });
     switch (outcome.status) {
-      case 'created':
-        return { status: HttpStatus.CREATED, body: serialize(outcome.record) };
-      case 'identical':
-        return { status: HttpStatus.OK, body: serialize(outcome.record) };
-      case 'conflict':
+      case WriteOutcomeStatus.CREATED:
+        return {
+          status: HttpStatus.CREATED,
+          body: this.serialize(outcome.record),
+        };
+      case WriteOutcomeStatus.IDENTICAL:
+        return { status: HttpStatus.OK, body: this.serialize(outcome.record) };
+      case WriteOutcomeStatus.CONFLICT:
         throw new ConflictException({
           code: 'PASSKEY_CONFLICT',
           message: 'a different record already exists for this credentialId',
         });
-      case 'cross_rp_conflict':
+      case WriteOutcomeStatus.CROSS_RP_CONFLICT:
         throw new ConflictException({
           code: 'PASSKEY_CROSS_RP_CONFLICT',
           message:
@@ -107,7 +111,7 @@ export class PasskeysService {
     body: PasskeyRecordResponse;
     etag: string;
   }> {
-    const credentialId = decodeCredentialId(credentialIdB64Url);
+    const credentialId = this.decodeCredentialId(credentialIdB64Url);
     const record =
       await this.passkeysRepository.findByCredentialId(credentialId);
     if (!record) {
@@ -117,7 +121,7 @@ export class PasskeysService {
       });
     }
     return {
-      body: serialize(record),
+      body: this.serialize(record),
       // ETag = first 16 bytes of credentialId; rows are immutable so the bytes
       // alone are sufficient for cache-validation and never leak data the
       // client did not already supply on the request URL.
@@ -208,64 +212,65 @@ export class PasskeysService {
       { cause: err instanceof Error ? err : new Error(String(err)) },
     );
   }
-}
 
-function decodeCredentialId(value: string): Buffer {
-  // Reject anything that is not strictly base64url. We also bound the encoded
-  // length to ceil(1023 * 4 / 3) = 1364 — anything longer can never decode to
-  // a credentialId within the WebAuthn L3 limits.
-  const ENCODED_MAX = Math.ceil((CREDENTIAL_ID_MAX_BYTES * 4) / 3);
-  if (
-    typeof value !== 'string' ||
-    value.length === 0 ||
-    value.length > ENCODED_MAX ||
-    !/^[A-Za-z0-9_-]+$/.test(value)
-  ) {
-    throw new BadRequestException({
-      code: 'PASSKEY_INVALID_CREDENTIAL_ID',
-      message: 'malformed credentialId',
-    });
+  private decodeCredentialId(value: string): Buffer {
+    // Reject anything that is not strictly base64url. We also bound the
+    // encoded length to ceil(1023 * 4 / 3) = 1364 — anything longer can never
+    // decode to a credentialId within the WebAuthn L3 limits.
+    const ENCODED_MAX = Math.ceil((CREDENTIAL_ID_MAX_BYTES * 4) / 3);
+    if (
+      typeof value !== 'string' ||
+      value.length === 0 ||
+      value.length > ENCODED_MAX ||
+      !/^[A-Za-z0-9_-]+$/.test(value)
+    ) {
+      throw new BadRequestException({
+        code: 'PASSKEY_INVALID_CREDENTIAL_ID',
+        message: 'malformed credentialId',
+      });
+    }
+    const buf = Buffer.from(value, 'base64url');
+    if (
+      buf.length < CREDENTIAL_ID_MIN_BYTES ||
+      buf.length > CREDENTIAL_ID_MAX_BYTES
+    ) {
+      throw new BadRequestException({
+        code: 'PASSKEY_INVALID_CREDENTIAL_ID',
+        message: 'malformed credentialId',
+      });
+    }
+    return buf;
   }
-  const buf = Buffer.from(value, 'base64url');
-  if (
-    buf.length < CREDENTIAL_ID_MIN_BYTES ||
-    buf.length > CREDENTIAL_ID_MAX_BYTES
-  ) {
-    throw new BadRequestException({
-      code: 'PASSKEY_INVALID_CREDENTIAL_ID',
-      message: 'malformed credentialId',
-    });
+
+  /**
+   * Stateless replay protection: server recomputes the expected challenge
+   * from request inputs the client must already know to assemble a valid
+   * attestation. This is the Cometh-style model called out in the plan — it
+   * avoids a stateful challenge endpoint while keeping replay-resistance
+   * because:
+   *
+   *   - the bound inputs (rpId, verifiers, origin) are part of the WebAuthn
+   *     ceremony's clientData / attestation, so an attacker cannot freely
+   *     vary them without regenerating the attestation, and
+   *   - the comparison is constant-time (in PasskeyAttestationService).
+   */
+  private deriveStatelessChallenge(dto: RegisterPasskeyDto): string {
+    const material = `passkey:v1\n${dto.rpId}\n${dto.origin}\n${dto.verifiers.toLowerCase()}`;
+    return createHash('sha256').update(material).digest('base64url');
   }
-  return buf;
-}
 
-/**
- * Stateless replay protection: server recomputes the expected challenge from
- * request inputs the client must already know to assemble a valid attestation.
- * This is the Cometh-style model called out in the plan — it avoids a stateful
- * challenge endpoint while keeping replay-resistance because:
- *
- *   - the bound inputs (rpId, verifiers, origin) are part of the WebAuthn
- *     ceremony's clientData / attestation, so an attacker cannot freely vary
- *     them without regenerating the attestation, and
- *   - the comparison is constant-time (in PasskeyAttestationService).
- */
-function deriveStatelessChallenge(dto: RegisterPasskeyDto): string {
-  const material = `passkey:v1\n${dto.rpId}\n${dto.origin}\n${dto.verifiers.toLowerCase()}`;
-  return createHash('sha256').update(material).digest('base64url');
-}
+  private serialize(record: PasskeyRecord): PasskeyRecordResponse {
+    return {
+      credentialId: record.credentialId.toString('base64url'),
+      x: `0x${record.x.toString('hex')}`,
+      y: `0x${record.y.toString('hex')}`,
+      verifiers: `0x${record.verifiers.toString('hex')}`,
+      rpId: record.rpId,
+      createdAt: record.createdAt.toISOString(),
+    };
+  }
 
-function serialize(record: PasskeyRecord): PasskeyRecordResponse {
-  return {
-    credentialId: record.credentialId.toString('base64url'),
-    x: `0x${record.x.toString('hex')}`,
-    y: `0x${record.y.toString('hex')}`,
-    verifiers: `0x${record.verifiers.toString('hex')}`,
-    rpId: record.rpId,
-    createdAt: record.createdAt.toISOString(),
-  };
-}
-
-function stripHex(s: string): string {
-  return s.startsWith('0x') ? s.slice(2) : s;
+  private stripHex(s: string): string {
+    return s.startsWith('0x') ? s.slice(2) : s;
+  }
 }

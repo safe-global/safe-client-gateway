@@ -11,13 +11,15 @@ export class CreatePasskeyCoordinates1778500000000
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
       `CREATE TABLE passkey_coordinates (
+        id             SERIAL      NOT NULL,
         credential_id  bytea       NOT NULL,
         x              bytea       NOT NULL,
         y              bytea       NOT NULL,
         verifiers      bytea       NOT NULL,
         rp_id          text        NOT NULL,
         created_at     timestamptz NOT NULL DEFAULT now(),
-        CONSTRAINT PK_passkey_coordinates PRIMARY KEY (credential_id),
+        CONSTRAINT PK_passkey_coordinates PRIMARY KEY (id),
+        CONSTRAINT UQ_PC_credential_id UNIQUE (credential_id),
         CONSTRAINT CK_PC_x_len CHECK (octet_length(x) = 32),
         CONSTRAINT CK_PC_y_len CHECK (octet_length(y) = 32),
         CONSTRAINT CK_PC_verifiers_len CHECK (octet_length(verifiers) = 22),
@@ -28,14 +30,6 @@ export class CreatePasskeyCoordinates1778500000000
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(
-      `DO $$
-       DECLARE row_count bigint;
-       BEGIN
-         SELECT count(*) INTO row_count FROM passkey_coordinates;
-         RAISE NOTICE 'Dropping passkey_coordinates with % rows (DESTRUCTIVE)', row_count;
-       END $$;`,
-    );
     await queryRunner.query(`DROP TABLE IF EXISTS passkey_coordinates;`);
   }
 }

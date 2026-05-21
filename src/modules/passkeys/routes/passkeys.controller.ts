@@ -30,6 +30,7 @@ import type { Response } from 'express';
 import { PasskeyErrorResponse } from '@/modules/passkeys/routes/entities/passkey-error.dto.entity';
 import { PasskeyRecordResponse } from '@/modules/passkeys/routes/entities/passkey-record.dto.entity';
 import {
+  type RegisterPasskeyDto,
   RegisterPasskeyDtoEntity,
   RegisterPasskeySchema,
 } from '@/modules/passkeys/routes/entities/register-passkey.dto.entity';
@@ -96,7 +97,7 @@ export class PasskeysController {
   @HttpCode(HttpStatus.CREATED)
   public async register(
     @Body(new ValidationPipe(RegisterPasskeySchema, HttpStatus.BAD_REQUEST))
-    dto: import('@/modules/passkeys/routes/entities/register-passkey.dto.entity').RegisterPasskeyDto,
+    dto: RegisterPasskeyDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<PasskeyRecordResponse> {
     const outcome = await this.passkeysService.register(dto);

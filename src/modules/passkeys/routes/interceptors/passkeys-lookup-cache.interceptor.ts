@@ -2,14 +2,15 @@
 import {
   type CallHandler,
   type ExecutionContext,
+  Inject,
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
 import type { Response } from 'express';
 // biome-ignore lint/suspicious/noDeprecatedImports: only the multi-callback tap overloads are deprecated.
 import { catchError, type Observable, tap, throwError } from 'rxjs';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 
-const HIT_CACHE_CONTROL = 'public, max-age=86400, s-maxage=2592000, immutable';
 const MISS_CACHE_CONTROL = 'no-store';
 
 /**
@@ -18,11 +19,30 @@ const MISS_CACHE_CONTROL = 'no-store';
  *   - 4xx (404 / 400) → no-store, to avoid stale-negative cache that would
  *     lock first-launch flows after a brand-new POST lands at the origin
  *
- * Replaces the global CacheControlInterceptor for this route only — the
- * interceptor is wired via @UseInterceptors at the handler level.
+ * The global CacheControlInterceptor defaults to `no-cache`, which is the
+ * right policy for almost every endpoint but wrong for this one: passkey
+ * rows are immutable (`credentialId` is the PK and never mutates), so the
+ * 200 response is safe to cache aggressively. TTLs are read from
+ * configuration so they can be tuned per environment without a code change.
+ * The interceptor is wired via @UseInterceptors at the handler level.
  */
 @Injectable()
 export class PasskeysLookupCacheInterceptor implements NestInterceptor {
+  private readonly hitCacheControl: string;
+
+  public constructor(
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
+  ) {
+    const maxAge = configurationService.getOrThrow<number>(
+      'passkeys.lookupCache.hitMaxAgeSeconds',
+    );
+    const sMaxAge = configurationService.getOrThrow<number>(
+      'passkeys.lookupCache.hitSharedMaxAgeSeconds',
+    );
+    this.hitCacheControl = `public, max-age=${maxAge}, s-maxage=${sMaxAge}, immutable`;
+  }
+
   public intercept(
     context: ExecutionContext,
     next: CallHandler,
@@ -31,7 +51,7 @@ export class PasskeysLookupCacheInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         if (!response.headersSent) {
-          response.setHeader('Cache-Control', HIT_CACHE_CONTROL);
+          response.setHeader('Cache-Control', this.hitCacheControl);
         }
       }),
       catchError((err: unknown) => {

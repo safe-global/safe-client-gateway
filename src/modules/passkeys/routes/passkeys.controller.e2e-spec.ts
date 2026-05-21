@@ -32,11 +32,12 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { PasskeyRecord } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import {
-  PasskeyAttestationError,
-  PasskeyAttestationService,
-} from '@/modules/passkeys/domain/passkey-attestation.service';
+  type PasskeyRecord,
+  WriteOutcomeStatus,
+} from '@/modules/passkeys/domain/entities/passkey-record.entity';
+import { PasskeyAttestationError } from '@/modules/passkeys/domain/errors/passkey-attestation.error';
+import { PasskeyAttestationService } from '@/modules/passkeys/domain/passkey-attestation.service';
 import { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 import { PasskeysLookupRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-lookup-rate-limit.guard';
 import { PasskeysRegistrationRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-registration-rate-limit.guard';
@@ -205,7 +206,7 @@ describe('PasskeysController (HTTP)', () => {
         alg: -7,
       });
       h.repo.create.mockResolvedValue({
-        status: 'created',
+        status: WriteOutcomeStatus.CREATED,
         record: recordFor(Buffer.from('credid').toString('base64url')),
       });
 
@@ -227,7 +228,7 @@ describe('PasskeysController (HTTP)', () => {
         alg: -7,
       });
       h.repo.create.mockResolvedValue({
-        status: 'identical',
+        status: WriteOutcomeStatus.IDENTICAL,
         record: recordFor(Buffer.from('credid').toString('base64url')),
       });
       const res = await request(h.app.getHttpServer())
@@ -266,7 +267,9 @@ describe('PasskeysController (HTTP)', () => {
         rpId: 'app.safe.global',
         alg: -7,
       });
-      h.repo.create.mockResolvedValue({ status: 'conflict' });
+      h.repo.create.mockResolvedValue({
+        status: WriteOutcomeStatus.CONFLICT,
+      });
       const res = await request(h.app.getHttpServer())
         .post('/v1/passkeys')
         .send(dto());
@@ -282,7 +285,9 @@ describe('PasskeysController (HTTP)', () => {
         rpId: 'app.safe.global',
         alg: -7,
       });
-      h.repo.create.mockResolvedValue({ status: 'cross_rp_conflict' });
+      h.repo.create.mockResolvedValue({
+        status: WriteOutcomeStatus.CROSS_RP_CONFLICT,
+      });
       const res = await request(h.app.getHttpServer())
         .post('/v1/passkeys')
         .send(dto());

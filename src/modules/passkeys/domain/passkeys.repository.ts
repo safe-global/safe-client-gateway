@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import type { Repository } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { PasskeyCoordinates } from '@/modules/passkeys/datasources/entities/passkey-coordinates.entity.db';
-import type {
-  PasskeyRecord,
-  PasskeyRecordInput,
-  WriteOutcome,
+import {
+  type PasskeyRecord,
+  type PasskeyRecordInput,
+  type WriteOutcome,
+  WriteOutcomeStatus,
 } from '@/modules/passkeys/domain/entities/passkey-record.entity';
 import type { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 
@@ -17,9 +19,41 @@ export class PasskeysRepository implements IPasskeysRepository {
   ) {}
 
   public async create(input: PasskeyRecordInput): Promise<WriteOutcome> {
-    const repo =
-      await this.postgresDatabaseService.getRepository(PasskeyCoordinates);
+    const repo = await this.getRepository();
+    const inserted = await this.tryInsert(repo, input);
+    if (inserted) {
+      return {
+        status: WriteOutcomeStatus.CREATED,
+        record: this.toRecord(inserted),
+      };
+    }
+    return this.resolveConflict(repo, input);
+  }
 
+  public async findByCredentialId(
+    credentialId: Buffer,
+  ): Promise<PasskeyRecord | null> {
+    const repo = await this.getRepository();
+    const row = await repo.findOneBy({ credentialId });
+    return row ? this.toRecord(row) : null;
+  }
+
+  private getRepository(): Promise<Repository<PasskeyCoordinates>> {
+    return this.postgresDatabaseService.getRepository(PasskeyCoordinates);
+  }
+
+  /**
+   * Attempts to INSERT … ON CONFLICT DO NOTHING. Returns the inserted entity
+   * on success, or `null` if a row with the same credentialId already exists.
+   *
+   * We read the inserted row from `generatedMaps[0]` rather than issuing a
+   * follow-up SELECT — TypeORM populates it from the RETURNING clause and
+   * runs column transformers, so the shape already matches the entity.
+   */
+  private async tryInsert(
+    repo: Repository<PasskeyCoordinates>,
+    input: PasskeyRecordInput,
+  ): Promise<PasskeyCoordinates | null> {
     const insertResult = await repo
       .createQueryBuilder()
       .insert()
@@ -35,74 +69,60 @@ export class PasskeysRepository implements IPasskeysRepository {
       .returning('*')
       .execute();
 
-    if (insertResult.raw.length === 1) {
-      // `insertResult.raw` carries driver-level rows (snake_case columns), not
-      // entity-mapped fields, so we re-select via the entity repository to get
-      // a properly mapped row before serialising. The extra round-trip is
-      // negligible — the cold path is gated behind 500 ms attestation
-      // verification.
-      const inserted = await repo.findOneByOrFail({
-        credentialId: input.credentialId,
-      });
-      return { status: 'created', record: toRecord(inserted) };
-    }
+    const generated = insertResult.generatedMaps[0] as
+      | PasskeyCoordinates
+      | undefined;
+    return generated ?? null;
+  }
 
-    // PK conflict — re-select to distinguish identical / conflict / cross-RP.
-    const existing = await repo.findOneBy({
-      credentialId: input.credentialId,
-    });
+  /**
+   * Classifies an ON CONFLICT DO NOTHING no-op. The credentialId is RP-scoped
+   * per WebAuthn, so any `rpId` divergence is a cross-RP collision regardless
+   * of whether the coords also differ. PASSKEY_CROSS_RP_CONFLICT lets clients
+   * show "this credential is registered to a different domain";
+   * PASSKEY_CONFLICT covers the same-RP coord-mismatch case.
+   */
+  private async resolveConflict(
+    repo: Repository<PasskeyCoordinates>,
+    input: PasskeyRecordInput,
+  ): Promise<WriteOutcome> {
+    const existing = await repo.findOneBy({ credentialId: input.credentialId });
     if (!existing) {
-      // Extremely unlikely: row vanished between INSERT and SELECT.
-      // Treat as conflict so the caller surfaces a 409 rather than a silent 200.
-      return { status: 'conflict' };
+      // Extremely unlikely: row vanished between INSERT and SELECT. Treat as
+      // conflict so the caller surfaces a 409 rather than a silent 200.
+      return { status: WriteOutcomeStatus.CONFLICT };
     }
-
-    // rpId mismatch is the most specific signal — the credentialId is
-    // RP-scoped per WebAuthn, so any rpId divergence is a cross-RP collision
-    // regardless of whether the coords also differ. Clients that see
-    // PASSKEY_CROSS_RP_CONFLICT can show "this credential is registered to a
-    // different domain"; PASSKEY_CONFLICT covers the same-RP coord-mismatch
-    // case ("registered with different keys").
     if (existing.rpId !== input.rpId) {
-      return { status: 'cross_rp_conflict' };
+      return { status: WriteOutcomeStatus.CROSS_RP_CONFLICT };
     }
-
-    const coordsMatch =
-      bufferEquals(existing.x, input.x) &&
-      bufferEquals(existing.y, input.y) &&
-      bufferEquals(existing.verifiers, input.verifiers);
-
-    if (!coordsMatch) {
-      return { status: 'conflict' };
+    if (!this.coordinatesMatch(existing, input)) {
+      return { status: WriteOutcomeStatus.CONFLICT };
     }
-    return { status: 'identical', record: toRecord(existing) };
+    return {
+      status: WriteOutcomeStatus.IDENTICAL,
+      record: this.toRecord(existing),
+    };
   }
 
-  public async findByCredentialId(
-    credentialId: Buffer,
-  ): Promise<PasskeyRecord | null> {
-    const repo =
-      await this.postgresDatabaseService.getRepository(PasskeyCoordinates);
-    const row = await repo.findOneBy({ credentialId });
-    return row ? toRecord(row) : null;
+  private coordinatesMatch(
+    existing: PasskeyCoordinates,
+    input: PasskeyRecordInput,
+  ): boolean {
+    return (
+      existing.x.equals(input.x) &&
+      existing.y.equals(input.y) &&
+      existing.verifiers.equals(input.verifiers)
+    );
   }
-}
 
-function toRecord(row: PasskeyCoordinates): PasskeyRecord {
-  return {
-    credentialId: toBuffer(row.credentialId),
-    x: toBuffer(row.x),
-    y: toBuffer(row.y),
-    verifiers: toBuffer(row.verifiers),
-    rpId: row.rpId,
-    createdAt: row.createdAt,
-  };
-}
-
-function toBuffer(value: Buffer | Uint8Array): Buffer {
-  return Buffer.isBuffer(value) ? value : Buffer.from(value);
-}
-
-function bufferEquals(a: Buffer | Uint8Array, b: Buffer | Uint8Array): boolean {
-  return toBuffer(a).equals(toBuffer(b));
+  private toRecord(row: PasskeyCoordinates): PasskeyRecord {
+    return {
+      credentialId: row.credentialId,
+      x: row.x,
+      y: row.y,
+      verifiers: row.verifiers,
+      rpId: row.rpId,
+      createdAt: row.createdAt,
+    };
+  }
 }

@@ -2,11 +2,10 @@
 import { HttpStatus } from '@nestjs/common';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import {
-  PasskeyAttestationError,
-  type PasskeyAttestationService,
-  type VerifiedPasskey,
-} from '@/modules/passkeys/domain/passkey-attestation.service';
+import { WriteOutcomeStatus } from '@/modules/passkeys/domain/entities/passkey-record.entity';
+import type { VerifiedPasskey } from '@/modules/passkeys/domain/entities/verified-passkey.entity';
+import { PasskeyAttestationError } from '@/modules/passkeys/domain/errors/passkey-attestation.error';
+import type { PasskeyAttestationService } from '@/modules/passkeys/domain/passkey-attestation.service';
 import type { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
 
@@ -96,7 +95,7 @@ describe('PasskeysService.register', () => {
     const verified = buildVerified();
     attestation.verify.mockResolvedValue(verified);
     repo.create.mockResolvedValue({
-      status: 'created',
+      status: WriteOutcomeStatus.CREATED,
       record: {
         ...verified,
         verifiers: Buffer.from(VERIFIERS_HEX.slice(2), 'hex'),
@@ -117,7 +116,7 @@ describe('PasskeysService.register', () => {
     const verified = buildVerified();
     attestation.verify.mockResolvedValue(verified);
     repo.create.mockResolvedValue({
-      status: 'identical',
+      status: WriteOutcomeStatus.IDENTICAL,
       record: {
         ...verified,
         verifiers: Buffer.from(VERIFIERS_HEX.slice(2), 'hex'),
@@ -176,9 +175,9 @@ describe('PasskeysService.register', () => {
   });
 
   it.each([
-    ['conflict' as const, 'PASSKEY_CONFLICT'],
-    ['cross_rp_conflict' as const, 'PASSKEY_CROSS_RP_CONFLICT'],
-  ])('returns 409 %s', async (status, code) => {
+    [WriteOutcomeStatus.CONFLICT, 'PASSKEY_CONFLICT'],
+    [WriteOutcomeStatus.CROSS_RP_CONFLICT, 'PASSKEY_CROSS_RP_CONFLICT'],
+  ] as const)('returns 409 %s', async (status, code) => {
     const { attestation, repo, service } = buildService();
     attestation.verify.mockResolvedValue(buildVerified());
     repo.create.mockResolvedValue({ status });

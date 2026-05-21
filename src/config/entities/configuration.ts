@@ -779,6 +779,21 @@ export default () => ({
       process.env.PASSKEYS_VERIFICATION_TIMEOUT_MS ?? `${500}`,
       10,
     ),
+    // Cache policy for the lookup GET endpoint. Passkey rows are immutable
+    // (credentialId is the PK and never mutates), so the 200 response can
+    // be aggressively cached. 4xx responses are `no-store` to avoid a
+    // stale-negative cache locking first-launch flows after a fresh POST.
+    // Values are env-tunable so future TTL changes don't require code edits.
+    lookupCache: {
+      hitMaxAgeSeconds: Number.parseInt(
+        process.env.PASSKEYS_LOOKUP_CACHE_HIT_MAX_AGE_SECONDS ?? `${86400}`,
+        10,
+      ),
+      hitSharedMaxAgeSeconds: Number.parseInt(
+        process.env.PASSKEYS_LOOKUP_CACHE_HIT_S_MAX_AGE_SECONDS ?? `${2592000}`,
+        10,
+      ),
+    },
   },
   spaces: {
     addressBooks: {

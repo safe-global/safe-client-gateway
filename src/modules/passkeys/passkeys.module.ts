@@ -17,6 +17,7 @@ import { PasskeysRepository } from '@/modules/passkeys/domain/passkeys.repositor
 import { IPasskeysRepository } from '@/modules/passkeys/domain/passkeys.repository.interface';
 import { PasskeysLookupRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-lookup-rate-limit.guard';
 import { PasskeysRegistrationRateLimitGuard } from '@/modules/passkeys/routes/guards/passkeys-registration-rate-limit.guard';
+import { PasskeysLookupCacheInterceptor } from '@/modules/passkeys/routes/interceptors/passkeys-lookup-cache.interceptor';
 import { PasskeysController } from '@/modules/passkeys/routes/passkeys.controller';
 import { PasskeysService } from '@/modules/passkeys/routes/passkeys.service';
 
@@ -36,6 +37,7 @@ const PASSKEYS_BODY_LIMIT = '24kb';
     PasskeyAttestationService,
     PasskeysRegistrationRateLimitGuard,
     PasskeysLookupRateLimitGuard,
+    PasskeysLookupCacheInterceptor,
     {
       provide: IPasskeysRepository,
       useClass: PasskeysRepository,

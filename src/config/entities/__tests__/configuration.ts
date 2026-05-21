@@ -432,14 +432,18 @@ export default (): ReturnType<typeof configuration> => ({
     rateLimit: {
       registration: {
         max: faker.number.int({ min: 10, max: 100 }),
-        windowSeconds: 600,
+        windowSeconds: faker.number.int({ min: 60, max: 3600 }),
       },
       lookup: {
         max: faker.number.int({ min: 100, max: 500 }),
-        windowSeconds: 600,
+        windowSeconds: faker.number.int({ min: 60, max: 3600 }),
       },
     },
     verificationTimeoutMs: 500,
+    lookupCache: {
+      hitMaxAgeSeconds: 86400,
+      hitSharedMaxAgeSeconds: 2592000,
+    },
   },
   spaces: {
     addressBooks: {

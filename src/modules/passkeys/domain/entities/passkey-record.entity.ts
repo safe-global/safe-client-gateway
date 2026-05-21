@@ -20,8 +20,15 @@ export interface PasskeyRecord {
  */
 export type PasskeyRecordInput = Omit<PasskeyRecord, 'createdAt'>;
 
+export enum WriteOutcomeStatus {
+  CREATED = 'created',
+  IDENTICAL = 'identical',
+  CONFLICT = 'conflict',
+  CROSS_RP_CONFLICT = 'cross_rp_conflict',
+}
+
 export type WriteOutcome =
-  | { status: 'created'; record: PasskeyRecord }
-  | { status: 'identical'; record: PasskeyRecord }
-  | { status: 'conflict' }
-  | { status: 'cross_rp_conflict' };
+  | { status: WriteOutcomeStatus.CREATED; record: PasskeyRecord }
+  | { status: WriteOutcomeStatus.IDENTICAL; record: PasskeyRecord }
+  | { status: WriteOutcomeStatus.CONFLICT }
+  | { status: WriteOutcomeStatus.CROSS_RP_CONFLICT };

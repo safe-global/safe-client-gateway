@@ -2,7 +2,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 
-const BASE64URL = /^[A-Za-z0-9_-]+$/;
 const RP_ID = /^[A-Za-z0-9.-]+$/;
 const VERIFIERS_HEX = /^0x[0-9a-fA-F]{44}$/;
 
@@ -17,12 +16,8 @@ const CLIENT_DATA_JSON_MAX = 2 * 1024;
 
 export const RegisterPasskeySchema = z.object({
   rpId: z.string().min(1).max(253).regex(RP_ID),
-  attestationObject: z
-    .string()
-    .min(1)
-    .max(ATTESTATION_OBJECT_MAX)
-    .regex(BASE64URL),
-  clientDataJSON: z.string().min(1).max(CLIENT_DATA_JSON_MAX).regex(BASE64URL),
+  attestationObject: z.base64url().min(1).max(ATTESTATION_OBJECT_MAX),
+  clientDataJSON: z.base64url().min(1).max(CLIENT_DATA_JSON_MAX),
   // P256.Verifiers (uint176, 22 bytes). Lower 20 bytes = FCL fallback verifier
   // address; upper 2 bytes = on-chain precompile address (RIP-7212). NOT an
   // Ethereum address — no EIP-55 checksum applies. Lowercased on the wire.
@@ -30,8 +25,8 @@ export const RegisterPasskeySchema = z.object({
   // The origin allowlist in the service is the load-bearing check, but URL
   // parsing here strips control characters / whitespace / non-URL strings at
   // the framework boundary as defense-in-depth.
-  origin: z.string().min(1).max(512).url(),
-  challenge: z.string().min(1).max(256).regex(BASE64URL),
+  origin: z.url().min(1).max(512),
+  challenge: z.base64url().min(1).max(256),
 });
 
 export type RegisterPasskeyDto = z.infer<typeof RegisterPasskeySchema>;

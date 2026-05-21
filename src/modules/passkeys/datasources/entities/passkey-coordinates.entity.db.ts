@@ -1,22 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { databaseBufferTransformer } from '@/domain/common/transformers/databaseBuffer.transformer';
 
 @Entity('passkey_coordinates')
+@Unique('UQ_PC_credential_id', ['credentialId'])
 export class PasskeyCoordinates {
-  @PrimaryColumn({
+  @PrimaryGeneratedColumn({
+    name: 'id',
+    type: 'integer',
+    primaryKeyConstraintName: 'PK_passkey_coordinates',
+  })
+  id!: number;
+
+  @Column({
     name: 'credential_id',
     type: 'bytea',
-    primaryKeyConstraintName: 'PK_passkey_coordinates',
+    transformer: databaseBufferTransformer,
   })
   credentialId!: Buffer;
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'bytea', transformer: databaseBufferTransformer })
   x!: Buffer;
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'bytea', transformer: databaseBufferTransformer })
   y!: Buffer;
 
-  @Column({ type: 'bytea' })
+  @Column({ type: 'bytea', transformer: databaseBufferTransformer })
   verifiers!: Buffer;
 
   @Column({ name: 'rp_id', type: 'text' })
