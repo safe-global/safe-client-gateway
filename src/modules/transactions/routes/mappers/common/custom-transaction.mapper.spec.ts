@@ -313,19 +313,22 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const dataSize = 0;
     const chainId = faker.string.numeric();
     const dataDecoded = dataDecodedBuilder().with('method', method).build();
-    const baseTransaction = multisigTransactionBuilder()
-      .with('to', getAddress(toAddress.value))
-      .with('safe', getAddress(toAddress.value))
-      .with('value', '0')
-      .with('operation', 0)
-      .with('baseGas', faker.number.int({ min: 1 }))
-      .with('gasPrice', faker.string.numeric({ exclude: ['0'] }))
-      .with('gasToken', NULL_ADDRESS)
-      .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
-      .with('safeTxGas', faker.number.int({ min: 1 }));
+    // Builder.with() mutates and returns `this`, so each case must start from a
+    // fresh builder — otherwise prior overrides leak into subsequent cases.
+    const baseTransactionBuilder = (): ReturnType<typeof multisigTransactionBuilder> =>
+      multisigTransactionBuilder()
+        .with('to', getAddress(toAddress.value))
+        .with('safe', getAddress(toAddress.value))
+        .with('value', '0')
+        .with('operation', 0)
+        .with('baseGas', faker.number.int({ min: 1 }))
+        .with('gasPrice', faker.string.numeric({ exclude: ['0'] }))
+        .with('gasToken', NULL_ADDRESS)
+        .with('refundReceiver', getAddress(faker.finance.ethereumAddress()))
+        .with('safeTxGas', faker.number.int({ min: 1 }));
 
     const safeTxWithSafeTxGasZero = await mapper.mapCustomTransaction(
-      baseTransaction.with('safeTxGas', 0).build(),
+      baseTransactionBuilder().with('safeTxGas', 0).build(),
       dataSize,
       chainId,
       null,
@@ -337,7 +340,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     ).toBe(false);
 
     const safeTxWithBaseGasZero = await mapper.mapCustomTransaction(
-      baseTransaction.with('safeTxGas', 2409).with('baseGas', 0).build(),
+      baseTransactionBuilder().with('baseGas', 0).build(),
       dataSize,
       chainId,
       null,
@@ -349,7 +352,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     ).toBe(false);
 
     const safeTxWithGasPriceZero = await mapper.mapCustomTransaction(
-      baseTransaction.with('baseGas', 75608).with('gasPrice', '0').build(),
+      baseTransactionBuilder().with('gasPrice', '0').build(),
       dataSize,
       chainId,
       null,
@@ -361,7 +364,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     ).toBe(false);
 
     const safeTxWithRefundReceiverZero = await mapper.mapCustomTransaction(
-      baseTransaction.with('refundReceiver', NULL_ADDRESS).build(),
+      baseTransactionBuilder().with('refundReceiver', NULL_ADDRESS).build(),
       dataSize,
       chainId,
       null,
@@ -373,7 +376,7 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     ).toBe(false);
 
     const safeTxWithOnlyGasTokenNonZero = await mapper.mapCustomTransaction(
-      baseTransaction
+      baseTransactionBuilder()
         .with('baseGas', 0)
         .with('gasPrice', '0')
         .with('gasToken', getAddress(faker.finance.ethereumAddress()))
