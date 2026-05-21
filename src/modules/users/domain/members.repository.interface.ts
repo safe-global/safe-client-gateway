@@ -37,6 +37,11 @@ export interface IMembersRepository {
     spaceId: Space['id'];
   }): Promise<DbMember | null>;
 
+  /**
+   * Invites users to a space until the provided expiry date.
+   * Existing invited members are overwritten with the new invite data.
+   * Active members cannot be invited again.
+   */
   inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
@@ -45,14 +50,23 @@ export interface IMembersRepository {
       role: Member['role'];
       name: Member['name'];
     }>;
+    inviteExpiresAt: Date;
   }): Promise<Array<Invitation>>;
 
+  /**
+   * Accepts a pending space invite for the authenticated user.
+   * Expired invites cannot be accepted.
+   */
   acceptInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     payload: Pick<Member, 'name'>;
   }): Promise<void>;
 
+  /**
+   * Declines a pending space invite for the authenticated user.
+   * Expired invites cannot be declined.
+   */
   declineInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

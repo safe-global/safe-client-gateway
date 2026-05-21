@@ -2,6 +2,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   Inject,
   Injectable,
   NotFoundException,
@@ -12,7 +13,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In } from 'typeorm';
+import { In, MoreThan } from 'typeorm';
 import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -113,6 +114,7 @@ export class MembersRepository implements IMembersRepository {
       address: Address;
       role: Member['role'];
     }>;
+    inviteExpiresAt: Date;
   }): Promise<Array<Invitation>> {
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
@@ -144,23 +146,14 @@ export class MembersRepository implements IMembersRepository {
               address: userToInvite.address,
             });
 
-        try {
-          await entityManager.insert(DbMember, {
-            user: { id: userIdToInvite },
-            space: space,
-            name: userToInvite.name,
-            role: userToInvite.role,
-            status: 'INVITED',
-            invitedBy,
-          });
-        } catch (err) {
-          if (isUniqueConstraintError(err)) {
-            throw new UniqueConstraintError(
-              `${userToInvite.address} is already in this space or has a pending invite.`,
-            );
-          }
-          throw err;
-        }
+        await this.insertOrUpdateInvite({
+          entityManager,
+          space,
+          userId: userIdToInvite,
+          userToInvite,
+          invitedBy,
+          inviteExpiresAt: args.inviteExpiresAt,
+        });
 
         invitations.push({
           userId: userIdToInvite,
@@ -174,6 +167,61 @@ export class MembersRepository implements IMembersRepository {
     });
 
     return invitations;
+  }
+
+  private async insertOrUpdateInvite(args: {
+    entityManager: EntityManager;
+    space: Space;
+    userId: User['id'];
+    userToInvite: {
+      name: Member['name'];
+      address: Address;
+      role: Member['role'];
+    };
+    invitedBy: Address | null;
+    inviteExpiresAt: Date;
+  }): Promise<void> {
+    const existingMember = await args.entityManager.findOne(DbMember, {
+      where: {
+        user: { id: args.userId },
+        space: { id: args.space.id },
+      },
+    });
+
+    if (existingMember) {
+      if (existingMember.status === 'INVITED') {
+        await args.entityManager.update(DbMember, existingMember.id, {
+          name: args.userToInvite.name,
+          role: args.userToInvite.role,
+          invitedBy: args.invitedBy,
+          inviteExpiresAt: args.inviteExpiresAt,
+        });
+        return;
+      }
+
+      throw new UniqueConstraintError(
+        `${args.userToInvite.address} is already in this space or has a pending invite.`,
+      );
+    }
+
+    try {
+      await args.entityManager.insert(DbMember, {
+        user: { id: args.userId },
+        space: args.space,
+        name: args.userToInvite.name,
+        role: args.userToInvite.role,
+        status: 'INVITED',
+        invitedBy: args.invitedBy,
+        inviteExpiresAt: args.inviteExpiresAt,
+      });
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          `${args.userToInvite.address} is already in this space or has a pending invite.`,
+        );
+      }
+      throw err;
+    }
   }
 
   private async createUserAndWallet(args: {
@@ -204,11 +252,13 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
     const member = space.members[0];
+    this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
         name: args.payload.name,
+        inviteExpiresAt: null,
       });
 
       await this.usersRepository.updateStatus({
@@ -233,12 +283,23 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
     const member = space.members[0];
+    this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'DECLINED',
+        inviteExpiresAt: null,
       });
     });
+  }
+
+  private assertInviteNotExpired(member: DbMember): void {
+    if (
+      member.inviteExpiresAt !== null &&
+      member.inviteExpiresAt.getTime() <= Date.now()
+    ) {
+      throw new GoneException('Invitation has expired.');
+    }
   }
 
   public async findAuthorizedMembersOrFail(args: {
@@ -404,8 +465,9 @@ export class MembersRepository implements IMembersRepository {
   }
 
   /**
-   * Returns the authenticated user's `ACTIVE` or `INVITED` membership row
-   * for the given space, or throws `ForbiddenException` if none exists.
+   * Returns the authenticated user's `ACTIVE` or non-expired `INVITED`
+   * membership row for the given space, or throws `ForbiddenException` if none
+   * exists.
    *
    * Shared by {@link findAuthorizedMembersOrFail} (which uses it as an
    * authorization gate and discards the row, so it omits `relations`) and
@@ -425,11 +487,19 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const member = await membersRepository.findOne({
-      where: {
-        user: { id: userId },
-        space: { id: args.spaceId },
-        status: In(['ACTIVE', 'INVITED']),
-      },
+      where: [
+        {
+          user: { id: userId },
+          space: { id: args.spaceId },
+          status: 'ACTIVE',
+        },
+        {
+          user: { id: userId },
+          space: { id: args.spaceId },
+          status: 'INVITED',
+          inviteExpiresAt: MoreThan(new Date()),
+        },
+      ],
       relations,
     });
     if (!member) {

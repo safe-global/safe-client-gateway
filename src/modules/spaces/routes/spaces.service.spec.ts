@@ -89,6 +89,39 @@ describe('SpacesService', () => {
           safeCount: 3,
         },
       ]);
+      expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            members: expect.objectContaining({
+              inviteExpiresAt: true,
+            }),
+          }),
+        }),
+      );
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should only include non-expired invited spaces for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+
+      membersRepositoryMock.find.mockResolvedValue([]);
+
+      await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(membersRepositoryMock.find).toHaveBeenCalledWith({
+        where: [
+          { user: { id: userId }, status: 'ACTIVE' },
+          {
+            user: { id: userId },
+            status: 'INVITED',
+            inviteExpiresAt: expect.any(Object),
+          },
+        ],
+        relations: ['space'],
+      });
     });
 
     it.each([

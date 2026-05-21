@@ -1250,6 +1250,7 @@ describe('MembersController', () => {
                 name: `${spaceName} creator`,
                 alias: null,
                 invitedBy: null, // Space creator's `invitedBy` field value is null
+                inviteExpiresAt: null,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -1267,6 +1268,7 @@ describe('MembersController', () => {
                 name: user1Name,
                 alias: null,
                 invitedBy: authPayloadDto.signer_address,
+                inviteExpiresAt: expect.any(String),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -1284,6 +1286,7 @@ describe('MembersController', () => {
                 name: user2Name,
                 alias: null,
                 invitedBy: authPayloadDto.signer_address,
+                inviteExpiresAt: expect.any(String),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {

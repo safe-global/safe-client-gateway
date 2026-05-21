@@ -235,6 +235,7 @@ describe('SpacesRepository', () => {
         name: expect.any(String),
         alias: null,
         invitedBy: null,
+        inviteExpiresAt: null,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         user: {
@@ -327,6 +328,7 @@ describe('SpacesRepository', () => {
         name: `${spaceName} creator`,
         alias: null,
         invitedBy: null,
+        inviteExpiresAt: null,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         user: {

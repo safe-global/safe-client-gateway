@@ -286,6 +286,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -338,6 +339,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -410,6 +412,7 @@ describe('MembersRepository', () => {
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
         {
@@ -420,6 +423,7 @@ describe('MembersRepository', () => {
           role: memberRole2,
           status: memberStatus2,
           invitedBy: member2InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -491,6 +495,7 @@ describe('MembersRepository', () => {
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
         {
@@ -501,6 +506,7 @@ describe('MembersRepository', () => {
           role: memberRole2,
           status: member2Status,
           invitedBy: member2InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -646,6 +652,7 @@ describe('MembersRepository', () => {
     it('should invite users to a space and return the members', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
+      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const {
         user: owner,
         authPayload,
@@ -679,6 +686,7 @@ describe('MembersRepository', () => {
         authPayload,
         spaceId,
         users,
+        inviteExpiresAt,
       });
 
       expect(member).toEqual(
@@ -698,6 +706,7 @@ describe('MembersRepository', () => {
     it('should invite users as OIDC admin with invitedBy null', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
+      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const { user: owner, authPayload } = await createOidcUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -727,6 +736,7 @@ describe('MembersRepository', () => {
         authPayload,
         spaceId,
         users,
+        inviteExpiresAt,
       });
 
       expect(member).toEqual(
@@ -746,6 +756,7 @@ describe('MembersRepository', () => {
     it('should not create PENDING users for existing ones', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
+      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const { user: owner, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -781,6 +792,7 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         ],
+        inviteExpiresAt,
       });
 
       await expect(
@@ -808,7 +820,139 @@ describe('MembersRepository', () => {
       ]);
     });
 
+    it('should update an existing invite when reinviting the same user to the same space', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const existingInviteExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      const renewedInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const { user: owner, authPayload } = await createSiweUser();
+      const inviteeAddress = getAddress(faker.finance.ethereumAddress());
+      const inviteeName = faker.person.firstName();
+      const updatedInviteeName = faker.person.firstName();
+      const invitee = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: invitee.generatedMaps[0],
+        address: inviteeAddress,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      const existingInvite = await dbMembersRepository.insert({
+        user: invitee.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: inviteeName,
+        role: 'MEMBER',
+        status: 'INVITED',
+        invitedBy: authPayload.signer_address,
+        inviteExpiresAt: existingInviteExpiresAt,
+      });
+      const existingInviteId = existingInvite.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: [
+            {
+              address: inviteeAddress,
+              role: 'ADMIN',
+              name: updatedInviteeName,
+            },
+          ],
+          inviteExpiresAt: renewedInviteExpiresAt,
+        }),
+      ).resolves.toEqual([
+        {
+          userId: invitee.generatedMaps[0].id,
+          spaceId,
+          name: updatedInviteeName,
+          role: 'ADMIN',
+          status: 'INVITED',
+          invitedBy: authPayload.signer_address,
+        },
+      ]);
+
+      await expect(
+        dbMembersRepository.findOneOrFail({
+          where: { id: existingInviteId },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: existingInviteId,
+          name: updatedInviteeName,
+          role: 'ADMIN',
+          status: 'INVITED',
+          invitedBy: authPayload.signer_address,
+          inviteExpiresAt: renewedInviteExpiresAt,
+        }),
+      );
+    });
+
+    it('should throw when reinviting an active member to the same space', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const { user: owner, authPayload } = await createSiweUser();
+      const { user: activeMember } = await createSiweUser();
+      const activeMemberAddress = getAddress(faker.finance.ethereumAddress());
+      await dbWalletRepo.insert({
+        user: activeMember,
+        address: activeMemberAddress,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+      await dbMembersRepository.insert({
+        user: activeMember,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: authPayload.signer_address,
+        inviteExpiresAt: null,
+      });
+
+      await expect(
+        membersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: [
+            {
+              address: activeMemberAddress,
+              role: 'ADMIN',
+              name: faker.person.firstName(),
+            },
+          ],
+          inviteExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+        }),
+      ).rejects.toThrow(
+        `${activeMemberAddress} is already in this space or has a pending invite.`,
+      );
+    });
+
     it('should throw an error if the space does not exist', async () => {
+      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const { authPayload } = await createSiweUser();
       const spaceId = faker.number.int({
         min: 69420,
@@ -825,6 +969,7 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
           users,
+          inviteExpiresAt,
         }),
       ).rejects.toThrow('Space not found.');
     });
@@ -833,6 +978,7 @@ describe('MembersRepository', () => {
   describe('acceptInvite', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -867,6 +1013,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -890,6 +1037,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -908,6 +1056,7 @@ describe('MembersRepository', () => {
 
     it('should accept an invite for OIDC user', async () => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -942,6 +1091,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -962,6 +1112,7 @@ describe('MembersRepository', () => {
           id: memberId,
           status: 'ACTIVE',
           name: memberName,
+          inviteExpiresAt: null,
         }),
       );
     });
@@ -971,6 +1122,7 @@ describe('MembersRepository', () => {
       ['OIDC', createOidcUser],
     ] as const)('should accept an invite to a space and override the name (%s)', async (_label, createUser) => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1005,6 +1157,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
       const updatedName = nameBuilder();
@@ -1029,6 +1182,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1225,6 +1379,7 @@ describe('MembersRepository', () => {
   describe('declineInvite', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1259,6 +1414,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -1279,6 +1435,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'DECLINED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1297,6 +1454,7 @@ describe('MembersRepository', () => {
 
     it('should decline an invite for OIDC user', async () => {
       const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1331,6 +1489,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -1348,6 +1507,7 @@ describe('MembersRepository', () => {
           id: memberId,
           status: 'DECLINED',
           name: memberName,
+          inviteExpiresAt: null,
         }),
       );
     });
@@ -1543,7 +1703,7 @@ describe('MembersRepository', () => {
           spaceId,
         }),
       ).resolves.toEqual([
-        {
+        expect.objectContaining({
           createdAt: expect.any(Date),
           id: memberId,
           name: memberName,
@@ -1551,16 +1711,17 @@ describe('MembersRepository', () => {
           role: memberRole,
           status: 'ACTIVE',
           invitedBy: memberInvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
-          user: {
+          user: expect.objectContaining({
             createdAt: expect.any(Date),
             email: null,
             extUserId: null,
             id: userId,
             status: userStatus,
             updatedAt: expect.any(Date),
-          },
-        },
+          }),
+        }),
       ]);
     });
 
@@ -1690,6 +1851,36 @@ describe('MembersRepository', () => {
         ),
       );
     });
+
+    it('should throw ForbiddenException for an expired invited caller', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: authPayloadDto.signer_address,
+        inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+      });
+
+      await expect(
+        membersRepository.findAuthorizedMembersOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
   });
 
   describe('findSelfMembershipOrFail', () => {
@@ -1716,6 +1907,10 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt:
+          memberStatus === 'INVITED'
+            ? new Date(Date.now() + 60 * 60 * 1000)
+            : null,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -1752,6 +1947,36 @@ describe('MembersRepository', () => {
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'DECLINED',
         invitedBy: authPayloadDto.signer_address,
+      });
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the space.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException for an expired invited caller', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: authPayloadDto.signer_address,
+        inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
       });
 
       await expect(
@@ -1956,6 +2181,7 @@ describe('MembersRepository', () => {
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: expect.any(String),
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
         space: expect.objectContaining({ id: spaceId }),
       });
@@ -1976,6 +2202,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: expect.any(String),
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
         space: expect.objectContaining({ id: space2Id }),
       });
@@ -2345,6 +2572,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: member2InvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -2716,6 +2944,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: signerMember2InvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });

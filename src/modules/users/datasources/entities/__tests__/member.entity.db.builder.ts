@@ -19,6 +19,7 @@ export function memberBuilder(): IBuilder<Member> {
     .with('role', 'ADMIN')
     .with('status', 'ACTIVE')
     .with('invitedBy', getAddress(faker.finance.ethereumAddress()))
+    .with('inviteExpiresAt', faker.date.future())
     .with('createdAt', new Date())
     .with('updatedAt', new Date());
 }

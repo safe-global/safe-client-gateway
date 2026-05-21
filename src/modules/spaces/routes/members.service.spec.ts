@@ -121,6 +121,7 @@ describe('MembersService', () => {
         authPayload,
         spaceId,
         users: [],
+        inviteExpiresAt: expect.any(Date),
       });
     });
   });

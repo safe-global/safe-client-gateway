@@ -73,6 +73,7 @@ export class SpacesRepository implements ISpacesRepository {
     member.status = getEnumKey(MemberStatus, MemberStatus.ACTIVE);
     member.user = user;
     member.space = space;
+    member.inviteExpiresAt = null;
 
     space.members = [member];
 

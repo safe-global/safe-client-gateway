@@ -25,6 +25,9 @@ class SpaceMemberDto {
   @ApiProperty({ type: String })
   public invitedBy!: Member['invitedBy'];
 
+  @ApiProperty({ type: Date, nullable: true })
+  public inviteExpiresAt!: Member['inviteExpiresAt'];
+
   @ApiProperty({
     type: String,
     enum: getStringEnumKeys(MemberStatus),
