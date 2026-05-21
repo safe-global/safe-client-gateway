@@ -315,7 +315,9 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     const dataDecoded = dataDecodedBuilder().with('method', method).build();
     // Builder.with() mutates and returns `this`, so each case must start from a
     // fresh builder — otherwise prior overrides leak into subsequent cases.
-    const baseTransactionBuilder = (): ReturnType<typeof multisigTransactionBuilder> =>
+    const baseTransactionBuilder = (): ReturnType<
+      typeof multisigTransactionBuilder
+    > =>
       multisigTransactionBuilder()
         .with('to', getAddress(toAddress.value))
         .with('safe', getAddress(toAddress.value))
@@ -373,6 +375,20 @@ describe('Multisig Custom Transaction mapper (Unit)', () => {
     expect(safeTxWithRefundReceiverZero).toBeInstanceOf(CustomTransactionInfo);
     expect(
       (safeTxWithRefundReceiverZero as CustomTransactionInfo).isCancellation,
+    ).toBe(false);
+
+    // gasToken === null must not be treated as cancellation, even when every
+    // other refund param is non-zero/non-null (i.e. the non-zero branch).
+    const safeTxWithGasTokenNull = await mapper.mapCustomTransaction(
+      baseTransactionBuilder().with('gasToken', null).build(),
+      dataSize,
+      chainId,
+      null,
+      dataDecoded,
+    );
+    expect(safeTxWithGasTokenNull).toBeInstanceOf(CustomTransactionInfo);
+    expect(
+      (safeTxWithGasTokenNull as CustomTransactionInfo).isCancellation,
     ).toBe(false);
 
     const safeTxWithOnlyGasTokenNonZero = await mapper.mapCustomTransaction(

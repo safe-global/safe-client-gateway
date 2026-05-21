@@ -108,6 +108,7 @@ export class CustomTransactionMapper {
           gasPrice !== null &&
           Number(gasPrice) !== 0 &&
           refundReceiver !== null &&
+          gasToken !== null &&
           refundReceiver !== NULL_ADDRESS &&
           safeTxGas !== null &&
           safeTxGas !== 0)
