@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { Address } from 'viem';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type {
   AddressBookRequest,
@@ -33,7 +32,6 @@ export interface IAddressBookRequestsRepository {
   create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
-    requestedByWallet: Address;
     item: AddressBookItem;
   }): Promise<AddressBookRequest>;
 
@@ -41,7 +39,7 @@ export interface IAddressBookRequestsRepository {
     id: AddressBookRequest['id'];
     spaceId: Space['id'];
     toStatus: 'APPROVED' | 'REJECTED';
-    reviewedBy: Address;
+    reviewedBy: User['id'];
   }): Promise<boolean>;
 
   revertToPending(args: {
