@@ -31,6 +31,7 @@
 | [`AUTH-02`](#auth-02) | Identity supports SIWE and email | general / auth |
 | [`AUTH-03`](#auth-03) | Use proven auth/crypto libs | general / auth |
 | [`AUTH-04`](#auth-04) | Email exposure intentional | general / auth |
+| [`AUTH-05`](#auth-05) | Space routes enforce membership before data access | general / auth |
 | [`ROUTE-01`](#route-01) | Controllers are HTTP boundary | general / routes |
 | [`ROUTE-02`](#route-02) | Inputs validated at controller | general / routes |
 | [`ROUTE-03`](#route-03) | Stable empty shapes | general / routes |
@@ -880,16 +881,16 @@ same notion of absence.
 <a id="type-04"></a>
 ### `TYPE-04` DTO matches wire shape
 
-> **general** · types · 3 examples · ↩ `RL-20260108-002` · `RL-20251223-001`
+> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001`
 
 **📜 Rule**\
-DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Defense-in-depth checks downstream of upstream filters.
+DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters.
 
 **✅ Check**\
 > Do DTO fields match the actual wire shape?
 
 <details>
-<summary><strong>💡 Example 1 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays</em></summary>
+<summary><strong>💡 Example 1 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays</em></summary>
 
 <br>
 
@@ -944,7 +945,62 @@ shows up as a single fix, not three near-misses scattered across modules.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-strict-enum-schemas-for-internal-boolean-query-params</em></summary>
+<summary><strong>💡 Example 2 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-use-unions-for-exact-one-dto-shapes</em></summary>
+
+<br>
+
+**TYPE-04 — Use unions for exact-one DTO shapes**
+
+Source: PR #3067 (RL-20260520-002)
+
+### Avoid
+
+Modeling an "address or email, but not both" payload as one loose object plus
+cross-field refinement:
+
+```ts
+const InviteUserSchema = z
+  .object({
+    address: AddressSchema.optional(),
+    email: z.email().max(255).optional(),
+    role: z.enum(getStringEnumKeys(MemberRole)),
+    name: NameSchema,
+  })
+  .superRefine((value, ctx) => {
+    if (!value.address && !value.email) {
+      ctx.addIssue({ code: 'custom', path: ['address'] });
+    }
+  });
+```
+
+### Prefer
+
+Make the two accepted wire shapes explicit:
+
+```ts
+const SharedInviteFields = {
+  role: z.enum(getStringEnumKeys(MemberRole)),
+  name: NameSchema,
+};
+
+const InviteUserSchema = z.union([
+  z.object({ address: AddressSchema, ...SharedInviteFields }).strict(),
+  z.object({ email: z.email().max(255), ...SharedInviteFields }).strict(),
+]);
+```
+
+### Why
+
+The union shows the API contract directly, gives better type narrowing to the
+service/repository layer, and avoids misleading validation paths such as
+pointing an email-only failure at `address`.
+
+<sub>Source: <a href="examples/schemas-and-validation.md#type-04-use-unions-for-exact-one-dto-shapes">examples/schemas-and-validation.md#type-04-use-unions-for-exact-one-dto-shapes</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 3 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-strict-enum-schemas-for-internal-boolean-query-params</em></summary>
 
 <br>
 
@@ -994,7 +1050,7 @@ and removes the `.pipe(z.boolean())` belt-and-braces step.
 </details>
 
 <details>
-<summary><strong>💡 Example 3 of 3</strong> — <code>examples/controllers-and-swagger.md</code> § <em>type-04-route-01-public-params-apply-on-every-code-path-or-are-removed</em></summary>
+<summary><strong>💡 Example 4 of 4</strong> — <code>examples/controllers-and-swagger.md</code> § <em>type-04-route-01-public-params-apply-on-every-code-path-or-are-removed</em></summary>
 
 <br>
 
@@ -1185,6 +1241,19 @@ User-email exposure in DTOs and Swagger is intentional and consistent.
 
 **✅ Check**\
 > Is user email exposure intentional and consistent?
+
+---
+
+<a id="auth-05"></a>
+### `AUTH-05` Space routes enforce membership before data access
+
+> **general** · auth · ↩ `RL-20260520-001`
+
+**📜 Rule**\
+Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data.
+
+**✅ Check**\
+> Did this add or change a space-scoped route? If yes, is it auth-guarded and does the service assert membership/admin status before any data access?
 
 ---
 
@@ -1490,10 +1559,10 @@ Map uniqueness/constraint errors to domain errors at the repository boundary; in
 <a id="db-05"></a>
 ### `DB-05` Migrations agree with code
 
-> **general** · database · 2 examples · ↩ `RL-20260506-007` · `RL-20260116-001`
+> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001`
 
 **📜 Rule**\
-Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`.
+Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`.
 
 **✅ Check**\
 > Do migrations, entities, indexes, schemas, and tests agree?
@@ -3144,4 +3213,3 @@ the breakage only shows up when a malformed URL slips in.
 </details>
 
 ---
-

@@ -169,3 +169,49 @@ The endpoint is internal, so there is no ecosystem pressure to be lenient
 with `''`, `'TRUE'`, or anything else; tightening the wire contract makes
 the parser fail fast on garbage instead of quietly coercing it to `false`,
 and removes the `.pipe(z.boolean())` belt-and-braces step.
+
+## TYPE-04 — Use unions for exact-one DTO shapes
+
+Source: PR #3067 (RL-20260520-002)
+
+### Avoid
+
+Modeling an "address or email, but not both" payload as one loose object plus
+cross-field refinement:
+
+```ts
+const InviteUserSchema = z
+  .object({
+    address: AddressSchema.optional(),
+    email: z.email().max(255).optional(),
+    role: z.enum(getStringEnumKeys(MemberRole)),
+    name: NameSchema,
+  })
+  .superRefine((value, ctx) => {
+    if (!value.address && !value.email) {
+      ctx.addIssue({ code: 'custom', path: ['address'] });
+    }
+  });
+```
+
+### Prefer
+
+Make the two accepted wire shapes explicit:
+
+```ts
+const SharedInviteFields = {
+  role: z.enum(getStringEnumKeys(MemberRole)),
+  name: NameSchema,
+};
+
+const InviteUserSchema = z.union([
+  z.object({ address: AddressSchema, ...SharedInviteFields }).strict(),
+  z.object({ email: z.email().max(255), ...SharedInviteFields }).strict(),
+]);
+```
+
+### Why
+
+The union shows the API contract directly, gives better type narrowing to the
+service/repository layer, and avoids misleading validation paths such as
+pointing an email-only failure at `address`.

@@ -231,14 +231,16 @@
     "project": "general",
     "area": "types",
     "title": "DTO matches wire shape",
-    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Defense-in-depth checks downstream of upstream filters.",
+    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters.",
     "check": "Do DTO fields match the actual wire shape?",
     "exampleRefs": [
       "examples/schemas-and-validation.md#type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays",
+      "examples/schemas-and-validation.md#type-04-use-unions-for-exact-one-dto-shapes",
       "examples/schemas-and-validation.md#type-04-strict-enum-schemas-for-internal-boolean-query-params",
       "examples/controllers-and-swagger.md#type-04-route-01-public-params-apply-on-every-code-path-or-are-removed"
     ],
     "reviewLearningIds": [
+      "RL-20260520-002",
       "RL-20260108-002",
       "RL-20251223-001"
     ]
@@ -306,6 +308,18 @@
     "check": "Is user email exposure intentional and consistent?",
     "exampleRefs": [],
     "reviewLearningIds": []
+  },
+  {
+    "id": "AUTH-05",
+    "project": "general",
+    "area": "auth",
+    "title": "Space routes enforce membership before data access",
+    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data.",
+    "check": "Did this add or change a space-scoped route? If yes, is it auth-guarded and does the service assert membership/admin status before any data access?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260520-001"
+    ]
   },
   {
     "id": "ROUTE-01",
@@ -396,13 +410,14 @@
     "project": "general",
     "area": "database",
     "title": "Migrations agree with code",
-    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`.",
+    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`.",
     "check": "Do migrations, entities, indexes, schemas, and tests agree?",
     "exampleRefs": [
       "examples/database-migrations.md#db-05-do-not-use-the-recorded-migration-id-as-an-array-index",
       "examples/database-migrations.md#db-05-migration-metadata-is-reviewed-not-copy-pasted"
     ],
     "reviewLearningIds": [
+      "RL-20260520-003",
       "RL-20260506-007",
       "RL-20260116-001"
     ]
