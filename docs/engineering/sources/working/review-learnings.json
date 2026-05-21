@@ -682,5 +682,66 @@
     "ruleIds": [
       "TEST-02"
     ]
+  },
+  {
+    "id": "RL-20260520-001",
+    "title": "Space-scoped queue endpoint shipped without auth and membership checks",
+    "sourceWindowId": "CLOSED-20260505-20260521",
+    "prNumbers": [
+      3098
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      3259925576,
+      3265351529
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4485340665,
+      4486565567
+    ],
+    "learning": "A new space-scoped queued-transactions endpoint initially had no `@UseGuards(AuthGuard)` and did not assert that the caller was a member of the space before returning space-owned transaction data. Space routes must copy the existing spaces pattern: guard the controller, pass the auth payload through, and assert membership or admin status before data access.",
+    "ruleIds": [
+      "AUTH-05"
+    ]
+  },
+  {
+    "id": "RL-20260520-002",
+    "title": "Address-or-email invite DTOs should be union schemas",
+    "sourceWindowId": "CLOSED-20260505-20260521",
+    "prNumbers": [
+      3067
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4389688792,
+      4396803018
+    ],
+    "learning": "The invite payload accepted exactly one of address or email, but the first implementation modeled that with optional fields and refinement. Review pushed it to a Zod union of strict address and email object shapes, making the wire contract, validation errors, and downstream TypeScript narrowing match the behavior.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20260520-003",
+    "title": "Invite-expiry migration backfilled declined rows against runtime invariant",
+    "sourceWindowId": "CLOSED-20260505-20260521",
+    "prNumbers": [
+      3067
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      3220303451
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4396803018
+    ],
+    "learning": "A migration backfilled `inviteExpiresAt` for both INVITED and DECLINED member rows while the runtime decline path explicitly clears the expiration. Status migrations must preserve the invariant for each status and use the narrowest predicate needed, not raw enum ordinals that make unrelated statuses look eligible.",
+    "ruleIds": [
+      "DB-05"
+    ]
   }
 ]
