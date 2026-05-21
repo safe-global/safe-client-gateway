@@ -41,9 +41,9 @@ yarn generate-abis
 
 ### Development with Dev Containers
 
-If you have Docker and the [VS Code Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you can develop the project without installing Node, Yarn, or any of the backing services on your host:
+If you have Docker and the [VS Code/Cursor Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you can develop the project without installing Node, Yarn, or any of the backing services on your host:
 
-1. Open the repository in VS Code.
+1. Open the repository in VS Code/Cursor.
 2. Run **Dev Containers: Reopen in Container** from the command palette.
 
 On first build the container will install dependencies with `yarn install --immutable` (which also generates the required ABIs via the `postinstall` hook).
@@ -56,7 +56,7 @@ docker compose up <service>
 
 Note: both `db` and `db-test` run with SSL enabled, so before you reopen in container — or any time you run `docker compose up db`/`db-test` from the host — make sure the self-signed key has owner-only permissions (see [Running the services](#running-the-services)).
 
-VS Code installs the Biome, Claude Code, and ChatGPT extensions automatically inside the container.
+VS Code/Cursor installs the Biome, Claude Code, and ChatGPT extensions automatically inside the container.
 
 ## Setup your env
 
