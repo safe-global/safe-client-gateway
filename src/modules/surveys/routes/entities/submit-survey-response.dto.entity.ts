@@ -45,6 +45,9 @@ export class SurveyResponseResultDto {
   @ApiProperty()
   submittedAt!: Date;
 
+  @ApiProperty()
+  updatedAt!: Date;
+
   @ApiProperty({ type: Number, nullable: true })
   answeredByUserId!: User['id'] | null;
 }

@@ -30,8 +30,8 @@ class SurveyPageDto implements SurveyPage {
   @ApiProperty({ type: String })
   title!: SurveyPage['title'];
 
-  @ApiPropertyOptional({ type: String, nullable: true })
-  subtitle?: SurveyPage['subtitle'];
+  @ApiProperty({ type: String, nullable: true })
+  subtitle!: SurveyPage['subtitle'];
 
   @ApiProperty({ type: Boolean })
   multiSelect!: SurveyPage['multiSelect'];
@@ -80,6 +80,9 @@ export class SpaceSurveyResponseDto {
 
   @ApiProperty()
   submittedAt!: Date;
+
+  @ApiProperty()
+  updatedAt!: Date;
 
   @ApiProperty({ type: Number, nullable: true })
   answeredByUserId!: User['id'] | null;

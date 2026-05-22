@@ -183,72 +183,79 @@ describe('SurveysController', () => {
   });
 
   describe('POST /v1/spaces/:spaceId/surveys/:slug/responses', () => {
-    it('admin submits then re-submits, upserting selections', async () => {
+    it('admin submits then re-submits, upserting selections and bumping updated_at', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
 
-      await request(app.getHttpServer())
+      const first = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
-        .expect(201)
-        .expect(({ body }) => {
-          expect(body).toEqual(
-            expect.objectContaining({
-              spaceId,
-              surveySlug: ONBOARDING_SLUG,
-              surveyVersion: 1,
-              selections: { [USE_CASES_PAGE]: ['hold_assets'] },
-              answeredByUserId: expect.any(Number),
-            }),
-          );
-        });
+        .expect(201);
 
-      await request(app.getHttpServer())
+      expect(first.body).toEqual(
+        expect.objectContaining({
+          spaceId,
+          surveySlug: ONBOARDING_SLUG,
+          surveyVersion: 1,
+          selections: { [USE_CASES_PAGE]: ['hold_assets'] },
+          answeredByUserId: expect.any(Number),
+        }),
+      );
+      // On the initial INSERT both timestamps come from the same statement.
+      expect(new Date(first.body.updatedAt).getTime()).toBe(
+        new Date(first.body.submittedAt).getTime(),
+      );
+
+      // Give the DB clock a tick so the update_updated_at trigger produces a
+      // visibly later timestamp.
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      const second = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           selections: { [USE_CASES_PAGE]: ['run_payments', 'hold_assets'] },
         })
-        .expect(201)
-        .expect(({ body }) => {
-          expect(body.selections[USE_CASES_PAGE]).toEqual(
-            expect.arrayContaining(['run_payments', 'hold_assets']),
-          );
-        });
+        .expect(201);
+
+      expect(second.body.selections[USE_CASES_PAGE]).toEqual(
+        expect.arrayContaining(['run_payments', 'hold_assets']),
+      );
+      // submittedAt is locked at INSERT time; updated_at bumps on every UPDATE.
+      expect(second.body.submittedAt).toBe(first.body.submittedAt);
+      expect(new Date(second.body.updatedAt).getTime()).toBeGreaterThan(
+        new Date(first.body.updatedAt).getTime(),
+      );
     });
 
-    it('returns 400/422 for an empty page (mandatory)', async () => {
+    it('returns 422 for an empty page array (mandatory)', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
 
+      // Inner `z.array(...).min(1)` fires in ValidationPipe → 422.
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: { [USE_CASES_PAGE]: [] } })
-        .expect((res) => {
-          expect([400, 422]).toContain(res.status);
-        });
+        .expect(422);
     });
 
-    it('returns 400 when a required page is missing', async () => {
+    it('returns 422 when selections is an empty object', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
 
+      // Empty `{}` is caught by the Zod schema's `.refine` (non-empty map),
+      // so it surfaces as 422 from ValidationPipe rather than reaching the
+      // service-level "Missing answers for page(s)" check.
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: {} })
-        .expect((res) => {
-          // The 400 comes from the service-level "Missing answers for page(s)"
-          // check; z.record does not enforce a minimum number of keys, so the
-          // Zod ValidationPipe lets the empty object through. Accept 422 too
-          // in case the Zod schema is tightened later with a .refine().
-          expect([400, 422]).toContain(res.status);
-        });
+        .expect(422);
     });
 
     it('returns 400 for an unknown page id', async () => {

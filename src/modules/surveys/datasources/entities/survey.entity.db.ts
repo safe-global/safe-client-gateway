@@ -7,7 +7,10 @@ import type {
 
 @Entity('surveys')
 @Unique('UQ_surveys_slug_version', ['slug', 'version'])
-@Index('idx_surveys_active', ['slug'], { where: '"is_active" = true' })
+@Index('uq_surveys_active', ['slug'], {
+  unique: true,
+  where: '"is_active" = true',
+})
 export class Survey implements DomainSurvey {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_surveys_id' })
   id!: number;

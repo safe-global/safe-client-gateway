@@ -19,8 +19,10 @@ export class CreateSurveys1779100947599 implements MigrationInterface {
         CONSTRAINT "UQ_surveys_slug_version" UNIQUE ("slug", "version")
       )
     `);
+    // UNIQUE so an operator can't accidentally leave two versions of the same
+    // slug active at once (kill-switch flips depend on this invariant).
     await queryRunner.query(
-      `CREATE INDEX "idx_surveys_active" ON "surveys" ("slug") WHERE "is_active" = true`,
+      `CREATE UNIQUE INDEX "uq_surveys_active" ON "surveys" ("slug") WHERE "is_active" = true`,
     );
 
     await queryRunner.query(`

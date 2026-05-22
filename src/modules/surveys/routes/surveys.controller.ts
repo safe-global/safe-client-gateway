@@ -25,6 +25,7 @@ import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { SurveySlugSchema } from '@/modules/surveys/domain/entities/survey.entity';
 import {
   SubmitSurveyResponseDto,
   SubmitSurveyResponseDtoSchema,
@@ -61,7 +62,7 @@ export class SurveysController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-    @Param('slug') slug: string,
+    @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
   ): Promise<SurveyStateDto> {
     return await this.surveysService.getState({
       authPayload,
@@ -93,7 +94,7 @@ export class SurveysController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     spaceId: number,
-    @Param('slug') slug: string,
+    @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
     @Body(new ValidationPipe(SubmitSurveyResponseDtoSchema))
     body: SubmitSurveyResponseDto,
   ): Promise<SurveyResponseResultDto> {

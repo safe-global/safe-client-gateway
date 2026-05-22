@@ -5,11 +5,16 @@ import { SurveySchema } from '@/modules/surveys/domain/entities/survey.entity';
 import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 
 // selections is a map from page id → selected option keys for that page.
-// Keys are non-empty arrays (cannot submit an empty page).
-export const SurveyResponseSelectionsSchema = z.record(
-  z.string().min(1).max(64),
-  z.array(z.string().min(1).max(64)).min(1).max(64),
-);
+// Keys are non-empty arrays (cannot submit an empty page), and the map
+// itself must have at least one entry (cannot submit an empty body).
+export const SurveyResponseSelectionsSchema = z
+  .record(
+    z.string().min(1).max(64),
+    z.array(z.string().min(1).max(64)).min(1).max(64),
+  )
+  .refine((rec) => Object.keys(rec).length > 0, {
+    message: 'selections must contain at least one page',
+  });
 export type SurveyResponseSelections = z.infer<
   typeof SurveyResponseSelectionsSchema
 >;

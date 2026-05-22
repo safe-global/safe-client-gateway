@@ -118,6 +118,7 @@ describe('SurveysService', () => {
     const multiSelectPage: SurveyPage = {
       id: 'use_cases',
       title: 'How will you use Safe?',
+      subtitle: null,
       multiSelect: true,
       options: [
         { key: 'run_payments', label: 'Run payments' },
@@ -129,6 +130,7 @@ describe('SurveysService', () => {
     const singleSelectPage: SurveyPage = {
       id: 'team_size',
       title: 'How big is your team?',
+      subtitle: null,
       multiSelect: false,
       options: [
         { key: 'one_to_five', label: '1-5' },

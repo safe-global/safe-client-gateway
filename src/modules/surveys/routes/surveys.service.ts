@@ -92,6 +92,7 @@ export class SurveysService {
       surveyVersion: survey.version,
       selections: response.selections,
       submittedAt: response.submittedAt,
+      updatedAt: response.updatedAt,
       answeredByUserId: response.answeredBy?.id ?? null,
     };
   }
@@ -191,6 +192,7 @@ export class SurveysService {
       surveyVersion: response.survey.version,
       selections: response.selections,
       submittedAt: response.submittedAt,
+      updatedAt: response.updatedAt,
       answeredByUserId: response.answeredBy?.id ?? null,
     };
   }
