@@ -755,6 +755,113 @@ describe('SafeRepository', () => {
         origin: null,
       });
     });
+
+    it('should coerce a javascript: originUrl to null without leaking the URI', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: 'Evil',
+            originUrl: 'javascript:alert(1)' as unknown as string,
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      const origin = (result.results[0] as { origin: string | null }).origin;
+      expect(origin).not.toBeNull();
+      expect(origin).not.toContain('javascript');
+      expect(JSON.parse(origin as string).url).toBeNull();
+      expect(JSON.parse(origin as string).name).toBe('Evil');
+    });
+
+    it('should drop the override when the queue record reports a different chainId', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', `${Number(chainId) + 1}`)
+            .with('safe', safeAddress)
+            .with('safeTxHash', multisig.safeTxHash)
+            .with('originName', 'CrossChain')
+            .with('originUrl', 'https://crosschain.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({ origin: 'tx-service-origin' });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Queue origin reconciliation rejected'),
+      );
+    });
+
+    it('should drop the override when the queue record reports a different safe', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', getAddress(faker.finance.ethereumAddress()))
+            .with('safeTxHash', multisig.safeTxHash)
+            .with('originName', 'WrongSafe')
+            .with('originUrl', 'https://wrongsafe.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({ origin: 'tx-service-origin' });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Queue origin reconciliation rejected'),
+      );
+    });
   });
 
   describe('getMultiSigTransaction', () => {
@@ -813,6 +920,37 @@ describe('SafeRepository', () => {
       expect(result.origin).toBe('tx-service-origin');
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining(tx.safeTxHash),
+      );
+    });
+
+    it('should drop the override when the queue record reports a different chainId or safe', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(
+          queueMultisigTransactionBuilder()
+            .with('chainId', `${Number(chainId) + 1}`)
+            .with('safe', getAddress(faker.finance.ethereumAddress()))
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'CrossChain')
+            .with('originUrl', 'https://crosschain.example')
+            .build(),
+        ),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe('tx-service-origin');
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Queue origin reconciliation rejected'),
       );
     });
 

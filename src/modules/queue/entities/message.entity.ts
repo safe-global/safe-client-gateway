@@ -4,13 +4,14 @@ import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
+import {
+  OriginNameSchema,
+  OriginUrlSchema,
+} from '@/modules/queue/entities/schemas/origin.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
-import {
-  NullableHexSchema,
-  NullableStringSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+import { NullableHexSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export type QueueMessageConfirmation = z.infer<
   typeof QueueMessageConfirmationSchema
@@ -33,8 +34,8 @@ export const QueueMessageSchema = z.object({
   message: z.union([z.string(), TypedDataSchema]),
   proposedBy: AddressSchema,
   preparedSignature: NullableHexSchema,
-  originName: NullableStringSchema,
-  originUrl: NullableStringSchema,
+  originName: OriginNameSchema,
+  originUrl: OriginUrlSchema,
   created: z.coerce.date(),
   modified: z.coerce.date(),
   confirmations: z.array(QueueMessageConfirmationSchema),

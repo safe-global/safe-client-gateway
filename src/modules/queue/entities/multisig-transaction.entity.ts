@@ -3,6 +3,10 @@
 import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import {
+  OriginNameSchema,
+  OriginUrlSchema,
+} from '@/modules/queue/entities/schemas/origin.schema';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
@@ -47,8 +51,8 @@ export const QueueMultisigTransactionSchema = z.object({
   refundReceiver: NullableAddressSchema,
   failed: z.boolean().nullable(),
   notes: NullableStringSchema,
-  originName: NullableStringSchema,
-  originUrl: NullableStringSchema,
+  originName: OriginNameSchema,
+  originUrl: OriginUrlSchema,
   txHash: NullableHexSchema,
   created: z.coerce.date(),
   modified: z.coerce.date(),

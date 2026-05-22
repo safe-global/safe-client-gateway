@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import {
   Message,
   MessagePageSchema,
@@ -33,6 +35,8 @@ export class MessagesRepository implements IMessagesRepository {
     private readonly queueService: IQueue,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
     private readonly messageVerifier: MessageVerifierHelper,
   ) {
     this.queueServiceEnabled = this.configurationService.getOrThrow<boolean>(
@@ -54,7 +58,14 @@ export class MessagesRepository implements IMessagesRepository {
       return MessageSchema.parse(message);
     }
     const message = await this.queueService.getMessageByHash(args);
-    return mapQueueToMessage(QueueMessageSchema.parse(message));
+    const parsed = QueueMessageSchema.parse(message);
+    if (parsed.chainId !== Number(args.chainId)) {
+      this.loggingService.warn(
+        `Queue service returned message for chainId=${parsed.chainId}, expected=${args.chainId}, messageHash=${args.messageHash}`,
+      );
+      throw new HttpExceptionNoLog('Message not found', HttpStatus.NOT_FOUND);
+    }
+    return mapQueueToMessage(parsed);
   }
 
   async getMessagesBySafe(args: {
@@ -76,10 +87,18 @@ export class MessagesRepository implements IMessagesRepository {
     }
     const page = await this.queueService.getMessagesBySafe(args);
     const parsed = QueueMessagePageSchema.parse(page);
-    return {
-      ...parsed,
-      results: parsed.results.map(mapQueueToMessage),
-    };
+    const expectedChainId = Number(args.chainId);
+    const results: Array<Message> = [];
+    for (const message of parsed.results) {
+      if (message.chainId !== expectedChainId) {
+        this.loggingService.warn(
+          `Queue service returned message for chainId=${message.chainId}, expected=${expectedChainId}, messageHash=${message.messageHash}`,
+        );
+        continue;
+      }
+      results.push(mapQueueToMessage(message));
+    }
+    return { ...parsed, results };
   }
 
   async createMessage(args: {

@@ -198,5 +198,31 @@ describe('CreateMessageDtoSchema', () => {
         createMessageDto.origin,
       );
     });
+
+    it('should accept an origin within the size bound', () => {
+      const createMessageDto = createMessageDtoBuilder()
+        .with('origin', 'a'.repeat(2048))
+        .build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject an origin exceeding 2048 chars', () => {
+      const createMessageDto = createMessageDtoBuilder()
+        .with('origin', 'a'.repeat(2049))
+        .build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'too_big',
+          maximum: 2048,
+          path: ['origin'],
+        }),
+      ]);
+    });
   });
 });
