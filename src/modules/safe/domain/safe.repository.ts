@@ -11,6 +11,7 @@ import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.mana
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import {
+  type QueueMultisigTransactionEntity,
   QueueMultisigTransactionListSchema,
   QueueMultisigTransactionPageSchema,
   QueueMultisigTransactionSchema,
@@ -375,25 +376,20 @@ export class SafeRepository implements ISafeRepository {
     return page;
   }
 
-  private async fetchQueueOrigins(
+  private async fetchQueueMultisigByHash(
     chainId: string,
     safeTxHashes: Array<string>,
-  ): Promise<Map<string, string | null>> {
-    const origins = new Map<string, string | null>();
-    if (safeTxHashes.length === 0) return origins;
+  ): Promise<Map<string, QueueMultisigTransactionEntity>> {
+    const byHash = new Map<string, QueueMultisigTransactionEntity>();
+    if (safeTxHashes.length === 0) return byHash;
     try {
       const raw = await this.queueService.getMultisigTransactionsBatch({
         chainId,
         safeTxHashes,
       });
       const transactions = QueueMultisigTransactionListSchema.parse(raw);
-      for (const queue of transactions) {
-        origins.set(
-          queue.safeTxHash,
-          buildOrigin(queue.originName, queue.originUrl),
-        );
-      }
-      const missing = safeTxHashes.filter((hash) => !origins.has(hash));
+      for (const queue of transactions) byHash.set(queue.safeTxHash, queue);
+      const missing = safeTxHashes.filter((hash) => !byHash.has(hash));
       if (missing.length > 0) {
         this.loggingService.warn(
           `Queue service omitted ${missing.length} hash(es) from batch response. chainId=${chainId}, missing=${missing.join(',')}`,
@@ -404,7 +400,20 @@ export class SafeRepository implements ISafeRepository {
         `Failed to fetch origins from queue service. chainId=${chainId}, hashes=${safeTxHashes.length}, error=${error}`,
       );
     }
-    return origins;
+    return byHash;
+  }
+
+  private isQueueOriginAuthoritative(
+    queue: { chainId: string; safe: Address; safeTxHash: string },
+    expected: { chainId: string; safe: Address },
+  ): boolean {
+    if (queue.chainId !== expected.chainId || queue.safe !== expected.safe) {
+      this.loggingService.warn(
+        `Queue origin reconciliation rejected. safeTxHash=${queue.safeTxHash}, expectedChainId=${expected.chainId}, queueChainId=${queue.chainId}, expectedSafe=${expected.safe}, queueSafe=${queue.safe}`,
+      );
+      return false;
+    }
+    return true;
   }
 
   private async bindQueueOrigins(
@@ -414,13 +423,17 @@ export class SafeRepository implements ISafeRepository {
     if (!this.queueServiceEnabled) return;
     const multisigs = txs.filter(isMultisigTransaction);
     if (multisigs.length === 0) return;
-    const origins = await this.fetchQueueOrigins(
+    const byHash = await this.fetchQueueMultisigByHash(
       chainId,
       multisigs.map((tx) => tx.safeTxHash),
     );
     for (const tx of multisigs) {
-      const override = origins.get(tx.safeTxHash);
-      if (override !== undefined) tx.origin = override;
+      const queue = byHash.get(tx.safeTxHash);
+      if (queue === undefined) continue;
+      if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
+        continue;
+      }
+      tx.origin = buildOrigin(queue.originName, queue.originUrl);
     }
   }
 
@@ -435,6 +448,9 @@ export class SafeRepository implements ISafeRepository {
         safeTxHash: tx.safeTxHash,
       });
       const queue = QueueMultisigTransactionSchema.parse(raw);
+      if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
+        return;
+      }
       tx.origin = buildOrigin(queue.originName, queue.originUrl);
     } catch (error) {
       this.loggingService.warn(

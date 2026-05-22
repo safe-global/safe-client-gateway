@@ -550,6 +550,40 @@ describe('Messages controller', () => {
           safeAppId: null,
         });
     });
+
+    it('should return 404 when the queue returns a message for a different chainId', async () => {
+      const chain = chainBuilder().build();
+      const otherChainId = `${Number(chain.chainId) + 1}`;
+      const message = messageBuilder()
+        .with(
+          'confirmations',
+          faker.helpers.multiple(() => messageConfirmationBuilder().build(), {
+            count: { min: 2, max: 5 },
+          }),
+        )
+        .build();
+      const safe = safeBuilder().build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
+            return Promise.resolve({
+              data: rawify(toQueueMessageJson(message, otherChainId)),
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${message.safe}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
+        .expect(404)
+        .expect({ statusCode: 404, message: 'Message not found' });
+    });
   });
 
   describe('Get messages by Safe address', () => {
@@ -841,6 +875,59 @@ describe('Messages controller', () => {
               ])
               .build(),
           );
+        });
+    });
+
+    it('should filter out messages whose chainId differs from the request', async () => {
+      const chain = chainBuilder().build();
+      const otherChainId = `${Number(chain.chainId) + 1}`;
+      const safe = safeBuilder().build();
+      const matching = messageBuilder()
+        .with('safe', safe.address)
+        .with(
+          'confirmations',
+          faker.helpers.multiple(() => messageConfirmationBuilder().build(), {
+            count: { min: 2, max: 5 },
+          }),
+        )
+        .build();
+      const wrongChainMessage = messageBuilder()
+        .with('safe', safe.address)
+        .with('confirmations', [messageConfirmationBuilder().build()])
+        .build();
+      const page = pageBuilder()
+        .with('previous', null)
+        .with('next', null)
+        .with('count', 2)
+        .with('results', [
+          toQueueMessageJson(matching, chain.chainId),
+          toQueueMessageJson(wrongChainMessage, otherChainId),
+        ])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
+            return Promise.resolve({ data: rawify(page), status: 200 });
+          case `${safeConfigUrl}/api/v1/safe-apps/`:
+            return Promise.resolve({ data: rawify([]), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          const messageHashes = body.results
+            .filter((r: { type: string }) => r.type === 'MESSAGE')
+            .map((r: { messageHash: string }) => r.messageHash);
+          expect(messageHashes).toEqual([matching.messageHash]);
+          expect(messageHashes).not.toContain(wrongChainMessage.messageHash);
         });
     });
   });

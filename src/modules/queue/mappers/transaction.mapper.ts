@@ -39,6 +39,7 @@ export function mapQueueToMultisigTransaction(
     executionDate: null,
     blockNumber: null,
     executor: null,
+    payment: null,
     ethGasPrice: null,
     gasUsed: null,
     fee: null,
