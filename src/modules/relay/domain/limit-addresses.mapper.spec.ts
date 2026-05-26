@@ -97,7 +97,6 @@ describe('LimitAddressesMapper', () => {
     const relayTransactionHelper = new RelayTransactionHelper(
       mockSafeRepository,
       mockLoggingService,
-      { getApi: jest.fn(), destroyApi: jest.fn() } as never,
       new Erc20Decoder(),
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),

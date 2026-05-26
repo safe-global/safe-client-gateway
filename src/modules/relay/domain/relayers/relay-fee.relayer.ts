@@ -115,7 +115,6 @@ export class RelayFeeRelayer implements IRelayer {
       // Verify the safeTxHash matches the decoded payload and that the fee
       // service permits relaying this specific transaction.
       await this.validateExecTransaction({
-        version,
         chainId,
         to,
         decoded,
@@ -161,20 +160,18 @@ export class RelayFeeRelayer implements IRelayer {
   }
 
   private async validateExecTransaction(args: {
-    version: string;
     chainId: string;
     to: Address;
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
   }): Promise<void> {
-    const { version, chainId, to, decoded, safeTxHash } = args;
+    const { chainId, to, decoded, safeTxHash } = args;
 
     if (!safeTxHash) {
       throw new RelayTxDeniedError(undefined);
     }
 
     const isValid = await this.relayTransactionHelper.isSafeTxHashValid({
-      version,
       chainId,
       safeAddress: to,
       decoded,

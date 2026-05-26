@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import semverSatisfies from 'semver/functions/satisfies';
 import type { Address, Hex } from 'viem';
 import {
   encodeAbiParameters,
   getAddress,
   keccak256,
   parseAbiParameters,
+  zeroAddress,
 } from 'viem';
-import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
-import Safe141 from '@/abis/safe/v1.4.1/Safe.abi';
-import Safe150 from '@/abis/safe/v1.5.0/Safe.abi';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
   getMultiSendCallOnlyDeployments,
@@ -20,7 +17,6 @@ import {
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
 } from '@/domain/common/utils/deployments';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
@@ -29,10 +25,9 @@ import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-d
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
-
-type SafeAbi = typeof Safe130 | typeof Safe141 | typeof Safe150;
 
 @Injectable()
 export class RelayTransactionHelper {
@@ -41,8 +36,6 @@ export class RelayTransactionHelper {
     private readonly safeRepository: ISafeRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(IBlockchainApiManager)
-    private readonly blockchainApiManager: IBlockchainApiManager,
     private readonly erc20Decoder: Erc20Decoder,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
@@ -50,17 +43,6 @@ export class RelayTransactionHelper {
     private readonly delayModifierDecoder: DelayModifierDecoder,
     private readonly signerFactoryDecoder: SignerFactoryDecoder,
   ) {}
-
-  private getSafeAbi(version: string): SafeAbi {
-    if (semverSatisfies(version, '>=1.5.0')) return Safe150;
-    if (semverSatisfies(version, '>=1.4.1')) return Safe141;
-    if (semverSatisfies(version, '>=1.0.0')) return Safe130;
-    this.loggingService.warn({
-      type: LogType.TxRelayEligibility,
-      message: `getSafeAbi: unrecognised Safe version ${version}, falling back to 1.3.0 ABI`,
-    });
-    return Safe130;
-  }
 
   isValidExecTransactionCall(args: { to: Address; data: Hex }): boolean {
     const decoded = this.decodeExecTransaction(args.data);
@@ -483,58 +465,122 @@ export class RelayTransactionHelper {
     }
   }
 
+  /**
+   * Validates `safeTxHash` against the proposed transaction stored in the Safe Transaction Service.
+   *
+   * Looks up the transaction the service has stored under `safeTxHash`,
+   * asserts it belongs to `safeAddress`, and then performs a field-by-field
+   * equality check between the stored proposal and the `decoded`
+   * `execTransaction` calldata the relay is being asked to submit. Trusts the
+   * tx service to have computed its stored `safeTxHash` correctly at proposal
+   * time — see {@link checkSafeTx} for the comparison rules.
+   *
+   * @returns `true` when the proposal matches the relay payload; `false` on
+   * lookup failure, safe-address mismatch, or any field mismatch. Failures are
+   * logged with {@link LogType.TxRelayEligibility}.
+   */
   async isSafeTxHashValid(args: {
-    version: string;
     chainId: string;
     safeAddress: Address;
     decoded: SafeTransaction;
     safeTxHash: Hex;
   }): Promise<boolean> {
-    const { decoded } = args;
-    const abi = this.getSafeAbi(args.version);
-
+    let stored: MultisigTransaction;
     try {
-      const publicClient = await this.blockchainApiManager.getApi(args.chainId);
-
-      const nonce = await publicClient.readContract({
-        address: args.safeAddress,
-        abi,
-        functionName: 'nonce',
+      stored = await this.safeRepository.getMultiSigTransaction({
+        chainId: args.chainId,
+        safeTransactionHash: args.safeTxHash,
       });
-
-      const onChainHash = await publicClient.readContract({
-        address: args.safeAddress,
-        abi,
-        functionName: 'getTransactionHash',
-        args: [
-          decoded.to,
-          decoded.value,
-          decoded.data,
-          decoded.operation,
-          decoded.safeTxGas,
-          decoded.baseGas,
-          decoded.gasPrice,
-          decoded.gasToken,
-          decoded.refundReceiver,
-          nonce,
-        ],
-      });
-
-      if (onChainHash !== args.safeTxHash) {
-        this.loggingService.warn({
-          type: LogType.TxRelayEligibility,
-          message: `relay-fee safeTxHash mismatch for ${args.safeAddress} on chain ${args.chainId}`,
-        });
-        return false;
-      }
-
-      return true;
     } catch (error) {
-      this.loggingService.error({
+      this.loggingService.warn({
         type: LogType.TxRelayEligibility,
-        message: `relay-fee RPC error verifying safeTxHash for ${args.safeAddress} on chain ${args.chainId}: ${String(error)}`,
+        message: `relay-fee tx service lookup failed for ${args.safeAddress} on chain ${args.chainId} hash=${args.safeTxHash}: ${String(error)}`,
       });
       return false;
     }
+
+    if (getAddress(stored.safe) !== args.safeAddress) {
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee safe address mismatch for ${args.safeAddress} on chain ${args.chainId} hash=${args.safeTxHash}`,
+      });
+      return false;
+    }
+
+    const mismatches = this.checkSafeTx({
+      stored,
+      decoded: args.decoded,
+    });
+    if (mismatches.length > 0) {
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee safeTxHash field mismatch for ${args.safeAddress} on chain ${args.chainId} hash=${args.safeTxHash}: ${mismatches.join(',')}`,
+      });
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Compares a tx-service-stored multisig transaction against the decoded
+   * relay-submitted `execTransaction` payload, returning the names of any
+   * fields that don't match.
+   *
+   * Coerces the two sides into a common form before comparison:
+   * - addresses are checksum-normalized via `getAddress`
+   * - numerics are widened to `bigint` (stored numbers/strings vs decoded `bigint`s)
+   * - nullable stored fields are treated as their zero/empty equivalents:
+   *   `data: null` → `'0x'`, `safeTxGas/baseGas: null` → `0n`,
+   *   `gasPrice: null` → `0n`, `gasToken/refundReceiver: null` → `zeroAddress`
+   *
+   * Does NOT compare `nonce` — it is implicitly committed to by the tx
+   * service's stored `safeTxHash` invariant. Does NOT compare `safe` — caller
+   * is expected to have already asserted that.
+   *
+   * @returns array of mismatched field names; empty when all fields match.
+   */
+  private checkSafeTx(args: {
+    stored: MultisigTransaction;
+    decoded: SafeTransaction;
+  }): Array<string> {
+    const { stored, decoded } = args;
+    const mismatches: Array<string> = [];
+
+    if (getAddress(stored.to) !== getAddress(decoded.to)) {
+      mismatches.push('to');
+    }
+    if (BigInt(stored.value) !== decoded.value) {
+      mismatches.push('value');
+    }
+    if ((stored.data ?? '0x').toLowerCase() !== decoded.data.toLowerCase()) {
+      mismatches.push('data');
+    }
+    if (Number(stored.operation) !== decoded.operation) {
+      mismatches.push('operation');
+    }
+    if (BigInt(stored.safeTxGas ?? 0) !== decoded.safeTxGas) {
+      mismatches.push('safeTxGas');
+    }
+    if (BigInt(stored.baseGas ?? 0) !== decoded.baseGas) {
+      mismatches.push('baseGas');
+    }
+    if (BigInt(stored.gasPrice ?? '0') !== decoded.gasPrice) {
+      mismatches.push('gasPrice');
+    }
+    if (
+      getAddress(stored.gasToken ?? zeroAddress) !==
+      getAddress(decoded.gasToken)
+    ) {
+      mismatches.push('gasToken');
+    }
+    if (
+      getAddress(stored.refundReceiver ?? zeroAddress) !==
+      getAddress(decoded.refundReceiver)
+    ) {
+      mismatches.push('refundReceiver');
+    }
+
+    return mismatches;
   }
 }

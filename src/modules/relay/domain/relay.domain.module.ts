@@ -2,7 +2,6 @@
 import { Module } from '@nestjs/common';
 import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-api.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
-import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { RelayApiModule } from '@/modules/relay/datasources/relay-api.module';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
@@ -22,7 +21,6 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
     SafeRepositoryModule,
     BalancesModule,
     FeeServiceApiModule,
-    BlockchainModule,
   ],
   providers: [
     RelayTransactionHelper,
