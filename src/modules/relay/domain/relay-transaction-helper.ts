@@ -553,7 +553,7 @@ export class RelayTransactionHelper {
     if (BigInt(stored.value) !== decoded.value) {
       mismatches.push('value');
     }
-    if ((stored.data ?? '0x') !== decoded.data) {
+    if ((stored.data ?? '0x').toLowerCase() !== decoded.data.toLowerCase()) {
       mismatches.push('data');
     }
     if (Number(stored.operation) !== decoded.operation) {

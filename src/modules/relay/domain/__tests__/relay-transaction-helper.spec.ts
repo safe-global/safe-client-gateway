@@ -415,6 +415,40 @@ describe('RelayTransactionHelper', () => {
         }),
       ).resolves.toBe(true);
     });
+
+    it('should match when stored data uses mixed-case hex but decoded data is lowercase', async () => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      // erc20 transfer payload — non-empty data so case can actually differ.
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const execData = execTransactionEncoder()
+        .with('data', erc20TransferEncoder().with('to', recipient).encode())
+        .encode();
+      const decoded = helper.decodeExecTransaction(execData)!;
+      // Tx service may return any hex casing; viem-decoded data is lowercase.
+      // Sanity-check the precondition is non-trivial.
+      expect(decoded.data).toBe(decoded.data.toLowerCase());
+      const stored = buildMatchingStored({
+        safeAddress,
+        decodedTo: decoded.to,
+      })
+        .with('data', decoded.data.toUpperCase().replace('0X', '0x') as Hex)
+        .build();
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
+
+      await expect(
+        helper.isSafeTxHashValid({
+          chainId,
+          safeAddress,
+          decoded,
+          safeTxHash,
+        }),
+      ).resolves.toBe(true);
+    });
   });
 
   describe('decodeExecTransaction', () => {
