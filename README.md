@@ -39,6 +39,25 @@ The project requires some ABIs that are generated after install. In order to man
 yarn generate-abis
 ```
 
+### Development with Dev Containers
+
+If you have Docker and the [VS Code/Cursor Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you can develop the project without installing Node, Yarn, or any of the backing services on your host:
+
+1. Open the repository in VS Code/Cursor.
+2. Run **Dev Containers: Reopen in Container** from the command palette.
+
+On first build the container will install dependencies with `yarn install --immutable` (which also generates the required ABIs via the `postinstall` hook).
+
+The following services start automatically alongside the dev container: Postgres (`db`), Postgres test DB (`db-test`), Redis (`redis`), and RabbitMQ (`rabbitmq`). The `web`, `nginx`, and `pgadmin` services from `docker-compose.yml` are NOT auto-started; if you need them, run them from the host with:
+
+```bash
+docker compose up <service>
+```
+
+Note: both `db` and `db-test` run with SSL enabled, so before you reopen in container — or any time you run `docker compose up db`/`db-test` from the host — make sure the self-signed key has owner-only permissions (see [Running the services](#running-the-services)).
+
+VS Code/Cursor installs the Biome, Claude Code, and ChatGPT extensions automatically inside the container.
+
 ## Setup your env
 
 We recommend using what is available in the .env.sample file:
@@ -110,6 +129,17 @@ yarn env:validate
 yarn env:validate:silent
 ```
 
+## Running the services
+
+Both the `db` and `db-test` Postgres containers run with SSL enabled using a self-signed certificate stored in `db_config/test/`. Postgres refuses to start if the private key is group- or world-readable, so before launching either container (whether from the host or via the dev container) restrict the key to the owner:
+
+```shell
+# disallow any access to world or group
+chmod 0600 db_config/test/server.key
+```
+
+This only needs to be done once per checkout (and again after a fresh `git clone`).
+
 ## Running the app
 
 1. Start Redis instance. By default, it will start on port `6379` of `localhost`.
@@ -146,15 +176,8 @@ yarn run start:prod
 
 The unit test suite contains tests that require a database connection.
 This project provides a `db-test` container which also validates the support for SSL connections.
-To start the container, make sure that the key for the self-signed certificate
-has the right permissions.
 
-```shell
-# disallow any access to world or group
-chmod 0600 db_config/test/server.key
-```
-
-With the right permissions set on the `server.key` file we can now start the `db-test` container:
+Make sure the self-signed certificate key has the right permissions (see [Running the services](#running-the-services)), then start the `db-test` container:
 
 ```shell
 # start the db-test container

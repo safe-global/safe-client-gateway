@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, Inject } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Inject } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
 import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
@@ -33,6 +34,10 @@ export class MembersService {
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
+    await this.assertActiveAdmin({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
@@ -142,5 +147,19 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+  }
+
+  private async assertActiveAdmin(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+  }): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const activeAdmin = await this.membersRepository.findActiveAdmin({
+      userId,
+      spaceId: args.spaceId,
+    });
+    if (!activeAdmin) {
+      throw new ForbiddenException('User is not an active admin.');
+    }
   }
 }

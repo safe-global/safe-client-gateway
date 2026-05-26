@@ -518,6 +518,130 @@ describe('MembersRepository', () => {
     });
   });
 
+  describe('findActiveAdmin', () => {
+    it('should return the member when the user is an ACTIVE ADMIN of the space', async () => {
+      const { spaceId, userId } = await createSpaceAsAdmin();
+
+      await expect(
+        membersRepository.findActiveAdmin({ userId, spaceId }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          role: 'ADMIN',
+          status: 'ACTIVE',
+        }),
+      );
+    });
+
+    it('should return null when the user has no member record in the space', async () => {
+      const { userId } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: space.generatedMaps[0].id,
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('should return null when the user is a MEMBER, not an ADMIN', async () => {
+      const { userId, user } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: space.generatedMaps[0].id,
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('should return null when the ADMIN status is not ACTIVE', async () => {
+      const nonActiveStatus = faker.helpers.arrayElement(
+        MemberStatusKeys.filter((s) => s !== 'ACTIVE'),
+      );
+      const { userId, user } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: nonActiveStatus,
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: space.generatedMaps[0].id,
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('should return null when the user is an ACTIVE ADMIN of a different space', async () => {
+      const { userId } = await createSpaceAsAdmin();
+      const otherSpace = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: otherSpace.generatedMaps[0].id,
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('should return null for an INVITED admin even when another ACTIVE admin exists in the same space', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const space = await dbSpacesRepository.findOneByOrFail({ id: spaceId });
+      const { userId, user } = await createSiweUser();
+      await dbMembersRepository.insert({
+        user,
+        space,
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'INVITED',
+        invitedBy: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      await expect(
+        membersRepository.findActiveAdmin({ userId, spaceId }),
+      ).resolves.toBeNull();
+    });
+
+    it('should return null when the caller is an ACTIVE ADMIN of a different space, even if the queried space has its own ACTIVE admin', async () => {
+      const { userId } = await createSpaceAsAdmin();
+      const { spaceId: otherSpaceId } = await createSpaceAsAdmin();
+
+      await expect(
+        membersRepository.findActiveAdmin({
+          userId,
+          spaceId: otherSpaceId,
+        }),
+      ).resolves.toBeNull();
+    });
+  });
+
   describe('inviteUsers', () => {
     it('should invite users to a space and return the members', async () => {
       const spaceName = nameBuilder();
@@ -684,142 +808,6 @@ describe('MembersRepository', () => {
       ]);
     });
 
-    it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-      const users: Array<{
-        address: Address;
-        role: keyof typeof MemberRole;
-        name: string;
-      }> = [];
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload: new AuthPayload(),
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow('Not authenticated');
-    });
-
-    it('should not allow inviting users if the user is not an ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const { user: owner, authPayload } = await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: owner,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const users = faker.helpers.multiple(
-        () => {
-          return {
-            address: getAddress(faker.finance.ethereumAddress()),
-            role: faker.helpers.arrayElement(MemberRoleKeys),
-            name: faker.person.firstName(),
-          };
-        },
-        { count: { min: 2, max: 5 } },
-      );
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload,
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
-    });
-
-    it('should not allow inviting users if the user is a NON-ACTIVE ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const { user: owner, authPayload } = await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: owner,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'ADMIN',
-        status: 'INVITED',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const users = faker.helpers.multiple(
-        () => {
-          return {
-            address: getAddress(faker.finance.ethereumAddress()),
-            role: faker.helpers.arrayElement(MemberRoleKeys),
-            name: faker.person.firstName(),
-          };
-        },
-        { count: { min: 2, max: 5 } },
-      );
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload,
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
-    });
-
-    it('should not allow inviting users if the signer is an admin of another space', async () => {
-      const sourceSpaceName = nameBuilder();
-      const targetSpaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const { user: owner, authPayload } = await createSiweUser();
-      const sourceSpace = await dbSpacesRepository.insert({
-        name: sourceSpaceName,
-        status: 'ACTIVE',
-      });
-      const targetSpace = await dbSpacesRepository.insert({
-        name: targetSpaceName,
-        status: 'ACTIVE',
-      });
-      const targetSpaceId = targetSpace.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: owner,
-        space: sourceSpace.generatedMaps[0],
-        name: memberName,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const users = faker.helpers.multiple(
-        () => {
-          return {
-            address: getAddress(faker.finance.ethereumAddress()),
-            role: faker.helpers.arrayElement(MemberRoleKeys),
-            name: faker.person.firstName(),
-          };
-        },
-        { count: { min: 1, max: 3 } },
-      );
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload,
-          spaceId: targetSpaceId,
-          users,
-        }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
-    });
-
     it('should throw an error if the space does not exist', async () => {
       const { authPayload } = await createSiweUser();
       const spaceId = faker.number.int({
@@ -839,48 +827,6 @@ describe('MembersRepository', () => {
           users,
         }),
       ).rejects.toThrow('Space not found.');
-    });
-
-    it('should throw an error if the signer_address member is not ACTIVE', async () => {
-      const spaceName = nameBuilder();
-      const adminName = nameBuilder();
-      const { user: admin } = await createSiweUser();
-      const { user: invitedAdmin, authPayload: invitedAdminAuthPayload } =
-        await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: admin,
-        space: space.generatedMaps[0],
-        name: adminName,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      await dbMembersRepository.insert({
-        user: invitedAdmin,
-        space: space.generatedMaps[0],
-        name: adminName,
-        role: 'ADMIN',
-        status: 'INVITED',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
-      });
-      const users: Array<{
-        address: Address;
-        role: keyof typeof MemberRole;
-        name: string;
-      }> = [];
-
-      await expect(
-        membersRepository.inviteUsers({
-          authPayload: invitedAdminAuthPayload,
-          spaceId,
-          users,
-        }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
     });
   });
 
@@ -3079,6 +3025,33 @@ describe('MembersRepository', () => {
       userId,
       user: user.generatedMaps[0],
       authPayload: new AuthPayload(authPayloadDto),
+    };
+  }
+
+  async function createSpaceAsAdmin(): Promise<{
+    spaceId: Space['id'];
+    userId: number;
+    user: Record<string, unknown>;
+    authPayload: AuthPayload;
+  }> {
+    const { userId, user, authPayload } = await createSiweUser();
+    const space = await dbSpacesRepository.insert({
+      name: nameBuilder(),
+      status: 'ACTIVE',
+    });
+    await dbMembersRepository.insert({
+      user,
+      space: space.generatedMaps[0],
+      name: nameBuilder(),
+      status: 'ACTIVE',
+      role: 'ADMIN',
+      invitedBy: getAddress(faker.finance.ethereumAddress()),
+    });
+    return {
+      spaceId: space.generatedMaps[0].id,
+      userId,
+      user,
+      authPayload,
     };
   }
 });

@@ -89,16 +89,33 @@ export class CustomTransactionMapper {
         safeTxGas,
       } = transaction;
 
-      return (
+      const isEmptySelfCall =
         to === safe &&
         dataSize === 0 &&
         (!value || Number(value) === 0) &&
-        operation === Operation.CALL &&
+        operation === Operation.CALL;
+
+      const areAllRefundParamsEmptyOrDefault =
         (!baseGas || Number(baseGas) === 0) &&
         (!gasPrice || Number(gasPrice) === 0) &&
         (!gasToken || gasToken === NULL_ADDRESS) &&
         (!refundReceiver || refundReceiver === NULL_ADDRESS) &&
-        (!safeTxGas || safeTxGas === 0)
+        (!safeTxGas || safeTxGas === 0);
+
+      const areAllRefundParamsSet =
+        baseGas !== null &&
+        Number(baseGas) !== 0 &&
+        gasPrice !== null &&
+        Number(gasPrice) !== 0 &&
+        refundReceiver !== null &&
+        gasToken !== null &&
+        refundReceiver !== NULL_ADDRESS &&
+        safeTxGas !== null &&
+        safeTxGas !== 0;
+
+      return (
+        isEmptySelfCall &&
+        (areAllRefundParamsEmptyOrDefault || areAllRefundParamsSet)
       );
     }
     return false;
