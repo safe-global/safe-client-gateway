@@ -59,10 +59,6 @@ const MULTI_SEND_VERSIONS = getDeploymentVersionsByChainIds(
   'MultiSend',
   supportedChainIds,
 );
-const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
-  'Safe',
-  supportedChainIds,
-);
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -263,7 +259,6 @@ describe('RelayTransactionHelper', () => {
 
     it('should return true when the tx-service stored fields match the decoded execTransaction', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -280,7 +275,6 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -291,7 +285,6 @@ describe('RelayTransactionHelper', () => {
 
     it('should return false when a stored field differs from the decoded execTransaction', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -310,7 +303,6 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -327,7 +319,6 @@ describe('RelayTransactionHelper', () => {
 
     it('should return false when the tx-service lookup fails', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -342,7 +333,6 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -359,7 +349,6 @@ describe('RelayTransactionHelper', () => {
 
     it("should return false when the stored tx's safe address differs from the requested safe", async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const otherSafe = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
@@ -377,7 +366,6 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -401,7 +389,6 @@ describe('RelayTransactionHelper', () => {
       ['refundReceiver', { field: 'refundReceiver' as const, value: null }],
     ])('should treat stored %s=null as equivalent to the decoded zero/empty default', async (_, override) => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -421,7 +408,6 @@ describe('RelayTransactionHelper', () => {
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,

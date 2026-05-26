@@ -480,7 +480,6 @@ export class RelayTransactionHelper {
    * logged with {@link LogType.TxRelayEligibility}.
    */
   async isSafeTxHashValid(args: {
-    version: string;
     chainId: string;
     safeAddress: Address;
     decoded: SafeTransaction;
