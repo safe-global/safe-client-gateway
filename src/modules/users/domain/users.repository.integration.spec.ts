@@ -21,6 +21,7 @@ import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.ent
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
@@ -975,7 +976,7 @@ describe('UsersRepository', () => {
 
       await expect(
         usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email),
-      ).rejects.toThrow(/idx_users_email/);
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
     });
 
     it('should throw UnauthorizedException when the stored email differs from the OIDC email', async () => {
