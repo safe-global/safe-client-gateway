@@ -22,6 +22,7 @@ import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 describe('MembersController', () => {
   let app: INestApplication<Server>;
@@ -1301,7 +1302,7 @@ describe('MembersController', () => {
 
     it('should return email for active members', async () => {
       const spaceName = nameBuilder();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
         faker.string.uuid(),
@@ -1342,7 +1343,7 @@ describe('MembersController', () => {
       const spaceName = nameBuilder();
       const invitedAddress = getAddress(faker.finance.ethereumAddress());
       const invitedName = faker.person.firstName();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
         faker.string.uuid(),
