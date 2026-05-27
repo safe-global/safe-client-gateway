@@ -234,3 +234,4 @@ This repository contains code developed under two different ownership and licens
 Users who require a purely MIT-licensed codebase should base their work on the `sef-mit-final` tag. The historical MIT-licensed code remains MIT and is not retroactively relicensed.
 
 For full details, see `LICENSE.md` and `NOTICE.md`.
+

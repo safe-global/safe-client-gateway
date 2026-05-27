@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { Hex, PublicClient } from 'viem';
-import { getAddress } from 'viem';
+import type { Hex } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import configuration from '@/config/entities/configuration';
 import {
@@ -11,7 +11,6 @@ import {
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
 } from '@/domain/common/utils/deployments';
-import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
   execTransactionFromModuleEncoder,
@@ -42,6 +41,7 @@ import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/p
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 const supportedChainIds = Object.keys(configuration().relay.apiKey);
@@ -59,10 +59,6 @@ const MULTI_SEND_VERSIONS = getDeploymentVersionsByChainIds(
   'MultiSend',
   supportedChainIds,
 );
-const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
-  'Safe',
-  supportedChainIds,
-);
 
 const mockLoggingService = jest.mocked({
   info: jest.fn(),
@@ -74,12 +70,8 @@ const mockLoggingService = jest.mocked({
 const mockSafeRepository = jest.mocked({
   getSafe: jest.fn(),
   getSafesByModule: jest.fn(),
+  getMultiSigTransaction: jest.fn(),
 } as jest.MockedObjectDeep<ISafeRepository>);
-
-const mockBlockchainApiManager = jest.mocked({
-  getApi: jest.fn(),
-  destroyApi: jest.fn(),
-} as jest.MockedObjectDeep<IBlockchainApiManager>);
 
 describe('RelayTransactionHelper', () => {
   let helper: RelayTransactionHelper;
@@ -90,7 +82,6 @@ describe('RelayTransactionHelper', () => {
     helper = new RelayTransactionHelper(
       mockSafeRepository,
       mockLoggingService,
-      mockBlockchainApiManager,
       new Erc20Decoder(),
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),
@@ -243,20 +234,31 @@ describe('RelayTransactionHelper', () => {
   });
 
   describe('isSafeTxHashValid', () => {
-    function makePublicClientMock(args: {
-      nonce: bigint;
-      txHash: Hex;
-    }): jest.MockedObjectDeep<PublicClient> {
-      const readContract = jest
-        .fn()
-        .mockResolvedValueOnce(args.nonce)
-        .mockResolvedValueOnce(args.txHash);
-      return { readContract } as unknown as jest.MockedObjectDeep<PublicClient>;
+    // execTransactionEncoder() defaults: value=0n, data='0x', operation=0,
+    // safeTxGas=baseGas=gasPrice=0n, gasToken=refundReceiver=zeroAddress.
+    // We build a matching stored MultisigTransaction for happy-path tests, with
+    // the `to` field aligned to the decoded payload.
+    function buildMatchingStored(args: {
+      safeAddress: Hex;
+      decodedTo: Hex;
+    }): ReturnType<typeof multisigTransactionBuilder> extends infer B
+      ? B
+      : never {
+      return multisigTransactionBuilder()
+        .with('safe', getAddress(args.safeAddress))
+        .with('to', getAddress(args.decodedTo))
+        .with('value', '0')
+        .with('data', '0x')
+        .with('operation', 0)
+        .with('safeTxGas', 0)
+        .with('baseGas', 0)
+        .with('gasPrice', '0')
+        .with('gasToken', zeroAddress)
+        .with('refundReceiver', zeroAddress);
     }
 
-    it('should return true when on-chain hash matches the provided safeTxHash', async () => {
+    it('should return true when the tx-service stored fields match the decoded execTransaction', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -265,17 +267,14 @@ describe('RelayTransactionHelper', () => {
       const decoded = helper.decodeExecTransaction(
         execTransactionEncoder().encode(),
       )!;
-      const mockPublicClient = makePublicClientMock({
-        nonce: BigInt(0),
-        txHash: safeTxHash,
-      });
-      mockBlockchainApiManager.getApi.mockResolvedValue(
-        mockPublicClient as unknown as PublicClient,
-      );
+      const stored = buildMatchingStored({
+        safeAddress,
+        decodedTo: decoded.to,
+      }).build();
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -284,32 +283,26 @@ describe('RelayTransactionHelper', () => {
       ).resolves.toBe(true);
     });
 
-    it('should return false when on-chain hash differs from provided safeTxHash', async () => {
+    it('should return false when a stored field differs from the decoded execTransaction', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
-        length: 64,
-        casing: 'lower',
-      }) as Hex;
-      const differentHash = faker.string.hexadecimal({
         length: 64,
         casing: 'lower',
       }) as Hex;
       const decoded = helper.decodeExecTransaction(
         execTransactionEncoder().encode(),
       )!;
-      const mockPublicClient = makePublicClientMock({
-        nonce: BigInt(0),
-        txHash: differentHash,
-      });
-      mockBlockchainApiManager.getApi.mockResolvedValue(
-        mockPublicClient as unknown as PublicClient,
-      );
+      const stored = buildMatchingStored({
+        safeAddress,
+        decodedTo: decoded.to,
+      })
+        .with('to', getAddress(faker.finance.ethereumAddress()))
+        .build();
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -319,14 +312,13 @@ describe('RelayTransactionHelper', () => {
 
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('safeTxHash mismatch'),
+          message: expect.stringContaining('safeTxHash field mismatch'),
         }),
       );
     });
 
-    it('should return false when the RPC call fails', async () => {
+    it('should return false when the tx-service lookup fails', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const version = faker.helpers.arrayElement(SAFE_VERSIONS[chainId]);
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const safeTxHash = faker.string.hexadecimal({
         length: 64,
@@ -335,11 +327,12 @@ describe('RelayTransactionHelper', () => {
       const decoded = helper.decodeExecTransaction(
         execTransactionEncoder().encode(),
       )!;
-      mockBlockchainApiManager.getApi.mockRejectedValue(new Error('RPC error'));
+      mockSafeRepository.getMultiSigTransaction.mockRejectedValue(
+        new Error('Not found'),
+      );
 
       await expect(
         helper.isSafeTxHashValid({
-          version,
           chainId,
           safeAddress,
           decoded,
@@ -347,11 +340,114 @@ describe('RelayTransactionHelper', () => {
         }),
       ).resolves.toBe(false);
 
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining('RPC error verifying safeTxHash'),
+          message: expect.stringContaining('tx service lookup failed'),
         }),
       );
+    });
+
+    it("should return false when the stored tx's safe address differs from the requested safe", async () => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const otherSafe = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const decoded = helper.decodeExecTransaction(
+        execTransactionEncoder().encode(),
+      )!;
+      const stored = buildMatchingStored({
+        safeAddress: otherSafe,
+        decodedTo: decoded.to,
+      }).build();
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
+
+      await expect(
+        helper.isSafeTxHashValid({
+          chainId,
+          safeAddress,
+          decoded,
+          safeTxHash,
+        }),
+      ).resolves.toBe(false);
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: expect.stringContaining('safe address mismatch'),
+        }),
+      );
+    });
+
+    it.each([
+      ['data', { field: 'data' as const, value: null }],
+      ['safeTxGas', { field: 'safeTxGas' as const, value: null }],
+      ['baseGas', { field: 'baseGas' as const, value: null }],
+      ['gasPrice', { field: 'gasPrice' as const, value: null }],
+      ['gasToken', { field: 'gasToken' as const, value: null }],
+      ['refundReceiver', { field: 'refundReceiver' as const, value: null }],
+    ])('should treat stored %s=null as equivalent to the decoded zero/empty default', async (_, override) => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const decoded = helper.decodeExecTransaction(
+        execTransactionEncoder().encode(),
+      )!;
+      const stored = buildMatchingStored({
+        safeAddress,
+        decodedTo: decoded.to,
+      })
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .with(override.field as any, override.value as any)
+        .build();
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
+
+      await expect(
+        helper.isSafeTxHashValid({
+          chainId,
+          safeAddress,
+          decoded,
+          safeTxHash,
+        }),
+      ).resolves.toBe(true);
+    });
+
+    it('should match when stored data uses mixed-case hex but decoded data is lowercase', async () => {
+      const chainId = faker.helpers.arrayElement(supportedChainIds);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      // erc20 transfer payload — non-empty data so case can actually differ.
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const execData = execTransactionEncoder()
+        .with('data', erc20TransferEncoder().with('to', recipient).encode())
+        .encode();
+      const decoded = helper.decodeExecTransaction(execData)!;
+      // Tx service may return any hex casing; viem-decoded data is lowercase.
+      // Sanity-check the precondition is non-trivial.
+      expect(decoded.data).toBe(decoded.data.toLowerCase());
+      const stored = buildMatchingStored({
+        safeAddress,
+        decodedTo: decoded.to,
+      })
+        .with('data', decoded.data.toUpperCase().replace('0X', '0x') as Hex)
+        .build();
+      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
+
+      await expect(
+        helper.isSafeTxHashValid({
+          chainId,
+          safeAddress,
+          decoded,
+          safeTxHash,
+        }),
+      ).resolves.toBe(true);
     });
   });
 
