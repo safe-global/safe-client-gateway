@@ -384,6 +384,7 @@ export default () => ({
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
+    passkeys: process.env.FF_PASSKEYS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
@@ -738,6 +739,61 @@ export default () => ({
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
+  },
+  passkeys: {
+    rpIdAllowlist: (
+      process.env.PASSKEYS_RP_ID_ALLOWLIST ?? 'app.safe.global,safe.global'
+    )
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    originAllowlist: (
+      process.env.PASSKEYS_ORIGIN_ALLOWLIST ?? 'https://app.safe.global'
+    )
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    // `windowSeconds` is intentionally hardcoded at 10 minutes for both
+    // budgets — the burst profile is fixed by the use case (one registration
+    // per device, ~3-5 lookups per first-launch). The `max` knob is
+    // sufficient for environment-level tuning.
+    rateLimit: {
+      registration: {
+        max: Number.parseInt(
+          process.env.PASSKEYS_REGISTRATION_RATE_LIMIT_MAX ?? `${20}`,
+          10,
+        ),
+        windowSeconds: 600,
+      },
+      lookup: {
+        max: Number.parseInt(
+          process.env.PASSKEYS_LOOKUP_RATE_LIMIT_MAX ?? `${120}`,
+          10,
+        ),
+        windowSeconds: 600,
+      },
+    },
+    // Wall-clock cap on attestation verification. Protects worker thread
+    // from cert-chain stalls in `tpm` / `android-safetynet` formats.
+    verificationTimeoutMs: Number.parseInt(
+      process.env.PASSKEYS_VERIFICATION_TIMEOUT_MS ?? `${500}`,
+      10,
+    ),
+    // Cache policy for the lookup GET endpoint. Passkey rows are immutable
+    // (credentialId is the PK and never mutates), so the 200 response can
+    // be aggressively cached. 4xx responses are `no-store` to avoid a
+    // stale-negative cache locking first-launch flows after a fresh POST.
+    // Values are env-tunable so future TTL changes don't require code edits.
+    lookupCache: {
+      hitMaxAgeSeconds: Number.parseInt(
+        process.env.PASSKEYS_LOOKUP_CACHE_HIT_MAX_AGE_SECONDS ?? `${86400}`,
+        10,
+      ),
+      hitSharedMaxAgeSeconds: Number.parseInt(
+        process.env.PASSKEYS_LOOKUP_CACHE_HIT_S_MAX_AGE_SECONDS ?? `${2592000}`,
+        10,
+      ),
+    },
   },
   spaces: {
     addressBooks: {

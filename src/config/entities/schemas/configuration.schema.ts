@@ -110,6 +110,43 @@ export const RootConfigurationSchema = z
     INFURA_API_KEY: z.string(),
     JWT_ISSUER: z.string(),
     JWT_SECRET: z.string(),
+    PASSKEYS_RP_ID_ALLOWLIST: z
+      .string()
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.string().min(1)))
+      .optional(),
+    PASSKEYS_ORIGIN_ALLOWLIST: z
+      .string()
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.url()))
+      .optional(),
+    PASSKEYS_REGISTRATION_RATE_LIMIT_MAX: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    PASSKEYS_LOOKUP_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    PASSKEYS_VERIFICATION_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
+    PASSKEYS_LOOKUP_CACHE_HIT_MAX_AGE_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    PASSKEYS_LOOKUP_CACHE_HIT_S_MAX_AGE_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
     PUSH_NOTIFICATIONS_API_PROJECT: z.string(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: z.email(),
     PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY: z.string(),

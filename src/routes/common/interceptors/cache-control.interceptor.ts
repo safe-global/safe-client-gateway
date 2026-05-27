@@ -21,7 +21,12 @@ export class CacheControlInterceptor implements NestInterceptor {
     return next.handle().pipe(
       tap(() => {
         const response: Response = context.switchToHttp().getResponse();
-        if (!response.headersSent) {
+        // Respect a Cache-Control set by an inner interceptor or @Header
+        // decorator. Without this guard, route-specific cache policies
+        // (e.g. `immutable` on an immutable-row lookup) would be silently
+        // downgraded to `no-cache` because the global tap runs last in
+        // the chain.
+        if (!(response.headersSent || response.getHeader('Cache-Control'))) {
           response.header('Cache-Control', 'no-cache');
         }
       }),

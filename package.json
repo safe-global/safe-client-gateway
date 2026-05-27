@@ -58,6 +58,7 @@
     "@nestjs/typeorm": "11.0.1",
     "@safe-global/safe-deployments": "1.37.51",
     "@safe-global/safe-modules-deployments": "3.0.3",
+    "@simplewebauthn/server": "13.3.0",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "1.0.3",
     "bullmq": "^5.56.0",
