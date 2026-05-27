@@ -301,6 +301,8 @@ describe('OidcAuthService', () => {
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,
+        email: fakeEmailAddress(),
+        email_verified: true,
         exp,
         nbf: undefined,
         iat: undefined,

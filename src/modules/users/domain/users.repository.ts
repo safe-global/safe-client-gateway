@@ -232,49 +232,29 @@ export class UsersRepository implements IUsersRepository {
   }
 
   /**
-   * Finds or creates an OIDC user with the given verified email.
+   * Finds or creates an OIDC user identified by their external user ID.
+   *
+   * If a user with the given `extUserId` already exists, their email is
+   * reconciled against `email`: a missing email is persisted, while a
+   * conflicting one is rejected. Otherwise a new user is created with the
+   * email stored at insert time.
+   *
+   * @param extUserId - The external (OIDC provider) user identifier.
+   * @param email - The verified email address to associate with the user.
+   * @returns The ID of the existing or newly created user.
+   * @throws {UnauthorizedException} If the email does not match the one
+   * already registered for the account.
+   * @throws {UserEmailAlreadyInUseError} If the email is already in use by
+   * another user.
    */
   public async findOrCreateByExtUserIdAndEmail(
     extUserId: string,
     email: EmailAddress,
   ): Promise<User['id']> {
-    const existingId = await this.findExistingByExtUserIdAndEnsureEmail(
-      extUserId,
-      email,
-    );
-    if (existingId) return existingId;
-
-    return this.createByExtUserIdAndStoreEmail(extUserId, email);
-  }
-
-  private async findExistingByExtUserIdAndEnsureEmail(
-    extUserId: string,
-    email: EmailAddress,
-  ): Promise<User['id'] | null> {
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
-    const existing = await userRepository.findOne({
-      where: { extUserId },
-      select: { email: true, id: true },
-    });
-    if (!existing) return null;
-    if (existing.email && existing.email !== email) {
-      throw new UnauthorizedException(
-        'Email does not match the registered email for this account',
-      );
+    const existing = await this.findByExtUserId(extUserId);
+    if (existing) {
+      return this.reconcileEmail(existing, email);
     }
-    if (!existing.email) {
-      await this.persistEmail(existing.id, email);
-    }
-    return existing.id;
-  }
-
-  private async createByExtUserIdAndStoreEmail(
-    extUserId: string,
-    email: EmailAddress,
-  ): Promise<User['id']> {
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
 
     try {
       return await this.postgresDatabaseService.transaction(
@@ -287,16 +267,56 @@ export class UsersRepository implements IUsersRepository {
       );
     } catch (error) {
       if (this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
-        const user = await userRepository.findOneOrFail({
-          where: { extUserId },
-        });
-        return user.id;
+        // A concurrent request inserted this extUserId between our find and
+        // insert. Re-fetch and reconcile through the same path as a user that
+        // already existed, so the email is matched/backfilled/rejected
+        // identically regardless of timing.
+        const raced = await this.findByExtUserId(extUserId);
+        if (!raced) {
+          throw error;
+        }
+        return this.reconcileEmail(raced, email);
       }
       if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
     }
+  }
+
+  private async findByExtUserId(
+    extUserId: string,
+  ): Promise<Pick<DbUser, 'id' | 'email'> | null> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+
+    return userRepository.findOne({
+      where: { extUserId },
+      select: { id: true, email: true },
+    });
+  }
+
+  /**
+   * Reconciles a verified `email` against an existing user: returns the id when
+   * the email matches, backfills it when none is stored, and rejects a
+   * conflicting one.
+   */
+  private async reconcileEmail(
+    user: Pick<DbUser, 'id' | 'email'>,
+    email: EmailAddress,
+  ): Promise<User['id']> {
+    if (user.email) {
+      if (user.email !== email) {
+        throw new UnauthorizedException(
+          'Email does not match the registered email for this account',
+        );
+      }
+      return user.id;
+    }
+
+    // No email stored yet — backfill it.
+    await this.persistEmail(user.id, email);
+    return user.id;
   }
 
   private async persistEmail(
