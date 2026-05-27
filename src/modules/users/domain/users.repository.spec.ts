@@ -7,6 +7,7 @@ import {
 } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 describe('UsersRepository', () => {
   const walletsRepository = {} as jest.MockedObjectDeep<IWalletsRepository>;
@@ -57,12 +58,12 @@ describe('UsersRepository', () => {
       const extUserId = faker.string.uuid();
       userRepository.findOne.mockResolvedValue({
         id: userId,
-        email: faker.internet.email().toLowerCase(),
+        email: fakeEmailAddress(),
       });
 
       await expect(
         target.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: faker.internet.email(),
+          address: fakeEmailAddress(),
           verified: true,
         }),
       ).resolves.toBe(userId);
@@ -73,7 +74,7 @@ describe('UsersRepository', () => {
     it('should return when an unverified email is unused', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
-      const email = faker.internet.email();
+      const email = fakeEmailAddress();
       userRepository.findOne
         .mockResolvedValueOnce({ id: userId })
         .mockResolvedValueOnce(null);
@@ -99,7 +100,7 @@ describe('UsersRepository', () => {
 
       await expect(
         target.findOrCreateByExtUserIdWithEmail(faker.string.uuid(), {
-          address: faker.internet.email(),
+          address: fakeEmailAddress(),
           verified: false,
         }),
       ).resolves.toBe(userId);
@@ -113,7 +114,7 @@ describe('UsersRepository', () => {
 
       const result = target.findOrCreateByExtUserIdWithEmail(
         faker.string.uuid(),
-        { address: faker.internet.email(), verified: false },
+        { address: fakeEmailAddress(), verified: false },
       );
 
       await expect(result).rejects.toThrow(UserEmailAlreadyInUseError);
@@ -129,7 +130,7 @@ describe('UsersRepository', () => {
   describe('findEmailById', () => {
     it('should return the persisted email', async () => {
       const userId = faker.number.int({ min: 1 });
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       userRepository.findOne.mockResolvedValue({ email });
 
       await expect(target.findEmailById(userId)).resolves.toBe(email);

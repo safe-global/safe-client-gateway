@@ -12,6 +12,7 @@ import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const authRepositoryMock = {
   signToken: jest.fn(),
@@ -162,7 +163,7 @@ describe('OidcAuthService', () => {
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,
@@ -190,7 +191,7 @@ describe('OidcAuthService', () => {
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
         sub: extUserId,
@@ -246,7 +247,7 @@ describe('OidcAuthService', () => {
       jest.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const error = new Error('Database connection failed');
 
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({

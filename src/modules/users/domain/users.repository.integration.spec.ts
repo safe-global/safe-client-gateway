@@ -25,6 +25,7 @@ import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-e
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -917,7 +918,7 @@ describe('UsersRepository', () => {
   describe('findOrCreateByExtUserIdWithEmail', () => {
     it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       await dbUserRepository.insert({
         status: 'ACTIVE',
@@ -953,7 +954,7 @@ describe('UsersRepository', () => {
         extUserId,
       });
       const userId = userInsertResult.identifiers[0].id as number;
-      const email = faker.internet.email();
+      const email = fakeEmailAddress();
 
       await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
         address: email,
@@ -963,13 +964,13 @@ describe('UsersRepository', () => {
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
-      expect(user.email).toBe(email.toLowerCase());
+      expect(user.email).toBe(email);
     });
 
     it('should not overwrite an existing email for the same user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
-      const existingEmail = faker.internet.email().toLowerCase();
+      const existingEmail = fakeEmailAddress();
       const userInsertResult = await dbUserRepository.insert({
         status: 'ACTIVE',
         extUserId,
@@ -978,7 +979,7 @@ describe('UsersRepository', () => {
       const userId = userInsertResult.identifiers[0].id as number;
 
       await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-        address: faker.internet.email().toLowerCase(),
+        address: fakeEmailAddress(),
         verified: true,
       });
 
@@ -990,7 +991,7 @@ describe('UsersRepository', () => {
 
     it('should throw when the email belongs to a different user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const extUserId = faker.string.uuid();
 
       await dbUserRepository.insert({
@@ -1008,7 +1009,7 @@ describe('UsersRepository', () => {
 
     it('should throw when an unverified email belongs to a different user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const extUserId = faker.string.uuid();
 
       await dbUserRepository.insert({
