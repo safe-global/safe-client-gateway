@@ -3,8 +3,9 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
-import { getAddress } from 'viem';
+import { encodeFunctionData, getAddress, type Hash, type Hex } from 'viem';
 import { createTestModule } from '@/__tests__/testing-module';
+import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -17,6 +18,7 @@ import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manage
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { multiSendTransactionsEncoder } from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
@@ -255,6 +257,202 @@ describe('Hook Events for Cache', () => {
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+  });
+
+  describe('nested Safe approveHash invalidation', () => {
+    const approveHashData = (hashToApprove: Hash): Hex =>
+      encodeFunctionData({
+        abi: Safe130,
+        functionName: 'approveHash',
+        args: [hashToApprove],
+      });
+
+    const mockSupportedChain = (chainId: string): void => {
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+          return Promise.resolve({
+            data: rawify(chainBuilder().with('chainId', chainId).build()),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+    };
+
+    it('EXECUTED_MULTISIG_TRANSACTION with approveHash clears the nested (child) Safe tx and queue', async () => {
+      const chainId = faker.string.numeric();
+      const parentSafe = getAddress(faker.finance.ethereumAddress());
+      const childSafe = getAddress(faker.finance.ethereumAddress());
+      const childTxHash = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hash;
+      const childTxCacheDir = new CacheDir(
+        `${chainId}_multisig_transaction_${childTxHash}`,
+        faker.string.alpha(),
+      );
+      const childQueueCacheDir = new CacheDir(
+        `${chainId}_multisig_transactions_${childSafe}`,
+        faker.string.alpha(),
+      );
+      await fakeCacheService.hSet(
+        childTxCacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+      await fakeCacheService.hSet(
+        childQueueCacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+      mockSupportedChain(chainId);
+
+      const data = {
+        type: 'EXECUTED_MULTISIG_TRANSACTION',
+        address: parentSafe,
+        chainId,
+        to: childSafe, // approveHash is executed on the child Safe
+        safeTxHash: faker.string.hexadecimal({ length: 64 }),
+        txHash: faker.string.hexadecimal({ length: 64 }),
+        failed: 'false',
+        data: approveHashData(childTxHash),
+      };
+
+      const cb = getSubscriptionCallback(queuesApiService);
+      await cb({
+        content: Buffer.from(JSON.stringify(data)),
+      } as ConsumeMessage);
+
+      await expect(fakeCacheService.hGet(childTxCacheDir)).resolves.toBeNull();
+      await expect(
+        fakeCacheService.hGet(childQueueCacheDir),
+      ).resolves.toBeNull();
+    });
+
+    it('clears nested Safe txs for approveHash calls wrapped in a multiSend', async () => {
+      const chainId = faker.string.numeric();
+      const parentSafe = getAddress(faker.finance.ethereumAddress());
+      const multiSendAddress = getAddress(faker.finance.ethereumAddress());
+      const childSafeA = getAddress(faker.finance.ethereumAddress());
+      const childSafeB = getAddress(faker.finance.ethereumAddress());
+      const childTxHashA = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hash;
+      const childTxHashB = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hash;
+      const childCacheDirs = [
+        new CacheDir(
+          `${chainId}_multisig_transaction_${childTxHashA}`,
+          faker.string.alpha(),
+        ),
+        new CacheDir(
+          `${chainId}_multisig_transactions_${childSafeA}`,
+          faker.string.alpha(),
+        ),
+        new CacheDir(
+          `${chainId}_multisig_transaction_${childTxHashB}`,
+          faker.string.alpha(),
+        ),
+        new CacheDir(
+          `${chainId}_multisig_transactions_${childSafeB}`,
+          faker.string.alpha(),
+        ),
+      ];
+      for (const cacheDir of childCacheDirs) {
+        await fakeCacheService.hSet(
+          cacheDir,
+          faker.string.alpha(),
+          faker.number.int({ min: 1 }),
+        );
+      }
+      mockSupportedChain(chainId);
+
+      const multiSendData = multiSendTransactionsEncoder([
+        {
+          operation: 0,
+          to: childSafeA,
+          value: BigInt(0),
+          data: approveHashData(childTxHashA),
+        },
+        {
+          operation: 0,
+          to: childSafeB,
+          value: BigInt(0),
+          data: approveHashData(childTxHashB),
+        },
+      ]);
+
+      const data = {
+        type: 'EXECUTED_MULTISIG_TRANSACTION',
+        address: parentSafe,
+        chainId,
+        to: multiSendAddress,
+        safeTxHash: faker.string.hexadecimal({ length: 64 }),
+        txHash: faker.string.hexadecimal({ length: 64 }),
+        failed: 'false',
+        data: encodeFunctionData({
+          abi: [
+            {
+              inputs: [{ name: 'transactions', type: 'bytes' }],
+              name: 'multiSend',
+              outputs: [],
+              stateMutability: 'payable',
+              type: 'function',
+            },
+          ],
+          functionName: 'multiSend',
+          args: [multiSendData],
+        }),
+      };
+
+      const cb = getSubscriptionCallback(queuesApiService);
+      await cb({
+        content: Buffer.from(JSON.stringify(data)),
+      } as ConsumeMessage);
+
+      for (const cacheDir of childCacheDirs) {
+        await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+      }
+    });
+
+    it('does not clear unrelated transactions for non-approveHash executed txs', async () => {
+      const chainId = faker.string.numeric();
+      const unrelatedTxHash = faker.string.hexadecimal({ length: 64 });
+      const unrelatedCacheDir = new CacheDir(
+        `${chainId}_multisig_transaction_${unrelatedTxHash}`,
+        faker.string.alpha(),
+      );
+      const cachedValue = faker.string.alpha();
+      await fakeCacheService.hSet(
+        unrelatedCacheDir,
+        cachedValue,
+        faker.number.int({ min: 1 }),
+      );
+      mockSupportedChain(chainId);
+
+      const data = {
+        type: 'EXECUTED_MULTISIG_TRANSACTION',
+        address: getAddress(faker.finance.ethereumAddress()),
+        chainId,
+        to: getAddress(faker.finance.ethereumAddress()),
+        safeTxHash: faker.string.hexadecimal({ length: 64 }),
+        txHash: faker.string.hexadecimal({ length: 64 }),
+        failed: 'false',
+        data: '0xaaaaaaaa', // not approveHash, not multiSend
+      };
+
+      const cb = getSubscriptionCallback(queuesApiService);
+      await cb({
+        content: Buffer.from(JSON.stringify(data)),
+      } as ConsumeMessage);
+
+      await expect(fakeCacheService.hGet(unrelatedCacheDir)).resolves.toBe(
+        cachedValue,
+      );
+    });
   });
 
   it.each([
