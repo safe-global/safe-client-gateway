@@ -114,6 +114,8 @@ export class MembersRepository implements IMembersRepository {
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });

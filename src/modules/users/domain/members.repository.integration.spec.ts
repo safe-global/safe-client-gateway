@@ -559,7 +559,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -585,7 +585,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'ADMIN',
         status: nonActiveStatus,
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -621,7 +621,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'ADMIN',
         status: 'INVITED',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -3049,7 +3049,7 @@ describe('MembersRepository', () => {
       name: nameBuilder(),
       status: 'ACTIVE',
       role: 'ADMIN',
-      invitedBy: getAddress(faker.finance.ethereumAddress()),
+      invitedBy: null,
     });
     return {
       spaceId: space.generatedMaps[0].id,
