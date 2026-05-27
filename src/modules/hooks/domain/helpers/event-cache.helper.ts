@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import type { MemoizedFunction } from 'lodash';
 import memoize from 'lodash/memoize';
+import type { Address, Hex } from 'viem';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -18,6 +19,8 @@ import { IBalancesRepository } from '@/modules/balances/domain/balances.reposito
 import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
@@ -66,6 +69,8 @@ export class EventCacheHelper {
     private readonly loggingService: ILoggingService,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
+    private readonly safeDecoder: SafeDecoder,
+    private readonly multiSendDecoder: MultiSendDecoder,
   ) {
     this.isSupportedChainMemo = memoize(
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
@@ -293,7 +298,7 @@ export class EventCacheHelper {
     // - the transaction executed – clear multisig transaction
     // - the safe configuration - clear safe info
     // - the stakes of a safe
-    return [
+    const promises = [
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -327,6 +332,87 @@ export class EventCacheHelper {
         safeAddress: event.address,
       }),
     ];
+
+    // Nested Safe: if this executed tx approves a child Safe transaction
+    // (approveHash, optionally wrapped in multiSend), the tx-service only signals
+    // a change to the parent tx. Decode the calldata and also invalidate the
+    // referenced child transaction(s) and their Safe's queue, otherwise the child
+    // keeps serving stale state until its cache expires. See WA-2032.
+    for (const child of this.getApprovedNestedTransactions(event)) {
+      promises.push(
+        this.safeRepository.clearMultisigTransactions({
+          chainId: event.chainId,
+          safeAddress: child.safeAddress,
+        }),
+        this.safeRepository.clearMultisigTransaction({
+          chainId: event.chainId,
+          safeTransactionHash: child.safeTxHash,
+        }),
+      );
+    }
+
+    return promises;
+  }
+
+  /**
+   * Extracts the nested (child) Safe transactions approved by an executed parent
+   * transaction.
+   *
+   * In nested-Safe setups a parent Safe approves a child transaction by executing
+   * `approveHash(childSafeTxHash)` on the child Safe contract, optionally batched
+   * inside a `multiSend`. The child Safe is the `to` of the `approveHash` call and
+   * the child `safeTxHash` is the decoded argument.
+   *
+   * @param event - the executed multisig transaction event
+   * @returns child Safe address + safeTxHash pairs to invalidate (empty if none)
+   */
+  private getApprovedNestedTransactions(
+    event: Extract<
+      Event,
+      { type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION }
+    >,
+  ): Array<{ safeAddress: Address; safeTxHash: Hex }> {
+    if (!event.data) {
+      return [];
+    }
+
+    // Direct approveHash executed on the child Safe (event.to).
+    const approvedHash = this.decodeApprovedHash(event.data);
+    if (approvedHash) {
+      return [{ safeAddress: event.to, safeTxHash: approvedHash }];
+    }
+
+    // approveHash wrapped in a multiSend batch: the child Safe is each inner
+    // call's `to`, so we cannot rely on event.to here.
+    if (this.multiSendDecoder.helpers.isMultiSend(event.data)) {
+      return this.multiSendDecoder
+        .mapMultiSendTransactions(event.data)
+        .flatMap((transaction) => {
+          const hash = this.decodeApprovedHash(transaction.data);
+          return hash
+            ? [{ safeAddress: transaction.to, safeTxHash: hash }]
+            : [];
+        });
+    }
+
+    return [];
+  }
+
+  /**
+   * Returns the approved child `safeTxHash` if `data` is an `approveHash` call,
+   * otherwise null. Malformed calldata is treated as "not an approveHash" so it
+   * never breaks the surrounding cache invalidation.
+   */
+  private decodeApprovedHash(data: Hex): Hex | null {
+    if (!this.safeDecoder.helpers.isApproveHash(data)) {
+      return null;
+    }
+    try {
+      const decoded = this.safeDecoder.decodeFunctionData({ data });
+      return decoded.functionName === 'approveHash' ? decoded.args[0] : null;
+    } catch {
+      return null;
+    }
   }
 
   private onTransactionEventNewConfirmation(
