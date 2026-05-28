@@ -349,8 +349,8 @@ export class UsersRepository implements IUsersRepository {
 
   public async findEmailsByIds(
     userIds: Array<User['id']>,
-  ): Promise<Map<User['id'], string>> {
-    if (userIds.length === 0) return new Map();
+  ): Promise<Map<User['id'], string> | null> {
+    if (!userIds.length) return null;
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
     const users = await userRepository.find({

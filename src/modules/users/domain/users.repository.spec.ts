@@ -148,6 +148,13 @@ describe('UsersRepository', () => {
     });
   });
 
+  describe('findEmailsByIds', () => {
+    it('should return null for empty input without querying', async () => {
+      await expect(target.findEmailsByIds([])).resolves.toBeNull();
+      expect(userRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
   describe('find', () => {
     it('should return users matching the where clause', async () => {
       const users = [

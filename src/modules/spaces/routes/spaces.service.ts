@@ -178,12 +178,8 @@ export class SpacesService {
 
     // Batch 2: resolve remaining via email (OIDC-only users)
     const unresolvedIds = userIds.filter((id) => !result.has(id));
-    if (unresolvedIds.length > 0) {
-      const emails = await this.usersRepository.findEmailsByIds(unresolvedIds);
-      return new Map([...result, ...emails]);
-    }
-
-    return result;
+    const emails = await this.usersRepository.findEmailsByIds(unresolvedIds);
+    return new Map([...result, ...(emails ?? [])]);
   }
 
   public async delete(args: {

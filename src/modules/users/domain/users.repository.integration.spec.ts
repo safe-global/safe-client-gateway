@@ -1206,11 +1206,5 @@ describe('UsersRepository', () => {
 
       expect(result).toEqual(new Map());
     });
-
-    it('should return empty map for empty input', async () => {
-      const result = await usersRepository.findEmailsByIds([]);
-
-      expect(result).toEqual(new Map());
-    });
   });
 });
