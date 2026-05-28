@@ -9,8 +9,15 @@ import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const ISurveysRepository = Symbol('ISurveysRepository');
 
+export type UpsertedSurveyResponse = Pick<
+  SurveyResponse,
+  'id' | 'submittedAt' | 'updatedAt'
+>;
+
 export interface ISurveysRepository {
   findActiveBySlug(slug: Survey['slug']): Promise<Survey | null>;
+
+  findActiveBySlugOrFail(slug: Survey['slug']): Promise<Survey>;
 
   findResponse(args: {
     spaceId: Space['id'];
@@ -22,5 +29,5 @@ export interface ISurveysRepository {
     surveyId: Survey['id'];
     answeredByUserId: User['id'];
     selections: SurveyResponseSelections;
-  }): Promise<SurveyResponse>;
+  }): Promise<UpsertedSurveyResponse>;
 }

@@ -34,7 +34,7 @@ export class SurveyResponse implements DomainSurveyResponse {
   @ManyToOne(
     () => Survey,
     (survey: Survey) => survey.id,
-    { nullable: false },
+    { nullable: false, onDelete: 'CASCADE' },
   )
   @JoinColumn({
     name: 'survey_id',

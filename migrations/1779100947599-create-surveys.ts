@@ -37,7 +37,7 @@ export class CreateSurveys1779100947599 implements MigrationInterface {
         CONSTRAINT "PK_survey_responses_id" PRIMARY KEY ("id"),
         CONSTRAINT "UQ_survey_responses_space_survey" UNIQUE ("space_id", "survey_id"),
         CONSTRAINT "FK_survey_responses_space_id" FOREIGN KEY ("space_id") REFERENCES "spaces"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-        CONSTRAINT "FK_survey_responses_survey_id" FOREIGN KEY ("survey_id") REFERENCES "surveys"("id") ON DELETE NO ACTION ON UPDATE NO ACTION,
+        CONSTRAINT "FK_survey_responses_survey_id" FOREIGN KEY ("survey_id") REFERENCES "surveys"("id") ON DELETE CASCADE ON UPDATE NO ACTION,
         CONSTRAINT "FK_survey_responses_answered_by_user_id" FOREIGN KEY ("answered_by_user_id") REFERENCES "users"("id") ON DELETE SET NULL ON UPDATE NO ACTION
       )
     `);

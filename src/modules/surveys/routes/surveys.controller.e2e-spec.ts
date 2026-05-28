@@ -84,7 +84,7 @@ describe('SurveysController', () => {
   });
 
   describe('GET /v1/spaces/:spaceId/surveys/:slug/state', () => {
-    it('returns survey definition with null spaceResponse when admin has not submitted', async () => {
+    it('returns survey definition with null surveyResponse when admin has not submitted', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
@@ -115,11 +115,11 @@ describe('SurveysController', () => {
               }),
             }),
           );
-          expect(body.spaceResponse).toBeNull();
+          expect(body.surveyResponse).toBeNull();
         });
     });
 
-    it('returns spaceResponse after admin submits', async () => {
+    it('returns surveyResponse after admin submits', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = await registerWalletAndCreateSpace(app, accessToken);
@@ -137,7 +137,7 @@ describe('SurveysController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
-          expect(body.spaceResponse).toEqual(
+          expect(body.surveyResponse).toEqual(
             expect.objectContaining({
               surveyVersion: 1,
               selections: {

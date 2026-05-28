@@ -93,5 +93,5 @@ export class SurveyStateDto {
   survey!: SurveyDto;
 
   @ApiProperty({ type: SpaceSurveyResponseDto, nullable: true })
-  spaceResponse!: SpaceSurveyResponseDto | null;
+  surveyResponse!: SpaceSurveyResponseDto | null;
 }

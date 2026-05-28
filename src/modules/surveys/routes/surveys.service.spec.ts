@@ -12,14 +12,17 @@ import type {
   Survey,
   SurveyPage,
 } from '@/modules/surveys/domain/entities/survey.entity';
-import type { SurveyResponse } from '@/modules/surveys/domain/entities/survey-response.entity';
-import type { ISurveysRepository } from '@/modules/surveys/domain/surveys.repository.interface';
+import type {
+  ISurveysRepository,
+  UpsertedSurveyResponse,
+} from '@/modules/surveys/domain/surveys.repository.interface';
 import { SurveysService } from '@/modules/surveys/routes/surveys.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 const surveysRepositoryMock = {
   findActiveBySlug: jest.fn(),
+  findActiveBySlugOrFail: jest.fn(),
   findResponse: jest.fn(),
   upsertResponse: jest.fn(),
 } as jest.MockedObjectDeep<ISurveysRepository>;
@@ -41,23 +44,11 @@ function buildSurvey(pages: Array<SurveyPage>): Survey {
   };
 }
 
-function buildResponseRow(args: {
-  selections: SurveyResponse['selections'];
-  surveyId: number;
-  spaceId: number;
-  answeredById: number | null;
-}): SurveyResponse {
+function buildUpsertedRow(): UpsertedSurveyResponse {
   return {
     id: 100,
-    selections: args.selections,
-    submittedAt: new Date(),
-    updatedAt: new Date(),
-    space: { id: args.spaceId } as SurveyResponse['space'],
-    survey: { id: args.surveyId, version: 1 } as SurveyResponse['survey'],
-    answeredBy:
-      args.answeredById === null
-        ? null
-        : ({ id: args.answeredById } as SurveyResponse['answeredBy']),
+    submittedAt: new Date('2026-05-01T10:00:00Z'),
+    updatedAt: new Date('2026-05-01T10:00:00Z'),
   };
 }
 
@@ -94,14 +85,18 @@ describe('SurveysService', () => {
         }),
       ).rejects.toBeInstanceOf(ForbiddenException);
 
-      expect(surveysRepositoryMock.findActiveBySlug).not.toHaveBeenCalled();
+      expect(
+        surveysRepositoryMock.findActiveBySlugOrFail,
+      ).not.toHaveBeenCalled();
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
   });
 
   describe('survey lookup', () => {
-    it('throws NotFoundException when slug has no active survey', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(null);
+    it('propagates NotFoundException when slug has no active survey', async () => {
+      surveysRepositoryMock.findActiveBySlugOrFail.mockRejectedValue(
+        new NotFoundException('No active survey for slug "onboarding".'),
+      );
 
       await expect(
         service.submitResponse({
@@ -139,7 +134,7 @@ describe('SurveysService', () => {
     };
 
     it('rejects a missing required page id with 400', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage, singleSelectPage]),
       );
 
@@ -155,7 +150,7 @@ describe('SurveysService', () => {
     });
 
     it('rejects an unknown page id with 400', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
 
@@ -176,7 +171,7 @@ describe('SurveysService', () => {
     });
 
     it('rejects unknown selection keys within a page with 400', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
 
@@ -193,7 +188,7 @@ describe('SurveysService', () => {
     });
 
     it('rejects more than one selection on a single-select page with 400', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([singleSelectPage]),
       );
 
@@ -210,18 +205,11 @@ describe('SurveysService', () => {
     });
 
     it('accepts exactly one selection on a single-select page', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([singleSelectPage]),
       );
-      surveysRepositoryMock.upsertResponse.mockImplementation((args) =>
-        Promise.resolve(
-          buildResponseRow({
-            selections: args.selections,
-            surveyId: 1,
-            spaceId,
-            answeredById: userId,
-          }),
-        ),
+      surveysRepositoryMock.upsertResponse.mockResolvedValue(
+        buildUpsertedRow(),
       );
 
       await expect(
@@ -237,18 +225,11 @@ describe('SurveysService', () => {
     });
 
     it('dedupes repeated selection keys before persisting', async () => {
-      surveysRepositoryMock.findActiveBySlug.mockResolvedValue(
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
-      surveysRepositoryMock.upsertResponse.mockImplementation((args) =>
-        Promise.resolve(
-          buildResponseRow({
-            selections: args.selections,
-            surveyId: 1,
-            spaceId,
-            answeredById: userId,
-          }),
-        ),
+      surveysRepositoryMock.upsertResponse.mockResolvedValue(
+        buildUpsertedRow(),
       );
 
       await service.submitResponse({

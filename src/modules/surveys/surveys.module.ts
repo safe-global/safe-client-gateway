@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '@/modules/auth/auth.module';
@@ -15,7 +15,7 @@ import { UsersModule } from '@/modules/users/users.module';
   imports: [
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([Survey, SurveyResponse]),
-    forwardRef(() => AuthModule),
+    AuthModule,
     UsersModule,
   ],
   controllers: [SurveysController],

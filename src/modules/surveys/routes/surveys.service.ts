@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   Inject,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -48,7 +47,9 @@ export class SurveysService {
       spaceId: args.spaceId,
     });
 
-    const survey = await this.findActiveSurveyOrFail(args.slug);
+    const survey = await this.surveysRepository.findActiveBySlugOrFail(
+      args.slug,
+    );
     const response = await this.surveysRepository.findResponse({
       spaceId: args.spaceId,
       surveyId: survey.id,
@@ -56,7 +57,7 @@ export class SurveysService {
 
     return {
       survey: this.toSurveyDto(survey),
-      spaceResponse: response ? this.toSpaceResponseDto(response) : null,
+      surveyResponse: response ? this.toSpaceResponseDto(response) : null,
     };
   }
 
@@ -71,14 +72,16 @@ export class SurveysService {
       spaceId: args.spaceId,
     });
 
-    const survey = await this.findActiveSurveyOrFail(args.slug);
+    const survey = await this.surveysRepository.findActiveBySlugOrFail(
+      args.slug,
+    );
 
     const validatedSelections = this.validateSelections({
       pages: survey.surveyContent.pages,
       submitted: args.body.selections,
     });
 
-    const response = await this.surveysRepository.upsertResponse({
+    const upserted = await this.surveysRepository.upsertResponse({
       spaceId: args.spaceId,
       surveyId: survey.id,
       answeredByUserId: userId,
@@ -86,14 +89,14 @@ export class SurveysService {
     });
 
     return {
-      id: response.id,
-      spaceId: response.space.id,
+      id: upserted.id,
+      spaceId: args.spaceId,
       surveySlug: survey.slug,
       surveyVersion: survey.version,
-      selections: response.selections,
-      submittedAt: response.submittedAt,
-      updatedAt: response.updatedAt,
-      answeredByUserId: response.answeredBy?.id ?? null,
+      selections: validatedSelections,
+      submittedAt: upserted.submittedAt,
+      updatedAt: upserted.updatedAt,
+      answeredByUserId: userId,
     };
   }
 
@@ -110,17 +113,17 @@ export class SurveysService {
     submitted: SurveyResponseSelections;
   }): SurveyResponseSelections {
     const pagesById = new Map(args.pages.map((p) => [p.id, p]));
-    const requiredIds = new Set(args.pages.map((p) => p.id));
+    const allPageIds = new Set(args.pages.map((p) => p.id));
     const submittedIds = new Set(Object.keys(args.submitted));
 
-    const missing = [...requiredIds].filter((id) => !submittedIds.has(id));
+    const missing = [...allPageIds].filter((id) => !submittedIds.has(id));
     if (missing.length > 0) {
       throw new BadRequestException(
         `Missing answers for page(s): ${missing.join(', ')}`,
       );
     }
 
-    const unknownPages = [...submittedIds].filter((id) => !requiredIds.has(id));
+    const unknownPages = [...submittedIds].filter((id) => !allPageIds.has(id));
     if (unknownPages.length > 0) {
       throw new BadRequestException(
         `Unknown page id(s): ${unknownPages.join(', ')}`,
@@ -166,14 +169,6 @@ export class SurveysService {
       );
     }
     return userId;
-  }
-
-  private async findActiveSurveyOrFail(slug: Survey['slug']): Promise<Survey> {
-    const survey = await this.surveysRepository.findActiveBySlug(slug);
-    if (!survey) {
-      throw new NotFoundException(`No active survey for slug "${slug}".`);
-    }
-    return survey;
   }
 
   private toSurveyDto(survey: Survey): SurveyDto {
