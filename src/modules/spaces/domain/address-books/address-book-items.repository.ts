@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { EntityManager, In } from 'typeorm';
+import { EntityManager, In, MoreThan } from 'typeorm';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -107,14 +107,25 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     return await this.spacesRepository.findOneOrFail({
-      where: {
-        id: args.spaceId,
-        members: {
-          status: In(['ACTIVE', 'INVITED']),
-          role: In(args.memberRoleIn),
-          user: { id: userId },
+      where: [
+        {
+          id: args.spaceId,
+          members: {
+            status: 'ACTIVE',
+            role: In(args.memberRoleIn),
+            user: { id: userId },
+          },
         },
-      },
+        {
+          id: args.spaceId,
+          members: {
+            status: 'INVITED',
+            inviteExpiresAt: MoreThan(new Date()),
+            role: In(args.memberRoleIn),
+            user: { id: userId },
+          },
+        },
+      ],
     });
   }
 

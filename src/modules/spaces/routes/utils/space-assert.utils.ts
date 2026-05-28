@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ForbiddenException } from '@nestjs/common';
-import { In } from 'typeorm';
+import { MoreThan } from 'typeorm';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -41,11 +41,19 @@ export async function assertMember(
   spaceId: Space['id'],
   userId: number,
 ): Promise<void> {
-  const member = await membersRepository.findOne({
-    user: { id: userId },
-    space: { id: spaceId },
-    status: In(['ACTIVE', 'INVITED']),
-  });
+  const member = await membersRepository.findOne([
+    {
+      user: { id: userId },
+      space: { id: spaceId },
+      status: 'ACTIVE',
+    },
+    {
+      user: { id: userId },
+      space: { id: spaceId },
+      status: 'INVITED',
+      inviteExpiresAt: MoreThan(new Date()),
+    },
+  ]);
 
   if (!member) {
     throw new ForbiddenException('User is not a member of this space');

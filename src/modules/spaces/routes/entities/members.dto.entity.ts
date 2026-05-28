@@ -42,6 +42,9 @@ export class MemberDto {
   @ApiProperty({ type: Number, nullable: true })
   invitedBy!: DomainMember['invitedBy'];
 
+  @ApiPropertyOptional({ type: Date, nullable: true })
+  inviteExpiresAt!: DomainMember['inviteExpiresAt'];
+
   @ApiProperty()
   createdAt!: Date;
 

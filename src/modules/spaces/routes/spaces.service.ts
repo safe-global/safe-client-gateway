@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Inject, NotFoundException } from '@nestjs/common';
-import { In } from 'typeorm';
+import { In, MoreThan } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -65,11 +65,15 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const members = await this.membersRepository.find({
-      where: {
-        user: { id: userId },
-        status: In(['ACTIVE', 'INVITED']),
+      where: [
+        { user: { id: userId }, status: 'ACTIVE' },
+        {
+          user: { id: userId },
+          status: 'INVITED',
+          inviteExpiresAt: MoreThan(new Date()),
+        },
         ...(spaceId != null && { space: { id: spaceId } }),
-      },
+      ],
       relations: ['space'],
     });
     if (members.length === 0) {
@@ -84,6 +88,7 @@ export class SpacesService {
           role: true,
           name: true,
           invitedBy: true,
+          inviteExpiresAt: true,
           status: true,
           user: { id: true },
         },

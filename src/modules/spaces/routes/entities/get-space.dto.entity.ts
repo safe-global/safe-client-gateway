@@ -25,6 +25,9 @@ class SpaceMemberDto {
   @ApiProperty({ type: Number, nullable: true })
   public invitedBy!: Member['invitedBy'];
 
+  @ApiProperty({ type: Date, nullable: true })
+  public inviteExpiresAt!: Member['inviteExpiresAt'];
+
   @ApiPropertyOptional({ type: String })
   public invitedByName?: string;
 
