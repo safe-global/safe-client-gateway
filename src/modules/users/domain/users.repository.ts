@@ -83,12 +83,12 @@ export class UsersRepository implements IUsersRepository {
   public async create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string; email?: string },
+    options?: { extUserId?: string; email?: EmailAddress },
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
       status,
       ...(options?.extUserId && { extUserId: options.extUserId }),
-      ...(options?.email && { email: options.email.trim().toLowerCase() }),
+      ...(options?.email && { email: options.email }),
     });
 
     return userInsertResult.identifiers[0].id;

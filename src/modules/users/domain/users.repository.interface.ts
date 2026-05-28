@@ -36,7 +36,7 @@ export interface IUsersRepository {
   create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string; email?: string },
+    options?: { extUserId?: string; email?: EmailAddress },
   ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
