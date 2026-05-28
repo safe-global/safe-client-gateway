@@ -83,11 +83,12 @@ export class UsersRepository implements IUsersRepository {
   public async create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: EmailAddress },
   ): Promise<User['id']> {
     const userInsertResult = await entityManager.insert(DbUser, {
       status,
       ...(options?.extUserId && { extUserId: options.extUserId }),
+      ...(options?.email && { email: options.email }),
     });
 
     return userInsertResult.identifiers[0].id;
@@ -231,68 +232,94 @@ export class UsersRepository implements IUsersRepository {
   }
 
   /**
-   * Finds or creates an OIDC user, then validates or persists the optional email claim.
+   * Finds or creates an OIDC user identified by their external user ID.
+   *
+   * If a user with the given `extUserId` already exists, their email is
+   * reconciled against `email`: a missing email is persisted, while a
+   * conflicting one is rejected. Otherwise a new user is created with the
+   * email stored at insert time.
+   *
+   * @param extUserId - The external (OIDC provider) user identifier.
+   * @param email - The verified email address to associate with the user.
+   * @returns The ID of the existing or newly created user.
+   * @throws {UnauthorizedException} If the email does not match the one
+   * already registered for the account.
+   * @throws {UserEmailAlreadyInUseError} If the email is already in use by
+   * another user.
    */
-  public async findOrCreateByExtUserIdWithEmail(
+  public async findOrCreateByExtUserIdAndEmail(
     extUserId: string,
-    email?: { address: EmailAddress; verified: boolean },
+    email: EmailAddress,
   ): Promise<User['id']> {
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
-
-    const existingUser = await userRepository.findOne({
-      where: { extUserId },
-      select: { email: true, id: true },
-    });
-
-    if (existingUser) {
-      if (!existingUser.email && email) {
-        await this.handleUserEmail(existingUser.id, email);
-      }
-      return existingUser.id;
+    const existing = await this.findByExtUserId(extUserId);
+    if (existing) {
+      return this.reconcileEmail(existing, email);
     }
 
-    let userId: User['id'];
     try {
-      userId = await this.postgresDatabaseService.transaction(
+      return await this.postgresDatabaseService.transaction(
         async (entityManager) => {
-          return await this.create('ACTIVE', entityManager, { extUserId });
+          return await this.create('ACTIVE', entityManager, {
+            extUserId,
+            email,
+          });
         },
       );
     } catch (error) {
-      // Handle race condition: a concurrent call may have created the
-      // user between our find and insert, causing a unique constraint
-      // violation. Retry the lookup in that case.
-      if (!this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
-        throw error;
+      if (this.isUniqueConstraintViolation(error, 'idx_users_ext_user_id')) {
+        // A concurrent request inserted this extUserId between our find and
+        // insert. Re-fetch and reconcile through the same path as a user that
+        // already existed, so the email is matched/backfilled/rejected
+        // identically regardless of timing.
+        const raced = await this.findByExtUserId(extUserId);
+        if (!raced) {
+          throw error;
+        }
+        return this.reconcileEmail(raced, email);
       }
-      const user = await userRepository.findOneOrFail({
-        where: { extUserId },
-      });
-      userId = user.id;
-    }
-
-    await this.handleUserEmail(userId, email);
-
-    return userId;
-  }
-
-  private async handleUserEmail(
-    userId: User['id'],
-    email?: { address: EmailAddress; verified: boolean },
-  ): Promise<void> {
-    if (!email) {
-      return;
-    }
-
-    if (email.verified) {
-      await this.persistVerifiedEmail(userId, email.address);
-    } else {
-      await this.assertEmailNotTaken(userId, email.address);
+      if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
+        throw new UserEmailAlreadyInUseError();
+      }
+      throw error;
     }
   }
 
-  private async persistVerifiedEmail(
+  private async findByExtUserId(
+    extUserId: string,
+  ): Promise<Pick<DbUser, 'id' | 'email'> | null> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+
+    return userRepository.findOne({
+      where: { extUserId },
+      select: { id: true, email: true },
+    });
+  }
+
+  /**
+   * Reconciles a verified `email` against an existing user: returns the id when
+   * the email matches, backfills it when none is stored, and rejects a
+   * conflicting one.
+   */
+  private async reconcileEmail(
+    user: Pick<DbUser, 'id' | 'email'>,
+    email: EmailAddress,
+  ): Promise<User['id']> {
+    if (user.email) {
+      if (user.email !== email) {
+        throw new UnauthorizedException(
+          'Email does not match the registered email for this account',
+        );
+      }
+      return user.id;
+    }
+
+    // No email stored yet — backfill it.
+    await this.persistEmail(user.id, email);
+    return user.id;
+  }
+
+  private async persistEmail(
     userId: User['id'],
     email: EmailAddress,
   ): Promise<void> {
@@ -312,24 +339,6 @@ export class UsersRepository implements IUsersRepository {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
-    }
-  }
-
-  private async assertEmailNotTaken(
-    userId: User['id'],
-    email: EmailAddress,
-  ): Promise<void> {
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
-    // The DB unique index is the integrity guard for verified writes; this
-    // check blocks unverified duplicate emails before minting a CGW session.
-    const user = await userRepository.findOne({
-      where: { email },
-      select: { id: true },
-    });
-
-    if (user && user.id !== userId) {
-      throw new UserEmailAlreadyInUseError();
     }
   }
 

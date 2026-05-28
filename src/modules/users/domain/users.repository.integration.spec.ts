@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -915,7 +915,7 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserIdWithEmail', () => {
+  describe('findOrCreateByExtUserIdAndEmail', () => {
     it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const email = fakeEmailAddress();
@@ -956,37 +956,12 @@ describe('UsersRepository', () => {
       const userId = userInsertResult.identifiers[0].id as number;
       const email = fakeEmailAddress();
 
-      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-        address: email,
-        verified: true,
-      });
+      await usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email);
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
       expect(user.email).toBe(email);
-    });
-
-    it('should not overwrite an existing email for the same user', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-      const existingEmail = fakeEmailAddress();
-      const userInsertResult = await dbUserRepository.insert({
-        status: 'ACTIVE',
-        extUserId,
-        email: existingEmail,
-      });
-      const userId = userInsertResult.identifiers[0].id as number;
-
-      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-        address: fakeEmailAddress(),
-        verified: true,
-      });
-
-      const user = await dbUserRepository.findOneOrFail({
-        where: { id: userId },
-      });
-      expect(user.email).toBe(existingEmail);
     });
 
     it('should throw when the email belongs to a different user', async () => {
@@ -1000,39 +975,26 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: email,
-          verified: true,
-        }),
+        usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email),
       ).rejects.toThrow(UserEmailAlreadyInUseError);
     });
 
-    it('should throw when an unverified email belongs to a different user', async () => {
+    it('should throw UnauthorizedException when the stored email differs from the OIDC email', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = fakeEmailAddress();
+      const storedEmail = fakeEmailAddress();
       const extUserId = faker.string.uuid();
-
       await dbUserRepository.insert({
         status: 'ACTIVE',
-        email,
-      });
-      const userInsertResult = await dbUserRepository.insert({
-        status: 'ACTIVE',
+        email: storedEmail,
         extUserId,
       });
-      const userId = userInsertResult.identifiers[0].id as number;
 
       await expect(
-        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: email,
-          verified: false,
-        }),
-      ).rejects.toThrow(UserEmailAlreadyInUseError);
-
-      const user = await dbUserRepository.findOneOrFail({
-        where: { id: userId },
-      });
-      expect(user.email).toBeNull();
+        usersRepository.findOrCreateByExtUserIdAndEmail(
+          extUserId,
+          fakeEmailAddress(), // different email
+        ),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
