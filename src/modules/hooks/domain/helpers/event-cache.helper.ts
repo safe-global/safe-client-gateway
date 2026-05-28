@@ -333,11 +333,10 @@ export class EventCacheHelper {
       }),
     ];
 
-    // Nested Safe: if this executed tx approves a child Safe transaction
-    // (approveHash, optionally wrapped in multiSend), the tx-service only signals
-    // a change to the parent tx. Decode the calldata and also invalidate the
-    // referenced child transaction(s) and their Safe's queue, otherwise the child
-    // keeps serving stale state until its cache expires. See WA-2032.
+    // Nested Safe: cascade invalidation to children referenced by approveHash
+    // calls in the executed calldata. We invalidate regardless of event.failed
+    // (a failed approveHash didn't change child state, but re-fetching is cheap
+    // and always-correct). See WA-2032 and getApprovedNestedTransactions.
     for (const child of this.getApprovedNestedTransactions(event)) {
       promises.push(
         this.safeRepository.clearMultisigTransactions({
@@ -360,8 +359,8 @@ export class EventCacheHelper {
    *
    * In nested-Safe setups a parent Safe approves a child transaction by executing
    * `approveHash(childSafeTxHash)` on the child Safe contract, optionally batched
-   * inside a `multiSend`. The child Safe is the `to` of the `approveHash` call and
-   * the child `safeTxHash` is the decoded argument.
+   * inside one or more `multiSend` calls. The child Safe is the `to` of the
+   * `approveHash` call and the child `safeTxHash` is the decoded argument.
    *
    * @param event - the executed multisig transaction event
    * @returns child Safe address + safeTxHash pairs to invalidate (empty if none)
@@ -375,24 +374,29 @@ export class EventCacheHelper {
     if (!event.data) {
       return [];
     }
+    return this.collectApprovedHashes(event.data, event.to);
+  }
 
-    // Direct approveHash executed on the child Safe (event.to).
-    const approvedHash = this.decodeApprovedHash(event.data);
+  /**
+   * Recursively walks `data` (a call to `callee`) and collects every
+   * `approveHash` invocation, unwrapping `multiSend` batches of arbitrary depth.
+   * For each approveHash found, the child Safe is the immediate `callee` of that
+   * call (i.e. the inner call's `to` inside a multiSend, or the outer `to` at
+   * the top level).
+   */
+  private collectApprovedHashes(
+    data: Hex,
+    callee: Address,
+  ): Array<{ safeAddress: Address; safeTxHash: Hex }> {
+    const approvedHash = this.decodeApprovedHash(data);
     if (approvedHash) {
-      return [{ safeAddress: event.to, safeTxHash: approvedHash }];
+      return [{ safeAddress: callee, safeTxHash: approvedHash }];
     }
 
-    // approveHash wrapped in a multiSend batch: the child Safe is each inner
-    // call's `to`, so we cannot rely on event.to here.
-    if (this.multiSendDecoder.helpers.isMultiSend(event.data)) {
+    if (this.multiSendDecoder.helpers.isMultiSend(data)) {
       return this.multiSendDecoder
-        .mapMultiSendTransactions(event.data)
-        .flatMap((transaction) => {
-          const hash = this.decodeApprovedHash(transaction.data);
-          return hash
-            ? [{ safeAddress: transaction.to, safeTxHash: hash }]
-            : [];
-        });
+        .mapMultiSendTransactions(data)
+        .flatMap((inner) => this.collectApprovedHashes(inner.data, inner.to));
     }
 
     return [];
@@ -400,8 +404,12 @@ export class EventCacheHelper {
 
   /**
    * Returns the approved child `safeTxHash` if `data` is an `approveHash` call,
-   * otherwise null. Malformed calldata is treated as "not an approveHash" so it
-   * never breaks the surrounding cache invalidation.
+   * otherwise null.
+   *
+   * `isApproveHash` only matches the 4-byte selector, so the decode try/catch is
+   * the real trust boundary: any non-`approveHash` call that happens to share
+   * the selector (or truncated calldata) fails to decode and is treated as
+   * "not an approveHash", so cache invalidation never breaks on malformed input.
    */
   private decodeApprovedHash(data: Hex): Hex | null {
     if (!this.safeDecoder.helpers.isApproveHash(data)) {
