@@ -755,6 +755,12 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
+    invite: {
+      ttlMs: Number.parseInt(
+        process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,
+        10,
+      ),
+    },
     rateLimit: {
       creation: {
         max: Number.parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`, 10),
