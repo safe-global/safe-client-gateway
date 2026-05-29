@@ -6,6 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -126,8 +127,9 @@ describe('SpacesService', () => {
           {
             user: { id: userId },
             status: 'INVITED',
-            inviteExpiresAt: expect.any(Object),
+            inviteExpiresAt: MoreThan(expect.any(Date)),
           },
+          {},
         ],
         relations: ['space'],
       });

@@ -35,6 +35,7 @@ describe('MembersRepository', () => {
   let target: MembersRepository;
 
   const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+  const authenticatedUserId = Number(authPayload.sub);
   const space = spaceBuilder().with('members', []).build();
   let inviteExpiresAt: Date;
 
@@ -87,7 +88,7 @@ describe('MembersRepository', () => {
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
-          invitedBy: authPayload.signer_address,
+          invitedBy: authenticatedUserId,
         },
       ]);
 
@@ -97,7 +98,7 @@ describe('MembersRepository', () => {
         name: userToInvite.name,
         role: userToInvite.role,
         status: 'INVITED',
-        invitedBy: authPayload.signer_address,
+        invitedBy: authenticatedUserId,
         inviteExpiresAt,
       });
     });
@@ -129,7 +130,7 @@ describe('MembersRepository', () => {
         {
           name: userToInvite.name,
           role: userToInvite.role,
-          invitedBy: authPayload.signer_address,
+          invitedBy: authenticatedUserId,
           inviteExpiresAt,
         },
       );

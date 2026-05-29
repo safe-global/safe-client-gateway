@@ -174,7 +174,7 @@ export class MembersRepository implements IMembersRepository {
       address: Address;
       role: Member['role'];
     };
-    invitedBy: Address | null;
+    invitedBy: number | null;
     inviteExpiresAt: Date;
   }): Promise<void> {
     const {
@@ -302,8 +302,10 @@ export class MembersRepository implements IMembersRepository {
   }
 
   private assertInviteNotExpired(member: DbMember): void {
+    // An `INVITED` member is always expected to carry an expiry;
+    // treat a missing one as expired.
     if (
-      member.inviteExpiresAt !== null &&
+      member.inviteExpiresAt === null ||
       member.inviteExpiresAt.getTime() <= Date.now()
     ) {
       throw new GoneException('Invitation has expired.');

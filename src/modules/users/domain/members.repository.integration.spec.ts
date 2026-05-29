@@ -829,7 +829,11 @@ describe('MembersRepository', () => {
       const adminName = nameBuilder();
       const existingInviteExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
       const renewedInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
-      const { user: owner, authPayload } = await createSiweUser();
+      const {
+        user: owner,
+        userId: ownerId,
+        authPayload,
+      } = await createSiweUser();
       const inviteeAddress = getAddress(faker.finance.ethereumAddress());
       const inviteeName = faker.person.firstName();
       const updatedInviteeName = faker.person.firstName();
@@ -851,7 +855,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: null,
       });
       const existingInvite = await dbMembersRepository.insert({
         user: invitee.generatedMaps[0],
@@ -859,7 +863,7 @@ describe('MembersRepository', () => {
         name: inviteeName,
         role: 'MEMBER',
         status: 'INVITED',
-        invitedBy: authPayload.signer_address,
+        invitedBy: ownerId,
         inviteExpiresAt: existingInviteExpiresAt,
       });
       const existingInviteId = existingInvite.identifiers[0].id as Member['id'];
@@ -884,7 +888,7 @@ describe('MembersRepository', () => {
           name: updatedInviteeName,
           role: 'ADMIN',
           status: 'INVITED',
-          invitedBy: authPayload.signer_address,
+          invitedBy: ownerId,
         },
       ]);
 
@@ -898,7 +902,7 @@ describe('MembersRepository', () => {
           name: updatedInviteeName,
           role: 'ADMIN',
           status: 'INVITED',
-          invitedBy: authPayload.signer_address,
+          invitedBy: ownerId,
           inviteExpiresAt: renewedInviteExpiresAt,
         }),
       );
@@ -925,7 +929,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: activeMember,
@@ -933,7 +937,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: authPayload.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         inviteExpiresAt: null,
       });
 
@@ -1380,8 +1384,9 @@ describe('MembersRepository', () => {
     });
 
     it('should throw GoneException if the invite has expired', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const memberInviteExpiresAt = new Date(Date.now() - 60 * 60 * 1000);
+
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1407,7 +1412,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: memberInvitedBy,
+        invitedBy: null,
       });
       const member = await dbMembersRepository.insert({
         user,
@@ -1738,7 +1743,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw GoneException if the invite has expired', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const memberInviteExpiresAt = new Date(Date.now() - 60 * 60 * 1000);
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -1765,7 +1770,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: memberInvitedBy,
+        invitedBy: null,
       });
       const member = await dbMembersRepository.insert({
         user,
@@ -1982,7 +1987,7 @@ describe('MembersRepository', () => {
 
     it('should throw ForbiddenException for an expired invited caller', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -1994,7 +1999,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
       });
 
@@ -2012,7 +2017,7 @@ describe('MembersRepository', () => {
 
     it('should throw ForbiddenException for an expired invited caller', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -2024,7 +2029,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
       });
 
@@ -2121,7 +2126,7 @@ describe('MembersRepository', () => {
 
     it('should throw ForbiddenException for an expired invited caller', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -2133,7 +2138,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
       });
 
@@ -2151,7 +2156,7 @@ describe('MembersRepository', () => {
 
     it('should throw ForbiddenException for an expired invited caller', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -2163,7 +2168,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
       });
 

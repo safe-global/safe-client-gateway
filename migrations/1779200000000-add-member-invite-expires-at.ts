@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class AddMemberInviteExpiresAt1779000000000
+export class AddMemberInviteExpiresAt1779200000000
   implements MigrationInterface
 {
   public async up(queryRunner: QueryRunner): Promise<void> {

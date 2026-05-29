@@ -72,7 +72,7 @@ export class SpacesService {
           status: 'INVITED',
           inviteExpiresAt: MoreThan(new Date()),
         },
-        ...(spaceId != null && { space: { id: spaceId } }),
+        { ...(spaceId != null && { space: { id: spaceId } }) },
       ],
       relations: ['space'],
     });
