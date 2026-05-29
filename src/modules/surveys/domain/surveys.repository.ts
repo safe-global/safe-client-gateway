@@ -52,10 +52,9 @@ export class SurveysRepository implements ISurveysRepository {
   }
 
   /**
-   * Atomic INSERT ... ON CONFLICT DO UPDATE ... RETURNING — single round-trip.
-   * On conflict only the mutable columns are overwritten; submitted_at stays
-   * pinned to the original INSERT time, and updated_at is bumped by the
-   * `update_updated_at` trigger.
+   * Atomic upsert with single round-trip — submitted_at is column-level
+   * `update: false` so it stays pinned to the original INSERT time, and
+   * updated_at is bumped by the `update_updated_at` trigger.
    */
   public async upsertResponse(args: {
     spaceId: Space['id'];
@@ -65,31 +64,20 @@ export class SurveysRepository implements ISurveysRepository {
   }): Promise<UpsertedSurveyResponse> {
     const repo =
       await this.postgresDatabaseService.getRepository(DbSurveyResponse);
-    const result = await repo
-      .createQueryBuilder()
-      .insert()
-      .values({
+    const result = await repo.upsert(
+      {
         space: { id: args.spaceId },
         survey: { id: args.surveyId },
         answeredBy: { id: args.answeredByUserId },
         selections: args.selections,
-      })
-      .orUpdate(
-        ['selections', 'answered_by_user_id'],
-        ['space_id', 'survey_id'],
-      )
-      .returning(['id', 'submitted_at', 'updated_at'])
-      .execute();
+      },
+      { conflictPaths: ['space', 'survey'] },
+    );
 
-    const row = result.raw[0] as {
-      id: number;
-      submitted_at: Date;
-      updated_at: Date;
-    };
-    return {
-      id: row.id,
-      submittedAt: row.submitted_at,
-      updatedAt: row.updated_at,
-    };
+    const { id, submittedAt, updatedAt } = result.generatedMaps[0] as Pick<
+      DbSurveyResponse,
+      'id' | 'submittedAt' | 'updatedAt'
+    >;
+    return { id, submittedAt, updatedAt };
   }
 }

@@ -102,10 +102,6 @@ export class SurveysService {
 
   /**
    * Validates the submitted selections against the active survey's pages.
-   * - Every page in the survey must be present as a key.
-   * - No unknown page ids allowed.
-   * - Each page's selections must be a subset of that page's option keys.
-   * - Single-select pages may only have 1 selection.
    * Returns a normalised, deduped selections map.
    */
   private validateSelections(args: {
@@ -113,43 +109,72 @@ export class SurveysService {
     submitted: SurveyResponseSelections;
   }): SurveyResponseSelections {
     const pagesById = new Map(args.pages.map((p) => [p.id, p]));
-    const allPageIds = new Set(args.pages.map((p) => p.id));
+    this.assertPageIdSetMatches({
+      expected: pagesById,
+      submitted: args.submitted,
+    });
+
+    const result: SurveyResponseSelections = {};
+    for (const [pageId, submittedKeys] of Object.entries(args.submitted)) {
+      const page = pagesById.get(pageId);
+      // Unreachable: assertPageIdSetMatches already verified the set equality.
+      if (!page) continue;
+      result[pageId] = this.validatePageSelections(page, submittedKeys);
+    }
+    return result;
+  }
+
+  /**
+   * Verifies that the submitted page ids and the survey's page ids are the
+   * same set — every survey page must be answered, and no unknown page ids
+   * are allowed.
+   */
+  private assertPageIdSetMatches(args: {
+    expected: Map<string, SurveyPage>;
+    submitted: SurveyResponseSelections;
+  }): void {
     const submittedIds = new Set(Object.keys(args.submitted));
 
-    const missing = [...allPageIds].filter((id) => !submittedIds.has(id));
+    const missing = [...args.expected.keys()].filter(
+      (id) => !submittedIds.has(id),
+    );
     if (missing.length > 0) {
       throw new BadRequestException(
         `Missing answers for page(s): ${missing.join(', ')}`,
       );
     }
 
-    const unknownPages = [...submittedIds].filter((id) => !allPageIds.has(id));
-    if (unknownPages.length > 0) {
+    const unknown = [...submittedIds].filter((id) => !args.expected.has(id));
+    if (unknown.length > 0) {
       throw new BadRequestException(
-        `Unknown page id(s): ${unknownPages.join(', ')}`,
+        `Unknown page id(s): ${unknown.join(', ')}`,
       );
     }
+  }
 
-    const result: SurveyResponseSelections = {};
-    for (const [pageId, submittedKeys] of Object.entries(args.submitted)) {
-      const page = pagesById.get(pageId);
-      if (!page) continue; // unreachable after the check above
-      const validKeys = new Set(page.options.map((o) => o.key));
-      const deduped = Array.from(new Set(submittedKeys));
-      const unknown = deduped.filter((k) => !validKeys.has(k));
-      if (unknown.length > 0) {
-        throw new BadRequestException(
-          `Unknown selection key(s) on page "${pageId}": ${unknown.join(', ')}`,
-        );
-      }
-      if (!page.multiSelect && deduped.length > 1) {
-        throw new BadRequestException(
-          `Page "${pageId}" is single-select but received ${deduped.length} selections`,
-        );
-      }
-      result[pageId] = deduped;
+  /**
+   * Validates a single page's selections against its option keys, applies
+   * the multi/single-select constraint, and returns the deduped result.
+   */
+  private validatePageSelections(
+    page: SurveyPage,
+    submittedKeys: Array<string>,
+  ): Array<string> {
+    const validKeys = new Set(page.options.map((o) => o.key));
+    const deduped = Array.from(new Set(submittedKeys));
+
+    const unknown = deduped.filter((k) => !validKeys.has(k));
+    if (unknown.length > 0) {
+      throw new BadRequestException(
+        `Unknown selection key(s) on page "${page.id}": ${unknown.join(', ')}`,
+      );
     }
-    return result;
+    if (!page.multiSelect && deduped.length > 1) {
+      throw new BadRequestException(
+        `Page "${page.id}" is single-select but received ${deduped.length} selections`,
+      );
+    }
+    return deduped;
   }
 
   private async assertActiveAdmin(args: {

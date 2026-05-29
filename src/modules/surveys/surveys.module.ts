@@ -26,6 +26,5 @@ import { UsersModule } from '@/modules/users/users.module';
       useClass: SurveysRepository,
     },
   ],
-  exports: [ISurveysRepository],
 })
 export class SurveysModule {}

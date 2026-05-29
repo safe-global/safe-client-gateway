@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { surveyBuilder } from '@/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
 import type {
   Survey,
   SurveyPage,
@@ -32,16 +33,10 @@ const membersRepositoryMock = {
 } as unknown as jest.MockedObjectDeep<IMembersRepository>;
 
 function buildSurvey(pages: Array<SurveyPage>): Survey {
-  return {
-    id: 1,
-    slug: 'onboarding',
-    version: 1,
-    title: 'Space Onboarding Survey',
-    subtitle: null,
-    surveyContent: { pages },
-    isActive: true,
-    createdAt: new Date(),
-  };
+  return surveyBuilder()
+    .with('slug', 'onboarding')
+    .with('surveyContent', { pages })
+    .build();
 }
 
 function buildUpsertedRow(): UpsertedSurveyResponse {
