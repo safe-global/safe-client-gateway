@@ -14,6 +14,7 @@ import {
   UserStatus,
 } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 @Entity('users')
 @Check(
@@ -54,7 +55,7 @@ export class User implements DomainUser {
     length: 255,
     nullable: true,
   })
-  email!: string | null;
+  email!: EmailAddress | null;
 
   @OneToMany(
     () => Wallet,

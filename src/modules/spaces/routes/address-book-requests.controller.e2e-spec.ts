@@ -17,6 +17,7 @@ import {
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 describe('AddressBookRequestsController', () => {
   let app: INestApplication<Server>;
@@ -496,10 +497,10 @@ describe('AddressBookRequestsController', () => {
     userId: number;
     email: string;
   }> => {
-    const email = faker.internet.email().toLowerCase();
-    const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+    const email = fakeEmailAddress();
+    const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
       faker.string.uuid(),
-      { address: email, verified: true },
+      email,
     );
     const authPayloadDto = oidcAuthPayloadDtoBuilder()
       .with('sub', userId.toString())

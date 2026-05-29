@@ -2,12 +2,13 @@
 
 import { z } from 'zod';
 import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
+import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
 // Auth0 ID token claims:
 // https://auth0.com/docs/tokens/references/id-token-structure
 export const Auth0TokenSchema = JwtClaimsSchema.extend({
   sub: z.string().min(1),
-  email: z.email().max(255).optional(),
+  email: EmailAddressSchema.optional(),
   email_verified: z.boolean().optional(),
 }).superRefine((token, ctx) => {
   if (token.email_verified === true && token.email === undefined) {

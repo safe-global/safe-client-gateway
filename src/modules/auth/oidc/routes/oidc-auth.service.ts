@@ -63,6 +63,12 @@ export class OidcAuthService {
       iat,
     } = await this.auth0Repository.authenticateWithAuthorizationCode(code);
 
+    if (!(email && emailVerified)) {
+      throw new UnauthorizedException(
+        'A verified email is required to sign in',
+      );
+    }
+
     const maxExpirationTime = getMaxExpirationTime(
       this.maxValidityPeriodInSeconds,
     );
@@ -75,9 +81,9 @@ export class OidcAuthService {
       );
     }
 
-    const userId = await this.usersRepository.findOrCreateByExtUserIdWithEmail(
+    const userId = await this.usersRepository.findOrCreateByExtUserIdAndEmail(
       extUserId,
-      email ? { address: email, verified: emailVerified ?? false } : undefined,
+      email,
     );
     const accessToken = this.authRepository.signToken(
       {
