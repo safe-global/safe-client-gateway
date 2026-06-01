@@ -52,7 +52,8 @@ export class AddressBooksController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space UUID to get address book for',
+    description:
+      'Space UUID to get address book for (numeric ID accepted for legacy clients, deprecated)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -72,9 +73,9 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   public async getAddressBookItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId') spaceIdOrUuid: string,
   ): Promise<SpaceAddressBookDto> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
+    const spaceId = await this.service.getNumericIdLenient(spaceIdOrUuid);
     return this.service.findAllBySpaceId(authPayload, spaceId);
   }
 

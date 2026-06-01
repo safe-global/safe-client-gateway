@@ -32,6 +32,11 @@ export class SpaceSafesService {
     return await this.spacesRepository.findIdByUuid(uuid);
   }
 
+  // TODO: remove after FE removes numeric Space ID fallback.
+  public async getNumericIdLenient(value: string): Promise<Space['id']> {
+    return await this.spacesRepository.findIdByIdOrUuid(value);
+  }
+
   public async create(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;

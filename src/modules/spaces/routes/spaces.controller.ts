@@ -148,7 +148,8 @@ export class SpacesController {
   @ApiParam({
     name: 'id',
     type: 'string',
-    description: 'Space UUID',
+    description:
+      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -166,10 +167,11 @@ export class SpacesController {
   })
   @Get('/:id')
   public async getOne(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id') idOrUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
-    return await this.spacesService.getActiveOrInvitedSpace(id, authPayload);
+    const uuid = await this.spacesService.resolveUuid(idOrUuid);
+    return await this.spacesService.getActiveOrInvitedSpace(uuid, authPayload);
   }
 
   @ApiOperation({

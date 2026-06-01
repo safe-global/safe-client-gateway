@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -222,6 +223,26 @@ export class SpacesRepository implements ISpacesRepository {
       select: { id: true },
     });
     return space.id;
+  }
+
+  // TODO: remove after FE removes numeric Space ID fallback.
+  public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
+    if (/^\d+$/.test(value)) {
+      const numericId = Number(value);
+      const space = await this.findOneOrFail({
+        where: { id: numericId },
+        select: { id: true },
+      });
+      return space.id;
+    }
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        value,
+      )
+    ) {
+      return await this.findIdByUuid(value);
+    }
+    throw new BadRequestException('Invalid space identifier');
   }
 
   // @todo Add a soft delete method

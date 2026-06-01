@@ -245,7 +245,8 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space UUID to get members for',
+    description:
+      'Space UUID to get members for (numeric ID accepted for legacy clients, deprecated)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -263,9 +264,10 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId') spaceIdOrUuid: string,
   ): Promise<MembersDto> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
+    const spaceId =
+      await this.membersService.getNumericIdLenient(spaceIdOrUuid);
     return await this.membersService.get({
       authPayload,
       spaceId,
@@ -281,7 +283,8 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: "Space UUID to fetch the caller's membership for",
+    description:
+      "Space UUID to fetch the caller's membership for (numeric ID accepted for legacy clients, deprecated)",
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -297,9 +300,10 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getMembership(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId') spaceIdOrUuid: string,
   ): Promise<MemberDto> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
+    const spaceId =
+      await this.membersService.getNumericIdLenient(spaceIdOrUuid);
     return await this.membersService.getSelfMembership({
       authPayload,
       spaceId,

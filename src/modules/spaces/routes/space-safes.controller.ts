@@ -98,7 +98,8 @@ export class SpaceSafesController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space UUID to get Safes for',
+    description:
+      'Space UUID to get Safes for (numeric ID accepted for legacy clients, deprecated)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -117,10 +118,11 @@ export class SpaceSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId') spaceIdOrUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
-    const spaceId = await this.spaceSafesService.getNumericId(spaceUuid);
+    const spaceId =
+      await this.spaceSafesService.getNumericIdLenient(spaceIdOrUuid);
     return await this.spaceSafesService.get(spaceId, authPayload);
   }
 

@@ -42,6 +42,11 @@ export class MembersService {
     return await this.spacesRepository.findIdByUuid(uuid);
   }
 
+  // TODO: remove after FE removes numeric Space ID fallback.
+  public async getNumericIdLenient(value: string): Promise<Space['id']> {
+    return await this.spacesRepository.findIdByIdOrUuid(value);
+  }
+
   /**
    * Invites users and queues invite emails for email invites.
    *

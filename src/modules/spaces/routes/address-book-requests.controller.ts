@@ -53,7 +53,8 @@ export class AddressBookRequestsController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space UUID',
+    description:
+      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -68,9 +69,9 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async getPendingRequests(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId') spaceIdOrUuid: string,
   ): Promise<AddressBookRequestsDto> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
+    const spaceId = await this.service.getNumericIdLenient(spaceIdOrUuid);
     return await this.service.findPending(authPayload, spaceId);
   }
 

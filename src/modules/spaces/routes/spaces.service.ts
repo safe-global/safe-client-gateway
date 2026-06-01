@@ -121,8 +121,29 @@ export class SpacesService {
     });
   }
 
+  // TODO: remove after FE removes numeric Space ID fallback.
+  public async resolveUuid(idOrUuid: string): Promise<string> {
+    if (
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        idOrUuid,
+      )
+    ) {
+      return idOrUuid;
+    }
+    const space = await this.spacesRepository.findOneOrFail({
+      where: { id: await this.spacesRepository.findIdByIdOrUuid(idOrUuid) },
+      select: { uuid: true },
+    });
+    return space.uuid;
+  }
+
   public async getNumericId(uuid: string): Promise<Space['id']> {
     return await this.spacesRepository.findIdByUuid(uuid);
+  }
+
+  // TODO: remove after FE removes numeric Space ID fallback.
+  public async getNumericIdLenient(value: string): Promise<Space['id']> {
+    return await this.spacesRepository.findIdByIdOrUuid(value);
   }
 
   public async update(args: {

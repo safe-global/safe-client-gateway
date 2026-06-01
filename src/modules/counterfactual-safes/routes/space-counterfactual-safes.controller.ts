@@ -1,13 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import {
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseUUIDPipe,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Inject, Param, UseGuards } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -42,7 +35,8 @@ export class SpaceCounterfactualSafesController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space UUID',
+    description:
+      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -58,11 +52,13 @@ export class SpaceCounterfactualSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId') spaceIdOrUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetCounterfactualSafesResponse> {
     const spaceId =
-      await this.spaceCounterfactualSafesService.getNumericId(spaceUuid);
+      await this.spaceCounterfactualSafesService.getNumericIdLenient(
+        spaceIdOrUuid,
+      );
     return await this.spaceCounterfactualSafesService.get(spaceId, authPayload);
   }
 }
