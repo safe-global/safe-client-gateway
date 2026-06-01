@@ -554,7 +554,8 @@ describe('SpacesController', () => {
                   }),
                 }),
                 expect.objectContaining({
-                  invitedBy: adminAuthPayloadDto.signer_address,
+                  invitedBy: userId,
+                  invitedByName: adminAuthPayloadDto.signer_address,
                   status: getEnumKey(MemberStatus, MemberStatus.INVITED),
                   role: getEnumKey(MemberRole, MemberRole.MEMBER),
                   user: expect.objectContaining({
