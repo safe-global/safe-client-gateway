@@ -216,6 +216,14 @@ export class SpacesRepository implements ISpacesRepository {
     return { id: space.id, uuid: space.uuid };
   }
 
+  public async findIdByUuid(uuid: Space['uuid']): Promise<Space['id']> {
+    const space = await this.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
+  }
+
   // @todo Add a soft delete method
   public async delete(id: number): Promise<void> {
     const spaceRepository =

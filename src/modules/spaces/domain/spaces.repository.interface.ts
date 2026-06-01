@@ -63,5 +63,7 @@ export interface ISpacesRepository {
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
   }): Promise<Pick<Space, 'id' | 'uuid'>>;
 
+  findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
+
   delete(id: number): Promise<void>;
 }

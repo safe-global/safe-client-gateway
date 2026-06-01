@@ -122,11 +122,7 @@ export class SpacesService {
   }
 
   public async getNumericId(uuid: string): Promise<Space['id']> {
-    const space = await this.spacesRepository.findOneOrFail({
-      where: { uuid },
-      select: { id: true },
-    });
-    return space.id;
+    return await this.spacesRepository.findIdByUuid(uuid);
   }
 
   public async update(args: {
