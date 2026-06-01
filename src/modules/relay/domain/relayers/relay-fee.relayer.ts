@@ -5,16 +5,21 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import type {
+  RelayFeeConfiguration,
+  RelaySimulationConfiguration,
+} from '@/modules/relay/domain/entities/relay.configuration';
 import {
   type Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
+import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
@@ -25,15 +30,20 @@ import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-tra
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
   private readonly relayFeeConfiguration: RelayFeeConfiguration;
+  private readonly relaySimulationConfiguration: RelaySimulationConfiguration;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
+    @Inject(ITenderlySimulationApi)
+    private readonly tenderlySimulationApi: ITenderlySimulationApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {
     this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
+    this.relaySimulationConfiguration =
+      configurationService.getOrThrow('relay.simulation');
   }
 
   /**
@@ -117,6 +127,7 @@ export class RelayFeeRelayer implements IRelayer {
       await this.validateExecTransaction({
         chainId,
         to,
+        data,
         decoded,
         safeTxHash: args.safeTxHash,
       });
@@ -162,10 +173,11 @@ export class RelayFeeRelayer implements IRelayer {
   private async validateExecTransaction(args: {
     chainId: string;
     to: Address;
+    data: Hex;
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
   }): Promise<void> {
-    const { chainId, to, decoded, safeTxHash } = args;
+    const { chainId, to, data, decoded, safeTxHash } = args;
 
     if (!safeTxHash) {
       throw new RelayTxDeniedError(undefined);
@@ -193,6 +205,22 @@ export class RelayFeeRelayer implements IRelayer {
         message: `relay-fee relay denied for ${to} on chain ${chainId}: fee service rejected safeTxHash ${safeTxHash}`,
       });
       throw new RelayTxDeniedError(safeTxHash);
+    }
+
+    if (this.relaySimulationConfiguration.enabledChainIds.includes(chainId)) {
+      const simulation = await this.tenderlySimulationApi.simulate({
+        chainId,
+        from: to,
+        to,
+        data,
+      });
+      if (!simulation.success) {
+        this.loggingService.warn({
+          type: LogType.TxRelayEligibility,
+          message: `relay-fee relay denied for ${to} on chain ${chainId}: simulation failed (${simulation.reason}) for safeTxHash ${safeTxHash}`,
+        });
+        throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
+      }
     }
   }
 

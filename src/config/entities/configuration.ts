@@ -703,6 +703,9 @@ export default () => ({
         10,
       ),
     },
+    simulation: {
+      enabledChainIds: process.env.RELAY_SIMULATION_CHAIN_IDS?.split(',') ?? [],
+    },
   },
   safeConfig: {
     baseUri:

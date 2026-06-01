@@ -6,6 +6,7 @@ import { getAddress } from 'viem';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
@@ -29,6 +30,10 @@ const mockRelayApi = jest.mocked({
 const mockFeeServiceApi = jest.mocked({
   canRelay: jest.fn(),
 } as jest.MockedObjectDeep<IFeeServiceApi>);
+
+const mockTenderlySimulationApi = jest.mocked({
+  simulate: jest.fn(),
+} as jest.MockedObjectDeep<ITenderlySimulationApi>);
 
 const mockRelayTransactionHelper = jest.mocked({
   decodeExecTransaction: jest.fn(),
@@ -61,12 +66,16 @@ describe('RelayFeeRelayer', () => {
       enabledChainIds: [enabledChainId],
       baseUri: faker.internet.url({ appendSlash: false }),
     });
+    fakeConfigurationService.set('relay.simulation', {
+      enabledChainIds: [],
+    });
 
     target = new RelayFeeRelayer(
       mockLoggingService,
       fakeConfigurationService,
       mockRelayApi,
       mockFeeServiceApi,
+      mockTenderlySimulationApi,
       mockRelayTransactionHelper,
     );
   });
