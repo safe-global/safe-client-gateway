@@ -4,6 +4,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
 import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
@@ -26,6 +27,8 @@ export class MembersService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
     private readonly spaceInviteEmailService: SpaceInviteEmailService,
   ) {
     this.maxInvites =
@@ -33,6 +36,14 @@ export class MembersService {
     this.inviteTtlMs = this.configurationService.getOrThrow<number>(
       'spaces.invite.ttlMs',
     );
+  }
+
+  public async getNumericId(uuid: string): Promise<Space['id']> {
+    const space = await this.spacesRepository.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
   }
 
   /**

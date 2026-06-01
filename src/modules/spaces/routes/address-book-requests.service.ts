@@ -44,6 +44,14 @@ export class AddressBookRequestsService {
     private readonly identityResolver: UserIdentityResolverService,
   ) {}
 
+  public async getNumericId(uuid: string): Promise<Space['id']> {
+    const space = await this.spacesRepository.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
+  }
+
   public async findPending(
     authPayload: AuthPayload,
     spaceId: Space['id'],

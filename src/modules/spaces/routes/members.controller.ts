@@ -8,6 +8,7 @@ import {
   Inject,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
@@ -66,9 +67,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to invite users to',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to invite users to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: InviteUsersDto,
@@ -93,11 +94,11 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Body(new ValidationPipe(InviteUsersDtoSchema))
     inviteUsersDto: InviteUsersDto,
   ): Promise<Array<Invitation>> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.inviteUser({
       authPayload,
       spaceId,
@@ -112,9 +113,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to accept invitation for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to accept invitation for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: AcceptInviteDto,
@@ -139,11 +140,11 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Body(new ValidationPipe(AcceptInviteDtoSchema))
     acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.acceptInvite({
       authPayload,
       spaceId,
@@ -158,9 +159,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to decline invitation for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to decline invitation for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Invitation declined successfully',
@@ -179,9 +180,9 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
   ): Promise<void> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.declineInvite({
       authPayload,
       spaceId,
@@ -243,9 +244,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to get members for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to get members for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space members retrieved successfully',
@@ -262,9 +263,9 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
   ): Promise<MembersDto> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.get({
       authPayload,
       spaceId,
@@ -279,9 +280,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: "Space ID to fetch the caller's membership for",
-    example: 1,
+    type: 'string',
+    description: "Space UUID to fetch the caller's membership for",
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Membership retrieved successfully',
@@ -296,9 +297,9 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getMembership(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
   ): Promise<MemberDto> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.getSelfMembership({
       authPayload,
       spaceId,
@@ -312,9 +313,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID containing the member',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID containing the member',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'userId',
@@ -346,13 +347,13 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
     updateRoleDto: UpdateRoleDto,
   ): Promise<void> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.updateRole({
       authPayload,
       spaceId,
@@ -376,11 +377,11 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateAlias(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
     updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     await this.membersService.updateAlias({
       authPayload,
       spaceId,
@@ -395,9 +396,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to remove member from',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to remove member from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'userId',
@@ -424,11 +425,11 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<void> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.removeUser({
       authPayload,
       spaceId,
@@ -453,9 +454,9 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async selfRemove(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
   ): Promise<void> {
+    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.selfRemove({
       authPayload,
       spaceId,

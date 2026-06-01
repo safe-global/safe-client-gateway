@@ -7,7 +7,7 @@ import {
   Get,
   Inject,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -23,7 +23,6 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -51,9 +50,9 @@ export class UserAddressBookController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Private address book items retrieved successfully',
@@ -67,9 +66,9 @@ export class UserAddressBookController {
   @UseGuards(AuthGuard)
   public async getPrivateItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
   ): Promise<UserAddressBookDto> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.findAll(authPayload, spaceId);
   }
 
@@ -80,9 +79,9 @@ export class UserAddressBookController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: UpsertAddressBookItemsDto,
@@ -100,11 +99,11 @@ export class UserAddressBookController {
   @UseGuards(AuthGuard)
   public async upsertPrivateItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     dto: UpsertAddressBookItemsDto,
   ): Promise<UserAddressBookDto> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.upsertMany(authPayload, spaceId, dto);
   }
 
@@ -115,9 +114,9 @@ export class UserAddressBookController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'address',
@@ -135,11 +134,11 @@ export class UserAddressBookController {
   @UseGuards(AuthGuard)
   public async deletePrivateItem(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.deleteByAddress({
       authPayload,
       spaceId,

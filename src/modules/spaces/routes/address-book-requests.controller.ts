@@ -7,6 +7,7 @@ import {
   Inject,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   Put,
   UseGuards,
@@ -51,9 +52,9 @@ export class AddressBookRequestsController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Pending requests retrieved successfully',
@@ -67,9 +68,9 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async getPendingRequests(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
   ): Promise<AddressBookRequestsDto> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.findPending(authPayload, spaceId);
   }
 
@@ -80,9 +81,9 @@ export class AddressBookRequestsController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: CreateAddressBookRequestDto,
@@ -102,11 +103,11 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async createRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Body(new ValidationPipe(CreateAddressBookRequestSchema))
     dto: CreateAddressBookRequestDto,
   ): Promise<AddressBookRequestItemDto> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.createRequest(authPayload, spaceId, dto.address);
   }
 
@@ -117,9 +118,9 @@ export class AddressBookRequestsController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'requestId',
@@ -138,11 +139,11 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async approveRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.approve(authPayload, spaceId, requestId);
   }
 
@@ -153,9 +154,9 @@ export class AddressBookRequestsController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'requestId',
@@ -174,11 +175,11 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async rejectRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
+    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.reject(authPayload, spaceId, requestId);
   }
 }
