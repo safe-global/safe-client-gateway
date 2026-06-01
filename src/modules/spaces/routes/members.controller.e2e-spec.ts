@@ -238,10 +238,7 @@ describe('MembersController', () => {
     it('should throw a 403 if the signer is not an active admin of the space', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
@@ -805,10 +802,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
       const memberName = nameBuilder();
 
       await request(app.getHttpServer())
@@ -1000,10 +994,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1342,10 +1333,7 @@ describe('MembersController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       // Space does not even exist
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1662,10 +1650,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
 
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -1877,10 +1862,7 @@ describe('MembersController', () => {
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
+      const spaceId = faker.string.uuid();
       const newAlias = nameBuilder();
 
       await request(app.getHttpServer())

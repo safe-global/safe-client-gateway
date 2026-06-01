@@ -396,7 +396,7 @@ describe('SpaceSafesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .expect(403)
@@ -412,7 +412,7 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -429,7 +429,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -453,7 +453,7 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if body is an empty array', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -476,7 +476,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -509,7 +509,7 @@ describe('SpaceSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -595,7 +595,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(400)
         .expect({
-          message: 'Validation failed (numeric string is expected)',
+          message: 'Validation failed (uuid is expected)',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -825,7 +825,7 @@ describe('SpaceSafesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .expect(403)
@@ -841,7 +841,7 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
@@ -857,7 +857,7 @@ describe('SpaceSafesController', () => {
     it('Should return a 404 if user is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
@@ -880,7 +880,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(400)
         .expect({
-          message: 'Validation failed (numeric string is expected)',
+          message: 'Validation failed (uuid is expected)',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -1157,7 +1157,7 @@ describe('SpaceSafesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
         .expect(403)
@@ -1173,7 +1173,7 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1190,7 +1190,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1214,7 +1214,7 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if body is an empty array', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1237,7 +1237,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1270,7 +1270,7 @@ describe('SpaceSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1356,7 +1356,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(400)
         .expect({
-          message: 'Validation failed (numeric string is expected)',
+          message: 'Validation failed (uuid is expected)',
           error: 'Bad Request',
           statusCode: 400,
         });
