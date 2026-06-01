@@ -28,6 +28,7 @@ const spacesRepositoryMock = {
   create: jest.fn(),
   find: jest.fn(),
   findOne: jest.fn(),
+  findOneOrFail: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
 } as jest.MockedObjectDeep<ISpacesRepository>;
@@ -93,7 +94,7 @@ describe('SpacesService', () => {
 
       expect(result).toEqual([
         {
-          id: space.id,
+          id: mockSpace.uuid,
           name: space.name,
           members: [member],
           safeCount: 3,
@@ -607,9 +608,13 @@ describe('SpacesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
       const name = faker.word.noun();
-      const expectedResponse = { id: faker.number.int(), uuid: faker.string.uuid(), name };
+      const repositoryResponse = {
+        id: faker.number.int(),
+        uuid: faker.string.uuid(),
+        name,
+      };
 
-      spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
+      spacesRepositoryMock.create.mockResolvedValue(repositoryResponse);
 
       const result = await service.create({
         name,
@@ -617,7 +622,7 @@ describe('SpacesService', () => {
         authPayload,
       });
 
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual({ id: repositoryResponse.uuid, name });
       expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
         userId,
       );
@@ -690,14 +695,17 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should update space for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
+      const spaceUuid = faker.string.uuid();
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
-      const expectedResponse = { id: spaceId, name: updatePayload.name };
 
       spacesRepositoryMock.findOne.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).build(),
+        spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
       );
-      spacesRepositoryMock.update.mockResolvedValue(expectedResponse);
+      spacesRepositoryMock.update.mockResolvedValue({ id: spaceId });
+      spacesRepositoryMock.findOneOrFail.mockResolvedValue(
+        spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
+      );
 
       const result = await service.update({
         id: spaceId,
@@ -705,7 +713,7 @@ describe('SpacesService', () => {
         authPayload,
       });
 
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual({ id: spaceUuid });
     });
 
     it.each([
