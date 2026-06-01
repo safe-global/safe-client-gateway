@@ -519,11 +519,11 @@ describe('SpacesService', () => {
       spacesRepositoryMock.find.mockResolvedValue([space]);
 
       const result = await service.getActiveOrInvitedSpace(
-        space.id,
+        space.uuid,
         authPayload,
       );
 
-      expect(result.id).toBe(space.id);
+      expect(result.id).toBe(space.uuid);
     });
 
     it.each([
@@ -535,7 +535,7 @@ describe('SpacesService', () => {
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
-        service.getActiveOrInvitedSpace(999999, authPayload),
+        service.getActiveOrInvitedSpace('00000000-0000-0000-0000-000000000000', authPayload),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
@@ -548,7 +548,7 @@ describe('SpacesService', () => {
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
-        service.getActiveOrInvitedSpace(1, authPayload),
+        service.getActiveOrInvitedSpace('00000000-0000-0000-0000-000000000000', authPayload),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
@@ -607,7 +607,7 @@ describe('SpacesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
       const name = faker.word.noun();
-      const expectedResponse = { id: faker.number.int(), name };
+      const expectedResponse = { id: faker.number.int(), uuid: faker.string.uuid(), name };
 
       spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
 
@@ -634,6 +634,7 @@ describe('SpacesService', () => {
       const userId = Number(authPayload.sub);
       const expectedResponse = {
         id: faker.number.int(),
+        uuid: faker.string.uuid(),
         name: faker.word.noun(),
       };
 

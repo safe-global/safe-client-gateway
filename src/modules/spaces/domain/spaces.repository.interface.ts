@@ -16,7 +16,7 @@ export interface ISpacesRepository {
     userId: User['id'];
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'name'>>;
+  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<SpacesRepository['findOne']>[0],

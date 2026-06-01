@@ -7,7 +7,7 @@ import {
   HttpCode,
   Inject,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -23,7 +23,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -53,9 +52,9 @@ export class SpaceSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to add Safes to',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to add Safes to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: CreateSpaceSafesDto,
@@ -80,10 +79,10 @@ export class SpaceSafesController {
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
+    const spaceId = await this.spaceSafesService.getNumericId(spaceUuid);
     return await this.spaceSafesService.create({
       spaceId,
       authPayload,
@@ -98,9 +97,9 @@ export class SpaceSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to get Safes for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to get Safes for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space Safes retrieved successfully',
@@ -118,10 +117,10 @@ export class SpaceSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
+    const spaceId = await this.spaceSafesService.getNumericId(spaceUuid);
     return await this.spaceSafesService.get(spaceId, authPayload);
   }
 
@@ -132,9 +131,9 @@ export class SpaceSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to remove Safes from',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to remove Safes from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: DeleteSpaceSafesDto,
@@ -161,10 +160,10 @@ export class SpaceSafesController {
   public async delete(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: DeleteSpaceSafesDto,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
+    const spaceId = await this.spaceSafesService.getNumericId(spaceUuid);
     return await this.spaceSafesService.delete({
       authPayload,
       payload: body.safes,

@@ -20,6 +20,15 @@ export class Space implements DomainSpace {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_spaces_id' })
   id!: number;
 
+  @Column({
+    type: 'uuid',
+    default: () => 'gen_random_uuid()',
+    unique: true,
+    nullable: false,
+    update: false,
+  })
+  uuid!: string;
+
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
   name!: string;
 

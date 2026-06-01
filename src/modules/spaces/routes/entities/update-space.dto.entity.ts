@@ -24,6 +24,6 @@ export class UpdateSpaceDto implements z.infer<typeof UpdateSpaceSchema> {
 }
 
 export class UpdateSpaceResponse {
-  @ApiProperty({ type: Number })
-  public readonly id!: Space['id'];
+  @ApiProperty({ type: String })
+  public readonly id!: Space['uuid'];
 }

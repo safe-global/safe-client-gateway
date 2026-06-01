@@ -10,6 +10,7 @@ import type { Space } from '@/modules/spaces/datasources/entities/space.entity.d
 export function spaceBuilder(): IBuilder<Space> {
   return new Builder<Space>()
     .with('id', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
+    .with('uuid', faker.string.uuid())
     .with('name', nameBuilder())
     .with('status', 'ACTIVE');
 }

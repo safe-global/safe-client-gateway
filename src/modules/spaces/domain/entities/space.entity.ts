@@ -23,6 +23,7 @@ export type Space = z.infer<typeof RowSchema> & {
 // The lazy callbacks are explicitly typed to break the circular inference
 // with MemberSchema, while keeping SpaceSchema a ZodObject (exposing `.shape`).
 export const SpaceSchema = RowSchema.extend({
+  uuid: z.string().uuid(),
   name: NameSchema,
   status: z.enum(getStringEnumKeys(SpaceStatus)),
   members: z.array(z.lazy((): z.ZodType<Member> => MemberSchema)),

@@ -17,6 +17,6 @@ export class CreateSpaceResponse {
   @ApiProperty({ type: String })
   public readonly name!: Space['name'];
 
-  @ApiProperty({ type: Number })
-  public readonly id!: Space['id'];
+  @ApiProperty({ type: String })
+  public readonly id!: Space['uuid'];
 }

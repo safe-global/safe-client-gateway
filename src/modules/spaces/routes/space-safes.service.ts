@@ -28,6 +28,14 @@ export class SpaceSafesService {
     private readonly membersRepository: IMembersRepository,
   ) {}
 
+  public async getNumericId(uuid: string): Promise<Space['id']> {
+    const space = await this.spacesRepository.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
+  }
+
   public async create(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;

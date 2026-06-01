@@ -40,7 +40,8 @@ export class SpacesService {
     await this.usersRepository.findOneOrFail({ id: userId });
     await this.usersRepository.activateIfPending(userId);
 
-    return await this.spacesRepository.create({ userId, ...args });
+    const result = await this.spacesRepository.create({ userId, ...args });
+    return { id: result.uuid, name: result.name };
   }
 
   public getActiveOrInvitedSpaces(
@@ -81,6 +82,7 @@ export class SpacesService {
       where: { id: In(members.map((member) => member.space.id)) },
       select: {
         id: true,
+        uuid: true,
         name: true,
         members: {
           role: true,
@@ -103,7 +105,7 @@ export class SpacesService {
       );
 
       return {
-        id: space.id,
+        id: space.uuid,
         name: space.name,
         members: space.members.map((member) => ({
           ...member,
@@ -119,6 +121,14 @@ export class SpacesService {
     });
   }
 
+  public async getNumericId(uuid: string): Promise<Space['id']> {
+    const space = await this.spacesRepository.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
+  }
+
   public async update(args: {
     id: Space['id'];
     updatePayload: UpdateSpaceDto;
@@ -127,7 +137,12 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
-    return await this.spacesRepository.update(args);
+    const result = await this.spacesRepository.update(args);
+    const space = await this.spacesRepository.findOneOrFail({
+      where: { id: result.id },
+      select: { uuid: true },
+    });
+    return { id: space.uuid };
   }
 
   /**

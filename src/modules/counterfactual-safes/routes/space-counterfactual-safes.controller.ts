@@ -5,7 +5,7 @@ import {
   Get,
   Inject,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -16,13 +16,11 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
 import { SpaceCounterfactualSafesService } from '@/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({
@@ -43,9 +41,9 @@ export class SpaceCounterfactualSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Counterfactual Safes retrieved successfully',
@@ -60,10 +58,11 @@ export class SpaceCounterfactualSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetCounterfactualSafesResponse> {
+    const spaceId =
+      await this.spaceCounterfactualSafesService.getNumericId(spaceUuid);
     return await this.spaceCounterfactualSafesService.get(spaceId, authPayload);
   }
 }

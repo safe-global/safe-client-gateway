@@ -48,7 +48,7 @@ export class SpacesRepository implements ISpacesRepository {
     userId: number;
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'name'>> {
+  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 
@@ -80,6 +80,7 @@ export class SpacesRepository implements ISpacesRepository {
 
     return {
       id: insertResult.id,
+      uuid: insertResult.uuid,
       name: insertResult.name,
     };
   }
