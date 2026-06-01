@@ -202,13 +202,18 @@ export class SpacesRepository implements ISpacesRepository {
   public async update(args: {
     id: Space['id'];
     updatePayload: QueryDeepPartialEntity<Space>;
-  }): Promise<Pick<Space, 'id'>> {
+  }): Promise<Pick<Space, 'id' | 'uuid'>> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 
     await spaceRepository.update(args.id, args.updatePayload);
 
-    return { id: args.id };
+    const space = await this.findOneOrFail({
+      where: { id: args.id },
+      select: { id: true, uuid: true },
+    });
+
+    return { id: space.id, uuid: space.uuid };
   }
 
   // @todo Add a soft delete method

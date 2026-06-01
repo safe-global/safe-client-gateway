@@ -702,10 +702,10 @@ describe('SpacesService', () => {
       spacesRepositoryMock.findOne.mockResolvedValue(
         spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
       );
-      spacesRepositoryMock.update.mockResolvedValue({ id: spaceId });
-      spacesRepositoryMock.findOneOrFail.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
-      );
+      spacesRepositoryMock.update.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+      });
 
       const result = await service.update({
         id: spaceId,

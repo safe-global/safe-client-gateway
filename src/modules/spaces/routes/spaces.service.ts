@@ -138,11 +138,7 @@ export class SpacesService {
     await assertAdmin(this.spacesRepository, args.id, userId);
 
     const result = await this.spacesRepository.update(args);
-    const space = await this.spacesRepository.findOneOrFail({
-      where: { id: result.id },
-      select: { uuid: true },
-    });
-    return { id: space.uuid };
+    return { id: result.uuid };
   }
 
   /**
