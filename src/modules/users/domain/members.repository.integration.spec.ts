@@ -4,7 +4,6 @@ import { faker } from '@faker-js/faker';
 import { ForbiddenException, GoneException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
-import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -24,6 +23,10 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
@@ -35,6 +38,7 @@ import { MembersRepository } from '@/modules/users/domain/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -674,6 +678,7 @@ describe('MembersRepository', () => {
       const users = faker.helpers.multiple(
         () => {
           return {
+            type: InviteType.Wallet,
             address: getAddress(faker.finance.ethereumAddress()),
             role: faker.helpers.arrayElement(MemberRoleKeys),
             name: faker.person.firstName(),
@@ -728,6 +733,7 @@ describe('MembersRepository', () => {
       const users = faker.helpers.multiple(
         () => {
           return {
+            type: InviteType.Wallet,
             address: getAddress(faker.finance.ethereumAddress()),
             role: faker.helpers.arrayElement(MemberRoleKeys),
             name: faker.person.firstName(),
@@ -791,6 +797,7 @@ describe('MembersRepository', () => {
         spaceId,
         users: [
           {
+            type: InviteType.Wallet,
             address: memberWallet,
             role: memberRole,
             name: memberName,
@@ -874,6 +881,7 @@ describe('MembersRepository', () => {
           spaceId,
           users: [
             {
+              type: InviteType.Wallet,
               address: inviteeAddress,
               role: 'ADMIN',
               name: updatedInviteeName,
@@ -947,6 +955,7 @@ describe('MembersRepository', () => {
           spaceId,
           users: [
             {
+              type: InviteType.Wallet,
               address: activeMemberAddress,
               role: 'ADMIN',
               name: faker.person.firstName(),
@@ -959,6 +968,90 @@ describe('MembersRepository', () => {
       );
     });
 
+    it('should invite by email, creating a PENDING placeholder user', async () => {
+      const inviteExpiresAt = faker.date.future();
+      const { user: owner, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+      });
+      const inviteEmail = EmailAddressSchema.parse(faker.internet.email());
+      const inviteName = nameBuilder();
+
+      const invitations = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            type: InviteType.Email,
+            email: inviteEmail,
+            role: 'MEMBER',
+            name: inviteName,
+          },
+        ],
+        inviteExpiresAt,
+      });
+
+      expect(invitations).toHaveLength(1);
+      const placeholder = await dbUserRepo.findOneOrFail({
+        where: { id: invitations[0].userId },
+      });
+      expect(placeholder.status).toBe('PENDING');
+      expect(placeholder.email).toBe(inviteEmail);
+      expect(placeholder.extUserId).toBeNull();
+    });
+
+    it('should reuse the existing user when invited by email matches an ACTIVE account', async () => {
+      const inviteExpiresAt = faker.date.future();
+      const { user: owner, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+      });
+      const existingEmail = EmailAddressSchema.parse(faker.internet.email());
+      const existingInsert = await dbUserRepo.insert({
+        status: 'ACTIVE',
+        email: existingEmail,
+        extUserId: faker.string.uuid(),
+      });
+      const existingUserId = existingInsert.generatedMaps[0].id;
+
+      const invitations = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            type: InviteType.Email,
+            email: existingEmail,
+            role: 'MEMBER',
+            name: nameBuilder(),
+          },
+        ],
+        inviteExpiresAt,
+      });
+
+      expect(invitations).toHaveLength(1);
+      expect(invitations[0].userId).toBe(existingUserId);
+    });
+
     it('should throw an error if the space does not exist', async () => {
       const inviteExpiresAt = faker.date.future();
       const { authPayload } = await createSiweUser();
@@ -966,11 +1059,7 @@ describe('MembersRepository', () => {
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
-      const users: Array<{
-        address: Address;
-        role: keyof typeof MemberRole;
-        name: string;
-      }> = [];
+      const users: Array<InviteUserInput> = [];
 
       await expect(
         membersRepository.inviteUsers({

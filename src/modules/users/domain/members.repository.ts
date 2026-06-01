@@ -22,6 +22,10 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
@@ -110,11 +114,7 @@ export class MembersRepository implements IMembersRepository {
   public async inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    users: Array<{
-      name: Member['name'];
-      address: Address;
-      role: Member['role'];
-    }>;
+    users: Array<InviteUserInput>;
     inviteExpiresAt: Date;
   }): Promise<Array<Invitation>> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
@@ -123,25 +123,42 @@ export class MembersRepository implements IMembersRepository {
       where: { id: args.spaceId },
     });
 
-    const invitedAddresses = args.users.map((user) => user.address);
-    const invitedWallets = await this.walletsRepository.find({
-      where: { address: In(invitedAddresses) },
-      relations: { user: true },
-    });
+    const invitedAddresses = args.users.flatMap((u) =>
+      u.type === InviteType.Wallet ? [u.address] : [],
+    );
+    const invitedWallets = invitedAddresses.length
+      ? await this.walletsRepository.find({
+          where: { address: In(invitedAddresses) },
+          relations: { user: true },
+        })
+      : [];
     const invitations: Array<Invitation> = [];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
-        // Find existing User via Wallet or create new User and Wallet.
-        const wallet = invitedWallets.find((wallet) => {
-          return isAddressEqual(wallet.address, userToInvite.address);
-        });
-        const userIdToInvite = wallet
-          ? wallet.user.id
-          : await this.createUserAndWallet({
-              entityManager,
-              address: userToInvite.address,
-            });
+        let userIdToInvite: User['id'];
+        switch (userToInvite.type) {
+          case InviteType.Wallet: {
+            const wallet = invitedWallets.find((w) =>
+              isAddressEqual(w.address, userToInvite.address),
+            );
+            userIdToInvite = wallet
+              ? wallet.user.id
+              : await this.createUserAndWallet({
+                  entityManager,
+                  address: userToInvite.address,
+                });
+            break;
+          }
+          case InviteType.Email: {
+            userIdToInvite =
+              await this.usersRepository.findOrCreatePendingByEmail(
+                userToInvite.email,
+                entityManager,
+              );
+            break;
+          }
+        }
 
         await this.insertOrUpdateInvite({
           entityManager,
@@ -170,11 +187,7 @@ export class MembersRepository implements IMembersRepository {
     entityManager: EntityManager;
     space: Space;
     userId: User['id'];
-    userToInvite: {
-      name: Member['name'];
-      address: Address;
-      role: Member['role'];
-    };
+    userToInvite: InviteUserInput;
     invitedBy: number | null;
     inviteExpiresAt: Date;
   }): Promise<void> {
@@ -186,11 +199,13 @@ export class MembersRepository implements IMembersRepository {
       invitedBy,
       inviteExpiresAt,
     } = args;
-    const { name, role, address } = userToInvite;
+    const { name, role } = userToInvite;
 
     const duplicateInviteError = (): UniqueConstraintError =>
       new UniqueConstraintError(
-        `${address} is already in this space or has a pending invite.`,
+        userToInvite.type === InviteType.Wallet
+          ? `${userToInvite.address} is already in this space or has a pending invite.`
+          : 'This invitee is already in this space or has a pending invite.',
       );
 
     const existingMember = await entityManager.findOne(DbMember, {

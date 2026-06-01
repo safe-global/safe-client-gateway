@@ -24,6 +24,7 @@ describe('UsersRepository', () => {
     find: jest.Mock;
     findOne: jest.Mock;
     findOneOrFail: jest.Mock;
+    update: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let emailUpdateExecute: jest.Mock;
@@ -46,6 +47,7 @@ describe('UsersRepository', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       findOneOrFail: jest.fn(),
+      update: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
@@ -128,9 +130,10 @@ describe('UsersRepository', () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
       const email = fakeEmailAddress();
-      // First lookup finds no record, so we attempt the insert; the insert loses
-      // the race and the re-fetch returns the row the concurrent request wrote.
+      // Lookups: extUserId → null, email → null (no placeholder to claim),
+      // then INSERT loses the race and re-fetch by extUserId finds the row.
       userRepository.findOne
+        .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: userId, email });
       postgresDatabaseService.transaction.mockRejectedValue(
@@ -141,13 +144,14 @@ describe('UsersRepository', () => {
         target.findOrCreateByExtUserIdAndEmail(extUserId, email),
       ).resolves.toBe(userId);
 
-      expect(userRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(userRepository.findOne).toHaveBeenCalledTimes(3);
     });
 
     it('should reject when the racing row has a conflicting email', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
       userRepository.findOne
+        .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: userId, email: fakeEmailAddress() });
       postgresDatabaseService.transaction.mockRejectedValue(
@@ -157,6 +161,67 @@ describe('UsersRepository', () => {
       await expect(
         target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should claim a PENDING email-invite placeholder and flip it to ACTIVE', async () => {
+      const placeholderId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      const email = fakeEmailAddress();
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: placeholderId,
+        status: 'PENDING',
+        extUserId: null,
+      });
+      userRepository.update.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, email),
+      ).resolves.toBe(placeholderId);
+
+      expect(userRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: placeholderId,
+          status: 'PENDING',
+          extUserId: expect.anything(),
+        }),
+        { extUserId, status: 'ACTIVE' },
+      );
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the email belongs to an already-active user', async () => {
+      const linkedUserId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: linkedUserId,
+        status: 'ACTIVE',
+        extUserId: faker.string.uuid(),
+      });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+      expect(userRepository.update).not.toHaveBeenCalled();
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should fall through to INSERT (and surface UserEmailAlreadyInUseError) when the claim UPDATE loses the race', async () => {
+      const placeholderId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: placeholderId,
+        status: 'PENDING',
+        extUserId: null,
+      });
+      userRepository.update.mockResolvedValue({ affected: 0 });
+      postgresDatabaseService.transaction.mockRejectedValue(
+        uniqueConstraintError('idx_users_email'),
+      );
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+      expect(postgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
     });
   });
 

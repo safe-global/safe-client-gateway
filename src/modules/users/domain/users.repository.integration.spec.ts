@@ -996,6 +996,70 @@ describe('UsersRepository', () => {
         ),
       ).rejects.toThrow(UnauthorizedException);
     });
+
+    it('should claim a PENDING email-invite placeholder and flip it to ACTIVE', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+      const extUserId = faker.string.uuid();
+      const placeholderInsert = await dbUserRepository.insert({
+        status: 'PENDING',
+        email,
+      });
+      const placeholderId = placeholderInsert.identifiers[0].id as number;
+
+      const resolvedId = await usersRepository.findOrCreateByExtUserIdAndEmail(
+        extUserId,
+        email,
+      );
+
+      expect(resolvedId).toBe(placeholderId);
+      const claimed = await dbUserRepository.findOneOrFail({
+        where: { id: placeholderId },
+      });
+      expect(claimed.status).toBe('ACTIVE');
+      expect(claimed.extUserId).toBe(extUserId);
+      expect(claimed.email).toBe(email);
+    });
+  });
+
+  describe('findOrCreatePendingByEmail', () => {
+    it('should insert a PENDING user when no row with the email exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+
+      const userId = await usersRepository.findOrCreatePendingByEmail(email);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.status).toBe('PENDING');
+      expect(user.email).toBe(email);
+      expect(user.extUserId).toBeNull();
+    });
+
+    it('should be idempotent and return the existing user id on repeated calls', async () => {
+      const email = fakeEmailAddress();
+
+      const first = await usersRepository.findOrCreatePendingByEmail(email);
+      const second = await usersRepository.findOrCreatePendingByEmail(email);
+
+      expect(first).toBe(second);
+    });
+
+    it('should return the existing user id when a user with this email is already ACTIVE', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+      const insertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+        extUserId: faker.string.uuid(),
+      });
+      const existingId = insertResult.identifiers[0].id as number;
+
+      await expect(
+        usersRepository.findOrCreatePendingByEmail(email),
+      ).resolves.toBe(existingId);
+    });
   });
 
   describe('update', () => {
