@@ -66,6 +66,15 @@ export interface IQueue {
     label: string;
   }): Promise<void>;
 
+  updateDelegate(args: {
+    chainId: string;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
+    signature: string;
+    label: string;
+  }): Promise<void>;
+
   deleteDelegate(args: {
     chainId: string;
     delegate: Address;
