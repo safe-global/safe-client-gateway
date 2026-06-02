@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
 import { QueryFailedError } from 'typeorm';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -42,7 +43,7 @@ describe('MembersRepository', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    inviteExpiresAt = faker.date.future();
     entityManager = {
       findOne: jest.fn(),
       insert: jest.fn(),
@@ -105,7 +106,7 @@ describe('MembersRepository', () => {
 
     it('should overwrite the stale invite metadata of an existing invited member', async () => {
       const staleInvitedBy = authenticatedUserId + 1;
-      const staleInviteExpiresAt = new Date(Date.now() - 60 * 60 * 1000);
+      const staleInviteExpiresAt = faker.date.past();
       const existingMember = memberBuilder()
         .with('space', space)
         .with('status', 'INVITED')

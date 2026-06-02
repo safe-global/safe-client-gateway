@@ -257,7 +257,7 @@ describe('AddressBookItemsRepository', () => {
       const authPayload = await addMemberToSpaceWithStatus(
         spaceId,
         'INVITED',
-        new Date(Date.now() - 1_000),
+        faker.date.past(),
       );
       await expect(
         addressBookItemsRepository.findAllBySpaceId({

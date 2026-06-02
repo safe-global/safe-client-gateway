@@ -652,7 +652,7 @@ describe('MembersRepository', () => {
     it('should invite users to a space and return the members', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const inviteExpiresAt = faker.date.future();
       const {
         userId: adminUserId,
         user: owner,
@@ -706,7 +706,7 @@ describe('MembersRepository', () => {
     it('should invite users as OIDC admin with invitedBy set to user id', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const inviteExpiresAt = faker.date.future();
       const {
         userId: adminUserId,
         user: owner,
@@ -760,7 +760,7 @@ describe('MembersRepository', () => {
     it('should not create PENDING users for existing ones', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const inviteExpiresAt = faker.date.future();
       const { user: owner, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -952,7 +952,7 @@ describe('MembersRepository', () => {
               name: faker.person.firstName(),
             },
           ],
-          inviteExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          inviteExpiresAt: faker.date.future(),
         }),
       ).rejects.toThrow(
         `${activeMemberAddress} is already in this space or has a pending invite.`,
@@ -960,7 +960,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw an error if the space does not exist', async () => {
-      const inviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const inviteExpiresAt = faker.date.future();
       const { authPayload } = await createSiweUser();
       const spaceId = faker.number.int({
         min: 69420,
@@ -986,7 +986,7 @@ describe('MembersRepository', () => {
   describe('acceptInvite', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1064,7 +1064,7 @@ describe('MembersRepository', () => {
 
     it('should accept an invite for OIDC user', async () => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1130,7 +1130,7 @@ describe('MembersRepository', () => {
       ['OIDC', createOidcUser],
     ] as const)('should accept an invite to a space and override the name (%s)', async (_label, createUser) => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1385,7 +1385,7 @@ describe('MembersRepository', () => {
 
     it('should throw GoneException if the invite has expired', async () => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() - 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.past();
 
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -1452,7 +1452,7 @@ describe('MembersRepository', () => {
   describe('declineInvite', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1527,7 +1527,7 @@ describe('MembersRepository', () => {
 
     it('should decline an invite for OIDC user', async () => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1744,7 +1744,7 @@ describe('MembersRepository', () => {
 
     it('should throw GoneException if the invite has expired', async () => {
       const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      const memberInviteExpiresAt = new Date(Date.now() - 60 * 60 * 1000);
+      const memberInviteExpiresAt = faker.date.past();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -2000,7 +2000,7 @@ describe('MembersRepository', () => {
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
         invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+        inviteExpiresAt: faker.date.past(),
       });
 
       await expect(
@@ -2071,9 +2071,7 @@ describe('MembersRepository', () => {
         status: memberStatus,
         invitedBy: memberInvitedBy,
         inviteExpiresAt:
-          memberStatus === 'INVITED'
-            ? new Date(Date.now() + 60 * 60 * 1000)
-            : null,
+          memberStatus === 'INVITED' ? faker.date.future() : null,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2139,7 +2137,7 @@ describe('MembersRepository', () => {
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
         invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+        inviteExpiresAt: faker.date.past(),
       });
 
       await expect(
