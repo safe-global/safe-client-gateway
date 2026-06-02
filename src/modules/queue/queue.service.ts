@@ -71,7 +71,7 @@ export class QueueService implements IQueue {
   }): Promise<unknown> {
     try {
       const dto = args.proposeTransactionDto;
-      const { originName, originUrl } = parseOrigin(dto.origin);
+      const { originName, originUrl, note } = parseOrigin(dto.origin);
 
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
       const { data } = await this.networkService.post<unknown>({
@@ -91,6 +91,7 @@ export class QueueService implements IQueue {
           refundReceiver: dto.refundReceiver,
           originName,
           originUrl,
+          notes: note ?? null,
           signatures: dto.signature ? [dto.signature] : [],
         },
         networkRequest: {
