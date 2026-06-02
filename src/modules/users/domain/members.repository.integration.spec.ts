@@ -981,7 +981,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        invitedBy: null,
       });
       const inviteEmail = EmailAddressSchema.parse(faker.internet.email());
       const inviteName = nameBuilder();
@@ -1023,7 +1023,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        invitedBy: null,
       });
       const existingEmail = EmailAddressSchema.parse(faker.internet.email());
       const existingInsert = await dbUserRepo.insert({

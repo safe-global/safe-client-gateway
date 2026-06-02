@@ -13,6 +13,8 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
+import { In } from 'typeorm';
+import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -31,6 +33,7 @@ import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -119,18 +122,36 @@ export class MembersRepository implements IMembersRepository {
     });
 
     const invitations: Array<Invitation> = [];
+    const walletAddresses = args.users.flatMap((user) =>
+      user.type === InviteType.Wallet ? [user.address] : [],
+    );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const walletUserIds = new Map<Address, User['id']>();
+      if (walletAddresses.length > 0) {
+        // Batch existing wallet lookups while keeping user creation atomic.
+        const wallets = await entityManager.find(Wallet, {
+          where: { address: In(walletAddresses) },
+          relations: { user: true },
+        });
+
+        for (const wallet of wallets) {
+          walletUserIds.set(wallet.address, wallet.user.id);
+        }
+      }
+
       for (const userToInvite of args.users) {
         let userIdToInvite: User['id'];
         switch (userToInvite.type) {
           case InviteType.Wallet: {
             userIdToInvite =
-              await this.usersRepository.findOrCreateByWalletAddress(
+              walletUserIds.get(userToInvite.address) ??
+              (await this.usersRepository.findOrCreateByWalletAddress(
                 userToInvite.address,
                 'PENDING',
                 entityManager,
-              );
+              ));
+            walletUserIds.set(userToInvite.address, userIdToInvite);
             break;
           }
           case InviteType.Email: {
