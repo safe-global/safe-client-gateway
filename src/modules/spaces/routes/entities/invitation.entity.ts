@@ -16,8 +16,8 @@ export class Invitation {
   @ApiProperty({ type: String })
   name!: Member['name'];
 
-  @ApiProperty({ type: Number })
-  spaceId!: Space['id'];
+  @ApiProperty({ type: String })
+  spaceId!: Space['uuid'];
 
   @ApiProperty({ enum: getStringEnumKeys(MemberRole) })
   role!: keyof typeof MemberRole;

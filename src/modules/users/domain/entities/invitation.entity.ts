@@ -4,7 +4,7 @@ import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export type Invitation = {
   userId: User['id'];
-  spaceId: Space['id'];
+  spaceId: Space['uuid'];
   role: Member['role'];
   name: Member['name'];
   status: Member['status'];

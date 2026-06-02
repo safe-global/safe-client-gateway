@@ -174,7 +174,7 @@ export class MembersRepository implements IMembersRepository {
 
         invitations.push({
           userId: userIdToInvite,
-          spaceId: space.id,
+          spaceId: space.uuid,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
