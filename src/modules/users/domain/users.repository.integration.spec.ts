@@ -877,6 +877,31 @@ describe('UsersRepository', () => {
       });
     });
 
+    it('should create a PENDING user when requested', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const userId = await usersRepository.findOrCreateByWalletAddress(
+        address,
+        'PENDING',
+      );
+
+      await expect(
+        dbUserRepository.findOneOrFail({ where: { id: userId } }),
+      ).resolves.toEqual(expect.objectContaining({ status: 'PENDING' }));
+      await expect(
+        dbWalletRepository.findOneOrFail({
+          where: { address },
+          relations: { user: true },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          user: expect.objectContaining({ id: userId, status: 'PENDING' }),
+        }),
+      );
+    });
+
     it('should checksum the wallet address when creating', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const nonChecksummedAddress = faker.finance

@@ -197,6 +197,7 @@ export class UsersRepository implements IUsersRepository {
 
   public async findOrCreateByWalletAddress(
     address: Address,
+    status: keyof typeof UserStatus = 'ACTIVE',
   ): Promise<User['id']> {
     const existing = await this.findByWalletAddress(address);
     if (existing) {
@@ -206,7 +207,7 @@ export class UsersRepository implements IUsersRepository {
     try {
       return await this.postgresDatabaseService.transaction(
         async (entityManager: EntityManager) => {
-          const userId = await this.create('ACTIVE', entityManager);
+          const userId = await this.create(status, entityManager);
 
           await this.walletsRepository.create(
             { userId, walletAddress: address },
@@ -413,6 +414,8 @@ export class UsersRepository implements IUsersRepository {
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
+      // If another request already backfilled the same email, the guarded
+      // update affects zero rows; that is idempotent for this reconcile path.
     } catch (error) {
       if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();

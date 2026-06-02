@@ -133,7 +133,6 @@ describe('MembersRepository', () => {
       postgresDatabaseService,
       new UsersRepository(postgresDatabaseService, walletsRepo),
       new SpacesRepository(postgresDatabaseService, mockConfigurationService),
-      walletsRepo,
     );
   });
 

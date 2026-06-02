@@ -13,8 +13,6 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In } from 'typeorm';
-import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -33,7 +31,6 @@ import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -43,8 +40,6 @@ export class MembersRepository implements IMembersRepository {
     private readonly usersRepository: IUsersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
-    @Inject(IWalletsRepository)
-    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async findOneOrFail(
@@ -123,15 +118,6 @@ export class MembersRepository implements IMembersRepository {
       where: { id: args.spaceId },
     });
 
-    const invitedAddresses = args.users.flatMap((u) =>
-      u.type === InviteType.Wallet ? [u.address] : [],
-    );
-    const invitedWallets = invitedAddresses.length
-      ? await this.walletsRepository.find({
-          where: { address: In(invitedAddresses) },
-          relations: { user: true },
-        })
-      : [];
     const invitations: Array<Invitation> = [];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
@@ -139,15 +125,11 @@ export class MembersRepository implements IMembersRepository {
         let userIdToInvite: User['id'];
         switch (userToInvite.type) {
           case InviteType.Wallet: {
-            const wallet = invitedWallets.find((w) =>
-              isAddressEqual(w.address, userToInvite.address),
-            );
-            userIdToInvite = wallet
-              ? wallet.user.id
-              : await this.createUserAndWallet({
-                  entityManager,
-                  address: userToInvite.address,
-                });
+            userIdToInvite =
+              await this.usersRepository.findOrCreateByWalletAddress(
+                userToInvite.address,
+                'PENDING',
+              );
             break;
           }
           case InviteType.Email: {
@@ -246,19 +228,6 @@ export class MembersRepository implements IMembersRepository {
     }
 
     throw duplicateInviteError();
-  }
-
-  private async createUserAndWallet(args: {
-    entityManager: EntityManager;
-    address: Address;
-  }): Promise<User['id']> {
-    const { address, entityManager } = args;
-    const userId = await this.usersRepository.create('PENDING', entityManager);
-    await this.walletsRepository.create(
-      { walletAddress: address, userId },
-      entityManager,
-    );
-    return userId;
   }
 
   public async acceptInvite(args: {

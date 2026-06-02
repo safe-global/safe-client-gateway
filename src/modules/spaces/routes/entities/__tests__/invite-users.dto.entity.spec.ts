@@ -43,8 +43,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should infer type=wallet for legacy clients sending address without type', () => {
-    const legacy = walletInviteItem();
-    delete legacy.type;
+    const { type: _type, ...legacy } = walletInviteItem();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [legacy] });
 
@@ -53,8 +52,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject an email-shaped item that omits `type`', () => {
-    const legacy = emailInviteItem();
-    delete legacy.type;
+    const { type: _type, ...legacy } = emailInviteItem();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [legacy] });
 
@@ -95,8 +93,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject an item missing the role field', () => {
-    const wallet = walletInviteItem();
-    delete wallet.role;
+    const { role: _role, ...wallet } = walletInviteItem();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [wallet] });
 
@@ -104,8 +101,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject a wallet item missing the address', () => {
-    const wallet = walletInviteItem();
-    delete wallet.address;
+    const { address: _address, ...wallet } = walletInviteItem();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [wallet] });
 
@@ -121,8 +117,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject an email item missing the email', () => {
-    const email = emailInviteItem();
-    delete email.email;
+    const { email: _email, ...email } = emailInviteItem();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [email] });
 
@@ -147,17 +142,40 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject an item missing the name field', () => {
-    const wallet = walletInviteItem();
-    delete wallet.name;
+    const { name: _name, ...wallet } = walletInviteItem();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [wallet] });
 
     expect(result.success).toBe(false);
   });
 
-  it('should reject a name exceeding 255 characters', () => {
+  it('should reject a name exceeding 30 characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), name: 'a'.repeat(256) }],
+      users: [{ ...walletInviteItem(), name: 'a'.repeat(31) }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a name shorter than 3 characters', () => {
+    const result = InviteUsersDtoSchema.safeParse({
+      users: [{ ...walletInviteItem(), name: 'ab' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a whitespace-only name', () => {
+    const result = InviteUsersDtoSchema.safeParse({
+      users: [{ ...walletInviteItem(), name: '   ' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject a name with invalid characters', () => {
+    const result = InviteUsersDtoSchema.safeParse({
+      users: [{ ...walletInviteItem(), name: '<>@!' }],
     });
 
     expect(result.success).toBe(false);
