@@ -722,7 +722,7 @@ describe('SafeRepository', () => {
       ).not.toHaveBeenCalled();
     });
 
-    it('should set origin to null when the queue record has no originName and no originUrl', async () => {
+    it('should preserve the tx-service origin when the queue record has no originName and no originUrl', async () => {
       const multisig = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -750,9 +750,11 @@ describe('SafeRepository', () => {
         safeAddress,
       });
 
+      // An empty queue origin (e.g. a not-yet-backfilled entry) must not clobber
+      // the existing tx-service origin.
       expect(result.results[0]).toMatchObject({
         safeTxHash: multisig.safeTxHash,
-        origin: null,
+        origin: 'tx-service-origin',
       });
     });
 

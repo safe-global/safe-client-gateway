@@ -20,9 +20,14 @@ export function parseOrigin(origin: string | null): {
   }
 
   try {
-    const { name, url } = JSON.parse(origin);
-    parsedOrigin.originName = name;
-    parsedOrigin.originUrl = url;
+    const parsed = JSON.parse(origin);
+    // Guard against valid-but-non-object JSON (e.g. `"hello"` or `42`), which
+    // would otherwise destructure into undefined name/url silently.
+    if (typeof parsed === 'object' && parsed !== null) {
+      const { name, url } = parsed;
+      parsedOrigin.originName = name;
+      parsedOrigin.originUrl = url;
+    }
   } catch {
     // Ignore, no origin
   }

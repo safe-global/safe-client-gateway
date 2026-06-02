@@ -175,7 +175,7 @@ describe('CacheRouter', () => {
       const dir = CacheRouter.getQueuedTransactionsCacheDir({
         chainId,
         safeAddress,
-        ordering: 'nonce',
+        nonceOrder: 'asc',
         limit: 10,
         offset: 0,
       });
@@ -183,7 +183,7 @@ describe('CacheRouter', () => {
       expect(dir.key).toBe(
         `${chainId}_queue_multisig_transactions_${safeAddress}`,
       );
-      expect(dir.field).toBe('queue_nonce_10_0');
+      expect(dir.field).toBe('queue_asc_10_0');
     });
   });
 

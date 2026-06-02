@@ -302,10 +302,17 @@ export class SafeRepository implements ISafeRepository {
       });
       return MultisigTransactionPageSchema.parse(page);
     }
+    // The queue service can only order the queue by nonce, so we translate the
+    // tx-service ordering into a nonce direction explicitly. A leading '-'
+    // denotes descending. NOTE: getTransactionQueueByModified asks for
+    // '-modified' ordering, which the queue cannot honour — it degrades to
+    // descending nonce. Callers relying on true modified-date ordering (e.g.
+    // the queued-transaction cache tag) get a best-effort nonce-desc result.
+    const nonceOrder = args.ordering.startsWith('-') ? 'desc' : 'asc';
     const page = await this.queueService.getTransactionQueue({
       chainId: args.chainId,
       safeAddress: args.safe.address,
-      ordering: args.ordering,
+      nonceOrder,
       limit: args.limit,
       offset: args.offset,
     });
@@ -433,7 +440,14 @@ export class SafeRepository implements ISafeRepository {
       if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
         continue;
       }
-      tx.origin = buildOrigin(queue.originName, queue.originUrl);
+      // Only overlay when the queue actually has origin metadata. Older
+      // transactions may not be backfilled in the queue yet; treating an empty
+      // origin as "no update" preserves the tx-service origin instead of
+      // clobbering it with null.
+      const origin = buildOrigin(queue.originName, queue.originUrl);
+      if (origin !== null) {
+        tx.origin = origin;
+      }
     }
   }
 
@@ -451,7 +465,13 @@ export class SafeRepository implements ISafeRepository {
       if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
         return;
       }
-      tx.origin = buildOrigin(queue.originName, queue.originUrl);
+      // Only overlay when the queue actually has origin metadata (see
+      // bindQueueOrigins) so a not-yet-backfilled queue entry doesn't wipe the
+      // tx-service origin.
+      const origin = buildOrigin(queue.originName, queue.originUrl);
+      if (origin !== null) {
+        tx.origin = origin;
+      }
     } catch (error) {
       this.loggingService.warn(
         `Failed to fetch origin from queue service. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=${error}`,
@@ -550,7 +570,13 @@ export class SafeRepository implements ISafeRepository {
           safe: tx.safe,
         })
       ) {
-        tx.origin = buildOrigin(queue.originName, queue.originUrl);
+        // Only overlay when the queue actually has origin metadata (see
+        // bindQueueOrigins) so a not-yet-backfilled queue entry doesn't wipe
+        // the tx-service origin.
+        const origin = buildOrigin(queue.originName, queue.originUrl);
+        if (origin !== null) {
+          tx.origin = origin;
+        }
       }
       return tx;
     }
