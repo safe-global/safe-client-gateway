@@ -416,6 +416,146 @@ describe('FetchNetworkService', () => {
     });
   });
 
+  describe('PATCH requests', () => {
+    it(`patch uses PATCH method`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+
+      await target.patch({ url, data });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+        undefined,
+        undefined,
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'PATCH',
+        url: expectedUrl,
+      });
+    });
+
+    it(`patch calls fetch with request`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+      const networkRequest: NetworkRequest = {
+        params: { some_query_param: 'query_param' },
+        headers: {
+          test: 'value',
+        },
+      };
+
+      await target.patch({ url, data, networkRequest });
+
+      const expectedUrl = `${url}/?some_query_param=query_param`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'PATCH',
+          headers: {
+            test: 'value',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        },
+        undefined,
+        undefined,
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'PATCH',
+        url: expectedUrl,
+      });
+    });
+
+    it(`patch omits body and Content-Type when no data is provided`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+
+      await target.patch({ url });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'PATCH',
+          headers: {},
+        },
+        undefined,
+        undefined,
+      );
+    });
+
+    it(`patch uses custom timeout when provided`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+      const timeout = faker.number.int({ min: 1000, max: 10000 });
+      const networkRequest: NetworkRequest = {
+        timeout,
+      };
+
+      await target.patch({ url, data, networkRequest });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+        timeout,
+        undefined,
+      );
+    });
+
+    it(`patch logs response error`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const error = new NetworkResponseError(
+        new URL(faker.internet.url()),
+        {
+          status: 100,
+          statusText: 'Some error happened',
+        } as Response,
+        'data',
+      );
+      fetchClientMock.mockRejectedValueOnce(error);
+
+      await expect(target.patch({ url, data: {} })).rejects.toThrow(error);
+
+      expect(loggingService.debug).toHaveBeenCalledTimes(2);
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'PATCH',
+        url: `${url}/`,
+      });
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        protocol: error.url.protocol,
+        target_host: error.url.host,
+        path: error.url.pathname,
+        request_status: error.response.status,
+        detail: error.response.statusText,
+        response_time_ms: expect.any(Number),
+      });
+    });
+  });
+
   describe('DELETE requests', () => {
     it(`delete uses DELETE method`, async () => {
       const url = faker.internet.url({ appendSlash: false });
