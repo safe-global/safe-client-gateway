@@ -28,6 +28,7 @@ export const MemberSchema: z.ZodType<
     role: keyof typeof MemberRole;
     status: keyof typeof MemberStatus;
     invitedBy: number | null;
+    inviteExpiresAt: Date | null;
   }
 > = RowSchema.extend({
   user: z.lazy(() => UserSchema),
@@ -37,6 +38,7 @@ export const MemberSchema: z.ZodType<
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),
   invitedBy: z.number().int().positive().nullable(),
+  inviteExpiresAt: z.date().nullable(),
 });
 
 export type Member = z.infer<typeof MemberSchema>;

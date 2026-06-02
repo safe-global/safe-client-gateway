@@ -84,6 +84,13 @@ export class Member implements DomainMember {
   invitedBy!: number | null;
 
   @Column({
+    name: 'invite_expires_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  inviteExpiresAt!: Date | null;
+
+  @Column({
     name: 'created_at',
     type: 'timestamp with time zone',
     default: () => 'CURRENT_TIMESTAMP',

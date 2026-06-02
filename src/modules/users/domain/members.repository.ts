@@ -2,6 +2,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   Inject,
   Injectable,
   NotFoundException,
@@ -27,6 +28,7 @@ import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
@@ -113,6 +115,7 @@ export class MembersRepository implements IMembersRepository {
       address: Address;
       role: Member['role'];
     }>;
+    inviteExpiresAt: Date;
   }): Promise<Array<Invitation>> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
@@ -140,23 +143,14 @@ export class MembersRepository implements IMembersRepository {
               address: userToInvite.address,
             });
 
-        try {
-          await entityManager.insert(DbMember, {
-            user: { id: userIdToInvite },
-            space: space,
-            name: userToInvite.name,
-            role: userToInvite.role,
-            status: 'INVITED',
-            invitedBy: userId,
-          });
-        } catch (err) {
-          if (isUniqueConstraintError(err)) {
-            throw new UniqueConstraintError(
-              `${userToInvite.address} is already in this space or has a pending invite.`,
-            );
-          }
-          throw err;
-        }
+        await this.insertOrUpdateInvite({
+          entityManager,
+          space,
+          userId: userIdToInvite,
+          userToInvite,
+          invitedBy: userId,
+          inviteExpiresAt: args.inviteExpiresAt,
+        });
 
         invitations.push({
           userId: userIdToInvite,
@@ -170,6 +164,73 @@ export class MembersRepository implements IMembersRepository {
     });
 
     return invitations;
+  }
+
+  private async insertOrUpdateInvite(args: {
+    entityManager: EntityManager;
+    space: Space;
+    userId: User['id'];
+    userToInvite: {
+      name: Member['name'];
+      address: Address;
+      role: Member['role'];
+    };
+    invitedBy: number | null;
+    inviteExpiresAt: Date;
+  }): Promise<void> {
+    const {
+      entityManager,
+      space,
+      userId,
+      userToInvite,
+      invitedBy,
+      inviteExpiresAt,
+    } = args;
+    const { name, role, address } = userToInvite;
+
+    const duplicateInviteError = (): UniqueConstraintError =>
+      new UniqueConstraintError(
+        `${address} is already in this space or has a pending invite.`,
+      );
+
+    const existingMember = await entityManager.findOne(DbMember, {
+      where: {
+        user: { id: userId },
+        space: { id: space.id },
+      },
+    });
+
+    if (!existingMember) {
+      try {
+        await entityManager.insert(DbMember, {
+          user: { id: userId },
+          space,
+          name,
+          role,
+          status: 'INVITED',
+          invitedBy,
+          inviteExpiresAt,
+        });
+      } catch (err) {
+        if (isUniqueConstraintError(err)) {
+          throw duplicateInviteError();
+        }
+        throw err;
+      }
+      return;
+    }
+
+    if (existingMember.status === 'INVITED') {
+      await entityManager.update(DbMember, existingMember.id, {
+        name,
+        role,
+        invitedBy,
+        inviteExpiresAt,
+      });
+      return;
+    }
+
+    throw duplicateInviteError();
   }
 
   private async createUserAndWallet(args: {
@@ -200,11 +261,13 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
     const member = space.members[0];
+    this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
         name: args.payload.name,
+        inviteExpiresAt: null,
       });
 
       await this.usersRepository.updateStatus({
@@ -229,12 +292,25 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
     const member = space.members[0];
+    this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'DECLINED',
+        inviteExpiresAt: null,
       });
     });
+  }
+
+  private assertInviteNotExpired(member: DbMember): void {
+    // An `INVITED` member is always expected to carry an expiry;
+    // treat a missing one as expired.
+    if (
+      member.inviteExpiresAt === null ||
+      member.inviteExpiresAt.getTime() <= Date.now()
+    ) {
+      throw new GoneException('Invitation has expired.');
+    }
   }
 
   public async findAuthorizedMembersOrFail(args: {
@@ -400,8 +476,9 @@ export class MembersRepository implements IMembersRepository {
   }
 
   /**
-   * Returns the authenticated user's `ACTIVE` or `INVITED` membership row
-   * for the given space, or throws `ForbiddenException` if none exists.
+   * Returns the authenticated user's `ACTIVE` or non-expired `INVITED`
+   * membership row for the given space, or throws `ForbiddenException` if none
+   * exists.
    *
    * Shared by {@link findAuthorizedMembersOrFail} (which uses it as an
    * authorization gate and discards the row, so it omits `relations`) and
@@ -421,11 +498,10 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const member = await membersRepository.findOne({
-      where: {
+      where: activeOrPendingMemberWhere<DbMember>(() => ({
         user: { id: userId },
         space: { id: args.spaceId },
-        status: In(['ACTIVE', 'INVITED']),
-      },
+      })),
       relations,
     });
     if (!member) {

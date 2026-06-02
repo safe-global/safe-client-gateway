@@ -19,6 +19,7 @@ export function memberBuilder(): IBuilder<Member> {
     .with('role', 'ADMIN')
     .with('status', 'ACTIVE')
     .with('invitedBy', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
+    .with('inviteExpiresAt', null)
     .with('createdAt', new Date())
     .with('updatedAt', new Date());
 }
