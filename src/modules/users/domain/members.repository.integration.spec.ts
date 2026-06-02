@@ -2015,7 +2015,7 @@ describe('MembersRepository', () => {
       );
     });
 
-    it('should throw ForbiddenException for an expired invited caller', async () => {
+    it('should throw ForbiddenException for an invited caller with no invite expiry', async () => {
       const spaceName = nameBuilder();
       const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
@@ -2030,7 +2030,7 @@ describe('MembersRepository', () => {
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
         invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+        inviteExpiresAt: null,
       });
 
       await expect(
@@ -2154,7 +2154,7 @@ describe('MembersRepository', () => {
       );
     });
 
-    it('should throw ForbiddenException for an expired invited caller', async () => {
+    it('should throw ForbiddenException for an invited caller with no invite expiry', async () => {
       const spaceName = nameBuilder();
       const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
@@ -2169,7 +2169,7 @@ describe('MembersRepository', () => {
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'INVITED',
         invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        inviteExpiresAt: new Date(Date.now() - 60 * 60 * 1000),
+        inviteExpiresAt: null,
       });
 
       await expect(

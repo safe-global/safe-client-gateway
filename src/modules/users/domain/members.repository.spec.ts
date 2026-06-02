@@ -103,10 +103,15 @@ describe('MembersRepository', () => {
       });
     });
 
-    it('should update an existing invited member', async () => {
+    it('should overwrite the stale invite metadata of an existing invited member', async () => {
+      const staleInvitedBy = authenticatedUserId + 1;
+      const staleInviteExpiresAt = new Date(Date.now() - 60 * 60 * 1000);
       const existingMember = memberBuilder()
         .with('space', space)
         .with('status', 'INVITED')
+        .with('role', 'MEMBER')
+        .with('invitedBy', staleInvitedBy)
+        .with('inviteExpiresAt', staleInviteExpiresAt)
         .build();
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
@@ -124,6 +129,8 @@ describe('MembersRepository', () => {
         inviteExpiresAt,
       });
 
+      // The re-invite refreshes name, role and the invite metadata
+      // (invitedBy + inviteExpiresAt) rather than preserving the stale values.
       expect(entityManager.update).toHaveBeenCalledWith(
         DbMember,
         existingMember.id,
@@ -133,6 +140,21 @@ describe('MembersRepository', () => {
           invitedBy: authenticatedUserId,
           inviteExpiresAt,
         },
+      );
+      expect(entityManager.update).not.toHaveBeenCalledWith(
+        DbMember,
+        existingMember.id,
+        expect.objectContaining({ role: existingMember.role }),
+      );
+      expect(entityManager.update).not.toHaveBeenCalledWith(
+        DbMember,
+        existingMember.id,
+        expect.objectContaining({ invitedBy: staleInvitedBy }),
+      );
+      expect(entityManager.update).not.toHaveBeenCalledWith(
+        DbMember,
+        existingMember.id,
+        expect.objectContaining({ inviteExpiresAt: staleInviteExpiresAt }),
       );
       expect(entityManager.insert).not.toHaveBeenCalled();
     });
