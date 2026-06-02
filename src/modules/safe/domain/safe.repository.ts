@@ -496,27 +496,78 @@ export class SafeRepository implements ISafeRepository {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<MultisigTransaction> {
+    return await this.resolveMultisigTransaction(args, { noCache: false });
+  }
+
+  private async fetchTxServiceMultisig(
+    args: { chainId: string; safeTransactionHash: string },
+    opts: { noCache: boolean },
+  ): Promise<MultisigTransaction> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const multiSigTransaction = await transactionService.getMultisigTransaction(
-      args.safeTransactionHash,
-    );
-    const tx = MultisigTransactionSchema.parse(multiSigTransaction);
-    await this.bindQueueOrigin(tx, args.chainId);
-    return tx;
+    const raw = opts.noCache
+      ? await transactionService.getMultisigTransactionWithNoCache(
+          args.safeTransactionHash,
+        )
+      : await transactionService.getMultisigTransaction(
+          args.safeTransactionHash,
+        );
+    return MultisigTransactionSchema.parse(raw);
+  }
+
+  private async resolveMultisigTransaction(
+    args: { chainId: string; safeTransactionHash: string },
+    opts: { noCache: boolean },
+  ): Promise<MultisigTransaction> {
+    if (!this.queueServiceEnabled) {
+      const tx = await this.fetchTxServiceMultisig(args, opts);
+      await this.bindQueueOrigin(tx, args.chainId);
+      return tx;
+    }
+
+    let queue: QueueMultisigTransactionEntity;
+    try {
+      const raw = await this.queueService.getMultisigTransaction({
+        chainId: args.chainId,
+        safeTxHash: args.safeTransactionHash,
+      });
+      queue = QueueMultisigTransactionSchema.parse(raw);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to fetch transaction from queue service. chainId=${args.chainId}, safeTxHash=${args.safeTransactionHash}, error=${error}`,
+      );
+      return this.fetchTxServiceMultisig(args, opts);
+    }
+
+    if (queue.txHash !== null) {
+      // Executed: the tx service is the source of truth. Overlay the origin
+      // from the queue entity we already fetched (no second queue call).
+      const tx = await this.fetchTxServiceMultisig(args, opts);
+      if (
+        this.isQueueOriginAuthoritative(queue, {
+          chainId: args.chainId,
+          safe: tx.safe,
+        })
+      ) {
+        tx.origin = buildOrigin(queue.originName, queue.originUrl);
+      }
+      return tx;
+    }
+
+    // Not executed: the queue service is the source of truth.
+    const safe = await this.getSafe({
+      chainId: args.chainId,
+      address: queue.safe,
+    });
+    return mapQueueToMultisigTransaction(queue, safe);
   }
 
   async getMultiSigTransactionWithNoCache(args: {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<MultisigTransaction> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const tx = await transactionService
-      .getMultisigTransactionWithNoCache(args.safeTransactionHash)
-      .then(MultisigTransactionSchema.parse);
+    const tx = await this.resolveMultisigTransaction(args, { noCache: true });
 
     const safe = await this.getSafe({
       chainId: args.chainId,
@@ -529,7 +580,6 @@ export class SafeRepository implements ISafeRepository {
       safe: safe,
     });
 
-    await this.bindQueueOrigin(tx, args.chainId);
     return tx;
   }
 

@@ -971,6 +971,32 @@ describe('SafeRepository', () => {
       expect(result.origin).toBe('tx-service-origin');
       expect(mockQueueService.getMultisigTransaction).not.toHaveBeenCalled();
     });
+
+    it('should use the queue transaction as the source of truth when it is not executed', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const queueTx = queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .with('originName', 'App')
+        .with('originUrl', 'https://app.example')
+        .build();
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: queueTx.safeTxHash,
+      });
+
+      expect(result.isExecuted).toBe(false);
+      expect(result.safeTxHash).toBe(queueTx.safeTxHash);
+      expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
+      expect(result.confirmationsRequired).toBe(safe.threshold);
+      expect(mockTransactionApi.getMultisigTransaction).not.toHaveBeenCalled();
+    });
   });
 
   describe('getMultiSigTransactionWithNoCache', () => {
@@ -1025,6 +1051,36 @@ describe('SafeRepository', () => {
 
       expect(result.origin).toBe('tx-service-origin');
       expect(mockQueueService.getMultisigTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should use the queue transaction as the source of truth and verify it when not executed', async () => {
+      const queueTx = queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .with('originName', 'App')
+        .with('originUrl', 'https://app.example')
+        .build();
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+
+      const result = await repository.getMultiSigTransactionWithNoCache({
+        chainId,
+        safeTransactionHash: queueTx.safeTxHash,
+      });
+
+      expect(result.isExecuted).toBe(false);
+      expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
+      expect(
+        mockTransactionApi.getMultisigTransactionWithNoCache,
+      ).not.toHaveBeenCalled();
+      expect(mockTransactionVerifier.verifyApiTransaction).toHaveBeenCalledWith({
+        chainId,
+        safe,
+        transaction: result,
+      });
     });
   });
 
