@@ -494,13 +494,23 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-
-    await transactionService.clearAllTransactions(args.safeAddress);
-    if (this.queueServiceEnabled) {
-      await this.queueService.clearAllTransactions({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      });
+    // The tx-service and queue caches are independent layers, so a failure in
+    // one must not skip invalidating the other. Run both, then surface a
+    // generic failure if either rejected so the webhook retries the whole
+    // invalidation.
+    const results = await Promise.allSettled([
+      transactionService.clearAllTransactions(args.safeAddress),
+      ...(this.queueServiceEnabled
+        ? [
+            this.queueService.clearAllTransactions({
+              chainId: args.chainId,
+              safeAddress: args.safeAddress,
+            }),
+          ]
+        : []),
+    ]);
+    if (results.some((r) => r.status === 'rejected')) {
+      throw new Error('Failed to clear all executed transactions');
     }
   }
 
@@ -511,12 +521,23 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.clearMultisigTransaction(args.safeTransactionHash);
-    if (this.queueServiceEnabled) {
-      await this.queueService.clearMultisigTransaction({
-        chainId: args.chainId,
-        safeTxHash: args.safeTransactionHash,
-      });
+    // The tx-service and queue caches are independent layers, so a failure in
+    // one must not skip invalidating the other. Run both, then surface a
+    // generic failure if either rejected so the webhook retries the whole
+    // invalidation.
+    const results = await Promise.allSettled([
+      transactionService.clearMultisigTransaction(args.safeTransactionHash),
+      ...(this.queueServiceEnabled
+        ? [
+            this.queueService.clearMultisigTransaction({
+              chainId: args.chainId,
+              safeTxHash: args.safeTransactionHash,
+            }),
+          ]
+        : []),
+    ]);
+    if (results.some((r) => r.status === 'rejected')) {
+      throw new Error('Failed to clear multisig transaction');
     }
   }
 
