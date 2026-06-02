@@ -5,7 +5,7 @@ import {
   Get,
   Inject,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -21,7 +21,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -48,7 +47,13 @@ export class SurveysController {
     description:
       "Returns the active survey definition and this space's response (if any) in a single round trip. Only active admins of the space can read survey state.",
   })
-  @ApiParam({ name: 'spaceId', type: 'number', example: 1 })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description:
+      'Space UUID to get survey state for (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiParam({ name: 'slug', type: 'string', example: 'onboarding' })
   @ApiOkResponse({ type: SurveyStateDto })
   @ApiUnauthorizedResponse({ description: 'Not authenticated' })
@@ -60,10 +65,11 @@ export class SurveysController {
   @UseGuards(AuthGuard)
   public async getState(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId') spaceIdOrUuid: string,
     @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
   ): Promise<SurveyStateDto> {
+    const spaceId =
+      await this.surveysService.getNumericIdLenient(spaceIdOrUuid);
     return await this.surveysService.getState({
       authPayload,
       spaceId,
@@ -76,7 +82,12 @@ export class SurveysController {
     description:
       "Submits or updates the space's response to the active survey for the given slug. Only active admins of the space can submit. Idempotent: repeat submissions overwrite the previous response.",
   })
-  @ApiParam({ name: 'spaceId', type: 'number', example: 1 })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to submit a survey response for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiParam({ name: 'slug', type: 'string', example: 'onboarding' })
   @ApiBody({ type: SubmitSurveyResponseDto })
   @ApiCreatedResponse({ type: SurveyResponseResultDto })
@@ -92,12 +103,12 @@ export class SurveysController {
   @UseGuards(AuthGuard)
   public async submitResponse(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
     @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
     @Body(new ValidationPipe(SubmitSurveyResponseDtoSchema))
     body: SubmitSurveyResponseDto,
   ): Promise<SurveyResponseResultDto> {
+    const spaceId = await this.surveysService.getNumericId(spaceUuid);
     return await this.surveysService.submitResponse({
       authPayload,
       spaceId,

@@ -8,6 +8,7 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type {
   Survey,
   SurveyPage,
@@ -35,7 +36,18 @@ export class SurveysService {
     private readonly surveysRepository: ISurveysRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
   ) {}
+
+  public async getNumericId(uuid: string): Promise<Space['id']> {
+    return await this.spacesRepository.findIdByUuid(uuid);
+  }
+
+  // TODO: remove after FE removes numeric Space ID fallback.
+  public async getNumericIdLenient(value: string): Promise<Space['id']> {
+    return await this.spacesRepository.findIdByIdOrUuid(value);
+  }
 
   public async getState(args: {
     authPayload: AuthPayload;

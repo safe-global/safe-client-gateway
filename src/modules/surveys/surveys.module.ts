@@ -5,6 +5,7 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { AuthModule } from '@/modules/auth/auth.module';
 import { Survey } from '@/modules/surveys/datasources/entities/survey.entity.db';
 import { SurveyResponse } from '@/modules/surveys/datasources/entities/survey-response.entity.db';
+import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { SurveysRepository } from '@/modules/surveys/domain/surveys.repository';
 import { ISurveysRepository } from '@/modules/surveys/domain/surveys.repository.interface';
 import { SurveysController } from '@/modules/surveys/routes/surveys.controller';
@@ -17,6 +18,7 @@ import { UsersModule } from '@/modules/users/users.module';
     TypeOrmModule.forFeature([Survey, SurveyResponse]),
     AuthModule,
     UsersModule,
+    SpacesModule,
   ],
   controllers: [SurveysController],
   providers: [
