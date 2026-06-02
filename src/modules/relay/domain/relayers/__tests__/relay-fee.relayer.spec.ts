@@ -8,6 +8,7 @@ import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interfa
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
@@ -414,6 +415,126 @@ describe('RelayFeeRelayer', () => {
 
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
       expect(mockRelayApi.relay).not.toHaveBeenCalled();
+    });
+
+    describe('simulation gate', () => {
+      const simulationChainId = '137';
+
+      function configureSimulationEnabled(chainIds: Array<string>): void {
+        fakeConfigurationService.set('relay.simulation', {
+          enabledChainIds: chainIds,
+        });
+        target = new RelayFeeRelayer(
+          mockLoggingService,
+          fakeConfigurationService,
+          mockRelayApi,
+          mockFeeServiceApi,
+          mockTenderlySimulationApi,
+          mockRelayTransactionHelper,
+        );
+      }
+
+      function arrangeValidExecTransaction(): void {
+        mockRelayTransactionHelper.decodeExecTransaction.mockReturnValue(
+          fakeDecoded,
+        );
+        mockRelayTransactionHelper.isValidDecodedExecTransaction.mockReturnValue(
+          true,
+        );
+        mockRelayTransactionHelper.isSafeTxHashValid.mockResolvedValue(true);
+        mockFeeServiceApi.canRelay.mockResolvedValue({ canRelay: true });
+      }
+
+      it('skips simulation when chainId is not in relay.simulation.enabledChainIds', async () => {
+        fakeConfigurationService.set('relay.fee', {
+          enabledChainIds: [simulationChainId],
+          baseUri: faker.internet.url({ appendSlash: false }),
+        });
+        configureSimulationEnabled([]); // empty -> gate disabled for every chain
+        arrangeValidExecTransaction();
+        const taskId = faker.string.uuid();
+        mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+        const result = await target.relay({
+          version: '1.3.0',
+          chainId: simulationChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash: fakeSafeTxHash(),
+        });
+
+        expect(result).toEqual({ taskId });
+        expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
+        expect(mockRelayApi.relay).toHaveBeenCalledTimes(1);
+      });
+
+      it('runs simulation and relays when the simulation succeeds', async () => {
+        fakeConfigurationService.set('relay.fee', {
+          enabledChainIds: [simulationChainId],
+          baseUri: faker.internet.url({ appendSlash: false }),
+        });
+        configureSimulationEnabled([simulationChainId]);
+        arrangeValidExecTransaction();
+        mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
+          success: true,
+        });
+        const safeAddress = fakeAddress();
+        const taskId = faker.string.uuid();
+        mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+
+        const result = await target.relay({
+          version: '1.3.0',
+          chainId: simulationChainId,
+          to: safeAddress,
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash: fakeSafeTxHash(),
+        });
+
+        expect(result).toEqual({ taskId });
+        expect(mockTenderlySimulationApi.simulate).toHaveBeenCalledWith({
+          chainId: simulationChainId,
+          from: '0x000000000000000000000000000000000000dEaD',
+          to: safeAddress,
+          data: '0x',
+        });
+        expect(mockRelayApi.relay).toHaveBeenCalledTimes(1);
+      });
+
+      it('throws RelaySimulationFailedError and never relays when the simulation fails', async () => {
+        fakeConfigurationService.set('relay.fee', {
+          enabledChainIds: [simulationChainId],
+          baseUri: faker.internet.url({ appendSlash: false }),
+        });
+        configureSimulationEnabled([simulationChainId]);
+        arrangeValidExecTransaction();
+        mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
+          success: false,
+          reason: "Reverted with reason string: 'GS013'",
+        });
+        const safeTxHash = fakeSafeTxHash();
+
+        await expect(
+          target.relay({
+            version: '1.3.0',
+            chainId: simulationChainId,
+            to: fakeAddress(),
+            data: '0x' as Hex,
+            gasLimit: null,
+            safeTxHash,
+          }),
+        ).rejects.toThrow(RelaySimulationFailedError);
+
+        expect(mockRelayApi.relay).not.toHaveBeenCalled();
+        expect(mockLoggingService.warn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: expect.stringContaining(
+              `simulation failed (Reverted with reason string: 'GS013') for safeTxHash ${safeTxHash}`,
+            ),
+          }),
+        );
+      });
     });
   });
 
