@@ -13,7 +13,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In, MoreThan } from 'typeorm';
+import { In } from 'typeorm';
 import { type Address, isAddressEqual } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -28,6 +28,7 @@ import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
@@ -497,19 +498,10 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const member = await membersRepository.findOne({
-      where: [
-        {
-          user: { id: userId },
-          space: { id: args.spaceId },
-          status: 'ACTIVE',
-        },
-        {
-          user: { id: userId },
-          space: { id: args.spaceId },
-          status: 'INVITED',
-          inviteExpiresAt: MoreThan(new Date()),
-        },
-      ],
+      where: activeOrPendingMemberWhere<DbMember>(() => ({
+        user: { id: userId },
+        space: { id: args.spaceId },
+      })),
       relations,
     });
     if (!member) {

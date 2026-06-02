@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { EntityManager, In, MoreThan } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -14,7 +14,9 @@ import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -107,25 +109,13 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     return await this.spacesRepository.findOneOrFail({
-      where: [
-        {
-          id: args.spaceId,
-          members: {
-            status: 'ACTIVE',
-            role: In(args.memberRoleIn),
-            user: { id: userId },
-          },
-        },
-        {
-          id: args.spaceId,
-          members: {
-            status: 'INVITED',
-            inviteExpiresAt: MoreThan(new Date()),
-            role: In(args.memberRoleIn),
-            user: { id: userId },
-          },
-        },
-      ],
+      where: activeOrPendingMemberWhere<Member>(() => ({
+        role: In(args.memberRoleIn),
+        user: { id: userId },
+      })).map((members) => ({
+        id: args.spaceId,
+        members,
+      })),
     });
   }
 

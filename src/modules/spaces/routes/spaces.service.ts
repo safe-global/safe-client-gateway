@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Inject, NotFoundException } from '@nestjs/common';
-import { In, MoreThan } from 'typeorm';
+import { In } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -13,8 +13,10 @@ import type {
   UpdateSpaceResponse,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 export class SpacesService {
@@ -66,15 +68,10 @@ export class SpacesService {
 
     const spaceScope = spaceId != null ? { space: { id: spaceId } } : {};
     const members = await this.membersRepository.find({
-      where: [
-        { user: { id: userId }, status: 'ACTIVE', ...spaceScope },
-        {
-          user: { id: userId },
-          status: 'INVITED',
-          inviteExpiresAt: MoreThan(new Date()),
-          ...spaceScope,
-        },
-      ],
+      where: activeOrPendingMemberWhere<Member>(() => ({
+        user: { id: userId },
+        ...spaceScope,
+      })),
       relations: ['space'],
     });
     if (members.length === 0) {
