@@ -437,7 +437,11 @@ export class SafeRepository implements ISafeRepository {
    */
   private overlayQueueOrigin(
     tx: MultisigTransaction,
-    queue: { originName: string | null; originUrl: string | null; notes: string | null },
+    queue: {
+      originName: string | null;
+      originUrl: string | null;
+      notes: string | null;
+    },
   ): void {
     if (!(queue.originName || queue.originUrl)) return;
     tx.origin = buildOrigin(queue.originName, queue.originUrl, queue.notes);
