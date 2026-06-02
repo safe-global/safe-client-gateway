@@ -490,6 +490,7 @@ describe('SafeRepository', () => {
       safeTxHash: Hex;
       originName: string | null;
       originUrl: string | null;
+      notes?: string | null;
     }): QueueMultisigTransactionEntity =>
       queueMultisigTransactionBuilder()
         .with('chainId', chainId)
@@ -497,6 +498,7 @@ describe('SafeRepository', () => {
         .with('safeTxHash', overrides.safeTxHash)
         .with('originName', overrides.originName)
         .with('originUrl', overrides.originUrl)
+        .with('notes', overrides.notes ?? null)
         .build();
 
     it('should replace origin on every multisig entry with queue-service metadata', async () => {
@@ -562,6 +564,41 @@ describe('SafeRepository', () => {
       expect(result.results[1]).toMatchObject({
         safeTxHash: multisigB.safeTxHash,
         origin: buildOrigin('AppB', 'https://b.example'),
+      });
+    });
+
+    it('should preserve the queue note in the batch origin overlay', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: 'App',
+            originUrl: 'https://app.example',
+            notes: 'a note',
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: buildOrigin('App', 'https://app.example', 'a note'),
       });
     });
 
