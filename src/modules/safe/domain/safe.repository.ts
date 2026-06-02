@@ -444,7 +444,11 @@ export class SafeRepository implements ISafeRepository {
       // transactions may not be backfilled in the queue yet; treating an empty
       // origin as "no update" preserves the tx-service origin instead of
       // clobbering it with null.
-      const origin = buildOrigin(queue.originName, queue.originUrl);
+      const origin = buildOrigin(
+        queue.originName,
+        queue.originUrl,
+        queue.notes,
+      );
       if (origin !== null) {
         tx.origin = origin;
       }
@@ -468,7 +472,11 @@ export class SafeRepository implements ISafeRepository {
       // Only overlay when the queue actually has origin metadata (see
       // bindQueueOrigins) so a not-yet-backfilled queue entry doesn't wipe the
       // tx-service origin.
-      const origin = buildOrigin(queue.originName, queue.originUrl);
+      const origin = buildOrigin(
+        queue.originName,
+        queue.originUrl,
+        queue.notes,
+      );
       if (origin !== null) {
         tx.origin = origin;
       }
@@ -573,7 +581,11 @@ export class SafeRepository implements ISafeRepository {
         // Only overlay when the queue actually has origin metadata (see
         // bindQueueOrigins) so a not-yet-backfilled queue entry doesn't wipe
         // the tx-service origin.
-        const origin = buildOrigin(queue.originName, queue.originUrl);
+        const origin = buildOrigin(
+          queue.originName,
+          queue.originUrl,
+          queue.notes,
+        );
         if (origin !== null) {
           tx.origin = origin;
         }
@@ -659,12 +671,23 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.clearMultisigTransactions(args.safeAddress);
-    if (this.queueServiceEnabled) {
-      await this.queueService.clearAllTransactions({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      });
+    // The tx-service and queue caches are independent layers, so a failure in
+    // one must not skip invalidating the other. Run both, then surface a
+    // generic failure if either rejected so the webhook retries the whole
+    // invalidation.
+    const results = await Promise.allSettled([
+      transactionService.clearMultisigTransactions(args.safeAddress),
+      ...(this.queueServiceEnabled
+        ? [
+            this.queueService.clearAllTransactions({
+              chainId: args.chainId,
+              safeAddress: args.safeAddress,
+            }),
+          ]
+        : []),
+    ]);
+    if (results.some((r) => r.status === 'rejected')) {
+      throw new Error('Failed to clear multisig transactions');
     }
   }
 
