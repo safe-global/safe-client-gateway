@@ -2,12 +2,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import {
+  makeNameSchema,
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
 } from '@/domain/common/schemas/name.schema';
 
 export const AcceptInviteDtoSchema = z.object({
-  name: z.string().max(255),
+  name: makeNameSchema(),
 });
 
 export class AcceptInviteDto implements z.infer<typeof AcceptInviteDtoSchema> {

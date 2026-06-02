@@ -2,7 +2,9 @@
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
+import { getAddress } from 'viem';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -24,6 +26,7 @@ describe('UsersRepository', () => {
     find: jest.Mock;
     findOne: jest.Mock;
     findOneOrFail: jest.Mock;
+    update: jest.Mock;
     createQueryBuilder: jest.Mock;
   };
   let emailUpdateExecute: jest.Mock;
@@ -46,6 +49,7 @@ describe('UsersRepository', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       findOneOrFail: jest.fn(),
+      update: jest.fn(),
       createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
@@ -55,6 +59,86 @@ describe('UsersRepository', () => {
     } as jest.MockedObjectDeep<PostgresDatabaseService>;
 
     target = new UsersRepository(postgresDatabaseService, walletsRepository);
+  });
+
+  describe('findOrCreateByWalletAddress', () => {
+    const mockEntityManager = (args?: {
+      walletInsertIdentifiers?: Array<Record<string, unknown>>;
+      createdUserId?: number;
+      racedUserId?: number;
+    }) => {
+      const queryBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({
+          identifiers: args?.walletInsertIdentifiers ?? [{ id: 1 }],
+        }),
+      };
+
+      return {
+        findOne: jest
+          .fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(
+            args?.racedUserId
+              ? {
+                  user: {
+                    id: args.racedUserId,
+                  },
+                }
+              : null,
+          ),
+        insert: jest.fn().mockResolvedValue({
+          identifiers: [{ id: args?.createdUserId ?? 1 }],
+        }),
+        createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+        delete: jest.fn(),
+      };
+    };
+
+    it('should use the provided entity manager instead of opening a transaction', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdUserId = faker.number.int({ min: 1 });
+      const entityManager = mockEntityManager({ createdUserId });
+
+      await expect(
+        target.findOrCreateByWalletAddress(
+          address,
+          'PENDING',
+          // The test only needs the EntityManager methods used by the helper.
+          entityManager as never,
+        ),
+      ).resolves.toBe(createdUserId);
+
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+      expect(entityManager.insert).toHaveBeenCalledWith(DbUser, {
+        status: 'PENDING',
+      });
+      expect(entityManager.delete).not.toHaveBeenCalled();
+    });
+
+    it('should delete the created user and return the racing wallet user when wallet insert is ignored', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdUserId = faker.number.int({ min: 1 });
+      const racedUserId = faker.number.int({ min: createdUserId + 1 });
+      const entityManager = mockEntityManager({
+        createdUserId,
+        racedUserId,
+        walletInsertIdentifiers: [],
+      });
+
+      await expect(
+        target.findOrCreateByWalletAddress(
+          address,
+          'PENDING',
+          entityManager as never,
+        ),
+      ).resolves.toBe(racedUserId);
+
+      expect(entityManager.delete).toHaveBeenCalledWith(DbUser, createdUserId);
+    });
   });
 
   describe('findOrCreateByExtUserIdAndEmail', () => {
@@ -128,9 +212,10 @@ describe('UsersRepository', () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
       const email = fakeEmailAddress();
-      // First lookup finds no record, so we attempt the insert; the insert loses
-      // the race and the re-fetch returns the row the concurrent request wrote.
+      // Lookups: extUserId → null, email → null (no placeholder to claim),
+      // then INSERT loses the race and re-fetch by extUserId finds the row.
       userRepository.findOne
+        .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: userId, email });
       postgresDatabaseService.transaction.mockRejectedValue(
@@ -141,13 +226,14 @@ describe('UsersRepository', () => {
         target.findOrCreateByExtUserIdAndEmail(extUserId, email),
       ).resolves.toBe(userId);
 
-      expect(userRepository.findOne).toHaveBeenCalledTimes(2);
+      expect(userRepository.findOne).toHaveBeenCalledTimes(3);
     });
 
     it('should reject when the racing row has a conflicting email', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
       userRepository.findOne
+        .mockResolvedValueOnce(null)
         .mockResolvedValueOnce(null)
         .mockResolvedValueOnce({ id: userId, email: fakeEmailAddress() });
       postgresDatabaseService.transaction.mockRejectedValue(
@@ -157,6 +243,67 @@ describe('UsersRepository', () => {
       await expect(
         target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
       ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should claim a PENDING email-invite placeholder and flip it to ACTIVE', async () => {
+      const placeholderId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      const email = fakeEmailAddress();
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: placeholderId,
+        status: 'PENDING',
+        extUserId: null,
+      });
+      userRepository.update.mockResolvedValue({ affected: 1 });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, email),
+      ).resolves.toBe(placeholderId);
+
+      expect(userRepository.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: placeholderId,
+          status: 'PENDING',
+          extUserId: expect.anything(),
+        }),
+        { extUserId, status: 'ACTIVE' },
+      );
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the email belongs to an already-active user', async () => {
+      const linkedUserId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: linkedUserId,
+        status: 'ACTIVE',
+        extUserId: faker.string.uuid(),
+      });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+      expect(userRepository.update).not.toHaveBeenCalled();
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+    });
+
+    it('should fall through to INSERT (and surface UserEmailAlreadyInUseError) when the claim UPDATE loses the race', async () => {
+      const placeholderId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      userRepository.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce({
+        id: placeholderId,
+        status: 'PENDING',
+        extUserId: null,
+      });
+      userRepository.update.mockResolvedValue({ affected: 0 });
+      postgresDatabaseService.transaction.mockRejectedValue(
+        uniqueConstraintError('idx_users_email'),
+      );
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+      expect(postgresDatabaseService.transaction).toHaveBeenCalledTimes(1);
     });
   });
 

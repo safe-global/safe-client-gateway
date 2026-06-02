@@ -10,27 +10,25 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { InviteType } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { MembersRepository } from '@/modules/users/domain/members.repository';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 describe('MembersRepository', () => {
   const usersRepository = {
     create: jest.fn(),
+    findOrCreateByWalletAddress: jest.fn(),
     updateStatus: jest.fn(),
   } as jest.MockedObjectDeep<IUsersRepository>;
   const spacesRepository = {
     findOneOrFail: jest.fn(),
   } as jest.MockedObjectDeep<ISpacesRepository>;
-  const walletsRepository = {
-    find: jest.fn(),
-  } as jest.MockedObjectDeep<IWalletsRepository>;
 
   let entityManager: jest.Mocked<
-    Pick<EntityManager, 'findOne' | 'insert' | 'update'>
+    Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
   >;
   let postgresDatabaseService: jest.MockedObjectDeep<PostgresDatabaseService>;
   let target: MembersRepository;
@@ -45,6 +43,7 @@ describe('MembersRepository', () => {
 
     inviteExpiresAt = faker.date.future();
     entityManager = {
+      find: jest.fn(),
       findOne: jest.fn(),
       insert: jest.fn(),
       update: jest.fn(),
@@ -60,7 +59,6 @@ describe('MembersRepository', () => {
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
-      walletsRepository,
     );
   });
 
@@ -68,11 +66,12 @@ describe('MembersRepository', () => {
     it('should insert a member invite when the user is not already in the space', async () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
+        type: InviteType.Wallet,
         address: wallet.address,
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
-      walletsRepository.find.mockResolvedValue([wallet]);
+      entityManager.find.mockResolvedValue([wallet]);
       entityManager.findOne.mockResolvedValue(null);
 
       await expect(
@@ -116,11 +115,12 @@ describe('MembersRepository', () => {
         .build();
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
+        type: InviteType.Wallet,
         address: wallet.address,
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
-      walletsRepository.find.mockResolvedValue([wallet]);
+      entityManager.find.mockResolvedValue([wallet]);
       entityManager.findOne.mockResolvedValue(existingMember);
 
       await target.inviteUsers({
@@ -167,11 +167,12 @@ describe('MembersRepository', () => {
         .build();
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
+        type: InviteType.Wallet,
         address: wallet.address,
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
-      walletsRepository.find.mockResolvedValue([wallet]);
+      entityManager.find.mockResolvedValue([wallet]);
       entityManager.findOne.mockResolvedValue(existingMember);
 
       await expect(
@@ -193,11 +194,12 @@ describe('MembersRepository', () => {
     it('should translate insert unique constraint races to a domain error', async () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
+        type: InviteType.Wallet,
         address: wallet.address,
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
-      walletsRepository.find.mockResolvedValue([wallet]);
+      entityManager.find.mockResolvedValue([wallet]);
       entityManager.findOne.mockResolvedValue(null);
       entityManager.insert.mockRejectedValue(
         new QueryFailedError(
