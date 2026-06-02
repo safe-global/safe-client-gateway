@@ -98,9 +98,12 @@ export class MessagesRepository implements IMessagesRepository {
       }
       results.push(mapQueueToMessage(message));
     }
-    // Keep `count` consistent with what we actually return: when wrong-chain
-    // messages are filtered out, the queue's count would otherwise overstate
-    // the number of results on this page.
+    // Best-effort: keep `count` consistent with what we actually return on
+    // this page when wrong-chain messages are filtered out. This only corrects
+    // for rows filtered on the current page — if `count` is a total across all
+    // pages and earlier pages also dropped rows, it can still over-report. The
+    // queue is queried with the chain id, so cross-chain results should be rare
+    // to begin with.
     const filteredOut = parsed.results.length - results.length;
     const count =
       parsed.count === null ? null : Math.max(0, parsed.count - filteredOut);

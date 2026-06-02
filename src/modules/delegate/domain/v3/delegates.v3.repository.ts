@@ -62,6 +62,9 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
         safe: d.safe,
         delegate: d.delegate,
         delegator: d.delegator,
+        // The queue allows a null label; the domain Delegate (and the
+        // tx-service v2 path) require a string. Coerce to '' so both backends
+        // represent "no label" identically for downstream consumers.
         label: d.label ?? '',
       })),
     };
