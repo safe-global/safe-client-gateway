@@ -903,6 +903,37 @@ describe('SafeRepository', () => {
       });
     });
 
+    it('should preserve the queue note in the executed-tx origin overlay', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .with('notes', 'a note')
+            .build(),
+        ),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe(
+        buildOrigin('App', 'https://app.example', 'a note'),
+      );
+    });
+
     it('should keep tx-service origin when the queue call fails', async () => {
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
