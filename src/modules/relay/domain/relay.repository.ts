@@ -17,7 +17,7 @@ export class RelayRepository {
     version: string;
     chainId: string;
     to: Address;
-    data: Address;
+    data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: Hex;
   }): Promise<Relay> {

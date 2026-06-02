@@ -52,6 +52,7 @@ import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-d
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
@@ -93,22 +94,18 @@ describe('LimitAddressesMapper', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    const erc20Decoder = new Erc20Decoder();
-    const safeDecoder = new SafeDecoder();
-    const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
-    const proxyFactoryDecoder = new ProxyFactoryDecoder();
-    const delayModifierDecoder = new DelayModifierDecoder();
-    const signerFactoryDecoder = new SignerFactoryDecoder();
-
-    target = new LimitAddressesMapper(
+    const relayTransactionHelper = new RelayTransactionHelper(
       mockSafeRepository,
-      erc20Decoder,
-      safeDecoder,
-      multiSendDecoder,
-      proxyFactoryDecoder,
-      delayModifierDecoder,
-      signerFactoryDecoder,
+      mockLoggingService,
+      new Erc20Decoder(),
+      new SafeDecoder(),
+      new MultiSendDecoder(mockLoggingService),
+      new ProxyFactoryDecoder(),
+      new DelayModifierDecoder(),
+      new SignerFactoryDecoder(),
     );
+
+    target = new LimitAddressesMapper(relayTransactionHelper);
   });
 
   describe('Recovery', () => {

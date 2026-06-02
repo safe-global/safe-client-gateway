@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -25,6 +25,7 @@ import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-e
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -914,10 +915,10 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserIdWithEmail', () => {
+  describe('findOrCreateByExtUserIdAndEmail', () => {
     it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
       await dbUserRepository.insert({
         status: 'ACTIVE',
@@ -953,44 +954,19 @@ describe('UsersRepository', () => {
         extUserId,
       });
       const userId = userInsertResult.identifiers[0].id as number;
-      const email = faker.internet.email();
+      const email = fakeEmailAddress();
 
-      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-        address: email,
-        verified: true,
-      });
+      await usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email);
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
-      expect(user.email).toBe(email.toLowerCase());
-    });
-
-    it('should not overwrite an existing email for the same user', async () => {
-      const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-      const existingEmail = faker.internet.email().toLowerCase();
-      const userInsertResult = await dbUserRepository.insert({
-        status: 'ACTIVE',
-        extUserId,
-        email: existingEmail,
-      });
-      const userId = userInsertResult.identifiers[0].id as number;
-
-      await usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-        address: faker.internet.email().toLowerCase(),
-        verified: true,
-      });
-
-      const user = await dbUserRepository.findOneOrFail({
-        where: { id: userId },
-      });
-      expect(user.email).toBe(existingEmail);
+      expect(user.email).toBe(email);
     });
 
     it('should throw when the email belongs to a different user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
       const extUserId = faker.string.uuid();
 
       await dbUserRepository.insert({
@@ -999,39 +975,26 @@ describe('UsersRepository', () => {
       });
 
       await expect(
-        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: email,
-          verified: true,
-        }),
+        usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email),
       ).rejects.toThrow(UserEmailAlreadyInUseError);
     });
 
-    it('should throw when an unverified email belongs to a different user', async () => {
+    it('should throw UnauthorizedException when the stored email differs from the OIDC email', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const email = faker.internet.email().toLowerCase();
+      const storedEmail = fakeEmailAddress();
       const extUserId = faker.string.uuid();
-
       await dbUserRepository.insert({
         status: 'ACTIVE',
-        email,
-      });
-      const userInsertResult = await dbUserRepository.insert({
-        status: 'ACTIVE',
+        email: storedEmail,
         extUserId,
       });
-      const userId = userInsertResult.identifiers[0].id as number;
 
       await expect(
-        usersRepository.findOrCreateByExtUserIdWithEmail(extUserId, {
-          address: email,
-          verified: false,
-        }),
-      ).rejects.toThrow(UserEmailAlreadyInUseError);
-
-      const user = await dbUserRepository.findOneOrFail({
-        where: { id: userId },
-      });
-      expect(user.email).toBeNull();
+        usersRepository.findOrCreateByExtUserIdAndEmail(
+          extUserId,
+          fakeEmailAddress(), // different email
+        ),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 
@@ -1150,6 +1113,60 @@ describe('UsersRepository', () => {
       expect(users).toHaveLength(2);
       expect(users[0].extUserId).toBe(extUserId1);
       expect(users[1].extUserId).toBe(extUserId2);
+    });
+  });
+
+  describe('findEmailsByIds', () => {
+    it('should return emails for users that have them', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email1 = faker.internet.email().toLowerCase();
+      const email2 = faker.internet.email().toLowerCase();
+      const user1 = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: email1,
+      });
+      const user2 = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: email2,
+      });
+      const userId1 = user1.identifiers[0].id as number;
+      const userId2 = user2.identifiers[0].id as number;
+
+      const result = await usersRepository.findEmailsByIds([userId1, userId2]);
+
+      expect(result).toEqual(
+        new Map([
+          [userId1, email1],
+          [userId2, email2],
+        ]),
+      );
+    });
+
+    it('should skip users with no email', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+      const userWithEmail = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userWithoutEmail = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userIdWithEmail = userWithEmail.identifiers[0].id as number;
+      const userIdWithoutEmail = userWithoutEmail.identifiers[0].id as number;
+
+      const result = await usersRepository.findEmailsByIds([
+        userIdWithEmail,
+        userIdWithoutEmail,
+      ]);
+
+      expect(result).toEqual(new Map([[userIdWithEmail, email]]));
+    });
+
+    it('should return empty map for non-existent user IDs', async () => {
+      const result = await usersRepository.findEmailsByIds([999999]);
+
+      expect(result).toEqual(new Map());
     });
   });
 });

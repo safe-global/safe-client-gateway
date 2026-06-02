@@ -22,6 +22,7 @@ import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 describe('MembersController', () => {
   let app: INestApplication<Server>;
@@ -88,10 +89,11 @@ describe('MembersController', () => {
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
+      const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
+      const userId = createUserResponse.body.id;
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -126,7 +128,7 @@ describe('MembersController', () => {
               name: user1Name,
               role: 'ADMIN',
               status: 'INVITED',
-              invitedBy: authPayloadDto.signer_address,
+              invitedBy: userId,
             },
             {
               userId: expect.any(Number),
@@ -134,7 +136,7 @@ describe('MembersController', () => {
               name: user2Name,
               role: 'MEMBER',
               status: 'INVITED',
-              invitedBy: authPayloadDto.signer_address,
+              invitedBy: userId,
             },
           ]),
         );
@@ -1205,10 +1207,11 @@ describe('MembersController', () => {
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
+      const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(201);
+      const adminUserId = createUserResponse.body.id;
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -1249,11 +1252,11 @@ describe('MembersController', () => {
                 status: 'ACTIVE',
                 name: `${spaceName} creator`,
                 alias: null,
-                invitedBy: null, // Space creator's `invitedBy` field value is null
+                invitedBy: null,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
-                  id: expect.any(Number),
+                  id: adminUserId,
                   status: 'ACTIVE',
                   email: null,
                   createdAt: expect.any(String),
@@ -1266,7 +1269,7 @@ describe('MembersController', () => {
                 status: 'INVITED',
                 name: user1Name,
                 alias: null,
-                invitedBy: authPayloadDto.signer_address,
+                invitedBy: adminUserId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -1283,7 +1286,7 @@ describe('MembersController', () => {
                 status: 'INVITED',
                 name: user2Name,
                 alias: null,
-                invitedBy: authPayloadDto.signer_address,
+                invitedBy: adminUserId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
                 user: {
@@ -1301,11 +1304,11 @@ describe('MembersController', () => {
 
     it('should return email for active members', async () => {
       const spaceName = nameBuilder();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
-      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+      const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
         faker.string.uuid(),
-        { address: email, verified: true },
+        email,
       );
       const authPayloadDto = oidcAuthPayloadDtoBuilder()
         .with('sub', userId.toString())
@@ -1342,11 +1345,11 @@ describe('MembersController', () => {
       const spaceName = nameBuilder();
       const invitedAddress = getAddress(faker.finance.ethereumAddress());
       const invitedName = faker.person.firstName();
-      const email = faker.internet.email().toLowerCase();
+      const email = fakeEmailAddress();
 
-      const userId = await usersRepository.findOrCreateByExtUserIdWithEmail(
+      const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
         faker.string.uuid(),
-        { address: email, verified: true },
+        email,
       );
       const authPayloadDto = oidcAuthPayloadDtoBuilder()
         .with('sub', userId.toString())

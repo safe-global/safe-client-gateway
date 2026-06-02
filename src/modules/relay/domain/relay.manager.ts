@@ -78,7 +78,7 @@ export class RelayManager implements IRelayManager {
       return this.noFeeCampaignRelayer;
     }
 
-    // Fallback, to use daily limit relayer. This is to ensure backward compatibility if dailyLimitRelayChainIds is not set becuase of missing environment variable.
+    // Fallback, to use daily limit relayer. This is to ensure backward compatibility if dailyLimitRelayChainIds is not set because of missing environment variable.
     return this.dailyLimitRelayer;
   }
 }

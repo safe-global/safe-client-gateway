@@ -13,6 +13,7 @@ import type {
   UserStatus,
 } from '@/modules/users/domain/entities/user.entity';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
@@ -35,7 +36,7 @@ export interface IUsersRepository {
   create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: EmailAddress },
   ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
@@ -62,12 +63,16 @@ export interface IUsersRepository {
 
   findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
 
-  findOrCreateByExtUserIdWithEmail(
+  findOrCreateByExtUserIdAndEmail(
     extUserId: string,
-    email?: { address: string; verified: boolean },
+    email: EmailAddress,
   ): Promise<User['id']>;
 
-  findEmailById(userId: User['id']): Promise<string | undefined>;
+  findEmailById(userId: User['id']): Promise<EmailAddress | undefined>;
+
+  findEmailsByIds(
+    userIds: Array<User['id']>,
+  ): Promise<Map<User['id'], string> | null>;
 
   update(args: {
     userId: User['id'];
