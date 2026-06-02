@@ -314,6 +314,37 @@ export class QueueService implements IQueue {
     }
   }
 
+  async updateDelegate(args: {
+    chainId: string;
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
+    signature: string;
+    label: string;
+  }): Promise<void> {
+    try {
+      const url = `${this.baseUri}/api/v1/delegates`;
+      await this.networkService.patch({
+        url,
+        data: {
+          delegate: args.delegate,
+          delegator: args.delegator,
+          signature: args.signature,
+          chainId: Number(args.chainId),
+          safe: args.safeAddress ?? undefined,
+          label: args.label,
+        },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async deleteDelegate(args: {
     chainId: string;
     delegate: Address;
