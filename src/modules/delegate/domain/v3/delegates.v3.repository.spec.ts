@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
 import type { Address } from 'viem';
+import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -80,7 +80,10 @@ describe('DelegatesV3Repository', () => {
       it('uses the transaction service and returns parsed delegates', async () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const delegates = [delegateBuilder().build(), delegateBuilder().build()];
+        const delegates = [
+          delegateBuilder().build(),
+          delegateBuilder().build(),
+        ];
         const page = pageBuilder()
           .with('results', delegates)
           .with('count', delegates.length)
@@ -194,11 +197,12 @@ describe('DelegatesV3Repository', () => {
           .with('results', [queueDelegate as unknown as QueueDelegate])
           .with('count', 1)
           .build();
-        mockQueueService.getDelegates.mockResolvedValue(
-          rawify(page) as never,
-        );
+        mockQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
 
-        const result = await repository.getDelegates({ chainId, safeAddress: safe });
+        const result = await repository.getDelegates({
+          chainId,
+          safeAddress: safe,
+        });
 
         expect(mockQueueService.getDelegates).toHaveBeenCalledTimes(1);
         expect(mockQueueService.getDelegates).toHaveBeenCalledWith({
@@ -234,9 +238,7 @@ describe('DelegatesV3Repository', () => {
           .with('results', [queueDelegate as unknown as QueueDelegate])
           .with('count', 1)
           .build();
-        mockQueueService.getDelegates.mockResolvedValue(
-          rawify(page) as never,
-        );
+        mockQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
 
         const result = await repository.getDelegates({ chainId });
 
