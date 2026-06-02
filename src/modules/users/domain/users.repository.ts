@@ -211,6 +211,7 @@ export class UsersRepository implements IUsersRepository {
         return existing.user.id;
       }
 
+      // `status` only applies when creating a user for a new wallet.
       const userId = await this.create(status, manager);
       const insert = await manager
         .createQueryBuilder()
@@ -250,7 +251,7 @@ export class UsersRepository implements IUsersRepository {
    * Used by the email-invite path: the placeholder will be claimed by the
    * eventual OIDC sign-in via {@link findOrCreateByExtUserIdAndEmail}.
    */
-  public findOrCreatePendingByEmail(
+  public findOrCreateByEmail(
     email: EmailAddress,
     entityManager?: EntityManager,
   ): Promise<User['id']> {

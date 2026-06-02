@@ -672,7 +672,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        invitedBy: null,
       });
       const users = faker.helpers.multiple(
         () => {
@@ -727,7 +727,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        invitedBy: null,
       });
       const users = faker.helpers.multiple(
         () => {

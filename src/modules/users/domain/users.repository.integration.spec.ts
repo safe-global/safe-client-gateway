@@ -1047,12 +1047,12 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreatePendingByEmail', () => {
+  describe('findOrCreateByEmail', () => {
     it('should insert a PENDING user when no row with the email exists', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const email = fakeEmailAddress();
 
-      const userId = await usersRepository.findOrCreatePendingByEmail(email);
+      const userId = await usersRepository.findOrCreateByEmail(email);
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
@@ -1065,8 +1065,8 @@ describe('UsersRepository', () => {
     it('should be idempotent and return the existing user id on repeated calls', async () => {
       const email = fakeEmailAddress();
 
-      const first = await usersRepository.findOrCreatePendingByEmail(email);
-      const second = await usersRepository.findOrCreatePendingByEmail(email);
+      const first = await usersRepository.findOrCreateByEmail(email);
+      const second = await usersRepository.findOrCreateByEmail(email);
 
       expect(first).toBe(second);
     });
@@ -1081,9 +1081,9 @@ describe('UsersRepository', () => {
       });
       const existingId = insertResult.identifiers[0].id as number;
 
-      await expect(
-        usersRepository.findOrCreatePendingByEmail(email),
-      ).resolves.toBe(existingId);
+      await expect(usersRepository.findOrCreateByEmail(email)).resolves.toBe(
+        existingId,
+      );
     });
   });
 

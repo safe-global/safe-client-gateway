@@ -1,26 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import {
+  emailInviteUserDtoBuilder,
+  walletInviteUserDtoBuilder,
+} from '@/modules/spaces/routes/entities/__tests__/invite-user.dto.builder';
 import { InviteUsersDtoSchema } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
-
-const walletInviteItem = (): Record<string, unknown> => ({
-  type: 'wallet',
-  address: getAddress(faker.finance.ethereumAddress()),
-  role: 'MEMBER',
-  name: faker.person.firstName(),
-});
-
-const emailInviteItem = (): Record<string, unknown> => ({
-  type: 'email',
-  email: faker.internet.email(),
-  role: 'MEMBER',
-  name: faker.person.firstName(),
-});
 
 describe('InviteUsersDtoSchema', () => {
   it('should validate a wallet invite with explicit type', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [walletInviteItem()],
+      users: [walletInviteUserDtoBuilder().build()],
     });
 
     expect(result.success).toBe(true);
@@ -28,7 +18,7 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should validate an email invite with explicit type', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [emailInviteItem()],
+      users: [emailInviteUserDtoBuilder().build()],
     });
 
     expect(result.success).toBe(true);
@@ -36,14 +26,17 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should validate a mixed batch of wallet and email invites', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [walletInviteItem(), emailInviteItem()],
+      users: [
+        walletInviteUserDtoBuilder().build(),
+        emailInviteUserDtoBuilder().build(),
+      ],
     });
 
     expect(result.success).toBe(true);
   });
 
   it('should infer type=wallet for legacy clients sending address without type', () => {
-    const { type: _type, ...legacy } = walletInviteItem();
+    const { type: _type, ...legacy } = walletInviteUserDtoBuilder().build();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [legacy] });
 
@@ -52,7 +45,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject an email-shaped item that omits `type`', () => {
-    const { type: _type, ...legacy } = emailInviteItem();
+    const { type: _type, ...legacy } = emailInviteUserDtoBuilder().build();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [legacy] });
 
@@ -61,7 +54,12 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should normalize email to lowercase via EmailAddressSchema', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...emailInviteItem(), email: 'Mixed.Case@Example.COM' }],
+      users: [
+        {
+          ...emailInviteUserDtoBuilder().build(),
+          email: 'Mixed.Case@Example.COM',
+        },
+      ],
     });
 
     expect(result.success).toBe(true);
@@ -72,7 +70,9 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject an invalid email format', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...emailInviteItem(), email: 'not-an-email' }],
+      users: [
+        { ...emailInviteUserDtoBuilder().build(), email: 'not-an-email' },
+      ],
     });
 
     expect(result.success).toBe(false);
@@ -93,7 +93,7 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject an item missing the role field', () => {
-    const { role: _role, ...wallet } = walletInviteItem();
+    const { role: _role, ...wallet } = walletInviteUserDtoBuilder().build();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [wallet] });
 
@@ -101,7 +101,8 @@ describe('InviteUsersDtoSchema', () => {
   });
 
   it('should reject a wallet item missing the address', () => {
-    const { address: _address, ...wallet } = walletInviteItem();
+    const { address: _address, ...wallet } =
+      walletInviteUserDtoBuilder().build();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [wallet] });
 
@@ -110,14 +111,16 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject a wallet item with an invalid address', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), address: 'not-an-address' }],
+      users: [
+        { ...walletInviteUserDtoBuilder().build(), address: 'not-an-address' },
+      ],
     });
 
     expect(result.success).toBe(false);
   });
 
   it('should reject an email item missing the email', () => {
-    const { email: _email, ...email } = emailInviteItem();
+    const { email: _email, ...email } = emailInviteUserDtoBuilder().build();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [email] });
 
@@ -127,7 +130,7 @@ describe('InviteUsersDtoSchema', () => {
   it('should reject an email exceeding 255 characters', () => {
     const longEmail = `${'a'.repeat(251)}@b.co`;
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...emailInviteItem(), email: longEmail }],
+      users: [{ ...emailInviteUserDtoBuilder().build(), email: longEmail }],
     });
 
     expect(result.success).toBe(false);
@@ -135,14 +138,14 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject an unknown type value', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), type: 'admin' }],
+      users: [{ ...walletInviteUserDtoBuilder().build(), type: 'admin' }],
     });
 
     expect(result.success).toBe(false);
   });
 
   it('should reject an item missing the name field', () => {
-    const { name: _name, ...wallet } = walletInviteItem();
+    const { name: _name, ...wallet } = walletInviteUserDtoBuilder().build();
 
     const result = InviteUsersDtoSchema.safeParse({ users: [wallet] });
 
@@ -151,7 +154,9 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject a name exceeding 30 characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), name: 'a'.repeat(31) }],
+      users: [
+        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(31) },
+      ],
     });
 
     expect(result.success).toBe(false);
@@ -159,7 +164,7 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject a name shorter than 3 characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), name: 'ab' }],
+      users: [{ ...walletInviteUserDtoBuilder().build(), name: 'ab' }],
     });
 
     expect(result.success).toBe(false);
@@ -167,7 +172,7 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject a whitespace-only name', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), name: '   ' }],
+      users: [{ ...walletInviteUserDtoBuilder().build(), name: '   ' }],
     });
 
     expect(result.success).toBe(false);
@@ -175,7 +180,7 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject a name with invalid characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), name: '<>@!' }],
+      users: [{ ...walletInviteUserDtoBuilder().build(), name: '<>@!' }],
     });
 
     expect(result.success).toBe(false);
@@ -183,7 +188,7 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject an invalid role value', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), role: 'OWNER' }],
+      users: [{ ...walletInviteUserDtoBuilder().build(), role: 'OWNER' }],
     });
 
     expect(result.success).toBe(false);
@@ -203,7 +208,12 @@ describe('InviteUsersDtoSchema', () => {
 
   it('should reject a wallet item that also carries an email field (strict)', () => {
     const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteItem(), email: faker.internet.email() }],
+      users: [
+        {
+          ...walletInviteUserDtoBuilder().build(),
+          email: faker.internet.email(),
+        },
+      ],
     });
 
     expect(result.success).toBe(false);
@@ -213,7 +223,7 @@ describe('InviteUsersDtoSchema', () => {
     const result = InviteUsersDtoSchema.safeParse({
       users: [
         {
-          ...emailInviteItem(),
+          ...emailInviteUserDtoBuilder().build(),
           address: getAddress(faker.finance.ethereumAddress()),
         },
       ],

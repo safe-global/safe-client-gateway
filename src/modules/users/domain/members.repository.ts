@@ -155,11 +155,10 @@ export class MembersRepository implements IMembersRepository {
             break;
           }
           case InviteType.Email: {
-            userIdToInvite =
-              await this.usersRepository.findOrCreatePendingByEmail(
-                userToInvite.email,
-                entityManager,
-              );
+            userIdToInvite = await this.usersRepository.findOrCreateByEmail(
+              userToInvite.email,
+              entityManager,
+            );
             break;
           }
         }

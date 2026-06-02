@@ -67,7 +67,7 @@ export interface IUsersRepository {
     entityManager?: EntityManager,
   ): Promise<User['id']>;
 
-  findOrCreatePendingByEmail(
+  findOrCreateByEmail(
     email: EmailAddress,
     entityManager?: EntityManager,
   ): Promise<User['id']>;
