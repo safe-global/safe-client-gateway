@@ -602,6 +602,41 @@ describe('SafeRepository', () => {
       });
     });
 
+    it('should keep tx-service origin when the queue record has only a note (no name/url)', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', buildOrigin('TxName', 'https://tx.example'))
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: null,
+            originUrl: null,
+            notes: 'a note',
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: buildOrigin('TxName', 'https://tx.example'),
+      });
+    });
+
     it('should leave non-multisig entries (ethereum, module) untouched', async () => {
       const multisig = multisigTransactionBuilder()
         .with('safe', safeAddress)
