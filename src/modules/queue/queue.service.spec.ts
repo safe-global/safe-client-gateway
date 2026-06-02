@@ -260,6 +260,66 @@ describe('QueueService', () => {
     });
   });
 
+  describe('proposeTransaction note handling', () => {
+    it('sends the note (embedded in the origin) to the queue service as notes', async () => {
+      const note = faker.lorem.sentence();
+      const dto = proposeTransactionDtoBuilder()
+        .with(
+          'origin',
+          JSON.stringify({
+            name: faker.company.name(),
+            url: faker.internet.url({ appendSlash: false }),
+            note,
+          }),
+        )
+        .build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ notes: note }),
+        }),
+      );
+    });
+
+    it('sends a null note when the origin has no note', async () => {
+      const dto = proposeTransactionDtoBuilder()
+        .with(
+          'origin',
+          JSON.stringify({
+            name: faker.company.name(),
+            url: faker.internet.url({ appendSlash: false }),
+          }),
+        )
+        .build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ notes: null }),
+        }),
+      );
+    });
+  });
+
   describe('circuit breaker', () => {
     const withCircuitBreakerKey = expect.objectContaining({
       networkRequest: expect.objectContaining({

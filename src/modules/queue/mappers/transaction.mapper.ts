@@ -35,7 +35,7 @@ export function mapQueueToMultisigTransaction(
     transactionHash: tx.txHash,
     isExecuted: tx.txHash !== null,
     isSuccessful: !tx.failed,
-    origin: buildOrigin(tx.originName, tx.originUrl),
+    origin: buildOrigin(tx.originName, tx.originUrl, tx.notes),
     executionDate: null,
     blockNumber: null,
     executor: null,
