@@ -704,7 +704,9 @@ export default () => ({
       ),
     },
     simulation: {
-      enabledChainIds: process.env.RELAY_SIMULATION_CHAIN_IDS?.split(',') ?? [],
+      enabledChainIds:
+        process.env.RELAY_SIMULATION_CHAIN_IDS?.split(',').filter(Boolean) ??
+        [],
     },
   },
   safeConfig: {
