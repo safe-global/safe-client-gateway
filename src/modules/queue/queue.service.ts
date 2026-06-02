@@ -115,7 +115,7 @@ export class QueueService implements IQueue {
         chainId: args.chainId,
         safeTransactionHash: args.safeTxHash,
       });
-      const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
       const data = await this.dataSource.get({
         cacheDir,
         url,
@@ -217,7 +217,7 @@ export class QueueService implements IQueue {
     signature: string;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}/signatures`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}/signatures`;
       const { data } = await this.networkService.post<unknown>({
         url,
         data: { signatures: [args.signature] },
@@ -239,7 +239,7 @@ export class QueueService implements IQueue {
     signature: string;
   }): Promise<void> {
     try {
-      const url = `${this.baseUri}/api/v1/multisig-transactions/${args.safeTxHash}`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
       await this.networkService.delete({
         url,
         data: { signature: args.signature },
@@ -391,7 +391,7 @@ export class QueueService implements IQueue {
         chainId: args.chainId,
         messageHash: args.messageHash,
       });
-      const url = `${this.baseUri}/api/v1/messages/${args.messageHash}`;
+      const url = `${this.baseUri}/api/v1/messages/${encodeURIComponent(args.messageHash)}`;
       const data = await this.dataSource.get({
         cacheDir,
         url,
@@ -422,7 +422,7 @@ export class QueueService implements IQueue {
         limit: args.limit,
         offset: args.offset,
       });
-      const url = `${this.baseUri}/api/v1/safes/${args.safeAddress}/messages`;
+      const url = `${this.baseUri}/api/v1/safes/${encodeURIComponent(args.safeAddress)}/messages`;
       const data = await this.dataSource.get({
         cacheDir,
         url,
@@ -454,7 +454,7 @@ export class QueueService implements IQueue {
   }): Promise<unknown> {
     try {
       const { originName, originUrl } = parseOrigin(args.origin);
-      const url = `${this.baseUri}/api/v1/safes/${args.safeAddress}/messages`;
+      const url = `${this.baseUri}/api/v1/safes/${encodeURIComponent(args.safeAddress)}/messages`;
       const { data } = await this.networkService.post<unknown>({
         url,
         data: {
@@ -482,7 +482,7 @@ export class QueueService implements IQueue {
     signature: Hex;
   }): Promise<unknown> {
     try {
-      const url = `${this.baseUri}/api/v1/messages/${args.messageHash}/signatures`;
+      const url = `${this.baseUri}/api/v1/messages/${encodeURIComponent(args.messageHash)}/signatures`;
       const { data } = await this.networkService.post({
         url,
         data: { signatures: [args.signature] },

@@ -423,6 +423,26 @@ export class SafeRepository implements ISafeRepository {
     return true;
   }
 
+  /**
+   * Overlays the queue's origin metadata onto a tx-service transaction.
+   *
+   * Only overlays when the queue carries an actual origin identity (a name or
+   * url). Two cases must NOT touch the existing tx-service origin:
+   * - a not-yet-backfilled queue entry (all of name/url/notes null) would
+   *   otherwise wipe the origin to null;
+   * - a notes-only entry (name and url both null) would otherwise blank out
+   *   the tx-service name/url, keeping only the note.
+   * When name/url are present the queue is authoritative, so its note is
+   * layered on via buildOrigin.
+   */
+  private overlayQueueOrigin(
+    tx: MultisigTransaction,
+    queue: { originName: string | null; originUrl: string | null; notes: string | null },
+  ): void {
+    if (!(queue.originName || queue.originUrl)) return;
+    tx.origin = buildOrigin(queue.originName, queue.originUrl, queue.notes);
+  }
+
   private async bindQueueOrigins(
     txs: ReadonlyArray<Transaction>,
     chainId: string,
@@ -440,50 +460,7 @@ export class SafeRepository implements ISafeRepository {
       if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
         continue;
       }
-      // Only overlay when the queue actually has origin metadata. Older
-      // transactions may not be backfilled in the queue yet; treating an empty
-      // origin as "no update" preserves the tx-service origin instead of
-      // clobbering it with null.
-      const origin = buildOrigin(
-        queue.originName,
-        queue.originUrl,
-        queue.notes,
-      );
-      if (origin !== null) {
-        tx.origin = origin;
-      }
-    }
-  }
-
-  private async bindQueueOrigin(
-    tx: MultisigTransaction,
-    chainId: string,
-  ): Promise<void> {
-    if (!this.queueServiceEnabled) return;
-    try {
-      const raw = await this.queueService.getMultisigTransaction({
-        chainId,
-        safeTxHash: tx.safeTxHash,
-      });
-      const queue = QueueMultisigTransactionSchema.parse(raw);
-      if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
-        return;
-      }
-      // Only overlay when the queue actually has origin metadata (see
-      // bindQueueOrigins) so a not-yet-backfilled queue entry doesn't wipe the
-      // tx-service origin.
-      const origin = buildOrigin(
-        queue.originName,
-        queue.originUrl,
-        queue.notes,
-      );
-      if (origin !== null) {
-        tx.origin = origin;
-      }
-    } catch (error) {
-      this.loggingService.warn(
-        `Failed to fetch origin from queue service. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=${error}`,
-      );
+      this.overlayQueueOrigin(tx, queue);
     }
   }
 
@@ -509,7 +486,13 @@ export class SafeRepository implements ISafeRepository {
           ]
         : []),
     ]);
-    if (results.some((r) => r.status === 'rejected')) {
+    const errors = results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => r.reason);
+    if (errors.length > 0) {
+      this.loggingService.debug(
+        `Failed to clear all executed transactions from one or more caches. errors=${errors}`,
+      );
       throw new Error('Failed to clear all executed transactions');
     }
   }
@@ -536,7 +519,13 @@ export class SafeRepository implements ISafeRepository {
           ]
         : []),
     ]);
-    if (results.some((r) => r.status === 'rejected')) {
+    const errors = results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => r.reason);
+    if (errors.length > 0) {
+      this.loggingService.debug(
+        `Failed to clear multisig transaction from one or more caches. errors=${errors}`,
+      );
       throw new Error('Failed to clear multisig transaction');
     }
   }
@@ -570,9 +559,7 @@ export class SafeRepository implements ISafeRepository {
     opts: { noCache: boolean },
   ): Promise<MultisigTransaction> {
     if (!this.queueServiceEnabled) {
-      const tx = await this.fetchTxServiceMultisig(args, opts);
-      await this.bindQueueOrigin(tx, args.chainId);
-      return tx;
+      return this.fetchTxServiceMultisig(args, opts);
     }
 
     let queue: QueueMultisigTransactionEntity;
@@ -599,17 +586,7 @@ export class SafeRepository implements ISafeRepository {
           safe: tx.safe,
         })
       ) {
-        // Only overlay when the queue actually has origin metadata (see
-        // bindQueueOrigins) so a not-yet-backfilled queue entry doesn't wipe
-        // the tx-service origin.
-        const origin = buildOrigin(
-          queue.originName,
-          queue.originUrl,
-          queue.notes,
-        );
-        if (origin !== null) {
-          tx.origin = origin;
-        }
+        this.overlayQueueOrigin(tx, queue);
       }
       return tx;
     }
@@ -707,7 +684,13 @@ export class SafeRepository implements ISafeRepository {
           ]
         : []),
     ]);
-    if (results.some((r) => r.status === 'rejected')) {
+    const errors = results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => r.reason);
+    if (errors.length > 0) {
+      this.loggingService.debug(
+        `Failed to clear multisig transactions from one or more caches. errors=${errors}`,
+      );
       throw new Error('Failed to clear multisig transactions');
     }
   }
