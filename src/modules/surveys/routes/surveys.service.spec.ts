@@ -55,10 +55,7 @@ describe('SurveysService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new SurveysService(
-      surveysRepositoryMock,
-      membersRepositoryMock,
-    );
+    service = new SurveysService(surveysRepositoryMock, membersRepositoryMock);
     userId = faker.number.int({ min: 1, max: 1_000_000 });
     spaceId = faker.number.int({ min: 1, max: 1_000_000 });
     authPayload = new AuthPayload(

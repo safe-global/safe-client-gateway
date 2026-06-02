@@ -536,7 +536,10 @@ describe('SpacesService', () => {
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
-        service.getActiveOrInvitedSpace('00000000-0000-0000-0000-000000000000', authPayload),
+        service.getActiveOrInvitedSpace(
+          '00000000-0000-0000-0000-000000000000',
+          authPayload,
+        ),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
@@ -549,7 +552,10 @@ describe('SpacesService', () => {
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
-        service.getActiveOrInvitedSpace('00000000-0000-0000-0000-000000000000', authPayload),
+        service.getActiveOrInvitedSpace(
+          '00000000-0000-0000-0000-000000000000',
+          authPayload,
+        ),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 

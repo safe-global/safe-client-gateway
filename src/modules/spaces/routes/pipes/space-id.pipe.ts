@@ -14,7 +14,9 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
  * client error contracts stay stable.
  */
 @Injectable()
-export class SpaceIdPipe implements PipeTransform<string, Promise<Space['id']>> {
+export class SpaceIdPipe
+  implements PipeTransform<string, Promise<Space['id']>>
+{
   private readonly uuidPipe = new ParseUUIDPipe();
 
   constructor(
