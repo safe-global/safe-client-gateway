@@ -34,6 +34,7 @@ import { UserAddressBookService } from '@/modules/spaces/routes/user-address-boo
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
+import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 @Module({
   imports: [
@@ -49,6 +50,7 @@ import { UsersModule } from '@/modules/users/users.module';
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     UserIdentityResolverModule,
+    WalletsModule,
   ],
   controllers: [
     AddressBooksController,

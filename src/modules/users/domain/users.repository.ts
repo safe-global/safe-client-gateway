@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -354,6 +354,25 @@ export class UsersRepository implements IUsersRepository {
 
     // /me omits absent email fields, so normalize null/missing rows to undefined.
     return user?.email ?? undefined;
+  }
+
+  public async findEmailsByIds(
+    userIds: Array<User['id']>,
+  ): Promise<Map<User['id'], string> | null> {
+    if (!userIds.length) return null;
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const users = await userRepository.find({
+      where: { id: In(userIds) },
+      select: { id: true, email: true },
+    });
+
+    return new Map(
+      users.flatMap(
+        (user): Array<[User['id'], string]> =>
+          user.email ? [[user.id, user.email]] : [],
+      ),
+    );
   }
 
   private isUniqueConstraintViolation(

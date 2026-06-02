@@ -15,6 +15,7 @@ import type {
 import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 export class SpacesService {
   public constructor(
@@ -24,6 +25,8 @@ export class SpacesService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async create(args: {
@@ -38,13 +41,35 @@ export class SpacesService {
     return await this.spacesRepository.create({ userId, ...args });
   }
 
-  public async getActiveOrInvitedSpaces(
+  public getActiveOrInvitedSpaces(
     authPayload: AuthPayload,
+  ): Promise<Array<GetSpaceResponse>> {
+    return this.findSpaces(authPayload);
+  }
+
+  public async getActiveOrInvitedSpace(
+    id: number,
+    authPayload: AuthPayload,
+  ): Promise<GetSpaceResponse> {
+    const [space] = await this.findSpaces(authPayload, id);
+    if (!space) {
+      throw new NotFoundException('Space not found.');
+    }
+    return space;
+  }
+
+  private async findSpaces(
+    authPayload: AuthPayload,
+    spaceId?: number,
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const members = await this.membersRepository.find({
-      where: { user: { id: userId }, status: In(['ACTIVE', 'INVITED']) },
+      where: {
+        user: { id: userId },
+        status: In(['ACTIVE', 'INVITED']),
+        ...(spaceId != null && { space: { id: spaceId } }),
+      },
       relations: ['space'],
     });
     if (members.length === 0) {
@@ -67,24 +92,28 @@ export class SpacesService {
       relations: { members: { user: true }, safes: true },
     });
 
-    return spaces.map((space) => ({
-      id: space.id,
-      name: space.name,
-      members: space.members,
-      safeCount: space.safes?.length ?? 0,
-    }));
-  }
+    const invitedByNames = await this.resolveInvitedByNames(spaces);
 
-  public async getActiveOrInvitedSpace(
-    id: number,
-    authPayload: AuthPayload,
-  ): Promise<GetSpaceResponse> {
-    const spaces = await this.getActiveOrInvitedSpaces(authPayload);
-    const space = spaces.find((space) => space.id === id);
-    if (!space) {
-      throw new NotFoundException('Space not found.');
-    }
-    return space;
+    return spaces.map((space) => {
+      const memberUserIds = new Set(
+        space.members.map((member) => member.user.id),
+      );
+
+      return {
+        id: space.id,
+        name: space.name,
+        members: space.members.map((member) => ({
+          ...member,
+          ...(member.status === 'INVITED' &&
+            member.invitedBy != null &&
+            memberUserIds.has(member.invitedBy) &&
+            invitedByNames.has(member.invitedBy) && {
+              invitedByName: invitedByNames.get(member.invitedBy),
+            }),
+        })),
+        safeCount: space.safes?.length ?? 0,
+      };
+    });
   }
 
   public async update(args: {
@@ -96,6 +125,61 @@ export class SpacesService {
     await assertAdmin(this.spacesRepository, args.id, userId);
 
     return await this.spacesRepository.update(args);
+  }
+
+  /**
+   * Resolves display names for valid inviters only:
+   * - invited member has invitedBy set
+   * - inviter is still a member of the same space
+   *
+   * Wallet address is preferred over email.
+   *
+   * Note: the returned map is keyed by user ID across all spaces. Callers must
+   * re-check per-space membership before applying a name, since the same user
+   * may be a valid inviter in one space and not a member of another.
+   */
+  private async resolveInvitedByNames(
+    spaces: Array<Space>,
+  ): Promise<Map<number, string>> {
+    const userIds = Array.from(
+      new Set(
+        spaces.flatMap((space) => {
+          const memberUserIds = new Set(
+            space.members.map((member) => member.user.id),
+          );
+
+          return space.members.flatMap((member): Array<number> => {
+            return member.status === 'INVITED' &&
+              member.invitedBy != null &&
+              memberUserIds.has(member.invitedBy)
+              ? [member.invitedBy]
+              : [];
+          });
+        }),
+      ),
+    );
+
+    if (!userIds.length) {
+      return new Map();
+    }
+    const result = new Map<number, string>();
+
+    // Batch 1: resolve via wallets (preferred)
+    const wallets = await this.walletsRepository.find({
+      where: { user: { id: In(userIds) } },
+      select: { address: true, user: { id: true } },
+      relations: { user: true },
+    });
+    for (const wallet of wallets) {
+      if (!result.has(wallet.user.id)) {
+        result.set(wallet.user.id, wallet.address);
+      }
+    }
+
+    // Batch 2: resolve remaining via email (OIDC-only users)
+    const unresolvedIds = userIds.filter((id) => !result.has(id));
+    const emails = await this.usersRepository.findEmailsByIds(unresolvedIds);
+    return new Map([...result, ...(emails ?? [])]);
   }
 
   public async delete(args: {

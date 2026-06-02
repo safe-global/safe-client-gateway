@@ -114,6 +114,8 @@ export class MembersRepository implements IMembersRepository {
       role: Member['role'];
     }>;
   }): Promise<Array<Invitation>> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });
@@ -124,12 +126,6 @@ export class MembersRepository implements IMembersRepository {
       relations: { user: true },
     });
     const invitations: Array<Invitation> = [];
-
-    // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
-    // address to store here. Revisit when OIDC invite identifiers are available.
-    const invitedBy = args.authPayload.isSiwe()
-      ? args.authPayload.signer_address
-      : null;
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       for (const userToInvite of args.users) {
@@ -151,7 +147,7 @@ export class MembersRepository implements IMembersRepository {
             name: userToInvite.name,
             role: userToInvite.role,
             status: 'INVITED',
-            invitedBy,
+            invitedBy: userId,
           });
         } catch (err) {
           if (isUniqueConstraintError(err)) {
@@ -168,7 +164,7 @@ export class MembersRepository implements IMembersRepository {
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
-          invitedBy,
+          invitedBy: userId,
         });
       }
     });
