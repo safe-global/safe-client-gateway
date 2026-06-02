@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, toEventSelector } from 'viem';
+import { ZodError } from 'zod';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -27,6 +28,41 @@ import { TenderlySimulationResponseSchema } from '@/modules/relay/datasources/sc
  */
 const SIMULATION_URL = 'https://simulation.safe.global/';
 
+
+function formatNetworkError(error: unknown): string {
+  if (error instanceof NetworkResponseError) {
+    return `HTTP ${error.response.status} from ${error.url.toString()} — body=${JSON.stringify(error.data)}`;
+  }
+  if (error instanceof NetworkRequestError) {
+    const url = error.url?.toString() ?? '<unknown>';
+    return `network request error to ${url} — ${formatErrorCause(error.data)}`;
+  }
+  if (error instanceof Error) {
+    return formatError(error);
+  }
+  return JSON.stringify(error);
+}
+
+function formatErrorCause(cause: unknown): string {
+  if (!(cause instanceof Error)) {
+    return JSON.stringify(cause);
+  }
+  const nested =
+    'cause' in cause && cause.cause ? ` (cause: ${formatCause(cause.cause)})` : '';
+  return `${formatError(cause)}${nested}`;
+}
+
+function formatCause(cause: unknown): string {
+  return cause instanceof Error
+    ? `${cause.name}: ${cause.message}`
+    : String(cause);
+}
+
+function formatError(error: Error): string {
+  const stack = error.stack ? `\n${error.stack}` : '';
+  return `${error.name}: ${error.message}${stack}`;
+}
+
 /**
  * Topic for the Safe's `ExecutionFailure(bytes32 txHash, uint256 payment)`
  * event. When `execTransaction` runs with `gasPrice > 0` and the inner call
@@ -37,8 +73,20 @@ const SAFE_EXECUTION_FAILURE_TOPIC = toEventSelector(
   'event ExecutionFailure(bytes32 txHash, uint256 payment)',
 ).toLowerCase();
 
+/**
+ * Block gas limits change slowly relative to the relay request rate, so we
+ * cache them per chain with a short TTL to avoid one RPC roundtrip per
+ * simulation. 30s is well below any realistic gas limit change cadence.
+ */
+const BLOCK_GAS_LIMIT_TTL_MS = 30_000;
+
 @Injectable()
 export class TenderlySimulationApi implements ITenderlySimulationApi {
+  private readonly blockGasLimitCache = new Map<
+    string,
+    { gasLimit: bigint; expiresAt: number }
+  >();
+
   constructor(
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
@@ -49,8 +97,16 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
   ) {}
 
   private async getLatestBlockGasLimit(chainId: string): Promise<bigint> {
+    const cached = this.blockGasLimitCache.get(chainId);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.gasLimit;
+    }
     const client = await this.blockchainApiManager.getApi(chainId);
     const block = await client.getBlock({ blockTag: 'latest' });
+    this.blockGasLimitCache.set(chainId, {
+      gasLimit: block.gasLimit,
+      expiresAt: Date.now() + BLOCK_GAS_LIMIT_TTL_MS,
+    });
     return block.gasLimit;
   }
 
@@ -66,8 +122,10 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
       // relay request's `gasLimit` is what Gelato will use on-chain and is
       // typically too tight to cover the simulation's overhead (refund path,
       // etc.). Mirrors what the Safe frontend does when no explicit
-      // simulation gas budget is supplied.
-      const gas = Number(await this.getLatestBlockGasLimit(args.chainId));
+      // simulation gas budget is supplied. Serialised as a decimal string to
+      // avoid a lossy bigint → Number cast for chains with very large gas
+      // limits.
+      const gas = (await this.getLatestBlockGasLimit(args.chainId)).toString();
       const { data: raw } = await this.networkService.post<unknown>({
         url: SIMULATION_URL,
         data: {
@@ -78,7 +136,7 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
           value: (args.value ?? 0n).toString(),
           gas,
           gas_price: '0',
-          save: true,
+          save: false,
           save_if_fails: true,
         },
       });
@@ -110,28 +168,18 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
 
       return { success: true };
     } catch (error) {
-      let details: string;
-      if (error instanceof NetworkResponseError) {
-        details = `HTTP ${error.response.status} from ${error.url.toString()} — body=${JSON.stringify(error.data)}`;
-      } else if (error instanceof NetworkRequestError) {
-        const cause = error.data;
-        const causeStr =
-          cause instanceof Error
-            ? `${cause.name}: ${cause.message}${
-                'cause' in cause && cause.cause
-                  ? ` (cause: ${cause.cause instanceof Error ? `${cause.cause.name}: ${cause.cause.message}` : String(cause.cause)})`
-                  : ''
-              }${cause.stack ? `\n${cause.stack}` : ''}`
-            : JSON.stringify(cause);
-        details = `network request error to ${error.url?.toString() ?? '<unknown>'} — ${causeStr}`;
-      } else if (error instanceof Error) {
-        details = `${error.name}: ${error.message}${error.stack ? `\n${error.stack}` : ''}`;
+      if (error instanceof ZodError) {
+        // Schema mismatch — Tenderly likely changed their response shape.
+        // Logged at `error` (not `warn`) so it's distinguishable from
+        // transient network failures and can be alerted on.
+        this.loggingService.error(
+          `Tenderly simulation response schema mismatch for ${args.to} on chain ${args.chainId}: ${formatError(error)}`,
+        );
       } else {
-        details = JSON.stringify(error);
+        this.loggingService.warn(
+          `Tenderly simulation failed for ${args.to} on chain ${args.chainId}: ${formatNetworkError(error)}`,
+        );
       }
-      this.loggingService.warn(
-        `Tenderly simulation failed for ${args.to} on chain ${args.chainId}: ${details}`,
-      );
       return { success: false, reason: 'Simulation request failed' };
     }
   }
