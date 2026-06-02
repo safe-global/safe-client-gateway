@@ -412,13 +412,13 @@ export class CacheRouter {
   static getQueuedTransactionsCacheDir(args: {
     chainId: string;
     safeAddress: Address;
-    ordering?: string;
+    nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getQueueMultisigTransactionsCacheKey(args),
-      `queue_${args.ordering}_${args.limit}_${args.offset}`,
+      `queue_${args.nonceOrder}_${args.limit}_${args.offset}`,
     );
   }
 

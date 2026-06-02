@@ -74,7 +74,7 @@ export class QueueService implements IQueue {
       const { originName, originUrl } = parseOrigin(dto.origin);
 
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
-      return await this.networkService.post({
+      const { data } = await this.networkService.post<unknown>({
         url,
         data: {
           chainId: Number(args.chainId),
@@ -99,6 +99,7 @@ export class QueueService implements IQueue {
           },
         },
       });
+      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -144,7 +145,11 @@ export class QueueService implements IQueue {
       for (let i = 0; i < args.safeTxHashes.length; i += chunkSize) {
         chunks.push(args.safeTxHashes.slice(i, i + chunkSize));
       }
-      const responses = await Promise.all(
+      // Use allSettled so a single failing chunk (e.g. a 5xx) doesn't discard
+      // the transactions returned by the other chunks. Hashes belonging to a
+      // failed chunk simply won't appear in the merged result; the caller
+      // detects and logs those omissions, preserving partial enrichment.
+      const responses = await Promise.allSettled(
         chunks.map((chunk) => {
           const query = new URLSearchParams();
           for (const hash of chunk) {
@@ -161,8 +166,10 @@ export class QueueService implements IQueue {
           });
         }),
       );
-      const merged = responses.flatMap(({ data }) =>
-        QueueMultisigTransactionListSchema.parse(data),
+      const merged = responses.flatMap((response) =>
+        response.status === 'fulfilled'
+          ? QueueMultisigTransactionListSchema.parse(response.value.data)
+          : [],
       );
       return rawify(merged);
     } catch (error) {
@@ -173,14 +180,14 @@ export class QueueService implements IQueue {
   async getTransactionQueue(args: {
     chainId: string;
     safeAddress: Address;
-    ordering?: string;
+    nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<QueueMultisigTransactionEntity>>> {
     try {
       const cacheDir = CacheRouter.getQueuedTransactionsCacheDir(args);
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
-      const nonceOrder = args.ordering?.includes('-') ? 'desc' : 'asc';
+      const nonceOrder = args.nonceOrder ?? 'asc';
       return await this.dataSource.get<Page<QueueMultisigTransactionEntity>>({
         cacheDir,
         url,

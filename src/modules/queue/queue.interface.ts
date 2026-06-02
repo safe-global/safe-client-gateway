@@ -30,7 +30,9 @@ export interface IQueue {
   getTransactionQueue(args: {
     chainId: string;
     safeAddress: Address;
-    ordering?: string;
+    // The queue service can only order the queue by nonce. Callers translate
+    // their desired tx-service ordering into a nonce direction explicitly.
+    nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<QueueMultisigTransactionEntity>>>;

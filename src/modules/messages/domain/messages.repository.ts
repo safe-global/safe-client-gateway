@@ -98,7 +98,13 @@ export class MessagesRepository implements IMessagesRepository {
       }
       results.push(mapQueueToMessage(message));
     }
-    return { ...parsed, results };
+    // Keep `count` consistent with what we actually return: when wrong-chain
+    // messages are filtered out, the queue's count would otherwise overstate
+    // the number of results on this page.
+    const filteredOut = parsed.results.length - results.length;
+    const count =
+      parsed.count === null ? null : Math.max(0, parsed.count - filteredOut);
+    return { ...parsed, count, results };
   }
 
   async createMessage(args: {
