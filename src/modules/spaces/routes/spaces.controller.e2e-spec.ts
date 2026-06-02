@@ -108,7 +108,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -180,7 +180,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: expect.any(String),
           }),
         );
@@ -251,7 +251,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -269,7 +269,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            id: expect.any(String),
             name: spaceName,
           }),
         );
@@ -353,7 +353,7 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual([
             {
-              id: expect.any(Number),
+              id: expect.any(String),
               name: firstSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               createdAt: expect.any(String),
@@ -379,7 +379,7 @@ describe('SpacesController', () => {
               ],
             },
             {
-              id: expect.any(Number),
+              id: expect.any(String),
               name: secondSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               createdAt: expect.any(String),
