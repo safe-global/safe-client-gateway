@@ -217,6 +217,7 @@ describe('SpacesRepository', () => {
 
       expect(space).toEqual({
         id: expect.any(Number),
+        uuid: expect.any(String),
         name,
       });
 
@@ -248,6 +249,7 @@ describe('SpacesRepository', () => {
         },
         space: {
           id: expect.any(Number),
+          uuid: expect.any(String),
           name,
           status: spaceStatus,
           createdAt: expect.any(Date),
@@ -280,6 +282,7 @@ describe('SpacesRepository', () => {
         }),
       ).resolves.toEqual({
         id: expect.any(Number),
+        uuid: expect.any(String),
         name,
       });
 
@@ -353,6 +356,7 @@ describe('SpacesRepository', () => {
 
       expect(space).toEqual({
         id: expect.any(Number),
+        uuid: expect.any(String),
         name: spaceName,
       });
 
@@ -450,10 +454,13 @@ describe('SpacesRepository', () => {
         spacesRepository.findOneOrFail({ where: { id: space.id } }),
       ).resolves.toEqual({
         id: space.id,
+        uuid: space.uuid,
         name,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
+        members: undefined,
+        safes: undefined,
       });
     });
 
@@ -488,10 +495,13 @@ describe('SpacesRepository', () => {
         spacesRepository.findOne({ where: { id: space.id } }),
       ).resolves.toEqual({
         id: space.id,
+        uuid: space.uuid,
         name,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
+        members: undefined,
+        safes: undefined,
       });
     });
 
@@ -536,17 +546,23 @@ describe('SpacesRepository', () => {
       ).resolves.toEqual([
         {
           id: space1.id,
+          uuid: space1.uuid,
           name: spaceName1,
           status: spaceStatus1,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
+          members: undefined,
+          safes: undefined,
         },
         {
           id: space2.id,
+          uuid: space2.uuid,
           name: spaceName2,
           status: spaceStatus2,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
+          members: undefined,
+          safes: undefined,
         },
       ]);
     });
@@ -594,17 +610,23 @@ describe('SpacesRepository', () => {
       ).resolves.toEqual([
         {
           id: space1.id,
+          uuid: space1.uuid,
           name: spaceName1,
           status: spaceStatus1,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
+          members: undefined,
+          safes: undefined,
         },
         {
           id: space2.id,
+          uuid: space2.uuid,
           name: spaceName2,
           status: spaceStatus2,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
+          members: undefined,
+          safes: undefined,
         },
       ]);
     });
@@ -642,10 +664,13 @@ describe('SpacesRepository', () => {
         }),
       ).resolves.toEqual({
         id: space.id,
+        uuid: space.uuid,
         name: spaceName,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
+        members: undefined,
+        safes: undefined,
       });
     });
 
@@ -682,10 +707,13 @@ describe('SpacesRepository', () => {
         }),
       ).resolves.toEqual({
         id: space.id,
+        uuid: space.uuid,
         name: spaceName,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
+        members: undefined,
+        safes: undefined,
       });
     });
 
@@ -730,10 +758,13 @@ describe('SpacesRepository', () => {
 
       expect(dbSpace).toEqual({
         id: space.id,
+        uuid: space.uuid,
         name: newName,
         status: newStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
+        members: undefined,
+        safes: undefined,
       });
     });
   });

@@ -666,6 +666,7 @@ describe('MembersRepository', () => {
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
+      const spaceUuid = space.generatedMaps[0].uuid;
       await dbMembersRepository.insert({
         user: owner,
         space: space.generatedMaps[0],
@@ -697,7 +698,7 @@ describe('MembersRepository', () => {
         users.map((user) => {
           return {
             userId: expect.any(Number),
-            spaceId,
+            spaceId: spaceUuid,
             name: user.name,
             role: user.role,
             status: 'INVITED',
@@ -721,6 +722,7 @@ describe('MembersRepository', () => {
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
+      const spaceUuid = space.generatedMaps[0].uuid;
       await dbMembersRepository.insert({
         user: owner,
         space: space.generatedMaps[0],
@@ -752,7 +754,7 @@ describe('MembersRepository', () => {
         users.map((user) => {
           return {
             userId: expect.any(Number),
-            spaceId,
+            spaceId: spaceUuid,
             name: user.name,
             role: user.role,
             status: 'INVITED',
