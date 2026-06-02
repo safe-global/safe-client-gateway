@@ -64,15 +64,16 @@ export class SpacesService {
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
+    const spaceScope = spaceId != null ? { space: { id: spaceId } } : {};
     const members = await this.membersRepository.find({
       where: [
-        { user: { id: userId }, status: 'ACTIVE' },
+        { user: { id: userId }, status: 'ACTIVE', ...spaceScope },
         {
           user: { id: userId },
           status: 'INVITED',
           inviteExpiresAt: MoreThan(new Date()),
+          ...spaceScope,
         },
-        { ...(spaceId != null && { space: { id: spaceId } }) },
       ],
       relations: ['space'],
     });
