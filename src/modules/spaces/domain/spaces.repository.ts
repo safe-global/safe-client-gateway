@@ -17,6 +17,7 @@ import {
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
@@ -207,14 +208,20 @@ export class SpacesRepository implements ISpacesRepository {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 
-    await spaceRepository.update(args.id, args.updatePayload);
+    const result = await spaceRepository
+      .createQueryBuilder()
+      .update(Space)
+      .set(args.updatePayload)
+      .where({ id: args.id })
+      .returning(['id', 'uuid'])
+      .execute();
 
-    const space = await this.findOneOrFail({
-      where: { id: args.id },
-      select: { id: true, uuid: true },
-    });
+    const row = result.raw[0] as Pick<Space, 'id' | 'uuid'> | undefined;
+    if (!row) {
+      throw new NotFoundException('Space not found.');
+    }
 
-    return { id: space.id, uuid: space.uuid };
+    return { id: row.id, uuid: row.uuid };
   }
 
   public async findIdByUuid(uuid: Space['uuid']): Promise<Space['id']> {
@@ -229,6 +236,9 @@ export class SpacesRepository implements ISpacesRepository {
   public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
     if (/^\d+$/.test(value)) {
       const numericId = Number(value);
+      if (!Number.isSafeInteger(numericId) || numericId > DB_MAX_SAFE_INTEGER) {
+        throw new BadRequestException('Invalid space identifier');
+      }
       const space = await this.findOneOrFail({
         where: { id: numericId },
         select: { id: true },

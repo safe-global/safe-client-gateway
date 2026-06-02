@@ -123,15 +123,9 @@ export class SpacesService {
 
   // TODO: remove after FE removes numeric Space ID fallback.
   public async resolveUuid(idOrUuid: string): Promise<string> {
-    if (
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        idOrUuid,
-      )
-    ) {
-      return idOrUuid;
-    }
+    const id = await this.spacesRepository.findIdByIdOrUuid(idOrUuid);
     const space = await this.spacesRepository.findOneOrFail({
-      where: { id: await this.spacesRepository.findIdByIdOrUuid(idOrUuid) },
+      where: { id },
       select: { uuid: true },
     });
     return space.uuid;
