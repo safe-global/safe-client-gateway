@@ -14,6 +14,7 @@ import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
 import { SpaceCounterfactualSafesService } from '@/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 
 @ApiTags('spaces')
 @Controller({
@@ -52,13 +53,9 @@ export class SpaceCounterfactualSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId') spaceIdOrUuid: string,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetCounterfactualSafesResponse> {
-    const spaceId =
-      await this.spaceCounterfactualSafesService.getNumericIdLenient(
-        spaceIdOrUuid,
-      );
     return await this.spaceCounterfactualSafesService.get(spaceId, authPayload);
   }
 }

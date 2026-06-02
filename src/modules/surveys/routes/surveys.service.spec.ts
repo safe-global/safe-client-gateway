@@ -8,7 +8,6 @@ import {
 } from '@nestjs/common';
 import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { surveyBuilder } from '@/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
 import type {
   Survey,
@@ -32,11 +31,6 @@ const surveysRepositoryMock = {
 const membersRepositoryMock = {
   findOne: jest.fn(),
 } as unknown as jest.MockedObjectDeep<IMembersRepository>;
-
-const spacesRepositoryMock = {
-  findIdByUuid: jest.fn(),
-  findIdByIdOrUuid: jest.fn(),
-} as unknown as jest.MockedObjectDeep<ISpacesRepository>;
 
 function buildSurvey(pages: Array<SurveyPage>): Survey {
   return surveyBuilder()
@@ -64,7 +58,6 @@ describe('SurveysService', () => {
     service = new SurveysService(
       surveysRepositoryMock,
       membersRepositoryMock,
-      spacesRepositoryMock,
     );
     userId = faker.number.int({ min: 1, max: 1_000_000 });
     spaceId = faker.number.int({ min: 1, max: 1_000_000 });

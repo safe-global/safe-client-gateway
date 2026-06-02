@@ -7,7 +7,6 @@ import {
   Inject,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Post,
   Put,
   UseGuards,
@@ -35,6 +34,10 @@ import {
   CreateAddressBookRequestDto,
   CreateAddressBookRequestSchema,
 } from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -69,9 +72,8 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async getPendingRequests(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId') spaceIdOrUuid: string,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<AddressBookRequestsDto> {
-    const spaceId = await this.service.getNumericIdLenient(spaceIdOrUuid);
     return await this.service.findPending(authPayload, spaceId);
   }
 
@@ -104,11 +106,10 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async createRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(CreateAddressBookRequestSchema))
     dto: CreateAddressBookRequestDto,
   ): Promise<AddressBookRequestItemDto> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.createRequest(authPayload, spaceId, dto.address);
   }
 
@@ -140,11 +141,10 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async approveRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.approve(authPayload, spaceId, requestId);
   }
 
@@ -176,11 +176,10 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async rejectRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.reject(authPayload, spaceId, requestId);
   }
 }

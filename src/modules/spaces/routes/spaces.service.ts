@@ -131,15 +131,6 @@ export class SpacesService {
     return space.uuid;
   }
 
-  public async getNumericId(uuid: string): Promise<Space['id']> {
-    return await this.spacesRepository.findIdByUuid(uuid);
-  }
-
-  // TODO: remove after FE removes numeric Space ID fallback.
-  public async getNumericIdLenient(value: string): Promise<Space['id']> {
-    return await this.spacesRepository.findIdByIdOrUuid(value);
-  }
-
   public async update(args: {
     id: Space['id'];
     updatePayload: UpdateSpaceDto;

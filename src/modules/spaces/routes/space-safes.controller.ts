@@ -7,7 +7,6 @@ import {
   HttpCode,
   Inject,
   Param,
-  ParseUUIDPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -30,6 +29,10 @@ import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-spa
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -79,10 +82,9 @@ export class SpaceSafesController {
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
-    const spaceId = await this.spaceSafesService.getNumericId(spaceUuid);
     return await this.spaceSafesService.create({
       spaceId,
       authPayload,
@@ -118,11 +120,9 @@ export class SpaceSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId') spaceIdOrUuid: string,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
-    const spaceId =
-      await this.spaceSafesService.getNumericIdLenient(spaceIdOrUuid);
     return await this.spaceSafesService.get(spaceId, authPayload);
   }
 
@@ -162,10 +162,9 @@ export class SpaceSafesController {
   public async delete(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: DeleteSpaceSafesDto,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
-    const spaceId = await this.spaceSafesService.getNumericId(spaceUuid);
     return await this.spaceSafesService.delete({
       authPayload,
       payload: body.safes,

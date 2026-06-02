@@ -8,7 +8,6 @@ import { transformCounterfactualSafesResponse } from '@/modules/counterfactual-s
 import type { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
@@ -21,18 +20,7 @@ export class SpaceCounterfactualSafesService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(ICounterfactualSafesRepository)
     private readonly counterfactualSafesRepository: ICounterfactualSafesRepository,
-    @Inject(ISpacesRepository)
-    private readonly spacesRepository: ISpacesRepository,
   ) {}
-
-  public async getNumericId(uuid: string): Promise<Space['id']> {
-    return await this.spacesRepository.findIdByUuid(uuid);
-  }
-
-  // TODO: remove after FE removes numeric Space ID fallback.
-  public async getNumericIdLenient(value: string): Promise<Space['id']> {
-    return await this.spacesRepository.findIdByIdOrUuid(value);
-  }
 
   public async get(
     spaceId: Space['id'],

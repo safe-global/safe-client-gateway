@@ -5,7 +5,6 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
@@ -23,21 +22,10 @@ export class AddressBooksService {
     private readonly identityResolver: UserIdentityResolverService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(ISpacesRepository)
-    private readonly spacesRepository: ISpacesRepository,
   ) {
     this.maxItems = this.configurationService.getOrThrow<number>(
       'spaces.addressBooks.maxItems',
     );
-  }
-
-  public async getNumericId(uuid: string): Promise<Space['id']> {
-    return await this.spacesRepository.findIdByUuid(uuid);
-  }
-
-  // TODO: remove after FE removes numeric Space ID fallback.
-  public async getNumericIdLenient(value: string): Promise<Space['id']> {
-    return await this.spacesRepository.findIdByIdOrUuid(value);
   }
 
   public async findAllBySpaceId(

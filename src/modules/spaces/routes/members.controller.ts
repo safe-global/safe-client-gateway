@@ -8,7 +8,6 @@ import {
   Inject,
   Param,
   ParseIntPipe,
-  ParseUUIDPipe,
   Patch,
   Post,
   UseGuards,
@@ -50,6 +49,10 @@ import {
   UpdateRoleDtoSchema,
 } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -94,11 +97,10 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(InviteUsersDtoSchema))
     inviteUsersDto: InviteUsersDto,
   ): Promise<Array<Invitation>> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.inviteUser({
       authPayload,
       spaceId,
@@ -140,11 +142,10 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(AcceptInviteDtoSchema))
     acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.acceptInvite({
       authPayload,
       spaceId,
@@ -180,9 +181,8 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<void> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.declineInvite({
       authPayload,
       spaceId,
@@ -264,10 +264,8 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId') spaceIdOrUuid: string,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<MembersDto> {
-    const spaceId =
-      await this.membersService.getNumericIdLenient(spaceIdOrUuid);
     return await this.membersService.get({
       authPayload,
       spaceId,
@@ -300,10 +298,8 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getMembership(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId') spaceIdOrUuid: string,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<MemberDto> {
-    const spaceId =
-      await this.membersService.getNumericIdLenient(spaceIdOrUuid);
     return await this.membersService.getSelfMembership({
       authPayload,
       spaceId,
@@ -351,13 +347,12 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
     updateRoleDto: UpdateRoleDto,
   ): Promise<void> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.updateRole({
       authPayload,
       spaceId,
@@ -381,11 +376,10 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateAlias(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
     updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     await this.membersService.updateAlias({
       authPayload,
       spaceId,
@@ -429,11 +423,10 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<void> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.removeUser({
       authPayload,
       spaceId,
@@ -458,9 +451,8 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async selfRemove(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<void> {
-    const spaceId = await this.membersService.getNumericId(spaceUuid);
     return await this.membersService.selfRemove({
       authPayload,
       spaceId,

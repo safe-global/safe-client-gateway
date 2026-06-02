@@ -12,7 +12,6 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
@@ -45,10 +44,6 @@ const spaceInviteEmailServiceMock = {
   enqueueRenewalEmail: jest.fn(),
 } as jest.MockedObjectDeep<SpaceInviteEmailService>;
 
-const spacesRepositoryMock = {
-  findOneOrFail: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
-
 describe('MembersService', () => {
   let service: MembersService;
 
@@ -67,7 +62,6 @@ describe('MembersService', () => {
     service = new MembersService(
       membersRepositoryMock,
       configurationServiceMock,
-      spacesRepositoryMock,
       spaceInviteEmailServiceMock,
     );
   });

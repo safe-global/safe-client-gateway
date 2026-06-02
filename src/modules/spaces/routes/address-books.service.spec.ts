@@ -10,7 +10,6 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
@@ -37,10 +36,6 @@ const walletsRepositoryMock = {
   find: jest.fn(),
 } as jest.MockedObjectDeep<IWalletsRepository>;
 
-const spacesRepositoryMock = {
-  findOneOrFail: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
-
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
@@ -56,7 +51,6 @@ describe('AddressBooksService', () => {
         walletsRepositoryMock,
       ),
       configurationServiceMock,
-      spacesRepositoryMock,
     );
   });
 

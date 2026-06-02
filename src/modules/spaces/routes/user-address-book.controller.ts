@@ -7,7 +7,6 @@ import {
   Get,
   Inject,
   Param,
-  ParseUUIDPipe,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -31,6 +30,10 @@ import {
   UpsertAddressBookItemsDto,
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -67,9 +70,8 @@ export class UserAddressBookController {
   @UseGuards(AuthGuard)
   public async getPrivateItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId') spaceIdOrUuid: string,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<UserAddressBookDto> {
-    const spaceId = await this.service.getNumericIdLenient(spaceIdOrUuid);
     return await this.service.findAll(authPayload, spaceId);
   }
 
@@ -100,11 +102,10 @@ export class UserAddressBookController {
   @UseGuards(AuthGuard)
   public async upsertPrivateItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     dto: UpsertAddressBookItemsDto,
   ): Promise<UserAddressBookDto> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.upsertMany(authPayload, spaceId, dto);
   }
 
@@ -135,11 +136,10 @@ export class UserAddressBookController {
   @UseGuards(AuthGuard)
   public async deletePrivateItem(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseUUIDPipe) spaceUuid: string,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    const spaceId = await this.service.getNumericId(spaceUuid);
     return await this.service.deleteByAddress({
       authPayload,
       spaceId,

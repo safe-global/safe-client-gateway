@@ -32,6 +32,10 @@ import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.contro
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { UserAddressBookController } from '@/modules/spaces/routes/user-address-book.controller';
 import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -94,6 +98,8 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
       provide: IAddressBookRequestsRepository,
       useClass: AddressBookRequestsRepository,
     },
+    SpaceIdPipe,
+    LegacySpaceIdPipe,
   ],
   exports: [
     ISpacesRepository,
@@ -101,6 +107,8 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     IAddressBookItemsRepository,
     IUserAddressBookItemsRepository,
     IAddressBookRequestsRepository,
+    SpaceIdPipe,
+    LegacySpaceIdPipe,
   ],
 })
 export class SpacesModule {}
