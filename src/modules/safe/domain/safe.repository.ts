@@ -659,7 +659,13 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    return transactionService.clearMultisigTransactions(args.safeAddress);
+    await transactionService.clearMultisigTransactions(args.safeAddress);
+    if (this.queueServiceEnabled) {
+      await this.queueService.clearAllTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      });
+    }
   }
 
   async getMultisigTransactionsWithNoCache(args: {
@@ -927,7 +933,7 @@ export class SafeRepository implements ISafeRepository {
     });
 
     if (this.queueServiceEnabled) {
-      return this.queueService.proposeTransaction({
+      return await this.queueService.proposeTransaction({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         proposeTransactionDto: args.proposeTransactionDto,
