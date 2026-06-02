@@ -372,8 +372,6 @@ export class UsersRepository implements IUsersRepository {
       { extUserId, status: 'ACTIVE' },
     );
 
-    // Lost a race to a concurrent claim; let the caller fall through to
-    // INSERT, where idx_users_email will surface UserEmailAlreadyInUseError.
     return result.affected === 1 ? candidate.id : null;
   }
 
@@ -427,8 +425,6 @@ export class UsersRepository implements IUsersRepository {
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
-      // Zero affected rows means another request backfilled this user after
-      // reconcileEmail saw email=null; that is idempotent for this path.
     } catch (error) {
       if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();
