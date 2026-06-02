@@ -1077,11 +1077,13 @@ describe('SafeRepository', () => {
       expect(
         mockTransactionApi.getMultisigTransactionWithNoCache,
       ).not.toHaveBeenCalled();
-      expect(mockTransactionVerifier.verifyApiTransaction).toHaveBeenCalledWith({
-        chainId,
-        safe,
-        transaction: result,
-      });
+      expect(mockTransactionVerifier.verifyApiTransaction).toHaveBeenCalledWith(
+        {
+          chainId,
+          safe,
+          transaction: result,
+        },
+      );
     });
   });
 
