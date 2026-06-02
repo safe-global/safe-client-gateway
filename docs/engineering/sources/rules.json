@@ -92,7 +92,7 @@
     "rule": "Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters.",
     "check": "Are persistence workflows hidden behind repositories?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": ["RL-20260529-001"]
   },
   {
     "id": "MOD-03",
@@ -126,9 +126,9 @@
     "area": "modules",
     "title": "No new forwardRef cycles",
     "rule": "Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local debt; extract a third boundary instead of adding new ones.",
-    "check": "Did I avoid adding or expanding `forwardRef` cycles?",
+    "check": "Did I avoid adding or expanding `forwardRef` cycles, including not adding `forwardRef` where no circular dependency exists?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": ["RL-20260529-002"]
   },
   {
     "id": "MOD-06",
@@ -217,13 +217,15 @@
     "project": "general",
     "area": "types",
     "title": "Validate external inputs",
-    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance.",
-    "check": "Are external responses, token claims, queued jobs, and config strings validated before use?",
+    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings.",
+    "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
     ],
     "reviewLearningIds": [
-      "RL-20260116-002"
+      "RL-20260116-002",
+      "RL-20260526-001",
+      "RL-20260527-001"
     ]
   },
   {
@@ -231,8 +233,8 @@
     "project": "general",
     "area": "types",
     "title": "DTO matches wire shape",
-    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters.",
-    "check": "Do DTO fields match the actual wire shape?",
+    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time.",
+    "check": "Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?",
     "exampleRefs": [
       "examples/schemas-and-validation.md#type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays",
       "examples/schemas-and-validation.md#type-04-use-unions-for-exact-one-dto-shapes",
@@ -242,7 +244,8 @@
     "reviewLearningIds": [
       "RL-20260520-002",
       "RL-20260108-002",
-      "RL-20251223-001"
+      "RL-20251223-001",
+      "RL-20260602-003"
     ]
   },
   {
@@ -314,11 +317,12 @@
     "project": "general",
     "area": "auth",
     "title": "Space routes enforce membership before data access",
-    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data.",
-    "check": "Did this add or change a space-scoped route? If yes, is it auth-guarded and does the service assert membership/admin status before any data access?",
-    "exampleRefs": [],
+    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id.",
+    "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?",
+    "exampleRefs": ["examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"],
     "reviewLearningIds": [
-      "RL-20260520-001"
+      "RL-20260520-001",
+      "RL-20260602-001"
     ]
   },
   {
@@ -380,20 +384,20 @@
     "project": "general",
     "area": "database",
     "title": "Atomic state transitions",
-    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows.",
-    "check": "Are multi-step state transitions atomic?",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows.",
+    "check": "Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": ["RL-20260602-002"]
   },
   {
     "id": "DB-03",
     "project": "general",
     "area": "database",
     "title": "No redundant DB trips",
-    "rule": "Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant.",
-    "check": "Did I avoid redundant reads/writes and no-op DB trips?",
+    "rule": "Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING/`generatedMaps` instead of issuing a follow-up `find` after an insert/upsert.",
+    "check": "Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": ["RL-20260529-003"]
   },
   {
     "id": "DB-04",
@@ -410,8 +414,8 @@
     "project": "general",
     "area": "database",
     "title": "Migrations agree with code",
-    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`.",
-    "check": "Do migrations, entities, indexes, schemas, and tests agree?",
+    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match.",
+    "check": "Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?",
     "exampleRefs": [
       "examples/database-migrations.md#db-05-do-not-use-the-recorded-migration-id-as-an-array-index",
       "examples/database-migrations.md#db-05-migration-metadata-is-reviewed-not-copy-pasted"
@@ -419,7 +423,8 @@
     "reviewLearningIds": [
       "RL-20260520-003",
       "RL-20260506-007",
-      "RL-20260116-001"
+      "RL-20260116-001",
+      "RL-20260601-001"
     ]
   },
   {
@@ -532,13 +537,14 @@
     "project": "general",
     "area": "tests",
     "title": "Use builders and fakes",
-    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules.",
-    "check": "Did I use builders, fakes, and existing test helpers?",
+    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason.",
+    "check": "Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?",
     "exampleRefs": [
       "examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures"
     ],
     "reviewLearningIds": [
-      "RL-20260506-002"
+      "RL-20260506-002",
+      "RL-20260521-001"
     ]
   },
   {
@@ -553,7 +559,8 @@
     ],
     "reviewLearningIds": [
       "RL-20260506-001",
-      "RL-20260508-001"
+      "RL-20260508-001",
+      "RL-20260529-004"
     ]
   },
   {

@@ -95,3 +95,31 @@ also carries cookies, session tokens, and bodies. Hashing turns the
 material into an opaque identifier suitable for both lookup and
 diagnostics. A test that asserts `loggingService.info` is called with
 fields that do not include `Authorization` keeps the contract pinned.
+
+## AUTH-05 — Every OR clause of a membership where carries the user filter
+
+Source: PR #3115 (RL-20260602-001)
+
+### Avoid
+
+```ts
+// array where = OR; the third clause has no user filter
+where: [
+  { user: { id: userId }, status: 'ACTIVE' },
+  { user: { id: userId }, status: 'INVITED', inviteExpiresAt: MoreThan(new Date()) },
+  { ...(spaceId != null && { space: { id: spaceId } }) }, // matches any/all members
+],
+```
+
+### Prefer
+
+```ts
+const where = activeOrPendingMemberWhere(() => ({
+  ...(spaceId != null && { space: { id: spaceId } }),
+})); // helper spreads `user: { id: userId }` into every clause
+// → [{ user:{id}, status:'ACTIVE', space:{id} }, { user:{id}, status:'INVITED', inviteExpiresAt:MoreThan(now), space:{id} }]
+```
+
+### Why
+
+TypeORM treats an array `where` as OR. A clause that omits the `user: { id }` predicate matches members of any space (or every row when its own scope is undefined), turning a membership query into an authorization bypass. Centralize the predicate in a helper so every OR branch carries the ownership filter, and regression-test a non-member requesting a specific space id.

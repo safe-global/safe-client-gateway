@@ -743,5 +743,212 @@
     "ruleIds": [
       "DB-05"
     ]
+  },
+  {
+    "id": "RL-20260521-001",
+    "title": "Mutable test builder reused across cases leaked state between assertions",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3097
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4506519226
+    ],
+    "learning": "A spec reused one `multisigTransactionBuilder` across five `mapCustomTransaction` cases. `Builder.with()` mutates and returns `this`, so each `.with(...)` permanently changed state for later cases — the assertions passed for the wrong reasons and the test names misdescribed what was exercised. Build a fresh builder per case (or per assertion); never reuse a mutable builder across cases, since `.with()` is not a pure copy.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20260526-001",
+    "title": "Strict hex equality gave false mismatches without case normalization",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3112
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4542310263
+    ],
+    "learning": "Relay validation compared `stored.data` against viem's `decoded.data` with `!==`. viem emits lowercase hex, but the stored payload is only shape-validated (`NullableHexSchema`) and mixed-case hex is legal, so a case difference produced a false mismatch and rejected a legitimate relay. Normalize both sides (`.toLowerCase()`) before strict equality whenever comparing hex/address-like strings that may differ only in case.",
+    "ruleIds": [
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20260527-001",
+    "title": "Normalize and brand validated value types at the schema boundary",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3096,
+      3101
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3273044784
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4490386430
+    ],
+    "learning": "Email normalization (`.trim().toLowerCase()`) was repeated at every repository call site, and the new `EmailAddress` type was a bare `z.infer` alias (plain `string`) so any unnormalized string could be assigned without going through the schema. Normalize once at the validation boundary via a Zod `.toLowerCase()`/`.transform()` so consumers receive ready-to-use values, and `.brand<'X'>()` validated value types so the type system enforces that a value actually passed through the schema rather than being a same-shaped raw string.",
+    "ruleIds": [
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20260529-001",
+    "title": "Query method placed in the route service instead of the repository",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3107
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3311238509
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`findActiveSurveyOrFail` (a DB lookup) was defined on the route service. Methods that issue database queries belong in the repository layer; the service orchestrates and the repository owns persistence access. Keep query/`*OrFail` lookups in the repository so the boundary between orchestration and data access stays clean.",
+    "ruleIds": [
+      "MOD-02"
+    ]
+  },
+  {
+    "id": "RL-20260529-002",
+    "title": "forwardRef used without an actual circular dependency",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3107
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3311230574
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new module wrapped an import in `forwardRef(() => AuthModule)` although there was no circular dependency between the modules. `forwardRef` should only be used to break a genuine import cycle; adding it speculatively hides the real dependency graph and invites confusion. Drop it unless a cycle actually exists.",
+    "ruleIds": [
+      "MOD-05"
+    ]
+  },
+  {
+    "id": "RL-20260529-003",
+    "title": "Upsert followed by a redundant find instead of using its returned rows",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3107
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3318775977,
+      3310898651
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An upsert was followed by a separate `findOneOrFail` to read back generated columns. `repo.upsert()` already returns generated/default columns (e.g. `submittedAt`/`updatedAt`) in `result.generatedMaps`, so the extra round-trip was unnecessary. Read generated values from the write's RETURNING/`generatedMaps` instead of issuing a follow-up query.",
+    "ruleIds": [
+      "DB-03"
+    ]
+  },
+  {
+    "id": "RL-20260529-004",
+    "title": "Controller coverage written as e2e, which does not run in CI",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3107
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3318804344
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "New controller coverage was added as an e2e spec, which only runs on demand and not as part of CI, so the behavior was effectively unverified on every PR. Put coverage that must run on every CI run in an integration spec; reserve e2e specs for the on-demand suite. Match the test layer (and filename suffix) to where it should execute.",
+    "ruleIds": [
+      "TEST-02"
+    ]
+  },
+  {
+    "id": "RL-20260601-001",
+    "title": "Migration address join must normalize case on both sides",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3059
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3147884070
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A migration joined `wallets.address = members.invited_by` with raw equality, but `wallets.address` is stored checksummed via `databaseAddressTransformer`/`getAddress()` while `members.invited_by` may carry different casing. The preflight check then flagged same-address rows as unresolvable and aborted the migration. When a migration compares address columns where one side passes through a checksum transformer, normalize both sides (`LOWER(...)`) so equal addresses match regardless of stored case.",
+    "ruleIds": [
+      "DB-05"
+    ]
+  },
+  {
+    "id": "RL-20260602-001",
+    "title": "TypeORM array where dropped the user filter, leaking other spaces",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3115
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4601336470
+    ],
+    "learning": "Refactoring a single-object `where` into an array (`findSpaces`) introduced an authorization bypass: TypeORM treats array entries as OR, and one clause omitted the `user: { id: userId }` filter, so any authenticated user could read another space by id (and an undefined `spaceId` matched every member row). When converting an object `where` to an array, remember each entry is an independent OR branch — every clause must carry the ownership/membership predicate. Centralize the shared predicate in a helper (`activeOrPendingMemberWhere`) and add a non-member-requesting-a-spaceId regression test.",
+    "ruleIds": [
+      "AUTH-05"
+    ]
+  },
+  {
+    "id": "RL-20260602-002",
+    "title": "Find-or-create ran outside the outer transaction, leaking orphan rows",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3104
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3340260946
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4601146117
+    ],
+    "learning": "Inside `inviteUsers`, the wallet branch called `findOrCreateByWalletAddress(address, 'PENDING')` without the outer `EntityManager`, so the user+wallet creation ran in its own transaction. When the later per-item `DbMember` insert failed, the outer transaction rolled back the member but the freshly created `User`/`Wallet` rows stayed committed — orphan PENDING rows on every failed invite. Multi-step writes that must commit/roll back together must share the outer transaction's `EntityManager`; methods used inside a transaction should accept and thread an optional `EntityManager` rather than opening their own.",
+    "ruleIds": [
+      "DB-02"
+    ]
+  },
+  {
+    "id": "RL-20260602-003",
+    "title": "DTO Zod schema was looser than its documented @ApiProperty bounds",
+    "sourceWindowId": "CLOSED-20260520-20260602",
+    "prNumbers": [
+      3104
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3340168255,
+      3340169950
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4594494498
+    ],
+    "learning": "An invite DTO validated `name` with `z.string().max(255)` while its `@ApiProperty` advertised `minLength: 3`/`maxLength: 30` — so the runtime accepted empty/oversized names the OpenAPI contract forbade, and the DTO class could drift from the Zod schema. Make the DTO's Zod schema match the documented `@ApiProperty` bounds by reusing the canonical schema (`makeNameSchema()`), and have the DTO class `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Drop `export` on DTO classes only referenced within their own file.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
   }
 ]

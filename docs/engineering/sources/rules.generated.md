@@ -4,74 +4,75 @@
 
 ## 📑 Quick Index
 
-| ID | Title | Group |
-| --- | --- | --- |
-| [`CHANGE-01`](#change-01) | Smallest correct change | general / scope |
-| [`CHANGE-02`](#change-02) | No unrelated drive-by edits | general / scope |
-| [`CHANGE-03`](#change-03) | Tooling parity preserved | general / scope |
-| [`CHANGE-04`](#change-04) | External contracts versioned | general / scope |
-| [`PR-01`](#pr-01) | New abstractions justified | general / scope |
-| [`PR-02`](#pr-02) | Docs aligned with behavior | general / scope |
-| [`MOD-01`](#mod-01) | Behavior in the right module | general / modules |
-| [`MOD-02`](#mod-02) | Persistence behind repositories | general / modules |
-| [`MOD-03`](#mod-03) | No single-use DI abstractions | general / modules |
-| [`MOD-04`](#mod-04) | No private behavior leaks | general / modules |
-| [`MOD-05`](#mod-05) | No new forwardRef cycles | general / modules |
-| [`MOD-06`](#mod-06) | Route services behind repositories | general / modules |
-| [`NAME-01`](#name-01) | Names reveal behavior | general / naming |
-| [`REUSE-01`](#reuse-01) | Reuse existing helpers | general / naming |
-| [`STYLE-01`](#style-01) | Document non-trivial code | general / naming |
-| [`TYPE-01`](#type-01) | Use project types | general / types |
-| [`TYPE-02`](#type-02) | Schemas in entity files | general / types |
-| [`TYPE-03`](#type-03) | Validate external inputs | general / types |
-| [`TYPE-04`](#type-04) | DTO matches wire shape | general / types |
-| [`TYPE-05`](#type-05) | Parser generics complete | general / types |
-| [`TYPE-06`](#type-06) | No unsafe casts | general / types |
-| [`AUTH-01`](#auth-01) | Reuse auth assertions | general / auth |
-| [`AUTH-02`](#auth-02) | Identity supports SIWE and email | general / auth |
-| [`AUTH-03`](#auth-03) | Use proven auth/crypto libs | general / auth |
-| [`AUTH-04`](#auth-04) | Email exposure intentional | general / auth |
-| [`AUTH-05`](#auth-05) | Space routes enforce membership before data access | general / auth |
-| [`ROUTE-01`](#route-01) | Controllers are HTTP boundary | general / routes |
-| [`ROUTE-02`](#route-02) | Inputs validated at controller | general / routes |
-| [`ROUTE-03`](#route-03) | Stable empty shapes | general / routes |
-| [`DB-01`](#db-01) | Unique constraint matches lifecycle | general / database |
-| [`DB-02`](#db-02) | Atomic state transitions | general / database |
-| [`DB-03`](#db-03) | No redundant DB trips | general / database |
-| [`DB-04`](#db-04) | DB errors mapped at write boundary | general / database |
-| [`DB-05`](#db-05) | Migrations agree with code | general / database |
-| [`CACHE-01`](#cache-01) | Multi-step cache writes checked | general / cache |
-| [`CACHE-02`](#cache-02) | Cache keys cover all inputs | general / cache |
-| [`CONFIG-01`](#config-01) | Defaults safe and OSS-generic | general / config |
-| [`CONFIG-02`](#config-02) | Config fails fast | general / config |
-| [`CONFIG-03`](#config-03) | TTLs are config | general / config |
-| [`CONFIG-04`](#config-04) | Pinned runtime versions | general / config |
-| [`CONFIG-05`](#config-05) | Env metadata matches runtime | general / config |
-| [`PERF-01`](#perf-01) | Batch and parallelize I/O | general / performance |
-| [`TEST-01`](#test-01) | Use builders and fakes | general / tests |
-| [`TEST-02`](#test-02) | Right test layer (pyramid) | general / tests |
-| [`TEST-03`](#test-03) | No internal mock chains | general / tests |
-| [`TEST-04`](#test-04) | Cover security paths | general / tests |
-| [`TEST-05`](#test-05) | Scoped test cleanup | general / tests |
-| [`TEST-06`](#test-06) | Fixtures fail loudly | general / tests |
-| [`TEST-07`](#test-07) | Pipeline coverage | general / tests |
-| [`TEST-08`](#test-08) | Test names match assertions | general / tests |
-| [`TEST-09`](#test-09) | Cover edges and determinism | general / tests |
-| [`LOG-01`](#log-01) | Operational log levels | general / logging |
-| [`LOG-02`](#log-02) | No noisy success logs | general / logging |
-| [`LOG-03`](#log-03) | Telemetry cost-justified | general / logging |
-| [`LOG-04`](#log-04) | Structured logs and asError | general / logging |
-| [`SEC-01`](#sec-01) | Validate redirect targets | general / security |
-| [`SEC-02`](#sec-02) | Bounded sensitive fields | general / security |
-| [`CACHE-03`](#cache-03) | Cached payload shape is canonical once | general / cache |
-| [`DATA-01`](#data-01) | Aggregates match returned items and signed values | general / data |
-| [`RESILIENCE-01`](#resilience-01) | Resilience policy semantics | resilience |
+| ID                                | Title                                              | Group                 |
+| --------------------------------- | -------------------------------------------------- | --------------------- |
+| [`CHANGE-01`](#change-01)         | Smallest correct change                            | general / scope       |
+| [`CHANGE-02`](#change-02)         | No unrelated drive-by edits                        | general / scope       |
+| [`CHANGE-03`](#change-03)         | Tooling parity preserved                           | general / scope       |
+| [`CHANGE-04`](#change-04)         | External contracts versioned                       | general / scope       |
+| [`PR-01`](#pr-01)                 | New abstractions justified                         | general / scope       |
+| [`PR-02`](#pr-02)                 | Docs aligned with behavior                         | general / scope       |
+| [`MOD-01`](#mod-01)               | Behavior in the right module                       | general / modules     |
+| [`MOD-02`](#mod-02)               | Persistence behind repositories                    | general / modules     |
+| [`MOD-03`](#mod-03)               | No single-use DI abstractions                      | general / modules     |
+| [`MOD-04`](#mod-04)               | No private behavior leaks                          | general / modules     |
+| [`MOD-05`](#mod-05)               | No new forwardRef cycles                           | general / modules     |
+| [`MOD-06`](#mod-06)               | Route services behind repositories                 | general / modules     |
+| [`NAME-01`](#name-01)             | Names reveal behavior                              | general / naming      |
+| [`REUSE-01`](#reuse-01)           | Reuse existing helpers                             | general / naming      |
+| [`STYLE-01`](#style-01)           | Document non-trivial code                          | general / naming      |
+| [`TYPE-01`](#type-01)             | Use project types                                  | general / types       |
+| [`TYPE-02`](#type-02)             | Schemas in entity files                            | general / types       |
+| [`TYPE-03`](#type-03)             | Validate external inputs                           | general / types       |
+| [`TYPE-04`](#type-04)             | DTO matches wire shape                             | general / types       |
+| [`TYPE-05`](#type-05)             | Parser generics complete                           | general / types       |
+| [`TYPE-06`](#type-06)             | No unsafe casts                                    | general / types       |
+| [`AUTH-01`](#auth-01)             | Reuse auth assertions                              | general / auth        |
+| [`AUTH-02`](#auth-02)             | Identity supports SIWE and email                   | general / auth        |
+| [`AUTH-03`](#auth-03)             | Use proven auth/crypto libs                        | general / auth        |
+| [`AUTH-04`](#auth-04)             | Email exposure intentional                         | general / auth        |
+| [`AUTH-05`](#auth-05)             | Space routes enforce membership before data access | general / auth        |
+| [`ROUTE-01`](#route-01)           | Controllers are HTTP boundary                      | general / routes      |
+| [`ROUTE-02`](#route-02)           | Inputs validated at controller                     | general / routes      |
+| [`ROUTE-03`](#route-03)           | Stable empty shapes                                | general / routes      |
+| [`DB-01`](#db-01)                 | Unique constraint matches lifecycle                | general / database    |
+| [`DB-02`](#db-02)                 | Atomic state transitions                           | general / database    |
+| [`DB-03`](#db-03)                 | No redundant DB trips                              | general / database    |
+| [`DB-04`](#db-04)                 | DB errors mapped at write boundary                 | general / database    |
+| [`DB-05`](#db-05)                 | Migrations agree with code                         | general / database    |
+| [`CACHE-01`](#cache-01)           | Multi-step cache writes checked                    | general / cache       |
+| [`CACHE-02`](#cache-02)           | Cache keys cover all inputs                        | general / cache       |
+| [`CONFIG-01`](#config-01)         | Defaults safe and OSS-generic                      | general / config      |
+| [`CONFIG-02`](#config-02)         | Config fails fast                                  | general / config      |
+| [`CONFIG-03`](#config-03)         | TTLs are config                                    | general / config      |
+| [`CONFIG-04`](#config-04)         | Pinned runtime versions                            | general / config      |
+| [`CONFIG-05`](#config-05)         | Env metadata matches runtime                       | general / config      |
+| [`PERF-01`](#perf-01)             | Batch and parallelize I/O                          | general / performance |
+| [`TEST-01`](#test-01)             | Use builders and fakes                             | general / tests       |
+| [`TEST-02`](#test-02)             | Right test layer (pyramid)                         | general / tests       |
+| [`TEST-03`](#test-03)             | No internal mock chains                            | general / tests       |
+| [`TEST-04`](#test-04)             | Cover security paths                               | general / tests       |
+| [`TEST-05`](#test-05)             | Scoped test cleanup                                | general / tests       |
+| [`TEST-06`](#test-06)             | Fixtures fail loudly                               | general / tests       |
+| [`TEST-07`](#test-07)             | Pipeline coverage                                  | general / tests       |
+| [`TEST-08`](#test-08)             | Test names match assertions                        | general / tests       |
+| [`TEST-09`](#test-09)             | Cover edges and determinism                        | general / tests       |
+| [`LOG-01`](#log-01)               | Operational log levels                             | general / logging     |
+| [`LOG-02`](#log-02)               | No noisy success logs                              | general / logging     |
+| [`LOG-03`](#log-03)               | Telemetry cost-justified                           | general / logging     |
+| [`LOG-04`](#log-04)               | Structured logs and asError                        | general / logging     |
+| [`SEC-01`](#sec-01)               | Validate redirect targets                          | general / security    |
+| [`SEC-02`](#sec-02)               | Bounded sensitive fields                           | general / security    |
+| [`CACHE-03`](#cache-03)           | Cached payload shape is canonical once             | general / cache       |
+| [`DATA-01`](#data-01)             | Aggregates match returned items and signed values  | general / data        |
+| [`RESILIENCE-01`](#resilience-01) | Resilience policy semantics                        | resilience            |
 
 ---
 
 ## 🌐 general › scope
 
 <a id="change-01"></a>
+
 ### `CHANGE-01` Smallest correct change
 
 > **general** · scope
@@ -80,11 +81,13 @@
 A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require.
 
 **✅ Check**\
+
 > Is this the smallest correct change for the behavior?
 
 ---
 
 <a id="change-02"></a>
+
 ### `CHANGE-02` No unrelated drive-by edits
 
 > **general** · scope · 1 example · ↩ `RL-20251211-001`
@@ -93,6 +96,7 @@ A PR should be the smallest correct change for the behavior; avoid surrounding c
 Keep unrelated docs, config, formatting, or generated changes out of feature PRs.
 
 **✅ Check**\
+
 > Did I avoid unrelated docs/config/formatting/generated changes?
 
 <details>
@@ -148,6 +152,7 @@ focused review of why the test was flaky to begin with.
 ---
 
 <a id="change-03"></a>
+
 ### `CHANGE-03` Tooling parity preserved
 
 > **general** · scope
@@ -156,11 +161,13 @@ focused review of why the test was flaky to begin with.
 Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs.
 
 **✅ Check**\
+
 > If this is tooling work, did I preserve behavior, rule parity, and docs?
 
 ---
 
 <a id="change-04"></a>
+
 ### `CHANGE-04` External contracts versioned
 
 > **general** · scope · 1 example · ↩ `RL-20260108-001`
@@ -169,6 +176,7 @@ Tooling work (lint, formatter, build, CI, test runner) must preserve previous be
 Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release.
 
 **✅ Check**\
+
 > If this changes an external contract, is it versioned or explicitly backward-compatible?
 
 <details>
@@ -230,6 +238,7 @@ deleted with a clean PR that only touches the loader.
 ---
 
 <a id="pr-01"></a>
+
 ### `PR-01` New abstractions justified
 
 > **general** · scope
@@ -238,11 +247,13 @@ deleted with a clean PR that only touches the loader.
 New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason.
 
 **✅ Check**\
+
 > Can I justify every new abstraction or file?
 
 ---
 
 <a id="pr-02"></a>
+
 ### `PR-02` Docs aligned with behavior
 
 > **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003`
@@ -251,6 +262,7 @@ New files, providers, interfaces, helpers, factories, injection tokens, or modul
 Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR.
 
 **✅ Check**\
+
 > Are docs, samples, and runbooks aligned with the final behavior?
 
 ---
@@ -258,6 +270,7 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 ## 🌐 general › modules
 
 <a id="mod-01"></a>
+
 ### `MOD-01` Behavior in the right module
 
 > **general** · modules · ↩ `RL-20260128-002`
@@ -266,24 +279,28 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally.
 
 **✅ Check**\
+
 > Does new API/product behavior live in the right module?
 
 ---
 
 <a id="mod-02"></a>
+
 ### `MOD-02` Persistence behind repositories
 
-> **general** · modules
+> **general** · modules · ↩ `RL-20260529-001`
 
 **📜 Rule**\
 Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters.
 
 **✅ Check**\
+
 > Are persistence workflows hidden behind repositories?
 
 ---
 
 <a id="mod-03"></a>
+
 ### `MOD-03` No single-use DI abstractions
 
 > **general** · modules
@@ -292,11 +309,13 @@ Services do not know persistence/email uniqueness internals; repositories own DB
 Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused.
 
 **✅ Check**\
+
 > Did I avoid single-use DI abstractions?
 
 ---
 
 <a id="mod-04"></a>
+
 ### `MOD-04` No private behavior leaks
 
 > **general** · modules · 2 examples · ↩ `RL-20251223-001` · `RL-20251216-002`
@@ -305,6 +324,7 @@ Do not create an interface, provider, factory, or injection token for a single-u
 Public interfaces must not expose private helpers; do not add optional methods to shared interfaces — split with `IFooWithBar extends IFoo` instead.
 
 **✅ Check**\
+
 > Did I avoid exposing private helper behavior through public interfaces?
 
 <details>
@@ -322,10 +342,14 @@ Exporting every intermediate schema "for consistency" with sibling files:
 
 ```ts
 // analysis-result.entity.ts — none of these are imported elsewhere
-export const FailedAnalysisResultSchema = BaseSchema.extend({ /* ... */ });
-export const ModerateAnalysisResultSchema = BaseSchema.extend({ /* ... */ });
+export const FailedAnalysisResultSchema = BaseSchema.extend({
+  /* ... */
+});
+export const ModerateAnalysisResultSchema = BaseSchema.extend({
+  /* ... */
+});
 
-export const AnalysisResultSchema = z.discriminatedUnion('type', [
+export const AnalysisResultSchema = z.discriminatedUnion("type", [
   FailedAnalysisResultSchema,
   ModerateAnalysisResultSchema,
 ]);
@@ -337,10 +361,14 @@ Keep intermediate schemas module-local and export only the union or the
 type the rest of the codebase consumes:
 
 ```ts
-const FailedAnalysisResultSchema = BaseSchema.extend({ /* ... */ });
-const ModerateAnalysisResultSchema = BaseSchema.extend({ /* ... */ });
+const FailedAnalysisResultSchema = BaseSchema.extend({
+  /* ... */
+});
+const ModerateAnalysisResultSchema = BaseSchema.extend({
+  /* ... */
+});
 
-export const AnalysisResultSchema = z.discriminatedUnion('type', [
+export const AnalysisResultSchema = z.discriminatedUnion("type", [
   FailedAnalysisResultSchema,
   ModerateAnalysisResultSchema,
 ]);
@@ -375,7 +403,7 @@ theory that it might be useful elsewhere later:
 /**
  * Minimum Safe version that supports CompatibilityFallbackHandler.
  */
-export const MIN_FALLBACK_HANDLER_VERSION = '>=1.3.0';
+export const MIN_FALLBACK_HANDLER_VERSION = ">=1.3.0";
 // ...nothing in the codebase imports MIN_FALLBACK_HANDLER_VERSION
 ```
 
@@ -385,7 +413,7 @@ Keep the symbol module-local; promote to an export when an actual
 consumer or test references it:
 
 ```ts
-const MIN_FALLBACK_HANDLER_VERSION = '>=1.3.0';
+const MIN_FALLBACK_HANDLER_VERSION = ">=1.3.0";
 // Inline use within the module that owns the constant
 ```
 
@@ -404,19 +432,22 @@ imported symbol becomes a breaking change.
 ---
 
 <a id="mod-05"></a>
+
 ### `MOD-05` No new forwardRef cycles
 
-> **general** · modules
+> **general** · modules · ↩ `RL-20260529-002`
 
 **📜 Rule**\
 Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local debt; extract a third boundary instead of adding new ones.
 
 **✅ Check**\
-> Did I avoid adding or expanding `forwardRef` cycles?
+
+> Did I avoid adding or expanding `forwardRef` cycles, including not adding `forwardRef` where no circular dependency exists?
 
 ---
 
 <a id="mod-06"></a>
+
 ### `MOD-06` Route services behind repositories
 
 > **general** · modules
@@ -425,6 +456,7 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation/fallbacks. Validate inputs at the controller, not the service.
 
 **✅ Check**\
+
 > Do route services stay behind repository boundaries?
 
 ---
@@ -432,6 +464,7 @@ Route services orchestrate use cases; they do not call external API datasources 
 ## 🌐 general › naming
 
 <a id="name-01"></a>
+
 ### `NAME-01` Names reveal behavior
 
 > **general** · naming · 1 example · ↩ `RL-20260506-001`
@@ -440,6 +473,7 @@ Route services orchestrate use cases; they do not call external API datasources 
 Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants.
 
 **✅ Check**\
+
 > Do names describe behavior honestly and avoid redundant scope?
 
 <details>
@@ -490,6 +524,7 @@ runs can stay fast and integration runs stay reproducible.
 ---
 
 <a id="reuse-01"></a>
+
 ### `REUSE-01` Reuse existing helpers
 
 > **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001`
@@ -498,6 +533,7 @@ runs can stay fast and integration runs stay reproducible.
 Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates.
 
 **✅ Check**\
+
 > Did I reuse existing helpers, constants homes, and utilities?
 
 <details>
@@ -540,7 +576,7 @@ export class EntityRepository {
     /* ... */
   ) {
     this.maxSequentialPages = configurationService.getOrThrow<number>(
-      'entity.entitiesByOwner.maxSequentialPages',
+      "entity.entitiesByOwner.maxSequentialPages",
     );
   }
 }
@@ -573,7 +609,7 @@ versions in a constant inside the consuming module:
 
 ```ts
 // Manually enumerated, gets stale with every release
-export const FALLBACK_HANDLER_VERSIONS = ['1.3.0', '1.4.1'] as const;
+export const FALLBACK_HANDLER_VERSIONS = ["1.3.0", "1.4.1"] as const;
 
 export function getFallbackHandlerVersions(): Array<string> {
   return [...FALLBACK_HANDLER_VERSIONS].reverse();
@@ -587,7 +623,7 @@ truth — the deployments package — drives the runtime set, and a
 contract release does not need a coordinated edit in every consumer:
 
 ```ts
-import { getCompatibilityFallbackHandlerDeployments } from '@safe-global/safe-deployments';
+import { getCompatibilityFallbackHandlerDeployments } from "@safe-global/safe-deployments";
 
 export function getFallbackHandlerVersions(): Array<string> {
   return getCompatibilityFallbackHandlerDeployments({ released: true })
@@ -611,6 +647,7 @@ someone remembered to add the string.
 ---
 
 <a id="style-01"></a>
+
 ### `STYLE-01` Document non-trivial code
 
 > **general** · naming · 2 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001`
@@ -619,6 +656,7 @@ someone remembered to add the string.
 Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact.
 
 **✅ Check**\
+
 > Did I document public/non-trivial logic and remove dead code?
 
 <details>
@@ -639,7 +677,7 @@ shipping the temporary `console.log` left over from local debugging:
 const request_id = response.headers.get(REQUEST_ID_HEADER) ?? undefined;
 
 // TODO: remove logging after adding Blockaid error mapping:
-console.log('!!!! data:', data);
+console.log("!!!! data:", data);
 
 try {
   // ...
@@ -662,7 +700,10 @@ const request_id = response.headers.get(REQUEST_ID_HEADER) ?? undefined;
 try {
   // ...
 } catch (error) {
-  this.loggingService.error({ type: LogType.AnalysisFailure, cause: asError(error) });
+  this.loggingService.error({
+    type: LogType.AnalysisFailure,
+    cause: asError(error),
+  });
   return this.failedAnalysisResponse();
 }
 ```
@@ -740,6 +781,7 @@ binding explicit and impossible to forget.
 ## 🌐 general › types
 
 <a id="type-01"></a>
+
 ### `TYPE-01` Use project types
 
 > **general** · types
@@ -748,11 +790,13 @@ binding explicit and impossible to forget.
 Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`.
 
 **✅ Check**\
+
 > Did I use project types and shared schemas first?
 
 ---
 
 <a id="type-02"></a>
+
 ### `TYPE-02` Schemas in entity files
 
 > **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002`
@@ -761,6 +805,7 @@ Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), 
 Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`.
 
 **✅ Check**\
+
 > Are reusable schemas in entity/schema files?
 
 <details>
@@ -779,7 +824,7 @@ absence with overly specific equality:
 
 ```ts
 export const prepareErrorMessage = (error?: string): string | undefined => {
-  if (error === undefined || error === '') return undefined;
+  if (error === undefined || error === "") return undefined;
   const match = error.match(/GS\d{3}/);
   if (!match) return error;
   const mapped = ERROR_MAPPING[match[0]];
@@ -816,15 +861,17 @@ same notion of absence.
 ---
 
 <a id="type-03"></a>
+
 ### `TYPE-03` Validate external inputs
 
-> **general** · types · 1 example · ↩ `RL-20260116-002`
+> **general** · types · 1 example · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001`
 
 **📜 Rule**\
-Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance.
+Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings.
 
 **✅ Check**\
-> Are external responses, token claims, queued jobs, and config strings validated before use?
+
+> Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
@@ -842,7 +889,7 @@ absence with overly specific equality:
 
 ```ts
 export const prepareErrorMessage = (error?: string): string | undefined => {
-  if (error === undefined || error === '') return undefined;
+  if (error === undefined || error === "") return undefined;
   const match = error.match(/GS\d{3}/);
   if (!match) return error;
   const mapped = ERROR_MAPPING[match[0]];
@@ -879,15 +926,17 @@ same notion of absence.
 ---
 
 <a id="type-04"></a>
+
 ### `TYPE-04` DTO matches wire shape
 
-> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001`
+> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003`
 
 **📜 Rule**\
-DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters.
+DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time.
 
 **✅ Check**\
-> Do DTO fields match the actual wire shape?
+
+> Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?
 
 <details>
 <summary><strong>💡 Example 1 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays</em></summary>
@@ -968,7 +1017,7 @@ const InviteUserSchema = z
   })
   .superRefine((value, ctx) => {
     if (!value.address && !value.email) {
-      ctx.addIssue({ code: 'custom', path: ['address'] });
+      ctx.addIssue({ code: "custom", path: ["address"] });
     }
   });
 ```
@@ -1017,7 +1066,7 @@ Accepting any string and post-filtering, then redundantly piping through
 const BooleanStringDefaultFalseSchema = z
   .string()
   .optional()
-  .transform((val) => val === 'true')
+  .transform((val) => val === "true")
   .pipe(z.boolean());
 ```
 
@@ -1028,14 +1077,14 @@ Constrain the wire shape to the two valid strings up front; the
 
 ```ts
 const BooleanStringDefaultFalseSchema = z
-  .enum(['true', 'false'])
+  .enum(["true", "false"])
   .optional()
-  .transform((val) => val === 'true');
+  .transform((val) => val === "true");
 
 const BooleanStringDefaultTrueSchema = z
-  .enum(['true', 'false'])
+  .enum(["true", "false"])
   .optional()
-  .transform((val) => val !== 'false');
+  .transform((val) => val !== "false");
 ```
 
 ### Why
@@ -1109,6 +1158,7 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 ---
 
 <a id="type-05"></a>
+
 ### `TYPE-05` Parser generics complete
 
 > **general** · types
@@ -1117,11 +1167,13 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 Parser/decode generics include every field the code reads downstream.
 
 **✅ Check**\
+
 > Do parser/decode types include every field the code reads?
 
 ---
 
 <a id="type-06"></a>
+
 ### `TYPE-06` No unsafe casts
 
 > **general** · types · 1 example · ↩ `RL-20260506-005`
@@ -1130,6 +1182,7 @@ Parser/decode generics include every field the code reads downstream.
 Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`.
 
 **✅ Check**\
+
 > Did I avoid unsafe casts, `any`, and silent type drift?
 
 <details>
@@ -1193,6 +1246,7 @@ binding explicit and impossible to forget.
 ## 🌐 general › auth
 
 <a id="auth-01"></a>
+
 ### `AUTH-01` Reuse auth assertions
 
 > **general** · auth
@@ -1201,11 +1255,13 @@ binding explicit and impossible to forget.
 Reuse existing auth assertions and predicates (`assertAuthenticated`, `getAuthenticatedUserIdOrFail`); branch signature recovery on `SignatureType` (only EOA/EthSign are recoverable).
 
 **✅ Check**\
+
 > Did I reuse existing auth assertions/predicates?
 
 ---
 
 <a id="auth-02"></a>
+
 ### `AUTH-02` Identity supports SIWE and email
 
 > **general** · auth
@@ -1214,11 +1270,13 @@ Reuse existing auth assertions and predicates (`assertAuthenticated`, `getAuthen
 Identity code handles wallet (SIWE) and OIDC/email users; do not assume `signer_address` is set.
 
 **✅ Check**\
+
 > Does identity code handle wallet and email users?
 
 ---
 
 <a id="auth-03"></a>
+
 ### `AUTH-03` Use proven auth/crypto libs
 
 > **general** · auth
@@ -1227,11 +1285,13 @@ Identity code handles wallet (SIWE) and OIDC/email users; do not assume `signer_
 Prefer `jose` and other maintained libraries for JWKS/JWT and signature work over hand-rolled primitives.
 
 **✅ Check**\
+
 > Did I use proven auth/crypto libraries instead of custom primitives?
 
 ---
 
 <a id="auth-04"></a>
+
 ### `AUTH-04` Email exposure intentional
 
 > **general** · auth
@@ -1240,26 +1300,67 @@ Prefer `jose` and other maintained libraries for JWKS/JWT and signature work ove
 User-email exposure in DTOs and Swagger is intentional and consistent.
 
 **✅ Check**\
+
 > Is user email exposure intentional and consistent?
 
 ---
 
 <a id="auth-05"></a>
+
 ### `AUTH-05` Space routes enforce membership before data access
 
-> **general** · auth · ↩ `RL-20260520-001`
+> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001`
 
 **📜 Rule**\
-Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data.
+Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id.
 
 **✅ Check**\
-> Did this add or change a space-scoped route? If yes, is it auth-guarded and does the service assert membership/admin status before any data access?
+
+> Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/auth-and-secrets.md</code> § <em>auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter</em></summary>
+
+<br>
+
+**AUTH-05 — Every OR clause of a membership where carries the user filter**
+
+Source: PR #3115 (RL-20260602-001)
+
+### Avoid
+
+```ts
+// array where = OR; the third clause has no user filter
+where: [
+  { user: { id: userId }, status: 'ACTIVE' },
+  { user: { id: userId }, status: 'INVITED', inviteExpiresAt: MoreThan(new Date()) },
+  { ...(spaceId != null && { space: { id: spaceId } }) }, // matches any/all members
+],
+```
+
+### Prefer
+
+```ts
+const where = activeOrPendingMemberWhere(() => ({
+  ...(spaceId != null && { space: { id: spaceId } }),
+})); // helper spreads `user: { id: userId }` into every clause
+// → [{ user:{id}, status:'ACTIVE', space:{id} }, { user:{id}, status:'INVITED', inviteExpiresAt:MoreThan(now), space:{id} }]
+```
+
+### Why
+
+TypeORM treats an array `where` as OR. A clause that omits the `user: { id }` predicate matches members of any space (or every row when its own scope is undefined), turning a membership query into an authorization bypass. Centralize the predicate in a helper so every OR branch carries the ownership filter, and regression-test a non-member requesting a specific space id.
+
+<sub>Source: <a href="examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter">examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter</a></sub>
+
+</details>
 
 ---
 
 ## 🌐 general › routes
 
 <a id="route-01"></a>
+
 ### `ROUTE-01` Controllers are HTTP boundary
 
 > **general** · routes · 3 examples · ↩ `RL-20260108-002` · `RL-20260108-003` · `RL-20251222-001`
@@ -1268,6 +1369,7 @@ Every space-scoped controller is guarded with `AuthGuard`, accepts the authentic
 Controllers stay at the HTTP boundary: no Provider naming in user-facing copy, no false standards labels (e.g. CAIP-10) the implementation does not satisfy, no domain `Error` for "not found" — throw `NotFoundException`/`ForbiddenException` so the global filter maps to the right status. Wrap parsing/IO inside the adapter's wrap-and-throw boundary.
 
 **✅ Check**\
+
 > Are controllers only HTTP boundary code?
 
 <details>
@@ -1422,6 +1524,7 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 ---
 
 <a id="route-02"></a>
+
 ### `ROUTE-02` Inputs validated at controller
 
 > **general** · routes · ↩ `RL-20260123-002`
@@ -1430,11 +1533,13 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 Validate params, query, and body at the controller via Zod schemas and `ValidationPipe`; do not duplicate presence checks in services. Cache-busting params should be booleans with server-generated keys, not unbounded client strings.
 
 **✅ Check**\
+
 > Are params, query, and bodies validated?
 
 ---
 
 <a id="route-03"></a>
+
 ### `ROUTE-03` Stable empty shapes
 
 > **general** · routes · 1 example · ↩ `RL-20260114-002`
@@ -1443,6 +1548,7 @@ Validate params, query, and body at the controller via Zod schemas and `Validati
 Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes.
 
 **✅ Check**\
+
 > Do empty responses use stable empty shapes?
 
 <details>
@@ -1505,6 +1611,7 @@ unknown case at the boundary they own.
 ## 🌐 general › database
 
 <a id="db-01"></a>
+
 ### `DB-01` Unique constraint matches lifecycle
 
 > **general** · database
@@ -1513,37 +1620,43 @@ unknown case at the boundary they own.
 Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically.
 
 **✅ Check**\
+
 > Do unique constraints match nullable/lifecycle behavior?
 
 ---
 
 <a id="db-02"></a>
+
 ### `DB-02` Atomic state transitions
 
-> **general** · database
+> **general** · database · ↩ `RL-20260602-002`
 
 **📜 Rule**\
-Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows.
+Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows.
 
 **✅ Check**\
-> Are multi-step state transitions atomic?
+
+> Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?
 
 ---
 
 <a id="db-03"></a>
+
 ### `DB-03` No redundant DB trips
 
-> **general** · database
+> **general** · database · ↩ `RL-20260529-003`
 
 **📜 Rule**\
-Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant.
+Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING/`generatedMaps` instead of issuing a follow-up `find` after an insert/upsert.
 
 **✅ Check**\
-> Did I avoid redundant reads/writes and no-op DB trips?
+
+> Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?
 
 ---
 
 <a id="db-04"></a>
+
 ### `DB-04` DB errors mapped at write boundary
 
 > **general** · database
@@ -1552,20 +1665,23 @@ Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit column
 Map uniqueness/constraint errors to domain errors at the repository boundary; include the conflicting key from `driverError.detail` in the message.
 
 **✅ Check**\
+
 > Are DB errors mapped at the write boundary?
 
 ---
 
 <a id="db-05"></a>
+
 ### `DB-05` Migrations agree with code
 
-> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001`
+> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001` · `RL-20260601-001`
 
 **📜 Rule**\
-Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`.
+Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match.
 
 **✅ Check**\
-> Do migrations, entities, indexes, schemas, and tests agree?
+
+> Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?
 
 <details>
 <summary><strong>💡 Example 1 of 2</strong> — <code>examples/database-migrations.md</code> § <em>db-05-do-not-use-the-recorded-migration-id-as-an-array-index</em></summary>
@@ -1671,6 +1787,7 @@ the previous run is cheap; recovering attribution after a release is not.
 ## 🌐 general › cache
 
 <a id="cache-01"></a>
+
 ### `CACHE-01` Multi-step cache writes checked
 
 > **general** · cache
@@ -1679,11 +1796,13 @@ the previous run is cheap; recovering attribution after a release is not.
 Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache.
 
 **✅ Check**\
+
 > Are multi-step cache/Redis operations fully checked?
 
 ---
 
 <a id="cache-02"></a>
+
 ### `CACHE-02` Cache keys cover all inputs
 
 > **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001`
@@ -1692,6 +1811,7 @@ Redis pipelines and cache marker writes must validate every meaningful result. H
 Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy.
 
 **✅ Check**\
+
 > Are cache keys, bounded caches, and TTL semantics tested?
 
 <details>
@@ -1709,11 +1829,11 @@ Changing the value's shape but keeping the same cache key:
 
 ```ts
 // before — cached value: { 'ethereum': '1', ... }
-const cacheKey = 'zerion_chains:mapping';
+const cacheKey = "zerion_chains:mapping";
 const networkToChainId = JSON.parse(await cache.get(cacheKey));
 
 // after — same key, new shape
-const cacheKey = 'zerion_chains:mapping';
+const cacheKey = "zerion_chains:mapping";
 const { chainIdToName, nameToChainId } = JSON.parse(await cache.get(cacheKey));
 // boom: post-deploy reads the OLD payload, chainIdToName is undefined
 ```
@@ -1725,14 +1845,14 @@ write the migration plan into the PR description so it does not get lost:
 
 ```ts
 // option 1: bump the key suffix
-const cacheKey = 'zerion_chains:mapping:v2';
+const cacheKey = "zerion_chains:mapping:v2";
 
 // option 2: version the payload, fall back when the version is missing
 const raw = JSON.parse(await cache.get(cacheKey));
 if (raw?.version !== 2) await cache.invalidate(cacheKey);
 
 // option 3: explicit cache invalidation in the deploy/migration step
-await cache.invalidate('zerion_chains:mapping');
+await cache.invalidate("zerion_chains:mapping");
 ```
 
 ### Why
@@ -1762,12 +1882,16 @@ directory:
 
 ```ts
 // in CacheRouter.getEntityChainsCacheDir
-return { key, field: isTestnet ? 'mapping_testnet' : 'mapping' };
+return { key, field: isTestnet ? "mapping_testnet" : "mapping" };
 
 // in the service — silently overrides the router's field
 const field = isReverse
-  ? (isTestnet ? 'mapping_reverse_testnet' : 'mapping_reverse')
-  : (isTestnet ? 'mapping_testnet' : 'mapping');
+  ? isTestnet
+    ? "mapping_reverse_testnet"
+    : "mapping_reverse"
+  : isTestnet
+    ? "mapping_testnet"
+    : "mapping";
 const cached = await this.cacheService.hGet({ ...cacheDir, field });
 ```
 
@@ -1857,6 +1981,7 @@ code path inside `request()`.
 ## 🌐 general › config
 
 <a id="config-01"></a>
+
 ### `CONFIG-01` Defaults safe and OSS-generic
 
 > **general** · config
@@ -1865,11 +1990,13 @@ code path inside `request()`.
 Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`.
 
 **✅ Check**\
+
 > Are defaults safe, minimal, and OSS-generic?
 
 ---
 
 <a id="config-02"></a>
+
 ### `CONFIG-02` Config fails fast
 
 > **general** · config · ↩ `RL-20260506-004` · `RL-20251219-002`
@@ -1878,11 +2005,13 @@ Defaults remain conservative and OSS-generic. Dev-only feature flags require bot
 Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read.
 
 **✅ Check**\
+
 > Does config validation fail at startup?
 
 ---
 
 <a id="config-03"></a>
+
 ### `CONFIG-03` TTLs are config
 
 > **general** · config · 1 example · ↩ `RL-20260506-003`
@@ -1891,6 +2020,7 @@ Config values and config tests belong in the canonical schema/test locations and
 TTLs/timeouts/cache settings are configured, not hardcoded. Follow precedents in similar repositories before introducing new hardcoded knobs.
 
 **✅ Check**\
+
 > Are TTLs/timeouts/tunables configured?
 
 <details>
@@ -1933,7 +2063,7 @@ export class EntityRepository {
     /* ... */
   ) {
     this.maxSequentialPages = configurationService.getOrThrow<number>(
-      'entity.entitiesByOwner.maxSequentialPages',
+      "entity.entitiesByOwner.maxSequentialPages",
     );
   }
 }
@@ -1953,6 +2083,7 @@ real config entry now, while the surrounding code is fresh.
 ---
 
 <a id="config-04"></a>
+
 ### `CONFIG-04` Pinned runtime versions
 
 > **general** · config
@@ -1961,11 +2092,13 @@ real config entry now, while the surrounding code is fresh.
 Runtime dependency versions are pinned exactly; do not hardcode contract versions/addresses that exist in `safe-deployments`.
 
 **✅ Check**\
+
 > Are runtime dependencies pinned exactly?
 
 ---
 
 <a id="config-05"></a>
+
 ### `CONFIG-05` Env metadata matches runtime
 
 > **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003`
@@ -1974,6 +2107,7 @@ Runtime dependency versions are pinned exactly; do not hardcode contract version
 Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR.
 
 **✅ Check**\
+
 > Do tool versions and env metadata match runtime behavior?
 
 <details>
@@ -2082,6 +2216,7 @@ later. A one-line comment at the variable closes that gap.
 ## 🌐 general › performance
 
 <a id="perf-01"></a>
+
 ### `PERF-01` Batch and parallelize I/O
 
 > **general** · performance · 1 example · ↩ `RL-20260506-006`
@@ -2090,6 +2225,7 @@ later. A one-line comment at the variable closes that gap.
 Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks.
 
 **✅ Check**\
+
 > Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?
 
 <details>
@@ -2152,15 +2288,17 @@ deep pagination depth.
 ## 🌐 general › tests
 
 <a id="test-01"></a>
+
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 1 example · ↩ `RL-20260506-002`
+> **general** · tests · 1 example · ↩ `RL-20260506-002` · `RL-20260521-001`
 
 **📜 Rule**\
-Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules.
+Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason.
 
 **✅ Check**\
-> Did I use builders, fakes, and existing test helpers?
+
+> Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-01-use-a-builder-for-repeated-entity-fixtures</em></summary>
@@ -2191,9 +2329,7 @@ A `Builder<T>` with `.with(field, value)` that lives next to the entity, so
 each test only spells out the fields it cares about:
 
 ```ts
-const entity = entityBuilder()
-  .with('guard', specificGuard)
-  .build();
+const entity = entityBuilder().with("guard", specificGuard).build();
 ```
 
 ### Why
@@ -2210,14 +2346,16 @@ for each shape and lets a test override only what matters to that case.
 ---
 
 <a id="test-02"></a>
+
 ### `TEST-02` Right test layer (pyramid)
 
-> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004`
 
 **📜 Rule**\
 Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test.
 
 **✅ Check**\
+
 > Does each assertion live at the lowest layer that can prove it, and did I avoid duplicating the same scenario across unit, integration, and e2e?
 
 <details>
@@ -2268,6 +2406,7 @@ runs can stay fast and integration runs stay reproducible.
 ---
 
 <a id="test-03"></a>
+
 ### `TEST-03` No internal mock chains
 
 > **general** · tests
@@ -2276,11 +2415,13 @@ runs can stay fast and integration runs stay reproducible.
 Do not mock internal query-builder chains or implementation details.
 
 **✅ Check**\
+
 > Did I avoid mocking internal query-builder chains?
 
 ---
 
 <a id="test-04"></a>
+
 ### `TEST-04` Cover security paths
 
 > **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001`
@@ -2289,6 +2430,7 @@ Do not mock internal query-builder chains or implementation details.
 Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads.
 
 **✅ Check**\
+
 > Are security and negative paths covered?
 
 <details>
@@ -2342,6 +2484,7 @@ silently asserts the wrong thing and looks green for the wrong reason.
 ---
 
 <a id="test-05"></a>
+
 ### `TEST-05` Scoped test cleanup
 
 > **general** · tests · 1 example · ↩ `RL-20251219-002`
@@ -2350,6 +2493,7 @@ silently asserts the wrong thing and looks green for the wrong reason.
 Test setup/cleanup is scoped, not global workaround cleanup. `process.env.NODE_ENV` and other env mutations restore in `afterEach`.
 
 **✅ Check**\
+
 > Is test cleanup scoped and minimal?
 
 <details>
@@ -2367,9 +2511,9 @@ Mutating `process.env.NODE_ENV` per test without restoring, and validating
 secret-shaped strings without trimming:
 
 ```ts
-it('rejects empty API_KEY in production', () => {
-  process.env.NODE_ENV = 'production';
-  expect(() => validate({ API_KEY: '' })).toThrow();
+it("rejects empty API_KEY in production", () => {
+  process.env.NODE_ENV = "production";
+  expect(() => validate({ API_KEY: "" })).toThrow();
 });
 // other tests now also see NODE_ENV=production
 ```
@@ -2381,11 +2525,15 @@ that whitespace-only secrets are rejected because the validator trims:
 
 ```ts
 let originalNodeEnv: string | undefined;
-beforeAll(() => { originalNodeEnv = process.env.NODE_ENV; });
-afterEach(() => { process.env.NODE_ENV = originalNodeEnv; });
+beforeAll(() => {
+  originalNodeEnv = process.env.NODE_ENV;
+});
+afterEach(() => {
+  process.env.NODE_ENV = originalNodeEnv;
+});
 
-it.each(['', '   '])('rejects blank API_KEY in production', (apiKey) => {
-  process.env.NODE_ENV = 'production';
+it.each(["", "   "])("rejects blank API_KEY in production", (apiKey) => {
+  process.env.NODE_ENV = "production";
   expect(() => validate({ API_KEY: apiKey })).toThrow();
 });
 ```
@@ -2403,6 +2551,7 @@ mistake of letting whitespace stand in for a configured secret.
 ---
 
 <a id="test-06"></a>
+
 ### `TEST-06` Fixtures fail loudly
 
 > **general** · tests
@@ -2411,11 +2560,13 @@ mistake of letting whitespace stand in for a configured secret.
 Fixtures fail loudly when required deployments/data are absent — no silent skip.
 
 **✅ Check**\
+
 > Do fixtures fail loudly instead of silently skipping?
 
 ---
 
 <a id="test-07"></a>
+
 ### `TEST-07` Pipeline coverage
 
 > **general** · tests · ↩ `RL-20260123-001` · `RL-20260121-001` · `RL-20260114-002`
@@ -2424,11 +2575,13 @@ Fixtures fail loudly when required deployments/data are absent — no silent ski
 Implementation-selection changes (provider, mapper, datasource) need full-pipeline coverage end to end.
 
 **✅ Check**\
+
 > Are routing/precedence pipelines covered end to end?
 
 ---
 
 <a id="test-08"></a>
+
 ### `TEST-08` Test names match assertions
 
 > **general** · tests
@@ -2437,11 +2590,13 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`.
 
 **✅ Check**\
+
 > Do test names and generated data match the assertions?
 
 ---
 
 <a id="test-09"></a>
+
 ### `TEST-09` Cover edges and determinism
 
 > **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002`
@@ -2450,6 +2605,7 @@ Test descriptions and generated data reflect the actual assertion: `it('should r
 Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior.
 
 **✅ Check**\
+
 > Do tests cover edge cases, side effects, and deterministic behavior?
 
 <details>
@@ -2466,7 +2622,7 @@ Source: PR #2854 (RL-20251223-002)
 Testing only the positive path of a security-relevant extractor:
 
 ```ts
-it('returns UNOFFICIAL when handler is not official Safe or trusted', () => {
+it("returns UNOFFICIAL when handler is not official Safe or trusted", () => {
   // happy path only — extracts handler, classifies as unofficial
 });
 ```
@@ -2477,11 +2633,11 @@ Add explicit negative-path tests for the inputs an attacker or buggy caller
 can supply:
 
 ```ts
-it('returns undefined when the parameter name does not match');
-it('returns undefined when the address fails isAddress');
-it('keeps the last value when setHandler is called multiple times');
-it('returns undefined when tx.data exists but parameters are missing');
-it('omits the warning when the handler is an official Safe handler');
+it("returns undefined when the parameter name does not match");
+it("returns undefined when the address fails isAddress");
+it("keeps the last value when setHandler is called multiple times");
+it("returns undefined when tx.data exists but parameters are missing");
+it("omits the warning when the handler is an official Safe handler");
 ```
 
 ### Why
@@ -2501,6 +2657,7 @@ noise.
 ## 🌐 general › logging
 
 <a id="log-01"></a>
+
 ### `LOG-01` Operational log levels
 
 > **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002`
@@ -2509,6 +2666,7 @@ noise.
 Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value.
 
 **✅ Check**\
+
 > Are log levels operationally appropriate?
 
 <details>
@@ -2569,6 +2727,7 @@ unknown case at the boundary they own.
 ---
 
 <a id="log-02"></a>
+
 ### `LOG-02` No noisy success logs
 
 > **general** · logging
@@ -2577,11 +2736,13 @@ unknown case at the boundary they own.
 Hot worker events and expected success paths are not noisy logs.
 
 **✅ Check**\
+
 > Did I avoid noisy success logs?
 
 ---
 
 <a id="log-03"></a>
+
 ### `LOG-03` Telemetry cost-justified
 
 > **general** · logging
@@ -2590,11 +2751,13 @@ Hot worker events and expected success paths are not noisy logs.
 New telemetry must be worth its operational cost.
 
 **✅ Check**\
+
 > Is any new telemetry worth its operational cost?
 
 ---
 
 <a id="log-04"></a>
+
 ### `LOG-04` Structured logs and asError
 
 > **general** · logging · 2 examples · ↩ `RL-20251222-001` · `RL-20251219-001`
@@ -2603,6 +2766,7 @@ New telemetry must be worth its operational cost.
 Structured logs use `LogType`; caught values use `asError`. Internal error/exception messages do not flow into user-facing API response fields. Errors thrown from infrastructure include identifying context (which Safe, chainId, constraint key).
 
 **✅ Check**\
+
 > Did I use structured log types and error normalization helpers?
 
 <details>
@@ -2623,7 +2787,7 @@ shipping the temporary `console.log` left over from local debugging:
 const request_id = response.headers.get(REQUEST_ID_HEADER) ?? undefined;
 
 // TODO: remove logging after adding Blockaid error mapping:
-console.log('!!!! data:', data);
+console.log("!!!! data:", data);
 
 try {
   // ...
@@ -2646,7 +2810,10 @@ const request_id = response.headers.get(REQUEST_ID_HEADER) ?? undefined;
 try {
   // ...
 } catch (error) {
-  this.loggingService.error({ type: LogType.AnalysisFailure, cause: asError(error) });
+  this.loggingService.error({
+    type: LogType.AnalysisFailure,
+    cause: asError(error),
+  });
   return this.failedAnalysisResponse();
 }
 ```
@@ -2679,7 +2846,7 @@ that stringified value as-is for diagnostics:
 
 ```ts
 const key = JSON.stringify({ url, ...requestInit });
-this.loggingService.info({ msg: 'cache lookup', key });
+this.loggingService.info({ msg: "cache lookup", key });
 // `key` contains the Authorization header in plaintext
 ```
 
@@ -2691,7 +2858,7 @@ log path emits the raw `requestInit` (including headers and body):
 ```ts
 const rawKey = JSON.stringify({ url, ...requestInit });
 const key = hashSha1(rawKey); // cache key, also what we log
-this.loggingService.info({ msg: 'cache lookup', key });
+this.loggingService.info({ msg: "cache lookup", key });
 ```
 
 When that path also has to log a URL or method for diagnostics, log only
@@ -2714,6 +2881,7 @@ fields that do not include `Authorization` keeps the contract pinned.
 ## 🌐 general › security
 
 <a id="sec-01"></a>
+
 ### `SEC-01` Validate redirect targets
 
 > **general** · security
@@ -2722,11 +2890,13 @@ fields that do not include `Authorization` keeps the contract pinned.
 Redirect and callback targets are strictly validated for protocol, domain, credentials, and ports.
 
 **✅ Check**\
+
 > Are redirect and callback targets strictly validated?
 
 ---
 
 <a id="sec-02"></a>
+
 ### `SEC-02` Bounded sensitive fields
 
 > **general** · security · 2 examples · ↩ `RL-20251219-001`
@@ -2735,6 +2905,7 @@ Redirect and callback targets are strictly validated for protocol, domain, crede
 Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the "doesn't exist" branch explicitly.
 
 **✅ Check**\
+
 > Are secrets, unverified payloads, and sensitive fields bounded and explicitly selected?
 
 <details>
@@ -2814,7 +2985,7 @@ that stringified value as-is for diagnostics:
 
 ```ts
 const key = JSON.stringify({ url, ...requestInit });
-this.loggingService.info({ msg: 'cache lookup', key });
+this.loggingService.info({ msg: "cache lookup", key });
 // `key` contains the Authorization header in plaintext
 ```
 
@@ -2826,7 +2997,7 @@ log path emits the raw `requestInit` (including headers and body):
 ```ts
 const rawKey = JSON.stringify({ url, ...requestInit });
 const key = hashSha1(rawKey); // cache key, also what we log
-this.loggingService.info({ msg: 'cache lookup', key });
+this.loggingService.info({ msg: "cache lookup", key });
 ```
 
 When that path also has to log a URL or method for diagnostics, log only
@@ -2849,6 +3020,7 @@ fields that do not include `Authorization` keeps the contract pinned.
 ## 🌐 general › cache
 
 <a id="cache-03"></a>
+
 ### `CACHE-03` Cached payload shape is canonical once
 
 > **general** · cache · 2 examples · ↩ `RL-20260128-001` · `RL-20260123-001` · `RL-20260121-001` · `RL-20260114-001`
@@ -2857,6 +3029,7 @@ fields that do not include `Authorization` keeps the contract pinned.
 Cache readers and writers must agree whether payloads are raw upstream data or normalized domain data; document expiry-only caches that have no invalidation hook.
 
 **✅ Check**\
+
 > Did this add or change a cached datasource payload? If yes, is normalization applied exactly once and are invalidation/expiry semantics documented?
 
 <details>
@@ -2964,6 +3137,7 @@ and the bug only reproduces under cache-warm conditions.
 ## 🌐 general › data
 
 <a id="data-01"></a>
+
 ### `DATA-01` Aggregates match returned items and signed values
 
 > **general** · data · ↩ `RL-20260113-001`
@@ -2972,6 +3146,7 @@ and the bug only reproduces under cache-warm conditions.
 Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt.
 
 **✅ Check**\
+
 > Did this add filtering or aggregate totals? If yes, are totals based on returned items and are negative values handled by magnitude when appropriate?
 
 ---
@@ -2979,6 +3154,7 @@ Totals, dust filters, and aggregate fields must be computed from the same filter
 ## 📂 resilience
 
 <a id="resilience-01"></a>
+
 ### `RESILIENCE-01` Resilience policy semantics
 
 > resilience · 4 examples · ↩ `RL-20251215-002`
@@ -2987,6 +3163,7 @@ Totals, dust filters, and aggregate fields must be computed from the same filter
 Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken.
 
 **✅ Check**\
+
 > For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?
 
 <details>
@@ -3127,10 +3304,9 @@ Multiplying an absolute timestamp (epoch milliseconds) by a buffer
 factor when computing a stale-bound:
 
 ```ts
-const staleNextAttemptTime =
-  circuit.metrics.nextAttemptTime
-    ? circuit.metrics.nextAttemptTime * STALE_BUFFER_FACTOR
-    : Date.now();
+const staleNextAttemptTime = circuit.metrics.nextAttemptTime
+  ? circuit.metrics.nextAttemptTime * STALE_BUFFER_FACTOR
+  : Date.now();
 // nextAttemptTime is e.g. 1734567890000 — multiplying by 2 lands in 2077
 ```
 
