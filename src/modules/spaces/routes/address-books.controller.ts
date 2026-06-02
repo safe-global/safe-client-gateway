@@ -28,14 +28,14 @@ import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import {
-  LegacySpaceIdPipe,
-  SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
-import {
   UpsertAddressBookItemsDto,
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-rate-limit.guard';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -78,7 +78,7 @@ export class AddressBooksController {
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<SpaceAddressBookDto> {
-    return this.service.findAllBySpaceId(authPayload, spaceId);
+    return await this.service.findAllBySpaceId(authPayload, spaceId);
   }
 
   @ApiOperation({
@@ -123,7 +123,11 @@ export class AddressBooksController {
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
-    return this.service.upsertMany(authPayload, spaceId, addressBookItems);
+    return await this.service.upsertMany(
+      authPayload,
+      spaceId,
+      addressBookItems,
+    );
   }
 
   @ApiOperation({
@@ -161,6 +165,10 @@ export class AddressBooksController {
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    return this.service.deleteByAddress({ authPayload, spaceId, address });
+    return await this.service.deleteByAddress({
+      authPayload,
+      spaceId,
+      address,
+    });
   }
 }

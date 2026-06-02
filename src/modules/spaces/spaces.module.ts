@@ -27,15 +27,15 @@ import { AddressBooksController } from '@/modules/spaces/routes/address-books.co
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import {
-  LegacySpaceIdPipe,
-  SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { UserAddressBookController } from '@/modules/spaces/routes/user-address-book.controller';
 import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';

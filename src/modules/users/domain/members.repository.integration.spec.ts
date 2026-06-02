@@ -857,6 +857,7 @@ describe('MembersRepository', () => {
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
+      const spaceUuid = space.generatedMaps[0].uuid;
       await dbMembersRepository.insert({
         user: owner,
         space: space.generatedMaps[0],
@@ -893,7 +894,7 @@ describe('MembersRepository', () => {
       ).resolves.toEqual([
         {
           userId: invitee.generatedMaps[0].id,
-          spaceId,
+          spaceId: spaceUuid,
           name: updatedInviteeName,
           role: 'ADMIN',
           status: 'INVITED',

@@ -335,6 +335,7 @@ describe('SpacesRepository', () => {
         }),
       ).resolves.toEqual({
         id: expect.any(Number),
+        uuid: expect.any(String),
         name: expect.any(String),
       });
     });
@@ -388,6 +389,7 @@ describe('SpacesRepository', () => {
         },
         space: {
           id: expect.any(Number),
+          uuid: expect.any(String),
           name: spaceName,
           status: spaceStatus,
           createdAt: expect.any(Date),
