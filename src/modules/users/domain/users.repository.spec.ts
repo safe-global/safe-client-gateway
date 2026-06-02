@@ -2,7 +2,9 @@
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
+import { getAddress } from 'viem';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -57,6 +59,86 @@ describe('UsersRepository', () => {
     } as jest.MockedObjectDeep<PostgresDatabaseService>;
 
     target = new UsersRepository(postgresDatabaseService, walletsRepository);
+  });
+
+  describe('findOrCreateByWalletAddress', () => {
+    const mockEntityManager = (args?: {
+      walletInsertIdentifiers?: Array<Record<string, unknown>>;
+      createdUserId?: number;
+      racedUserId?: number;
+    }) => {
+      const queryBuilder = {
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({
+          identifiers: args?.walletInsertIdentifiers ?? [{ id: 1 }],
+        }),
+      };
+
+      return {
+        findOne: jest
+          .fn()
+          .mockResolvedValueOnce(null)
+          .mockResolvedValueOnce(
+            args?.racedUserId
+              ? {
+                  user: {
+                    id: args.racedUserId,
+                  },
+                }
+              : null,
+          ),
+        insert: jest.fn().mockResolvedValue({
+          identifiers: [{ id: args?.createdUserId ?? 1 }],
+        }),
+        createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+        delete: jest.fn(),
+      };
+    };
+
+    it('should use the provided entity manager instead of opening a transaction', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdUserId = faker.number.int({ min: 1 });
+      const entityManager = mockEntityManager({ createdUserId });
+
+      await expect(
+        target.findOrCreateByWalletAddress(
+          address,
+          'PENDING',
+          // The test only needs the EntityManager methods used by the helper.
+          entityManager as never,
+        ),
+      ).resolves.toBe(createdUserId);
+
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+      expect(entityManager.insert).toHaveBeenCalledWith(DbUser, {
+        status: 'PENDING',
+      });
+      expect(entityManager.delete).not.toHaveBeenCalled();
+    });
+
+    it('should delete the created user and return the racing wallet user when wallet insert is ignored', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdUserId = faker.number.int({ min: 1 });
+      const racedUserId = faker.number.int({ min: createdUserId + 1 });
+      const entityManager = mockEntityManager({
+        createdUserId,
+        racedUserId,
+        walletInsertIdentifiers: [],
+      });
+
+      await expect(
+        target.findOrCreateByWalletAddress(
+          address,
+          'PENDING',
+          entityManager as never,
+        ),
+      ).resolves.toBe(racedUserId);
+
+      expect(entityManager.delete).toHaveBeenCalledWith(DbUser, createdUserId);
+    });
   });
 
   describe('findOrCreateByExtUserIdAndEmail', () => {

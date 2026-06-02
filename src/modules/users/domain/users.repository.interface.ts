@@ -64,6 +64,7 @@ export interface IUsersRepository {
   findOrCreateByWalletAddress(
     address: Address,
     status?: keyof typeof UserStatus,
+    entityManager?: EntityManager,
   ): Promise<User['id']>;
 
   findOrCreatePendingByEmail(

@@ -195,41 +195,51 @@ export class UsersRepository implements IUsersRepository {
     return wallet?.user;
   }
 
-  public async findOrCreateByWalletAddress(
+  public findOrCreateByWalletAddress(
     address: Address,
     status: keyof typeof UserStatus = 'ACTIVE',
+    entityManager?: EntityManager,
   ): Promise<User['id']> {
-    const existing = await this.findByWalletAddress(address);
-    if (existing) {
-      return existing.id;
-    }
-
-    try {
-      return await this.postgresDatabaseService.transaction(
-        async (entityManager: EntityManager) => {
-          const userId = await this.create(status, entityManager);
-
-          await this.walletsRepository.create(
-            { userId, walletAddress: address },
-            entityManager,
-          );
-
-          return userId;
-        },
-      );
-    } catch (error) {
-      // Handle race condition: a concurrent call may have created the
-      // wallet between our find and insert, causing a unique constraint
-      // violation. Retry the lookup in that case.
-      if (
-        error instanceof Error &&
-        error.message.includes('UQ_wallet_address')
-      ) {
-        const user = await this.findByWalletAddressOrFail(address);
-        return user.id;
+    const findOrCreate = async (
+      manager: EntityManager,
+    ): Promise<User['id']> => {
+      const existing = await manager.findOne(Wallet, {
+        where: { address },
+        relations: { user: true },
+      });
+      if (existing) {
+        return existing.user.id;
       }
-      throw error;
+
+      const userId = await this.create(status, manager);
+      const insert = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(Wallet)
+        .values({ user: { id: userId }, address })
+        .orIgnore()
+        .execute();
+
+      if (insert.identifiers.length > 0) {
+        return userId;
+      }
+
+      await manager.delete(DbUser, userId);
+      const raced = await manager.findOne(Wallet, {
+        where: { address },
+        relations: { user: true },
+      });
+      if (!raced) {
+        throw new NotFoundException(`Wallet not found. Address=${address}`);
+      }
+      return raced.user.id;
+    };
+
+    if (entityManager) {
+      return findOrCreate(entityManager);
     }
+
+    return this.postgresDatabaseService.transaction(findOrCreate);
   }
 
   /**
@@ -289,6 +299,8 @@ export class UsersRepository implements IUsersRepository {
     extUserId: string,
     email: EmailAddress,
   ): Promise<User['id']> {
+    // This lookup/claim/insert sequence relies on unique indexes to settle
+    // races instead of SERIALIZABLE isolation; see the catches below.
     const existing = await this.findByExtUserId(extUserId);
     if (existing) {
       return this.reconcileEmail(existing, email);
@@ -414,8 +426,8 @@ export class UsersRepository implements IUsersRepository {
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
-      // If another request already backfilled the same email, the guarded
-      // update affects zero rows; that is idempotent for this reconcile path.
+      // Zero affected rows means another request backfilled this user after
+      // reconcileEmail saw email=null; that is idempotent for this path.
     } catch (error) {
       if (this.isUniqueConstraintViolation(error, 'idx_users_email')) {
         throw new UserEmailAlreadyInUseError();

@@ -129,6 +129,7 @@ export class MembersRepository implements IMembersRepository {
               await this.usersRepository.findOrCreateByWalletAddress(
                 userToInvite.address,
                 'PENDING',
+                entityManager,
               );
             break;
           }
