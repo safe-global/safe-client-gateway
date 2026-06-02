@@ -27,6 +27,15 @@ import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interfa
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
+/**
+ * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
+ * On-chain the caller is Gelato's dispatcher; using a non-Safe sentinel keeps
+ * `msg.sender`/`tx.origin` distinct from the Safe so refund-receiver-zero
+ * flows debit the Safe to a third party (as they would in production).
+ */
+const SIMULATION_SENDER_SENTINEL: Address =
+  '0x000000000000000000000000000000000000dEaD';
+
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
   private readonly relayFeeConfiguration: RelayFeeConfiguration;
@@ -78,7 +87,7 @@ export class RelayFeeRelayer implements IRelayer {
     if (!feeServiceResult.canRelay) {
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
-        message: `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}`,
+        message: `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}: fee service rejected safeTxHash ${args.safeTxHash}`,
       });
       return { result: false, currentCount: 0, limit: 0 };
     }
@@ -194,11 +203,31 @@ export class RelayFeeRelayer implements IRelayer {
       throw new SafeTxHashMismatchError(safeTxHash);
     }
 
-    const feeServiceResult = await this.feeServiceApi.canRelay({
-      chainId,
-      safeTxHash,
-    });
+    // Fee-service eligibility and Tenderly simulation are independent — fire
+    // them in parallel to avoid serializing two RTTs per relay.
+    const simulationEnabled =
+      this.relaySimulationConfiguration.enabledChainIds.includes(chainId);
+    const [feeServiceResult, simulation] = await Promise.all([
+      this.feeServiceApi.canRelay({ chainId, safeTxHash }),
+      simulationEnabled
+        ? this.tenderlySimulationApi.simulate({
+            chainId,
+            // Sentinel EOA — we use a non-Safe placeholder rather than the
+            // Safe itself so that `msg.sender`/`tx.origin` ≠ Safe during
+            // simulation. This surfaces issues that would only appear when
+            // relayed by an external dispatcher (most notably: when
+            // `refundReceiver` is the zero address, the refund is paid to
+            // `tx.origin`; simulating with `from = Safe` would have the Safe
+            // pay itself and hide insufficient token balance for the refund).
+            from: SIMULATION_SENDER_SENTINEL,
+            to,
+            data,
+          })
+        : Promise.resolve(null),
+    ]);
 
+    // Fee-service denial takes precedence over a simulation failure to keep
+    // the error class users see consistent with the previous serial flow.
     if (!feeServiceResult.canRelay) {
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
@@ -207,20 +236,12 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(safeTxHash);
     }
 
-    if (this.relaySimulationConfiguration.enabledChainIds.includes(chainId)) {
-      const simulation = await this.tenderlySimulationApi.simulate({
-        chainId,
-        from: to,
-        to,
-        data,
+    if (simulation && !simulation.success) {
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee relay denied for ${to} on chain ${chainId}: simulation failed (${simulation.reason}) for safeTxHash ${safeTxHash}`,
       });
-      if (!simulation.success) {
-        this.loggingService.warn({
-          type: LogType.TxRelayEligibility,
-          message: `relay-fee relay denied for ${to} on chain ${chainId}: simulation failed (${simulation.reason}) for safeTxHash ${safeTxHash}`,
-        });
-        throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
-      }
+      throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
     }
   }
 
