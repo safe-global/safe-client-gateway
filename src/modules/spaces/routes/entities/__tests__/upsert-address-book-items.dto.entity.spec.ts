@@ -1,19 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { UpsertAddressBookItemsSchema } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 
 const validItem = (): {
   name: string;
   address: string;
   chainIds: Array<string>;
-} => ({
-  name: faker.string.alphanumeric({ length: { min: 3, max: 20 } }),
-  address: getAddress(faker.finance.ethereumAddress()),
-  chainIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>
-    faker.string.numeric({ length: { min: 1, max: 6 } }),
-  ),
-});
+} => {
+  const { name, address, chainIds } = addressBookItemBuilder().build();
+  return { name, address, chainIds };
+};
 
 describe('UpsertAddressBookItemsSchema', () => {
   it('should validate a well-formed payload', () => {
