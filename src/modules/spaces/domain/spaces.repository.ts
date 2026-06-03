@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
-  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -17,7 +16,6 @@ import {
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
@@ -233,26 +231,17 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   // TODO: remove after FE removes numeric Space ID fallback.
+  // Input format is validated upstream by LegacySpaceIdPipe; this method only
+  // branches on numeric-vs-UUID and performs the lookup.
   public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
     if (/^\d+$/.test(value)) {
-      const numericId = Number(value);
-      if (!Number.isSafeInteger(numericId) || numericId > DB_MAX_SAFE_INTEGER) {
-        throw new BadRequestException('Invalid space identifier');
-      }
       const space = await this.findOneOrFail({
-        where: { id: numericId },
+        where: { id: Number(value) },
         select: { id: true },
       });
       return space.id;
     }
-    if (
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        value,
-      )
-    ) {
-      return await this.findIdByUuid(value);
-    }
-    throw new BadRequestException('Invalid space identifier');
+    return await this.findIdByUuid(value);
   }
 
   // @todo Add a soft delete method

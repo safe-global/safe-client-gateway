@@ -597,7 +597,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(400)
         .expect({
-          message: 'Validation failed (uuid is expected)',
+          message: 'Invalid space identifier',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -1353,7 +1353,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(400)
         .expect({
-          message: 'Validation failed (uuid is expected)',
+          message: 'Invalid space identifier',
           error: 'Bad Request',
           statusCode: 400,
         });
