@@ -138,6 +138,24 @@ describe('SpacesService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder] as const,
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should not scope the membership query to any space for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+
+      membersRepositoryMock.find.mockResolvedValue([]);
+
+      await service.getActiveOrInvitedSpaces(authPayload);
+
+      const options = membersRepositoryMock.find.mock.calls[0][0];
+      const where = options?.where as Array<Record<string, unknown>>;
+      expect(where.length).toBeGreaterThan(0);
+      for (const clause of where) {
+        expect(clause).not.toHaveProperty('space');
+      }
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should return safeCount 0 when %s space has no safes', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);

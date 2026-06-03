@@ -478,6 +478,81 @@ describe('SpacesRepository', () => {
     });
   });
 
+  describe('findIdByUuid', () => {
+    it('should resolve a UUID to its numeric id', async () => {
+      const user = await dbUserRepo.insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      const space = await spacesRepository.create({
+        userId,
+        name: faker.word.noun(),
+        status: faker.helpers.arrayElement(SpaceStatusKeys),
+      });
+
+      await expect(spacesRepository.findIdByUuid(space.uuid)).resolves.toBe(
+        space.id,
+      );
+    });
+
+    it('should throw if no space has the UUID', async () => {
+      await expect(
+        spacesRepository.findIdByUuid(faker.string.uuid()),
+      ).rejects.toThrow('Space not found.');
+    });
+  });
+
+  describe('findIdByIdOrUuid', () => {
+    it('should resolve a UUID to its numeric id', async () => {
+      const user = await dbUserRepo.insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      const space = await spacesRepository.create({
+        userId,
+        name: faker.word.noun(),
+        status: faker.helpers.arrayElement(SpaceStatusKeys),
+      });
+
+      await expect(spacesRepository.findIdByIdOrUuid(space.uuid)).resolves.toBe(
+        space.id,
+      );
+    });
+
+    it('should resolve a legacy numeric id to itself', async () => {
+      const user = await dbUserRepo.insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      const space = await spacesRepository.create({
+        userId,
+        name: faker.word.noun(),
+        status: faker.helpers.arrayElement(SpaceStatusKeys),
+      });
+
+      await expect(
+        spacesRepository.findIdByIdOrUuid(String(space.id)),
+      ).resolves.toBe(space.id);
+    });
+
+    it('should throw if no space has the UUID', async () => {
+      await expect(
+        spacesRepository.findIdByIdOrUuid(faker.string.uuid()),
+      ).rejects.toThrow('Space not found.');
+    });
+
+    it('should throw if no space has the numeric id', async () => {
+      const spaceId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await expect(
+        spacesRepository.findIdByIdOrUuid(String(spaceId)),
+      ).rejects.toThrow('Space not found.');
+    });
+  });
+
   describe('findOne', () => {
     it('should find a space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);

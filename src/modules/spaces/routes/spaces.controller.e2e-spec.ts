@@ -717,6 +717,44 @@ describe('SpacesController', () => {
         );
     });
 
+    it('Should return a 400 if the space id is numeric (UUID required on writes)', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${faker.number.int({ min: 1 })}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          name: nameBuilder(),
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+        })
+        .expect(400)
+        .expect({
+          message: 'Invalid space identifier',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+    });
+
+    it('Should return a 400 if the space id is malformed', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${faker.string.alpha()}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          name: nameBuilder(),
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+        })
+        .expect(400)
+        .expect({
+          message: 'Invalid space identifier',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+    });
+
     it('should return a 403 if not authenticated', async () => {
       const spaceId = faker.string.uuid();
 
