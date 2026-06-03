@@ -897,6 +897,101 @@ describe('Messages controller', () => {
         });
     });
 
+    // Reproduces the WA-2476 and WA-1455-adjacent read-after-write race:
+    // The Transaction Service may answer message creation with an
+    // (effectively) empty body. `postMessage` relays `data` verbatim, so the
+    // CGW create endpoint returns nothing usable to the client. The client is
+    // then forced to immediately re-GET the message by hash, which 404s while
+    // the tx-service is still indexing.
+    //
+    // This behavior is fine but ideally CGW sends back a 202 Accepted to signal
+    // to a client that the resource is being created but not immediately
+    // available once the request returns.
+    //
+    it('should respond 202 Accepted when the Transaction Service returns an empty body on creation', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            // Production behaviour: creation succeeds but no message body is echoed back.
+            return Promise.resolve({ data: rawify(null), status: 201 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          // Indexing lag: the just-created message is not yet readable by hash.
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(url),
+                { status: 404 } as Response,
+                { detail: 'Not found' },
+              ),
+            );
+          // ...and the Safe's message list doesn't include it yet either.
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: rawify(
+                pageBuilder().with('results', []).with('count', 0).build(),
+              ),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      // 1) Create the message. The Transaction Service returns an empty body, so the
+      //    CGW relays a 200 with nothing usable.
+      const createResponse = await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(
+          createMessageDtoBuilder()
+            .with('message', message.message)
+            .with('signature', message.confirmations[0].signature)
+            .build(),
+        );
+      expect(createResponse.body).toEqual({}); // empty body — client gets nothing
+
+      // 2) The client re-reads the message it just created — but the tx-service
+      //    hasn't indexed it yet, so the read-back 404s. This transient 404 is what
+      //    the wallet UI surfaces as "Error confirming the message", even though the
+      //    signature was persisted.
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
+        .expect(404);
+
+      // 3) Listing the Safe's messages doesn't include it yet either (empty).
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.results).toHaveLength(0);
+        });
+
+      // The create call should therefore not pretend success-with-availability.
+      // Ideally it returns 202 Accepted (signal "accepted, not yet retrievable —
+      // poll for it"). It currently returns 200, so this assertion fails,
+      // documenting the gap.
+      expect(createResponse.status).toBe(202);
+    });
+
     describe('Verification', () => {
       it('should throw and log if the messageHash could not be calculated', async () => {
         const chain = chainBuilder().build();
