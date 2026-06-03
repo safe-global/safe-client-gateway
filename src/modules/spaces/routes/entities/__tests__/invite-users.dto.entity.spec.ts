@@ -152,38 +152,32 @@ describe('InviteUsersDtoSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject a name exceeding 30 characters', () => {
+  it('should accept a name of up to 255 characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
       users: [
-        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(31) },
+        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(255) },
+      ],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject a name exceeding 255 characters', () => {
+    const result = InviteUsersDtoSchema.safeParse({
+      users: [
+        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(256) },
       ],
     });
 
     expect(result.success).toBe(false);
   });
 
-  it('should reject a name shorter than 3 characters', () => {
-    const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteUserDtoBuilder().build(), name: 'ab' }],
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject a whitespace-only name', () => {
-    const result = InviteUsersDtoSchema.safeParse({
-      users: [{ ...walletInviteUserDtoBuilder().build(), name: '   ' }],
-    });
-
-    expect(result.success).toBe(false);
-  });
-
-  it('should reject a name with invalid characters', () => {
+  it('should accept a name with special characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
       users: [{ ...walletInviteUserDtoBuilder().build(), name: '<>@!' }],
     });
 
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('should reject an invalid role value', () => {

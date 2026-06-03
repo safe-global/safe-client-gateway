@@ -199,7 +199,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -213,7 +213,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -519,7 +519,7 @@ describe('AddressBooksController', () => {
         .expect(400)
         .expect({
           message:
-            'This Space only allows a maximum of 1 Address Book Items. You can only add up to 0 more.',
+            'This Workspace only allows a maximum of 1 Address Book Items. You can only add up to 0 more.',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -551,7 +551,7 @@ describe('AddressBooksController', () => {
         .expect(400)
         .expect({
           message:
-            'This Space only allows a maximum of 1 Address Book Items. You can only add up to 1 more.',
+            'This Workspace only allows a maximum of 1 Address Book Items. You can only add up to 1 more.',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -703,7 +703,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -739,7 +739,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });

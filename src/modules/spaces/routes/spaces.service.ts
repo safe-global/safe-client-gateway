@@ -55,7 +55,7 @@ export class SpacesService {
   ): Promise<GetSpaceResponse> {
     const [space] = await this.findSpaces(authPayload, id);
     if (!space) {
-      throw new NotFoundException('Space not found.');
+      throw new NotFoundException('Workspace not found.');
     }
     return space;
   }
