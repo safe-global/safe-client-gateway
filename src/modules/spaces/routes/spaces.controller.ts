@@ -40,7 +40,10 @@ import {
   UpdateSpaceSchema,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -167,11 +170,10 @@ export class SpacesController {
   })
   @Get('/:id')
   public async getOne(
-    @Param('id') idOrUuid: string,
+    @Param('id', LegacySpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
-    const uuid = await this.spacesService.resolveUuid(idOrUuid);
-    return await this.spacesService.getActiveOrInvitedSpace(uuid, authPayload);
+    return await this.spacesService.getActiveOrInvitedSpace(id, authPayload);
   }
 
   @ApiOperation({

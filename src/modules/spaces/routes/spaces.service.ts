@@ -51,7 +51,7 @@ export class SpacesService {
   }
 
   public async getActiveOrInvitedSpace(
-    id: number,
+    id: Space['id'],
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     const [space] = await this.findSpaces(authPayload, id);
@@ -63,7 +63,7 @@ export class SpacesService {
 
   private async findSpaces(
     authPayload: AuthPayload,
-    spaceId?: number,
+    spaceId?: Space['id'],
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
@@ -119,16 +119,6 @@ export class SpacesService {
         safeCount: space.safes?.length ?? 0,
       };
     });
-  }
-
-  // TODO: remove after FE removes numeric Space ID fallback.
-  public async resolveUuid(idOrUuid: string): Promise<string> {
-    const id = await this.spacesRepository.findIdByIdOrUuid(idOrUuid);
-    const space = await this.spacesRepository.findOneOrFail({
-      where: { id },
-      select: { uuid: true },
-    });
-    return space.uuid;
   }
 
   public async update(args: {

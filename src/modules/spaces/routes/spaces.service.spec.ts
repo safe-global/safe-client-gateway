@@ -520,7 +520,7 @@ describe('SpacesService', () => {
       spacesRepositoryMock.find.mockResolvedValue([space]);
 
       const result = await service.getActiveOrInvitedSpace(
-        space.uuid,
+        space.id,
         authPayload,
       );
 
@@ -537,7 +537,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.getActiveOrInvitedSpace(
-          '00000000-0000-0000-0000-000000000000',
+          faker.number.int({ min: 1 }),
           authPayload,
         ),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
@@ -553,7 +553,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.getActiveOrInvitedSpace(
-          '00000000-0000-0000-0000-000000000000',
+          faker.number.int({ min: 1 }),
           authPayload,
         ),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
@@ -564,7 +564,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should throw NotFoundException when %s user is not a member of the space', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      const spaceId = faker.number.int();
+      const spaceId = faker.number.int({ min: 1 });
 
       // The space exists and has members, but none belong to this user, so
       // the user-scoped query returns no rows.
@@ -582,7 +582,7 @@ describe('SpacesService', () => {
     ])('should scope every membership clause to the user and the requested space for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
-      const spaceId = faker.number.int();
+      const spaceId = faker.number.int({ min: 1 });
 
       membersRepositoryMock.find.mockResolvedValue([]);
 
@@ -593,7 +593,11 @@ describe('SpacesService', () => {
       expect(membersRepositoryMock.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: [
-            { user: { id: userId }, status: 'ACTIVE', space: { id: spaceId } },
+            {
+              user: { id: userId },
+              status: 'ACTIVE',
+              space: { id: spaceId },
+            },
             {
               user: { id: userId },
               status: 'INVITED',
