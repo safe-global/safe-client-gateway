@@ -20,9 +20,9 @@ const mockNetworkService = jest.mocked({
   post: jest.fn(),
 } as unknown as jest.MockedObjectDeep<INetworkService>);
 
-const mockPublicClient = jest.mocked({
+const mockPublicClient = {
   getBlock: jest.fn(),
-} as unknown);
+};
 
 const mockBlockchainApiManager = jest.mocked({
   getApi: jest.fn(),
