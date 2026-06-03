@@ -6,6 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -98,6 +99,39 @@ describe('SpacesService', () => {
           safeCount: 3,
         },
       ]);
+      expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({
+            members: expect.objectContaining({
+              inviteExpiresAt: true,
+            }),
+          }),
+        }),
+      );
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should only include non-expired invited spaces for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+
+      membersRepositoryMock.find.mockResolvedValue([]);
+
+      await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(membersRepositoryMock.find).toHaveBeenCalledWith({
+        where: [
+          { user: { id: userId }, status: 'ACTIVE' },
+          {
+            user: { id: userId },
+            status: 'INVITED',
+            inviteExpiresAt: MoreThan(expect.any(Date)),
+          },
+        ],
+        relations: ['space'],
+      });
     });
 
     it.each([
@@ -516,6 +550,52 @@ describe('SpacesService', () => {
       await expect(
         service.getActiveOrInvitedSpace(1, authPayload),
       ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should throw NotFoundException when %s user is not a member of the space', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const spaceId = faker.number.int();
+
+      // The space exists and has members, but none belong to this user, so
+      // the user-scoped query returns no rows.
+      membersRepositoryMock.find.mockResolvedValue([]);
+
+      await expect(
+        service.getActiveOrInvitedSpace(spaceId, authPayload),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      expect(spacesRepositoryMock.find).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder] as const,
+      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+    ])('should scope every membership clause to the user and the requested space for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+      const spaceId = faker.number.int();
+
+      membersRepositoryMock.find.mockResolvedValue([]);
+
+      await expect(
+        service.getActiveOrInvitedSpace(spaceId, authPayload),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+
+      expect(membersRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: [
+            { user: { id: userId }, status: 'ACTIVE', space: { id: spaceId } },
+            {
+              user: { id: userId },
+              status: 'INVITED',
+              inviteExpiresAt: MoreThan(expect.any(Date)),
+              space: { id: spaceId },
+            },
+          ],
+        }),
+      );
     });
   });
 

@@ -16,6 +16,7 @@ import type { IMembersRepository } from '@/modules/users/domain/members.reposito
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const MAX_INVITES = 10;
+const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const membersRepositoryMock = {
   findActiveAdmin: jest.fn(),
@@ -32,7 +33,16 @@ describe('MembersService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    configurationServiceMock.getOrThrow.mockReturnValue(MAX_INVITES);
+    configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
+      switch (key) {
+        case 'spaces.maxInvites':
+          return MAX_INVITES;
+        case 'spaces.invite.ttlMs':
+          return INVITE_TTL_MS;
+        default:
+          throw new Error(`Unexpected config key: ${key}`);
+      }
+    });
     service = new MembersService(
       membersRepositoryMock,
       configurationServiceMock,
@@ -110,19 +120,26 @@ describe('MembersService', () => {
         .with('role', 'ADMIN')
         .with('status', 'ACTIVE')
         .build();
+      const now = new Date('2026-01-15T00:00:00Z');
+      jest.useFakeTimers().setSystemTime(now);
 
       membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
       membersRepositoryMock.inviteUsers.mockResolvedValue([]);
 
-      await expect(
-        service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
-      ).resolves.toEqual([]);
-      expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
-      expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
-        authPayload,
-        spaceId,
-        users: [],
-      });
+      try {
+        await expect(
+          service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
+        ).resolves.toEqual([]);
+        expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
+        expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
+          authPayload,
+          spaceId,
+          users: [],
+          inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+        });
+      } finally {
+        jest.useRealTimers();
+      }
     });
   });
 });

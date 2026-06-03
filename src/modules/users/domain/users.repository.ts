@@ -7,7 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
-import { EntityManager, In } from 'typeorm';
+import { EntityManager, In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -195,53 +195,102 @@ export class UsersRepository implements IUsersRepository {
     return wallet?.user;
   }
 
-  public async findOrCreateByWalletAddress(
+  public findOrCreateByWalletAddress(
     address: Address,
+    status: keyof typeof UserStatus = 'ACTIVE',
+    entityManager?: EntityManager,
   ): Promise<User['id']> {
-    const existing = await this.findByWalletAddress(address);
-    if (existing) {
-      return existing.id;
-    }
-
-    try {
-      return await this.postgresDatabaseService.transaction(
-        async (entityManager: EntityManager) => {
-          const userId = await this.create('ACTIVE', entityManager);
-
-          await this.walletsRepository.create(
-            { userId, walletAddress: address },
-            entityManager,
-          );
-
-          return userId;
-        },
-      );
-    } catch (error) {
-      // Handle race condition: a concurrent call may have created the
-      // wallet between our find and insert, causing a unique constraint
-      // violation. Retry the lookup in that case.
-      if (
-        error instanceof Error &&
-        error.message.includes('UQ_wallet_address')
-      ) {
-        const user = await this.findByWalletAddressOrFail(address);
-        return user.id;
+    const findOrCreate = async (
+      manager: EntityManager,
+    ): Promise<User['id']> => {
+      const existing = await manager.findOne(Wallet, {
+        where: { address },
+        relations: { user: true },
+      });
+      if (existing) {
+        return existing.user.id;
       }
-      throw error;
+
+      // `status` only applies when creating a user for a new wallet.
+      const userId = await this.create(status, manager);
+      const insert = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(Wallet)
+        .values({ user: { id: userId }, address })
+        .orIgnore()
+        .execute();
+
+      if (insert.identifiers.length > 0) {
+        return userId;
+      }
+
+      await manager.delete(DbUser, userId);
+      const raced = await manager.findOne(Wallet, {
+        where: { address },
+        relations: { user: true },
+      });
+      if (!raced) {
+        throw new NotFoundException(`Wallet not found. Address=${address}`);
+      }
+      return raced.user.id;
+    };
+
+    if (entityManager) {
+      return findOrCreate(entityManager);
     }
+
+    return this.postgresDatabaseService.transaction(findOrCreate);
+  }
+
+  /**
+   * Returns the id of an existing user with this email, or creates and
+   * returns a PENDING placeholder. Idempotent — repeated calls with the
+   * same email yield the same id.
+   *
+   * Used by the email-invite path: the placeholder will be claimed by the
+   * eventual OIDC sign-in via {@link findOrCreateByExtUserIdAndEmail}.
+   */
+  public findOrCreateByEmail(
+    email: EmailAddress,
+    entityManager?: EntityManager,
+  ): Promise<User['id']> {
+    const upsertThenSelect = async (
+      manager: EntityManager,
+    ): Promise<User['id']> => {
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(DbUser)
+        .values({ status: 'PENDING', email })
+        .orIgnore()
+        .execute();
+
+      const user = await manager.findOneOrFail(DbUser, {
+        where: { email },
+        select: { id: true },
+      });
+      return user.id;
+    };
+
+    if (entityManager) {
+      return upsertThenSelect(entityManager);
+    }
+    return this.postgresDatabaseService.transaction(upsertThenSelect);
   }
 
   /**
    * Finds or creates an OIDC user identified by their external user ID.
    *
-   * If a user with the given `extUserId` already exists, their email is
-   * reconciled against `email`: a missing email is persisted, while a
-   * conflicting one is rejected. Otherwise a new user is created with the
-   * email stored at insert time.
+   * Resolution order:
+   *  1. existing user with this `extUserId` → reconcile email
+   *  2. PENDING placeholder created by a prior email invite → claim by
+   *     setting `extUserId` and flipping to ACTIVE
+   *  3. otherwise INSERT a fresh ACTIVE user with email at insert time
    *
    * @param extUserId - The external (OIDC provider) user identifier.
    * @param email - The verified email address to associate with the user.
-   * @returns The ID of the existing or newly created user.
+   * @returns The ID of the existing, claimed, or newly created user.
    * @throws {UnauthorizedException} If the email does not match the one
    * already registered for the account.
    * @throws {UserEmailAlreadyInUseError} If the email is already in use by
@@ -251,9 +300,16 @@ export class UsersRepository implements IUsersRepository {
     extUserId: string,
     email: EmailAddress,
   ): Promise<User['id']> {
+    // This lookup/claim/insert sequence relies on unique indexes to settle
+    // races instead of SERIALIZABLE isolation; see the catches below.
     const existing = await this.findByExtUserId(extUserId);
     if (existing) {
       return this.reconcileEmail(existing, email);
+    }
+
+    const claimed = await this.claimPendingByEmail(extUserId, email);
+    if (claimed !== null) {
+      return claimed;
     }
 
     try {
@@ -282,6 +338,41 @@ export class UsersRepository implements IUsersRepository {
       }
       throw error;
     }
+  }
+
+  /**
+   * Atomically claims a PENDING email-invite placeholder for this OIDC
+   * caller. Returns the claimed user id, or null if no matching
+   * placeholder exists (caller should fall through to INSERT). Throws
+   * {@link UserEmailAlreadyInUseError} when a user with this email exists
+   * but isn't a claimable placeholder (already ACTIVE, or already linked
+   * to a different extUserId).
+   */
+  private async claimPendingByEmail(
+    extUserId: string,
+    email: EmailAddress,
+  ): Promise<User['id'] | null> {
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const candidate = await userRepository.findOne({
+      where: { email },
+      select: { id: true, status: true, extUserId: true },
+    });
+
+    if (!candidate) {
+      return null;
+    }
+
+    if (candidate.status !== 'PENDING' || candidate.extUserId !== null) {
+      throw new UserEmailAlreadyInUseError();
+    }
+
+    const result = await userRepository.update(
+      { id: candidate.id, status: 'PENDING', extUserId: IsNull() },
+      { extUserId, status: 'ACTIVE' },
+    );
+
+    return result.affected === 1 ? candidate.id : null;
   }
 
   private async findByExtUserId(

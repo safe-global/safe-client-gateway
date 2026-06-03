@@ -13,8 +13,10 @@ import type {
   UpdateSpaceResponse,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 export class SpacesService {
@@ -64,12 +66,12 @@ export class SpacesService {
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
+    const spaceScope = spaceId != null ? { space: { id: spaceId } } : {};
     const members = await this.membersRepository.find({
-      where: {
+      where: activeOrPendingMemberWhere<Member>(() => ({
         user: { id: userId },
-        status: In(['ACTIVE', 'INVITED']),
-        ...(spaceId != null && { space: { id: spaceId } }),
-      },
+        ...spaceScope,
+      })),
       relations: ['space'],
     });
     if (members.length === 0) {
@@ -84,6 +86,7 @@ export class SpacesService {
           role: true,
           name: true,
           invitedBy: true,
+          inviteExpiresAt: true,
           status: true,
           user: { id: true },
         },

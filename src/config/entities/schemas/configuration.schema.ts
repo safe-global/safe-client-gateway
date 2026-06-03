@@ -179,6 +179,7 @@ export const RootConfigurationSchema = z
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
+    SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),

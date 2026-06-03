@@ -251,6 +251,21 @@ describe('AddressBookItemsRepository', () => {
         }),
       ).rejects.toThrow(new NotFoundException('Space not found.'));
     });
+
+    it('should throw a NotFoundException if the user invitation has expired', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const authPayload = await addMemberToSpaceWithStatus(
+        spaceId,
+        'INVITED',
+        faker.date.past(),
+      );
+      await expect(
+        addressBookItemsRepository.findAllBySpaceId({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(new NotFoundException('Space not found.'));
+    });
   });
 
   describe('upsertMany', () => {
@@ -603,6 +618,7 @@ describe('AddressBookItemsRepository', () => {
   const addMemberToSpaceWithStatus = async (
     spaceId: Space['id'],
     memberStatus: 'ACTIVE' | 'INVITED' | 'DECLINED',
+    inviteExpiresAt: Date | null = null,
   ): Promise<AuthPayload> => {
     const { user, authPayload } = await createUser();
     const space = await dbSpacesRepository.findOneBy({ id: spaceId });
@@ -614,6 +630,7 @@ describe('AddressBookItemsRepository', () => {
       status: memberStatus,
       role: 'MEMBER',
       invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+      inviteExpiresAt,
     });
     return authPayload;
   };

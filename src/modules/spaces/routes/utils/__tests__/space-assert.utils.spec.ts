@@ -73,12 +73,19 @@ describe('space-assert.utils', () => {
         assertMember(membersRepositoryMock, spaceId, userId),
       ).resolves.toBeUndefined();
 
-      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith(
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith([
         expect.objectContaining({
           user: { id: userId },
           space: { id: spaceId },
+          status: 'ACTIVE',
         }),
-      );
+        expect.objectContaining({
+          user: { id: userId },
+          space: { id: spaceId },
+          status: 'INVITED',
+          inviteExpiresAt: expect.anything(),
+        }),
+      ]);
     });
 
     it('should throw ForbiddenException when user is not member', async () => {

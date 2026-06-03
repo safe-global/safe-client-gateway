@@ -18,6 +18,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
 
 export class MembersService {
   private readonly maxInvites: number;
+  private readonly inviteTtlMs: number;
 
   public constructor(
     @Inject(IMembersRepository)
@@ -27,6 +28,9 @@ export class MembersService {
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('spaces.maxInvites');
+    this.inviteTtlMs = this.configurationService.getOrThrow<number>(
+      'spaces.invite.ttlMs',
+    );
   }
 
   public async inviteUser(args: {
@@ -45,6 +49,7 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
+      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
     });
   }
 
