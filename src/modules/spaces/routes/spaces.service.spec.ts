@@ -430,12 +430,14 @@ describe('SpacesService', () => {
       spacesRepositoryMock.find.mockResolvedValue([
         spaceBuilder()
           .with('id', spaceA.id)
+          .with('uuid', spaceA.uuid)
           .with('name', spaceA.name)
           .with('members', [inviterMemberA, callerMemberA])
           .with('safes', [])
           .build(),
         spaceBuilder()
           .with('id', spaceB.id)
+          .with('uuid', spaceB.uuid)
           .with('name', spaceB.name)
           .with('members', [callerMemberB]) // inviter is NOT a member here
           .with('safes', [])
@@ -448,7 +450,7 @@ describe('SpacesService', () => {
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
       // Space A: inviter present → invitedByName populated
-      const spaceAResult = result.find((s) => s.id === spaceA.id)!;
+      const spaceAResult = result.find((s) => s.id === spaceA.uuid)!;
       const invitedInA = spaceAResult.members.find(
         (m) => m.status === 'INVITED',
       );
@@ -457,7 +459,7 @@ describe('SpacesService', () => {
       );
 
       // Space B: inviter absent → invitedByName must NOT leak from Space A
-      const spaceBResult = result.find((s) => s.id === spaceB.id)!;
+      const spaceBResult = result.find((s) => s.id === spaceB.uuid)!;
       const invitedInB = spaceBResult.members.find(
         (m) => m.status === 'INVITED',
       );

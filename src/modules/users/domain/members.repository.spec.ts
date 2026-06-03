@@ -84,7 +84,7 @@ describe('MembersRepository', () => {
       ).resolves.toEqual([
         {
           userId: wallet.user.id,
-          spaceId: space.id,
+          spaceId: space.uuid,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
