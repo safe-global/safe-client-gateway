@@ -79,16 +79,17 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
-    const members = await this.membersRepository.findAuthorizedMembersOrFail({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
-    const isActiveAdmin = Boolean(
-      await this.membersRepository.findActiveAdmin({
+    const [members, activeAdmin] = await Promise.all([
+      this.membersRepository.findAuthorizedMembersOrFail({
+        authPayload: args.authPayload,
+        spaceId: args.spaceId,
+      }),
+      this.membersRepository.findActiveAdmin({
         userId: getAuthenticatedUserIdOrFail(args.authPayload),
         spaceId: args.spaceId,
       }),
-    );
+    ]);
+    const isActiveAdmin = Boolean(activeAdmin);
     return {
       members: members.map((member) => ({
         ...member,
