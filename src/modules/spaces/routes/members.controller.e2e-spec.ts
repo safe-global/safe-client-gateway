@@ -1344,20 +1344,17 @@ describe('MembersController', () => {
         });
     });
 
-    it('should hide email for invited members', async () => {
-      const spaceName = nameBuilder();
-      const invitedAddress = getAddress(faker.finance.ethereumAddress());
-      const invitedName = faker.person.firstName();
-      const email = fakeEmailAddress();
-
-      const userId = await usersRepository.findOrCreateByExtUserIdAndEmail(
-        faker.string.uuid(),
-        email,
-      );
-      const authPayloadDto = oidcAuthPayloadDtoBuilder()
-        .with('sub', userId.toString())
-        .build();
+    it('should return email for invited members when the caller is an active admin', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const invitedName = faker.person.firstName();
+      const invitedEmail = fakeEmailAddress();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -1366,21 +1363,22 @@ describe('MembersController', () => {
         .expect(201);
       const spaceId = createSpaceResponse.body.id;
 
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           users: [
             {
+              type: 'email',
               role: 'MEMBER',
-              address: invitedAddress,
+              email: invitedEmail,
               name: invitedName,
             },
           ],
         })
         .expect(201);
-      const invitedUser =
-        await usersRepository.findByWalletAddressOrFail(invitedAddress);
+      const invitedUserId = inviteResponse.body[0].userId;
+
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -1391,7 +1389,67 @@ describe('MembersController', () => {
               expect.objectContaining({
                 status: 'INVITED',
                 user: expect.objectContaining({
-                  id: invitedUser.id,
+                  id: invitedUserId,
+                  email: invitedEmail,
+                }),
+              }),
+            ]),
+          );
+        });
+    });
+
+    it('should hide email for invited members when the caller is not an active admin', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+      const invitedName = faker.person.firstName();
+      const invitedEmail = fakeEmailAddress();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName })
+        .expect(201);
+      const spaceId = createSpaceResponse.body.id;
+
+      const inviteResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              type: 'email',
+              role: 'MEMBER',
+              email: invitedEmail,
+              name: invitedName,
+            },
+          ],
+        })
+        .expect(201);
+      const invitedUserId = inviteResponse.body[0].userId;
+
+      // The invited member can list members but is not an active admin.
+      const invitedAuthPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', invitedUserId.toString())
+        .build();
+      const invitedAccessToken = jwtService.sign(invitedAuthPayloadDto);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${invitedAccessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                status: 'INVITED',
+                user: expect.objectContaining({
+                  id: invitedUserId,
                   email: null,
                 }),
               }),
