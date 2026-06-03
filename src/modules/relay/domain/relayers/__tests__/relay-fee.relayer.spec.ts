@@ -9,6 +9,7 @@ import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
+import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
@@ -477,7 +478,7 @@ describe('RelayFeeRelayer', () => {
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
-          success: true,
+          status: 'success',
         });
         const safeAddress = fakeAddress();
         const taskId = faker.string.uuid();
@@ -510,7 +511,7 @@ describe('RelayFeeRelayer', () => {
         configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
-          success: false,
+          status: 'failed',
           reason: "Reverted with reason string: 'GS013'",
         });
         const safeTxHash = fakeSafeTxHash();
@@ -534,6 +535,101 @@ describe('RelayFeeRelayer', () => {
             ),
           }),
         );
+      });
+
+      it('throws RelaySimulationIndeterminateError when simulation is indeterminate and the user has not acknowledged it', async () => {
+        fakeConfigurationService.set('relay.fee', {
+          enabledChainIds: [simulationChainId],
+          baseUri: faker.internet.url({ appendSlash: false }),
+        });
+        configureSimulationEnabled([simulationChainId]);
+        arrangeValidExecTransaction();
+        mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
+          status: 'indeterminate',
+          reason: 'Simulation could not be completed',
+        });
+        const safeTxHash = fakeSafeTxHash();
+
+        await expect(
+          target.relay({
+            version: '1.3.0',
+            chainId: simulationChainId,
+            to: fakeAddress(),
+            data: '0x' as Hex,
+            gasLimit: null,
+            safeTxHash,
+          }),
+        ).rejects.toThrow(RelaySimulationIndeterminateError);
+
+        expect(mockRelayApi.relay).not.toHaveBeenCalled();
+        expect(mockLoggingService.warn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: expect.stringContaining(
+              `simulation indeterminate (Simulation could not be completed) for safeTxHash ${safeTxHash}`,
+            ),
+          }),
+        );
+      });
+
+      it('relays despite an indeterminate simulation when the user has acknowledged it', async () => {
+        fakeConfigurationService.set('relay.fee', {
+          enabledChainIds: [simulationChainId],
+          baseUri: faker.internet.url({ appendSlash: false }),
+        });
+        configureSimulationEnabled([simulationChainId]);
+        arrangeValidExecTransaction();
+        mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
+          status: 'indeterminate',
+          reason: 'Simulation could not be completed',
+        });
+        const taskId = faker.string.uuid();
+        mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+        const safeTxHash = fakeSafeTxHash();
+
+        const result = await target.relay({
+          version: '1.3.0',
+          chainId: simulationChainId,
+          to: fakeAddress(),
+          data: '0x' as Hex,
+          gasLimit: null,
+          safeTxHash,
+          acceptUnverifiedSimulation: true,
+        });
+
+        expect(result).toEqual({ taskId });
+        expect(mockRelayApi.relay).toHaveBeenCalledTimes(1);
+        expect(mockLoggingService.warn).toHaveBeenCalledWith(
+          expect.objectContaining({
+            message: expect.stringContaining('user override'),
+          }),
+        );
+      });
+
+      it('still throws RelaySimulationFailedError on the override path when the second simulation confirms a revert', async () => {
+        fakeConfigurationService.set('relay.fee', {
+          enabledChainIds: [simulationChainId],
+          baseUri: faker.internet.url({ appendSlash: false }),
+        });
+        configureSimulationEnabled([simulationChainId]);
+        arrangeValidExecTransaction();
+        mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
+          status: 'failed',
+          reason: "Reverted with reason string: 'GS013'",
+        });
+
+        await expect(
+          target.relay({
+            version: '1.3.0',
+            chainId: simulationChainId,
+            to: fakeAddress(),
+            data: '0x' as Hex,
+            gasLimit: null,
+            safeTxHash: fakeSafeTxHash(),
+            acceptUnverifiedSimulation: true,
+          }),
+        ).rejects.toThrow(RelaySimulationFailedError);
+
+        expect(mockRelayApi.relay).not.toHaveBeenCalled();
       });
     });
   });

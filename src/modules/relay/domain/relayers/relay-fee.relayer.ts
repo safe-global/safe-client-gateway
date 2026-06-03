@@ -20,6 +20,7 @@ import {
 } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
 import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
+import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
@@ -120,6 +121,7 @@ export class RelayFeeRelayer implements IRelayer {
     data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: Hex;
+    acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
     const { version, chainId, to, data } = args;
     const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
@@ -139,6 +141,7 @@ export class RelayFeeRelayer implements IRelayer {
         data,
         decoded,
         safeTxHash: args.safeTxHash,
+        acceptUnverifiedSimulation: args.acceptUnverifiedSimulation,
       });
     } else if (decoded !== null) {
       // Branch 2: the data decoded as execTransaction but failed validity rules.
@@ -185,8 +188,16 @@ export class RelayFeeRelayer implements IRelayer {
     data: Hex;
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
+    acceptUnverifiedSimulation: boolean | undefined;
   }): Promise<void> {
-    const { chainId, to, data, decoded, safeTxHash } = args;
+    const {
+      chainId,
+      to,
+      data,
+      decoded,
+      safeTxHash,
+      acceptUnverifiedSimulation,
+    } = args;
 
     if (!safeTxHash) {
       throw new RelayTxDeniedError(undefined);
@@ -236,12 +247,31 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(safeTxHash);
     }
 
-    if (simulation && !simulation.success) {
+    if (simulation?.status === 'failed') {
+      // Tenderly confirmed the transaction would revert => Block relay
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
         message: `relay-fee relay denied for ${to} on chain ${chainId}: simulation failed (${simulation.reason}) for safeTxHash ${safeTxHash}`,
       });
       throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
+    }
+
+    if (simulation?.status === 'indeterminate') {
+      if (!acceptUnverifiedSimulation) {
+        this.loggingService.warn({
+          type: LogType.TxRelayEligibility,
+          message: `relay-fee relay deferred for ${to} on chain ${chainId}: simulation indeterminate (${simulation.reason}) for safeTxHash ${safeTxHash}`,
+        });
+        throw new RelaySimulationIndeterminateError(
+          safeTxHash,
+          simulation.reason,
+        );
+      }
+
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee relay proceeding for ${to} on chain ${chainId} despite indeterminate simulation (${simulation.reason}) for safeTxHash ${safeTxHash}: user override`,
+      });
     }
   }
 

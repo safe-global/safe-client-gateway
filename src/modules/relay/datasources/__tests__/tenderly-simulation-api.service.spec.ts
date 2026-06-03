@@ -111,7 +111,7 @@ describe('TenderlySimulationApi', () => {
 
       const result = await target.simulate(args);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ status: 'success' });
       expect(mockBlockchainApiManager.getApi).toHaveBeenCalledWith(
         args.chainId,
       );
@@ -161,7 +161,7 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
+        status: 'failed',
         reason: "Reverted with reason string: 'GS013'",
       });
     });
@@ -176,7 +176,7 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
+        status: 'failed',
         reason: 'Transaction would revert',
       });
     });
@@ -197,7 +197,7 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
+        status: 'failed',
         reason: 'Safe execTransaction emitted ExecutionFailure',
       });
     });
@@ -214,7 +214,7 @@ describe('TenderlySimulationApi', () => {
 
       const result = await target.simulate(args);
 
-      expect(result.success).toBe(false);
+      expect(result.status).toBe('failed');
     });
 
     it('returns success when none of the log topics is ExecutionFailure', async () => {
@@ -232,10 +232,10 @@ describe('TenderlySimulationApi', () => {
 
       const result = await target.simulate(args);
 
-      expect(result).toEqual({ success: true });
+      expect(result).toEqual({ status: 'success' });
     });
 
-    it('fails closed and logs at error level when the response does not match the schema', async () => {
+    it('returns indeterminate and logs at error level when the response does not match the schema', async () => {
       const args = fakeArgs();
       mockNetworkService.post.mockResolvedValue({
         status: 200,
@@ -245,8 +245,8 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
-        reason: 'Simulation request failed',
+        status: 'indeterminate',
+        reason: 'Simulation could not be completed',
       });
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining(
@@ -256,7 +256,7 @@ describe('TenderlySimulationApi', () => {
       expect(mockLoggingService.warn).not.toHaveBeenCalled();
     });
 
-    it('fails closed and logs the HTTP status when Tenderly returns an error response', async () => {
+    it('returns indeterminate and logs the HTTP status when Tenderly returns an error response', async () => {
       const args = fakeArgs();
       const url = new URL(SIMULATION_URL);
       const response = { status: 502 } as Response;
@@ -267,8 +267,8 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
-        reason: 'Simulation request failed',
+        status: 'indeterminate',
+        reason: 'Simulation could not be completed',
       });
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.stringContaining('HTTP 502'),
@@ -278,7 +278,7 @@ describe('TenderlySimulationApi', () => {
       );
     });
 
-    it('fails closed and surfaces the underlying cause when the request never completes', async () => {
+    it('returns indeterminate and surfaces the underlying cause when the request never completes', async () => {
       const args = fakeArgs();
       const url = new URL(SIMULATION_URL);
       const cause = new Error('getaddrinfo ENOTFOUND simulation.safe.global');
@@ -291,8 +291,8 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
-        reason: 'Simulation request failed',
+        status: 'indeterminate',
+        reason: 'Simulation could not be completed',
       });
       const warn = mockLoggingService.warn.mock.calls[0][0] as string;
       expect(warn).toContain('TypeError: fetch failed');
@@ -348,7 +348,7 @@ describe('TenderlySimulationApi', () => {
       expect(mockBlockchainApiManager.getApi).toHaveBeenNthCalledWith(2, '137');
     });
 
-    it('fails closed when the latest block gas limit cannot be fetched', async () => {
+    it('returns indeterminate when the latest block gas limit cannot be fetched', async () => {
       const args = fakeArgs();
       (mockPublicClient.getBlock as jest.Mock).mockRejectedValue(
         new Error('RPC unreachable'),
@@ -357,8 +357,8 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({
-        success: false,
-        reason: 'Simulation request failed',
+        status: 'indeterminate',
+        reason: 'Simulation could not be completed',
       });
       expect(mockNetworkService.post).not.toHaveBeenCalled();
       expect(mockLoggingService.warn).toHaveBeenCalledWith(

@@ -143,7 +143,7 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
       const parsed = TenderlySimulationResponseSchema.parse(raw);
       if (!parsed.transaction.status) {
         return {
-          success: false,
+          status: 'failed',
           reason:
             parsed.transaction.error_message ?? 'Transaction would revert',
         };
@@ -160,12 +160,12 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
       );
       if (hasExecutionFailure) {
         return {
-          success: false,
+          status: 'failed',
           reason: 'Safe execTransaction emitted ExecutionFailure',
         };
       }
 
-      return { success: true };
+      return { status: 'success' };
     } catch (error) {
       if (error instanceof ZodError) {
         // Schema mismatch — Tenderly likely changed their response shape.
@@ -176,10 +176,13 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
         );
       } else {
         this.loggingService.warn(
-          `Tenderly simulation failed for ${args.to} on chain ${args.chainId}: ${formatNetworkError(error)}`,
+          `Tenderly simulation indeterminate for ${args.to} on chain ${args.chainId}: ${formatNetworkError(error)}`,
         );
       }
-      return { success: false, reason: 'Simulation request failed' };
+      return {
+        status: 'indeterminate',
+        reason: 'Simulation could not be completed',
+      };
     }
   }
 }

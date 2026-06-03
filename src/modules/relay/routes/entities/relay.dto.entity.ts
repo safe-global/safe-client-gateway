@@ -27,11 +27,20 @@ export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   })
   safeTxHash?: Hex;
 
+  @ApiPropertyOptional({
+    type: Boolean,
+    description:
+      'Set to true to proceed with the relay when a previous attempt returned INDETERMINATE_SIMULATION. The user has acknowledged the simulation could not be completed and accepts the risk.',
+  })
+  acceptUnverifiedSimulation?: boolean;
+
   constructor(dto: z.infer<typeof RelayDtoSchema>) {
     this.version = dto.version;
     this.to = dto.to;
     this.data = dto.data;
     this.gasLimit = dto.gasLimit;
     this.safeTxHash = dto.safeTxHash;
+    this.acceptUnverifiedSimulation =
+      dto.acceptUnverifiedSimulation;
   }
 }
