@@ -8,9 +8,11 @@ const validItem = (): {
   address: string;
   chainIds: Array<string>;
 } => ({
-  name: 'My Wallet',
+  name: faker.string.alphanumeric({ length: { min: 3, max: 20 } }),
   address: getAddress(faker.finance.ethereumAddress()),
-  chainIds: ['1', '100'],
+  chainIds: Array.from({ length: faker.number.int({ min: 1, max: 10 }) }, () =>
+    faker.string.numeric({ length: { min: 1, max: 6 } }),
+  ),
 });
 
 describe('UpsertAddressBookItemsSchema', () => {
