@@ -19,8 +19,7 @@ export class RelayService {
       data: args.relayDto.data,
       gasLimit: args.relayDto.gasLimit,
       safeTxHash: args.relayDto.safeTxHash,
-      acceptUnverifiedSimulation:
-        args.relayDto.acceptUnverifiedSimulation,
+      acceptUnverifiedSimulation: args.relayDto.acceptUnverifiedSimulation,
     });
 
     return new Relay(relay);

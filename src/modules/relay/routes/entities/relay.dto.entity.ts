@@ -40,7 +40,6 @@ export class RelayDto implements z.infer<typeof RelayDtoSchema> {
     this.data = dto.data;
     this.gasLimit = dto.gasLimit;
     this.safeTxHash = dto.safeTxHash;
-    this.acceptUnverifiedSimulation =
-      dto.acceptUnverifiedSimulation;
+    this.acceptUnverifiedSimulation = dto.acceptUnverifiedSimulation;
   }
 }
