@@ -2,10 +2,11 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
+import { AddressBookItemSchema as BaseAddressBookItemSchema } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 const AddressBookItemSchema = z.object({
-  name: z.string(),
+  name: BaseAddressBookItemSchema.shape.name.optional(),
   address: AddressSchema,
   chainIds: z.array(z.string()),
 });

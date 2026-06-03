@@ -2,6 +2,7 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -17,7 +18,7 @@ export const InviteType = {
 
 const SharedInviteFields = {
   role: z.enum(getStringEnumKeys(MemberRole)),
-  name: z.string().max(255),
+  name: makeNameSchema({ maxLength: 255 }),
 };
 
 const WalletInviteUserSchema = z

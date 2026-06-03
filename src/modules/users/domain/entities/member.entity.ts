@@ -18,21 +18,22 @@ export enum MemberStatus {
   DECLINED = 2,
 }
 
-// We need explicitly define ZodType due to recursion
-export const MemberSchema: z.ZodType<
-  z.infer<typeof RowSchema> & {
-    user: User;
-    space: Space;
-    name: string;
-    alias: string | null;
-    role: keyof typeof MemberRole;
-    status: keyof typeof MemberStatus;
-    invitedBy: number | null;
-    inviteExpiresAt: Date | null;
-  }
-> = RowSchema.extend({
-  user: z.lazy(() => UserSchema),
-  space: z.lazy(() => SpaceSchema),
+export type Member = z.infer<typeof RowSchema> & {
+  user: User;
+  space: Space;
+  name: string;
+  alias: string | null;
+  role: keyof typeof MemberRole;
+  status: keyof typeof MemberStatus;
+  invitedBy: number | null;
+  inviteExpiresAt: Date | null;
+};
+
+// The lazy callbacks are explicitly typed to break the circular inference
+// with UserSchema/SpaceSchema, while keeping MemberSchema a ZodObject (exposing `.shape`).
+export const MemberSchema = RowSchema.extend({
+  user: z.lazy((): z.ZodType<User> => UserSchema),
+  space: z.lazy((): z.ZodType<Space> => SpaceSchema),
   name: NameSchema,
   alias: NameSchema.nullable(),
   role: z.enum(getStringEnumKeys(MemberRole)),
@@ -40,5 +41,3 @@ export const MemberSchema: z.ZodType<
   invitedBy: z.number().int().positive().nullable(),
   inviteExpiresAt: z.date().nullable(),
 });
-
-export type Member = z.infer<typeof MemberSchema>;
