@@ -184,7 +184,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new UniqueConstraintError(
-          `${wallet.address} is already in this space or has a pending invite.`,
+          `${wallet.address} is already in this workspace or has a pending invite.`,
         ),
       );
       expect(entityManager.insert).not.toHaveBeenCalled();
@@ -218,7 +218,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new UniqueConstraintError(
-          `${wallet.address} is already in this space or has a pending invite.`,
+          `${wallet.address} is already in this workspace or has a pending invite.`,
         ),
       );
       expect(entityManager.insert).toHaveBeenCalled();

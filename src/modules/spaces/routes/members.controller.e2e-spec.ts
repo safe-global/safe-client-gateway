@@ -319,7 +319,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -589,7 +589,7 @@ describe('MembersController', () => {
         })
         .expect(409)
         .expect({
-          message: `${memberAddress} is already in this space or has a pending invite.`,
+          message: `${memberAddress} is already in this workspace or has a pending invite.`,
           error: 'Conflict',
           statusCode: 409,
         });
@@ -788,7 +788,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -842,7 +842,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -899,7 +899,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1088,7 +1088,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1139,7 +1139,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1190,7 +1190,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(404)
         .expect({
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1499,7 +1499,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(401)
         .expect({
-          message: 'The user is not an active member of the space.',
+          message: 'The user is not an active member of the workspace.',
           error: 'Unauthorized',
           statusCode: 401,
         });

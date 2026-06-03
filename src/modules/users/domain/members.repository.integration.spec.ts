@@ -963,7 +963,7 @@ describe('MembersRepository', () => {
           inviteExpiresAt: faker.date.future(),
         }),
       ).rejects.toThrow(
-        `${activeMemberAddress} is already in this space or has a pending invite.`,
+        `${activeMemberAddress} is already in this workspace or has a pending invite.`,
       );
     });
 
@@ -1067,7 +1067,7 @@ describe('MembersRepository', () => {
           users,
           inviteExpiresAt,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
   });
 
@@ -1325,7 +1325,7 @@ describe('MembersRepository', () => {
             name: adminName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if not authenticated', async () => {
@@ -1362,7 +1362,7 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the space does not exist', async () => {
@@ -1381,7 +1381,7 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
@@ -1420,7 +1420,7 @@ describe('MembersRepository', () => {
           spaceId,
           payload: { name: memberName },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
@@ -1468,7 +1468,7 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw GoneException if the invite has expired', async () => {
@@ -1700,7 +1700,7 @@ describe('MembersRepository', () => {
           authPayload: nonMemberAuthPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if not authenticated', async () => {
@@ -1729,7 +1729,7 @@ describe('MembersRepository', () => {
           authPayload: new AuthPayload(authPayloadDto),
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the space does not exist', async () => {
@@ -1744,7 +1744,7 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
@@ -1782,7 +1782,7 @@ describe('MembersRepository', () => {
           authPayload: memberAuthPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
@@ -1827,7 +1827,7 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw GoneException if the invite has expired', async () => {
@@ -2015,7 +2015,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2039,7 +2039,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2068,7 +2068,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2098,7 +2098,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2128,7 +2128,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2205,7 +2205,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2235,7 +2235,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2265,7 +2265,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -2286,7 +2286,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
