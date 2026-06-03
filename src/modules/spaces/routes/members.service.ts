@@ -79,18 +79,28 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
+    const [members, activeAdmin] = await Promise.all([
+      this.membersRepository.findAuthorizedMembersOrFail({
+        authPayload: args.authPayload,
+        spaceId: args.spaceId,
+      }),
+      this.membersRepository.findActiveAdmin({
+        userId: getAuthenticatedUserIdOrFail(args.authPayload),
+        spaceId: args.spaceId,
+      }),
+    ]);
+    const isActiveAdmin = Boolean(activeAdmin);
     return {
-      members: (
-        await this.membersRepository.findAuthorizedMembersOrFail({
-          authPayload: args.authPayload,
-          spaceId: args.spaceId,
-        })
-      ).map((member) => ({
+      members: members.map((member) => ({
         ...member,
         user: {
           ...member.user,
-          // Only expose email once the member accepted the invite.
-          email: member.status === 'ACTIVE' ? member.user.email : null,
+          // Until the member accepted the invite, only expose their email
+          // to active admins.
+          email:
+            member.status === 'ACTIVE' || isActiveAdmin
+              ? member.user.email
+              : null,
         },
       })),
     };
