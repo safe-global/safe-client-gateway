@@ -7,7 +7,7 @@ import { AddressBookItemSchema as BaseAddressBookItemSchema } from '@/modules/sp
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 const AddressBookItemSchema = z.object({
-  name: BaseAddressBookItemSchema.shape.name.optional(),
+  name: BaseAddressBookItemSchema.shape.name,
   address: AddressSchema,
   chainIds: z.array(ChainIdSchema),
 });
