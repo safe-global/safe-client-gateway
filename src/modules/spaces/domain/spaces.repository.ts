@@ -27,7 +27,6 @@ import {
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 
-// TODO: Add tests
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
   private readonly maxSpaceCreationsPerUser: number;
