@@ -48,8 +48,10 @@ describe('TenderlySimulationResponseSchema', () => {
   });
 
   it('preserves the original casing of log topics', () => {
-    const upper = '0xABCDEF0000000000000000000000000000000000000000000000000000000000';
-    const lower = '0x123456abcdef00000000000000000000000000000000000000000000abcdef00';
+    const upper =
+      '0xABCDEF0000000000000000000000000000000000000000000000000000000000';
+    const lower =
+      '0x123456abcdef00000000000000000000000000000000000000000000abcdef00';
 
     const parsed = TenderlySimulationResponseSchema.parse({
       transaction: {
@@ -72,9 +74,9 @@ describe('TenderlySimulationResponseSchema', () => {
       },
     });
 
-    expect(
-      parsed.transaction.transaction_info?.logs?.[0].raw?.topics,
-    ).toEqual([]);
+    expect(parsed.transaction.transaction_info?.logs?.[0].raw?.topics).toEqual(
+      [],
+    );
   });
 
   it('rejects a response missing the required `transaction.status` field', () => {
