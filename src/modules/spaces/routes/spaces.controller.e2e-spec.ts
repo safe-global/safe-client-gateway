@@ -191,7 +191,7 @@ describe('SpacesController', () => {
         .send({ name: nameBuilder() })
         .expect(403)
         .expect({
-          message: 'User has reached the maximum number of Spaces.',
+          message: 'User has reached the maximum number of Workspaces.',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -616,7 +616,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -637,7 +637,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });

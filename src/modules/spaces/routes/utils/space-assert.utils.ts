@@ -33,7 +33,7 @@ export async function assertAdmin(
   userId: number,
 ): Promise<void> {
   if (!(await isAdmin(spacesRepository, spaceId, userId))) {
-    throw new ForbiddenException('User is not an admin of this space');
+    throw new ForbiddenException('User is not an admin of this workspace');
   }
 }
 
@@ -50,6 +50,6 @@ export async function assertMember(
   );
 
   if (!member) {
-    throw new ForbiddenException('User is not a member of this space');
+    throw new ForbiddenException('User is not a member of this workspace');
   }
 }

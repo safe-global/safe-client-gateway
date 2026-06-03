@@ -536,7 +536,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.getActiveOrInvitedSpace(999999, authPayload),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it.each([
@@ -549,7 +549,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.getActiveOrInvitedSpace(1, authPayload),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it.each([
@@ -565,7 +565,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.getActiveOrInvitedSpace(spaceId, authPayload),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
       expect(spacesRepositoryMock.find).not.toHaveBeenCalled();
     });
 
@@ -581,7 +581,7 @@ describe('SpacesService', () => {
 
       await expect(
         service.getActiveOrInvitedSpace(spaceId, authPayload),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
 
       expect(membersRepositoryMock.find).toHaveBeenCalledWith(
         expect.objectContaining({

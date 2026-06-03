@@ -227,7 +227,7 @@ describe('AddressBookItemsRepository', () => {
           authPayload,
           spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should throw a NotFoundException if the user is not a member', async () => {
@@ -238,7 +238,7 @@ describe('AddressBookItemsRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should throw a NotFoundException if the user declined the membership', async () => {
@@ -249,7 +249,7 @@ describe('AddressBookItemsRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should throw a NotFoundException if the user invitation has expired', async () => {
@@ -264,7 +264,7 @@ describe('AddressBookItemsRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
   });
 
@@ -368,7 +368,7 @@ describe('AddressBookItemsRepository', () => {
         }),
       ).rejects.toThrow(
         new BadRequestException(
-          `This Space only allows a maximum of ${limit} Address Book Items. You can only add up to 1 more.`,
+          `This Workspace only allows a maximum of ${limit} Address Book Items. You can only add up to 1 more.`,
         ),
       );
     });
@@ -384,7 +384,7 @@ describe('AddressBookItemsRepository', () => {
           spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
           addressBookItems,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should throw NotFoundException if the user is not an admin', async () => {
@@ -399,7 +399,7 @@ describe('AddressBookItemsRepository', () => {
           spaceId,
           addressBookItems,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should upsert items for an OIDC admin', async () => {
@@ -535,7 +535,7 @@ describe('AddressBookItemsRepository', () => {
           spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
           address: addressBookItem.address,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should throw NotFoundException if the user is not an ADMIN', async () => {
@@ -549,7 +549,7 @@ describe('AddressBookItemsRepository', () => {
           spaceId,
           address: addressBookItem.address,
         }),
-      ).rejects.toThrow(new NotFoundException('Space not found.'));
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it('should delete an address book item as an OIDC admin', async () => {
@@ -603,7 +603,7 @@ describe('AddressBookItemsRepository', () => {
   ): Promise<AuthPayload> => {
     const { user, authPayload } = await createUser();
     const space = await dbSpacesRepository.findOneBy({ id: spaceId });
-    if (!space) throw new NotFoundException('Space not found.');
+    if (!space) throw new NotFoundException('Workspace not found.');
     await dbMembersRepository.insert({
       user,
       space,
@@ -622,7 +622,7 @@ describe('AddressBookItemsRepository', () => {
   ): Promise<AuthPayload> => {
     const { user, authPayload } = await createUser();
     const space = await dbSpacesRepository.findOneBy({ id: spaceId });
-    if (!space) throw new NotFoundException('Space not found.');
+    if (!space) throw new NotFoundException('Workspace not found.');
     await dbMembersRepository.insert({
       user,
       space,

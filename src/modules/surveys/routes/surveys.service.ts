@@ -190,7 +190,7 @@ export class SurveysService {
     });
     if (!member) {
       throw new ForbiddenException(
-        'User is not an active admin of this space.',
+        'User is not an active admin of this workspace.',
       );
     }
     return userId;

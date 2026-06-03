@@ -207,8 +207,8 @@ export class MembersRepository implements IMembersRepository {
     const duplicateInviteError = (): UniqueConstraintError =>
       new UniqueConstraintError(
         userToInvite.type === InviteType.Wallet
-          ? `${userToInvite.address} is already in this space or has a pending invite.`
-          : 'This invitee is already in this space or has a pending invite.',
+          ? `${userToInvite.address} is already in this workspace or has a pending invite.`
+          : 'This invitee is already in this workspace or has a pending invite.',
       );
 
     const existingMember = await entityManager.findOne(DbMember, {
@@ -511,7 +511,7 @@ export class MembersRepository implements IMembersRepository {
     });
     if (!member) {
       throw new ForbiddenException(
-        'The user is not an active member of the space.',
+        'The user is not an active member of the workspace.',
       );
     }
     return member;

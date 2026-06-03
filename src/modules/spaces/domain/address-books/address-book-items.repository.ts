@@ -181,7 +181,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       existingAddressBookItems + args.addressBookItems.length;
     if (totalAddressBookItemsCount > this.maxItems) {
       throw new BadRequestException(
-        `This Space only allows a maximum of ${this.maxItems} Address Book Items. You can only add up to ${this.maxItems - existingAddressBookItems} more.`,
+        `This Workspace only allows a maximum of ${this.maxItems} Address Book Items. You can only add up to ${this.maxItems - existingAddressBookItems} more.`,
       );
     }
   }
