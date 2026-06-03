@@ -28,7 +28,6 @@ import { TenderlySimulationResponseSchema } from '@/modules/relay/datasources/sc
  */
 const SIMULATION_URL = 'https://simulation.safe.global/';
 
-
 function formatNetworkError(error: unknown): string {
   if (error instanceof NetworkResponseError) {
     return `HTTP ${error.response.status} from ${error.url.toString()} — body=${JSON.stringify(error.data)}`;
@@ -48,7 +47,9 @@ function formatErrorCause(cause: unknown): string {
     return JSON.stringify(cause);
   }
   const nested =
-    'cause' in cause && cause.cause ? ` (cause: ${formatCause(cause.cause)})` : '';
+    'cause' in cause && cause.cause
+      ? ` (cause: ${formatCause(cause.cause)})`
+      : '';
   return `${formatError(cause)}${nested}`;
 }
 
@@ -122,10 +123,8 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
       // relay request's `gasLimit` is what Gelato will use on-chain and is
       // typically too tight to cover the simulation's overhead (refund path,
       // etc.). Mirrors what the Safe frontend does when no explicit
-      // simulation gas budget is supplied. Serialised as a decimal string to
-      // avoid a lossy bigint → Number cast for chains with very large gas
-      // limits.
-      const gas = (await this.getLatestBlockGasLimit(args.chainId)).toString();
+      // simulation gas budget is supplied.
+      const gas = Number(await this.getLatestBlockGasLimit(args.chainId));
       const { data: raw } = await this.networkService.post<unknown>({
         url: SIMULATION_URL,
         data: {

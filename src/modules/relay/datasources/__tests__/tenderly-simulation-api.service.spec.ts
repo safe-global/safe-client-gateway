@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Address, type Hex, getAddress, toEventSelector } from 'viem';
+import { type Address, getAddress, type Hex, toEventSelector } from 'viem';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -84,7 +84,9 @@ describe('TenderlySimulationApi', () => {
   beforeEach(() => {
     jest.resetAllMocks();
 
-    blockGasLimit = BigInt(faker.number.int({ min: 30_000_000, max: 50_000_000 }));
+    blockGasLimit = BigInt(
+      faker.number.int({ min: 30_000_000, max: 50_000_000 }),
+    );
     (mockPublicClient.getBlock as jest.Mock).mockResolvedValue({
       gasLimit: blockGasLimit,
     });
@@ -110,7 +112,9 @@ describe('TenderlySimulationApi', () => {
       const result = await target.simulate(args);
 
       expect(result).toEqual({ success: true });
-      expect(mockBlockchainApiManager.getApi).toHaveBeenCalledWith(args.chainId);
+      expect(mockBlockchainApiManager.getApi).toHaveBeenCalledWith(
+        args.chainId,
+      );
       expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: SIMULATION_URL,
         data: {
@@ -119,7 +123,7 @@ describe('TenderlySimulationApi', () => {
           to: args.to,
           input: args.data,
           value: '0',
-          gas: blockGasLimit.toString(),
+          gas: Number(blockGasLimit),
           gas_price: '0',
           save: true,
           save_if_fails: true,
