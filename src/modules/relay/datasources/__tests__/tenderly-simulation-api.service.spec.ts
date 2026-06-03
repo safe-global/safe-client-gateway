@@ -125,7 +125,7 @@ describe('TenderlySimulationApi', () => {
           value: '0',
           gas: Number(blockGasLimit),
           gas_price: '0',
-          save: true,
+          save: false,
           save_if_fails: true,
         },
       });
