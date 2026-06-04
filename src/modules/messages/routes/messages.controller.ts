@@ -1,5 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
+  ApiAcceptedResponse,
   ApiOkResponse,
   ApiQuery,
   ApiTags,
@@ -130,13 +131,14 @@ export class MessagesController {
     type: CreateMessageDto,
     description: 'Message data including content and signature',
   })
-  @ApiOkResponse({
-    description: 'Message created successfully',
+  @ApiAcceptedResponse({
+    description:
+      'Message accepted. The Transaction Service indexes messages asynchronously, so the message may not be immediately retrievable — poll GET /v1/chains/{chainId}/messages/{messageHash}.',
   })
   @ApiBadRequestResponse({
     description: 'Invalid message format or signature',
   })
-  @HttpCode(200)
+  @HttpCode(202)
   @Post('chains/:chainId/safes/:safeAddress/messages')
   async createMessage(
     @Param('chainId') chainId: string,
