@@ -499,7 +499,7 @@ describe('SpacesRepository', () => {
     it('should throw if no space has the UUID', async () => {
       await expect(
         spacesRepository.findIdByUuid(faker.string.uuid() as UUID),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
   });
 
@@ -539,7 +539,7 @@ describe('SpacesRepository', () => {
     it('should throw if no space has the UUID', async () => {
       await expect(
         spacesRepository.findIdByIdOrUuid(faker.string.uuid()),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw if no space has the numeric id', async () => {
@@ -550,7 +550,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findIdByIdOrUuid(String(spaceId)),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
   });
 

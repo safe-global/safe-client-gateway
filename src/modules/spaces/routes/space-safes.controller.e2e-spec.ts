@@ -446,7 +446,7 @@ describe('SpaceSafesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -863,7 +863,7 @@ describe('SpaceSafesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -1202,7 +1202,7 @@ describe('SpaceSafesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });

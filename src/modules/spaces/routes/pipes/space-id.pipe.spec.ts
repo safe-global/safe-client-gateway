@@ -65,11 +65,11 @@ describe('SpaceIdPipe', () => {
   it('should propagate NotFoundException for a valid UUID with no row', async () => {
     const uuid = faker.string.uuid();
     spacesRepositoryMock.findIdByUuid.mockRejectedValue(
-      new NotFoundException('Space not found.'),
+      new NotFoundException('Workspace not found.'),
     );
 
     await expect(pipe.transform(uuid)).rejects.toThrow(
-      new NotFoundException('Space not found.'),
+      new NotFoundException('Workspace not found.'),
     );
   });
 });
@@ -146,22 +146,22 @@ describe('LegacySpaceIdPipe', () => {
   it('should propagate NotFoundException for a valid UUID with no row', async () => {
     const uuid = faker.string.uuid();
     spacesRepositoryMock.findIdByIdOrUuid.mockRejectedValue(
-      new NotFoundException('Space not found.'),
+      new NotFoundException('Workspace not found.'),
     );
 
     await expect(pipe.transform(uuid)).rejects.toThrow(
-      new NotFoundException('Space not found.'),
+      new NotFoundException('Workspace not found.'),
     );
   });
 
   it('should propagate NotFoundException for a valid numeric id with no row', async () => {
     spacesRepositoryMock.findIdByIdOrUuid.mockRejectedValue(
-      new NotFoundException('Space not found.'),
+      new NotFoundException('Workspace not found.'),
     );
 
     await expect(
       pipe.transform(String(faker.number.int({ min: 1, max: 2 ** 31 - 2 }))),
-    ).rejects.toThrow(new NotFoundException('Space not found.'));
+    ).rejects.toThrow(new NotFoundException('Workspace not found.'));
   });
 
   it('should use the same rejection message as SpaceIdPipe', () => {

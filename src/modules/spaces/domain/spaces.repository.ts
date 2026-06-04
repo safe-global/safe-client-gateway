@@ -217,7 +217,7 @@ export class SpacesRepository implements ISpacesRepository {
       | Pick<Space, 'id' | 'uuid'>
       | undefined;
     if (!row) {
-      throw new NotFoundException('Space not found.');
+      throw new NotFoundException('Workspace not found.');
     }
 
     return { id: row.id, uuid: row.uuid };
