@@ -698,7 +698,8 @@ describe('MembersRepository', () => {
         users.map((user) => {
           return {
             userId: expect.any(Number),
-            spaceId: spaceUuid,
+            spaceId,
+            spaceUuid,
             name: user.name,
             role: user.role,
             status: 'INVITED',
@@ -754,7 +755,8 @@ describe('MembersRepository', () => {
         users.map((user) => {
           return {
             userId: expect.any(Number),
-            spaceId: spaceUuid,
+            spaceId,
+            spaceUuid,
             name: user.name,
             role: user.role,
             status: 'INVITED',
@@ -894,7 +896,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual([
         {
           userId: invitee.generatedMaps[0].id,
-          spaceId: spaceUuid,
+          spaceId,
+          spaceUuid,
           name: updatedInviteeName,
           role: 'ADMIN',
           status: 'INVITED',
