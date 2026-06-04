@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Cache } from 'cache-manager';
 import sortBy from 'lodash/sortBy';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -20,29 +22,29 @@ import { rawify } from '@/validation/entities/raw.entity';
 
 const MAX_BATCH_SIZE = 100;
 
-const mockCacheFirstDataSource = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+const mockCacheFirstDataSource = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>);
 
-const mockCacheService = jest.mocked({
-  deleteByKey: jest.fn(),
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>);
+const mockCacheService = vi.mocked({
+  deleteByKey: vi.fn(),
+  hGet: vi.fn(),
+  hSet: vi.fn(),
+} as MockedObject<ICacheService>);
 
-const mockNetworkService = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<INetworkService>);
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const mockInMemoryCache = {
-  get: jest.fn(),
-  set: jest.fn(),
-} as jest.MockedObjectDeep<Cache>;
+  get: vi.fn(),
+  set: vi.fn(),
+} as MockedObject<Cache>;
 
 function buildCoinGeckoResponse(
   tokenAddresses: Array<string>,
@@ -74,7 +76,7 @@ describe('CoingeckoAPI', () => {
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.safe.prices.baseUri',

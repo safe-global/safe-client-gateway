@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Hash } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -13,18 +15,18 @@ import { bridgeStatusBuilder } from '@/modules/bridge/domain/entities/__tests__/
 import { BridgeNames } from '@/modules/bridge/domain/entities/bridge-name.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockNetworkService = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockCacheFirstDataSource = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+const mockCacheFirstDataSource = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>);
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('LifiBridgeApi', () => {
   let target: LifiBridgeApi;
@@ -35,7 +37,7 @@ describe('LifiBridgeApi', () => {
   let httpErrorFactory: HttpErrorFactory;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     chainId = faker.string.numeric();
     baseUrl = faker.internet.url({ appendSlash: false });

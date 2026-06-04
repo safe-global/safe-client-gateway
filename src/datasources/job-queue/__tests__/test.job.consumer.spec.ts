@@ -16,7 +16,7 @@ describe('TestJobConsumer', () => {
     const job = {
       name: 'test-job',
       data: { message: faker.lorem.word(), timestamp: 0 },
-      updateProgress: jest.fn(),
+      updateProgress: vi.fn(),
     } as unknown as Job<TestJobData>;
 
     await expect(consumer.process(job)).resolves.toEqual(
@@ -29,12 +29,12 @@ describe('TestJobConsumer', () => {
     const job1 = {
       name: 'test-job',
       data: { message: faker.lorem.word(), timestamp: 0 },
-      updateProgress: jest.fn(),
+      updateProgress: vi.fn(),
     } as unknown as Job<TestJobData>;
     const job2 = {
       name: 'test-job',
       data: { message: faker.lorem.word(), timestamp: 0 },
-      updateProgress: jest.fn(),
+      updateProgress: vi.fn(),
     } as unknown as Job<TestJobData>;
 
     await consumer.process(job1);

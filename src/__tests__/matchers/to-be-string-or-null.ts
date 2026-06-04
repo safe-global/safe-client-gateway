@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { expect } from '@jest/globals';
-import type { MatcherFunction } from 'expect';
+import { expect } from 'vitest';
 
-const anyStringOrNull: MatcherFunction = (actual) => {
+const anyStringOrNull = (
+  actual: unknown,
+): { message: () => string; pass: boolean } => {
   const pass = actual === null || typeof actual === 'string';
-  if (pass) {
-    return {
-      message: () => `expected ${actual} to be string or null`,
-      pass: true,
-    };
-  }
   return {
     message: () => `expected ${actual} to be string or null`,
-    pass: false,
+    pass,
   };
 };
 
@@ -20,12 +15,12 @@ expect.extend({
   anyStringOrNull,
 });
 
-declare module 'expect' {
-  interface AsymmetricMatchers {
-    anyStringOrNull(): void;
+declare module 'vitest' {
+  interface Assertion<T = any> {
+    anyStringOrNull(): T;
   }
 
-  interface Matchers<R> {
-    anyStringOrNull(): R;
+  interface AsymmetricMatchersContaining {
+    anyStringOrNull(): void;
   }
 }

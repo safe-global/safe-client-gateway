@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
+import type { MockedObject } from 'vitest';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -10,19 +11,19 @@ import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/
 import { pushNotificationEventJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-event-job-data.builder';
 import type { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 
-const mockLoggingService = jest.mocked({
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>);
 
 const pushNotificationService = {
-  enqueueEvent: jest.fn(),
-  processEvent: jest.fn(),
-  processDelivery: jest.fn(),
-} as jest.MockedObjectDeep<PushNotificationService>;
-const mockPushNotificationService = jest.mocked(pushNotificationService);
+  enqueueEvent: vi.fn(),
+  processEvent: vi.fn(),
+  processDelivery: vi.fn(),
+} as MockedObject<PushNotificationService>;
+const mockPushNotificationService = vi.mocked(pushNotificationService);
 
 function createMockJob<T>(
   name: string,
@@ -44,7 +45,7 @@ describe('PushNotificationConsumer', () => {
   let consumer: PushNotificationConsumer;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     consumer = new PushNotificationConsumer(
       mockLoggingService,

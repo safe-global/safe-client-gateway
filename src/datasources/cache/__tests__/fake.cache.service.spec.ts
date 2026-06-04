@@ -23,8 +23,8 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes key and sets invalidationTimeMs', async () => {
-    jest.useFakeTimers();
-    const now = jest.now();
+    vi.useFakeTimers();
+    const now = Date.now();
     const key = faker.string.alphanumeric();
     const field = faker.string.alphanumeric();
     const cacheDir = new CacheDir(key, field);
@@ -38,7 +38,7 @@ describe('FakeCacheService', () => {
       target.hGet(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
     ).resolves.toBe(now.toString());
     expect(target.keyCount()).toBe(1);
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('clears keys', async () => {

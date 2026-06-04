@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { RedisClientType } from '@/datasources/cache/cache.module';
@@ -7,23 +9,23 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 
-import clearAllMocks = jest.clearAllMocks;
+import clearAllMocks = vi.clearAllMocks;
 
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { offsetByPercentage } from '@/domain/common/utils/number';
 
-const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
+const mockLoggingService: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
 };
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
-const mockConfigurationService = jest.mocked(configurationService);
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
+const mockConfigurationService = vi.mocked(configurationService);
 
 describe('RedisCacheService', () => {
   let redisCacheService: RedisCacheService;

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { Module } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 
@@ -7,8 +9,8 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
   providers: [
     {
       provide: PostgresDatabaseService,
-      useFactory: (): jest.MockedObjectDeep<PostgresDatabaseService> => {
-        return jest.mocked(mockPostgresDatabaseService);
+      useFactory: (): MockedObject<PostgresDatabaseService> => {
+        return vi.mocked(mockPostgresDatabaseService);
       },
     },
   ],

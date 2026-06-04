@@ -39,8 +39,8 @@ describe('NetworkModule', () => {
   let loggingService: ILoggingService;
   let circuitBreakerService: CircuitBreakerService;
   // fetch response is not mocked but we are only concerned with RequestInit options
-  const fetchMock = jest.fn();
-  jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
+  const fetchMock = vi.fn();
+  vi.spyOn(global, 'fetch').mockImplementation(fetchMock);
 
   async function initApp(cacheInFlightRequests: boolean): Promise<void> {
     const baseConfiguration = configuration();
@@ -75,7 +75,7 @@ describe('NetworkModule', () => {
       'circuitBreaker.threshold',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
-    jest.spyOn(loggingService, 'debug');
+    vi.spyOn(loggingService, 'debug');
     circuitBreakerService = moduleFixture.get<CircuitBreakerService>(
       CircuitBreakerService,
     );
@@ -85,7 +85,7 @@ describe('NetworkModule', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('without caching', () => {
@@ -663,7 +663,7 @@ describe('NetworkModule', () => {
 
       // Spy on the agent's close method
       const agent = getGlobalDispatcher();
-      const closeSpy = jest.spyOn(agent, 'close');
+      const closeSpy = vi.spyOn(agent, 'close');
 
       // Trigger module destruction
       await moduleFixture.close();

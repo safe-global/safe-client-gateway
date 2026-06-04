@@ -1,19 +1,20 @@
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { TransferDetailsMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
 import type { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 
-const transferInfoMapper = jest.mocked({
-  mapTransferInfo: jest.fn(),
-} as jest.MockedObjectDeep<TransferInfoMapper>);
+const transferInfoMapper = vi.mocked({
+  mapTransferInfo: vi.fn(),
+} as MockedObject<TransferInfoMapper>);
 
 describe('TransferDetails mapper (Unit)', () => {
   let mapper: TransferDetailsMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mapper = new TransferDetailsMapper(transferInfoMapper);
   });
 

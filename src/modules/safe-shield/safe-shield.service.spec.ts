@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -136,34 +137,34 @@ const createCustomTransactionInfo = (
 
 describe('SafeShieldService', () => {
   const mockRecipientAnalysisService = {
-    analyze: jest.fn(),
-    analyzeRecipient: jest.fn(),
-  } as jest.MockedObjectDeep<RecipientAnalysisService>;
+    analyze: vi.fn(),
+    analyzeRecipient: vi.fn(),
+  } as MockedObject<RecipientAnalysisService>;
   const mockContractAnalysisService = {
-    analyze: jest.fn(),
-  } as jest.MockedObjectDeep<ContractAnalysisService>;
+    analyze: vi.fn(),
+  } as MockedObject<ContractAnalysisService>;
   const mockDeadlockAnalysisService = {
-    analyze: jest.fn(),
-  } as jest.MockedObjectDeep<DeadlockAnalysisService>;
+    analyze: vi.fn(),
+  } as MockedObject<DeadlockAnalysisService>;
   const mockThreatAnalysisService = {
-    analyze: jest.fn(),
-    failedAnalysisResponse: jest.fn(),
-    reportTransaction: jest.fn(),
-  } as jest.MockedObjectDeep<ThreatAnalysisService>;
+    analyze: vi.fn(),
+    failedAnalysisResponse: vi.fn(),
+    reportTransaction: vi.fn(),
+  } as MockedObject<ThreatAnalysisService>;
   const mockTransactionsService = {
-    previewTransaction: jest.fn(),
-  } as jest.MockedObjectDeep<TransactionsService>;
+    previewTransaction: vi.fn(),
+  } as MockedObject<TransactionsService>;
 
   const mockLoggingService = {
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>;
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  } as MockedObject<ILoggingService>;
 
   const mockConfigApi = {
-    getChain: jest.fn(),
-  } as jest.MockedObjectDeep<IConfigApi>;
+    getChain: vi.fn(),
+  } as MockedObject<IConfigApi>;
 
   const service = new SafeShieldService(
     mockRecipientAnalysisService,
@@ -182,7 +183,7 @@ describe('SafeShieldService', () => {
   const mockData = faker.string.hexadecimal({ length: 128 }) as Hex;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockDeadlockAnalysisService.analyze.mockResolvedValue({});
   });
 

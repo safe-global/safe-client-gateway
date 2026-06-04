@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { FeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service';
 
 const mockChainsRepository = {
-  getChainV2: jest.fn(),
-} as jest.MockedObjectDeep<IChainsRepository>;
+  getChainV2: vi.fn(),
+} as MockedObject<IChainsRepository>;
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('FeatureFlagService', () => {
   let target: FeatureFlagService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeConfig.cgwServiceKey') return 'CGW';
       throw new Error(`Unexpected key: ${key}`);

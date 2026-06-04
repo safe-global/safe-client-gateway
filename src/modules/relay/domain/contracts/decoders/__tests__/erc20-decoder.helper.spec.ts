@@ -8,7 +8,7 @@ describe('Erc20Decoder', () => {
   let target: Erc20Decoder;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new Erc20Decoder();
   });
 

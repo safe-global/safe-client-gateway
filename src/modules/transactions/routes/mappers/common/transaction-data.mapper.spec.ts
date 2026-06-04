@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -26,40 +28,40 @@ import type { AddressInfoHelper } from '@/routes/common/address-info/address-inf
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
-const addressInfoHelper = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<AddressInfoHelper>);
+const addressInfoHelper = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<AddressInfoHelper>);
 
-const contractsRepository = jest.mocked({
-  isTrustedForDelegateCall: jest.fn(),
-} as jest.MockedObjectDeep<ContractsRepository>);
+const contractsRepository = vi.mocked({
+  isTrustedForDelegateCall: vi.fn(),
+} as MockedObject<ContractsRepository>);
 
-const dataDecodedParamHelper = jest.mocked({
-  hasNestedDelegate: jest.fn(),
-} as jest.MockedObjectDeep<DataDecodedParamHelper>);
+const dataDecodedParamHelper = vi.mocked({
+  hasNestedDelegate: vi.fn(),
+} as MockedObject<DataDecodedParamHelper>);
 
-const transactionInfoMapper = jest.mocked({
-  isValidTokenTransfer: jest.fn(),
-} as jest.MockedObjectDeep<MultisigTransactionInfoMapper>);
+const transactionInfoMapper = vi.mocked({
+  isValidTokenTransfer: vi.fn(),
+} as MockedObject<MultisigTransactionInfoMapper>);
 
-const chainsRepository = jest.mocked({
-  getChain: jest.fn(),
-} as jest.MockedObjectDeep<IChainsRepository>);
+const chainsRepository = vi.mocked({
+  getChain: vi.fn(),
+} as MockedObject<IChainsRepository>);
 
-const tokenRepository = jest.mocked({
-  getToken: jest.fn(),
-} as jest.MockedObjectDeep<TokenRepository>);
+const tokenRepository = vi.mocked({
+  getToken: vi.fn(),
+} as MockedObject<TokenRepository>);
 
-const configurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const configurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('Transaction Data Mapper (Unit)', () => {
   let mapper: TransactionDataMapper;
   const maxTokenInfoIndexSize = 2;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     configurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'mappings.transactionData.maxTokenInfoIndexSize') {

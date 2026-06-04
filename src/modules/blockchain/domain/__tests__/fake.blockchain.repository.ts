@@ -4,5 +4,5 @@ import type { IBlockchainRepository } from '@/modules/blockchain/domain/blockcha
 
 @Injectable()
 export class FakeBlockchainRepository implements IBlockchainRepository {
-  clearApi = jest.fn();
+  clearApi = vi.fn();
 }

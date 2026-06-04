@@ -10,6 +10,7 @@ import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
 import { faker } from '@faker-js/faker';
 import { UnrecoverableError } from 'bullmq';
 import type { Address } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -32,51 +33,51 @@ import type { TransactionExport } from '@/modules/csv-export/v1/entities/transac
 import { rawify } from '@/validation/entities/raw.entity';
 
 const exportApi = {
-  export: jest.fn(),
-} as jest.MockedObjectDeep<IExportApi>;
-const mockExportApi = jest.mocked(exportApi);
+  export: vi.fn(),
+} as MockedObject<IExportApi>;
+const mockExportApi = vi.mocked(exportApi);
 
 const exportApiManager = {
-  getApi: jest.fn(),
-  destroyApi: jest.fn(),
-} as jest.MockedObjectDeep<IExportApiManager>;
-const mockExportApiManager = jest.mocked(exportApiManager);
+  getApi: vi.fn(),
+  destroyApi: vi.fn(),
+} as MockedObject<IExportApiManager>;
+const mockExportApiManager = vi.mocked(exportApiManager);
 
 const csvService = {
-  toCsv: jest.fn(),
-} as jest.MockedObjectDeep<CsvService>;
-const mockCsvService = jest.mocked(csvService);
+  toCsv: vi.fn(),
+} as MockedObject<CsvService>;
+const mockCsvService = vi.mocked(csvService);
 
 const jobQueueService = {
-  addJob: jest.fn(),
-  getJob: jest.fn(),
-} as jest.MockedObjectDeep<IJobQueueService>;
-const mockJobQueueService = jest.mocked(jobQueueService);
+  addJob: vi.fn(),
+  getJob: vi.fn(),
+} as MockedObject<IJobQueueService>;
+const mockJobQueueService = vi.mocked(jobQueueService);
 
 const cloudStorageApiService = {
-  createUploadStream: jest.fn(),
-  getSignedUrl: jest.fn(),
-  getFileContent: jest.fn(),
-} as jest.MockedObjectDeep<ICloudStorageApiService>;
-const mockCloudStorageApiService = jest.mocked(cloudStorageApiService);
+  createUploadStream: vi.fn(),
+  getSignedUrl: vi.fn(),
+  getFileContent: vi.fn(),
+} as MockedObject<ICloudStorageApiService>;
+const mockCloudStorageApiService = vi.mocked(cloudStorageApiService);
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
-const mockConfigurationService = jest.mocked(configurationService);
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
+const mockConfigurationService = vi.mocked(configurationService);
 
 const loggingService = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
-const mockLoggingService = jest.mocked(loggingService);
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
+const mockLoggingService = vi.mocked(loggingService);
 
 const chainsRepository = {
-  getChain: jest.fn(),
-} as jest.MockedObjectDeep<IChainsRepository>;
-const mockChainsRepository = jest.mocked(chainsRepository);
+  getChain: vi.fn(),
+} as MockedObject<IChainsRepository>;
+const mockChainsRepository = vi.mocked(chainsRepository);
 
 describe('CsvExportService', () => {
   let service: CsvExportService;
@@ -164,7 +165,7 @@ describe('CsvExportService', () => {
 
   describe('export', () => {
     beforeEach(() => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
 
       setupMocks();
 
@@ -613,7 +614,7 @@ describe('CsvExportService', () => {
     });
 
     it('should call progress callback with correct progress values', async () => {
-      const progressCallback = jest.fn().mockResolvedValue(undefined);
+      const progressCallback = vi.fn().mockResolvedValue(undefined);
       const mockTransactionExport2 = transactionExportBuilder().build();
 
       const mockPage1 = pageBuilder()
@@ -757,7 +758,7 @@ describe('CsvExportService', () => {
     };
 
     beforeEach(async () => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       await mkdir(localBaseDir, { recursive: true });
 
       setupMocks();
@@ -781,7 +782,7 @@ describe('CsvExportService', () => {
       } catch {
         // File doesn't exist, nothing to clean up
       }
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     it('should handle local storage type and return local file path', async () => {

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
+import type { Mock } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import {
   fingerprintIpDataBuilder,
@@ -13,7 +15,7 @@ import { FingerprintApiService } from '@/datasources/locking-api/fingerprint-api
 import { eligibilityRequestBuilder } from '@/modules/community/domain/entities/__tests__/eligibility-request.builder';
 
 // TODO: convert to spy to avoid casting
-jest.mock('@fingerprintjs/fingerprintjs-pro-server-api');
+vi.mock('@fingerprintjs/fingerprintjs-pro-server-api');
 
 describe('FingerprintApiService', () => {
   let service: FingerprintApiService;
@@ -21,7 +23,7 @@ describe('FingerprintApiService', () => {
   const eligibilityEncryptionKey = faker.string.uuid();
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
@@ -59,7 +61,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -90,7 +92,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -121,7 +123,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -145,7 +147,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -168,7 +170,7 @@ describe('FingerprintApiService', () => {
           vpn,
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -191,7 +193,7 @@ describe('FingerprintApiService', () => {
           vpn,
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -213,7 +215,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -235,7 +237,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -257,7 +259,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 
@@ -279,7 +281,7 @@ describe('FingerprintApiService', () => {
             .build(),
         })
         .build();
-      (unsealEventsResponse as jest.Mock).mockResolvedValue(unsealedData);
+      (unsealEventsResponse as Mock).mockResolvedValue(unsealedData);
 
       const result = await service.checkEligibility(eligibilityRequest);
 

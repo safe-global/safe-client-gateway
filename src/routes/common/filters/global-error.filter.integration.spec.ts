@@ -60,8 +60,8 @@ describe('GlobalErrorFilter tests', () => {
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
 
     // TODO: Override service so as to not spy
-    jest.spyOn(loggingService, 'error');
-    jest.spyOn(loggingService, 'info');
+    vi.spyOn(loggingService, 'error');
+    vi.spyOn(loggingService, 'info');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
@@ -72,7 +72,7 @@ describe('GlobalErrorFilter tests', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('responses', () => {

@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -29,11 +30,11 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Owners Controller V3 (Unit)', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let loggingService: jest.MockedObjectDeep<ILoggingService>;
+  let networkService: MockedObject<INetworkService>;
+  let loggingService: MockedObject<ILoggingService>;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const moduleFixture = await createTestModule();
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -372,7 +373,7 @@ describe('Owners Controller V3 (Unit)', () => {
     });
 
     it('should gracefully handle chain-specific Transaction Service error', async () => {
-      jest.spyOn(loggingService, 'warn');
+      vi.spyOn(loggingService, 'warn');
       const ownerAddress = faker.finance.ethereumAddress();
       const chainId1 = faker.string.numeric();
       const chainId2 = faker.string.numeric({ exclude: [chainId1] });
@@ -1086,7 +1087,7 @@ describe('Owners Controller V3 (Unit)', () => {
     const captchaSecretKey = faker.string.alphanumeric(32);
 
     beforeEach(async () => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
 
       const customConfig = (): ReturnType<typeof configuration> => ({
         ...configuration(),

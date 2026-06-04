@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { generateKeyPairSync } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import jwt from 'jsonwebtoken';
+import type { MockInstance } from 'vitest';
 import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 
 export type Auth0JwksFixture = {
@@ -49,7 +51,7 @@ export function createAuth0JwksResponse(
 }
 
 export function mockAuth0Jwks(args: {
-  fetchMock: jest.SpiedFunction<typeof fetch>;
+  fetchMock: MockInstance<typeof fetch>;
   issuer: string;
   publicJwk: JsonWebKey;
   kid: string;

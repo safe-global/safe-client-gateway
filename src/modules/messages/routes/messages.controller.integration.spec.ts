@@ -8,6 +8,7 @@ import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -40,9 +41,9 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let loggingService: jest.MockedObjectDeep<ILoggingService>;
-  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
+  let networkService: MockedObject<INetworkService>;
+  let loggingService: MockedObject<ILoggingService>;
+  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     if (app) {
@@ -69,14 +70,14 @@ describe('Messages controller', () => {
     blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
-    jest.spyOn(loggingService, 'error');
+    vi.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   }
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     await initApp(configuration);
   });
@@ -1085,9 +1086,9 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        jest
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
+        vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+          signer.address,
+        ]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -1655,9 +1656,9 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        jest
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
+        vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+          signer.address,
+        ]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:

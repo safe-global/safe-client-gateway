@@ -6,6 +6,7 @@ import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -24,19 +25,19 @@ import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/en
 import { OutreachFileProcessor } from './outreach-file-processor';
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
-const mockCloudStorageApiService = jest.mocked({
-  getFileContent: jest.fn(),
-} as jest.MockedObjectDeep<ICloudStorageApiService>);
+const mockCloudStorageApiService = vi.mocked({
+  getFileContent: vi.fn(),
+} as MockedObject<ICloudStorageApiService>);
 
 function getChecksum(content: string): string {
   const hash = createHash('sha256');
@@ -97,7 +98,7 @@ describe('OutreachFileProcessor', () => {
   afterEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     await rm(path.resolve(baseDir, fileName));
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(async () => {

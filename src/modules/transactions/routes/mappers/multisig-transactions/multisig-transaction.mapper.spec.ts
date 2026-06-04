@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Mocked, MockedObject } from 'vitest';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
 import type { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
@@ -24,38 +25,38 @@ import type { MultisigTransactionStatusMapper } from '@/modules/transactions/rou
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 const mockDataDecodedRepository = {
-  getTransactionDataDecoded: jest.fn(),
-} as jest.MockedObjectDeep<IDataDecoderRepository>;
+  getTransactionDataDecoded: vi.fn(),
+} as MockedObject<IDataDecoderRepository>;
 
 describe('MultisigTransactionMapper', () => {
   let mapper: MultisigTransactionMapper;
 
-  const addressInfoHelper = jest.mocked({
-    getCollection: jest.fn(),
-  } as jest.MockedObjectDeep<AddressInfoHelper>);
+  const addressInfoHelper = vi.mocked({
+    getCollection: vi.fn(),
+  } as MockedObject<AddressInfoHelper>);
   const statusMapper = {
-    mapTransactionStatus: jest.fn(),
-  } as unknown as jest.Mocked<MultisigTransactionStatusMapper>;
+    mapTransactionStatus: vi.fn(),
+  } as unknown as Mocked<MultisigTransactionStatusMapper>;
   const transactionInfoMapper = {
-    mapTransactionInfo: jest.fn(),
-  } as unknown as jest.Mocked<MultisigTransactionInfoMapper>;
+    mapTransactionInfo: vi.fn(),
+  } as unknown as Mocked<MultisigTransactionInfoMapper>;
   const executionInfoMapper = {
-    mapExecutionInfo: jest.fn(),
-  } as unknown as jest.Mocked<MultisigTransactionExecutionInfoMapper>;
+    mapExecutionInfo: vi.fn(),
+  } as unknown as Mocked<MultisigTransactionExecutionInfoMapper>;
   const safeAppInfoMapper = {
-    mapSafeAppInfo: jest.fn(),
-  } as unknown as jest.Mocked<SafeAppInfoMapper>;
+    mapSafeAppInfo: vi.fn(),
+  } as unknown as Mocked<SafeAppInfoMapper>;
   const noteMapper = {
-    mapTxNote: jest.fn(),
-  } as jest.Mocked<MultisigTransactionNoteMapper>;
+    mapTxNote: vi.fn(),
+  } as Mocked<MultisigTransactionNoteMapper>;
   const transactionVerifier = {
-    verifyApiTransaction: jest.fn(),
-    verifyProposal: jest.fn(),
-    verifyConfirmation: jest.fn(),
-  } as unknown as jest.Mocked<TransactionVerifierHelper>;
+    verifyApiTransaction: vi.fn(),
+    verifyProposal: vi.fn(),
+    verifyConfirmation: vi.fn(),
+  } as unknown as Mocked<TransactionVerifierHelper>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mapper = new MultisigTransactionMapper(
       mockDataDecodedRepository,

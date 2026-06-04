@@ -1,28 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { CaptchaService } from '@/routes/captcha/captcha.service';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockNetworkService = jest.mocked({
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  post: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockLoggingService = jest.mocked({
-  warn: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  warn: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>);
 
 describe('CaptchaService', () => {
   let service: CaptchaService;
   let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('when CAPTCHA is disabled', () => {

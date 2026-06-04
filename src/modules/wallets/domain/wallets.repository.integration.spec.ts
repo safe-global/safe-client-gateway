@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
@@ -18,11 +20,11 @@ import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
 
@@ -74,7 +76,7 @@ describe('WalletsRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: jest.fn().mockImplementation((key: string) => {
+      getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -82,7 +84,7 @@ describe('WalletsRepository', () => {
           return testConfiguration.db.migrator.retryAfterMs;
         }
       }),
-    } as jest.MockedObjectDeep<ConfigService>;
+    } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
       mockLoggingService,
       postgresDatabaseService,
@@ -94,7 +96,7 @@ describe('WalletsRepository', () => {
   });
 
   afterEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     // Truncate tables
     const dbWalletRepository = dataSource.getRepository(Wallet);

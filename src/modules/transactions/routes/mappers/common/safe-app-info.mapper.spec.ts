@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
@@ -9,21 +11,21 @@ import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-inf
 import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 
 describe('SafeAppInfo mapper (Unit)', () => {
-  const safeAppsRepositoryMock = jest.mocked({
-    getSafeApps: jest.fn(),
-  } as jest.MockedObjectDeep<SafeAppsRepository>);
+  const safeAppsRepositoryMock = vi.mocked({
+    getSafeApps: vi.fn(),
+  } as MockedObject<SafeAppsRepository>);
 
-  const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
-    info: jest.fn(),
-    debug: jest.fn(),
-    error: jest.fn(),
-    warn: jest.fn(),
+  const mockLoggingService: MockedObject<ILoggingService> = {
+    info: vi.fn(),
+    debug: vi.fn(),
+    error: vi.fn(),
+    warn: vi.fn(),
   };
 
   let mapper: SafeAppInfoMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mapper = new SafeAppInfoMapper(safeAppsRepositoryMock, mockLoggingService);
   });
 

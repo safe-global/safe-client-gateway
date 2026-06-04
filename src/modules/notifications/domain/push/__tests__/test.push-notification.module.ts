@@ -7,7 +7,7 @@ import { IPushNotificationService } from '@/modules/notifications/domain/push/pu
     {
       provide: IPushNotificationService,
       useValue: {
-        enqueueEvent: jest.fn(),
+        enqueueEvent: vi.fn(),
       },
     },
   ],

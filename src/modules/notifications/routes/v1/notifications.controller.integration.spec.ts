@@ -6,6 +6,7 @@ import { faker } from '@faker-js/faker';
 import { type INestApplication, NotFoundException } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -27,14 +28,14 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Notifications Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let notificationServiceV2: jest.MockedObjectDeep<NotificationsServiceV2>;
+  let networkService: MockedObject<INetworkService>;
+  let notificationServiceV2: MockedObject<NotificationsServiceV2>;
   const REGISTRATION_TIMESTAMP_EXPIRY_MINUTES = 5;
   const REGISTRATION_TIMESTAMP_EXPIRY =
     REGISTRATION_TIMESTAMP_EXPIRY_MINUTES * 60;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const moduleFixture = await createTestModule({
       config: configuration,

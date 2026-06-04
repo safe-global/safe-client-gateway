@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -34,22 +35,22 @@ import {
 } from './utils/__tests__/helpers/base-data-decoded.helpers';
 
 const mockTransactionApi = {
-  getSafe: jest.fn(),
-  isSafe: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApi>;
+  getSafe: vi.fn(),
+  isSafe: vi.fn(),
+} as MockedObject<ITransactionApi>;
 
 const mockTransactionApiManager = {
-  getApi: jest.fn().mockResolvedValue(mockTransactionApi),
-} as jest.MockedObjectDeep<ITransactionApiManager>;
+  getApi: vi.fn().mockResolvedValue(mockTransactionApi),
+} as MockedObject<ITransactionApiManager>;
 
 const mockConfigurationService = {
-  getOrThrow: jest.fn().mockReturnValue(600),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn().mockReturnValue(600),
+} as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 function mockSafe(args: {
   address: Address;
@@ -104,7 +105,7 @@ describe('DeadlockAnalysisService', () => {
   const safeAddress = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     fakeCacheService = new FakeCacheService();
     service = new DeadlockAnalysisService(

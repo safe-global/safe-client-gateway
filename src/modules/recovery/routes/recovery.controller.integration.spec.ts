@@ -6,6 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
@@ -37,12 +38,12 @@ describe('Recovery Controller', () => {
   let alertsAccount: string;
   let alertsProject: string;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let jwtService: IJwtService;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
-    jest.useFakeTimers();
+    vi.resetAllMocks();
+    vi.useFakeTimers();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -88,7 +89,7 @@ describe('Recovery Controller', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('AuthGuard', () => {
@@ -294,7 +295,7 @@ describe('Recovery Controller', () => {
       const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
+      const timestamp = Date.now();
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
       const error = new NetworkResponseError(
@@ -341,7 +342,7 @@ describe('Recovery Controller', () => {
       const signer = privateKeyToAccount(privateKey);
       const chain = chainBuilder().build();
       const safe = safeBuilder().with('owners', [signer.address]).build();
-      const timestamp = jest.now();
+      const timestamp = Date.now();
       const message = `enable-recovery-alerts-${chain.chainId}-${safe.address}-${addRecoveryModuleDto.moduleAddress}-${signer.address}-${timestamp}`;
       const signature = await signer.signMessage({ message });
       const statusCode = faker.internet.httpStatusCode({
