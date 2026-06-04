@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
   ForbiddenException,
@@ -642,7 +643,7 @@ describe('SpacesService', () => {
       const name = faker.word.noun();
       const repositoryResponse = {
         id: faker.number.int(),
-        uuid: faker.string.uuid(),
+        uuid: faker.string.uuid() as UUID,
         name,
       };
 
@@ -675,7 +676,7 @@ describe('SpacesService', () => {
       const userId = Number(authPayload.sub);
       const expectedResponse = {
         id: faker.number.int(),
-        uuid: faker.string.uuid(),
+        uuid: faker.string.uuid() as UUID,
         name: faker.word.noun(),
       };
 
@@ -731,7 +732,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder] as const,
     ])('should update space for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = faker.string.uuid() as UUID;
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
 

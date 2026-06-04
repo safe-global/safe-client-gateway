@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
@@ -497,7 +498,7 @@ describe('SpacesRepository', () => {
 
     it('should throw if no space has the UUID', async () => {
       await expect(
-        spacesRepository.findIdByUuid(faker.string.uuid()),
+        spacesRepository.findIdByUuid(faker.string.uuid() as UUID),
       ).rejects.toThrow('Space not found.');
     });
   });

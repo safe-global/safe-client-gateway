@@ -213,7 +213,9 @@ export class SpacesRepository implements ISpacesRepository {
       .returning(['id', 'uuid'])
       .execute();
 
-    const row = result.raw[0] as Pick<Space, 'id' | 'uuid'> | undefined;
+    const row = result.generatedMaps[0] as
+      | Pick<Space, 'id' | 'uuid'>
+      | undefined;
     if (!row) {
       throw new NotFoundException('Space not found.');
     }
@@ -240,7 +242,7 @@ export class SpacesRepository implements ISpacesRepository {
       });
       return space.id;
     }
-    return await this.findIdByUuid(value);
+    return await this.findIdByUuid(value as Space['uuid']);
   }
 
   // @todo Add a soft delete method

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import {
   Column,
   Entity,
@@ -27,7 +28,7 @@ export class Space implements DomainSpace {
     nullable: false,
     update: false,
   })
-  uuid!: string;
+  uuid!: UUID;
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
   name!: string;

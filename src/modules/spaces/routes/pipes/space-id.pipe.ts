@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import {
   BadRequestException,
   Inject,
@@ -36,7 +37,7 @@ export class SpaceIdPipe
     if (!UUID_REGEX.test(value)) {
       throw new BadRequestException(INVALID_SPACE_IDENTIFIER_MESSAGE);
     }
-    return await this.spacesRepository.findIdByUuid(value);
+    return await this.spacesRepository.findIdByUuid(value as UUID);
   }
 }
 
