@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
@@ -12,23 +16,20 @@ import {
   erc721TokenBuilder,
 } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import type { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
-import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import {
   TransferDirection,
   TransferTransactionInfo,
 } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import type { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 import { TransferMapper } from '@/modules/transactions/routes/mappers/transfers/transfer.mapper';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
+import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 const addressInfoHelper = jest.mocked({
   getOrDefault: jest.fn(),

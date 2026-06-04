@@ -1,24 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { EntityManager, In } from 'typeorm';
+import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import {
-  BadRequestException,
-  ForbiddenException,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
-import { EntityManager, In } from 'typeorm';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { isAddressEqual } from 'viem';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -52,7 +50,9 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
+    createdByOverride?: number;
   }): Promise<Array<AddressBookDbItem>> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN'],
@@ -63,7 +63,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         entityManager,
         addressBookItems: args.addressBookItems,
         space,
-        authPayload: args.authPayload,
+        userId,
       });
 
       const newAddressBookItems = args.addressBookItems.filter(
@@ -77,7 +77,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         entityManager,
         addressBookItems: newAddressBookItems,
         space,
-        authPayload: args.authPayload,
+        userId,
+        createdByOverride: args.createdByOverride,
       });
     });
     return repository.findBy({ space: { id: space.id } });
@@ -107,29 +108,23 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }): Promise<Space> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    return this.spacesRepository.findOneOrFail({
-      where: {
+    return await this.spacesRepository.findOneOrFail({
+      where: activeOrPendingMemberWhere<Member>(() => ({
+        role: In(args.memberRoleIn),
+        user: { id: userId },
+      })).map((members) => ({
         id: args.spaceId,
-        members: {
-          status: In(['ACTIVE', 'INVITED']),
-          role: In(args.memberRoleIn),
-          user: { id: userId },
-        },
-      },
+        members,
+      })),
     });
   }
 
   private async updateExistingAddressBookItems(args: {
-    authPayload: AuthPayload;
+    userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
   }): Promise<Array<DbAddressBookItem['address']>> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const existingAddressBookItems = await repository.findBy({
       space: { id: args.space.id },
@@ -145,23 +140,19 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       await repository.update(item.id, {
         name: patch.name,
         chainIds: patch.chainIds,
-        lastUpdatedBy: args.authPayload.signer_address,
+        lastUpdatedBy: args.userId,
       });
     }
     return existingAddressBookItems.map((item) => item.address);
   }
 
   private async createNewAddressBookItems(args: {
-    authPayload: AuthPayload;
+    userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
+    createdByOverride?: number;
   }): Promise<Array<DbAddressBookItem['id']>> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
     await this.checkItemsLimit(args);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const insertedIds = await repository.insert(
@@ -170,8 +161,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         address: addressBookItem.address,
         name: addressBookItem.name,
         chainIds: addressBookItem.chainIds,
-        createdBy: args.authPayload.signer_address,
-        lastUpdatedBy: args.authPayload.signer_address,
+        createdBy: args.createdByOverride ?? args.userId,
+        lastUpdatedBy: args.userId,
       })),
     );
     return insertedIds.identifiers.map((i) => i.id);
@@ -190,7 +181,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       existingAddressBookItems + args.addressBookItems.length;
     if (totalAddressBookItemsCount > this.maxItems) {
       throw new BadRequestException(
-        `This Space only allows a maximum of ${this.maxItems} Address Book Items. You can only add up to ${this.maxItems - existingAddressBookItems} more.`,
+        `This Workspace only allows a maximum of ${this.maxItems} Address Book Items. You can only add up to ${this.maxItems - existingAddressBookItems} more.`,
       );
     }
   }

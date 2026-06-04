@@ -1,29 +1,30 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import sample from 'lodash/sample';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import {
   zerionAttributesBuilder,
+  zerionBalanceBuilder,
+  zerionBalancesBuilder,
+  zerionFlagsBuilder,
   zerionFungibleInfoBuilder,
   zerionImplementationBuilder,
   zerionQuantityBuilder,
-  zerionBalanceBuilder,
-  zerionFlagsBuilder,
-  zerionBalancesBuilder,
 } from '@/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import sample from 'lodash/sample';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { NULL_ADDRESS } from '@/routes/common/constants';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Balances Controller', () => {
   let app: INestApplication<Server>;

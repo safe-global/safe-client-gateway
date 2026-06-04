@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
 import { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
 import {
-  Order,
+  type FullAppData,
+  FullAppDataSchema,
+} from '@/modules/swaps/domain/entities/full-app-data.entity';
+import {
+  type Order,
   OrderSchema,
   OrdersSchema,
 } from '@/modules/swaps/domain/entities/order.entity';
-import {
-  FullAppData,
-  FullAppDataSchema,
-} from '@/modules/swaps/domain/entities/full-app-data.entity';
-import type { Address, Hex } from 'viem';
 
 export const ISwapsRepository = Symbol('ISwapsRepository');
 

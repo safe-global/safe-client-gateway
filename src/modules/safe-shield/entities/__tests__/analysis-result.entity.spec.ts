@@ -1,31 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { omit } from 'lodash';
 import {
   AnalysisResultBaseSchema,
-  RecipientAnalysisResultSchema,
-  ContractAnalysisResultSchema,
-  ThreatAnalysisResultSchema,
-  DeadlockAnalysisResultSchema,
   AnalysisStatusSchema,
-  type ContractAnalysisResult,
   CommonStatus,
+  type ContractAnalysisResult,
+  ContractAnalysisResultSchema,
+  DeadlockAnalysisResultSchema,
+  RecipientAnalysisResultSchema,
+  ThreatAnalysisResultSchema,
   UnofficialFallbackHandlerAnalysisResultSchema,
 } from '../analysis-result.entity';
-import { compareSeverityString } from '../severity.entity';
-import { RecipientStatus } from '../recipient-status.entity';
 import { BridgeStatus } from '../bridge-status.entity';
 import { ContractStatus } from '../contract-status.entity';
-import { ThreatStatus } from '../threat-status.entity';
 import { DeadlockStatus } from '../deadlock-status.entity';
+import { RecipientStatus } from '../recipient-status.entity';
+import { compareSeverityString } from '../severity.entity';
+import { ThreatStatus } from '../threat-status.entity';
 import {
-  recipientAnalysisResultBuilder,
   contractAnalysisResultBuilder,
-  threatAnalysisResultBuilder,
   deadlockAnalysisResultBuilder,
-  masterCopyChangeThreatBuilder,
   maliciousOrModerateThreatBuilder,
+  masterCopyChangeThreatBuilder,
+  recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
   unofficialFallbackHandlerAnalysisResultBuilder,
 } from './builders/analysis-result.builder';
-import { omit } from 'lodash';
 
 describe('AnalysisResult', () => {
   describe('AnalysisResult interface', () => {
@@ -87,54 +88,51 @@ describe('AnalysisResult', () => {
   });
 
   describe('AnalysisStatusSchema', () => {
-    it.each(Object.values(RecipientStatus))(
-      'should validate all recipient status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(RecipientStatus),
+    )('should validate all recipient status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(BridgeStatus))(
-      'should validate all bridge status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(BridgeStatus),
+    )('should validate all bridge status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(ContractStatus))(
-      'should validate all contract status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(ContractStatus),
+    )('should validate all contract status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(ThreatStatus))(
-      'should validate all threat status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(ThreatStatus),
+    )('should validate all threat status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(DeadlockStatus))(
-      'should validate all deadlock status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(DeadlockStatus),
+    )('should validate all deadlock status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(Object.values(CommonStatus))(
-      'should validate all common status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      Object.values(CommonStatus),
+    )('should validate all common status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(['INVALID_STATUS', '', null, undefined, 123] as const)(
-      'should reject invalid status values = %s',
-      (value) => {
-        expect(() => AnalysisStatusSchema.parse(value)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID_STATUS',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid status values = %s', (value) => {
+      expect(() => AnalysisStatusSchema.parse(value)).toThrow();
+    });
   });
 
   describe('AnalysisResultBaseSchema', () => {
@@ -466,16 +464,15 @@ describe('AnalysisResult', () => {
       ).not.toThrow();
     });
 
-    it.each(Object.values(DeadlockStatus))(
-      'should validate deadlock status = %s',
-      (status) => {
-        const result = deadlockAnalysisResultBuilder()
-          .with('type', status)
-          .build();
+    it.each(
+      Object.values(DeadlockStatus),
+    )('should validate deadlock status = %s', (status) => {
+      const result = deadlockAnalysisResultBuilder()
+        .with('type', status)
+        .build();
 
-        expect(() => DeadlockAnalysisResultSchema.parse(result)).not.toThrow();
-      },
-    );
+      expect(() => DeadlockAnalysisResultSchema.parse(result)).not.toThrow();
+    });
 
     it('should validate common status FAILED', () => {
       const failedResult = {
@@ -526,14 +523,14 @@ describe('AnalysisResult', () => {
       ];
 
       // Verify all results have the required structure
-      results.forEach((result) => {
+      for (const result of results) {
         expect(result).toHaveProperty('severity');
         expect(result).toHaveProperty('type');
         expect(result).toHaveProperty('title');
         expect(result).toHaveProperty('description');
         expect(typeof result.title).toBe('string');
         expect(typeof result.description).toBe('string');
-      });
+      }
     });
 
     it('should work with sorting by severity', () => {

@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { Theme as DomainTheme } from '@/modules/chains/domain/entities/theme.entity';
+import type { Theme as DomainTheme } from '@/modules/chains/domain/entities/theme.entity';
 
 export class Theme implements DomainTheme {
   @ApiProperty()

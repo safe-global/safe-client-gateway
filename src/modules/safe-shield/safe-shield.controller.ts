@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Body,
   Controller,
@@ -8,31 +9,31 @@ import {
   Post,
 } from '@nestjs/common';
 import {
+  ApiBody,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
-  ApiBody,
+  ApiTags,
 } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import type { Address } from 'viem';
-import { SafeShieldService } from './safe-shield.service';
-import { SingleRecipientAnalysisDto } from './entities/dtos/single-recipient-analysis.dto';
-import {
-  CounterpartyAnalysisRequestSchema,
-  ThreatAnalysisRequestSchema,
-} from './entities/analysis-requests.entity';
-import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
-import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
-import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import {
   ReportFalseResultRequestDto,
   ReportFalseResultRequestSchema,
   ReportFalseResultResponseDto,
 } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
+import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import {
+  CounterpartyAnalysisRequestSchema,
+  ThreatAnalysisRequestSchema,
+} from './entities/analysis-requests.entity';
+import { SingleRecipientAnalysisDto } from './entities/dtos/single-recipient-analysis.dto';
+import { SafeShieldService } from './safe-shield.service';
 
 /**
  * Controller for Safe Shield security analysis endpoints.
@@ -76,7 +77,7 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
-  public async analyzeRecipient(
+  public analyzeRecipient(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -120,7 +121,7 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/counterparty-analysis')
-  public async analyzeCounterparty(
+  public analyzeCounterparty(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -161,7 +162,7 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/threat-analysis')
-  public async analyzeThreat(
+  public analyzeThreat(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -204,11 +205,11 @@ export class SafeShieldController {
   })
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/report-false-result')
-  public async reportFalseResult(
+  public reportFalseResult(
     @Param('chainId', new ValidationPipe(NumericStringSchema))
-    chainId: string,
+    _chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: Address,
+    _safeAddress: Address,
     @Body(new ValidationPipe(ReportFalseResultRequestSchema))
     request: ReportFalseResultRequestDto,
   ): Promise<ReportFalseResultResponseDto> {

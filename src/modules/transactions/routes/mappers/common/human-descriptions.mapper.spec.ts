@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import {
   type Address,
   encodeFunctionData,
@@ -5,23 +7,22 @@ import {
   getAddress,
   parseAbi,
 } from 'viem';
-import { faker } from '@faker-js/faker';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import type { Hex } from 'viem/types/misc';
+import { truncateAddress } from '@/domain/common/utils/utils';
 import type { ILoggingService } from '@/logging/logging.interface';
 
 import { HumanDescriptionApi } from '@/modules/human-description/datasources/human-description-api.service';
 import { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import type { Hex } from 'viem/types/misc';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
 import { HumanDescriptionMapper } from '@/modules/transactions/routes/mappers/common/human-description.mapper';
 import type { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
-import { truncateAddress } from '@/domain/common/utils/utils';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 const tokenRepository = jest.mocked({
   getToken: jest.fn(),

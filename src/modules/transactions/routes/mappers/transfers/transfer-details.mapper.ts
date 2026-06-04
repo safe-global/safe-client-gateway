@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import {
   TRANSACTION_ID_SEPARATOR,
   TRANSFER_PREFIX,
 } from '@/modules/transactions/routes/constants';
-import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
+import type { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 

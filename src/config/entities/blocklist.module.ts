@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Global, Module } from '@nestjs/common';
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
 import { BlocklistService } from '@/config/entities/blocklist.service';
-import { Global, Module } from '@nestjs/common';
 
 @Global()
 @Module({

@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CommonStatus } from '../analysis-result.entity';
+import type { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { AnalysisResultDto } from './analysis-result.dto';
-import { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
+import { CommonStatus } from '../analysis-result.entity';
+import { AnalysisResultDto } from './analysis-result.dto';
 
 /**
  * DTO for recipient interaction analysis result.
@@ -25,7 +26,9 @@ export class SingleRecipientAnalysisResultDto extends AnalysisResultDto<
  * This DTO is used by the analyzeRecipient endpoint which only returns
  * recipient interaction and activity statuses (not bridge analysis).
  */
-export class SingleRecipientAnalysisDto implements SingleRecipientAnalysisResponse {
+export class SingleRecipientAnalysisDto
+  implements SingleRecipientAnalysisResponse
+{
   @ApiProperty({
     description:
       'Analysis results related to recipient interaction history. ' +

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
+
 import { z } from 'zod';
+import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const TxDataResponseSchema = z.object({
   chainId: z.number(),
@@ -18,11 +19,16 @@ export const PricingContextSnapshotSchema = z.object({
   phase: z.number(),
   priceSource: z.enum(PriceSource),
   priceTimestamp: z.number(),
-  gasVolatilityBuffer: z.number(),
+  gasPriceVolatilityBuffer: z.number(),
+});
+
+export const RelayCostSchema = z.object({
+  fiatCode: z.string(),
+  fiatValue: z.string(),
 });
 
 export const TxFeesResponseSchema = z.object({
   txData: TxDataResponseSchema,
-  relayCostUsd: z.number(),
+  relayCost: RelayCostSchema,
   pricingContextSnapshot: PricingContextSnapshotSchema,
 });

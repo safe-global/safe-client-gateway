@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, encodeFunctionData, getAddress } from 'viem';
-import ProxyFactory130 from '@/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
-import type { IEncoder } from '@/__tests__/encoder-builder';
 import { Builder } from '@/__tests__/builder';
+import type { IEncoder } from '@/__tests__/encoder-builder';
+import ProxyFactory130 from '@/abis/safe/v1.3.0/GnosisSafeProxyFactory.abi';
 import { setupEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 
 // createProxyWithNonce

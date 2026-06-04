@@ -1,24 +1,28 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import {
   Body,
   Controller,
   Get,
   HttpException,
-  HttpStatus,
-  INestApplication,
+  type HttpStatus,
+  type INestApplication,
   Post,
 } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import request from 'supertest';
 import { APP_FILTER } from '@nestjs/core';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { Test, type TestingModule } from '@nestjs/testing';
+import request from 'supertest';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { Server } from 'net';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 
 @Controller({})
 class TestController {

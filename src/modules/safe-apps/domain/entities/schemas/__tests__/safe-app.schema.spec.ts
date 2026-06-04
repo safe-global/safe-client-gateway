@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { safeAppAccessControlBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app-access-control.builder';
 import { safeAppProviderBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app-provider.builder';
 import { safeAppSocialProfileBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app-social-profile.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
 import type { SafeAppSocialProfile } from '@/modules/safe-apps/domain/entities/safe-app-social-profile.entity';
 import { SafeAppSchema } from '@/modules/safe-apps/domain/entities/schemas/safe-app.schema';
-import { faker } from '@faker-js/faker';
 
 describe('SafeAppSchema', () => {
   it('should validate a valid SafeApp', () => {

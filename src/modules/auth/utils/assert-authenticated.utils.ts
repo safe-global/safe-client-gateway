@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type {
-  AuthPayload,
-  AuthenticatedAuthPayload,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
+
 import { UnauthorizedException } from '@nestjs/common';
+import type {
+  AuthenticatedAuthPayload,
+  AuthPayload,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 
 /**
  * Asserts that the given {@link AuthPayload} is authenticated.

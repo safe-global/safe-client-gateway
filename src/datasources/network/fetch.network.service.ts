@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
-import { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
 import {
-  FetchClient,
+  type FetchClient,
   FetchClientToken,
 } from '@/datasources/network/network.module';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 /**
  * A {@link INetworkService} which uses fetch as the main HTTP client
@@ -78,7 +81,7 @@ export class FetchNetworkService implements INetworkService {
     }
   }
 
-  async post<T>(args: {
+  post<T>(args: {
     url: string;
     data?: object;
     networkRequest?: NetworkRequest;
@@ -91,7 +94,7 @@ export class FetchNetworkService implements INetworkService {
     });
   }
 
-  async postForm<T>(args: {
+  postForm<T>(args: {
     url: string;
     data: Record<string, string>;
     networkRequest?: NetworkRequest;

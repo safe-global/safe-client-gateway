@@ -2,32 +2,38 @@
 import {
   ConflictException,
   ForbiddenException,
+  GoneException,
   Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { type Address, isAddressEqual } from 'viem';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { In } from 'typeorm';
 import type {
-  FindOptionsWhere,
-  FindOptionsRelations,
-  FindManyOptions,
   EntityManager,
+  FindManyOptions,
+  FindOptionsRelations,
+  FindOptionsWhere,
 } from 'typeorm';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import { type Member } from '@/modules/users/domain/entities/member.entity';
+import { In } from 'typeorm';
+import type { Address } from 'viem';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -37,8 +43,6 @@ export class MembersRepository implements IMembersRepository {
     private readonly usersRepository: IUsersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
-    @Inject(IWalletsRepository)
-    private readonly walletsRepository: IWalletsRepository,
   ) {}
 
   public async findOneOrFail(
@@ -88,77 +92,85 @@ export class MembersRepository implements IMembersRepository {
     return await membersRepository.find(args);
   }
 
+  public async findActiveAdmin(args: {
+    userId: User['id'];
+    spaceId: Space['id'];
+  }): Promise<DbMember | null> {
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+
+    return await membersRepository.findOne({
+      where: {
+        user: { id: args.userId },
+        space: { id: args.spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      },
+    });
+  }
+
   public async inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
-    users: Array<{
-      name: Member['name'];
-      address: Address;
-      role: Member['role'];
-    }>;
+    users: Array<InviteUserInput>;
+    inviteExpiresAt: Date;
   }): Promise<Array<Invitation>> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
     });
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    const activeAdmin = await membersRepository.findOne({
-      where: {
-        user: { id: userId },
-        space: { id: args.spaceId },
-        status: 'ACTIVE',
-        role: 'ADMIN',
-      },
-    });
-    if (!activeAdmin) {
-      throw new ForbiddenException('User is not an active admin.');
-    }
 
-    const invitedAddresses = args.users.map((user) => user.address);
-    const invitedWallets = await this.walletsRepository.find({
-      where: { address: In(invitedAddresses) },
-      relations: { user: true },
-    });
     const invitations: Array<Invitation> = [];
-
-    // TODO: Until OIDC invite flow is set up, OIDC admins have no wallet
-    // address to store here. Revisit when OIDC invite identifiers are available.
-    const invitedBy = args.authPayload.isSiwe()
-      ? args.authPayload.signer_address
-      : null;
+    const walletAddresses = args.users.flatMap((user) =>
+      user.type === InviteType.Wallet ? [user.address] : [],
+    );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      for (const userToInvite of args.users) {
-        // Find existing User via Wallet or create new User and Wallet.
-        const wallet = invitedWallets.find((wallet) => {
-          return isAddressEqual(wallet.address, userToInvite.address);
+      const walletUserIds = new Map<Address, User['id']>();
+      if (walletAddresses.length > 0) {
+        // Batch existing wallet lookups while keeping user creation atomic.
+        const wallets = await entityManager.find(Wallet, {
+          where: { address: In(walletAddresses) },
+          relations: { user: true },
         });
-        const userIdToInvite = wallet
-          ? wallet.user.id
-          : await this.createUserAndWallet({
-              entityManager,
-              address: userToInvite.address,
-            });
 
-        try {
-          await entityManager.insert(DbMember, {
-            user: { id: userIdToInvite },
-            space: space,
-            name: userToInvite.name,
-            role: userToInvite.role,
-            status: 'INVITED',
-            invitedBy,
-          });
-        } catch (err) {
-          if (isUniqueConstraintError(err)) {
-            throw new UniqueConstraintError(
-              `${userToInvite.address} is already in this space or has a pending invite.`,
-            );
-          }
-          throw err;
+        for (const wallet of wallets) {
+          walletUserIds.set(wallet.address, wallet.user.id);
         }
+      }
+
+      for (const userToInvite of args.users) {
+        let userIdToInvite: User['id'];
+        switch (userToInvite.type) {
+          case InviteType.Wallet: {
+            userIdToInvite =
+              walletUserIds.get(userToInvite.address) ??
+              (await this.usersRepository.findOrCreateByWalletAddress(
+                userToInvite.address,
+                'PENDING',
+                entityManager,
+              ));
+            walletUserIds.set(userToInvite.address, userIdToInvite);
+            break;
+          }
+          case InviteType.Email: {
+            userIdToInvite = await this.usersRepository.findOrCreateByEmail(
+              userToInvite.email,
+              entityManager,
+            );
+            break;
+          }
+        }
+
+        await this.insertOrUpdateInvite({
+          entityManager,
+          space,
+          userId: userIdToInvite,
+          userToInvite,
+          invitedBy: userId,
+          inviteExpiresAt: args.inviteExpiresAt,
+        });
 
         invitations.push({
           userId: userIdToInvite,
@@ -166,7 +178,7 @@ export class MembersRepository implements IMembersRepository {
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
-          invitedBy,
+          invitedBy: userId,
         });
       }
     });
@@ -174,17 +186,69 @@ export class MembersRepository implements IMembersRepository {
     return invitations;
   }
 
-  private async createUserAndWallet(args: {
+  private async insertOrUpdateInvite(args: {
     entityManager: EntityManager;
-    address: Address;
-  }): Promise<User['id']> {
-    const { address, entityManager } = args;
-    const userId = await this.usersRepository.create('PENDING', entityManager);
-    await this.walletsRepository.create(
-      { walletAddress: address, userId },
+    space: Space;
+    userId: User['id'];
+    userToInvite: InviteUserInput;
+    invitedBy: number | null;
+    inviteExpiresAt: Date;
+  }): Promise<void> {
+    const {
       entityManager,
-    );
-    return userId;
+      space,
+      userId,
+      userToInvite,
+      invitedBy,
+      inviteExpiresAt,
+    } = args;
+    const { name, role } = userToInvite;
+
+    const duplicateInviteError = (): UniqueConstraintError =>
+      new UniqueConstraintError(
+        userToInvite.type === InviteType.Wallet
+          ? `${userToInvite.address} is already in this workspace or has a pending invite.`
+          : 'This invitee is already in this workspace or has a pending invite.',
+      );
+
+    const existingMember = await entityManager.findOne(DbMember, {
+      where: {
+        user: { id: userId },
+        space: { id: space.id },
+      },
+    });
+
+    if (!existingMember) {
+      try {
+        await entityManager.insert(DbMember, {
+          user: { id: userId },
+          space,
+          name,
+          role,
+          status: 'INVITED',
+          invitedBy,
+          inviteExpiresAt,
+        });
+      } catch (err) {
+        if (isUniqueConstraintError(err)) {
+          throw duplicateInviteError();
+        }
+        throw err;
+      }
+      return;
+    }
+
+    if (existingMember.status === 'INVITED') {
+      await entityManager.update(DbMember, existingMember.id, {
+        name,
+        role,
+        invitedBy,
+        inviteExpiresAt,
+      });
+      return;
+    }
+
+    throw duplicateInviteError();
   }
 
   public async acceptInvite(args: {
@@ -202,11 +266,13 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
     const member = space.members[0];
+    this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
         name: args.payload.name,
+        inviteExpiresAt: null,
       });
 
       await this.usersRepository.updateStatus({
@@ -231,12 +297,25 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
     const member = space.members[0];
+    this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'DECLINED',
+        inviteExpiresAt: null,
       });
     });
+  }
+
+  private assertInviteNotExpired(member: DbMember): void {
+    // An `INVITED` member is always expected to carry an expiry;
+    // treat a missing one as expired.
+    if (
+      member.inviteExpiresAt === null ||
+      member.inviteExpiresAt.getTime() <= Date.now()
+    ) {
+      throw new GoneException('Invitation has expired.');
+    }
   }
 
   public async findAuthorizedMembersOrFail(args: {
@@ -402,8 +481,9 @@ export class MembersRepository implements IMembersRepository {
   }
 
   /**
-   * Returns the authenticated user's `ACTIVE` or `INVITED` membership row
-   * for the given space, or throws `ForbiddenException` if none exists.
+   * Returns the authenticated user's `ACTIVE` or non-expired `INVITED`
+   * membership row for the given space, or throws `ForbiddenException` if none
+   * exists.
    *
    * Shared by {@link findAuthorizedMembersOrFail} (which uses it as an
    * authorization gate and discards the row, so it omits `relations`) and
@@ -423,16 +503,15 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
     const member = await membersRepository.findOne({
-      where: {
+      where: activeOrPendingMemberWhere<DbMember>(() => ({
         user: { id: userId },
         space: { id: args.spaceId },
-        status: In(['ACTIVE', 'INVITED']),
-      },
+      })),
       relations,
     });
     if (!member) {
       throw new ForbiddenException(
-        'The user is not an active member of the space.',
+        'The user is not an active member of the workspace.',
       );
     }
     return member;

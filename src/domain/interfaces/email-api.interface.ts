@@ -1,4 +1,5 @@
-import type { CreateEmailMessageDto } from '@/modules/email/domain/entities/create-email-message.dto.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { CreateEmailMessageDto } from '@/modules/email/pushwoosh/domain/entities/create-email-message.dto.entity';
 
 export const IEmailApi = Symbol('IEmailApi');
 

@@ -1,31 +1,32 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
+import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { TransactionApi } from '@/modules/transactions/datasources/transaction-api.service';
-import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v1/entities/__tests__/data-decoded.builder';
-import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
+import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
+import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v1/entities/__tests__/data-decoded.builder';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
+import { creationTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { creationTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
+import { TransactionApi } from '@/modules/transactions/datasources/transaction-api.service';
 import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import { type Address, getAddress } from 'viem';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
-import { fakeJson } from '@/__tests__/faker';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
@@ -563,7 +564,7 @@ describe('TransactionApi', () => {
 
       const actual = await service.getDelegates({
         ...delegate,
-        safeAddress: delegate.safe!,
+        safeAddress: delegate.safe as Address,
         limit,
         offset,
       });
@@ -617,7 +618,7 @@ describe('TransactionApi', () => {
       await expect(
         service.getDelegates({
           ...delegate,
-          safeAddress: delegate.safe!,
+          safeAddress: delegate.safe as Address,
           limit,
           offset,
         }),
@@ -654,7 +655,7 @@ describe('TransactionApi', () => {
 
       await service.postDelegate({
         ...delegate,
-        safeAddress: delegate.safe!,
+        safeAddress: delegate.safe as Address,
         signature,
       });
 
@@ -693,7 +694,7 @@ describe('TransactionApi', () => {
       await expect(
         service.postDelegate({
           ...delegate,
-          safeAddress: delegate.safe!,
+          safeAddress: delegate.safe as Address,
           signature,
         }),
       ).rejects.toThrow(expected);
@@ -790,7 +791,7 @@ describe('TransactionApi', () => {
 
       await service.deleteSafeDelegate({
         delegate: delegate.delegate,
-        safeAddress: delegate.safe!,
+        safeAddress: delegate.safe as Address,
         signature,
       });
 
@@ -799,7 +800,7 @@ describe('TransactionApi', () => {
         url: deleteSafeDelegateUrl,
         data: {
           delegate: delegate.delegate,
-          safe: delegate.safe!,
+          safe: delegate.safe as Address,
           signature,
         },
       });
@@ -830,7 +831,7 @@ describe('TransactionApi', () => {
       await expect(
         service.deleteSafeDelegate({
           delegate: delegate.delegate,
-          safeAddress: delegate.safe!,
+          safeAddress: delegate.safe as Address,
           signature,
         }),
       ).rejects.toThrow(expected);
@@ -840,7 +841,7 @@ describe('TransactionApi', () => {
         url: deleteSafeDelegateUrl,
         data: {
           delegate: delegate.delegate,
-          safe: delegate.safe!,
+          safe: delegate.safe as Address,
           signature,
         },
       });

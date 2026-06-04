@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
-import { z } from 'zod';
 
 export type MessageConfirmation = z.infer<typeof MessageConfirmationSchema>;
 

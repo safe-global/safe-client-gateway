@@ -1,18 +1,19 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Page } from '@/domain/entities/page.entity';
-import type { Server } from 'net';
-import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const SERVICE_KEY = 'WALLET_WEB';
 

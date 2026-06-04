@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
-  ApiTags,
   ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
 import { OwnersService } from '@/modules/owners/routes/owners.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('owners')
 @Controller({
@@ -40,7 +41,7 @@ export class OwnersControllerV1 {
     description: 'List of Safes owned by the specified address',
   })
   @Get('chains/:chainId/owners/:ownerAddress/safes')
-  async getSafesByOwner(
+  getSafesByOwner(
     @Param('chainId') chainId: string,
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: Address,

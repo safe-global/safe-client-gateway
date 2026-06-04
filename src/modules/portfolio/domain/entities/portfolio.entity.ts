@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TokenBalancesSchema } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import { AppBalancesSchema } from '@/modules/portfolio/domain/entities/app-balance.entity';
+import { TokenBalancesSchema } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import { FiatStringSchema } from '@/modules/portfolio/domain/entities/token-info.entity';
 
 export const PortfolioSchema = z.object({

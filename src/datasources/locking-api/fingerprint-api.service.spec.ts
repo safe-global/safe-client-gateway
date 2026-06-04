@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import {
   fingerprintIpDataBuilder,
@@ -8,19 +11,9 @@ import {
 } from '@/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
 import { FingerprintApiService } from '@/datasources/locking-api/fingerprint-api.service';
 import { eligibilityRequestBuilder } from '@/modules/community/domain/entities/__tests__/eligibility-request.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { faker } from '@faker-js/faker';
-import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
 
 // TODO: convert to spy to avoid casting
 jest.mock('@fingerprintjs/fingerprintjs-pro-server-api');
-
-const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
 
 describe('FingerprintApiService', () => {
   let service: FingerprintApiService;
@@ -40,10 +33,7 @@ describe('FingerprintApiService', () => {
       ['US'],
     );
 
-    service = new FingerprintApiService(
-      fakeConfigurationService,
-      mockLoggingService,
-    );
+    service = new FingerprintApiService(fakeConfigurationService);
   });
 
   describe('checkEligibility', () => {

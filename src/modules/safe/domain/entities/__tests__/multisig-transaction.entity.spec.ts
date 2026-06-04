@@ -1,14 +1,16 @@
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import {
   ConfirmationSchema,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
   MultisigTransactionTypeSchema,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { faker } from '@faker-js/faker/.';
-import { type Address, getAddress } from 'viem';
 
 describe('MultisigTransaction', () => {
   describe('ConfirmationSchema', () => {
@@ -112,6 +114,7 @@ describe('MultisigTransaction', () => {
       'gasPrice' as const,
       'ethGasPrice' as const,
       'fee' as const,
+      'payment' as const,
     ])('should require %s to be a numeric string', (key) => {
       const multisigTransaction = multisigTransactionBuilder()
         .with(key, faker.string.alpha())
@@ -166,6 +169,7 @@ describe('MultisigTransaction', () => {
       'ethGasPrice' as const,
       'gasUsed' as const,
       'fee' as const,
+      'payment' as const,
       'origin' as const,
       'confirmations' as const,
       'signatures' as const,

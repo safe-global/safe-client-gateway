@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
-import { NotificationsControllerV2 } from '@/modules/notifications/routes/v2/notifications.controller';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { NotificationsControllerV2 } from '@/modules/notifications/routes/v2/notifications.controller';
+import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
 
 @Module({
   imports: [NotificationsRepositoryV2Module, AuthModule],

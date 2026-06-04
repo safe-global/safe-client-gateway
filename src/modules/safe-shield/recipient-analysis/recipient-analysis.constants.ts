@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import {
+  COMMON_DESCRIPTION_MAPPING,
+  COMMON_SEVERITY_MAPPING,
+} from '@/modules/safe-shield/entities/common-status.constants';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
-import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
-import {
-  COMMON_SEVERITY_MAPPING,
-  COMMON_DESCRIPTION_MAPPING,
-} from '@/modules/safe-shield/entities/common-status.constants';
 
 /**
  * Severity mapping for recipient analysis results.

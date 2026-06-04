@@ -1,4 +1,5 @@
-import { z, type ZodType } from 'zod';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type ZodType, z } from 'zod';
 
 /**
  * Validates the configuration against the provided schema

@@ -1,29 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { type Address, getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
+import type { Page } from '@/domain/entities/page.entity';
 import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
 import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
+import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
+import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasPriceResponseBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-response.builder';
+import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import type { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
-import type { Page } from '@/domain/entities/page.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
-import { gasPriceResponseBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-response.builder';
-import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
-import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Chains Controller', () => {
   let app: INestApplication<Server>;
@@ -111,7 +112,7 @@ describe('Chains Controller', () => {
               theme: chainsResponse.results[0].theme,
               gasPrice: chainsResponse.results[0].gasPrice,
               ensRegistryAddress: getAddress(
-                chainsResponse.results[0].ensRegistryAddress!,
+                chainsResponse.results[0].ensRegistryAddress as Address,
               ),
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
@@ -140,7 +141,7 @@ describe('Chains Controller', () => {
               theme: chainsResponse.results[1].theme,
               gasPrice: chainsResponse.results[1].gasPrice,
               ensRegistryAddress: getAddress(
-                chainsResponse.results[1].ensRegistryAddress!,
+                chainsResponse.results[1].ensRegistryAddress as Address,
               ),
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,
@@ -228,7 +229,7 @@ describe('Chains Controller', () => {
               theme: chainsResponse.results[0].theme,
               gasPrice: chainsResponse.results[0].gasPrice,
               ensRegistryAddress: getAddress(
-                chainsResponse.results[0].ensRegistryAddress!,
+                chainsResponse.results[0].ensRegistryAddress as Address,
               ),
               disabledWallets: chainsResponse.results[0].disabledWallets,
               features: chainsResponse.results[0].features,
@@ -257,7 +258,7 @@ describe('Chains Controller', () => {
               theme: chainsResponse.results[1].theme,
               gasPrice: chainsResponse.results[1].gasPrice,
               ensRegistryAddress: getAddress(
-                chainsResponse.results[1].ensRegistryAddress!,
+                chainsResponse.results[1].ensRegistryAddress as Address,
               ),
               disabledWallets: chainsResponse.results[1].disabledWallets,
               features: chainsResponse.results[1].features,

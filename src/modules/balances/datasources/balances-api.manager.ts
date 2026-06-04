@@ -1,33 +1,33 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
+import intersection from 'lodash/intersection';
+import type { Address } from 'viem';
+import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
-import { IZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import type { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
-import { Inject, Injectable } from '@nestjs/common';
-import intersection from 'lodash/intersection';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
+import { IZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { z } from 'zod';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
-import type { Address } from 'viem';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
   private readonly isCounterFactualBalancesEnabled: boolean;
-  private readonly zerionBalancesEnabled: boolean;
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
 
@@ -48,9 +48,6 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.configurationService.getOrThrow<boolean>(
         'features.counterfactualBalances',
       );
-    this.zerionBalancesEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.zerionBalancesEnabled',
-    );
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
@@ -69,9 +66,8 @@ export class BalancesApiManager implements IBalancesApiManager {
     const isSafe = await transactionApi.isSafe(safeAddress);
     if (isSafe) {
       return this._getSafeBalancesApi(chainId);
-    } else {
-      return this.zerionBalancesApi;
     }
+    return this.zerionBalancesApi;
   }
 
   async getFiatCodes(): Promise<Raw<Array<string>>> {

@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import {
+  BridgeAndSwapTransactionInfo,
+  SwapTransactionInfo,
+} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
 import { CreationTransactionInfo } from '@/modules/transactions/routes/entities/creation-transaction-info.entity';
 import {
   CustomTransactionInfo,
@@ -12,15 +17,11 @@ import { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities
 import { TwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/twap-order-info.entity';
 import { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { TransferTransactionInfo } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
 import {
   VaultDepositTransactionInfo,
   VaultRedeemTransactionInfo,
 } from '@/modules/transactions/routes/entities/vaults/vault-transaction-info.entity';
-import {
-  BridgeAndSwapTransactionInfo,
-  SwapTransactionInfo,
-} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
 
 @ApiExtraModels(
   TransactionInfo,

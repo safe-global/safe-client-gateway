@@ -4,12 +4,11 @@ export enum JobType {
   CSV_EXPORT = 'csv-export',
   PUSH_NOTIFICATION_EVENT = 'push-notification-event',
   PUSH_NOTIFICATION_DELIVERY = 'push-notification-delivery',
+  SEND_EMAIL = 'send-email',
 }
 
 export type JobTypeName = (typeof JobType)[keyof typeof JobType];
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface JobData {}
+export type JobData = Record<string, unknown>;
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export interface JobResponse {}
+export type JobResponse = Record<string, unknown>;

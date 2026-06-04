@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Module } from '@nestjs/common';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { Module } from '@nestjs/common';
 
 const targetedMessagingDatasource = {
   getUnprocessedOutreaches: jest.fn(),

@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ExportApiManager } from './export-api.manager';
+import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { getAddress } from 'viem';
+import { ExportApiManager } from './export-api.manager';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),

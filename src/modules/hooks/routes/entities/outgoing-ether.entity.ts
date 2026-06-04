@@ -1,4 +1,5 @@
-import type { OutgoingEtherEventSchema } from '@/modules/hooks/routes/entities/schemas/outgoing-ether.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { z } from 'zod';
+import type { OutgoingEtherEventSchema } from '@/modules/hooks/routes/entities/schemas/outgoing-ether.schema';
 
 export type OutgoingEther = z.infer<typeof OutgoingEtherEventSchema>;

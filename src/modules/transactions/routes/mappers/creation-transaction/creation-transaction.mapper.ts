@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { CreationTransactionInfo } from '@/modules/transactions/routes/entities/creation-transaction-info.entity';
-import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
+import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
+import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class CreationTransactionMapper {

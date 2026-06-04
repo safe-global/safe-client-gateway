@@ -1,21 +1,25 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { createHash } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { FileStorageType } from '@/config/entities/schemas/configuration.schema';
+import type { FileStorageType } from '@/config/entities/schemas/configuration.schema';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
-import { OutreachFileSchema } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
 import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
-import { createHash } from 'crypto';
-import { readFile } from 'fs/promises';
-import path from 'path';
+import { OutreachFileSchema } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
+import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
 
 @Injectable()
 export class OutreachFileProcessor implements OnModuleInit {

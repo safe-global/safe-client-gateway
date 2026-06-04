@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { z } from 'zod';
+
 import semver from 'semver';
+import { z } from 'zod';
 
 export const SemverSchema = z
   .string()

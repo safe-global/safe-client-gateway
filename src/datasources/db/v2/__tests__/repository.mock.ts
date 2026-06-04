@@ -1,5 +1,6 @@
-import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ObjectLiteral, Repository } from 'typeorm';
+import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 
 export const mockRepository = {
   find: jest.fn(),

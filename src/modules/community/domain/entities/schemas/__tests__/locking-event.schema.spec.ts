@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import {
   lockEventItemBuilder,
@@ -11,8 +14,6 @@ import {
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
 } from '@/modules/community/domain/entities/schemas/locking-event.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('Locking event schemas', () => {
   describe('LockingEventItemSchema', () => {
@@ -86,24 +87,24 @@ describe('Locking event schemas', () => {
       );
     });
 
-    it.each([['amount' as const], ['logIndex' as const]])(
-      'should not allow a non-numeric string %s',
-      (field) => {
-        const lockEventItem = lockEventItemBuilder()
-          .with(field, faker.string.alpha())
-          .build();
+    it.each([
+      ['amount' as const],
+      ['logIndex' as const],
+    ])('should not allow a non-numeric string %s', (field) => {
+      const lockEventItem = lockEventItemBuilder()
+        .with(field, faker.string.alpha())
+        .build();
 
-        const result = LockEventItemSchema.safeParse(lockEventItem);
+      const result = LockEventItemSchema.safeParse(lockEventItem);
 
-        expect(!result.success && result.error.issues).toStrictEqual([
-          {
-            code: 'custom',
-            message: 'Invalid base-10 numeric string',
-            path: [field],
-          },
-        ]);
-      },
-    );
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [field],
+        },
+      ]);
+    });
 
     it('should not validate an invalid LockEventItem', () => {
       const lockEventItem = { invalid: 'lockEventItem' };
@@ -442,7 +443,7 @@ describe('Locking event schemas', () => {
       ['LockingEventItem', lockEventItemBuilder],
       ['UnlockEventItem', unlockEventItemBuilder],
       ['WithdrawEventItem', withdrawEventItemBuilder],
-    ])(`should validate a valid %s page`, (event, eventBuilder) => {
+    ])(`should validate a valid %s page`, (_event, eventBuilder) => {
       const lockingEvent = eventBuilder().build();
       const lockingEventPage = pageBuilder()
         .with('results', [lockingEvent])

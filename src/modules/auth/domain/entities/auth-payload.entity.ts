@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Address } from 'viem';
+import { z } from 'zod';
+import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { z } from 'zod';
-import type { Address } from 'viem';
-import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
 
 export const AuthMethod = {
   Siwe: 'siwe',

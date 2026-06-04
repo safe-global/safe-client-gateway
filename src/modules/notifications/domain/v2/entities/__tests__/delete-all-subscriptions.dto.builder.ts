@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import type { UUID } from 'crypto';
-import { Builder } from '@/__tests__/builder';
 import type { IBuilder } from '@/__tests__/builder';
+import { Builder } from '@/__tests__/builder';
+import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 
 export function deleteAllSubscriptionsDtoBuilder(): IBuilder<DeleteAllSubscriptionsDto> {
   return new Builder<DeleteAllSubscriptionsDto>().with(

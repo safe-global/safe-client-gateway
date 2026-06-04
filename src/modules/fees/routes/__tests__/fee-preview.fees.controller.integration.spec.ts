@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const ENABLED_CHAIN_ID = '1';
 
@@ -87,12 +88,15 @@ describe('Fees Controller', () => {
       });
   });
 
-  it('should return fee preview when relay-fee is enabled', async () => {
+  it('should return fee preview with relayCost when fee service returns new format', async () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const feePreviewDto = feePreviewTransactionDtoBuilder()
       .with('value', '1000000000000000000')
+      .with('fiatCode', 'EUR')
       .build();
-    const mockFeeResponse = txFeesResponseBuilder().build();
+    const mockFeeResponse = txFeesResponseBuilder()
+      .with('relayCost', { fiatCode: 'EUR', fiatValue: '0.0025' })
+      .build();
 
     networkService.post.mockImplementation(({ url }) => {
       if (
@@ -109,7 +113,12 @@ describe('Fees Controller', () => {
       .send(feePreviewDto)
       .expect(200)
       .expect(({ body }) => {
-        expect(body).toMatchObject(mockFeeResponse);
+        expect(body.relayCost).toEqual({
+          fiatCode: 'EUR',
+          fiatValue: '0.0025',
+        });
+        expect(body.txData).toBeDefined();
+        expect(body.pricingContextSnapshot).toBeDefined();
       });
   });
 

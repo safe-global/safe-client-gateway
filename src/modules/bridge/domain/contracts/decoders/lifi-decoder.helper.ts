@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Module } from '@nestjs/common';
 import {
-  AbiParameterToPrimitiveType,
-  Address,
+  type AbiParameterToPrimitiveType,
+  type Address,
   decodeAbiParameters,
   decodeFunctionData,
-  Hex,
+  type Hex,
   isAddressEqual,
   parseAbi,
   parseAbiParameter,
@@ -212,7 +213,7 @@ export class LiFiDecoder {
 
     let fromToken: Address;
     let fromAmount: bigint;
-    let fees = null;
+    let fees: FeeData | null = null;
 
     if (bridgeData.hasSourceSwaps) {
       const allSwapData = this.decodeBridgeSwapData(data);

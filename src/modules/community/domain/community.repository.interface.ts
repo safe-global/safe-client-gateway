@@ -1,12 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address } from 'viem';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
+import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
 import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
+import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
+import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
 import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
 import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
-import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
-import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
-import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
-import type { Address } from 'viem';
 
 export const ICommunityRepository = Symbol('ICommunityRepository');
 

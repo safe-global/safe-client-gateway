@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 
 /**
@@ -22,7 +23,7 @@ export function getTxAuthHeaders(
   );
 
   const isTxAuthEnabled = isDevelopment && !useVpcUrl;
-  if (!isTxAuthEnabled || !apiKey) {
+  if (!(isTxAuthEnabled && apiKey)) {
     return undefined;
   }
 

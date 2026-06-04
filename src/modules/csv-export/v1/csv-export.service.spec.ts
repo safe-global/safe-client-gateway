@@ -1,30 +1,35 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import fs from 'node:fs';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
+import path from 'node:path';
+import type { Writable } from 'node:stream';
+import { PassThrough, Readable, Transform } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
+import { faker } from '@faker-js/faker';
+import { UnrecoverableError } from 'bullmq';
+import type { Address } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
+import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
 import type { IExportApiManager } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
 import {
   transactionExportBuilder,
   transformTransactionExport,
 } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
-import { faker } from '@faker-js/faker/.';
-import type { Writable } from 'stream';
-import { PassThrough, Readable, Transform } from 'stream';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { rawify } from '@/validation/entities/raw.entity';
-import fs from 'fs';
-import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
-import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { Page } from '@/domain/entities/page.entity';
-import { mkdir, rm, readFile, access } from 'fs/promises';
-import path from 'path';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { UnrecoverableError } from 'bullmq';
 import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
-import type { CompleteMultipartUploadCommandOutput } from '@aws-sdk/client-s3';
-import { pipeline } from 'stream/promises';
-import type { Address } from 'viem';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const exportApi = {
   export: jest.fn(),
@@ -67,6 +72,11 @@ const loggingService = {
   error: jest.fn(),
 } as jest.MockedObjectDeep<ILoggingService>;
 const mockLoggingService = jest.mocked(loggingService);
+
+const chainsRepository = {
+  getChain: jest.fn(),
+} as jest.MockedObjectDeep<IChainsRepository>;
+const mockChainsRepository = jest.mocked(chainsRepository);
 
 describe('CsvExportService', () => {
   let service: CsvExportService;
@@ -142,6 +152,13 @@ describe('CsvExportService', () => {
       }
     });
 
+    mockChainsRepository.getChain.mockResolvedValue({
+      nativeCurrency: nativeCurrencyBuilder()
+        .with('decimals', 18)
+        .with('symbol', 'ETH')
+        .build(),
+    } as Chain);
+
     setupCsvServiceMock();
   };
 
@@ -158,6 +175,7 @@ describe('CsvExportService', () => {
         mockCloudStorageApiService,
         mockConfigurationService,
         mockLoggingService,
+        mockChainsRepository,
       );
     });
 
@@ -398,6 +416,64 @@ describe('CsvExportService', () => {
       );
     });
 
+    it('should stream null payment fields when fee is paid from signer wallet', async () => {
+      const mockTransactionExportNoFee = transactionExportBuilder()
+        .with('payment', null)
+        .with('gasToken', null)
+        .with('gasTokenSymbol', null)
+        .with('gasTokenDecimals', null)
+        .build();
+
+      const mockPageNoFee = pageBuilder()
+        .with('results', [mockTransactionExportNoFee])
+        .with('next', null)
+        .build();
+
+      mockExportApi.export.mockResolvedValueOnce(rawify(mockPageNoFee));
+
+      await service.export(exportArgs);
+
+      expect(streamData).toHaveLength(1);
+      expect(streamData[0]).toEqual(
+        transformTransactionExport(mockTransactionExportNoFee),
+      );
+      expect(streamData[0].payment).toBeNull();
+      expect(streamData[0].gasTokenSymbol).toBeNull();
+    });
+
+    it('should format payment using chain native currency when gasToken is zero address', async () => {
+      const nativeDecimals = 18;
+      const nativeSymbol = 'ETH';
+      const rawPayment = '13147530168800274'; // ~0.0131 ETH in wei
+
+      mockChainsRepository.getChain.mockResolvedValue({
+        nativeCurrency: nativeCurrencyBuilder()
+          .with('decimals', nativeDecimals)
+          .with('symbol', nativeSymbol)
+          .build(),
+      } as Chain);
+
+      const mockTxWithNativeGasToken = transactionExportBuilder()
+        .with('gasToken', '0x0000000000000000000000000000000000000000')
+        .with('payment', rawPayment)
+        .with('gasTokenSymbol', null)
+        .with('gasTokenDecimals', null)
+        .build();
+
+      const mockPageNative = pageBuilder()
+        .with('results', [mockTxWithNativeGasToken])
+        .with('next', null)
+        .build();
+
+      mockExportApi.export.mockResolvedValueOnce(rawify(mockPageNative));
+
+      await service.export(exportArgs);
+
+      expect(streamData).toHaveLength(1);
+      expect(streamData[0].payment).toBe('0.013147530168800274');
+      expect(streamData[0].gasTokenSymbol).toBe(nativeSymbol);
+    });
+
     it('should handle pagination with default values', async () => {
       const exportArgsNoPagination = {
         ...exportArgs,
@@ -626,7 +702,7 @@ describe('CsvExportService', () => {
   });
 
   describe('export with local storage', () => {
-    let csvRow: string = '';
+    let csvRow = '';
     const csvHeader = 'id,chainId,type,timestamp';
     const localBaseDir = 'assets/csv-export';
     const fileName = `transactions_export_${exportArgs.chainId}_${exportArgs.safeAddress}_${exportArgs.timestamp}.csv`;
@@ -646,8 +722,8 @@ describe('CsvExportService', () => {
             // Just consume the data
           }
           // Write to the stream and wait for it to finish
-          stream.write(csvHeader + '\n');
-          stream.write(csvRow + '\n');
+          stream.write(`${csvHeader}\n`);
+          stream.write(`${csvRow}\n`);
           stream.end();
 
           // Wait for the stream to finish writing to disk
@@ -672,6 +748,12 @@ describe('CsvExportService', () => {
             return 3600;
         }
       });
+      mockChainsRepository.getChain.mockResolvedValue({
+        nativeCurrency: nativeCurrencyBuilder()
+          .with('decimals', 18)
+          .with('symbol', 'ETH')
+          .build(),
+      } as Chain);
     };
 
     beforeEach(async () => {
@@ -687,6 +769,7 @@ describe('CsvExportService', () => {
         mockCloudStorageApiService,
         mockConfigurationService,
         mockLoggingService,
+        mockChainsRepository,
       );
     });
 

@@ -1,7 +1,8 @@
-import { collectibleBuilder } from '@/modules/collectibles/domain/entities/__tests__/collectible.builder';
-import { CollectibleSchema } from '@/modules/collectibles/domain/entities/schemas/collectible.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { collectibleBuilder } from '@/modules/collectibles/domain/entities/__tests__/collectible.builder';
+import { CollectibleSchema } from '@/modules/collectibles/domain/entities/schemas/collectible.schema';
 
 describe('CollectibleSchema', () => {
   it('should validate a valid collectible', () => {
@@ -36,15 +37,15 @@ describe('CollectibleSchema', () => {
       'metadata',
     ] as const;
     const collectible = collectibleBuilder().build();
-    fields.forEach((field) => {
+    for (const field of fields) {
       delete collectible[field];
-    });
+    }
 
     const result = CollectibleSchema.safeParse(collectible);
 
-    fields.forEach((field) => {
+    for (const field of fields) {
       expect(result.success && result.data[field]).toBe(null);
-    });
+    }
   });
 
   it('should now validate an invalid collectible', () => {

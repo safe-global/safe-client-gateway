@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
+import type { Hex } from 'viem';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
-import type { Hex } from 'viem';
 
 @Injectable()
 export class SafeDecoder extends AbiDecoder<typeof Safe130> {

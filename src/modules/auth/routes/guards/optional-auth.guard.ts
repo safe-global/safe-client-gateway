@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
+
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Injectable,
+} from '@nestjs/common';
+import type { Request } from 'express';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { Request } from 'express';
+import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {

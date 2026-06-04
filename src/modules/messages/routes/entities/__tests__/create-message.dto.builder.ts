@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
 import { fakeJson } from '@/__tests__/faker';
-import type { Hex } from 'viem';
+import type { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
 
 const SIGNATURE_LENGTH = 130;
 

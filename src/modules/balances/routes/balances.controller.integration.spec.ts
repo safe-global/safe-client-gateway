@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { getAddress } from 'viem';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -12,11 +18,6 @@ import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests_
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { rawify } from '@/validation/entities/raw.entity';
-import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import request from 'supertest';
-import { getAddress } from 'viem';
 
 describe('Balances Controller', () => {
   let app: INestApplication<Server>;
@@ -83,7 +84,7 @@ describe('Balances Controller', () => {
         .getOrThrow('balances.providers.safe.prices.apiKey');
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
           [`${currency.toLowerCase()}_24h_change`]: 1.6942,
         },
@@ -299,7 +300,7 @@ describe('Balances Controller', () => {
       ];
       const currency = faker.finance.currencyCode();
       const nativeCoinPriceProviderResponse = {
-        [chain.pricesProvider.nativeCoin!]: {
+        [chain.pricesProvider.nativeCoin as string]: {
           [currency.toLowerCase()]: 1536.75,
           [`${currency.toLowerCase()}_24h_change`]: 1.6942,
         },
@@ -763,20 +764,22 @@ describe('Balances Controller', () => {
         const chainResponse = chainBuilder().with('chainId', chainId).build();
         const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
         networkService.get.mockImplementation(({ url }) => {
-          if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
             return Promise.resolve({
               data: rawify(chainResponse),
               status: 200,
             });
-          } else if (
-            url ==
+          }
+          if (
+            url ===
             `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
           ) {
             return Promise.resolve({
               data: rawify(safeBuilder().build()),
               status: 200,
             });
-          } else if (url == transactionServiceUrl) {
+          }
+          if (url === transactionServiceUrl) {
             const error = new NetworkResponseError(
               new URL(transactionServiceUrl),
               {
@@ -784,9 +787,8 @@ describe('Balances Controller', () => {
               } as Response,
             );
             return Promise.reject(error);
-          } else {
-            return Promise.reject(new Error(`Could not match ${url}`));
           }
+          return Promise.reject(new Error(`Could not match ${url}`));
         });
 
         await request(app.getHttpServer())
@@ -806,27 +808,28 @@ describe('Balances Controller', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const chainResponse = chainBuilder().with('chainId', chainId).build();
       networkService.get.mockImplementation(({ url }) => {
-        if (url == `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
           return Promise.resolve({ data: rawify(chainResponse), status: 200 });
-        } else if (
-          url ==
+        }
+        if (
+          url ===
           `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`
         ) {
           return Promise.resolve({
             data: rawify([{ invalid: 'data' }]),
             status: 200,
           });
-        } else if (
-          url ==
+        }
+        if (
+          url ===
           `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`
         ) {
           return Promise.resolve({
             data: rawify(safeBuilder().build()),
             status: 200,
           });
-        } else {
-          return Promise.reject(new Error(`Could not match ${url}`));
         }
+        return Promise.reject(new Error(`Could not match ${url}`));
       });
 
       await request(app.getHttpServer())

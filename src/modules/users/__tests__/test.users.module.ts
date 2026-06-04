@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 
 @Module({
   providers: [
@@ -20,7 +20,10 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
         // Plain functions (not jest.fn) so they survive jest.resetAllMocks()
         // in tests that call getAccessToken → findOrCreate*.
         findOrCreateByWalletAddress: (): Promise<number> => Promise.resolve(1),
-        findOrCreateByExtUserId: (): Promise<number> => Promise.resolve(1),
+        findOrCreateByExtUserIdAndEmail: (): Promise<number> =>
+          Promise.resolve(1),
+        findEmailById: jest.fn(),
+        findEmailsByIds: jest.fn(),
         update: jest.fn(),
         updateStatus: jest.fn(),
         activateIfPending: jest.fn(),

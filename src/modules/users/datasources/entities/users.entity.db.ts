@@ -1,20 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Check,
   Column,
   Entity,
   Index,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import {
+  type User as DomainUser,
   UserStatus,
-  User as DomainUser,
 } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 @Entity('users')
+@Check(
+  'users_email_lowercase_check',
+  '"email" IS NULL OR "email" = lower("email")',
+)
 export class User implements DomainUser {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_id' })
   id!: number;
@@ -39,9 +45,25 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
-  @OneToMany(() => Wallet, (wallet: Wallet) => wallet.id, {
-    onDelete: 'CASCADE',
+  @Index('idx_users_email', {
+    unique: true,
+    where: '"email" IS NOT NULL',
   })
+  @Column({
+    name: 'email',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  email!: EmailAddress | null;
+
+  @OneToMany(
+    () => Wallet,
+    (wallet: Wallet) => wallet.id,
+    {
+      onDelete: 'CASCADE',
+    },
+  )
   wallets!: Array<Wallet>;
 
   @Column({
@@ -60,6 +82,9 @@ export class User implements DomainUser {
   })
   updatedAt!: Date;
 
-  @OneToMany(() => Member, (member: Member) => member.user)
+  @OneToMany(
+    () => Member,
+    (member: Member) => member.user,
+  )
   members!: Array<Member>;
 }

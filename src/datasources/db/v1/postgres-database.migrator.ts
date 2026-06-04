@@ -1,6 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import fs from 'node:fs';
 import { join } from 'node:path';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Sql, TransactionSql } from 'postgres';
 
 type Migration = {
@@ -149,7 +150,7 @@ export class PostgresDatabaseMigrator {
       .map((file) => {
         return {
           path: join(path, file),
-          id: parseInt(file.slice(0, 5)),
+          id: Number.parseInt(file.slice(0, 5), 10),
           name: file.slice(6),
         };
       });

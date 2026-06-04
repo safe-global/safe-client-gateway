@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
+import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
+import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
 
 describe('MessageSchema', () => {
   it('should validate a Message', () => {
@@ -32,55 +33,55 @@ describe('MessageSchema', () => {
     expect(!result.success && result.error.issues[0].path).toStrictEqual([key]);
   });
 
-  it.each(['created' as const, 'modified' as const])(
-    'should coerce %s to a Date',
-    (key) => {
-      const date = faker.date.recent();
-      const message = messageBuilder()
-        .with(key, date.toString() as unknown as Date)
-        .build();
+  it.each([
+    'created' as const,
+    'modified' as const,
+  ])('should coerce %s to a Date', (key) => {
+    const date = faker.date.recent();
+    const message = messageBuilder()
+      .with(key, date.toString() as unknown as Date)
+      .build();
 
-      const result = MessageSchema.safeParse(message);
+    const result = MessageSchema.safeParse(message);
 
-      // Zod coerces the date to the nearest millisecond
-      date.setMilliseconds(0);
-      expect(result.success && result.data[key]).toStrictEqual(date);
-    },
-  );
+    // Zod coerces the date to the nearest millisecond
+    date.setMilliseconds(0);
+    expect(result.success && result.data[key]).toStrictEqual(date);
+  });
 
-  it.each(['safe' as const, 'proposedBy' as const])(
-    'should checksum the %s address',
-    (key) => {
-      const nonChecksummedAddress = faker.finance.ethereumAddress().toString();
-      const message = messageBuilder()
-        .with(key, nonChecksummedAddress as Address)
-        .build();
+  it.each([
+    'safe' as const,
+    'proposedBy' as const,
+  ])('should checksum the %s address', (key) => {
+    const nonChecksummedAddress = faker.finance.ethereumAddress().toString();
+    const message = messageBuilder()
+      .with(key, nonChecksummedAddress as Address)
+      .build();
 
-      const result = MessageSchema.safeParse(message);
+    const result = MessageSchema.safeParse(message);
 
-      expect(result.success && result.data[key]).toBe(
-        getAddress(nonChecksummedAddress),
-      );
-    },
-  );
+    expect(result.success && result.data[key]).toBe(
+      getAddress(nonChecksummedAddress),
+    );
+  });
 
-  it.each(['messageHash' as const, 'preparedSignature' as const])(
-    'should not allow a non-hex messageHash',
-    (key) => {
-      const message = messageBuilder()
-        .with(key, faker.string.alphanumeric() as Address)
-        .build();
+  it.each([
+    'messageHash' as const,
+    'preparedSignature' as const,
+  ])('should not allow a non-hex messageHash', (key) => {
+    const message = messageBuilder()
+      .with(key, faker.string.alphanumeric() as Address)
+      .build();
 
-      const result = MessageSchema.safeParse(message);
+    const result = MessageSchema.safeParse(message);
 
-      expect(!result.success && result.error.issues.length).toBe(1);
-      expect(!result.success && result.error.issues[0]).toStrictEqual({
-        code: 'custom',
-        message: 'Invalid "0x" notated hex string',
-        path: [key],
-      });
-    },
-  );
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(!result.success && result.error.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid "0x" notated hex string',
+      path: [key],
+    });
+  });
 
   it.each([
     ['string', faker.string.alphanumeric()],

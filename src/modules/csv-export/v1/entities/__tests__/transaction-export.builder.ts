@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { formatUnits, getAddress } from 'viem';
 import type { Hash } from 'viem';
-import { Builder } from '@/__tests__/builder';
+import { formatUnits, getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
-import type { TransactionExport } from '@/modules/csv-export/v1/entities/transaction-export.entity';
+import { Builder } from '@/__tests__/builder';
+import {
+  formatTransactionExportGasFees,
+  type TransactionExport,
+} from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
 /**
  * Creates a builder for transaction export data
@@ -28,16 +32,31 @@ export function transactionExportBuilder(): IBuilder<TransactionExport> {
     .with('note', faker.lorem.sentence())
     .with('transactionHash', faker.string.hexadecimal({ length: 64 }) as Hash)
     .with('contractAddress', getAddress(faker.finance.ethereumAddress()))
-    .with('nonce', faker.number.int().toString());
+    .with('nonce', faker.number.int().toString())
+    .with('gasToken', getAddress(faker.finance.ethereumAddress()))
+    .with('payment', faker.number.bigInt().toString())
+    .with('gasTokenSymbol', faker.finance.currencyCode())
+    .with('gasTokenDecimals', faker.number.int({ min: 0, max: 18 }));
 }
 
 /**
- * Transforms transaction export's amount field to user-friendly format
+ * Simulates the full two-step transformation applied by the service:
+ * schema transform (amount formatting) + gas fees formatting with native currency.
  */
 export function transformTransactionExport(
   data: TransactionExport,
+  nativeDecimals = 18,
+  nativeSymbol = 'ETH',
 ): TransactionExport {
   const { amount, assetDecimals, ...rest } = data;
-  const convertedAmount = formatUnits(BigInt(amount), assetDecimals ?? 0);
-  return { ...rest, amount: convertedAmount, assetDecimals };
+  const schemaTransformed: TransactionExport = {
+    ...rest,
+    assetDecimals,
+    amount: formatUnits(BigInt(amount), assetDecimals ?? 0),
+  };
+  return formatTransactionExportGasFees(
+    schemaTransformed,
+    nativeDecimals,
+    nativeSymbol,
+  );
 }

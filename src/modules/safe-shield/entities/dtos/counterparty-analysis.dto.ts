@@ -5,27 +5,27 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import {
-  CommonStatus,
-  RecipientAnalysisResult,
-  UnofficialFallbackHandlerAnalysisResult,
-  type ContractAnalysisResult,
-} from '../analysis-result.entity';
+import type { Address } from 'viem';
 import type {
   CounterpartyAnalysisResponse,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { AnalysisResultDto } from './analysis-result.dto';
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
 import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { Address } from 'viem';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
+import {
+  CommonStatus,
+  type ContractAnalysisResult,
+  type RecipientAnalysisResult,
+  type UnofficialFallbackHandlerAnalysisResult,
+} from '../analysis-result.entity';
+import { AnalysisResultDto } from './analysis-result.dto';
 
 /**
  * DTO for contract analysis result.
@@ -89,7 +89,9 @@ export class FallbackHandlerAnalysisResultDto
  * Results are grouped by status group and sorted by severity (CRITICAL first).
  * Used by endpoints that return contract verification, interaction, and delegatecall analysis.
  */
-export class ContractAnalysisDto implements GroupedAnalysisResults<ContractAnalysisResult> {
+export class ContractAnalysisDto
+  implements GroupedAnalysisResults<ContractAnalysisResult>
+{
   @ApiPropertyOptional({
     description: 'Logo URL for the contract',
     example: 'https://example.com/logo.png',
@@ -207,7 +209,9 @@ export class RecipientResultDto extends AnalysisResultDto<
  * Results are grouped by status group and sorted by severity (CRITICAL first).
  * Used by endpoints that return both recipient interaction and bridge analysis.
  */
-export class RecipientAnalysisDto implements GroupedAnalysisResults<RecipientAnalysisResult> {
+export class RecipientAnalysisDto
+  implements GroupedAnalysisResults<RecipientAnalysisResult>
+{
   @ApiProperty({
     description: 'Indicates whether the analyzed recipient address is a Safe.',
     example: true,

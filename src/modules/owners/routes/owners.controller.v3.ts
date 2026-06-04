@@ -2,16 +2,16 @@
 import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiTags,
 } from '@nestjs/swagger';
-import { OwnersService } from '@/modules/owners/routes/owners.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 import type { Address } from 'viem';
+import { OwnersService } from '@/modules/owners/routes/owners.service';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('owners')
 @Controller({
@@ -48,7 +48,7 @@ export class OwnersControllerV3 {
   })
   @Get('owners/:ownerAddress/safes')
   @UseGuards(CaptchaGuard)
-  async getAllSafesByOwner(
+  getAllSafesByOwner(
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: Address,
   ): Promise<SafesByChainId> {

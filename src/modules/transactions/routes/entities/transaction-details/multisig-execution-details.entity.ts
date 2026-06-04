@@ -1,10 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   ApiExtraModels,
   ApiProperty,
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 import {
   Erc20Token,
   Erc721Token,
@@ -14,6 +14,7 @@ import {
   ExecutionDetails,
   ExecutionDetailsType,
 } from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()
@@ -51,6 +52,10 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   @ApiProperty()
   gasToken: string;
   @ApiProperty()
+  fee: string;
+  @ApiProperty()
+  payment: string;
+  @ApiProperty()
   refundReceiver: AddressInfo;
   @ApiProperty()
   safeTxHash: string;
@@ -87,6 +92,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     baseGas: string,
     gasPrice: string,
     gasToken: string,
+    fee: string,
+    payment: string,
     refundReceiver: AddressInfo,
     safeTxHash: string,
     executor: AddressInfo | null,
@@ -106,6 +113,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     this.baseGas = baseGas;
     this.gasPrice = gasPrice;
     this.gasToken = gasToken;
+    this.fee = fee;
+    this.payment = payment;
     this.refundReceiver = refundReceiver;
     this.safeTxHash = safeTxHash;
     this.executor = executor;

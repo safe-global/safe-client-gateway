@@ -1,36 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
-import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
-import type { Chain } from '@/modules/chains/routes/entities/chain.entity';
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import type { Server } from 'net';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '@/modules/chains/routes/entities/chain.entity';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { rawify } from '@/validation/entities/raw.entity';
+import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
+import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import { UsersModule } from '@/modules/users/users.module';
+import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { createTestModule } from '@/__tests__/testing-module';
+import { UsersModule } from '@/modules/users/users.module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Notifications Controller V2', () => {
   let app: INestApplication<Server>;
@@ -527,7 +528,7 @@ describe('Notifications Controller V2', () => {
           .with('chain_id', chainId)
           .build();
         // @ts-expect-error - we're checking the behavior when the signer_address is missing
-        delete authPayloadDto.signer_address;
+        authPayloadDto.signer_address = undefined;
         const accessToken = jwtService.sign(authPayloadDto);
 
         expect(() => jwtService.verify(accessToken)).not.toThrow();
@@ -559,7 +560,7 @@ describe('Notifications Controller V2', () => {
           .build();
         const authPayloadDto = siweAuthPayloadDtoBuilder().build();
         // @ts-expect-error - we're checking the behavior when the chain_id is missing
-        delete authPayloadDto.chain_id;
+        authPayloadDto.chain_id = undefined;
         const accessToken = jwtService.sign(authPayloadDto);
 
         expect(() => jwtService.verify(accessToken)).not.toThrow();
@@ -815,7 +816,7 @@ describe('Notifications Controller V2', () => {
           .with('chain_id', chainId)
           .build();
         // @ts-expect-error - we're checking the behavior when the signer_address is missing
-        delete authPayloadDto.signer_address;
+        authPayloadDto.signer_address = undefined;
         const accessToken = jwtService.sign(authPayloadDto);
 
         expect(() => jwtService.verify(accessToken)).not.toThrow();
@@ -835,7 +836,7 @@ describe('Notifications Controller V2', () => {
           .with('chain_id', chainId)
           .build();
         // @ts-expect-error - we're checking the behavior when the chain_id is missing
-        delete authPayloadDto.chain_id;
+        authPayloadDto.chain_id = undefined;
         const accessToken = jwtService.sign(authPayloadDto);
 
         expect(() => jwtService.verify(accessToken)).not.toThrow();

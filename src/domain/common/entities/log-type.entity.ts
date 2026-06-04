@@ -30,6 +30,7 @@ export enum LogType {
   NotificationSent = 'NOTIFICATION_SENT',
   NotificationEventProcessed = 'NOTIFICATION_EVENT_PROCESSED',
   NotificationDeliveryQueued = 'NOTIFICATION_DELIVERY_QUEUED',
+  PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
   RateLimit = 'RATE_LIMIT',
   TxRelayEligibility = 'TX_RELAY_ELIGIBILITY',
   TransactionPropose = 'TRANSACTION_PROPOSE',

@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import winston from 'winston';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   winstonFactory,
   winstonTransportsFactory,
 } from '@/logging/logging.module';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import winston from 'winston';
 
 const mockConfigurationService = jest.mocked({
   getOrThrow: jest.fn(),

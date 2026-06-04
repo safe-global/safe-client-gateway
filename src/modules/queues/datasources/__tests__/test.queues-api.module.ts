@@ -1,9 +1,10 @@
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Module } from '@nestjs/common';
 import {
-  IQueueReadiness,
+  type IQueueReadiness,
   QueueReadiness,
 } from '@/domain/interfaces/queue-readiness.interface';
-import { Module } from '@nestjs/common';
+import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
 
 @Module({
   providers: [

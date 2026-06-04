@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAddress, type Hash, type Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
-import { getAddress, type Hash, type Hex } from 'viem';
 
 export function ethereumTransactionBuilder(): IBuilder<EthereumTransaction> {
   return new Builder<EthereumTransaction>()

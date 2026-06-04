@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
+import { ExecutionDetailsType } from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
 import type {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
 } from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { ExecutionDetailsType } from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
+import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
 
 const MIN_SIGNERS = 2;
 const MAX_SIGNERS = 5;

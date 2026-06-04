@@ -1,30 +1,38 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
+import { sign } from 'jsonwebtoken';
 import request from 'supertest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { EmailModule } from '@/modules/email/email.module';
-import { TestEmailApiModule } from '@/modules/email/datasources/__tests__/test.email-api.module';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
-import { faker } from '@faker-js/faker';
-import { getSecondsUntil } from '@/domain/common/utils/time';
-import type { Server } from 'net';
-import { sign } from 'jsonwebtoken';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { UsersModule } from '@/modules/users/users.module';
-import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import {
-  NetworkService,
   type INetworkService,
+  NetworkService,
 } from '@/datasources/network/network.service.interface';
-import type { TestingModule } from '@nestjs/testing';
+import { getSecondsUntil } from '@/domain/common/utils/time';
+import {
+  type Auth0JwksFixture,
+  getAuth0JwksFixture,
+  mockAuth0Jwks,
+  signAuth0Jwt,
+} from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
+import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
+import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
+import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { UsersModule } from '@/modules/users/users.module';
 import { rawify } from '@/validation/entities/raw.entity';
 
 describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
   let networkService: jest.MockedObjectDeep<INetworkService>;
   let jwtService: IJwtService;
+  let fetchMock: jest.SpiedFunction<typeof fetch>;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -34,22 +42,33 @@ describe('OidcAuthController', () => {
     clientSecret: string;
     redirectUri: string;
     audience: string;
-    signingSecret: string;
     scope: string;
   };
+  let auth0JwksFixture: Auth0JwksFixture;
   let postLoginRedirectUri: string;
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, 'fetch');
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
+  });
 
   function signAuth0Token(claims: {
     sub: string;
     exp?: number;
     iat?: number;
     nbf?: number;
+    email?: string;
+    email_verified?: boolean;
   }): string {
-    return sign(claims, auth0Config.signingSecret, {
-      algorithm: 'HS256',
+    return signAuth0Jwt({
       issuer: `https://${auth0Config.domain}/`,
-      audience: auth0Config.audience,
-      noTimestamp: true,
+      audience: auth0Config.clientId,
+      kid: auth0JwksFixture.kid,
+      privateKey: auth0JwksFixture.privateKey,
+      payload: claims,
     });
   }
 
@@ -88,14 +107,18 @@ describe('OidcAuthController', () => {
       clientSecret: configService.getOrThrow<string>('auth.auth0.clientSecret'),
       redirectUri: configService.getOrThrow<string>('auth.auth0.redirectUri'),
       audience: configService.getOrThrow<string>('auth.auth0.audience'),
-      signingSecret: configService.getOrThrow<string>(
-        'auth.auth0.signingSecret',
-      ),
       scope: configService.getOrThrow<string>('auth.auth0.scope'),
     };
+    auth0JwksFixture = getAuth0JwksFixture();
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
+    mockAuth0Jwks({
+      fetchMock,
+      issuer: `https://${auth0Config.domain}/`,
+      publicJwk: auth0JwksFixture.publicJwk,
+      kid: auth0JwksFixture.kid,
+    });
   }
 
   describe('default configuration', () => {
@@ -273,7 +296,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should return 422 when redirect_url exceeds max length', async () => {
-        const longUrl = '/' + 'a'.repeat(2048);
+        const longUrl = `/${'a'.repeat(2048)}`;
         await request(app.getHttpServer())
           .get('/v1/auth/oidc/authorize')
           .query({ redirect_url: longUrl })
@@ -286,6 +309,7 @@ describe('OidcAuthController', () => {
         response: request.Response,
         expectedError: string,
         expectedBaseUrl?: string,
+        expectedErrorDescription?: string,
       ): void {
         expect(response.status).toBe(302);
         const location = new URL(response.headers.location);
@@ -295,6 +319,13 @@ describe('OidcAuthController', () => {
           redirectBase.origin + redirectBase.pathname,
         );
         expect(location.searchParams.get('error')).toBe(expectedError);
+        if (expectedErrorDescription) {
+          expect(location.searchParams.get('error_description')).toBe(
+            expectedErrorDescription,
+          );
+        } else {
+          expect(location.searchParams.has('error_description')).toBe(false);
+        }
         // State cookie should always be cleared
         expect(response.headers['set-cookie']).toEqual(
           expect.arrayContaining([
@@ -313,6 +344,8 @@ describe('OidcAuthController', () => {
 
         const auth0Token = signAuth0Token({
           sub: faker.string.uuid(),
+          email: faker.internet.email(),
+          email_verified: true,
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });
@@ -321,8 +354,8 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
             token_type: 'Bearer',
             scope: faker.lorem.words(),
           }),
@@ -400,9 +433,9 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: invalidToken,
+            access_token: faker.string.alphanumeric(64),
             refresh_token: 'auth0-refresh-token',
-            id_token: 'auth0-id-token',
+            id_token: invalidToken,
             token_type: 'Bearer',
           }),
         });
@@ -478,7 +511,7 @@ describe('OidcAuthController', () => {
         expect(networkService.postForm).not.toHaveBeenCalled();
       });
 
-      it('should redirect with only error when the OIDC provider returns an error with description', async () => {
+      it('should redirect with error and error_description when the OIDC provider returns an error with description', async () => {
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
           .query({
@@ -486,7 +519,12 @@ describe('OidcAuthController', () => {
             error_description: 'User denied access',
           });
 
-        expectErrorRedirect(response, 'access_denied');
+        expectErrorRedirect(
+          response,
+          'access_denied',
+          undefined,
+          'User denied access',
+        );
         expect(networkService.postForm).not.toHaveBeenCalled();
       });
 
@@ -504,8 +542,8 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
             token_type: 'Bearer',
           }),
         });
@@ -548,6 +586,8 @@ describe('OidcAuthController', () => {
 
         const auth0Token = signAuth0Token({
           sub: faker.string.uuid(),
+          email: faker.internet.email(),
+          email_verified: true,
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });
@@ -555,8 +595,8 @@ describe('OidcAuthController', () => {
         networkService.postForm.mockResolvedValueOnce({
           status: 200,
           data: rawify({
-            access_token: auth0Token,
-            id_token: 'auth0-id-token',
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
             token_type: 'Bearer',
             scope: faker.lorem.words(),
           }),
@@ -614,7 +654,12 @@ describe('OidcAuthController', () => {
             error_description: 'User denied access',
           });
 
-        expectErrorRedirect(response, 'access_denied', customRedirectUrl);
+        expectErrorRedirect(
+          response,
+          'access_denied',
+          customRedirectUrl,
+          'User denied access',
+        );
         expect(networkService.postForm).not.toHaveBeenCalled();
       });
     });

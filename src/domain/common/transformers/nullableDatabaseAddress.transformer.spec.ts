@@ -1,6 +1,7 @@
-import { faker } from '@faker-js/faker/.';
-import { nullableDatabaseAddressTransformer } from './nullableDatabaseAddress.transformer';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import { nullableDatabaseAddressTransformer } from './nullableDatabaseAddress.transformer';
 
 describe('nullableDatabaseAddressTransformer', () => {
   describe('to', () => {

@@ -1,21 +1,22 @@
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { CoingeckoApi } from '@/modules/balances/datasources/coingecko-api.service';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import {
-  getAssetPricesSchema,
-  type AssetPrice,
-} from '@/modules/balances/datasources/entities/asset-price.entity';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { Cache } from 'cache-manager';
 import sortBy from 'lodash/sortBy';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { CoingeckoApi } from '@/modules/balances/datasources/coingecko-api.service';
+import {
+  type AssetPrice,
+  getAssetPricesSchema,
+} from '@/modules/balances/datasources/entities/asset-price.entity';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import type { Cache } from 'cache-manager';
-import { DataSourceError } from '@/domain/errors/data-source.error';
 
 const MAX_BATCH_SIZE = 100;
 

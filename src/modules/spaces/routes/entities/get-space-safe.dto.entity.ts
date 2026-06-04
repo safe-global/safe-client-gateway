@@ -1,5 +1,6 @@
-import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
+import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 
 export class GetSpaceSafeResponse {
   @ApiProperty({

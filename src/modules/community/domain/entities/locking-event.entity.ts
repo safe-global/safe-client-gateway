@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { z } from 'zod';
 import type {
   LockEventItemSchema,
   LockingEventSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
 } from '@/modules/community/domain/entities/schemas/locking-event.schema';
-import type { z } from 'zod';
 
 export type LockEventItem = z.infer<typeof LockEventItemSchema>;
 

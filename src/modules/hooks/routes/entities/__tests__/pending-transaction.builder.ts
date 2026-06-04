@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { getAddress, type Hash } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type { PendingTransaction } from '@/modules/hooks/routes/entities/pending-transaction.entity';
-import { faker } from '@faker-js/faker';
-import { getAddress, type Hash } from 'viem';
 
 export function pendingTransactionEventBuilder(): IBuilder<PendingTransaction> {
   return new Builder<PendingTransaction>()

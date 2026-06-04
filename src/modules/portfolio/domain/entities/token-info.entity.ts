@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { NullableAddressSchema } from '@/validation/entities/schemas/nullable.schema';
 import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
+import { NullableAddressSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export const FiatStringSchema = z
   .string()

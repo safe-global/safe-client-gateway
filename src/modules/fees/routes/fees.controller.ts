@@ -8,14 +8,14 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
+import type { Address } from 'viem';
 import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
+import { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { FeePreviewTransactionDtoSchema } from '@/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
 import { FeesService } from '@/modules/fees/routes/fees.service';
-import type { Address } from 'viem';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('fees')
 @Controller({
@@ -57,7 +57,7 @@ export class FeesController {
   })
   @HttpCode(200)
   @Post(':safeAddress/preview')
-  async getFeePreview(
+  getFeePreview(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,

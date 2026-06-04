@@ -1,16 +1,16 @@
-import { join } from 'path';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { join } from 'node:path';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
-import { ConfigService } from '@nestjs/config';
-import { ConfigModule } from '@nestjs/config';
+import type { DataSource } from 'typeorm';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { type ILoggingService } from '@/logging/logging.interface';
-import type { DataSource } from 'typeorm';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
+import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
+import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import type { ILoggingService } from '@/logging/logging.interface';
 
 const mockLoggingService = {
   debug: jest.fn(),

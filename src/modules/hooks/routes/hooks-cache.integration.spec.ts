@@ -1,32 +1,33 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import configuration from '@/config/entities/__tests__/configuration';
+import type { ConsumeMessage } from 'amqplib';
+import { getAddress } from 'viem';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { safeCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-created.build';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
+import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
-import { rawify } from '@/validation/entities/raw.entity';
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import type { ConsumeMessage } from 'amqplib';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
 } from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { safeCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-created.build';
+import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
+import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { rawify } from '@/validation/entities/raw.entity';
 
 function getSubscriptionCallback(
   queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,

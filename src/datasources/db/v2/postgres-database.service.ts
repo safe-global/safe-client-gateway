@@ -1,15 +1,16 @@
-import {
-  LoggingService,
-  type ILoggingService,
-} from '@/logging/logging.interface';
-import { InjectDataSource } from '@nestjs/typeorm';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import {
+import { InjectDataSource } from '@nestjs/typeorm';
+import type {
   DataSource,
-  type EntityManager,
-  type ObjectLiteral,
-  type Repository,
+  EntityManager,
+  ObjectLiteral,
+  Repository,
 } from 'typeorm';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Injectable()
 export class PostgresDatabaseService {
@@ -82,7 +83,7 @@ export class PostgresDatabaseService {
     return this.dataSource.getRepository<T>(entity);
   }
 
-  public async transaction<T>(
+  public transaction<T>(
     callback: (transactionManager: EntityManager) => Promise<T>,
   ): Promise<T> {
     return this.dataSource.transaction(

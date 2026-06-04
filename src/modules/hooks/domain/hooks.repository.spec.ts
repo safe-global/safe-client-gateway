@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 import type { BalancesRepository } from '@/modules/balances/domain/balances.repository';
 import type { BlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository';
 import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
@@ -8,19 +10,17 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import type { CollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository';
 import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
-import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
-import type { QueuesRepository } from '@/modules/queues/domain/queues-repository';
-import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
-import type { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
+import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
+import type { QueuesRepository } from '@/modules/queues/domain/queues-repository';
+import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
+import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
+import type { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
 
 const mockBalancesRepository = jest.mocked({
   clearApi: jest.fn(),

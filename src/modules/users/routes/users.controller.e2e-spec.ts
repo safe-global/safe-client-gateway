@@ -1,28 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { type Address, getAddress } from 'viem';
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
-import request from 'supertest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { UsersController } from '@/modules/users/routes/users.controller';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import request from 'supertest';
+import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage, generateSiweNonce } from 'viem/siwe';
-import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { UsersController } from '@/modules/users/routes/users.controller';
 
 describe('UsersController', () => {
   let app: INestApplication<Server>;
@@ -71,12 +72,13 @@ describe('UsersController', () => {
   });
 
   it('should require authentication for every endpoint', () => {
-    const endpoints = Object.values(
-      UsersController.prototype,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-    ) as Array<Function>;
+    const endpoints = Object.values(UsersController.prototype) as Array<
+      (...args: Array<unknown>) => unknown
+    >;
 
-    endpoints.forEach((fn) => checkGuardIsApplied(AuthGuard, fn));
+    for (const fn of endpoints) {
+      checkGuardIsApplied(AuthGuard, fn);
+    }
   });
 
   describe('GET /v1/users', () => {
@@ -143,7 +145,7 @@ describe('UsersController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
+          message: `Wallet not found. Address=${authPayloadDto.signer_address}`,
           error: 'Not Found',
         });
     });
@@ -206,7 +208,7 @@ describe('UsersController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Wallet not found. Address=' + authPayloadDto.signer_address,
+          message: `Wallet not found. Address=${authPayloadDto.signer_address}`,
           error: 'Not Found',
         });
     });

@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { Erc4262Decoder } from '@/modules/transactions/routes/decoders/erc4262-decoder.helper';
+import type { Hex } from 'viem';
 import {
   erc4262DepositEncoder,
   erc4262WithdrawEncoder,
 } from '@/modules/transactions/routes/__tests__/encoders/erc4262-encoder.builder';
-import type { Hex } from 'viem';
+import { Erc4262Decoder } from '@/modules/transactions/routes/decoders/erc4262-decoder.helper';
 
 describe('ERC4262Decoder', () => {
   let target: Erc4262Decoder;

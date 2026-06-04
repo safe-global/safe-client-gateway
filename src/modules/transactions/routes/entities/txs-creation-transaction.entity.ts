@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { CreationTransaction as DomainCreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { Address, Hash } from 'viem';
+import type { CreationTransaction as DomainCreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 
 export class TXSCreationTransaction implements DomainCreationTransaction {
   @ApiProperty()

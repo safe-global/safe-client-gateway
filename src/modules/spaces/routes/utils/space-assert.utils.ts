@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { ForbiddenException } from '@nestjs/common';
+import { getEnumKey } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { getEnumKey } from '@/domain/common/utils/enum';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { ForbiddenException } from '@nestjs/common';
-import { In } from 'typeorm';
+import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
-export async function assertAdmin(
+export async function isAdmin(
   spacesRepository: ISpacesRepository,
   spaceId: Space['id'],
   userId: number,
-): Promise<void> {
+): Promise<boolean> {
   const space = await spacesRepository.findOne({
     where: {
       id: spaceId,
@@ -22,9 +24,16 @@ export async function assertAdmin(
       },
     },
   });
+  return space !== null;
+}
 
-  if (!space) {
-    throw new ForbiddenException('User is not an admin of this space');
+export async function assertAdmin(
+  spacesRepository: ISpacesRepository,
+  spaceId: Space['id'],
+  userId: number,
+): Promise<void> {
+  if (!(await isAdmin(spacesRepository, spaceId, userId))) {
+    throw new ForbiddenException('User is not an admin of this workspace');
   }
 }
 
@@ -33,13 +42,14 @@ export async function assertMember(
   spaceId: Space['id'],
   userId: number,
 ): Promise<void> {
-  const member = await membersRepository.findOne({
-    user: { id: userId },
-    space: { id: spaceId },
-    status: In(['ACTIVE', 'INVITED']),
-  });
+  const member = await membersRepository.findOne(
+    activeOrPendingMemberWhere<Member>(() => ({
+      user: { id: userId },
+      space: { id: spaceId },
+    })),
+  );
 
   if (!member) {
-    throw new ForbiddenException('User is not a member of this space');
+    throw new ForbiddenException('User is not a member of this workspace');
   }
 }

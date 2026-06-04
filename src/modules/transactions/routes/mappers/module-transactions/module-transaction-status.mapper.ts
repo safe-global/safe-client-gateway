@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
 
 @Injectable()

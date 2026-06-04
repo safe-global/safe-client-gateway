@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
-import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+
 import { Inject, Injectable } from '@nestjs/common';
-import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
-import { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+import { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import { Auth0TokenResponseSchema } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
+import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
+import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 @Injectable()
 export class Auth0Repository implements IAuth0Repository {
@@ -22,7 +23,7 @@ export class Auth0Repository implements IAuth0Repository {
     code: string,
   ): Promise<Auth0Token> {
     const response = await this.auth0Api.exchangeAuthorizationCode(code);
-    const { access_token } = Auth0TokenResponseSchema.parse(response);
-    return this.auth0TokenVerifier.verifyAndDecode(access_token);
+    const { id_token } = Auth0TokenResponseSchema.parse(response);
+    return this.auth0TokenVerifier.verifyAndDecode(id_token);
   }
 }

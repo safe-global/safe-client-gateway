@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 const QUERY_PARAM_CURSOR = 'cursor';
 const QUERY_PARAM_LIMIT = 'limit';
 const QUERY_PARAM_OFFSET = 'offset';
@@ -19,8 +20,8 @@ export class PaginationData {
     readonly limit: number,
     readonly offset: number,
   ) {
-    this.limit = isNaN(limit) ? PaginationData.DEFAULT_LIMIT : limit;
-    this.offset = isNaN(offset) ? PaginationData.DEFAULT_OFFSET : offset;
+    this.limit = Number.isNaN(limit) ? PaginationData.DEFAULT_LIMIT : limit;
+    this.offset = Number.isNaN(offset) ? PaginationData.DEFAULT_OFFSET : offset;
   }
 
   /**
@@ -37,8 +38,12 @@ export class PaginationData {
     // If we don't have a cursor, assume no pagination data
     const cursorValue = url.searchParams.get(QUERY_PARAM_CURSOR) ?? '';
     const cursorSearchParams = new URLSearchParams(cursorValue);
-    const limit = Number(cursorSearchParams.get(QUERY_PARAM_LIMIT) ?? NaN);
-    const offset = Number(cursorSearchParams.get(QUERY_PARAM_OFFSET) ?? NaN);
+    const limit = Number(
+      cursorSearchParams.get(QUERY_PARAM_LIMIT) ?? Number.NaN,
+    );
+    const offset = Number(
+      cursorSearchParams.get(QUERY_PARAM_OFFSET) ?? Number.NaN,
+    );
     return new PaginationData(limit, offset);
   }
 
@@ -53,8 +58,10 @@ export class PaginationData {
    * @param url - url which contains the limit and/or offset query param(s)
    */
   static fromLimitAndOffset(url: Readonly<URL>): PaginationData {
-    const limit = Number(url.searchParams.get(QUERY_PARAM_LIMIT) ?? NaN);
-    const offset = Number(url.searchParams.get(QUERY_PARAM_OFFSET) ?? NaN);
+    const limit = Number(url.searchParams.get(QUERY_PARAM_LIMIT) ?? Number.NaN);
+    const offset = Number(
+      url.searchParams.get(QUERY_PARAM_OFFSET) ?? Number.NaN,
+    );
     return new PaginationData(limit, offset);
   }
 }

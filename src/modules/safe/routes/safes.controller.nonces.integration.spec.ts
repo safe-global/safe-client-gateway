@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Server } from 'node:net';
+import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import request from 'supertest';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
-import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Safes Controller Nonces', () => {
   let app: INestApplication<Server>;

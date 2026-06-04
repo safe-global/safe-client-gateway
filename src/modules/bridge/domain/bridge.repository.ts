@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
+import type { Address, Hash } from 'viem';
+import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
+import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
+import { BridgeChainPageSchema } from '@/modules/bridge/domain/entities/bridge-chain.entity';
+import type { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
 import {
-  BridgeStatus,
+  type BridgeStatus,
   BridgeStatusSchema,
 } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
-import { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
-import { BridgeChainPageSchema } from '@/modules/bridge/domain/entities/bridge-chain.entity';
-import type { Address, Hash } from 'viem';
 
 @Injectable()
 export class BridgeRepository implements IBridgeRepository {
@@ -24,7 +25,7 @@ export class BridgeRepository implements IBridgeRepository {
       return chain.id === chainId && chain.diamondAddress;
     });
 
-    if (!chain || !chain.diamondAddress) {
+    if (!chain?.diamondAddress) {
       throw new NotFoundException(`Chain not found. chainId=${chainId}`);
     }
 

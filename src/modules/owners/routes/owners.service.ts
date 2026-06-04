@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
+import type { Address } from 'viem';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { Address } from 'viem';
+import type { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
+import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class OwnersService {
@@ -18,14 +19,14 @@ export class OwnersService {
     private readonly loggingService: ILoggingService,
   ) {}
 
-  async getSafesByOwner(args: {
+  getSafesByOwner(args: {
     chainId: string;
     ownerAddress: Address;
   }): Promise<SafeList> {
     return this.safeRepository.getSafesByOwner(args);
   }
 
-  async getSafesByOwnerV2(args: {
+  getSafesByOwnerV2(args: {
     chainId: string;
     ownerAddress: Address;
   }): Promise<SafeList> {
@@ -108,7 +109,7 @@ export class OwnersService {
     return Object.fromEntries(results);
   }
 
-  async getAllSafesByOwnerV2(args: {
+  getAllSafesByOwnerV2(args: {
     ownerAddress: Address;
   }): Promise<SafesByChainId> {
     return this.safeRepository.getAllSafesByOwnerV2(args);

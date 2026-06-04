@@ -28,8 +28,8 @@ Follow-up TODOs: None
 
 Every code change MUST pass the following checks in sequence before commit:
 
-1. **Format**: `yarn format` - Prettier formatting applied
-2. **Lint**: `yarn lint --fix` - ESLint rules enforced, remaining errors fixed manually
+1. **Format**: `yarn format` - Biome formatting applied
+2. **Lint**: `yarn lint` - Biome rules enforced, remaining errors fixed manually
 3. **Test**: `yarn test` - All unit tests pass
 
 **Rationale**: These gates prevent broken code from entering the repository. Skipping any step is forbidden, even for "minor" changes. If any command fails, the issue MUST be resolved before committing.
@@ -107,7 +107,7 @@ git commit -m "type: description"
 
 ### Code Style
 
-- ESLint and Prettier configurations are authoritative
+- Biome configuration is authoritative for linting and formatting
 - No custom style overrides without team consensus
 - Imports organized consistently (enforced by tooling)
 

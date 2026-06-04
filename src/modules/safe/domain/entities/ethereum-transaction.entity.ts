@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
 import { TransferSchema } from '@/modules/safe/domain/entities/transfer.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { z } from 'zod';
 import { NullableHexSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export type EthereumTransaction = z.infer<typeof EthereumTransactionSchema>;

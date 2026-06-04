@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { zeroAddress } from 'viem';
 import type { Address } from 'viem';
+import { zeroAddress } from 'viem';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
-import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
+import type {
+  RelayCost,
+  TxFeesResponse,
+} from '@/modules/fees/domain/entities/tx-fees-response.entity';
 
 export class FeePreviewTxData {
   @ApiProperty({ description: 'Chain ID', example: 1 })
@@ -68,16 +71,29 @@ export class FeePreviewPricingContext {
   priceTimestamp: number;
 
   @ApiProperty({
-    description: 'Gas volatility buffer multiplier',
+    description: 'Gas price volatility buffer multiplier',
     example: 1.3,
   })
-  gasVolatilityBuffer: number;
+  gasPriceVolatilityBuffer: number;
 
   constructor(pricingContext: TxFeesResponse['pricingContextSnapshot']) {
     this.phase = pricingContext.phase;
     this.priceSource = pricingContext.priceSource;
     this.priceTimestamp = pricingContext.priceTimestamp;
-    this.gasVolatilityBuffer = pricingContext.gasVolatilityBuffer;
+    this.gasPriceVolatilityBuffer = pricingContext.gasPriceVolatilityBuffer;
+  }
+}
+
+export class FeePreviewRelayCost {
+  @ApiProperty({ description: 'Fiat currency code', example: 'USD' })
+  fiatCode: string;
+
+  @ApiProperty({ description: 'Relay cost as a string', example: '0.0025' })
+  fiatValue: string;
+
+  constructor(relayCost: RelayCost) {
+    this.fiatCode = relayCost.fiatCode;
+    this.fiatValue = relayCost.fiatValue;
   }
 }
 
@@ -85,15 +101,15 @@ export class FeePreviewResponse {
   @ApiProperty({ type: FeePreviewTxData })
   txData: FeePreviewTxData;
 
-  @ApiProperty({ description: 'Relay cost in USD', example: 38.22 })
-  relayCostUsd: number;
+  @ApiProperty({ type: FeePreviewRelayCost })
+  relayCost: FeePreviewRelayCost;
 
   @ApiProperty({ type: FeePreviewPricingContext })
   pricingContextSnapshot: FeePreviewPricingContext;
 
   constructor(txFeesResponse: TxFeesResponse) {
     this.txData = new FeePreviewTxData(txFeesResponse.txData);
-    this.relayCostUsd = txFeesResponse.relayCostUsd;
+    this.relayCost = new FeePreviewRelayCost(txFeesResponse.relayCost);
     this.pricingContextSnapshot = new FeePreviewPricingContext(
       txFeesResponse.pricingContextSnapshot,
     );

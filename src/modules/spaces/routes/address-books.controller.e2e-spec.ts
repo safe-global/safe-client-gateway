@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { TestAppProvider } from '@/__tests__/test-app.provider';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
-import type { Server } from 'net';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -113,7 +114,8 @@ describe('AddressBooksController', () => {
     });
 
     it('should get a Space Address Book with items as admin', async () => {
-      const { spaceId, accessToken } = await createSpace();
+      const { spaceId, accessToken, signerAddress, userId } =
+        await createSpace();
       const { mockName, mockAddress, mockChainIds } =
         await createAddressBookItem({
           spaceId,
@@ -132,8 +134,10 @@ describe('AddressBooksController', () => {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
-                createdBy: expect.any(String),
-                lastUpdatedBy: expect.any(String),
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -167,7 +171,9 @@ describe('AddressBooksController', () => {
                 address: mockAddress,
                 name: mockName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -193,7 +199,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -207,7 +213,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -263,7 +269,8 @@ describe('AddressBooksController', () => {
 
   describe('PUT /spaces/:spaceId/address-book', () => {
     it('should add Space Address Book Items', async () => {
-      const { spaceId, accessToken } = await createSpace();
+      const { spaceId, accessToken, signerAddress, userId } =
+        await createSpace();
       const mockAddress = getAddress(faker.finance.ethereumAddress());
       const mockName = nameBuilder();
       const mockChainIds = faker.helpers.multiple(
@@ -294,8 +301,10 @@ describe('AddressBooksController', () => {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
-                createdBy: expect.any(String),
-                lastUpdatedBy: expect.any(String),
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -325,7 +334,9 @@ describe('AddressBooksController', () => {
                 address: mockAddress,
                 name: mockName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -360,7 +371,9 @@ describe('AddressBooksController', () => {
                 address: mockAddress,
                 name: mockNewName,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -413,14 +426,18 @@ describe('AddressBooksController', () => {
               {
                 ...updatedFirstItem,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
               {
                 ...secondItem,
                 createdBy: expect.any(String),
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -502,7 +519,7 @@ describe('AddressBooksController', () => {
         .expect(400)
         .expect({
           message:
-            'This Space only allows a maximum of 1 Address Book Items. You can only add up to 0 more.',
+            'This Workspace only allows a maximum of 1 Address Book Items. You can only add up to 0 more.',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -534,7 +551,7 @@ describe('AddressBooksController', () => {
         .expect(400)
         .expect({
           message:
-            'This Space only allows a maximum of 1 Address Book Items. You can only add up to 1 more.',
+            'This Workspace only allows a maximum of 1 Address Book Items. You can only add up to 1 more.',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -661,7 +678,9 @@ describe('AddressBooksController', () => {
                 name: mockName,
                 chainIds: mockChainIds,
                 createdBy: authPayload2.signer_address,
+                createdByUserId: expect.any(Number),
                 lastUpdatedBy: authPayload2.signer_address,
+                lastUpdatedByUserId: expect.any(Number),
                 createdAt: expect.any(String),
                 updatedAt: expect.any(String),
               },
@@ -684,7 +703,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -720,7 +739,7 @@ describe('AddressBooksController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -760,11 +779,13 @@ describe('AddressBooksController', () => {
   const createSpace = async (): Promise<{
     spaceId: string;
     accessToken: string;
+    signerAddress: string;
+    userId: number;
   }> => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const accessToken = jwtService.sign(authPayloadDto);
     const spaceName = nameBuilder();
-    await request(app.getHttpServer())
+    const userWithWalletResponse = await request(app.getHttpServer())
       .post('/v1/users/wallet')
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(201);
@@ -774,7 +795,12 @@ describe('AddressBooksController', () => {
       .send({ name: spaceName })
       .expect(201);
     const spaceId = createSpaceResponse.body.id;
-    return { spaceId, accessToken };
+    return {
+      spaceId,
+      accessToken,
+      signerAddress: authPayloadDto.signer_address as string,
+      userId: userWithWalletResponse.body.id,
+    };
   };
 
   const inviteMember = async (args: {

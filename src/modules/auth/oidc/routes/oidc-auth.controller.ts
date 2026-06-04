@@ -1,18 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import {
-  ACCESS_TOKEN_COOKIE_NAME,
-  getCookieOptions,
-} from '@/modules/auth/utils/auth-cookie.utils';
-import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
-import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import {
-  OidcConnectionSchema,
-  type OidcConnection,
-} from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
-import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+
 import {
   Controller,
   Get,
@@ -24,11 +11,26 @@ import {
 } from '@nestjs/common';
 import {
   ApiFoundResponse,
-  ApiTags,
   ApiOperation,
   ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import {
+  type OidcConnection,
+  OidcConnectionSchema,
+} from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
+import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
+import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
+import {
+  ACCESS_TOKEN_COOKIE_NAME,
+  getCookieOptions,
+} from '@/modules/auth/utils/auth-cookie.utils';
+import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:
@@ -168,11 +170,13 @@ export class OidcAuthController {
       this.loggingService.warn(
         `Auth callback: provider error: ${error}${errorDescription ? ` - ${errorDescription}` : ''}`,
       );
-      res.redirect(this.buildErrorRedirectUrl(error, expectedState));
+      res.redirect(
+        this.buildErrorRedirectUrl(error, expectedState, errorDescription),
+      );
       return;
     }
 
-    if (!code || !state) {
+    if (!(code && state)) {
       this.loggingService.warn('Auth callback: missing code or state');
       res.redirect(
         this.buildErrorRedirectUrl('invalid_request', expectedState),
@@ -189,14 +193,16 @@ export class OidcAuthController {
     try {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
+
       res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),
         maxAge,
       });
       res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
     } catch (err) {
-      this.loggingService.error(
-        `Auth callback: authentication failed: ${err instanceof Error ? err.message : 'Unknown error'}`,
+      const error = asError(err);
+      this.loggingService.warn(
+        `Auth callback: authentication failed: ${error.message}`,
       );
       res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }
@@ -212,11 +218,19 @@ export class OidcAuthController {
    * @param state optional OIDC state value used to resolve the redirect URL
    * from the original authorization request. If omitted, falls back to the
    * configured default post-login redirect URI.
+   * @param errorDescription optional description of the error
    * @returns fully qualified URL to redirect the user to
    */
-  private buildErrorRedirectUrl(error: string, state?: string): string {
+  private buildErrorRedirectUrl(
+    error: string,
+    state?: string,
+    errorDescription?: string,
+  ): string {
     const url = new URL(this.oidcAuthService.getPostLoginRedirectUri(state));
     url.searchParams.set('error', error);
+    if (errorDescription) {
+      url.searchParams.set('error_description', errorDescription);
+    }
     return url.toString();
   }
 }

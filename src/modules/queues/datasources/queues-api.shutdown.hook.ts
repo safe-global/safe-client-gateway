@@ -1,7 +1,11 @@
-import { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
-import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
+import type { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
 
 @Injectable()
 export class QueuesApiShutdownHook implements OnModuleDestroy {

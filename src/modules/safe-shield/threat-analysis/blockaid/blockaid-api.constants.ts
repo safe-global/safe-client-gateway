@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
 
 export const GUARD_STORAGE_POSITION =
@@ -110,7 +111,7 @@ export const prepareDescription = (
   const classificationMsg =
     classification && CLASSIFICATION_MAPPING[classification];
 
-  if (!reasonMsg || !classificationMsg) {
+  if (!(reasonMsg && classificationMsg)) {
     return undefined;
   }
 

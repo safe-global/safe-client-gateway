@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
 import { EstimationsRepository } from '@/modules/estimations/domain/estimations.repository';
+import { IEstimationsRepository } from '@/modules/estimations/domain/estimations.repository.interface';
 import { EstimationsController } from '@/modules/estimations/routes/estimations.controller';
 import { EstimationsService } from '@/modules/estimations/routes/estimations.service';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 
 @Module({
   imports: [TransactionApiManagerModule, SafeRepositoryModule],

@@ -1,11 +1,12 @@
-import { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import {
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { ApiProperty } from '@nestjs/swagger';
+import type { Address, Hash, Hex } from 'viem';
+import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type {
   Confirmation,
   MultisigTransaction as DomainMultisigTransaction,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { ApiProperty } from '@nestjs/swagger';
-import type { Address, Hash, Hex } from 'viem';
 
 export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
@@ -63,6 +64,8 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
   @ApiProperty()
   fee: string | null;
   @ApiProperty()
+  payment: string | null;
+  @ApiProperty()
   origin: string | null;
   @ApiProperty()
   confirmationsRequired: number;
@@ -100,6 +103,7 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     ethGasPrice: string | null;
     gasUsed: number | null;
     fee: string | null;
+    payment: string | null;
     origin: string | null;
     confirmationsRequired: number;
     confirmations: Array<Confirmation> | null;
@@ -131,6 +135,7 @@ export class TXSMultisigTransaction implements DomainMultisigTransaction {
     this.ethGasPrice = args.ethGasPrice;
     this.gasUsed = args.gasUsed;
     this.fee = args.fee;
+    this.payment = args.payment;
     this.origin = args.origin;
     this.confirmationsRequired = args.confirmationsRequired;
     this.confirmations = args.confirmations;

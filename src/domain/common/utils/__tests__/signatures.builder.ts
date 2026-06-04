@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import {
-  type Hex,
   type Address,
+  type Hex,
   isAddress,
   type PrivateKeyAccount,
 } from 'viem';
@@ -95,6 +96,6 @@ export async function getEthSignSignature(args: {
 
   // To differentiate signature types, eth_sign signatures have v value increased by 4
   // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-  const v = parseInt(signature.slice(-2), 16);
+  const v = Number.parseInt(signature.slice(-2), 16);
   return (signature.slice(0, 130) + (v + 4).toString(16)) as Hex;
 }

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  StatusGroup,
-  StatusGroupSchema,
-  RecipientStatusGroup,
-  RecipientStatusGroupSchema,
   ContractStatusGroup,
   ContractStatusGroupSchema,
-  ThreatStatusGroup,
-  ThreatStatusGroupSchema,
   DeadlockStatusGroup,
   DeadlockStatusGroupSchema,
+  RecipientStatusGroup,
+  RecipientStatusGroupSchema,
+  StatusGroup,
+  StatusGroupSchema,
+  ThreatStatusGroup,
+  ThreatStatusGroupSchema,
 } from '../status-group.entity';
 
 describe('StatusGroup', () => {
@@ -35,12 +35,12 @@ describe('StatusGroup', () => {
     });
 
     it('should have consistent naming convention', () => {
-      statusGroup.forEach((value) => {
+      for (const value of statusGroup) {
         // All values should be uppercase with underscores
         expect(value).toMatch(/^[A-Z_]+$/);
         // Should not start or end with underscore
         expect(value).not.toMatch(/^_|_$/);
-      });
+      }
     });
   });
 
@@ -79,86 +79,81 @@ describe('StatusGroup', () => {
   });
 
   describe('StatusGroupSchema', () => {
-    it.each(statusGroup)(
-      'should validate correct status group value = %s',
-      (value) => {
-        expect(() => StatusGroupSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      statusGroup,
+    )('should validate correct status group value = %s', (value) => {
+      expect(() => StatusGroupSchema.parse(value)).not.toThrow();
+    });
 
-    it.each(['INVALID_GROUP', '', null, undefined, 123] as const)(
-      'should reject invalid value = %s',
-      (invalidValue) => {
-        expect(() => StatusGroupSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      'INVALID_GROUP',
+      '',
+      null,
+      undefined,
+      123,
+    ] as const)('should reject invalid value = %s', (invalidValue) => {
+      expect(() => StatusGroupSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('RecipientStatusGroupSchema', () => {
-    it.each(recipientStatusGroup)(
-      'should validate recipient status group = %s',
-      (value) => {
-        expect(() => RecipientStatusGroupSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      recipientStatusGroup,
+    )('should validate recipient status group = %s', (value) => {
+      expect(() => RecipientStatusGroupSchema.parse(value)).not.toThrow();
+    });
 
-    it.each([...contractStatusGroup, ...threatStatusGroup] as const)(
-      'should reject non-recipient status group = %s',
-      (invalidValue) => {
-        expect(() => RecipientStatusGroupSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      ...contractStatusGroup,
+      ...threatStatusGroup,
+    ] as const)('should reject non-recipient status group = %s', (invalidValue) => {
+      expect(() => RecipientStatusGroupSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('ContractStatusGroupSchema', () => {
-    it.each(contractStatusGroup)(
-      'should validate contract status group = %s',
-      (value) => {
-        expect(() => ContractStatusGroupSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      contractStatusGroup,
+    )('should validate contract status group = %s', (value) => {
+      expect(() => ContractStatusGroupSchema.parse(value)).not.toThrow();
+    });
 
-    it.each([...recipientStatusGroup, ...threatStatusGroup] as const)(
-      'should reject non-contract status group = %s',
-      (invalidValue) => {
-        expect(() => ContractStatusGroupSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      ...recipientStatusGroup,
+      ...threatStatusGroup,
+    ] as const)('should reject non-contract status group = %s', (invalidValue) => {
+      expect(() => ContractStatusGroupSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('ThreatStatusGroupSchema', () => {
-    it.each(threatStatusGroup)(
-      'should validate threat status group = %s',
-      (value) => {
-        expect(() => ThreatStatusGroupSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      threatStatusGroup,
+    )('should validate threat status group = %s', (value) => {
+      expect(() => ThreatStatusGroupSchema.parse(value)).not.toThrow();
+    });
 
-    it.each([...recipientStatusGroup, ...contractStatusGroup] as const)(
-      'should reject non-threat status group = %s',
-      (invalidValue) => {
-        expect(() => ThreatStatusGroupSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    it.each([
+      ...recipientStatusGroup,
+      ...contractStatusGroup,
+    ] as const)('should reject non-threat status group = %s', (invalidValue) => {
+      expect(() => ThreatStatusGroupSchema.parse(invalidValue)).toThrow();
+    });
   });
 
   describe('DeadlockStatusGroupSchema', () => {
-    it.each(deadlockStatusGroup)(
-      'should validate deadlock status group = %s',
-      (value) => {
-        expect(() => DeadlockStatusGroupSchema.parse(value)).not.toThrow();
-      },
-    );
+    it.each(
+      deadlockStatusGroup,
+    )('should validate deadlock status group = %s', (value) => {
+      expect(() => DeadlockStatusGroupSchema.parse(value)).not.toThrow();
+    });
 
     it.each([
       ...recipientStatusGroup,
       ...contractStatusGroup,
       ...threatStatusGroup,
-    ] as const)(
-      'should reject non-deadlock status group = %s',
-      (invalidValue) => {
-        expect(() => DeadlockStatusGroupSchema.parse(invalidValue)).toThrow();
-      },
-    );
+    ] as const)('should reject non-deadlock status group = %s', (invalidValue) => {
+      expect(() => DeadlockStatusGroupSchema.parse(invalidValue)).toThrow();
+    });
   });
 });

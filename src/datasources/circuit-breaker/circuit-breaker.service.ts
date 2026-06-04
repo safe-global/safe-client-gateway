@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
+import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import type {
   ICircuit,
   ICircuitConfig,
 } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 /**
  * Circuit Breaker Service
@@ -91,7 +94,7 @@ export class CircuitBreakerService {
   public canProceed(name: string): boolean {
     const circuit = this.circuits.get(name);
 
-    if (!this.enabled || !circuit) {
+    if (!(this.enabled && circuit)) {
       return true;
     }
 
@@ -305,8 +308,7 @@ export class CircuitBreakerService {
   public recordFailure(name: string): void {
     const circuit = this.circuits.get(name);
     if (
-      !this.enabled ||
-      !circuit ||
+      !(this.enabled && circuit) ||
       circuit.metrics.state === CircuitState.OPEN
     ) {
       return;

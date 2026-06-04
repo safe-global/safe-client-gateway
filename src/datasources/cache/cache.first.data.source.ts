@@ -1,28 +1,32 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Page } from '@/domain/entities/page.entity';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { Page } from '@/domain/entities/page.entity';
 import {
-  isMultisigTransaction,
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import {
+  isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
-  isCreationTransaction,
-  Transaction,
+  isMultisigTransaction,
+  type Transaction,
 } from '@/modules/safe/domain/entities/transaction.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Raw } from '@/validation/entities/raw.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -272,7 +276,7 @@ export class CacheFirstDataSource {
    * Caches a not found error.
    * @param cacheDir - {@link CacheDir} where the error should be placed
    */
-  private async cacheNotFoundError(
+  private cacheNotFoundError(
     cacheDir: CacheDir,
     error: NetworkResponseError,
     notFoundExpireTimeSeconds?: number,
@@ -314,22 +318,26 @@ export class CacheFirstDataSource {
               confirmations: transaction.confirmations,
               confirmationRequired: transaction.confirmationsRequired,
             };
-          } else if (isEthereumTransaction(transaction)) {
+          }
+          if (isEthereumTransaction(transaction)) {
             return {
               txType: 'ethereum',
               txHash: transaction.txHash,
             };
-          } else if (isModuleTransaction(transaction)) {
+          }
+          if (isModuleTransaction(transaction)) {
             return {
               txType: 'module',
               transactionHash: transaction.transactionHash,
             };
-          } else if (isCreationTransaction(transaction)) {
+          }
+          if (isCreationTransaction(transaction)) {
             return {
               txType: 'creation',
               transactionHash: transaction.transactionHash,
             };
           }
+          return undefined;
         }),
     });
   }

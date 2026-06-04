@@ -1,11 +1,12 @@
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
-import type { UUID } from 'crypto';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import { TestDbFactory } from '@/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 
 type PushNotificationDevicesRow = {
   id: number;
@@ -172,7 +173,7 @@ describe('Migration 00005_notifications', () => {
     const cloudMessagingToken = faker.string.alphanumeric();
     const afterMigration = await migrator.test({
       migration: '00005_notifications',
-      after: async (sql: postgres.Sql) => {
+      after: (sql: postgres.Sql) => {
         // Create device
         return sql<
           [PushNotificationDevicesRow]
@@ -237,7 +238,7 @@ describe('Migration 00005_notifications', () => {
     const cloudMessagingToken = faker.string.alphanumeric();
     await migrator.test({
       migration: '00005_notifications',
-      after: async (sql: postgres.Sql) => {
+      after: (sql: postgres.Sql) => {
         // Create device
         return sql<
           [PushNotificationDevicesRow]

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { getAddress, type Hash } from 'viem';
+import type { z } from 'zod';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type {
@@ -11,9 +15,6 @@ import type {
   WithdrawEventItemSchema,
 } from '@/modules/community/domain/entities/schemas/locking-event.schema';
 import { LockingEventType } from '@/modules/community/domain/entities/schemas/locking-event.schema';
-import { faker } from '@faker-js/faker';
-import { getAddress, type Hash } from 'viem';
-import type { z } from 'zod';
 
 export function lockEventItemBuilder(): IBuilder<LockEventItem> {
   return new Builder<z.infer<typeof LockEventItemSchema>>()

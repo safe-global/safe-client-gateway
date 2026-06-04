@@ -1,8 +1,9 @@
-import {
-  BridgeNames,
-  BridgeNameSchema,
-} from '@/modules/bridge/domain/entities/bridge-name.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import {
+  BridgeNameSchema,
+  BridgeNames,
+} from '@/modules/bridge/domain/entities/bridge-name.entity';
 
 describe('BridgeStatusSchema', () => {
   it('should allow a valid bridge name', () => {

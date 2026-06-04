@@ -1,19 +1,20 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Body, Controller, HttpCode, Param, Post } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
+  ApiBody,
   ApiOkResponse,
-  ApiTags,
   ApiOperation,
   ApiParam,
-  ApiBody,
-  ApiBadRequestResponse,
+  ApiTags,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import { EstimationResponse } from '@/modules/estimations/routes/entities/estimation-response.entity';
 import { GetEstimationDto } from '@/modules/estimations/routes/entities/get-estimation.dto.entity';
-import { EstimationsService } from '@/modules/estimations/routes/estimations.service';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
+import { EstimationsService } from '@/modules/estimations/routes/estimations.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { Address } from 'viem';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('estimations')
 @Controller({
@@ -54,7 +55,7 @@ export class EstimationsController {
   })
   @HttpCode(200)
   @Post('chains/:chainId/safes/:address/multisig-transactions/estimations')
-  async getEstimation(
+  getEstimation(
     @Param('chainId') chainId: string,
     @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Body(new ValidationPipe(GetEstimationDtoSchema))

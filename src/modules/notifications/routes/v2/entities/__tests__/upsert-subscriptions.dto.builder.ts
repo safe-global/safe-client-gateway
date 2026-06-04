@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { getAddress } from 'viem';
-import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
 import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
-import type { UUID } from 'crypto';
+import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 
 export function upsertSubscriptionsDtoBuilder(): IBuilder<UpsertSubscriptionsDto> {
   return new Builder<UpsertSubscriptionsDto>()

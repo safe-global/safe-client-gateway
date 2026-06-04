@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker/.';
+import { faker } from '@faker-js/faker';
 import type configuration from '@/config/entities/configuration';
 
 export default (): ReturnType<typeof configuration> => ({
@@ -36,8 +36,9 @@ export default (): ReturnType<typeof configuration> => ({
       clientSecret: faker.string.uuid(),
       redirectUri: faker.internet.url(),
       audience: faker.internet.url({ appendSlash: false }),
-      signingSecret: faker.string.alphanumeric(32),
       scope: 'openid email',
+      jwksCacheMaxAgeMs: faker.number.int({ min: 60_000, max: 3_600_000 }),
+      jwksCooldownMs: faker.number.int({ min: 1_000, max: 60_000 }),
     },
     rateLimit: {
       max: faker.number.int({ min: 100, max: 200 }),
@@ -145,11 +146,33 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   email: {
-    applicationCode: faker.string.alphanumeric(),
-    baseUri: faker.internet.url({ appendSlash: false }),
-    apiKey: faker.string.hexadecimal({ length: 32 }),
-    fromEmail: faker.internet.email(),
-    fromName: faker.person.fullName(),
+    pushwoosh: {
+      applicationCode: faker.string.alphanumeric(),
+      baseUri: faker.internet.url({ appendSlash: false }),
+      apiKey: faker.string.hexadecimal({ length: 32 }),
+      fromEmail: faker.internet.email(),
+      fromName: faker.person.fullName(),
+    },
+    ses: {
+      fromEmail: faker.internet.email(),
+      fromName: faker.company.name(),
+      queue: {
+        removeOnComplete: {
+          age: faker.number.int({ min: 0, max: 3600 }),
+          count: faker.number.int({ min: 0, max: 1000 }),
+        },
+        removeOnFail: {
+          age: faker.number.int({ min: 0, max: 86400 }),
+          count: faker.number.int({ min: 0, max: 500 }),
+        },
+        backoff: {
+          type: 'exponential',
+          delay: faker.number.int({ min: 0, max: 5000 }),
+        },
+        attempts: faker.number.int({ min: 1, max: 3 }),
+        concurrency: faker.number.int({ min: 1, max: 5 }),
+      },
+    },
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
@@ -168,6 +191,7 @@ export default (): ReturnType<typeof configuration> => ({
   express: { jsonLimit: '1mb' },
   features: {
     email: false,
+    sesEmail: false,
     zerionBalancesEnabled: false,
     zerionPositions: false,
     debugLogs: false,
@@ -311,8 +335,8 @@ export default (): ReturnType<typeof configuration> => ({
     dailyLimitRelayerChainsIds: [],
     noFeeCampaign: {
       1: {
-        startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
-        endsAtTimeStamp: new Date().getTime() / 1000 + 1_000_000,
+        startsAtTimeStamp: Date.now() / 1000 - 10_000,
+        endsAtTimeStamp: Date.now() / 1000 + 1_000_000,
         safeTokenAddress: faker.finance.ethereumAddress(),
         maxGasLimit: faker.number.int({ min: 1 }),
         relayRules: [
@@ -340,8 +364,8 @@ export default (): ReturnType<typeof configuration> => ({
         ],
       },
       11155111: {
-        startsAtTimeStamp: new Date().getTime() / 1000 - 10_000,
-        endsAtTimeStamp: new Date().getTime() / 1000 + 1000_000,
+        startsAtTimeStamp: Date.now() / 1000 - 10_000,
+        endsAtTimeStamp: Date.now() / 1000 + 1000_000,
         maxGasLimit: faker.number.int({ min: 1 }),
         safeTokenAddress: faker.finance.ethereumAddress(),
         relayRules: [
@@ -408,6 +432,9 @@ export default (): ReturnType<typeof configuration> => ({
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
+    invite: {
+      ttlMs: faker.number.int({ min: 60_000, max: 7 * 24 * 60 * 60 * 1000 }),
+    },
     rateLimit: {
       creation: {
         max: faker.number.int({ min: 100, max: 200 }),

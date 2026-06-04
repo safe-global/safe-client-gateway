@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
+import {
+  type OidcState,
+  OidcStateSchema,
+} from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
+import {
+  getRedirectConfig,
+  type RedirectConfig,
+  resolveAndValidateRedirectUrl,
+} from '@/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
 } from '@/modules/auth/utils/token-expiration.utils';
-import {
-  getRedirectConfig,
-  resolveAndValidateRedirectUrl,
-  type RedirectConfig,
-} from '@/modules/auth/utils/auth-redirect.helper';
-import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  OidcState,
-  OidcStateSchema,
-} from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
-import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { getMillisecondsUntil } from '@/domain/common/utils/time';
 
 type OidcAuthTokenResponse = {
   accessToken: string;
@@ -56,10 +56,18 @@ export class OidcAuthService {
   ): Promise<OidcAuthTokenResponse> {
     const {
       sub: extUserId,
+      email,
+      email_verified: emailVerified,
       exp: expirationTime,
       nbf,
       iat,
     } = await this.auth0Repository.authenticateWithAuthorizationCode(code);
+
+    if (!(email && emailVerified)) {
+      throw new UnauthorizedException(
+        'A verified email is required to sign in',
+      );
+    }
 
     const maxExpirationTime = getMaxExpirationTime(
       this.maxValidityPeriodInSeconds,
@@ -73,8 +81,10 @@ export class OidcAuthService {
       );
     }
 
-    const userId =
-      await this.usersRepository.findOrCreateByExtUserId(extUserId);
+    const userId = await this.usersRepository.findOrCreateByExtUserIdAndEmail(
+      extUserId,
+      email,
+    );
     const accessToken = this.authRepository.signToken(
       {
         auth_method: AuthMethod.Oidc,

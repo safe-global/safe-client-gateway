@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type {
-  User,
-  UserStatus,
-} from '@/modules/users/domain/entities/user.entity';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+
 import type {
   EntityManager,
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
 import type { Address } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+import type {
+  User,
+  UserStatus,
+} from '@/modules/users/domain/entities/user.entity';
+import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 
@@ -21,6 +23,11 @@ export interface IUsersRepository {
     relations?: FindOptionsRelations<DbUser>,
   ): Promise<DbUser>;
 
+  find(
+    where: Array<FindOptionsWhere<DbUser>> | FindOptionsWhere<DbUser>,
+    relations?: FindOptionsRelations<DbUser>,
+  ): Promise<Array<DbUser>>;
+
   createWithWallet(args: {
     status: keyof typeof UserStatus;
     authPayload: AuthPayload;
@@ -29,7 +36,7 @@ export interface IUsersRepository {
   create(
     status: keyof typeof UserStatus,
     entityManager: EntityManager,
-    options?: { extUserId?: string },
+    options?: { extUserId?: string; email?: EmailAddress },
   ): Promise<User['id']>;
 
   getWithWallets(authPayload: AuthPayload): Promise<{
@@ -54,9 +61,27 @@ export interface IUsersRepository {
 
   findByWalletAddress(address: Address): Promise<User | undefined>;
 
-  findOrCreateByWalletAddress(address: Address): Promise<User['id']>;
+  findOrCreateByWalletAddress(
+    address: Address,
+    status?: keyof typeof UserStatus,
+    entityManager?: EntityManager,
+  ): Promise<User['id']>;
 
-  findOrCreateByExtUserId(extUserId: string): Promise<User['id']>;
+  findOrCreateByEmail(
+    email: EmailAddress,
+    entityManager?: EntityManager,
+  ): Promise<User['id']>;
+
+  findOrCreateByExtUserIdAndEmail(
+    extUserId: string,
+    email: EmailAddress,
+  ): Promise<User['id']>;
+
+  findEmailById(userId: User['id']): Promise<EmailAddress | undefined>;
+
+  findEmailsByIds(
+    userIds: Array<User['id']>,
+  ): Promise<Map<User['id'], string> | null>;
 
   update(args: {
     userId: User['id'];

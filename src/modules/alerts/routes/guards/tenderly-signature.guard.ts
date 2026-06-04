@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import crypto from 'node:crypto';
 import {
-  CanActivate,
-  ExecutionContext,
+  type CanActivate,
+  type ExecutionContext,
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { Request } from 'express';
-import crypto from 'crypto';
+import type { Request } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()

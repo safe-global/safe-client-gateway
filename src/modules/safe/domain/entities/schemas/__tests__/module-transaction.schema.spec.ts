@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { Page } from '@/domain/entities/page.entity';
 import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
@@ -6,8 +9,6 @@ import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
 } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('ModuleTransaction schemas', () => {
   describe('ModuleTransactionSchema', () => {
@@ -19,54 +20,55 @@ describe('ModuleTransaction schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['safe' as const, 'to' as const, 'module' as const])(
-      'should checksum the %s',
-      (key) => {
-        const nonChecksummedAddress = faker.finance
-          .ethereumAddress()
-          .toLowerCase() as Address;
-        const moduleTransaction = moduleTransactionBuilder()
-          .with(key, nonChecksummedAddress)
-          .build();
+    it.each([
+      'safe' as const,
+      'to' as const,
+      'module' as const,
+    ])('should checksum the %s', (key) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const moduleTransaction = moduleTransactionBuilder()
+        .with(key, nonChecksummedAddress)
+        .build();
 
-        const result = ModuleTransactionSchema.safeParse(moduleTransaction);
+      const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-        expect(result.success && result.data[key]).toBe(
-          getAddress(nonChecksummedAddress),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
 
-    it.each(['value' as const, 'data' as const])(
-      'should allow %s to be undefined, defaulting to null',
-      (key) => {
-        const moduleTransaction = moduleTransactionBuilder().build();
-        delete moduleTransaction[key];
+    it.each([
+      'value' as const,
+      'data' as const,
+    ])('should allow %s to be undefined, defaulting to null', (key) => {
+      const moduleTransaction = moduleTransactionBuilder().build();
+      delete moduleTransaction[key];
 
-        const result = ModuleTransactionSchema.safeParse(moduleTransaction);
+      const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-        expect(result.success && result.data[key]).toBe(null);
-      },
-    );
+      expect(result.success && result.data[key]).toBe(null);
+    });
 
-    it.each(['data' as const, 'transactionHash' as const])(
-      'should not allow non-hex %s',
-      (key) => {
-        const moduleTransaction = moduleTransactionBuilder()
-          .with(key, faker.string.numeric() as Address)
-          .build();
+    it.each([
+      'data' as const,
+      'transactionHash' as const,
+    ])('should not allow non-hex %s', (key) => {
+      const moduleTransaction = moduleTransactionBuilder()
+        .with(key, faker.string.numeric() as Address)
+        .build();
 
-        const result = ModuleTransactionSchema.safeParse(moduleTransaction);
+      const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-        expect(!result.success && result.error.issues).toEqual([
-          expect.objectContaining({
-            code: 'custom',
-            message: 'Invalid "0x" notated hex string',
-            path: [key],
-          }),
-        ]);
-      },
-    );
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: [key],
+        }),
+      ]);
+    });
 
     it('should not allow an invalid operation', () => {
       const moduleTransaction = moduleTransactionBuilder()
@@ -85,20 +87,20 @@ describe('ModuleTransaction schemas', () => {
       ]);
     });
 
-    it.each(['created' as const, 'executionDate' as const])(
-      'should coerce %s to a date',
-      (key) => {
-        const moduleTransaction = moduleTransactionBuilder()
-          .with(key, faker.date.recent().toISOString() as unknown as Date)
-          .build();
+    it.each([
+      'created' as const,
+      'executionDate' as const,
+    ])('should coerce %s to a date', (key) => {
+      const moduleTransaction = moduleTransactionBuilder()
+        .with(key, faker.date.recent().toISOString() as unknown as Date)
+        .build();
 
-        const result = ModuleTransactionSchema.safeParse(moduleTransaction);
+      const result = ModuleTransactionSchema.safeParse(moduleTransaction);
 
-        expect(result.success && result.data[key]).toStrictEqual(
-          new Date(moduleTransaction[key]),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toStrictEqual(
+        new Date(moduleTransaction[key]),
+      );
+    });
 
     it('should not allow an invalid blockNumber', () => {
       const moduleTransaction = moduleTransactionBuilder()

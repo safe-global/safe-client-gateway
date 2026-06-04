@@ -1,36 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { RecipientAnalysisService } from './recipient-analysis.service';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import type { Page } from '@/domain/entities/page.entity';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+
+import { createHash } from 'node:crypto';
+import { faker } from '@faker-js/faker';
+import type { Address, Hash, Hex } from 'viem';
+import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import * as utils from '../utils/extraction.utils';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import type {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
 } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
-import type { Address, Hash, Hex } from 'viem';
-import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
-import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { createHash } from 'crypto';
+import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { rawify } from '@/validation/entities/raw.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
+import * as utils from '../utils/extraction.utils';
+import { RecipientAnalysisService } from './recipient-analysis.service';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
@@ -103,7 +104,7 @@ describe('RecipientAnalysisService', () => {
 
   const createMockParameters = (
     owners: Array<string>,
-    threshold: number = 1,
+    threshold = 1,
   ): Array<{
     name: string;
     type: string;
@@ -141,7 +142,7 @@ describe('RecipientAnalysisService', () => {
 
   const createMockCreationTransaction = (
     owners: Array<string>,
-    threshold: number = 1,
+    threshold = 1,
   ): CreationTransaction =>
     ({
       created: faker.date.recent(),

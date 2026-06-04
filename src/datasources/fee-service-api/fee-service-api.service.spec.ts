@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.service';
+
 import { faker } from '@faker-js/faker';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { getAddress, type Hex } from 'viem';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.service';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
-import { rawify } from '@/validation/entities/raw.entity';
-import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import {
-  txFeesResponseBuilder,
-  txDataResponseBuilder,
   pricingContextSnapshotBuilder,
+  txDataResponseBuilder,
+  txFeesResponseBuilder,
 } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
+import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { rawify } from '@/validation/entities/raw.entity';
 
 const mockNetworkService = jest.mocked({
   get: jest.fn(),

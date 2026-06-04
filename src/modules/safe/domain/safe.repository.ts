@@ -1,46 +1,50 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { Page } from '@/domain/entities/page.entity';
+import type { Address } from 'viem';
+import { z } from 'zod';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import {
-  Transfer,
-  TransferPageSchema,
-  TransferSchema,
-} from '@/modules/safe/domain/entities/transfer.entity';
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import {
+  type ModuleTransaction,
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
 } from '@/modules/safe/domain/entities/module-transaction.entity';
 import {
+  type MultisigTransaction,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
-import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
+import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
-  SafeSchema,
   SafePageV2Schema,
+  SafeSchema,
 } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { z } from 'zod';
+import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
+import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
+import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
+import {
+  type Transfer,
+  TransferPageSchema,
+  TransferSchema,
+} from '@/modules/safe/domain/entities/transfer.entity';
+import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -233,7 +237,7 @@ export class SafeRepository implements ISafeRepository {
     return transactionService.clearModuleTransactions(args.safeAddress);
   }
 
-  async getTransactionQueue(args: {
+  getTransactionQueue(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
@@ -246,7 +250,7 @@ export class SafeRepository implements ISafeRepository {
     });
   }
 
-  async getTransactionQueueByModified(args: {
+  getTransactionQueueByModified(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
@@ -305,7 +309,7 @@ export class SafeRepository implements ISafeRepository {
     return CreationTransactionSchema.parse(createTransaction);
   }
 
-  async getTransactionHistory(args: {
+  getTransactionHistory(args: {
     chainId: string;
     safeAddress: Address;
     limit?: number;
@@ -624,9 +628,7 @@ export class SafeRepository implements ISafeRepository {
     return result;
   }
 
-  async getAllSafesByOwner(args: {
-    ownerAddress: Address;
-  }): Promise<SafesByChainId> {
+  getAllSafesByOwner(args: { ownerAddress: Address }): Promise<SafesByChainId> {
     return this.getAllSafesByOwnerForChains((chainId) =>
       this.getSafesByOwner({
         chainId,
@@ -635,7 +637,7 @@ export class SafeRepository implements ISafeRepository {
     );
   }
 
-  async getAllSafesByOwnerV2(args: {
+  getAllSafesByOwnerV2(args: {
     ownerAddress: Address;
   }): Promise<SafesByChainId> {
     return this.getAllSafesByOwnerForChains((chainId) =>

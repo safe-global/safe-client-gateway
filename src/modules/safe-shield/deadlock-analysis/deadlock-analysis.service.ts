@@ -1,38 +1,41 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { isAddressEqual, type Address } from 'viem';
 import chunk from 'lodash/chunk';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { type Address, isAddressEqual } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
+import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import {
+  type AnalysisResult,
+  CommonStatus,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
 import { DeadlockStatus } from '../entities/deadlock-status.entity';
 import { DeadlockStatusGroup } from '../entities/status-group.entity';
 import {
+  DEADLOCK_DESCRIPTION_MAPPING,
   DEADLOCK_SEVERITY_MAPPING,
   DEADLOCK_TITLE_MAPPING,
-  DEADLOCK_DESCRIPTION_MAPPING,
 } from './deadlock-status.constants';
 import {
   computeProjectedState,
   groupOwnerConfigsByTarget,
 } from './utils/owner-config-decoder.utils';
-import {
-  CacheService,
-  ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { asError } from '@/logging/utils';
-import {
-  CommonStatus,
-  type AnalysisResult,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
 
 type SafeOwnerInfo = {
   address: Address;
@@ -105,10 +108,11 @@ export class DeadlockAnalysisService {
       }),
     );
 
-    return results.reduce<DeadlockAnalysisResponse>(
-      (merged, result) => ({ ...merged, ...result }),
-      {},
-    );
+    const merged: DeadlockAnalysisResponse = {};
+    for (const result of results) {
+      Object.assign(merged, result);
+    }
+    return merged;
   }
 
   /**

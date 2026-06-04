@@ -9,7 +9,7 @@
   "transform": {
     "^.+\\.(t|j)s$": "ts-jest"
   },
-  "transformIgnorePatterns": ["node_modules/(?!@faker-js).+"],
+  "transformIgnorePatterns": ["node_modules/(?!(?:@faker-js|jose)/).+"],
   "coverageDirectory": "./coverage",
   "moduleNameMapper": {
     "^@/abis/(.*)$": "<rootDir>/abis/$1",

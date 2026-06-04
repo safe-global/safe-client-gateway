@@ -1,29 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { NotFoundException } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UsersRepository } from '@/modules/users/domain/users.repository';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -126,17 +128,17 @@ describe('UsersRepository', () => {
   describe('createdAt/updatedAt', () => {
     it('should set createdAt and updatedAt when creating a User', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const before = new Date().getTime();
+      const before = Date.now();
       const user = await dbUserRepository.insert({
         status: faker.helpers.arrayElement(UserStatusKeys),
       });
 
-      const after = new Date().getTime();
+      const after = Date.now();
 
       const createdAt = user.generatedMaps[0].createdAt;
       const updatedAt = user.generatedMaps[0].updatedAt;
 
-      if (!(createdAt instanceof Date) || !(updatedAt instanceof Date)) {
+      if (!(createdAt instanceof Date && updatedAt instanceof Date)) {
         throw new Error('createdAt and/or updatedAt is not a Date');
       }
 
@@ -218,6 +220,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -306,6 +309,7 @@ describe('UsersRepository', () => {
       expect(users).toEqual([
         {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: users[0].id,
           status,
@@ -487,6 +491,7 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -702,6 +707,7 @@ describe('UsersRepository', () => {
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
+            email: null,
             extUserId: null,
             id: wallets[0].user.id,
             status,
@@ -757,6 +763,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddressOrFail(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -793,6 +800,7 @@ describe('UsersRepository', () => {
         usersRepository.findByWalletAddress(address),
       ).resolves.toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -842,6 +850,7 @@ describe('UsersRepository', () => {
       });
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -859,12 +868,38 @@ describe('UsersRepository', () => {
         updatedAt: expect.any(Date),
         user: {
           createdAt: expect.any(Date),
+          email: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
           extUserId: null,
         },
       });
+    });
+
+    it('should create a PENDING user when requested', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbWalletRepository = dataSource.getRepository(Wallet);
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const userId = await usersRepository.findOrCreateByWalletAddress(
+        address,
+        'PENDING',
+      );
+
+      await expect(
+        dbUserRepository.findOneOrFail({ where: { id: userId } }),
+      ).resolves.toEqual(expect.objectContaining({ status: 'PENDING' }));
+      await expect(
+        dbWalletRepository.findOneOrFail({
+          where: { address },
+          relations: { user: true },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          user: expect.objectContaining({ id: userId, status: 'PENDING' }),
+        }),
+      );
     });
 
     it('should checksum the wallet address when creating', async () => {
@@ -905,66 +940,150 @@ describe('UsersRepository', () => {
     });
   });
 
-  describe('findOrCreateByExtUserId', () => {
-    it('should return the existing user id if the extUserId already exists', async () => {
+  describe('findOrCreateByExtUserIdAndEmail', () => {
+    it('should enforce unique non-null user emails', async () => {
       const dbUserRepository = dataSource.getRepository(User);
-      const extUserId = faker.string.uuid();
-      const status = faker.helpers.arrayElement(UserStatusKeys);
-      const userInsertResult = await dbUserRepository.insert({
-        status,
-        extUserId,
+      const email = fakeEmailAddress();
+
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
       });
-      const userId = userInsertResult.identifiers[0].id;
 
-      const result = await usersRepository.findOrCreateByExtUserId(extUserId);
-
-      expect(result).toBe(userId);
-      // No additional user should have been created
-      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(
+        dbUserRepository.insert({
+          status: 'ACTIVE',
+          email,
+        }),
+      ).rejects.toThrow(/duplicate key|idx_users_email/);
     });
 
-    it('should create a new user if none exists with the given extUserId', async () => {
+    it('should enforce lowercase user emails', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+
+      await expect(
+        dbUserRepository.insert({
+          status: 'ACTIVE',
+          email: faker.internet.email().toUpperCase(),
+        }),
+      ).rejects.toThrow(
+        /violates check constraint|users_email_lowercase_check/,
+      );
+    });
+
+    it('should persist a normalized email when the user has none yet', async () => {
       const dbUserRepository = dataSource.getRepository(User);
       const extUserId = faker.string.uuid();
+      const userInsertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        extUserId,
+      });
+      const userId = userInsertResult.identifiers[0].id as number;
+      const email = fakeEmailAddress();
 
-      const userId = await usersRepository.findOrCreateByExtUserId(extUserId);
+      await usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email);
 
       const user = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
-      expect(user).toEqual({
-        createdAt: expect.any(Date),
-        extUserId,
-        id: userId,
-        status: 'ACTIVE',
-        updatedAt: expect.any(Date),
-      });
+      expect(user.email).toBe(email);
     });
 
-    it('should return the existing user id on concurrent duplicate insert', async () => {
+    it('should throw when the email belongs to a different user', async () => {
       const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
       const extUserId = faker.string.uuid();
 
-      // Run two calls concurrently — one will win the insert, the other
-      // should catch the unique constraint violation and retry the find.
-      const [id1, id2] = await Promise.all([
-        usersRepository.findOrCreateByExtUserId(extUserId),
-        usersRepository.findOrCreateByExtUserId(extUserId),
-      ]);
-
-      expect(id1).toBe(id2);
-      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
-    });
-
-    it('should rethrow non-constraint-violation errors', async () => {
-      const extUserId = faker.string.uuid();
-      const error = new Error('unexpected failure');
-
-      jest.spyOn(usersRepository, 'create').mockRejectedValueOnce(error);
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
 
       await expect(
-        usersRepository.findOrCreateByExtUserId(extUserId),
-      ).rejects.toThrow(error);
+        usersRepository.findOrCreateByExtUserIdAndEmail(extUserId, email),
+      ).rejects.toThrow(UserEmailAlreadyInUseError);
+    });
+
+    it('should throw UnauthorizedException when the stored email differs from the OIDC email', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const storedEmail = fakeEmailAddress();
+      const extUserId = faker.string.uuid();
+      await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: storedEmail,
+        extUserId,
+      });
+
+      await expect(
+        usersRepository.findOrCreateByExtUserIdAndEmail(
+          extUserId,
+          fakeEmailAddress(), // different email
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should claim a PENDING email-invite placeholder and flip it to ACTIVE', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+      const extUserId = faker.string.uuid();
+      const placeholderInsert = await dbUserRepository.insert({
+        status: 'PENDING',
+        email,
+      });
+      const placeholderId = placeholderInsert.identifiers[0].id as number;
+
+      const resolvedId = await usersRepository.findOrCreateByExtUserIdAndEmail(
+        extUserId,
+        email,
+      );
+
+      expect(resolvedId).toBe(placeholderId);
+      const claimed = await dbUserRepository.findOneOrFail({
+        where: { id: placeholderId },
+      });
+      expect(claimed.status).toBe('ACTIVE');
+      expect(claimed.extUserId).toBe(extUserId);
+      expect(claimed.email).toBe(email);
+    });
+  });
+
+  describe('findOrCreateByEmail', () => {
+    it('should insert a PENDING user when no row with the email exists', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+
+      const userId = await usersRepository.findOrCreateByEmail(email);
+
+      const user = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(user.status).toBe('PENDING');
+      expect(user.email).toBe(email);
+      expect(user.extUserId).toBeNull();
+    });
+
+    it('should be idempotent and return the existing user id on repeated calls', async () => {
+      const email = fakeEmailAddress();
+
+      const first = await usersRepository.findOrCreateByEmail(email);
+      const second = await usersRepository.findOrCreateByEmail(email);
+
+      expect(first).toBe(second);
+    });
+
+    it('should return the existing user id when a user with this email is already ACTIVE', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+      const insertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+        extUserId: faker.string.uuid(),
+      });
+      const existingId = insertResult.identifiers[0].id as number;
+
+      await expect(usersRepository.findOrCreateByEmail(email)).resolves.toBe(
+        existingId,
+      );
     });
   });
 
@@ -990,6 +1109,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE',
@@ -1021,6 +1141,7 @@ describe('UsersRepository', () => {
 
       expect(user).toEqual({
         createdAt: expect.any(Date),
+        email: null,
         extUserId: null,
         id: userId,
         status,
@@ -1081,6 +1202,60 @@ describe('UsersRepository', () => {
       expect(users).toHaveLength(2);
       expect(users[0].extUserId).toBe(extUserId1);
       expect(users[1].extUserId).toBe(extUserId2);
+    });
+  });
+
+  describe('findEmailsByIds', () => {
+    it('should return emails for users that have them', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email1 = faker.internet.email().toLowerCase();
+      const email2 = faker.internet.email().toLowerCase();
+      const user1 = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: email1,
+      });
+      const user2 = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: email2,
+      });
+      const userId1 = user1.identifiers[0].id as number;
+      const userId2 = user2.identifiers[0].id as number;
+
+      const result = await usersRepository.findEmailsByIds([userId1, userId2]);
+
+      expect(result).toEqual(
+        new Map([
+          [userId1, email1],
+          [userId2, email2],
+        ]),
+      );
+    });
+
+    it('should skip users with no email', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = faker.internet.email().toLowerCase();
+      const userWithEmail = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userWithoutEmail = await dbUserRepository.insert({
+        status: 'ACTIVE',
+      });
+      const userIdWithEmail = userWithEmail.identifiers[0].id as number;
+      const userIdWithoutEmail = userWithoutEmail.identifiers[0].id as number;
+
+      const result = await usersRepository.findEmailsByIds([
+        userIdWithEmail,
+        userIdWithoutEmail,
+      ]);
+
+      expect(result).toEqual(new Map([[userIdWithEmail, email]]));
+    });
+
+    it('should return empty map for non-existent user IDs', async () => {
+      const result = await usersRepository.findEmailsByIds([999999]);
+
+      expect(result).toEqual(new Map());
     });
   });
 });

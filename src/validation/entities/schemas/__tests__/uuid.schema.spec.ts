@@ -1,5 +1,6 @@
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 
 describe('UuidSchema', () => {
   it('should validate a valid UUID string', () => {

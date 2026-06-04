@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Response } from 'express';
+
 import {
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
-  ArgumentsHost,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 

@@ -1,16 +1,17 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
-import {
+import type {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
   private readonly maxSafesPerSpace: number;
@@ -45,7 +46,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const existingSafes = await this.findBySpaceId(args.spaceId);
     if (existingSafes.length + safesToInsert.length > this.maxSafesPerSpace) {
       throw new BadRequestException(
-        `This Space only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${this.maxSafesPerSpace - existingSafes.length} more.`,
+        `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${this.maxSafesPerSpace - existingSafes.length} more.`,
       );
     }
 
@@ -79,7 +80,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const spaceSafes = await this.find(args);
 
     if (spaceSafes.length === 0) {
-      throw new NotFoundException('Space has no Safes.');
+      throw new NotFoundException('Workspace has no Safes.');
     }
 
     return spaceSafes;

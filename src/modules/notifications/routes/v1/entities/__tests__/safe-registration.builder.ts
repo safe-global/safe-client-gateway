@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { SafeRegistration } from '@/modules/notifications/routes/v1/entities/safe-registration.entity';
-import type { UUID } from 'crypto';
 import { safeRegistrationSignatureBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/create-signature.builder';
-import { getAddress } from 'viem';
+import type { SafeRegistration } from '@/modules/notifications/routes/v1/entities/safe-registration.entity';
 
 export async function safeRegistrationBuilder(args: {
   signaturePrefix: string;

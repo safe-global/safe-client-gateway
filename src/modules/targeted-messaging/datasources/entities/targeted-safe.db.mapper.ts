@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
-import { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+
 import { Injectable } from '@nestjs/common';
+import type { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
+import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
+import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 
 @Injectable()
 export class TargetedSafeDbMapper {

@@ -1,34 +1,35 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import {
-  type RecipientAnalysisResponse,
-  type ContractAnalysisResponse,
-  type ThreatAnalysisResponse,
-  type CounterpartyAnalysisResponse,
-  type DeadlockAnalysisResponse,
-} from '../../analysis-responses.entity';
-import {
-  contractAnalysisResultBuilder,
-  recipientAnalysisResultBuilder,
-  threatAnalysisResultBuilder,
-  masterCopyChangeThreatBuilder,
-  maliciousOrModerateThreatBuilder,
-  unofficialFallbackHandlerAnalysisResultBuilder,
-  deadlockAnalysisResultBuilder,
-} from './analysis-result.builder';
-import { ThreatStatus } from '../../threat-status.entity';
-import { getAddress } from 'viem';
+import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import type {
+  ContractAnalysisResponse,
+  CounterpartyAnalysisResponse,
+  DeadlockAnalysisResponse,
+  RecipientAnalysisResponse,
+  ThreatAnalysisResponse,
+} from '../../analysis-responses.entity';
+import type { ThreatAnalysisResult } from '../../analysis-result.entity';
+import { ThreatStatus } from '../../threat-status.entity';
+import {
+  contractAnalysisResultBuilder,
+  deadlockAnalysisResultBuilder,
+  maliciousOrModerateThreatBuilder,
+  masterCopyChangeThreatBuilder,
+  recipientAnalysisResultBuilder,
+  threatAnalysisResultBuilder,
+  unofficialFallbackHandlerAnalysisResultBuilder,
+} from './analysis-result.builder';
 
 /**
  * Builder for RecipientAnalysisResponse.
@@ -129,7 +130,7 @@ export function contractAnalysisResponseBuilder(
 export function threatAnalysisResponseBuilder(
   type?: ThreatStatus,
 ): IBuilder<ThreatAnalysisResponse> {
-  let threatResult;
+  let threatResult: ThreatAnalysisResult;
   if (type === ThreatStatus.MASTERCOPY_CHANGE) {
     threatResult = masterCopyChangeThreatBuilder().build();
   } else if (

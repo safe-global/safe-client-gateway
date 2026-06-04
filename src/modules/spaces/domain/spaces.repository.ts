@@ -1,16 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import {
-  MemberRole,
-  MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
+
 import {
   ForbiddenException,
   Inject,
@@ -18,13 +7,25 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
+  type FindOptionsRelations,
+  type FindOptionsSelect,
+  type FindOptionsWhere,
   In,
   IsNull,
 } from 'typeorm';
-import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { getEnumKey } from '@/domain/common/utils/enum';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import {
+  MemberRole,
+  MemberStatus,
+} from '@/modules/users/domain/entities/member.entity';
 
 // TODO: Add tests
 @Injectable()
@@ -54,7 +55,7 @@ export class SpacesRepository implements ISpacesRepository {
     const isLimited = await this.isLimited(args.userId);
     if (isLimited) {
       throw new ForbiddenException(
-        'User has reached the maximum number of Spaces.',
+        'User has reached the maximum number of Workspaces.',
       );
     }
 
@@ -89,7 +90,7 @@ export class SpacesRepository implements ISpacesRepository {
     const space = await this.findOne(args);
 
     if (!space) {
-      throw new NotFoundException('Space not found.');
+      throw new NotFoundException('Workspace not found.');
     }
 
     return space;
@@ -112,7 +113,7 @@ export class SpacesRepository implements ISpacesRepository {
     const spaces = await this.find(args);
 
     if (spaces.length === 0) {
-      throw new NotFoundException('Spaces not found.');
+      throw new NotFoundException('Workspaces not found.');
     }
 
     return spaces;
@@ -135,7 +136,9 @@ export class SpacesRepository implements ISpacesRepository {
     const spaces = await this.findByUserId(args);
 
     if (spaces.length === 0) {
-      throw new NotFoundException('Spaces not found. UserId = ' + args.userId);
+      throw new NotFoundException(
+        `Workspaces not found. UserId = ${args.userId}`,
+      );
     }
 
     return spaces;
@@ -173,7 +176,9 @@ export class SpacesRepository implements ISpacesRepository {
     const space = await this.findOneByUserId(args);
 
     if (!space) {
-      throw new NotFoundException('Space not found. UserId = ' + args.userId);
+      throw new NotFoundException(
+        `Workspace not found. UserId = ${args.userId}`,
+      );
     }
 
     return space;
@@ -221,8 +226,6 @@ export class SpacesRepository implements ISpacesRepository {
    * Determines if a user has reached the maximum number of spaces they can create.
    * If the user is member of a space that was not invited by anyone, they are considered to have created that space.
    */
-  // TODO: invitedBy IS NULL also matches invitees of OIDC admins.
-  // Revisit once OIDC invite flow is introduced.
   private async isLimited(userId: number): Promise<boolean> {
     const memberRepository =
       await this.postgresDatabaseService.getRepository(Member);

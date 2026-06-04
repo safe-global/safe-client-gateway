@@ -1,7 +1,8 @@
-import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
-import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
+import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
 
 describe('CreateDelegateSchema', () => {
   it('should validate a valid CreateDelegateDto', () => {
@@ -38,7 +39,7 @@ describe('CreateDelegateSchema', () => {
   it('should allow undefined safe', () => {
     const createDelegateDto = createDelegateDtoBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties
-    delete createDelegateDto.safe;
+    createDelegateDto.safe = undefined;
 
     const result = CreateDelegateDtoSchema.safeParse(createDelegateDto);
 

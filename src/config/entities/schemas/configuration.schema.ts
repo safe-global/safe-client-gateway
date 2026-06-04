@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+
 const relayRulesValidator = z
   .string()
   .refine(
@@ -52,13 +53,20 @@ export const RootConfigurationSchema = z
     AUTH0_CLIENT_ID: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),
-    AUTH0_SIGNING_SECRET: z.string().optional(),
     AUTH0_SCOPE: z.string().optional(),
+    AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    AUTH0_JWKS_COOLDOWN_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AUTH_STATE_TTL_MILLISECONDS: z.coerce.number().int().min(1).optional(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
     AWS_REGION: z.string().optional(),
+    AWS_SES_FROM_EMAIL: z.email().optional(),
+    AWS_SES_FROM_NAME: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -171,18 +179,20 @@ export const RootConfigurationSchema = z
     STAKING_TESTNET_API_KEY: z.string(),
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
+    SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     PUSH_NOTIFICATION_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
+    EMAIL_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
     BLOCKAID_CLIENT_API_KEY: z.string().optional(),
     TX_SERVICE_API_KEY: z.string().trim().min(1).optional(),
     CAPTCHA_ENABLED: z.string().optional().default('false'),
     CAPTCHA_SECRET_KEY: z.string().optional(),
   })
-  .superRefine((config, ctx) =>
+  .superRefine((config, ctx) => {
     // Check for AWS_* and Blockaid fields in production and staging environments
-    [
+    for (const field of [
       'AWS_ACCESS_KEY_ID',
       'AWS_KMS_ENCRYPTION_KEY_ID',
       'AWS_SECRET_ACCESS_KEY',
@@ -190,7 +200,7 @@ export const RootConfigurationSchema = z
       'CSV_AWS_ACCESS_KEY_ID',
       'CSV_AWS_SECRET_ACCESS_KEY',
       'BLOCKAID_CLIENT_API_KEY',
-    ].forEach((field) => {
+    ]) {
       if (
         config.CGW_ENV &&
         config instanceof Object &&
@@ -203,8 +213,8 @@ export const RootConfigurationSchema = z
           path: [field],
         });
       }
-    }),
-  );
+    }
+  });
 
 export type FileStorageType = z.infer<
   typeof RootConfigurationSchema

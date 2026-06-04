@@ -1,6 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import omit from 'lodash/omit';
 import type { Address, Hex } from 'viem';
+import { getAddress } from 'viem';
 import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
 import { TransactionExportSchema } from '@/modules/csv-export/v1/entities/transaction-export.entity';
 
@@ -93,6 +95,10 @@ describe('TransactionExportSchema', () => {
       .with('note', null)
       .with('contractAddress', null)
       .with('nonce', null)
+      .with('gasToken', null)
+      .with('payment', null)
+      .with('gasTokenSymbol', null)
+      .with('gasTokenDecimals', null)
       .build();
 
     const result = TransactionExportSchema.safeParse(transactionExport);
@@ -109,6 +115,29 @@ describe('TransactionExportSchema', () => {
       expect(result.data.note).toBeNull();
       expect(result.data.contractAddress).toBeNull();
       expect(result.data.nonce).toBeNull();
+      expect(result.data.gasToken).toBeNull();
+      expect(result.data.payment).toBeNull();
+      expect(result.data.gasTokenSymbol).toBeNull();
+      expect(result.data.gasTokenDecimals).toBeNull();
+    }
+  });
+
+  it('should parse successfully when gas fee fields are absent (backwards compatibility)', () => {
+    const rawData = omit(transactionExportBuilder().build(), [
+      'gasToken',
+      'payment',
+      'gasTokenSymbol',
+      'gasTokenDecimals',
+    ]);
+
+    const result = TransactionExportSchema.safeParse(rawData);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.gasToken).toBeUndefined();
+      expect(result.data.payment).toBeUndefined();
+      expect(result.data.gasTokenSymbol).toBeUndefined();
+      expect(result.data.gasTokenDecimals).toBeUndefined();
     }
   });
 
@@ -279,6 +308,76 @@ describe('TransactionExportSchema', () => {
       message: 'Invalid input: expected date, received Date',
       path: ['executedAt'],
       received: 'Invalid Date',
+    });
+  });
+
+  it('should keep payment as raw numeric string (formatting happens in service)', () => {
+    const rawPayment = '1000000000000000000';
+
+    const transactionExport = transactionExportBuilder()
+      .with('payment', rawPayment)
+      .with('gasTokenDecimals', 18)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.payment).toBe(rawPayment);
+  });
+
+  it('should set payment to null when payment is null', () => {
+    const transactionExport = transactionExportBuilder()
+      .with('payment', null)
+      .with('gasTokenDecimals', null)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.payment).toBeNull();
+  });
+
+  it('should keep payment as raw numeric string when gasTokenDecimals is null', () => {
+    const rawPayment = '100';
+
+    const transactionExport = transactionExportBuilder()
+      .with('payment', rawPayment)
+      .with('gasTokenDecimals', null)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.payment).toBe(rawPayment);
+  });
+
+  it('should validate gasToken as a valid address', () => {
+    const transactionExport = transactionExportBuilder()
+      .with('gasToken', '0x123' as Address)
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(result.error?.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid address',
+      path: ['gasToken'],
+    });
+  });
+
+  it('should validate payment as numeric string', () => {
+    const transactionExport = transactionExportBuilder()
+      .with('payment', 'not-numeric')
+      .build();
+
+    const result = TransactionExportSchema.safeParse(transactionExport);
+
+    expect(!result.success && result.error.issues.length).toBe(1);
+    expect(result.error?.issues[0]).toStrictEqual({
+      code: 'custom',
+      message: 'Invalid base-10 numeric string',
+      path: ['payment'],
     });
   });
 });

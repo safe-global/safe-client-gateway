@@ -5,40 +5,40 @@ import {
   ApiPropertyOptional,
   getSchemaPath,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import {
-  NativeCurrency,
-  NativeCurrency as ApiNativeCurrency,
-} from '@/modules/chains/routes/entities/native-currency.entity';
+  BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
+  type BeaconChainExplorerUriTemplate,
+} from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
+import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
 import {
-  BlockExplorerUriTemplate,
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
+  type BlockExplorerUriTemplate,
 } from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
 import {
-  BeaconChainExplorerUriTemplate,
-  BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
-} from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
-import {
-  GasPriceOracle,
-  GasPriceOracle as ApiGasPriceOracle,
-} from '@/modules/chains/routes/entities/gas-price-oracle.entity';
-import {
-  GasPriceFixed,
   GasPriceFixed as ApiGasPriceFixed,
+  type GasPriceFixed,
 } from '@/modules/chains/routes/entities/gas-price-fixed.entity';
 import {
-  GasPriceFixedEIP1559,
   GasPriceFixedEIP1559 as ApiGasPriceFixedEIP1559,
+  type GasPriceFixedEIP1559,
 } from '@/modules/chains/routes/entities/gas-price-fixed-eip-1559.entity';
 import {
-  RpcUri,
+  GasPriceOracle as ApiGasPriceOracle,
+  type GasPriceOracle,
+} from '@/modules/chains/routes/entities/gas-price-oracle.entity';
+import {
+  NativeCurrency as ApiNativeCurrency,
+  type NativeCurrency,
+} from '@/modules/chains/routes/entities/native-currency.entity';
+import {
   RpcUri as ApiRpcUri,
+  type RpcUri,
 } from '@/modules/chains/routes/entities/rpc-uri.entity';
 import {
-  Theme,
   Theme as ApiTheme,
+  type Theme,
 } from '@/modules/chains/routes/entities/theme.entity';
-import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
-import type { Address } from 'viem';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
 export class Chain {

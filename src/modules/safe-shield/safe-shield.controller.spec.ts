@@ -1,10 +1,21 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
-import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { SafeShieldController } from './safe-shield.controller';
-import { SafeShieldService } from './safe-shield.service';
+import {
+  CounterpartyAnalysisRequestSchema,
+  ThreatAnalysisRequestSchema,
+} from '@/modules/safe-shield/entities/analysis-requests.entity';
+import type { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import {
+  ContractStatusGroup,
+  RecipientStatusGroup,
+} from '@/modules/safe-shield/entities/status-group.entity';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   counterpartyAnalysisRequestDtoBuilder,
@@ -18,18 +29,8 @@ import {
   contractAnalysisResultBuilder,
   recipientAnalysisResultBuilder,
 } from './entities/__tests__/builders/analysis-result.builder';
-import type { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import {
-  CounterpartyAnalysisRequestSchema,
-  ThreatAnalysisRequestSchema,
-} from '@/modules/safe-shield/entities/analysis-requests.entity';
-import {
-  ContractStatusGroup,
-  RecipientStatusGroup,
-} from '@/modules/safe-shield/entities/status-group.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
+import { SafeShieldController } from './safe-shield.controller';
+import { SafeShieldService } from './safe-shield.service';
 
 describe('SafeShieldController (Unit)', () => {
   let controller: SafeShieldController;

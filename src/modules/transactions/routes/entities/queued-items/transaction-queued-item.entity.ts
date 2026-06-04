@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
 import {

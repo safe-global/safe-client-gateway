@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { Address } from 'viem';
 import { z } from 'zod';
+import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { type Address } from 'viem';
+import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
+import {
+  type ContractAnalysisResult,
+  ContractAnalysisResultSchema,
+  DeadlockAnalysisResultSchema,
+  type RecipientAnalysisResult,
+  RecipientAnalysisResultSchema,
+  ThreatAnalysisResultSchema,
+  UnofficialFallbackHandlerAnalysisResultSchema,
+} from './analysis-result.entity';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
 } from './status-group.entity';
-import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
-import {
-  RecipientAnalysisResultSchema,
-  ContractAnalysisResultSchema,
-  ThreatAnalysisResultSchema,
-  type RecipientAnalysisResult,
-  type ContractAnalysisResult,
-  UnofficialFallbackHandlerAnalysisResultSchema,
-} from './analysis-result.entity';
-import { DeadlockAnalysisResultSchema } from './analysis-result.entity';
-import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
 import { BalanceChangesSchema } from './threat-analysis.types';
 
 const recipientGroupValueSchema = z

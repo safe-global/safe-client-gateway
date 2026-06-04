@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ChannelWrapper } from 'amqp-connection-manager';
 import amqp from 'amqp-connection-manager';
 import type { Channel } from 'amqplib';
@@ -18,7 +19,7 @@ export function amqpClientFactory(queue?: string): {
   const heartbeatIntervalInSeconds = +(AMQP_HEARBEAT_INTERVAL_SECONDS || 60);
   const reconnectTimeInSeconds = +(AMQP_RECONNECT_TIME_SECONDS || 5);
 
-  if (!AMQP_URL || !AMQP_EXCHANGE_NAME || !AMQP_EXCHANGE_MODE || !AMQP_QUEUE) {
+  if (!(AMQP_URL && AMQP_EXCHANGE_NAME && AMQP_EXCHANGE_MODE && AMQP_QUEUE)) {
     throw new Error('Invalid amqpClientFactory configuration');
   }
 

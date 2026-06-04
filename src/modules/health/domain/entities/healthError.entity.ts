@@ -1,5 +1,2 @@
-export class HealthCheckError extends Error {
-  public constructor(message: string) {
-    super(message);
-  }
-}
+// SPDX-License-Identifier: FSL-1.1-MIT
+export class HealthCheckError extends Error {}

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -47,7 +48,7 @@ export class SafeAppsController {
     description: 'List of Safe Apps available for the specified chain',
   })
   @Get('chains/:chainId/safe-apps')
-  async getSafeApps(
+  getSafeApps(
     @Param('chainId') chainId: string,
     @Query('clientUrl') clientUrl?: string,
     @Query('url') url?: string,

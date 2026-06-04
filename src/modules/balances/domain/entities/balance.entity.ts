@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
 import { BalanceTokenSchema } from '@/modules/balances/domain/entities/balance.token.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { z } from 'zod';
 import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
 
 export type NativeBalance = z.infer<typeof NativeBalanceSchema>;

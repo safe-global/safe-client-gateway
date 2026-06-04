@@ -1,47 +1,47 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import request from 'supertest';
+import type { Address } from 'viem';
+import { getAddress } from 'viem';
+import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
+import { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { NetworkService } from '@/datasources/network/network.service.interface';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
 } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import {
-  multisigTransactionBuilder,
   toJson as multisigToJson,
+  multisigTransactionBuilder,
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
 } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { Address } from 'viem';
-import { getAddress } from 'viem';
-import type { Server } from 'net';
-import { rawify } from '@/validation/entities/raw.entity';
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { APP_FILTER } from '@nestjs/core';
-import {
-  type ILoggingService,
-  LoggingService,
-} from '@/logging/logging.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { createTestModule } from '@/__tests__/testing-module';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('Get by id - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -594,22 +594,22 @@ describe('Get by id - Transactions Controller', () => {
             confirmations: [
               {
                 signer: expect.objectContaining({
-                  value: tx.confirmations![0].owner,
+                  value: tx.confirmations?.[0].owner,
                 }),
-                signature: tx.confirmations![0].signature,
-                submittedAt: tx.confirmations![0].submissionDate.getTime(),
+                signature: tx.confirmations?.[0].signature,
+                submittedAt: tx.confirmations?.[0].submissionDate.getTime(),
               },
               {
                 signer: expect.objectContaining({
-                  value: tx.confirmations![1].owner,
+                  value: tx.confirmations?.[1].owner,
                 }),
-                signature: tx.confirmations![1].signature,
-                submittedAt: tx.confirmations![1].submissionDate.getTime(),
+                signature: tx.confirmations?.[1].signature,
+                submittedAt: tx.confirmations?.[1].submissionDate.getTime(),
               },
             ],
             rejectors: expect.arrayContaining([
               expect.objectContaining({
-                value: rejectionTx.confirmations![0].owner,
+                value: rejectionTx.confirmations?.[0].owner,
               }),
             ]),
             gasToken: tx.gasToken,
@@ -786,22 +786,22 @@ describe('Get by id - Transactions Controller', () => {
             confirmations: [
               {
                 signer: expect.objectContaining({
-                  value: tx.confirmations![0].owner,
+                  value: tx.confirmations?.[0].owner,
                 }),
-                signature: tx.confirmations![0].signature,
-                submittedAt: tx.confirmations![0].submissionDate.getTime(),
+                signature: tx.confirmations?.[0].signature,
+                submittedAt: tx.confirmations?.[0].submissionDate.getTime(),
               },
               {
                 signer: expect.objectContaining({
-                  value: tx.confirmations![1].owner,
+                  value: tx.confirmations?.[1].owner,
                 }),
-                signature: tx.confirmations![1].signature,
-                submittedAt: tx.confirmations![1].submissionDate.getTime(),
+                signature: tx.confirmations?.[1].signature,
+                submittedAt: tx.confirmations?.[1].submissionDate.getTime(),
               },
             ],
             rejectors: expect.arrayContaining([
               expect.objectContaining({
-                value: rejectionTx.confirmations![0].owner,
+                value: rejectionTx.confirmations?.[0].owner,
               }),
             ]),
             gasToken: tx.gasToken,
@@ -975,25 +975,25 @@ describe('Get by id - Transactions Controller', () => {
             confirmations: expect.arrayContaining([
               expect.objectContaining({
                 signer: expect.objectContaining({
-                  value: tx.confirmations![0].owner,
+                  value: tx.confirmations?.[0].owner,
                 }),
-                signature: tx.confirmations![0].signature,
-                submittedAt: tx.confirmations![0].submissionDate.getTime(),
+                signature: tx.confirmations?.[0].signature,
+                submittedAt: tx.confirmations?.[0].submissionDate.getTime(),
               }),
               expect.objectContaining({
                 signer: expect.objectContaining({
-                  value: tx.confirmations![1].owner,
+                  value: tx.confirmations?.[1].owner,
                 }),
-                signature: tx.confirmations![1].signature,
-                submittedAt: tx.confirmations![1].submissionDate.getTime(),
+                signature: tx.confirmations?.[1].signature,
+                submittedAt: tx.confirmations?.[1].submissionDate.getTime(),
               }),
             ]),
             rejectors: expect.arrayContaining([
               expect.objectContaining({
-                value: rejectionTx.confirmations![0].owner,
+                value: rejectionTx.confirmations?.[0].owner,
               }),
               expect.objectContaining({
-                value: rejectionTx.confirmations![1].owner,
+                value: rejectionTx.confirmations?.[1].owner,
               }),
             ]),
             gasToken: tx.gasToken,
@@ -1228,7 +1228,11 @@ describe('Get by id - Transactions Controller', () => {
           signers,
           safe,
         });
-      multisigTransaction.confirmations![0].signature = `0xdeadbee`;
+      (
+        multisigTransaction.confirmations as NonNullable<
+          typeof multisigTransaction.confirmations
+        >
+      )[0].signature = `0xdeadbee`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
@@ -1286,7 +1290,11 @@ describe('Get by id - Transactions Controller', () => {
           signers,
           safe,
         });
-      multisigTransaction.confirmations![0].signature = `0xdeadbee`;
+      (
+        multisigTransaction.confirmations as NonNullable<
+          typeof multisigTransaction.confirmations
+        >
+      )[0].signature = `0xdeadbee`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
@@ -1323,69 +1331,71 @@ describe('Get by id - Transactions Controller', () => {
       );
     });
 
-    it.each(Object.values(SignatureType))(
-      'should throw if a confirmation contains an invalid %s signature',
-      async (signatureType) => {
-        const chain = chainBuilder().build();
-        const signers = Array.from({ length: 2 }, () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
+    it.each(
+      Object.values(SignatureType),
+    )('should throw if a confirmation contains an invalid %s signature', async (signatureType) => {
+      const chain = chainBuilder().build();
+      const signers = Array.from({ length: 2 }, () => {
+        const privateKey = generatePrivateKey();
+        return privateKeyToAccount(privateKey);
+      });
+      const safe = safeBuilder()
+        .with(
+          'owners',
+          signers.map((signer) => signer.address),
+        )
+        .build();
+      const multisigTransaction = await multisigTransactionBuilder()
+        .with('safe', safe.address)
+        .with('isExecuted', false)
+        .with('nonce', safe.nonce)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          signers,
+          safe,
+          signatureType,
         });
-        const safe = safeBuilder()
-          .with(
-            'owners',
-            signers.map((signer) => signer.address),
-          )
-          .build();
-        const multisigTransaction = await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('isExecuted', false)
-          .with('nonce', safe.nonce)
-          .buildWithConfirmations({
-            chainId: chain.chainId,
-            signers,
-            safe,
-            signatureType,
-          });
-        const v = multisigTransaction.confirmations![0].signature?.slice(-2);
-        multisigTransaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
+      const confirmations = multisigTransaction.confirmations as NonNullable<
+        typeof multisigTransaction.confirmations
+      >;
+      const v = confirmations[0].signature?.slice(-2);
+      confirmations[0].signature = `0x${'-'.repeat(128)}${v}`;
 
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
-        networkService.get.mockImplementation(({ url }) => {
-          switch (url) {
-            case getChainUrl:
-              return Promise.resolve({ data: rawify(chain), status: 200 });
-            case getMultisigTransactionUrl:
-              return Promise.resolve({
-                data: rawify(multisigToJson(multisigTransaction)),
-                status: 200,
-              });
-            case getSafeUrl:
-              return Promise.resolve({ data: rawify(safe), status: 200 });
-            default:
-              return Promise.reject(new Error(`Could not match ${url}`));
-          }
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getMultisigTransactionUrl:
+            return Promise.resolve({
+              data: rawify(multisigToJson(multisigTransaction)),
+              status: 200,
+            });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
+        )
+        .expect(502)
+        .expect({
+          message: 'Bad gateway',
+          statusCode: 502,
         });
 
-        await request(app.getHttpServer())
-          .get(
-            `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
-          )
-          .expect(502)
-          .expect({
-            message: 'Bad gateway',
-            statusCode: 502,
-          });
-
-        expect(loggingService.error).not.toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: 'TRANSACTION_VALIDITY',
-          }),
-        );
-      },
-    );
+      expect(loggingService.error).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: 'TRANSACTION_VALIDITY',
+        }),
+      );
+    });
 
     it('should throw and log if a signer is blocked', async () => {
       const chain = chainBuilder().build();
@@ -1472,9 +1482,11 @@ describe('Get by id - Transactions Controller', () => {
           signers: [signer],
           safe,
         });
-      multisigTransaction.confirmations![0].owner = getAddress(
-        faker.finance.ethereumAddress(),
-      );
+      (
+        multisigTransaction.confirmations as NonNullable<
+          typeof multisigTransaction.confirmations
+        >
+      )[0].owner = getAddress(faker.finance.ethereumAddress());
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
@@ -1510,8 +1522,8 @@ describe('Get by id - Transactions Controller', () => {
         safeAddress: safe.address,
         safeVersion: safe.version,
         safeTxHash: multisigTransaction.safeTxHash,
-        signerAddress: multisigTransaction.confirmations![0].owner,
-        signature: multisigTransaction.confirmations![0].signature,
+        signerAddress: multisigTransaction.confirmations?.[0].owner,
+        signature: multisigTransaction.confirmations?.[0].signature,
         type: 'TRANSACTION_VALIDITY',
         source: 'API',
       });

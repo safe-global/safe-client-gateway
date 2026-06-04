@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import {
@@ -31,23 +32,23 @@ describe('BridgeStatusSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['status' as const, 'substatus' as const])(
-      '%s should fallback to UNKNOWN',
-      (key) => {
-        const baseStatusData = baseStatusDataBuilder()
-          .with(key, 'not a real status' as unknown as 'DONE')
-          .build();
+    it.each([
+      'status' as const,
+      'substatus' as const,
+    ])('%s should fallback to UNKNOWN', (key) => {
+      const baseStatusData = baseStatusDataBuilder()
+        .with(key, 'not a real status' as unknown as 'DONE')
+        .build();
 
-        const result = BaseStatusDataSchema.safeParse(baseStatusData);
+      const result = BaseStatusDataSchema.safeParse(baseStatusData);
 
-        expect(result.success && result.data[key]).toBe('UNKNOWN');
-      },
-    );
+      expect(result.success && result.data[key]).toBe('UNKNOWN');
+    });
 
     it('should default substatusMessage to null', () => {
       const baseStatusData = baseStatusDataBuilder().build();
       // @ts-expect-error - inferred type expects defined value
-      delete baseStatusData.substatusMessage;
+      baseStatusData.substatusMessage = undefined;
 
       const result = BaseStatusDataSchema.safeParse(baseStatusData);
 
@@ -144,28 +145,28 @@ describe('BridgeStatusSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['fromAddress' as const, 'toAddress' as const])(
-      '%s should be checksummed',
-      (key) => {
-        const nonChecksummedAddress = faker.finance
-          .ethereumAddress()
-          .toLowerCase();
-        const fullStatusData = successStatusDataBuilder()
-          .with(key, nonChecksummedAddress as Address)
-          .build();
+    it.each([
+      'fromAddress' as const,
+      'toAddress' as const,
+    ])('%s should be checksummed', (key) => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase();
+      const fullStatusData = successStatusDataBuilder()
+        .with(key, nonChecksummedAddress as Address)
+        .build();
 
-        const result = SuccessStatusDataSchema.safeParse(fullStatusData);
+      const result = SuccessStatusDataSchema.safeParse(fullStatusData);
 
-        expect(result.success && result.data[key]).toBe(
-          getAddress(nonChecksummedAddress),
-        );
-      },
-    );
+      expect(result.success && result.data[key]).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
 
     it('should default bridgeExplorerLink to null', () => {
       const fullStatusData = successStatusDataBuilder().build();
       // @ts-expect-error - inferred type expects defined value
-      delete fullStatusData.bridgeExplorerLink;
+      fullStatusData.bridgeExplorerLink = undefined;
 
       const result = SuccessStatusDataSchema.safeParse(fullStatusData);
 

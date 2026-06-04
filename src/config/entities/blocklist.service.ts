@@ -1,8 +1,9 @@
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { decryptData } from '@/domain/common/utils/encryption';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { getAddress, type Address } from 'viem';
+import { type Address, getAddress } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IBlocklistService } from '@/config/entities/blocklist.interface';
+import { decryptData } from '@/domain/common/utils/encryption';
 
 @Injectable()
 export class BlocklistService implements IBlocklistService {

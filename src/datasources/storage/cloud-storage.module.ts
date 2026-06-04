@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type DynamicModule, Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { AwsCloudStorageApiService } from '@/datasources/storage/aws-cloud-storage-api.service';
 import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
@@ -7,7 +9,6 @@ import {
   AWS_BUCKET_NAME,
   AWS_SECRET_ACCESS_KEY,
 } from '@/datasources/storage/constants';
-import { DynamicModule, Module } from '@nestjs/common';
 
 @Module({})
 export class CloudStorageModule {

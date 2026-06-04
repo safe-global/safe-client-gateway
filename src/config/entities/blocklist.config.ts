@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type Address, getAddress } from 'viem';
 import configuration from '@/config/entities/configuration';
 import { decryptData } from '@/domain/common/utils/encryption';
-import { getAddress, type Address } from 'viem';
 
 let cachedBlocklist: Array<Address> | null = null;
 
@@ -29,10 +30,21 @@ export function getBlocklist(): Array<Address> {
     return cachedBlocklist;
   }
 
+  const { blocklistSecretData, blocklistSecretKey, blocklistSecretSalt } =
+    config.blockchain;
+
+  if (
+    blocklistSecretData == null ||
+    blocklistSecretKey == null ||
+    blocklistSecretSalt == null
+  ) {
+    throw new Error('Blocklist is enabled but secret configuration is missing');
+  }
+
   const decryptedAddresses = decryptData<Array<string>>(
-    config.blockchain.blocklistSecretData!,
-    config.blockchain.blocklistSecretKey!,
-    config.blockchain.blocklistSecretSalt!,
+    blocklistSecretData,
+    blocklistSecretKey,
+    blocklistSecretSalt,
   );
 
   cachedBlocklist = decryptedAddresses.map((address) => getAddress(address));

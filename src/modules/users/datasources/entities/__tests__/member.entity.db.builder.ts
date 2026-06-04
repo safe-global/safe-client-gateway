@@ -1,11 +1,13 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { faker } from '@faker-js/faker/.';
-import { getAddress } from 'viem';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 export function memberBuilder(): IBuilder<Member> {
   return new Builder<Member>()
@@ -16,7 +18,8 @@ export function memberBuilder(): IBuilder<Member> {
     .with('alias', null)
     .with('role', 'ADMIN')
     .with('status', 'ACTIVE')
-    .with('invitedBy', getAddress(faker.finance.ethereumAddress()))
+    .with('invitedBy', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
+    .with('inviteExpiresAt', null)
     .with('createdAt', new Date())
     .with('updatedAt', new Date());
 }

@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { isHex } from 'viem';
 import { z } from 'zod';
 
@@ -6,7 +7,7 @@ function isNumeric(value: unknown): boolean {
     typeof value === 'string' &&
     value.length > 0 &&
     !isHex(value) &&
-    !isNaN(Number(value))
+    !Number.isNaN(Number(value))
   );
 }
 

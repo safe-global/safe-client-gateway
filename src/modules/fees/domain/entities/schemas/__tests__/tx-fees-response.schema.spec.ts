@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  TxDataResponseSchema,
-  PricingContextSnapshotSchema,
-  TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
-import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
+import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import {
+  PricingContextSnapshotSchema,
+  TxDataResponseSchema,
+  TxFeesResponseSchema,
+} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 
 describe('TxDataResponseSchema', () => {
   it('should validate valid tx data', () => {
@@ -50,7 +51,7 @@ describe('PricingContextSnapshotSchema', () => {
       phase: 1,
       priceSource: 'COINGECKO',
       priceTimestamp: 1700000000,
-      gasVolatilityBuffer: 1.3,
+      gasPriceVolatilityBuffer: 1.3,
     };
 
     const result = PricingContextSnapshotSchema.safeParse(pricingContext);
@@ -63,7 +64,7 @@ describe('PricingContextSnapshotSchema', () => {
       phase: 1,
       priceSource: 'INVALID_SOURCE',
       priceTimestamp: 1700000000,
-      gasVolatilityBuffer: 1.3,
+      gasPriceVolatilityBuffer: 1.3,
     };
 
     const result = PricingContextSnapshotSchema.safeParse(pricingContext);
@@ -82,17 +83,13 @@ describe('TxFeesResponseSchema', () => {
   });
 
   it('should not allow a missing txData', () => {
-    const response = {
-      relayCostUsd: 38.22,
-      pricingContextSnapshot: {
-        phase: 1,
-        priceSource: 'COINGECKO',
-        priceTimestamp: 1700000000,
-        gasVolatilityBuffer: 1.3,
-      },
-    };
+    const { relayCost, pricingContextSnapshot } =
+      txFeesResponseBuilder().build();
 
-    const result = TxFeesResponseSchema.safeParse(response);
+    const result = TxFeesResponseSchema.safeParse({
+      relayCost,
+      pricingContextSnapshot,
+    });
 
     expect(!result.success && result.error.issues).toStrictEqual(
       expect.arrayContaining([
@@ -104,12 +101,13 @@ describe('TxFeesResponseSchema', () => {
     );
   });
 
-  it('should not allow a missing relayCostUsd', () => {
-    const response = txFeesResponseBuilder().build();
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { relayCostUsd: _, ...withoutRelayCostUsd } = response;
+  it('should not allow a missing relayCost', () => {
+    const { txData, pricingContextSnapshot } = txFeesResponseBuilder().build();
 
-    const result = TxFeesResponseSchema.safeParse(withoutRelayCostUsd);
+    const result = TxFeesResponseSchema.safeParse({
+      txData,
+      pricingContextSnapshot,
+    });
 
     expect(result.success).toBe(false);
   });

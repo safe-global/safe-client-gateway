@@ -1,14 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import type { Auth0TokenResponse } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
 import type { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
+import type { Auth0TokenResponse } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
-import { Inject, Injectable } from '@nestjs/common';
 
 @Injectable()
 export class Auth0Api implements IAuth0Api {

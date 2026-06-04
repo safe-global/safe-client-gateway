@@ -1,4 +1,5 @@
-import * as fs from 'fs';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type * as fs from 'node:fs';
 
 /**
  * Shared test utilities for env scripts.

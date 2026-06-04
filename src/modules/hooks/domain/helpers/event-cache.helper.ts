@@ -1,31 +1,35 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { Inject, Injectable } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import type { MemoizedFunction } from 'lodash';
+import memoize from 'lodash/memoize';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
-import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import type { Event } from '@/modules/hooks/routes/entities/event.entity';
 import {
   ConfigEventType,
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
-import { Event } from '@/modules/hooks/routes/entities/event.entity';
-import { Inject, Injectable } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import memoize from 'lodash/memoize';
-import type { MemoizedFunction } from 'lodash';
-import { EarnRepository } from '@/modules/earn/domain/earn.repository';
+import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
+import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
 
 @Injectable()
 export class EventCacheHelper {
@@ -110,9 +114,9 @@ export class EventCacheHelper {
       this.onConfigEventSafeAppsUpdate.bind(this),
   };
 
-  public async onEventClearCache<
-    E extends Extract<Event, { type: Event['type'] }>,
-  >(event: E): Promise<Array<void>> {
+  public onEventClearCache<E extends Extract<Event, { type: Event['type'] }>>(
+    event: E,
+  ): Promise<Array<void>> {
     const eventHandler = this.EventTypeHandler[event.type] as (
       event: E,
     ) => Array<Promise<void>>;

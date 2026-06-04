@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import 'reflect-metadata';
-import { checkGuardIsApplied } from './check-guard';
 import { Controller, Get, UseGuards } from '@nestjs/common';
+import { checkGuardIsApplied } from './check-guard';
 
 class TestGuard {}
 class AnotherGuard {}

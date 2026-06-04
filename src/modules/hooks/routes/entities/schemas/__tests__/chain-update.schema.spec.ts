@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import type { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { ChainUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/chain-update.schema';
-import { faker } from '@faker-js/faker';
 
 describe('ChainUpdateEventSchema', () => {
   it('should validate a valid chain event', () => {
@@ -29,20 +30,20 @@ describe('ChainUpdateEventSchema', () => {
     ]);
   });
 
-  it.each(['type' as const, 'chainId' as const])(
-    'should not allow a missing %s',
-    (field) => {
-      const chainUpdateEvent = chainUpdateEventBuilder().build();
-      delete chainUpdateEvent[field];
+  it.each([
+    'type' as const,
+    'chainId' as const,
+  ])('should not allow a missing %s', (field) => {
+    const chainUpdateEvent = chainUpdateEventBuilder().build();
+    delete chainUpdateEvent[field];
 
-      const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
+    const result = ChainUpdateEventSchema.safeParse(chainUpdateEvent);
 
-      expect(
-        !result.success &&
-          result.error.issues.length === 1 &&
-          result.error.issues[0].path.length === 1 &&
-          result.error.issues[0].path[0] === field,
-      ).toBe(true);
-    },
-  );
+    expect(
+      !result.success &&
+        result.error.issues.length === 1 &&
+        result.error.issues[0].path.length === 1 &&
+        result.error.issues[0].path[0] === field,
+    ).toBe(true);
+  });
 });

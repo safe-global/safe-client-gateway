@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { fakeJson } from '@/__tests__/faker';
 import {
   dataDecodedBuilder,
@@ -7,7 +9,6 @@ import {
   DataDecodedParameterSchema,
   DataDecodedSchema,
 } from '@/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
-import { faker } from '@faker-js/faker';
 
 describe('Data decoded schema', () => {
   describe('DataDecodedParameterSchema', () => {
@@ -60,7 +61,7 @@ describe('Data decoded schema', () => {
     it('should allow no valueDecoded, defaulting to null', () => {
       const dataDecodedParameter = dataDecodedParameterBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional parameters
-      delete dataDecodedParameter.valueDecoded;
+      dataDecodedParameter.valueDecoded = undefined;
 
       const result = DataDecodedParameterSchema.safeParse(dataDecodedParameter);
 
@@ -80,7 +81,7 @@ describe('Data decoded schema', () => {
     it('should allow optional parameters, defaulting to null', () => {
       const dataDecoded = dataDecodedBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional parameters
-      delete dataDecoded.parameters;
+      dataDecoded.parameters = undefined;
 
       const result = DataDecodedSchema.safeParse(dataDecoded);
 

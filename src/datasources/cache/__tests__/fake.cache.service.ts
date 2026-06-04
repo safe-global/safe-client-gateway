@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
 
 export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
-  private isReady: boolean = true;
+  private isReady = true;
 
   ping(): Promise<unknown> {
     return this.isReady ? Promise.resolve() : Promise.reject();
@@ -70,8 +71,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
 
   increment(
     cacheKey: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    expireTimeSeconds: number | undefined,
+    _expireTimeSeconds: number | undefined,
   ): Promise<number> {
     let currentValue: number = this.cache[cacheKey] as number;
     currentValue = currentValue ? currentValue + 1 : 1;
@@ -82,8 +82,7 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
   setCounter(
     key: string,
     value: number,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    expireTimeSeconds: number | undefined,
+    _expireTimeSeconds: number | undefined,
   ): Promise<void> {
     this.cache[key] = value;
     return Promise.resolve();

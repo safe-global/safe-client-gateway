@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
-import { ForbiddenException, Inject } from '@nestjs/common';
-import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import type { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
+import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
 
+@Injectable()
 export class AddressBooksService {
   // TODO: Investigate and implement usage of this
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <>
   private readonly maxItems: number;
 
   constructor(
     @Inject(IAddressBookItemsRepository)
     private readonly repository: IAddressBookItemsRepository,
+    @Inject(UserIdentityResolverService)
+    private readonly identityResolver: UserIdentityResolverService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
@@ -27,12 +32,14 @@ export class AddressBooksService {
     authPayload: AuthPayload,
     spaceId: Space['id'],
   ): Promise<SpaceAddressBookDto> {
-    const addressBookItems = await this.repository.findAllBySpaceId({
+    const items = await this.repository.findAllBySpaceId({
       authPayload,
       spaceId,
     });
-
-    return this.mapAddressBookItems(spaceId, addressBookItems);
+    const identityMap = await this.identityResolver.resolveMany(
+      items.flatMap((item) => [item.createdBy, item.lastUpdatedBy]),
+    );
+    return this.mapAddressBookItems(spaceId, items, identityMap);
   }
 
   public async upsertMany(
@@ -40,19 +47,15 @@ export class AddressBooksService {
     spaceId: Space['id'],
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
-    if (!authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
-    const updatedItems = await this.repository.upsertMany({
+    const updated = await this.repository.upsertMany({
       authPayload,
       spaceId,
       addressBookItems: addressBookItems.items,
     });
-
-    return this.mapAddressBookItems(spaceId, updatedItems);
+    const identityMap = await this.identityResolver.resolveMany(
+      updated.flatMap((item) => [item.createdBy, item.lastUpdatedBy]),
+    );
+    return this.mapAddressBookItems(spaceId, updated, identityMap);
   }
 
   public async deleteByAddress(args: {
@@ -60,32 +63,31 @@ export class AddressBooksService {
     spaceId: Space['id'];
     address: AddressBookDbItem['address'];
   }): Promise<void> {
-    if (!args.authPayload.isSiwe()) {
-      throw new ForbiddenException(
-        'Address book writes require wallet authentication',
-      );
-    }
-
     await this.repository.deleteByAddress(args);
   }
 
   private mapAddressBookItems(
     spaceId: Space['id'],
     items: Array<AddressBookDbItem>,
+    identityMap: Map<number, string>,
   ): SpaceAddressBookDto {
-    const data = items.map((item) => ({
-      name: item.name,
-      address: item.address,
-      chainIds: item.chainIds,
-      createdBy: item.createdBy,
-      lastUpdatedBy: item.lastUpdatedBy,
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    }));
-
     return {
       spaceId: spaceId.toString(),
-      data,
+      data: items.map((item) => ({
+        name: item.name,
+        address: item.address,
+        chainIds: item.chainIds,
+        createdBy:
+          identityMap.get(item.createdBy) ??
+          UserIdentityResolverService.DELETED_USER_LABEL,
+        createdByUserId: item.createdBy,
+        lastUpdatedBy:
+          identityMap.get(item.lastUpdatedBy) ??
+          UserIdentityResolverService.DELETED_USER_LABEL,
+        lastUpdatedByUserId: item.lastUpdatedBy,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      })),
     };
   }
 }

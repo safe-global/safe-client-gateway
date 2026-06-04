@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { TransferBaseSchema } from '@/modules/safe/domain/entities/schemas/transfer-base.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const Erc20TransferSchema = TransferBaseSchema.extend({
   type: z.literal('ERC20_TRANSFER'),

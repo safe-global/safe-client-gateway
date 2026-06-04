@@ -1,11 +1,12 @@
-import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
 
 @Injectable()
 export class SiweApi implements ISiweApi {
@@ -25,7 +26,7 @@ export class SiweApi implements ISiweApi {
     await this.cacheService.hSet(cacheDir, nonce, this.nonceTtlInSeconds);
   }
 
-  async getNonce(nonce: string): Promise<string | null> {
+  getNonce(nonce: string): Promise<string | null> {
     const cacheDir = CacheRouter.getAuthNonceCacheDir(nonce);
     return this.cacheService.hGet(cacheDir);
   }

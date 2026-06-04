@@ -53,8 +53,7 @@ describe('OidcStateSchema', () => {
 
   describe('redirectUrl', () => {
     it('should accept a valid absolute URL', () => {
-      const redirectUrl =
-        faker.internet.url({ appendSlash: false }) + `/${faker.word.noun()}`;
+      const redirectUrl = `${faker.internet.url({ appendSlash: false })}/${faker.word.noun()}`;
       const csrf = faker.string.hexadecimal({
         length: 64,
         casing: 'lower',
@@ -93,7 +92,7 @@ describe('OidcStateSchema', () => {
         casing: 'lower',
         prefix: '',
       });
-      const redirectUrl = '/' + 'a'.repeat(2048);
+      const redirectUrl = `/${'a'.repeat(2048)}`;
       const result = OidcStateSchema.safeParse({ csrf, redirectUrl });
 
       expect(result.success).toBe(false);

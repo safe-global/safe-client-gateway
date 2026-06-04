@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   Controller,
   Delete,
@@ -8,18 +9,18 @@ import {
 } from '@nestjs/common';
 import {
   ApiOkResponse,
-  ApiQuery,
-  ApiTags,
   ApiOperation,
   ApiParam,
+  ApiQuery,
+  ApiTags,
 } from '@nestjs/swagger';
-import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
-import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
-import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
 import type { Address } from 'viem';
+import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
+import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
+import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 /**
  * Portfolio controller.
@@ -82,7 +83,7 @@ export class PortfolioController {
   })
   @ApiOkResponse({ type: Portfolio })
   @Get('/portfolio/:address')
-  public async getPortfolio(
+  public getPortfolio(
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
     @Query(new ValidationPipe(GetPortfolioDtoSchema))

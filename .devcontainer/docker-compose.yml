@@ -1,0 +1,117 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+# Override file for the dev container.
+# Used together with the root docker-compose.yml via the file list in
+# .devcontainer/devcontainer.json.
+services:
+  devcontainer:
+    build:
+      # Paths in this file are resolved against the Compose project directory
+      # (the dir of the first -f file), which is the repo root.
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      # Workspace bind mount; ':cached' improves macOS file-system perf.
+      - .:/workspaces/safe-client-gateway:cached
+      # Persist Claude Code auth/config across container rebuilds.
+      # If the host directory does not exist Docker creates an empty one.
+      # ${HOME:?...} fails fast with a clear error if HOME is unset (e.g. CI).
+      - ${HOME:?HOME must be set to mount the Claude config volume}/.claude-docker:/home/node/.claude
+      # SSH agent forwarding:
+      #   - Docker Desktop (macOS/Windows): SSH_AUTH_SOCK is unset on the host,
+      #     so the default /run/host-services/ssh-auth.sock magic path is used.
+      #   - Linux: export SSH_AUTH_SOCK on the host (usually already set by your
+      #     agent) and Compose bind-mounts it into the container.
+      - ${SSH_AUTH_SOCK:-/run/host-services/ssh-auth.sock}:/ssh-agent
+    environment:
+      - SSH_AUTH_SOCK=/ssh-agent
+      - APPLICATION_PORT=3030
+      - ALERTS_PROVIDER_ACCOUNT
+      - ALERTS_PROVIDER_API_BASE_URI
+      - ALERTS_PROVIDER_API_KEY
+      - ALERTS_PROVIDER_PROJECT
+      - ALERTS_PROVIDER_SIGNING_KEY
+      - ALLOW_CORS
+      - AUTH_POST_LOGIN_REDIRECT_URI
+      - AUTH_TOKEN
+      - AWS_ACCESS_KEY_ID
+      - AWS_KMS_ENCRYPTION_KEY_ID
+      - AWS_SECRET_ACCESS_KEY
+      - BLOCKLIST_ENCRYPTED_DATA
+      - BLOCKLIST_SECRET_KEY
+      - BLOCKLIST_SECRET_SALT
+      - BRIDGE_API_KEY
+      - CAPTCHA_ENABLED
+      - CGW_ENV
+      - CIRCUIT_BREAKER_ENABLED
+      - CSV_AWS_ACCESS_KEY_ID
+      - CSV_AWS_SECRET_ACCESS_KEY
+      - EMAIL_API_APPLICATION_CODE
+      - EMAIL_API_FROM_EMAIL
+      - EMAIL_API_KEY
+      - FF_AUTH
+      - FF_CONFIG_HOOKS_DEBUG_LOGS
+      - FF_COUNTERFACTUAL_BALANCES
+      - FF_DEBUG_LOGS
+      - FF_EMAIL
+      - FF_ETH_SIGN
+      - FF_FILTER_VALUE_PARSING
+      - FF_HASH_VERIFICATION_API
+      - FF_HASH_VERIFICATION_PROPOSAL
+      - FF_HOOK_HTTP_POST_EVENT
+      - FF_IMPROVED_ADDRESS_POISONING
+      - FF_LIFITRANSACTIONS_MAPPING
+      - FF_MESSAGE_VERIFICATION
+      - FF_SIGNATURE_VERIFICATION_API
+      - FF_SIGNATURE_VERIFICATION_PROPOSAL
+      - FF_TRUSTED_DELEGATE_CALL
+      - FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST
+      - FF_USERS
+      - FF_VAULT_TRANSACTIONS_MAPPING
+      - FF_ZERION_BALANCES_CHAIN_IDS
+      - FF_ZERION_ENABLED
+      - FF_ZERION_POSITIONS_DISABLED
+      - FINGERPRINT_ENCRYPTION_KEY
+      - INFURA_API_KEY
+      - JWT_ISSUER
+      - JWT_SECRET
+      - LOG_LEVEL
+      - LOG_PRETTY_COLORIZE
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - POSTGRES_SSL_ENABLED
+      - POSTGRES_SSL_REJECT_UNAUTHORIZED
+      - PUSH_NOTIFICATIONS_API_PROJECT
+      - PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL
+      - PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY
+      - QUEUE_SERVICE_BASE_URI
+      - REDIS_HOST
+      - RELAY_DAILY_LIMIT_CHAIN_IDS
+      - RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES
+      - RELAY_NO_FEE_CAMPAIGN_MAINNET_SAFE_TOKEN_ADDRESS
+      - RELAY_NO_FEE_CAMPAIGN_SEPOLIA_RELAY_RULES
+      - RELAY_PROVIDER_API_KEY_ARBITRUM_ONE
+      - RELAY_PROVIDER_API_KEY_AVALANCHE
+      - RELAY_PROVIDER_API_KEY_BASE
+      - RELAY_PROVIDER_API_KEY_BLAST
+      - RELAY_PROVIDER_API_KEY_BSC
+      - RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN
+      - RELAY_PROVIDER_API_KEY_LINEA
+      - RELAY_PROVIDER_API_KEY_OPTIMISM
+      - RELAY_PROVIDER_API_KEY_POLYGON
+      - RELAY_PROVIDER_API_KEY_POLYGON_ZKEVM
+      - RELAY_PROVIDER_API_KEY_SEPOLIA
+      - RELAY_PROVIDER_API_KEY_UNICHAIN
+      - SAFE_CONFIG_BASE_URI
+      - SAFE_DATA_DECODER_BASE_URI
+      - STAKING_API_KEY
+      - STAKING_TESTNET_API_KEY
+      - TX_SERVICE_API_KEY
+    # Keep the container alive for VS Code to attach to.
+    command: sleep infinity
+    working_dir: /workspaces/safe-client-gateway
+    depends_on:
+      - db
+      - db-test
+      - redis
+      - rabbitmq

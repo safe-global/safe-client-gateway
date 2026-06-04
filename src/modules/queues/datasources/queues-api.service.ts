@@ -1,9 +1,13 @@
-import { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject } from '@nestjs/common';
-import { ConsumeMessage } from 'amqplib';
+import type { ConsumeMessage } from 'amqplib';
+import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
+import type { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
 
 export class QueueApiService implements IQueuesApiService, IQueueReadiness {
   constructor(
@@ -22,7 +26,7 @@ export class QueueApiService implements IQueuesApiService, IQueueReadiness {
     await this.consumer.channel.consume(queueName, (msg: ConsumeMessage) => {
       // Note: each message is explicitly acknowledged at this point, regardless the callback execution result.
       // The callback is expected to handle any errors and/or retries. Messages are not re-enqueued on error.
-      void fn(msg)
+      fn(msg)
         .catch((error) => {
           this.loggingService.error(
             `Error processing message from queue ${queueName}: ${error.message}`,

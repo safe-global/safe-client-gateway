@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
 import { safeCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { SafeCreatedEventSchema } from '@/modules/hooks/routes/entities/schemas/safe-created.schema';
-import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
 
 describe('SafeCreatedEventSchema', () => {
   it('should validate an SafeCreated event', () => {
@@ -46,7 +47,7 @@ describe('SafeCreatedEventSchema', () => {
   it('should not allow a missing chainId', () => {
     const safeCreatedEvent = safeCreatedEventBuilder().build();
     // @ts-expect-error - inferred types don't allow optional fields
-    delete safeCreatedEvent.chainId;
+    safeCreatedEvent.chainId = undefined;
 
     const result = SafeCreatedEventSchema.safeParse(safeCreatedEvent);
 

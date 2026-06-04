@@ -1,12 +1,13 @@
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import type { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import type { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 
 export const ISpacesRepository = Symbol('ISpacesRepository');
 

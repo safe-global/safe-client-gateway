@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+
 import type {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
+import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import type { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 export const ICounterfactualSafesRepository = Symbol(
   'ICounterfactualSafesRepository',
@@ -36,8 +37,8 @@ export interface ICounterfactualSafesRepository {
     >;
   }): Promise<void>;
 
-  findByCreatorId(args: {
-    creatorId: User['id'];
+  findByUserId(args: {
+    userId: User['id'];
   }): Promise<Array<CounterfactualSafe>>;
 
   findOrFail(
@@ -53,7 +54,7 @@ export interface ICounterfactualSafesRepository {
   }): Promise<Array<CounterfactualSafe>>;
 
   delete(args: {
-    creatorId: User['id'];
+    userId: User['id'];
     payload: Array<{
       chainId: CounterfactualSafe['chainId'];
       address: CounterfactualSafe['address'];

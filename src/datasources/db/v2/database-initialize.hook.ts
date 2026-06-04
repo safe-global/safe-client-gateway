@@ -1,5 +1,6 @@
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 
 @Injectable()
 export class DatabaseInitializeHook implements OnModuleInit {

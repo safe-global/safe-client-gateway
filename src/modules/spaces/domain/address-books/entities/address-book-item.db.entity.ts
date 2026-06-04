@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address } from 'viem';
+import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { makeNameSchema } from '@/domain/common/schemas/name.schema';
-import { z } from 'zod';
-import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import type { Address } from 'viem';
 
 // We need explicitly define ZodType due to recursion
 export const AddressBookDbItemSchema: z.ZodType<
@@ -14,16 +15,16 @@ export const AddressBookDbItemSchema: z.ZodType<
     chainIds: Array<string>;
     address: Address;
     name: string;
-    createdBy: Address;
-    lastUpdatedBy: Address;
+    createdBy: number;
+    lastUpdatedBy: number;
   }
 > = RowSchema.extend({
   space: z.lazy(() => SpaceSchema),
   chainIds: z.array(z.string()),
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
-  createdBy: AddressSchema as z.ZodType<Address>,
-  lastUpdatedBy: AddressSchema as z.ZodType<Address>,
+  createdBy: z.number().int().positive(),
+  lastUpdatedBy: z.number().int().positive(),
 });
 
 export type AddressBookDbItem = z.infer<typeof AddressBookDbItemSchema>;

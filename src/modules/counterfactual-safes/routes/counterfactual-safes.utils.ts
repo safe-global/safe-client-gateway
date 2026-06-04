@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import { groupBy, mapValues } from 'lodash';
 import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
 import type {
   GetCounterfactualSafeItem,
   GetCounterfactualSafesResponse,
 } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
-import { groupBy, mapValues } from 'lodash';
 
 export function transformCounterfactualSafesResponse(
   counterfactualSafes: Array<CounterfactualSafe>,

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+// biome-ignore-all lint/style/useLiteralEnumMembers: members reuse TransactionEventType to keep the enums type-linked
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type { DeletedMultisigTransactionEvent } from '@/modules/hooks/routes/entities/schemas/deleted-multisig-transaction.schema';
 import type { ExecutedTransactionEvent } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';

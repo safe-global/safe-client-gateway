@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import type { TargetedSafeEntry } from '@/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
 import { TargetedSafeEntrySchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
@@ -7,9 +8,9 @@ export const CreateTargetedSafesDtoSchema = z.object({
   addresses: z.array(TargetedSafeEntrySchema),
 });
 
-export class CreateTargetedSafesDto implements z.infer<
-  typeof CreateTargetedSafesDtoSchema
-> {
+export class CreateTargetedSafesDto
+  implements z.infer<typeof CreateTargetedSafesDtoSchema>
+{
   outreachId: number;
   addresses: Array<TargetedSafeEntry>;
 

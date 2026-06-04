@@ -1,5 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { z } from 'zod';
 
 export const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -93,7 +94,7 @@ export function setFilePermissions(
 export function sanitizeEnvValue(value: unknown): string {
   const strValue = String(value);
 
-  // eslint-disable-next-line no-control-regex
+  // biome-ignore lint/suspicious/noControlCharactersInRegex: intentional control char removal
   return strValue.replace(/[\x00-\x08\x0A-\x1F\x7F]/g, '');
 }
 
@@ -213,7 +214,9 @@ export function loadEnvJson(): Array<EnvVariable> {
 
   if (duplicates.length > 0) {
     console.error('❌ Error: Duplicate variable names in .env.sample.json:');
-    duplicates.forEach((name) => console.error(`   - ${name}`));
+    for (const name of duplicates) {
+      console.error(`   - ${name}`);
+    }
     console.error('');
     console.error('Each variable name must be unique.');
     process.exit(1);

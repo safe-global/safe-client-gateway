@@ -1,10 +1,11 @@
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import type { Page } from '@/domain/entities/page.entity';
+import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
+import type { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 
 @Injectable()
 export class DelegatesV2Repository implements IDelegatesV2Repository {

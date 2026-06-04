@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
 
 export const CSV_OPTIONS: CsvOptions = {
@@ -17,6 +18,8 @@ export const CSV_OPTIONS: CsvOptions = {
     { key: 'proposerAddress', header: 'Proposer Address' },
     { key: 'executorAddress', header: 'Executor Address' },
     { key: 'note', header: 'Note' },
+    { key: 'payment', header: 'Amount Gas' },
+    { key: 'gasTokenSymbol', header: 'Gas token' },
   ],
   cast: {
     date: (value: Date): string => value.toISOString(),

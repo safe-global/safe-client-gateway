@@ -1,5 +1,6 @@
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 describe('AddressInfo entity', () => {
   it('should build an AddressInfo', () => {

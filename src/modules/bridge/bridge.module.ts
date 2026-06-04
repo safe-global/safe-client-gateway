@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
+import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
 import { BridgeApiFactory } from '@/modules/bridge/datasources/bridge-api.factory';
-import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import { BridgeRepository } from '@/modules/bridge/domain/bridge.repository';
-import { CacheFirstDataSourceModule } from '@/datasources/cache/cache.first.data.source.module';
+import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 
 @Module({
   imports: [CacheFirstDataSourceModule],
