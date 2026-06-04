@@ -24,6 +24,8 @@ import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { TestCsvExportModule } from '@/modules/csv-export/v1/__tests__/test.csv-export.module';
 import { TestPushNotificationModule } from '@/modules/notifications/domain/push/__tests__/test.push-notification.module';
 import { PushNotificationModule } from '@/modules/notifications/domain/push/push-notification.module';
+import { TestQueueModule } from '@/modules/queue/__tests__/test.queue.module';
+import { QueueModule } from '@/modules/queue/queue.module';
 import { TestQueuesApiModule } from '@/modules/queues/datasources/__tests__/test.queues-api.module';
 import { QueuesApiModule } from '@/modules/queues/datasources/queues-api.module';
 import { TestTargetedMessagingDatasourceModule } from '@/modules/targeted-messaging/datasources/__tests__/test.targeted-messaging.datasource.module';
@@ -86,6 +88,10 @@ export function createTestModule(
       {
         originalModule: TxAuthNetworkModule,
         testModule: TestTxAuthNetworkModule,
+      },
+      {
+        originalModule: QueueModule,
+        testModule: TestQueueModule,
       },
       ...additionalOverrides,
     ],

@@ -9,6 +9,7 @@ export const networkService: INetworkService = {
   get: jest.fn(),
   post: jest.fn(),
   postForm: jest.fn(),
+  patch: jest.fn(),
   delete: jest.fn(),
 };
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
@@ -10,8 +11,26 @@ import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { createMockQueueService } from '@/modules/queue/__tests__/queue.mock';
+import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
+import {
+  ethereumTransactionBuilder,
+  toJson as ethereumTransactionToJson,
+} from '@/modules/safe/domain/entities/__tests__/ethereum-transaction.builder';
+import {
+  moduleTransactionBuilder,
+  toJson as moduleTransactionToJson,
+} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+import {
+  multisigTransactionBuilder,
+  toJson as multisigTransactionToJson,
+} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -21,6 +40,16 @@ const mockTransactionApiManager = {
 
 const mockTransactionApi = {
   getSafesByOwnerV2: jest.fn(),
+  getAllTransactions: jest.fn(),
+  getSafe: jest.fn(),
+  getMultisigTransaction: jest.fn(),
+  getMultisigTransactionWithNoCache: jest.fn(),
+  getMultisigTransactions: jest.fn(),
+  getMultisigTransactionsWithNoCache: jest.fn(),
+  deleteTransaction: jest.fn(),
+  postMultisigTransaction: jest.fn(),
+  clearMultisigTransaction: jest.fn(),
+  clearMultisigTransactions: jest.fn(),
 } as jest.MockedObjectDeep<ITransactionApi>;
 
 const mockLoggingService = {
@@ -44,27 +73,38 @@ const mockConfigurationService = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
+const mockQueueService = createMockQueueService();
+
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
 
-  beforeEach(() => {
-    jest.resetAllMocks();
+  function createRepository(opts: {
+    queueServiceEnabled: boolean;
+  }): SafeRepository {
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeConfig.safes.maxSequentialPages') {
         return maxSequentialPages;
       }
+      if (key === 'features.queueService') {
+        return opts.queueServiceEnabled;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
-    mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-
-    repository = new SafeRepository(
+    return new SafeRepository(
       mockTransactionApiManager,
       mockLoggingService,
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
+      mockQueueService,
     );
+  }
+
+  beforeEach(() => {
+    jest.resetAllMocks();
+    mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
+    repository = createRepository({ queueServiceEnabled: true });
   });
 
   describe('getSafesByOwnerV2', () => {
@@ -439,6 +479,1129 @@ describe('SafeRepository', () => {
       await expect(
         repository.getAllSafesByOwnerV2({ ownerAddress }),
       ).rejects.toThrow('Failed to get chains');
+    });
+  });
+
+  describe('getTransactionHistory', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    const buildQueueEntityForSafe = (overrides: {
+      safeTxHash: Hex;
+      originName: string | null;
+      originUrl: string | null;
+      notes?: string | null;
+    }): QueueMultisigTransactionEntity =>
+      queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('safeTxHash', overrides.safeTxHash)
+        .with('originName', overrides.originName)
+        .with('originUrl', overrides.originUrl)
+        .with('notes', overrides.notes ?? null)
+        .build();
+
+    it('should replace origin on every multisig entry with queue-service metadata', async () => {
+      const multisigA = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-A')
+        .build();
+      const multisigB = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-B')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [
+          multisigTransactionToJson(multisigA),
+          multisigTransactionToJson(multisigB),
+        ])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      const queueA = buildQueueEntityForSafe({
+        safeTxHash: multisigA.safeTxHash,
+        originName: 'AppA',
+        originUrl: 'https://a.example',
+      });
+      const queueB = buildQueueEntityForSafe({
+        safeTxHash: multisigB.safeTxHash,
+        originName: 'AppB',
+        originUrl: 'https://b.example',
+      });
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([queueA, queueB]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(mockTransactionApi.getAllTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        executed: true,
+        queued: false,
+      });
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).toHaveBeenCalledWith({
+        chainId,
+        safeTxHashes: [multisigA.safeTxHash, multisigB.safeTxHash],
+      });
+      expect(result.results).toHaveLength(2);
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisigA.safeTxHash,
+        origin: buildOrigin('AppA', 'https://a.example'),
+      });
+      expect(result.results[1]).toMatchObject({
+        safeTxHash: multisigB.safeTxHash,
+        origin: buildOrigin('AppB', 'https://b.example'),
+      });
+    });
+
+    it('should preserve the queue note in the batch origin overlay', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: 'App',
+            originUrl: 'https://app.example',
+            notes: 'a note',
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: buildOrigin('App', 'https://app.example', 'a note'),
+      });
+    });
+
+    it('should keep tx-service origin when the queue record has only a note (no name/url)', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', buildOrigin('TxName', 'https://tx.example'))
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: null,
+            originUrl: null,
+            notes: 'a note',
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: buildOrigin('TxName', 'https://tx.example'),
+      });
+    });
+
+    it('should leave non-multisig entries (ethereum, module) untouched', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      const ethereum = ethereumTransactionBuilder().build();
+      const moduleTx = moduleTransactionBuilder()
+        .with('safe', safeAddress)
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [
+          multisigTransactionToJson(multisig),
+          ethereumTransactionToJson(ethereum),
+          moduleTransactionToJson(moduleTx),
+        ])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: 'App',
+            originUrl: 'https://app.example',
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).toHaveBeenCalledWith({
+        chainId,
+        safeTxHashes: [multisig.safeTxHash],
+      });
+
+      const [resultMultisig, resultEthereum, resultModule] = result.results;
+      expect(resultMultisig).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: buildOrigin('App', 'https://app.example'),
+      });
+      expect(resultEthereum).toMatchObject({
+        txHash: ethereum.txHash,
+        from: ethereum.from,
+      });
+      expect(resultModule).toMatchObject({
+        transactionHash: moduleTx.transactionHash,
+        module: moduleTx.module,
+      });
+    });
+
+    it('should fall back to tx-service origin for hashes the batch response omits', async () => {
+      const multisigOk = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-ok')
+        .build();
+      const multisigMissing = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-fail')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [
+          multisigTransactionToJson(multisigOk),
+          multisigTransactionToJson(multisigMissing),
+        ])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisigOk.safeTxHash,
+            originName: 'AppOk',
+            originUrl: 'https://ok.example',
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisigOk.safeTxHash,
+        origin: buildOrigin('AppOk', 'https://ok.example'),
+      });
+      expect(result.results[1]).toMatchObject({
+        safeTxHash: multisigMissing.safeTxHash,
+        origin: 'tx-service-origin-fail',
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining(multisigMissing.safeTxHash),
+      );
+    });
+
+    it('should keep tx-service origin on every entry when the batch call fails', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockRejectedValue(
+        new Error('queue unreachable'),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: 'tx-service-origin',
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining(chainId),
+      );
+    });
+
+    it('should skip queue-service calls entirely when the page has no multisig entries', async () => {
+      const ethereum = ethereumTransactionBuilder().build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [ethereumTransactionToJson(ethereum)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+
+      await repository.getTransactionHistory({ chainId, safeAddress });
+
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should preserve the tx-service origin when the queue record has no originName and no originUrl', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: null,
+            originUrl: null,
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      // An empty queue origin (e.g. a not-yet-backfilled entry) must not clobber
+      // the existing tx-service origin.
+      expect(result.results[0]).toMatchObject({
+        safeTxHash: multisig.safeTxHash,
+        origin: 'tx-service-origin',
+      });
+    });
+
+    it('should coerce a javascript: originUrl to null without leaking the URI', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          buildQueueEntityForSafe({
+            safeTxHash: multisig.safeTxHash,
+            originName: 'Evil',
+            originUrl: 'javascript:alert(1)' as unknown as string,
+          }),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      const origin = (result.results[0] as { origin: string | null }).origin;
+      expect(origin).not.toBeNull();
+      expect(origin).not.toContain('javascript');
+      expect(JSON.parse(origin as string).url).toBeNull();
+      expect(JSON.parse(origin as string).name).toBe('Evil');
+    });
+
+    it('should drop the override when the queue record reports a different chainId', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', `${Number(chainId) + 1}`)
+            .with('safe', safeAddress)
+            .with('safeTxHash', multisig.safeTxHash)
+            .with('originName', 'CrossChain')
+            .with('originUrl', 'https://crosschain.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({ origin: 'tx-service-origin' });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Queue origin reconciliation rejected'),
+      );
+    });
+
+    it('should drop the override when the queue record reports a different safe', async () => {
+      const multisig = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(multisig)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', getAddress(faker.finance.ethereumAddress()))
+            .with('safeTxHash', multisig.safeTxHash)
+            .with('originName', 'WrongSafe')
+            .with('originUrl', 'https://wrongsafe.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getTransactionHistory({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0]).toMatchObject({ origin: 'tx-service-origin' });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Queue origin reconciliation rejected'),
+      );
+    });
+  });
+
+  describe('getMultiSigTransaction', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('should override origin with the queue-service value', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .build(),
+        ),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
+      expect(mockQueueService.getMultisigTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+      });
+    });
+
+    it('should preserve the queue note in the executed-tx origin overlay', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .with('notes', 'a note')
+            .build(),
+        ),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe(
+        buildOrigin('App', 'https://app.example', 'a note'),
+      );
+    });
+
+    it('should keep tx-service origin when the queue call fails', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.getMultisigTransaction.mockRejectedValue(
+        new Error('queue unreachable'),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe('tx-service-origin');
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining(tx.safeTxHash),
+      );
+    });
+
+    it('should drop the override when the queue record reports a different chainId or safe', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(
+          queueMultisigTransactionBuilder()
+            .with('chainId', `${Number(chainId) + 1}`)
+            .with('safe', getAddress(faker.finance.ethereumAddress()))
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'CrossChain')
+            .with('originUrl', 'https://crosschain.example')
+            .build(),
+        ),
+      );
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe('tx-service-origin');
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Queue origin reconciliation rejected'),
+      );
+    });
+
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+
+      const result = await repo.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe('tx-service-origin');
+      expect(mockQueueService.getMultisigTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should use the queue transaction as the source of truth when it is not executed', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const queueTx = queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .with('originName', 'App')
+        .with('originUrl', 'https://app.example')
+        .build();
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+
+      const result = await repository.getMultiSigTransaction({
+        chainId,
+        safeTransactionHash: queueTx.safeTxHash,
+      });
+
+      expect(result.isExecuted).toBe(false);
+      expect(result.safeTxHash).toBe(queueTx.safeTxHash);
+      expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
+      expect(result.confirmationsRequired).toBe(safe.threshold);
+      expect(mockTransactionApi.getMultisigTransaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getMultiSigTransactionWithNoCache', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safe = safeBuilder().with('address', safeAddress).build();
+
+    it('should override origin with the queue-service value', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .build(),
+        ),
+      );
+
+      const result = await repository.getMultiSigTransactionWithNoCache({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
+    });
+
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+
+      const result = await repo.getMultiSigTransactionWithNoCache({
+        chainId,
+        safeTransactionHash: tx.safeTxHash,
+      });
+
+      expect(result.origin).toBe('tx-service-origin');
+      expect(mockQueueService.getMultisigTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should use the queue transaction as the source of truth and verify it when not executed', async () => {
+      const queueTx = queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .with('originName', 'App')
+        .with('originUrl', 'https://app.example')
+        .build();
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+
+      const result = await repository.getMultiSigTransactionWithNoCache({
+        chainId,
+        safeTransactionHash: queueTx.safeTxHash,
+      });
+
+      expect(result.isExecuted).toBe(false);
+      expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
+      expect(
+        mockTransactionApi.getMultisigTransactionWithNoCache,
+      ).not.toHaveBeenCalled();
+      expect(mockTransactionVerifier.verifyApiTransaction).toHaveBeenCalledWith(
+        {
+          chainId,
+          safe,
+          transaction: result,
+        },
+      );
+    });
+  });
+
+  describe('getMultisigTransactions', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('should override origin on each entry from the batch response', async () => {
+      const txA = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-A')
+        .build();
+      const txB = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-B')
+        .build();
+      const page = pageBuilder<unknown>()
+        .with('results', [
+          multisigTransactionToJson(txA),
+          multisigTransactionToJson(txB),
+        ])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', txA.safeTxHash)
+            .with('originName', 'AppA')
+            .with('originUrl', 'https://a.example')
+            .build(),
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', txB.safeTxHash)
+            .with('originName', 'AppB')
+            .with('originUrl', 'https://b.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getMultisigTransactions({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0].origin).toBe(
+        buildOrigin('AppA', 'https://a.example'),
+      );
+      expect(result.results[1].origin).toBe(
+        buildOrigin('AppB', 'https://b.example'),
+      );
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).toHaveBeenCalledWith({
+        chainId,
+        safeTxHashes: [txA.safeTxHash, txB.safeTxHash],
+      });
+    });
+
+    it('should keep tx-service origin for hashes the batch omits', async () => {
+      const txKept = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-kept')
+        .build();
+      const txMissing = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin-missing')
+        .build();
+      const page = pageBuilder<unknown>()
+        .with('results', [
+          multisigTransactionToJson(txKept),
+          multisigTransactionToJson(txMissing),
+        ])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', txKept.safeTxHash)
+            .with('originName', 'AppKept')
+            .with('originUrl', 'https://kept.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getMultisigTransactions({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0].origin).toBe(
+        buildOrigin('AppKept', 'https://kept.example'),
+      );
+      expect(result.results[1].origin).toBe('tx-service-origin-missing');
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining(txMissing.safeTxHash),
+      );
+    });
+
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(tx)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+
+      const result = await repo.getMultisigTransactions({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0].origin).toBe('tx-service-origin');
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getMultisigTransactionsWithNoCache', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safe = safeBuilder().with('address', safeAddress).build();
+
+    it('should override origin on each entry from the batch response', async () => {
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(tx)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getMultisigTransactionsWithNoCache.mockResolvedValue(
+        rawify(page),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+        rawify([
+          queueMultisigTransactionBuilder()
+            .with('chainId', chainId)
+            .with('safe', safeAddress)
+            .with('safeTxHash', tx.safeTxHash)
+            .with('originName', 'App')
+            .with('originUrl', 'https://app.example')
+            .build(),
+        ]),
+      );
+
+      const result = await repository.getMultisigTransactionsWithNoCache({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0].origin).toBe(
+        buildOrigin('App', 'https://app.example'),
+      );
+    });
+
+    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const tx = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('origin', 'tx-service-origin')
+        .build();
+      const page = pageBuilder<unknown>()
+        .with('results', [multisigTransactionToJson(tx)])
+        .with('next', null)
+        .with('previous', null)
+        .build();
+
+      mockTransactionApi.getMultisigTransactionsWithNoCache.mockResolvedValue(
+        rawify(page),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+
+      const result = await repo.getMultisigTransactionsWithNoCache({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result.results[0].origin).toBe('tx-service-origin');
+      expect(
+        mockQueueService.getMultisigTransactionsBatch,
+      ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteTransaction', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('should clear both tx-service and queue caches when FF_QUEUE_SERVICE is on', async () => {
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const signature = faker.string.hexadecimal({ length: 16 });
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.deleteTransaction.mockResolvedValue(undefined);
+
+      await repository.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+
+      expect(mockQueueService.deleteTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+      expect(mockTransactionApi.deleteTransaction).not.toHaveBeenCalled();
+      expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
+        tx.safeTxHash,
+      );
+      expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
+        tx.safe,
+      );
+      expect(mockQueueService.clearMultisigTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+      });
+      expect(mockQueueService.clearAllTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress: tx.safe,
+      });
+    });
+
+    it('should only clear tx-service cache when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const signature = faker.string.hexadecimal({ length: 16 });
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockTransactionApi.deleteTransaction.mockResolvedValue(undefined);
+
+      await repo.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+
+      expect(mockTransactionApi.deleteTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+      expect(mockQueueService.deleteTransaction).not.toHaveBeenCalled();
+      expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
+        tx.safeTxHash,
+      );
+      expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
+        tx.safe,
+      );
+      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should invalidate the queue cache so executed/deleted transactions disappear from the queue', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await repository.clearMultisigTransactions({ chainId, safeAddress });
+
+      expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
+        safeAddress,
+      );
+      expect(mockQueueService.clearAllTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+      });
+    });
+
+    it('should only clear the tx-service cache when FF_QUEUE_SERVICE is off (clearMultisigTransactions)', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await repo.clearMultisigTransactions({ chainId, safeAddress });
+
+      expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
+        safeAddress,
+      );
+      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should warn with chainId, safeTxHash and error when fire-and-forget cache clear fails', async () => {
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const signature = faker.string.hexadecimal({ length: 16 });
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockQueueService.clearMultisigTransaction.mockRejectedValue(
+        new Error('cache down'),
+      );
+
+      await repository.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature,
+      });
+      // Yield one microtask tick so the fire-and-forget Promise.all .catch runs
+      await Promise.resolve();
+
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Failed to immediately clear deleted transaction from cache. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=Error: cache down`,
+      );
+    });
+  });
+
+  describe('proposeTransaction', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('should propose via the queue service without explicitly clearing the queue cache (relies on TTL/upstream)', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+
+      await repository.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(mockQueueService.proposeTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should not touch the queue cache when FF_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ queueServiceEnabled: false });
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockTransactionApi.deleteTransaction.mockResolvedValue(undefined);
+
+      await repo.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(mockQueueService.proposeTransaction).not.toHaveBeenCalled();
+      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('addConfirmation', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('should post the confirmation to the queue service without explicitly clearing the queue cache (relies on TTL/upstream)', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const queueTx = queueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .build();
+      mockQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockQueueService.postConfirmation.mockResolvedValue(rawify({}));
+
+      await repository.addConfirmation({
+        chainId,
+        safeTxHash: queueTx.safeTxHash,
+        addConfirmationDto: {
+          signature: getAddress(faker.finance.ethereumAddress()),
+        },
+      });
+
+      expect(mockQueueService.postConfirmation).toHaveBeenCalled();
+      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
     });
   });
 });

@@ -60,3 +60,4 @@ data
 
 #CSV Export data files
 /assets/csv-export/*
+.claude/cache/
