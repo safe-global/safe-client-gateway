@@ -605,7 +605,7 @@ describe('RelayFeeRelayer', () => {
         );
       });
 
-      it('still throws RelaySimulationFailedError on the override path when the second simulation confirms a revert', async () => {
+      it('throws RelaySimulationFailedError whith acceptUnverifiedSimulation not overriding a confirmed simulation failure', async () => {
         fakeConfigurationService.set('relay.fee', {
           enabledChainIds: [simulationChainId],
           baseUri: faker.internet.url({ appendSlash: false }),
