@@ -191,6 +191,39 @@ describe('MembersRepository', () => {
       expect(entityManager.update).not.toHaveBeenCalled();
     });
 
+    it('should throw without attempting an insert when the existing member declined', async () => {
+      // A declined invite cannot be resent: re-inviting must be rejected
+      // rather than reviving the member.
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'DECLINED')
+        .build();
+      const wallet = walletBuilder().with('user', existingMember.user).build();
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'ADMIN' as const,
+        name: nameBuilder(),
+      };
+      entityManager.find.mockResolvedValue([wallet]);
+      entityManager.findOne.mockResolvedValue(existingMember);
+
+      await expect(
+        target.inviteUsers({
+          authPayload,
+          spaceId: space.id,
+          users: [userToInvite],
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(
+        new UniqueConstraintError(
+          `${wallet.address} is already in this workspace or has a pending invite.`,
+        ),
+      );
+      expect(entityManager.insert).not.toHaveBeenCalled();
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
     it('should translate insert unique constraint races to a domain error', async () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
