@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class MemberNameLength1780900000000 implements MigrationInterface {
