@@ -172,12 +172,12 @@ describe('InviteUsersDtoSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should accept a name with special characters', () => {
+  it('should reject a name with invalid special characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
       users: [{ ...walletInviteUserDtoBuilder().build(), name: '<>@!' }],
     });
 
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it('should reject an invalid role value', () => {

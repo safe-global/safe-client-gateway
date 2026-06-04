@@ -14,6 +14,7 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
   type Member as DomainMember,
+  MEMBER_NAME_MAX_LENGTH,
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
@@ -56,7 +57,7 @@ export class Member implements DomainMember {
   })
   space!: Space;
 
-  @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
+  @Column({ type: 'varchar', length: MEMBER_NAME_MAX_LENGTH })
   name!: string;
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH, nullable: true })
