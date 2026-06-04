@@ -348,6 +348,48 @@ describe('TenderlySimulationApi', () => {
       expect(mockBlockchainApiManager.getApi).toHaveBeenNthCalledWith(2, '137');
     });
 
+    it('deduplicates concurrent block-gas-limit fetches on a cold cache', async () => {
+      const args = fakeArgs();
+      let resolveBlock: (block: { gasLimit: bigint }) => void = () => {};
+      (mockPublicClient.getBlock as jest.Mock).mockReturnValueOnce(
+        new Promise((resolve) => {
+          resolveBlock = resolve;
+        }),
+      );
+      mockNetworkService.post.mockResolvedValue({
+        status: 200,
+        data: simulationResponse({ status: true }),
+      } as never);
+
+      const [first, second] = [target.simulate(args), target.simulate(args)];
+      resolveBlock({ gasLimit: blockGasLimit });
+      await Promise.all([first, second]);
+
+      expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(1);
+      expect(mockBlockchainApiManager.getApi).toHaveBeenCalledTimes(1);
+    });
+
+    it('evicts the cache entry when the block-gas-limit fetch rejects so the next caller retries', async () => {
+      const args = fakeArgs();
+      (mockPublicClient.getBlock as jest.Mock)
+        .mockRejectedValueOnce(new Error('RPC unreachable'))
+        .mockResolvedValueOnce({ gasLimit: blockGasLimit });
+      mockNetworkService.post.mockResolvedValue({
+        status: 200,
+        data: simulationResponse({ status: true }),
+      } as never);
+
+      const firstResult = await target.simulate(args);
+      const secondResult = await target.simulate(args);
+
+      expect(firstResult).toEqual({
+        status: 'indeterminate',
+        reason: 'Simulation could not be completed',
+      });
+      expect(secondResult).toEqual({ status: 'success' });
+      expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(2);
+    });
+
     it('returns indeterminate when the latest block gas limit cannot be fetched', async () => {
       const args = fakeArgs();
       (mockPublicClient.getBlock as jest.Mock).mockRejectedValue(

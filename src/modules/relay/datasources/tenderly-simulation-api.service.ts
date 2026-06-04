@@ -83,9 +83,12 @@ const BLOCK_GAS_LIMIT_TTL_MS = 30_000;
 
 @Injectable()
 export class TenderlySimulationApi implements ITenderlySimulationApi {
+  // Stores the in-flight or resolved promise, not the value, so concurrent
+  // callers on a cold cache share a single RPC roundtrip instead of racing.
+  // On failure the entry is evicted so the next caller retries.
   private readonly blockGasLimitCache = new Map<
     string,
-    { gasLimit: bigint; expiresAt: number }
+    { gasLimit: Promise<bigint>; expiresAt: number }
   >();
 
   constructor(
@@ -97,17 +100,30 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
     private readonly loggingService: ILoggingService,
   ) {}
 
-  private async getLatestBlockGasLimit(chainId: string): Promise<bigint> {
+  private getLatestBlockGasLimit(chainId: string): Promise<bigint> {
     const cached = this.blockGasLimitCache.get(chainId);
     if (cached && cached.expiresAt > Date.now()) {
       return cached.gasLimit;
     }
-    const client = await this.blockchainApiManager.getApi(chainId);
-    const block = await client.getBlock({ blockTag: 'latest' });
+    const gasLimit = this.fetchLatestBlockGasLimit(chainId);
     this.blockGasLimitCache.set(chainId, {
-      gasLimit: block.gasLimit,
+      gasLimit,
       expiresAt: Date.now() + BLOCK_GAS_LIMIT_TTL_MS,
     });
+
+    // Evict on rejection so the next caller re-fetches instead of replaying
+    // the cached failure for the rest of the TTL window.
+    gasLimit.catch(() => {
+      if (this.blockGasLimitCache.get(chainId)?.gasLimit === gasLimit) {
+        this.blockGasLimitCache.delete(chainId);
+      }
+    });
+    return gasLimit;
+  }
+
+  private async fetchLatestBlockGasLimit(chainId: string): Promise<bigint> {
+    const client = await this.blockchainApiManager.getApi(chainId);
+    const block = await client.getBlock({ blockTag: 'latest' });
     return block.gasLimit;
   }
 
