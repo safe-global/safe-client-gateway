@@ -69,6 +69,42 @@ describe('MembersController', () => {
     await app.close();
   });
 
+  // Auth resolves the acting user from the JWT `sub`, so a token must carry the
+  // id of the DB user it represents.
+  const accessTokenForUserId = (userId: number): string =>
+    jwtService.sign(
+      siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
+    );
+
+  // A signer for someone who isn't a member: a large `sub` that can't collide
+  // with another user's single-digit `sub`.
+  const nonMemberToken = (): string =>
+    accessTokenForUserId(
+      faker.number.int({ min: 69420, max: DB_MAX_SAFE_INTEGER }),
+    );
+
+  // Registers a fresh user and creates a space they administer. Signs the
+  // returned token in as the *real* user id.
+  // Callers reuse the returned `accessToken` for their admin operations.
+  const createSpaceForSigner = async (
+    spaceName: string,
+  ): Promise<{ accessToken: string; spaceId: number; userId: number }> => {
+    const walletResponse = await request(app.getHttpServer())
+      .post('/v1/users/wallet')
+      .set('Cookie', [
+        `access_token=${jwtService.sign(siweAuthPayloadDtoBuilder().build())}`,
+      ])
+      .expect(201);
+    const userId = walletResponse.body.id;
+    const accessToken = accessTokenForUserId(userId);
+    const createSpaceResponse = await request(app.getHttpServer())
+      .post('/v1/spaces')
+      .set('Cookie', [`access_token=${accessToken}`])
+      .send({ name: spaceName })
+      .expect(201);
+    return { accessToken, spaceId: createSpaceResponse.body.id, userId };
+  };
+
   it('should require authentication for every endpoint', () => {
     const endpoints = Object.values(MembersController.prototype) as Array<
       (...args: Array<unknown>) => unknown
@@ -81,26 +117,14 @@ describe('MembersController', () => {
 
   describe('POST /v1/spaces/:spaceId/members/invite', () => {
     it('should invite users', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      const createUserResponse = await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-      const userId = createUserResponse.body.id;
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId, userId } =
+        await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -143,9 +167,7 @@ describe('MembersController', () => {
     });
 
     it('should throw a 409 if there are too many invites', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceName = nameBuilder();
       const invites = Array.from({ length: maxInvites + 1 }).map(() => {
         return {
           role: faker.helpers.arrayElement(['ADMIN', 'MEMBER']),
@@ -153,6 +175,8 @@ describe('MembersController', () => {
           name: faker.person.firstName(),
         };
       });
+
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -167,25 +191,13 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -212,21 +224,9 @@ describe('MembersController', () => {
     });
 
     it('should throw a 422 if no addresses are provided', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -235,55 +235,7 @@ describe('MembersController', () => {
         .expect(422);
     });
 
-    it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = nameBuilder();
-      const user1 = getAddress(faker.finance.ethereumAddress());
-      const user1Name = faker.person.firstName();
-      const user2 = getAddress(faker.finance.ethereumAddress());
-      const user2Name = faker.person.firstName();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
-        .set('Cookie', [`access_token=${nonUserAccessToken}`])
-        .send({
-          users: [
-            {
-              role: 'ADMIN',
-              address: user1,
-              name: user1Name,
-            },
-            {
-              role: 'MEMBER',
-              address: user2,
-              name: user2Name,
-            },
-          ],
-        })
-        .expect(404)
-        .expect({
-          message: 'User not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
-
-    it('should throw a 404 if the space does not exist', async () => {
+    it('should throw a 403 if the signer is not an active admin of the space', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.number.int({
@@ -317,41 +269,23 @@ describe('MembersController', () => {
             },
           ],
         })
-        .expect(404)
+        .expect(403)
         .expect({
-          message: 'Workspace not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the signer is not a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
+    it('should throw a 403 if the signer is not a member of the space', async () => {
+      const nonMemberAccessToken = nonMemberToken();
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -370,34 +304,36 @@ describe('MembersController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the signer is an admin of another space', async () => {
+    it('should throw a 403 if the signer is an admin of another space', async () => {
       const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const targetSpaceOwnerAuthPayloadDto =
         siweAuthPayloadDtoBuilder().build();
-      const targetSpaceOwnerAccessToken = jwtService.sign(
-        targetSpaceOwnerAuthPayloadDto,
-      );
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
-      await request(app.getHttpServer())
+      const adminUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${adminAccessToken}`])
+        .set('Cookie', [`access_token=${jwtService.sign(adminAuthPayloadDto)}`])
         .expect(201);
+      const adminAccessToken = accessTokenForUserId(adminUserResponse.body.id);
 
-      await request(app.getHttpServer())
+      const targetSpaceOwnerResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${targetSpaceOwnerAccessToken}`])
+        .set('Cookie', [
+          `access_token=${jwtService.sign(targetSpaceOwnerAuthPayloadDto)}`,
+        ])
         .expect(201);
+      const targetSpaceOwnerAccessToken = accessTokenForUserId(
+        targetSpaceOwnerResponse.body.id,
+      );
 
       await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -424,36 +360,23 @@ describe('MembersController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the signer is not an admin', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the signer is not an admin', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -467,6 +390,10 @@ describe('MembersController', () => {
         })
         .expect(201);
 
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -479,36 +406,23 @@ describe('MembersController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the signer is not an active admin', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the signer is not an active admin', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const user = getAddress(faker.finance.ethereumAddress());
       const userName = faker.person.firstName();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -522,6 +436,10 @@ describe('MembersController', () => {
         })
         .expect(201);
 
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -534,33 +452,23 @@ describe('MembersController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 409 if the user is already a member of the space', async () => {
-      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const memberAddress = getAddress(faker.finance.ethereumAddress());
+    it('should throw a 409 if the user is already an active member of the space', async () => {
+      const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const memberAddress = memberAuthPayloadDto.signer_address;
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .expect(201);
+      const { accessToken: adminAccessToken, spaceId } =
+        await createSpaceForSigner(faker.word.noun());
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: faker.word.noun() })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({
@@ -573,8 +481,18 @@ describe('MembersController', () => {
           ],
         })
         .expect(201);
+      const memberUserId = inviteResponse.body[0].userId;
 
-      // A second invitation to the same user should fail
+      // Re-inviting an INVITED member only refreshes the invite; the member must
+      // accept (becoming ACTIVE) for a second invite to conflict.
+      const memberAccessToken = accessTokenForUserId(memberUserId);
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({ name: memberName })
+        .expect(201);
+
+      // A second invitation to the now-active member should fail
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${adminAccessToken}`])
@@ -598,26 +516,13 @@ describe('MembersController', () => {
 
   describe('POST /v1/spaces/:spaceId/members/accept', () => {
     it('should accept an invite for a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -631,6 +536,10 @@ describe('MembersController', () => {
         })
         .expect(201);
 
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -642,27 +551,14 @@ describe('MembersController', () => {
     });
 
     it('should accept an invite for a user, changing name', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const invitedMemberName = faker.person.firstName();
       const acceptedMemberName = faker.person.firstName();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -676,6 +572,10 @@ describe('MembersController', () => {
         })
         .expect(201);
 
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -686,24 +586,80 @@ describe('MembersController', () => {
         .expect({});
     });
 
+    it('should accept an invite for a user invited by email', async () => {
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const inviteEmail = fakeEmailAddress();
+
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
+
+      const inviteResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              type: 'email',
+              email: inviteEmail,
+              role: 'MEMBER',
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+      const invitedUserId = inviteResponse.body[0].userId;
+
+      // The invitee signs in via OIDC, which claims the PENDING placeholder
+      // created by the email invite (matched by email) and returns its id.
+      const claimedUserId =
+        await usersRepository.findOrCreateByExtUserIdAndEmail(
+          faker.string.uuid(),
+          inviteEmail,
+        );
+      expect(claimedUserId).toBe(invitedUserId);
+
+      const inviteeAuthPayloadDto = oidcAuthPayloadDtoBuilder()
+        .with('sub', claimedUserId.toString())
+        .build();
+      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/accept`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({
+          name: memberName,
+        })
+        .expect(201)
+        .expect({});
+
+      // The invitee is now an ACTIVE member with their email visible.
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/members`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.members).toEqual(
+            expect.arrayContaining([
+              expect.objectContaining({
+                name: memberName,
+                role: 'MEMBER',
+                status: 'ACTIVE',
+                user: expect.objectContaining({
+                  id: invitedUserId,
+                  email: inviteEmail,
+                }),
+              }),
+            ]),
+          );
+        });
+    });
+
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -732,25 +688,13 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 404 if the signer has no pending invite', async () => {
       const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -760,7 +704,7 @@ describe('MembersController', () => {
         })
         .expect(404)
         .expect({
-          message: 'User not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -794,81 +738,14 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 404 if the member does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = nameBuilder();
-      const user = getAddress(faker.finance.ethereumAddress());
-      const memberName = nameBuilder();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({
-          users: [
-            {
-              role: 'MEMBER',
-              address: user,
-              name: memberName,
-            },
-          ],
-        })
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/accept`)
-        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
-        .send({
-          name: memberName,
-        })
-        .expect(404)
-        .expect({
-          message: 'Workspace not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
-
     it('should throw a 404 if the status of the member is not INVITED', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -881,6 +758,10 @@ describe('MembersController', () => {
           ],
         })
         .expect(201);
+
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -906,24 +787,12 @@ describe('MembersController', () => {
     });
 
     it('should throw a 422 if the user name is not provided', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -948,35 +817,21 @@ describe('MembersController', () => {
           statusCode: 422,
           code: 'invalid_type',
           expected: 'object',
-          received: 'undefined',
           path: [],
-          message: 'Required',
+          message: 'Invalid input: expected object, received undefined',
         });
     });
   });
 
   describe('POST /v1/spaces/:spaceId/members/decline', () => {
     it('should decline an invite for a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -990,6 +845,10 @@ describe('MembersController', () => {
         })
         .expect(201);
 
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -998,23 +857,11 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1040,31 +887,19 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 404 if the signer has no pending invite', async () => {
       const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
       const spaceName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/decline`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .expect(404)
         .expect({
-          message: 'User not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1094,78 +929,14 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 404 if the member does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const user = getAddress(faker.finance.ethereumAddress());
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/invite`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({
-          users: [
-            {
-              role: 'MEMBER',
-              address: user,
-              name: memberName,
-            },
-          ],
-        })
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/decline`)
-        .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
-        .expect(404)
-        .expect({
-          message: 'Workspace not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
-    });
-
     it('should throw a 404 if the status of the member is not INVITED', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
+      const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
@@ -1178,6 +949,10 @@ describe('MembersController', () => {
           ],
         })
         .expect(201);
+
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteResponse.body[0].userId,
+      );
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/decline`)
@@ -1199,26 +974,14 @@ describe('MembersController', () => {
 
   describe('GET /v1/spaces/:spaceId/members', () => {
     it('should return a list of members of a space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
-
-      const createUserResponse = await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-      const adminUserId = createUserResponse.body.id;
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId, userId } =
+        await createSpaceForSigner(spaceName);
+      const adminUserId = userId;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1339,23 +1102,11 @@ describe('MembersController', () => {
     });
 
     it('should return email for invited members when the caller is an active admin', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const invitedName = faker.person.firstName();
       const invitedEmail = fakeEmailAddress();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1393,23 +1144,11 @@ describe('MembersController', () => {
     });
 
     it('should hide email for invited members when the caller is not an active admin', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const invitedName = faker.person.firstName();
       const invitedEmail = fakeEmailAddress();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1453,25 +1192,13 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const user1 = getAddress(faker.finance.ethereumAddress());
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1502,37 +1229,24 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+    it('should throw a 403 if the signer is not an active member of the space', async () => {
+      const nonUserAccessToken = nonMemberToken();
       const spaceName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          message: 'User not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          message: 'The user is not an active member of the workspace.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the user is not a member of the space', async () => {
+    it('should throw a 403 if the user is not a member of the space', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       // Space does not even exist
@@ -1549,68 +1263,22 @@ describe('MembersController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(401)
+        .expect(403)
         .expect({
           message: 'The user is not an active member of the workspace.',
-          error: 'Unauthorized',
-          statusCode: 401,
-        });
-    });
-
-    it('should throw a 404 if the user is not an active member of the space', async () => {
-      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
-      const spaceName = nameBuilder();
-      const nonMemberAddress = getAddress(faker.finance.ethereumAddress());
-      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', nonMemberAddress)
-        .build();
-      const memberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${adminAccessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/members`)
-        .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(404)
-        .expect({
-          message: 'User not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
   });
 
   describe('PATCH /v1/spaces/:spaceId/members/:userId/role', () => {
     it('should update the role of userId', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1626,6 +1294,8 @@ describe('MembersController', () => {
         })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
+
+      const inviteeAccessToken = accessTokenForUserId(userId);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -1644,24 +1314,11 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1677,6 +1334,8 @@ describe('MembersController', () => {
         })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
+
+      const inviteeAccessToken = accessTokenForUserId(userId);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -1697,27 +1356,13 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the signer is not an active admin', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
-      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
+      const nonUserAccessToken = nonMemberToken();
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1733,6 +1378,8 @@ describe('MembersController', () => {
         })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
+
+      const inviteeAccessToken = accessTokenForUserId(userId);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -1746,33 +1393,20 @@ describe('MembersController', () => {
         .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${nonUserAccessToken}`])
         .send({ role: 'ADMIN' })
-        .expect(404)
+        .expect(403)
         .expect({
-          message: 'User not found.',
-          error: 'Not Found',
-          statusCode: 404,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the status of the signer member is not ACTIVE', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the status of the signer member is not ACTIVE', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1788,38 +1422,29 @@ describe('MembersController', () => {
         })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
+
+      // The invitee is INVITED (never accepted); its token carries that id to
+      // exercise the "not an active admin" path rather than an unrelated user.
+      const inviteeAccessToken = accessTokenForUserId(userId);
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({ role: 'ADMIN' })
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the signer member is not of ADMIN role', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the signer member is not of ADMIN role', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1835,6 +1460,8 @@ describe('MembersController', () => {
         })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
+
+      const inviteeAccessToken = accessTokenForUserId(userId);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -1848,31 +1475,18 @@ describe('MembersController', () => {
         .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .send({ role: 'ADMIN' })
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
     it('should throw a 409 if downgrading the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-
-      const createUserResponse = await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-      const userId = createUserResponse.body.id;
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId, userId } =
+        await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
@@ -1887,29 +1501,18 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the user-to-update member does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonMemberAuthPayload = jwtService.sign(nonMemberAuthPayloadDto);
       const spaceName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
+      // A real, non-member user to target (exists, but isn't in the space).
       const createUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${nonMemberAuthPayload}`])
         .expect(201);
       const userId = createUserResponse.body.id;
 
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/${userId}/role`)
@@ -1926,24 +1529,11 @@ describe('MembersController', () => {
 
   describe('DELETE /v1/spaces/:spaceId/members/:userId', () => {
     it('should remove a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1960,6 +1550,8 @@ describe('MembersController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
+      const inviteeAccessToken = accessTokenForUserId(userId);
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -1973,40 +1565,6 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({});
-    });
-
-    it('should throw a 404 if the signer_address does not have a user', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonUserAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonUserAccessToken = jwtService.sign(nonUserAuthPayloadDto);
-      const spaceName = nameBuilder();
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
-
-      await request(app.getHttpServer())
-        .delete(`/v1/spaces/${spaceId}/members/${userId}`)
-        .set('Cookie', [`access_token=${nonUserAccessToken}`])
-        .expect(404)
-        .expect({
-          message: 'User not found.',
-          error: 'Not Found',
-          statusCode: 404,
-        });
     });
 
     it('should throw a 404 if the space does not exist', async () => {
@@ -2034,27 +1592,14 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 401 if the status of the signer member is not ACTIVE', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the status of the signer member is not ACTIVE', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const member = getAddress(faker.finance.ethereumAddress());
       const spaceName = nameBuilder();
       const adminName = faker.person.firstName();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -2075,37 +1620,27 @@ describe('MembersController', () => {
         })
         .expect(201);
       const memberUserId = inviteUsersResponse.body[1].userId;
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteUsersResponse.body[0].userId,
+      );
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/members/${memberUserId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('should throw a 401 if the signer member is not of ADMIN status', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
+    it('should throw a 403 if the signer member is not of ADMIN status', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -2122,6 +1657,8 @@ describe('MembersController', () => {
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
 
+      const inviteeAccessToken = accessTokenForUserId(userId);
+
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
@@ -2133,31 +1670,19 @@ describe('MembersController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/members/${userId}`)
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
-        .expect(401)
+        .expect(403)
         .expect({
-          message: 'Signer is not an active admin.',
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
     it('should throw a 409 if removing the last ACTIVE ADMIN', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-
-      const createUserResponse = await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-      const userId = createUserResponse.body.id;
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      // The space creator (admin) removing themselves is the last active admin.
+      const { accessToken, spaceId, userId } =
+        await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/members/${userId}`)
@@ -2173,22 +1698,10 @@ describe('MembersController', () => {
 
   describe('PATCH /v1/spaces/:spaceId/members/alias', () => {
     it('should set the alias for the authenticated user when they are admin of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/alias`)
@@ -2206,25 +1719,12 @@ describe('MembersController', () => {
     });
 
     it('should set the alias for the authenticated user when they are a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const inviteeAccessToken = jwtService.sign(inviteeAuthPayloadDto);
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
       const newAlias = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       const inviteUsersResponse = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -2240,6 +1740,8 @@ describe('MembersController', () => {
         })
         .expect(201);
       const userId = inviteUsersResponse.body[0].userId;
+
+      const inviteeAccessToken = accessTokenForUserId(userId);
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/accept`)
@@ -2264,22 +1766,10 @@ describe('MembersController', () => {
     });
 
     it('should throw a 403 if the user is not authenticated', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/alias`)
@@ -2319,22 +1809,16 @@ describe('MembersController', () => {
     });
 
     it('should throw a 404 if the user is not a member of the space', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const nonMemberAccessToken = jwtService.sign(nonMemberAuthPayloadDto);
+      const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const nonMemberAccessToken = nonMemberToken();
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
 
-      await request(app.getHttpServer())
+      const adminUserResponse = await request(app.getHttpServer())
         .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
+        .set('Cookie', [`access_token=${jwtService.sign(adminAuthPayloadDto)}`])
         .expect(201);
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
-        .expect(201);
+      const accessToken = accessTokenForUserId(adminUserResponse.body.id);
 
       const createSpaceResponse = await request(app.getHttpServer())
         .post('/v1/spaces')
@@ -2356,22 +1840,10 @@ describe('MembersController', () => {
     });
 
     it('should update alias from null to a value', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const newAlias = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       // Verify initial alias is null
       const initialMembersResponse = await request(app.getHttpServer())
@@ -2398,23 +1870,11 @@ describe('MembersController', () => {
     });
 
     it('should update alias from one value to another', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const originalAlias = nameBuilder();
       const newAlias = nameBuilder();
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       // First update: set initial alias
       await request(app.getHttpServer())
@@ -2448,22 +1908,10 @@ describe('MembersController', () => {
     });
 
     it('should validate alias format', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
       const invalidAlias = '1';
 
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/alias`)
