@@ -20,7 +20,11 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { TenderlySimulationResponseSchema } from '@/modules/relay/datasources/schemas/tenderly-simulation.schema';
+import {
+  type TenderlySimulationResponse,
+  TenderlySimulationResponseSchema,
+} from '@/modules/relay/datasources/schemas/tenderly-simulation.schema';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 /**
  * Public Tenderly proxy used by the Safe frontend. No auth required and the
@@ -141,7 +145,9 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
       // etc.). Mirrors what the Safe frontend does when no explicit
       // simulation gas budget is supplied.
       const gas = Number(await this.getLatestBlockGasLimit(args.chainId));
-      const { data: raw } = await this.networkService.post<unknown>({
+      const { data: raw } = await this.networkService.post<
+        Raw<TenderlySimulationResponse>
+      >({
         url: SIMULATION_URL,
         data: {
           network_id: args.chainId,
