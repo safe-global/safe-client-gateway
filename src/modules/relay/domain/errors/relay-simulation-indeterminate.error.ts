@@ -4,8 +4,7 @@ import type { Hex } from 'viem';
 
 /**
  * Stable error code surfaced in the response body so the frontend can detect
- * an indeterminate simulation result and offer the user the choice to retry
- * the relay with `acceptUnverifiedSimulation: true`.
+ * an indeterminate simulation result.
  */
 export const INDETERMINATE_SIMULATION_CODE = 'INDETERMINATE_SIMULATION';
 
@@ -18,7 +17,7 @@ export class RelaySimulationIndeterminateError extends UnprocessableEntityExcept
   ) {
     super({
       code: INDETERMINATE_SIMULATION_CODE,
-      message: `Relay simulation could not be completed: ${reason}. Retry with acceptUnverifiedSimulation=true to proceed anyway.`,
+      message: 'Relay simulation could not be completed.',
     });
   }
 }
