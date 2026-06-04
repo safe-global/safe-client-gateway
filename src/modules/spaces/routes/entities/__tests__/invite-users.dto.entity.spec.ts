@@ -152,20 +152,20 @@ describe('InviteUsersDtoSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should accept a name of up to 255 characters', () => {
+  it('should accept a name of up to 30 characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
       users: [
-        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(255) },
+        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(30) },
       ],
     });
 
     expect(result.success).toBe(true);
   });
 
-  it('should reject a name exceeding 255 characters', () => {
+  it('should reject a name exceeding 30 characters', () => {
     const result = InviteUsersDtoSchema.safeParse({
       users: [
-        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(256) },
+        { ...walletInviteUserDtoBuilder().build(), name: 'a'.repeat(31) },
       ],
     });
 
