@@ -123,7 +123,14 @@ export class RelayFeeRelayer implements IRelayer {
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
-    const { version, chainId, to, data } = args;
+    const {
+      version,
+      chainId,
+      to,
+      data,
+      safeTxHash,
+      acceptUnverifiedSimulation,
+    } = args;
     const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
 
     // The relay request must match one of the supported transaction.
@@ -140,8 +147,8 @@ export class RelayFeeRelayer implements IRelayer {
         to,
         data,
         decoded,
-        safeTxHash: args.safeTxHash,
-        acceptUnverifiedSimulation: args.acceptUnverifiedSimulation,
+        safeTxHash: safeTxHash,
+        acceptUnverifiedSimulation: acceptUnverifiedSimulation,
       });
     } else if (decoded !== null) {
       // Branch 2: the data decoded as execTransaction but failed validity rules.
