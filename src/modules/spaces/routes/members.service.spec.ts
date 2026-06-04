@@ -73,7 +73,8 @@ describe('MembersService', () => {
           {
             ...invitedMember,
             user: {
-              ...invitedMember.user,
+              id: invitedMember.user.id,
+              status: invitedMember.user.status,
               email: null,
             },
           },
@@ -111,16 +112,49 @@ describe('MembersService', () => {
 
       await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
         members: [
-          callerMember,
+          {
+            ...callerMember,
+            user: {
+              id: callerMember.user.id,
+              status: callerMember.user.status,
+              email: callerMember.user.email,
+            },
+          },
           {
             ...invitedMember,
             user: {
-              ...invitedMember.user,
+              id: invitedMember.user.id,
+              status: invitedMember.user.status,
               email,
             },
           },
         ],
       });
+    });
+
+    it('should not expose extUserId in the member user', async () => {
+      const invitedMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'INVITED')
+        .with(
+          'user',
+          userBuilder()
+            .with('extUserId', faker.string.uuid())
+            .with('status', 'PENDING')
+            .build(),
+        )
+        .build();
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        invitedMember,
+      ]);
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[0].user).not.toHaveProperty('extUserId');
     });
   });
 

@@ -1260,8 +1260,6 @@ describe('MembersController', () => {
                   id: adminUserId,
                   status: 'ACTIVE',
                   email: null,
-                  createdAt: expect.any(String),
-                  updatedAt: expect.any(String),
                 },
               },
               {
@@ -1278,8 +1276,6 @@ describe('MembersController', () => {
                   id: expect.any(Number),
                   status: 'PENDING',
                   email: null,
-                  createdAt: expect.any(String),
-                  updatedAt: expect.any(String),
                 },
               },
               {
@@ -1296,8 +1292,6 @@ describe('MembersController', () => {
                   id: expect.any(Number),
                   status: 'PENDING',
                   email: null,
-                  createdAt: expect.any(String),
-                  updatedAt: expect.any(String),
                 },
               },
             ],
