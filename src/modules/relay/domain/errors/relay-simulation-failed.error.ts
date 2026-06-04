@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { UnprocessableEntityException } from '@nestjs/common';
+import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import type { Hex } from 'viem';
 
 export const SIMULATION_FAILED_CODE = 'SIMULATION_FAILED';
@@ -14,6 +14,7 @@ export class RelaySimulationFailedError extends UnprocessableEntityException {
     super({
       code: SIMULATION_FAILED_CODE,
       message: `Relay denied: transaction simulation failed${reason ? `: ${reason}` : ''}`,
+      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });
   }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { UnprocessableEntityException } from '@nestjs/common';
+import { HttpStatus, UnprocessableEntityException } from '@nestjs/common';
 import type { Hex } from 'viem';
 
 /**
@@ -18,6 +18,7 @@ export class RelaySimulationIndeterminateError extends UnprocessableEntityExcept
     super({
       code: INDETERMINATE_SIMULATION_CODE,
       message: 'Relay simulation could not be completed.',
+      statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });
   }
 }
