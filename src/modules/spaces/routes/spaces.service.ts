@@ -41,7 +41,7 @@ export class SpacesService {
     await this.usersRepository.activateIfPending(userId);
 
     const result = await this.spacesRepository.create({ userId, ...args });
-    return { id: result.uuid, name: result.name };
+    return { id: result.id, uuid: result.uuid, name: result.name };
   }
 
   public getActiveOrInvitedSpaces(
@@ -105,7 +105,8 @@ export class SpacesService {
       );
 
       return {
-        id: space.uuid,
+        id: space.id,
+        uuid: space.uuid,
         name: space.name,
         members: space.members.map((member) => ({
           ...member,
@@ -130,7 +131,7 @@ export class SpacesService {
     await assertAdmin(this.spacesRepository, args.id, userId);
 
     const result = await this.spacesRepository.update(args);
-    return { id: result.uuid };
+    return { id: result.id, uuid: result.uuid };
   }
 
   /**

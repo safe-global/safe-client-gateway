@@ -40,10 +40,7 @@ import {
   UpdateSpaceSchema,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import {
-  LegacySpaceIdPipe,
-  SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -210,7 +207,7 @@ export class SpacesController {
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
-    @Param('id', SpaceIdPipe) id: number,
+    @Param('id', LegacySpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<UpdateSpaceResponse> {
     return await this.spacesService.update({
@@ -248,7 +245,7 @@ export class SpacesController {
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
-    @Param('id', SpaceIdPipe) id: number,
+    @Param('id', LegacySpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spacesService.delete({ id, authPayload });

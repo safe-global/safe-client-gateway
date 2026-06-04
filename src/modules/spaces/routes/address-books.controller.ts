@@ -32,10 +32,7 @@ import {
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-rate-limit.guard';
-import {
-  LegacySpaceIdPipe,
-  SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -119,7 +116,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
@@ -161,7 +158,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   public async deleteByAddress(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {

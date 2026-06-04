@@ -94,7 +94,8 @@ describe('SpacesService', () => {
 
       expect(result).toEqual([
         {
-          id: mockSpace.uuid,
+          id: mockSpace.id,
+          uuid: mockSpace.uuid,
           name: space.name,
           members: [member],
           safeCount: 3,
@@ -450,7 +451,7 @@ describe('SpacesService', () => {
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
       // Space A: inviter present → invitedByName populated
-      const spaceAResult = result.find((s) => s.id === spaceA.uuid)!;
+      const spaceAResult = result.find((s) => s.id === spaceA.id)!;
       const invitedInA = spaceAResult.members.find(
         (m) => m.status === 'INVITED',
       );
@@ -459,7 +460,7 @@ describe('SpacesService', () => {
       );
 
       // Space B: inviter absent → invitedByName must NOT leak from Space A
-      const spaceBResult = result.find((s) => s.id === spaceB.uuid)!;
+      const spaceBResult = result.find((s) => s.id === spaceB.id)!;
       const invitedInB = spaceBResult.members.find(
         (m) => m.status === 'INVITED',
       );
@@ -544,7 +545,8 @@ describe('SpacesService', () => {
         authPayload,
       );
 
-      expect(result.id).toBe(space.uuid);
+      expect(result.id).toBe(space.id);
+      expect(result.uuid).toBe(space.uuid);
     });
 
     it.each([
@@ -652,7 +654,11 @@ describe('SpacesService', () => {
         authPayload,
       });
 
-      expect(result).toEqual({ id: repositoryResponse.uuid, name });
+      expect(result).toEqual({
+        id: repositoryResponse.id,
+        uuid: repositoryResponse.uuid,
+        name,
+      });
       expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
         userId,
       );
@@ -743,7 +749,7 @@ describe('SpacesService', () => {
         authPayload,
       });
 
-      expect(result).toEqual({ id: spaceUuid });
+      expect(result).toEqual({ id: spaceId, uuid: spaceUuid });
     });
 
     it.each([

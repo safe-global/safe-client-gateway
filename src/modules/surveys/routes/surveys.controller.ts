@@ -23,10 +23,7 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import {
-  LegacySpaceIdPipe,
-  SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SurveySlugSchema } from '@/modules/surveys/domain/entities/survey.entity';
 import {
   SubmitSurveyResponseDto,
@@ -104,7 +101,7 @@ export class SurveysController {
   @UseGuards(AuthGuard)
   public async submitResponse(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
     @Body(new ValidationPipe(SubmitSurveyResponseDtoSchema))
     body: SubmitSurveyResponseDto,
