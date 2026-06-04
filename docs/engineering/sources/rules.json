@@ -1,0 +1,778 @@
+[
+  {
+    "id": "CHANGE-01",
+    "project": "general",
+    "area": "scope",
+    "title": "Smallest correct change",
+    "rule": "A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require.",
+    "check": "Is this the smallest correct change for the behavior?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "CHANGE-02",
+    "project": "general",
+    "area": "scope",
+    "title": "No unrelated drive-by edits",
+    "rule": "Keep unrelated docs, config, formatting, or generated changes out of feature PRs.",
+    "check": "Did I avoid unrelated docs/config/formatting/generated changes?",
+    "exampleRefs": [
+      "examples/scope-and-pr-hygiene.md#change-02-do-not-bundle-unrelated-test-or-tooling-fixes-into-a-feature-pr"
+    ],
+    "reviewLearningIds": [
+      "RL-20251211-001"
+    ]
+  },
+  {
+    "id": "CHANGE-03",
+    "project": "general",
+    "area": "scope",
+    "title": "Tooling parity preserved",
+    "rule": "Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs.",
+    "check": "If this is tooling work, did I preserve behavior, rule parity, and docs?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "CHANGE-04",
+    "project": "general",
+    "area": "scope",
+    "title": "External contracts versioned",
+    "rule": "Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release.",
+    "check": "If this changes an external contract, is it versioned or explicitly backward-compatible?",
+    "exampleRefs": [
+      "examples/configuration.md#change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release"
+    ],
+    "reviewLearningIds": [
+      "RL-20260108-001"
+    ]
+  },
+  {
+    "id": "PR-01",
+    "project": "general",
+    "area": "scope",
+    "title": "New abstractions justified",
+    "rule": "New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason.",
+    "check": "Can I justify every new abstraction or file?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "PR-02",
+    "project": "general",
+    "area": "scope",
+    "title": "Docs aligned with behavior",
+    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR.",
+    "check": "Are docs, samples, and runbooks aligned with the final behavior?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260128-002",
+      "RL-20260116-001",
+      "RL-20260108-002",
+      "RL-20260108-003"
+    ]
+  },
+  {
+    "id": "MOD-01",
+    "project": "general",
+    "area": "modules",
+    "title": "Behavior in the right module",
+    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally.",
+    "check": "Does new API/product behavior live in the right module?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260128-002"
+    ]
+  },
+  {
+    "id": "MOD-02",
+    "project": "general",
+    "area": "modules",
+    "title": "Persistence behind repositories",
+    "rule": "Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters.",
+    "check": "Are persistence workflows hidden behind repositories?",
+    "exampleRefs": [],
+    "reviewLearningIds": ["RL-20260529-001"]
+  },
+  {
+    "id": "MOD-03",
+    "project": "general",
+    "area": "modules",
+    "title": "No single-use DI abstractions",
+    "rule": "Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused.",
+    "check": "Did I avoid single-use DI abstractions?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "MOD-04",
+    "project": "general",
+    "area": "modules",
+    "title": "No private behavior leaks",
+    "rule": "Public interfaces must not expose private helpers; do not add optional methods to shared interfaces — split with `IFooWithBar extends IFoo` instead.",
+    "check": "Did I avoid exposing private helper behavior through public interfaces?",
+    "exampleRefs": [
+      "examples/schemas-and-validation.md#mod-04-do-not-export-private-intermediate-schemas",
+      "examples/schemas-and-validation.md#mod-04-do-not-export-symbols-that-are-not-consumed-externally"
+    ],
+    "reviewLearningIds": [
+      "RL-20251223-001",
+      "RL-20251216-002"
+    ]
+  },
+  {
+    "id": "MOD-05",
+    "project": "general",
+    "area": "modules",
+    "title": "No new forwardRef cycles",
+    "rule": "Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local debt; extract a third boundary instead of adding new ones.",
+    "check": "Did I avoid adding or expanding `forwardRef` cycles, including not adding `forwardRef` where no circular dependency exists?",
+    "exampleRefs": [],
+    "reviewLearningIds": ["RL-20260529-002"]
+  },
+  {
+    "id": "MOD-06",
+    "project": "general",
+    "area": "modules",
+    "title": "Route services behind repositories",
+    "rule": "Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation/fallbacks. Validate inputs at the controller, not the service.",
+    "check": "Do route services stay behind repository boundaries?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "NAME-01",
+    "project": "general",
+    "area": "naming",
+    "title": "Names reveal behavior",
+    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants.",
+    "check": "Do names describe behavior honestly and avoid redundant scope?",
+    "exampleRefs": [
+      "examples/testing.md#test-02-suffix-matches-the-test-layer"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-001"
+    ]
+  },
+  {
+    "id": "REUSE-01",
+    "project": "general",
+    "area": "naming",
+    "title": "Reuse existing helpers",
+    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates.",
+    "check": "Did I reuse existing helpers, constants homes, and utilities?",
+    "exampleRefs": [
+      "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent",
+      "examples/repositories-and-pagination.md#reuse-01-derive-version-lists-from-safe-deployments"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-003",
+      "RL-20251216-001"
+    ]
+  },
+  {
+    "id": "STYLE-01",
+    "project": "general",
+    "area": "naming",
+    "title": "Document non-trivial code",
+    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact.",
+    "check": "Did I document public/non-trivial logic and remove dead code?",
+    "exampleRefs": [
+      "examples/error-handling.md#style-01-log-04-internal-errors-do-not-leak-into-user-responses",
+      "examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-005",
+      "RL-20260128-001",
+      "RL-20251222-001"
+    ]
+  },
+  {
+    "id": "TYPE-01",
+    "project": "general",
+    "area": "types",
+    "title": "Use project types",
+    "rule": "Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`.",
+    "check": "Did I use project types and shared schemas first?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "TYPE-02",
+    "project": "general",
+    "area": "types",
+    "title": "Schemas in entity files",
+    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`.",
+    "check": "Are reusable schemas in entity/schema files?",
+    "exampleRefs": [
+      "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
+    ],
+    "reviewLearningIds": [
+      "RL-20260123-002",
+      "RL-20260116-002"
+    ]
+  },
+  {
+    "id": "TYPE-03",
+    "project": "general",
+    "area": "types",
+    "title": "Validate external inputs",
+    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings.",
+    "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
+    "exampleRefs": [
+      "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
+    ],
+    "reviewLearningIds": [
+      "RL-20260116-002",
+      "RL-20260526-001",
+      "RL-20260527-001"
+    ]
+  },
+  {
+    "id": "TYPE-04",
+    "project": "general",
+    "area": "types",
+    "title": "DTO matches wire shape",
+    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time.",
+    "check": "Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?",
+    "exampleRefs": [
+      "examples/schemas-and-validation.md#type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays",
+      "examples/schemas-and-validation.md#type-04-use-unions-for-exact-one-dto-shapes",
+      "examples/schemas-and-validation.md#type-04-strict-enum-schemas-for-internal-boolean-query-params",
+      "examples/controllers-and-swagger.md#type-04-route-01-public-params-apply-on-every-code-path-or-are-removed"
+    ],
+    "reviewLearningIds": [
+      "RL-20260520-002",
+      "RL-20260108-002",
+      "RL-20251223-001",
+      "RL-20260602-003"
+    ]
+  },
+  {
+    "id": "TYPE-05",
+    "project": "general",
+    "area": "types",
+    "title": "Parser generics complete",
+    "rule": "Parser/decode generics include every field the code reads downstream.",
+    "check": "Do parser/decode types include every field the code reads?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "TYPE-06",
+    "project": "general",
+    "area": "types",
+    "title": "No unsafe casts",
+    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`.",
+    "check": "Did I avoid unsafe casts, `any`, and silent type drift?",
+    "exampleRefs": [
+      "examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-005"
+    ]
+  },
+  {
+    "id": "AUTH-01",
+    "project": "general",
+    "area": "auth",
+    "title": "Reuse auth assertions",
+    "rule": "Reuse existing auth assertions and predicates (`assertAuthenticated`, `getAuthenticatedUserIdOrFail`); branch signature recovery on `SignatureType` (only EOA/EthSign are recoverable).",
+    "check": "Did I reuse existing auth assertions/predicates?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "AUTH-02",
+    "project": "general",
+    "area": "auth",
+    "title": "Identity supports SIWE and email",
+    "rule": "Identity code handles wallet (SIWE) and OIDC/email users; do not assume `signer_address` is set.",
+    "check": "Does identity code handle wallet and email users?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "AUTH-03",
+    "project": "general",
+    "area": "auth",
+    "title": "Use proven auth/crypto libs",
+    "rule": "Prefer `jose` and other maintained libraries for JWKS/JWT and signature work over hand-rolled primitives.",
+    "check": "Did I use proven auth/crypto libraries instead of custom primitives?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "AUTH-04",
+    "project": "general",
+    "area": "auth",
+    "title": "Email exposure intentional",
+    "rule": "User-email exposure in DTOs and Swagger is intentional and consistent.",
+    "check": "Is user email exposure intentional and consistent?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "AUTH-05",
+    "project": "general",
+    "area": "auth",
+    "title": "Space routes enforce membership before data access",
+    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id.",
+    "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?",
+    "exampleRefs": ["examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"],
+    "reviewLearningIds": [
+      "RL-20260520-001",
+      "RL-20260602-001"
+    ]
+  },
+  {
+    "id": "ROUTE-01",
+    "project": "general",
+    "area": "routes",
+    "title": "Controllers are HTTP boundary",
+    "rule": "Controllers stay at the HTTP boundary: no Provider naming in user-facing copy, no false standards labels (e.g. CAIP-10) the implementation does not satisfy, no domain `Error` for \"not found\" — throw `NotFoundException`/`ForbiddenException` so the global filter maps to the right status. Wrap parsing/IO inside the adapter's wrap-and-throw boundary.",
+    "check": "Are controllers only HTTP boundary code?",
+    "exampleRefs": [
+      "examples/controllers-and-swagger.md#route-01-do-not-name-internal-providers-in-user-facing-swagger-copy",
+      "examples/controllers-and-swagger.md#route-01-do-not-claim-a-standard-the-implementation-does-not-satisfy",
+      "examples/controllers-and-swagger.md#type-04-route-01-public-params-apply-on-every-code-path-or-are-removed"
+    ],
+    "reviewLearningIds": [
+      "RL-20260108-002",
+      "RL-20260108-003",
+      "RL-20251222-001"
+    ]
+  },
+  {
+    "id": "ROUTE-02",
+    "project": "general",
+    "area": "routes",
+    "title": "Inputs validated at controller",
+    "rule": "Validate params, query, and body at the controller via Zod schemas and `ValidationPipe`; do not duplicate presence checks in services. Cache-busting params should be booleans with server-generated keys, not unbounded client strings.",
+    "check": "Are params, query, and bodies validated?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260123-002"
+    ]
+  },
+  {
+    "id": "ROUTE-03",
+    "project": "general",
+    "area": "routes",
+    "title": "Stable empty shapes",
+    "rule": "Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes.",
+    "check": "Do empty responses use stable empty shapes?",
+    "exampleRefs": [
+      "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default"
+    ],
+    "reviewLearningIds": [
+      "RL-20260114-002"
+    ]
+  },
+  {
+    "id": "DB-01",
+    "project": "general",
+    "area": "database",
+    "title": "Unique constraint matches lifecycle",
+    "rule": "Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically.",
+    "check": "Do unique constraints match nullable/lifecycle behavior?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "DB-02",
+    "project": "general",
+    "area": "database",
+    "title": "Atomic state transitions",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows.",
+    "check": "Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?",
+    "exampleRefs": [],
+    "reviewLearningIds": ["RL-20260602-002"]
+  },
+  {
+    "id": "DB-03",
+    "project": "general",
+    "area": "database",
+    "title": "No redundant DB trips",
+    "rule": "Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING/`generatedMaps` instead of issuing a follow-up `find` after an insert/upsert.",
+    "check": "Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?",
+    "exampleRefs": [],
+    "reviewLearningIds": ["RL-20260529-003"]
+  },
+  {
+    "id": "DB-04",
+    "project": "general",
+    "area": "database",
+    "title": "DB errors mapped at write boundary",
+    "rule": "Map uniqueness/constraint errors to domain errors at the repository boundary; include the conflicting key from `driverError.detail` in the message.",
+    "check": "Are DB errors mapped at the write boundary?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "DB-05",
+    "project": "general",
+    "area": "database",
+    "title": "Migrations agree with code",
+    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match.",
+    "check": "Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?",
+    "exampleRefs": [
+      "examples/database-migrations.md#db-05-do-not-use-the-recorded-migration-id-as-an-array-index",
+      "examples/database-migrations.md#db-05-migration-metadata-is-reviewed-not-copy-pasted"
+    ],
+    "reviewLearningIds": [
+      "RL-20260520-003",
+      "RL-20260506-007",
+      "RL-20260116-001",
+      "RL-20260601-001"
+    ]
+  },
+  {
+    "id": "CACHE-01",
+    "project": "general",
+    "area": "cache",
+    "title": "Multi-step cache writes checked",
+    "rule": "Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache.",
+    "check": "Are multi-step cache/Redis operations fully checked?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "CACHE-02",
+    "project": "general",
+    "area": "cache",
+    "title": "Cache keys cover all inputs",
+    "rule": "Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy.",
+    "check": "Are cache keys, bounded caches, and TTL semantics tested?",
+    "exampleRefs": [
+      "examples/cache.md#cache-02-bump-the-key-when-the-cached-payload-shape-changes",
+      "examples/cache.md#cache-02-cache-router-owns-the-field-services-should-not-override",
+      "examples/cache.md#cache-02-cache-key-includes-every-input-that-toggles-behavior"
+    ],
+    "reviewLearningIds": [
+      "RL-20260121-001",
+      "RL-20260114-001",
+      "RL-20251215-001"
+    ]
+  },
+  {
+    "id": "CONFIG-01",
+    "project": "general",
+    "area": "config",
+    "title": "Defaults safe and OSS-generic",
+    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`.",
+    "check": "Are defaults safe, minimal, and OSS-generic?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "CONFIG-02",
+    "project": "general",
+    "area": "config",
+    "title": "Config fails fast",
+    "rule": "Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read.",
+    "check": "Does config validation fail at startup?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260506-004",
+      "RL-20251219-002"
+    ]
+  },
+  {
+    "id": "CONFIG-03",
+    "project": "general",
+    "area": "config",
+    "title": "TTLs are config",
+    "rule": "TTLs/timeouts/cache settings are configured, not hardcoded. Follow precedents in similar repositories before introducing new hardcoded knobs.",
+    "check": "Are TTLs/timeouts/tunables configured?",
+    "exampleRefs": [
+      "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-003"
+    ]
+  },
+  {
+    "id": "CONFIG-04",
+    "project": "general",
+    "area": "config",
+    "title": "Pinned runtime versions",
+    "rule": "Runtime dependency versions are pinned exactly; do not hardcode contract versions/addresses that exist in `safe-deployments`.",
+    "check": "Are runtime dependencies pinned exactly?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "CONFIG-05",
+    "project": "general",
+    "area": "config",
+    "title": "Env metadata matches runtime",
+    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR.",
+    "check": "Do tool versions and env metadata match runtime behavior?",
+    "exampleRefs": [
+      "examples/configuration.md#change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release",
+      "examples/configuration.md#config-05-envsample-comments-document-encoding-and-format-constraints"
+    ],
+    "reviewLearningIds": [
+      "RL-20260108-001",
+      "RL-20251215-003"
+    ]
+  },
+  {
+    "id": "PERF-01",
+    "project": "general",
+    "area": "performance",
+    "title": "Batch and parallelize I/O",
+    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks.",
+    "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?",
+    "exampleRefs": [
+      "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-006"
+    ]
+  },
+  {
+    "id": "TEST-01",
+    "project": "general",
+    "area": "tests",
+    "title": "Use builders and fakes",
+    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason.",
+    "check": "Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?",
+    "exampleRefs": [
+      "examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-002",
+      "RL-20260521-001"
+    ]
+  },
+  {
+    "id": "TEST-02",
+    "project": "general",
+    "area": "tests",
+    "title": "Right test layer (pyramid)",
+    "rule": "Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: \"Can I test this meaningfully without starting the app, database, network, or framework?\" If yes, it is a unit test.",
+    "check": "Does each assertion live at the lowest layer that can prove it, and did I avoid duplicating the same scenario across unit, integration, and e2e?",
+    "exampleRefs": [
+      "examples/testing.md#test-02-suffix-matches-the-test-layer"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-001",
+      "RL-20260508-001",
+      "RL-20260529-004"
+    ]
+  },
+  {
+    "id": "TEST-03",
+    "project": "general",
+    "area": "tests",
+    "title": "No internal mock chains",
+    "rule": "Do not mock internal query-builder chains or implementation details.",
+    "check": "Did I avoid mocking internal query-builder chains?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "TEST-04",
+    "project": "general",
+    "area": "tests",
+    "title": "Cover security paths",
+    "rule": "Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads.",
+    "check": "Are security and negative paths covered?",
+    "exampleRefs": [
+      "examples/testing.md#test-04-when-a-required-field-is-added-to-config-update-every-fixture"
+    ],
+    "reviewLearningIds": [
+      "RL-20260506-004",
+      "RL-20251223-002",
+      "RL-20251219-001"
+    ]
+  },
+  {
+    "id": "TEST-05",
+    "project": "general",
+    "area": "tests",
+    "title": "Scoped test cleanup",
+    "rule": "Test setup/cleanup is scoped, not global workaround cleanup. `process.env.NODE_ENV` and other env mutations restore in `afterEach`.",
+    "check": "Is test cleanup scoped and minimal?",
+    "exampleRefs": [
+      "examples/testing.md#test-05-restore-processenv-and-trim-secret-shaped-strings"
+    ],
+    "reviewLearningIds": [
+      "RL-20251219-002"
+    ]
+  },
+  {
+    "id": "TEST-06",
+    "project": "general",
+    "area": "tests",
+    "title": "Fixtures fail loudly",
+    "rule": "Fixtures fail loudly when required deployments/data are absent — no silent skip.",
+    "check": "Do fixtures fail loudly instead of silently skipping?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "TEST-07",
+    "project": "general",
+    "area": "tests",
+    "title": "Pipeline coverage",
+    "rule": "Implementation-selection changes (provider, mapper, datasource) need full-pipeline coverage end to end.",
+    "check": "Are routing/precedence pipelines covered end to end?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260123-001",
+      "RL-20260121-001",
+      "RL-20260114-002"
+    ]
+  },
+  {
+    "id": "TEST-08",
+    "project": "general",
+    "area": "tests",
+    "title": "Test names match assertions",
+    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`.",
+    "check": "Do test names and generated data match the assertions?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "TEST-09",
+    "project": "general",
+    "area": "tests",
+    "title": "Cover edges and determinism",
+    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior.",
+    "check": "Do tests cover edge cases, side effects, and deterministic behavior?",
+    "exampleRefs": [
+      "examples/testing.md#test-09-cover-the-negative-paths-around-safety-critical-extraction"
+    ],
+    "reviewLearningIds": [
+      "RL-20260123-001",
+      "RL-20260113-001",
+      "RL-20251223-002"
+    ]
+  },
+  {
+    "id": "LOG-01",
+    "project": "general",
+    "area": "logging",
+    "title": "Operational log levels",
+    "rule": "Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value.",
+    "check": "Are log levels operationally appropriate?",
+    "exampleRefs": [
+      "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default"
+    ],
+    "reviewLearningIds": [
+      "RL-20260121-001",
+      "RL-20260114-002"
+    ]
+  },
+  {
+    "id": "LOG-02",
+    "project": "general",
+    "area": "logging",
+    "title": "No noisy success logs",
+    "rule": "Hot worker events and expected success paths are not noisy logs.",
+    "check": "Did I avoid noisy success logs?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "LOG-03",
+    "project": "general",
+    "area": "logging",
+    "title": "Telemetry cost-justified",
+    "rule": "New telemetry must be worth its operational cost.",
+    "check": "Is any new telemetry worth its operational cost?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "LOG-04",
+    "project": "general",
+    "area": "logging",
+    "title": "Structured logs and asError",
+    "rule": "Structured logs use `LogType`; caught values use `asError`. Internal error/exception messages do not flow into user-facing API response fields. Errors thrown from infrastructure include identifying context (which Safe, chainId, constraint key).",
+    "check": "Did I use structured log types and error normalization helpers?",
+    "exampleRefs": [
+      "examples/error-handling.md#style-01-log-04-internal-errors-do-not-leak-into-user-responses",
+      "examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys"
+    ],
+    "reviewLearningIds": [
+      "RL-20251222-001",
+      "RL-20251219-001"
+    ]
+  },
+  {
+    "id": "SEC-01",
+    "project": "general",
+    "area": "security",
+    "title": "Validate redirect targets",
+    "rule": "Redirect and callback targets are strictly validated for protocol, domain, credentials, and ports.",
+    "check": "Are redirect and callback targets strictly validated?",
+    "exampleRefs": [],
+    "reviewLearningIds": []
+  },
+  {
+    "id": "SEC-02",
+    "project": "general",
+    "area": "security",
+    "title": "Bounded sensitive fields",
+    "rule": "Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the \"doesn't exist\" branch explicitly.",
+    "check": "Are secrets, unverified payloads, and sensitive fields bounded and explicitly selected?",
+    "exampleRefs": [
+      "examples/auth-and-secrets.md#sec-02-default-headers-come-first-caller-headers-override",
+      "examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys"
+    ],
+    "reviewLearningIds": [
+      "RL-20251219-001"
+    ]
+  },
+  {
+    "id": "CACHE-03",
+    "project": "general",
+    "area": "cache",
+    "title": "Cached payload shape is canonical once",
+    "rule": "Cache readers and writers must agree whether payloads are raw upstream data or normalized domain data; document expiry-only caches that have no invalidation hook.",
+    "check": "Did this add or change a cached datasource payload? If yes, is normalization applied exactly once and are invalidation/expiry semantics documented?",
+    "exampleRefs": [
+      "examples/cache.md#cache-03-document-expiry-only-caches-at-the-call-site",
+      "examples/cache.md#cache-03-normalize-cached-payloads-exactly-once"
+    ],
+    "reviewLearningIds": [
+      "RL-20260128-001",
+      "RL-20260123-001",
+      "RL-20260121-001",
+      "RL-20260114-001"
+    ]
+  },
+  {
+    "id": "DATA-01",
+    "project": "general",
+    "area": "data",
+    "title": "Aggregates match returned items and signed values",
+    "rule": "Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt.",
+    "check": "Did this add filtering or aggregate totals? If yes, are totals based on returned items and are negative values handled by magnitude when appropriate?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20260113-001"
+    ]
+  },
+  {
+    "id": "RESILIENCE-01",
+    "area": "resilience",
+    "title": "Resilience policy semantics",
+    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken.",
+    "check": "For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?",
+    "exampleRefs": [
+      "examples/resilience.md#resilience-01-classify-failures-and-scope-the-policy-key",
+      "examples/resilience.md#resilience-01-do-not-count-policy-blocked-attempts-as-policy-failures",
+      "examples/resilience.md#resilience-01-stale-cleanup-multiplies-durations-not-timestamps",
+      "examples/resilience.md#resilience-01-error-type-stays-consistent-across-the-policy-boundary"
+    ],
+    "reviewLearningIds": [
+      "RL-20251215-002"
+    ]
+  }
+]
