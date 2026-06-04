@@ -10,9 +10,15 @@ import { IPositionsRepository } from '@/modules/positions/domain/positions.repos
 import { PositionsController } from '@/modules/positions/routes/positions.controller';
 import { PositionsService } from '@/modules/positions/routes/positions.service';
 import { ZerionModule } from '@/modules/zerion/zerion.module';
+import { CaptchaModule } from '@/routes/captcha/captcha.module';
 
 @Module({
-  imports: [CacheFirstDataSourceModule, ChainsModule, ZerionModule],
+  imports: [
+    CacheFirstDataSourceModule,
+    ChainsModule,
+    ZerionModule,
+    CaptchaModule,
+  ],
   controllers: [PositionsController],
   providers: [
     HttpErrorFactory,
