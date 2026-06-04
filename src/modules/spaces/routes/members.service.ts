@@ -93,15 +93,14 @@ export class MembersService {
     return {
       members: members.map((member) => ({
         ...member,
-        user: {
-          ...member.user,
+        user: this.toMemberUser(
+          member.user,
           // Until the member accepted the invite, only expose their email
           // to active admins.
-          email:
-            member.status === 'ACTIVE' || isActiveAdmin
-              ? member.user.email
-              : null,
-        },
+          member.status === 'ACTIVE' || isActiveAdmin
+            ? member.user.email
+            : null,
+        ),
       })),
     };
   }
@@ -110,10 +109,26 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MemberDto> {
-    return await this.membersRepository.findSelfMembershipOrFail({
+    const member = await this.membersRepository.findSelfMembershipOrFail({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+    return {
+      ...member,
+      user: this.toMemberUser(member.user, member.user.email),
+    };
+  }
+
+  /**
+   * Maps a domain user to the public shape exposed in member responses,
+   * explicitly omitting sensitive fields such as `extUserId`.
+   */
+  private toMemberUser(user: User, email: User['email']): MemberDto['user'] {
+    return {
+      id: user.id,
+      status: user.status,
+      email,
+    };
   }
 
   public async updateRole(args: {
