@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { NameSchema } from '@/domain/common/schemas/name.schema';
+import {
+  makeNameSchema,
+  NameSchema,
+} from '@/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
@@ -17,6 +20,8 @@ export enum MemberStatus {
   ACTIVE = 1,
   DECLINED = 2,
 }
+
+export const MEMBER_NAME_MAX_LENGTH = 255;
 
 export type Member = z.infer<typeof RowSchema> & {
   user: User;
@@ -34,7 +39,7 @@ export type Member = z.infer<typeof RowSchema> & {
 export const MemberSchema = RowSchema.extend({
   user: z.lazy((): z.ZodType<User> => UserSchema),
   space: z.lazy((): z.ZodType<Space> => SpaceSchema),
-  name: NameSchema,
+  name: makeNameSchema({ maxLength: MEMBER_NAME_MAX_LENGTH }),
   alias: NameSchema.nullable(),
   role: z.enum(getStringEnumKeys(MemberRole)),
   status: z.enum(getStringEnumKeys(MemberStatus)),
