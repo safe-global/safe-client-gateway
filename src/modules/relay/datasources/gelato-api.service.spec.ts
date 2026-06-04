@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -14,13 +15,13 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { GelatoApi } from '@/modules/relay/datasources/gelato-api.service';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockNetworkService = jest.mocked({
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  post: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockLoggingService = jest.mocked({
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  error: vi.fn(),
+} as MockedObject<ILoggingService>);
 
 describe('GelatoApi', () => {
   let target: GelatoApi;
@@ -31,7 +32,7 @@ describe('GelatoApi', () => {
   let httpErrorFactory: HttpErrorFactory;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();

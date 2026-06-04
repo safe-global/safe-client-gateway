@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   INVALID_SPACE_IDENTIFIER_MESSAGE,
@@ -9,14 +10,14 @@ import {
 } from '@/modules/spaces/routes/pipes/space-id.pipe';
 
 const spacesRepositoryMock = {
-  findIdByUuid: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
+  findIdByUuid: vi.fn(),
+} as MockedObject<ISpacesRepository>;
 
 describe('SpaceIdPipe', () => {
   let pipe: SpaceIdPipe;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     pipe = new SpaceIdPipe(spacesRepositoryMock);
   });
 

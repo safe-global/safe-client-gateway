@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -42,8 +44,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Community Controller', () => {
   let app: INestApplication<Server>;
   let lockingBaseUri: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let identityApi: jest.MockedObjectDeep<IIdentityApi>;
+  let networkService: MockedObject<INetworkService>;
+  let identityApi: MockedObject<IIdentityApi>;
 
   beforeAll(async () => {
     const moduleFixture = await createTestModule({
@@ -72,7 +74,7 @@ describe('Community Controller', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('GET /community/campaigns', () => {

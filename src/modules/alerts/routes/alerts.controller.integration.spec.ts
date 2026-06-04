@@ -6,6 +6,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -66,14 +67,14 @@ function fakeTenderlySignature(args: {
 }
 
 describe('Alerts Controller', () => {
-  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
+  let configurationService: MockedObject<IConfigurationService>;
 
   describe('/alerts route enabled', () => {
     let app: INestApplication<Server>;
     let signingKey: string;
 
     beforeAll(async () => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -848,7 +849,7 @@ describe('Alerts Controller', () => {
     let app: INestApplication<Server>;
 
     beforeAll(async () => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({

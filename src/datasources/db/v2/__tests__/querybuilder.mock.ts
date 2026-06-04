@@ -1,8 +1,9 @@
 import type { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
+import type { MockedObject } from 'vitest';
 
 export const mockQueryBuilder = {
-  delete: jest.fn().mockReturnThis(),
-  from: jest.fn().mockReturnThis(),
-  where: jest.fn().mockReturnThis(),
-  execute: jest.fn(),
-} as jest.MockedObjectDeep<SelectQueryBuilder<ObjectLiteral>>;
+  delete: vi.fn().mockReturnThis(),
+  from: vi.fn().mockReturnThis(),
+  where: vi.fn().mockReturnThis(),
+  execute: vi.fn(),
+} as MockedObject<SelectQueryBuilder<ObjectLiteral>>;

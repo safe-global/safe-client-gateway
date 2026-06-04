@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { MockedObject } from 'vitest';
 import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
@@ -11,22 +12,22 @@ import type { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fe
 import type { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
 
 const mockDailyLimitRelayer = {
-  canRelay: jest.fn(),
-  relay: jest.fn(),
-  getRelaysRemaining: jest.fn(),
-} as unknown as jest.MockedObjectDeep<DailyLimitRelayer>;
+  canRelay: vi.fn(),
+  relay: vi.fn(),
+  getRelaysRemaining: vi.fn(),
+} as unknown as MockedObject<DailyLimitRelayer>;
 
 const mockNoFeeCampaignRelayer = {
-  canRelay: jest.fn(),
-  relay: jest.fn(),
-  getRelaysRemaining: jest.fn(),
-} as unknown as jest.MockedObjectDeep<NoFeeCampaignRelayer>;
+  canRelay: vi.fn(),
+  relay: vi.fn(),
+  getRelaysRemaining: vi.fn(),
+} as unknown as MockedObject<NoFeeCampaignRelayer>;
 
 const mockRelayFeeRelayer = {
-  canRelay: jest.fn(),
-  relay: jest.fn(),
-  getRelaysRemaining: jest.fn(),
-} as unknown as jest.MockedObjectDeep<RelayFeeRelayer>;
+  canRelay: vi.fn(),
+  relay: vi.fn(),
+  getRelaysRemaining: vi.fn(),
+} as unknown as MockedObject<RelayFeeRelayer>;
 
 const signerFactoryDecoder = new SignerFactoryDecoder();
 
@@ -34,7 +35,7 @@ describe('RelayManager', () => {
   let manager: RelayManager;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     manager = new RelayManager(
       mockDailyLimitRelayer,
       mockNoFeeCampaignRelayer,

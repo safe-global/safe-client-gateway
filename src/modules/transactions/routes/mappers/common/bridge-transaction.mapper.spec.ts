@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
+import type { Mocked } from 'vitest';
 import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
 import type { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
@@ -13,42 +15,42 @@ import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 
 describe('BridgeTransactionMapper (Unit)', () => {
   let mapper: BridgeTransactionMapper;
-  let liFiDecoder: jest.Mocked<LiFiDecoder>;
-  let tokenRepository: jest.Mocked<ITokenRepository>;
-  let addressInfoHelper: jest.Mocked<AddressInfoHelper>;
-  let bridgeRepository: jest.Mocked<IBridgeRepository>;
-  let chainsRepository: jest.Mocked<IChainsRepository>;
+  let liFiDecoder: Mocked<LiFiDecoder>;
+  let tokenRepository: Mocked<ITokenRepository>;
+  let addressInfoHelper: Mocked<AddressInfoHelper>;
+  let bridgeRepository: Mocked<IBridgeRepository>;
+  let chainsRepository: Mocked<IChainsRepository>;
 
   beforeEach(() => {
     liFiDecoder = {
-      isBridge: jest.fn(),
-      isSwap: jest.fn(),
-      isSwapAndBridge: jest.fn(),
-      decodeSwap: jest.fn(),
-      decodeBridgeAndMaybeSwap: jest.fn(),
-    } as unknown as jest.Mocked<LiFiDecoder>;
+      isBridge: vi.fn(),
+      isSwap: vi.fn(),
+      isSwapAndBridge: vi.fn(),
+      decodeSwap: vi.fn(),
+      decodeBridgeAndMaybeSwap: vi.fn(),
+    } as unknown as Mocked<LiFiDecoder>;
 
     tokenRepository = {
-      getToken: jest.fn(),
-      getTokens: jest.fn(),
-    } as unknown as jest.Mocked<ITokenRepository>;
+      getToken: vi.fn(),
+      getTokens: vi.fn(),
+    } as unknown as Mocked<ITokenRepository>;
 
     addressInfoHelper = {
-      get: jest.fn(),
-      getOrDefault: jest.fn(),
-      getCollection: jest.fn(),
-    } as unknown as jest.Mocked<AddressInfoHelper>;
+      get: vi.fn(),
+      getOrDefault: vi.fn(),
+      getCollection: vi.fn(),
+    } as unknown as Mocked<AddressInfoHelper>;
 
     bridgeRepository = {
-      getDiamondAddress: jest.fn(),
-      getStatus: jest.fn(),
-      getQuote: jest.fn(),
-      getRoutes: jest.fn(),
-    } as unknown as jest.Mocked<IBridgeRepository>;
+      getDiamondAddress: vi.fn(),
+      getStatus: vi.fn(),
+      getQuote: vi.fn(),
+      getRoutes: vi.fn(),
+    } as unknown as Mocked<IBridgeRepository>;
 
     chainsRepository = {
-      getChain: jest.fn(),
-    } as unknown as jest.Mocked<IChainsRepository>;
+      getChain: vi.fn(),
+    } as unknown as Mocked<IChainsRepository>;
 
     mapper = new BridgeTransactionMapper(
       liFiDecoder,

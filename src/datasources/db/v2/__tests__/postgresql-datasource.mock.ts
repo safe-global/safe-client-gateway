@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { DataSource } from 'typeorm';
 import type { QueryResultCache } from 'typeorm/cache/QueryResultCache';
+import type { MockedObject } from 'vitest';
 
 export const mockQueryResultCache = {
-  remove: jest.fn(),
-} as jest.MockedObjectDeep<QueryResultCache>;
+  remove: vi.fn(),
+} as MockedObject<QueryResultCache>;
 
 export const mockPostgresDataSource = {
-  query: jest.fn(),
-  runMigrations: jest.fn(),
-  initialize: jest.fn(),
+  query: vi.fn(),
+  runMigrations: vi.fn(),
+  initialize: vi.fn(),
   queryResultCache: mockQueryResultCache,
-} as jest.MockedObjectDeep<DataSource>;
+} as unknown as MockedObject<DataSource>;

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -30,15 +32,15 @@ import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('SpaceAuditRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
@@ -93,7 +95,7 @@ describe('SpaceAuditRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: jest.fn().mockImplementation((key: string) => {
+      getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -101,7 +103,7 @@ describe('SpaceAuditRepository', () => {
           return testConfiguration.db.migrator.retryAfterMs;
         }
       }),
-    } as jest.MockedObjectDeep<ConfigService>;
+    } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
       mockLoggingService,
       postgresDatabaseService,
@@ -615,13 +617,13 @@ describe('SpaceAuditRepository', () => {
   describe('record (flag off)', () => {
     it('should be a no-op when the feature flag is disabled', async () => {
       const { spaceId, spaceUuid, adminUserId } = await createSpaceWithAdmin();
-      const disabledConfigurationService = jest.mocked({
-        getOrThrow: jest.fn().mockImplementation((key: string) => {
+      const disabledConfigurationService = vi.mocked({
+        getOrThrow: vi.fn().mockImplementation((key: string) => {
           if (key === 'features.spaceAuditLog') {
             return false;
           }
         }),
-      } as jest.MockedObjectDeep<IConfigurationService>);
+      } as MockedObject<IConfigurationService>);
       const disabledRepository = new SpaceAuditRepository(
         postgresDatabaseService,
         disabledConfigurationService,

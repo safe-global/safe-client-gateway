@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
@@ -18,8 +20,8 @@ import { TransactionFinder } from '@/modules/transactions/routes/helpers/transac
 import { TwapOrderHelper } from '@/modules/transactions/routes/helpers/twap-order.helper';
 
 const mockLoggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('TwapOrderHelper', () => {
   const ComposableCowAddress = '0xfdaFc9d1902f4e0b84f65F49f244b32b31013b74';

@@ -8,7 +8,7 @@ describe('ProxyFactoryDecoder', () => {
   let target: ProxyFactoryDecoder;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new ProxyFactoryDecoder();
   });
 

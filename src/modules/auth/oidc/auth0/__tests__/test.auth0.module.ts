@@ -7,8 +7,8 @@ import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.reposit
     {
       provide: IAuth0Repository,
       useValue: {
-        getAuthorizationUrl: jest.fn(),
-        authenticateWithAuthorizationCode: jest.fn(),
+        getAuthorizationUrl: vi.fn(),
+        authenticateWithAuthorizationCode: vi.fn(),
       },
     },
   ],

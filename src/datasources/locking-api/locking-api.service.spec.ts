@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { LockingApi } from '@/datasources/locking-api/locking-api.service';
@@ -21,9 +23,9 @@ import type { CampaignRank } from '@/modules/community/domain/entities/campaign-
 import { rawify } from '@/validation/entities/raw.entity';
 
 const networkService = {
-  get: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
-const mockNetworkService = jest.mocked(networkService);
+  get: vi.fn(),
+} as MockedObject<INetworkService>;
+const mockNetworkService = vi.mocked(networkService);
 
 describe('LockingApi', () => {
   let service: LockingApi;
@@ -33,7 +35,7 @@ describe('LockingApi', () => {
   let lockingBaseUri: string;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     lockingBaseUri = faker.internet.url({ appendSlash: false });
 

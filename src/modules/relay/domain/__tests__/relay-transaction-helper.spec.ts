@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress, zeroAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import configuration from '@/config/entities/configuration';
 import {
@@ -60,24 +62,24 @@ const MULTI_SEND_VERSIONS = getDeploymentVersionsByChainIds(
   supportedChainIds,
 );
 
-const mockLoggingService = jest.mocked({
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>);
 
-const mockSafeRepository = jest.mocked({
-  getSafe: jest.fn(),
-  getSafesByModule: jest.fn(),
-  getMultiSigTransaction: jest.fn(),
-} as jest.MockedObjectDeep<ISafeRepository>);
+const mockSafeRepository = vi.mocked({
+  getSafe: vi.fn(),
+  getSafesByModule: vi.fn(),
+  getMultiSigTransaction: vi.fn(),
+} as MockedObject<ISafeRepository>);
 
 describe('RelayTransactionHelper', () => {
   let helper: RelayTransactionHelper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     helper = new RelayTransactionHelper(
       mockSafeRepository,

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -21,10 +23,10 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('List module transactions by Safe - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const moduleFixture = await createTestModule();
 

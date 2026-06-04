@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
 import { getAddress } from 'viem';
+import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -35,41 +36,41 @@ import { RecipientAnalysisService } from './recipient-analysis.service';
 
 describe('RecipientAnalysisService', () => {
   const mockTransactionApi = {
-    getTransfers: jest.fn(),
-    getSafe: jest.fn(),
-  } as jest.MockedObjectDeep<ITransactionApi>;
+    getTransfers: vi.fn(),
+    getSafe: vi.fn(),
+  } as MockedObject<ITransactionApi>;
 
   const mockTransactionApiManager = {
-    getApi: jest.fn().mockResolvedValue(mockTransactionApi),
-  } as jest.MockedObjectDeep<ITransactionApiManager>;
+    getApi: vi.fn().mockResolvedValue(mockTransactionApi),
+  } as MockedObject<ITransactionApiManager>;
 
   const mockErc20Decoder = {
     helpers: {
-      isTransfer: jest.fn(),
-      isTransferFrom: jest.fn(),
+      isTransfer: vi.fn(),
+      isTransferFrom: vi.fn(),
     },
-  } as jest.MockedObjectDeep<Erc20Decoder>;
+  } as MockedObject<Erc20Decoder>;
 
   const mockConfigurationService = {
-    getOrThrow: jest.fn().mockReturnValue(3600), // Default cache expiration
-  } as jest.MockedObjectDeep<IConfigurationService>;
+    getOrThrow: vi.fn().mockReturnValue(3600), // Default cache expiration
+  } as MockedObject<IConfigurationService>;
 
   const fakeCacheService = new FakeCacheService();
 
   const mockLoggingService = {
-    debug: jest.fn(),
-    warn: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>;
+    debug: vi.fn(),
+    warn: vi.fn(),
+  } as MockedObject<ILoggingService>;
 
   const mockChainsRepository = {
-    getAllChains: jest.fn(),
-    isSupportedChain: jest.fn(),
-    getChain: jest.fn(),
-  } as jest.MockedObjectDeep<IChainsRepository>;
+    getAllChains: vi.fn(),
+    isSupportedChain: vi.fn(),
+    getChain: vi.fn(),
+  } as MockedObject<IChainsRepository>;
 
   const mockTransactionsService = {
-    getCreationTransaction: jest.fn(),
-  } as jest.MockedObjectDeep<TransactionsService>;
+    getCreationTransaction: vi.fn(),
+  } as MockedObject<TransactionsService>;
 
   const service = new RecipientAnalysisService(
     mockTransactionApiManager,
@@ -81,7 +82,7 @@ describe('RecipientAnalysisService', () => {
     mockTransactionsService,
   );
 
-  const extractRecipientsSpy = jest.spyOn(utils, 'extractRecipients');
+  const extractRecipientsSpy = vi.spyOn(utils, 'extractRecipients');
 
   const mockChainId = faker.string.numeric(3); // Random chain ID
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
@@ -172,7 +173,7 @@ describe('RecipientAnalysisService', () => {
     faker.helpers.arrayElement(['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1']);
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     fakeCacheService.clear();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
   });
@@ -429,7 +430,7 @@ describe('RecipientAnalysisService', () => {
       });
 
       // Reset mocks for second call
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
 
       // Second run should use cache
@@ -660,12 +661,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
+            getSafe: vi.fn().mockResolvedValue(mockSourceSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null),
+          getSafe: vi.fn().mockResolvedValue(null),
         });
       });
 
@@ -725,9 +726,7 @@ describe('RecipientAnalysisService', () => {
         .with('owners', [getAddress(faker.finance.ethereumAddress())])
         .build();
 
-      (mockTransactionApi.getSafe as jest.Mock).mockResolvedValue(
-        mockSourceSafe,
-      );
+      (mockTransactionApi.getSafe as Mock).mockResolvedValue(mockSourceSafe);
 
       const result = await service.analyzeBridge({
         chainId: mockChainId,
@@ -748,12 +747,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockRejectedValue(new Error('Network error')),
+            getSafe: vi.fn().mockRejectedValue(new Error('Network error')),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null),
+          getSafe: vi.fn().mockResolvedValue(null),
         });
       });
 
@@ -804,9 +803,7 @@ describe('RecipientAnalysisService', () => {
         .with('owners', [owner1, owner2])
         .build();
 
-      (mockTransactionApi.getSafe as jest.Mock).mockResolvedValue(
-        mockSourceSafe,
-      );
+      (mockTransactionApi.getSafe as Mock).mockResolvedValue(mockSourceSafe);
 
       const result = await service.analyzeBridge({
         chainId: mockChainId,
@@ -894,9 +891,7 @@ describe('RecipientAnalysisService', () => {
         .with('owners', [getAddress(faker.finance.ethereumAddress())])
         .build();
 
-      (mockTransactionApi.getSafe as jest.Mock).mockResolvedValue(
-        mockSourceSafe,
-      );
+      (mockTransactionApi.getSafe as Mock).mockResolvedValue(mockSourceSafe);
 
       const result = await service.analyzeBridge({
         chainId: mockChainId,
@@ -1304,14 +1299,12 @@ describe('RecipientAnalysisService', () => {
         chainBuilder().with('chainId', faker.string.numeric(3)).build(),
       );
 
-      (mockTransactionApi.getSafe as jest.Mock).mockImplementation(
-        (address) => {
-          if (address === mockSafeAddress) {
-            return Promise.resolve(sourceSafe);
-          }
-          return Promise.resolve(targetSafe);
-        },
-      );
+      (mockTransactionApi.getSafe as Mock).mockImplementation((address) => {
+        if (address === mockSafeAddress) {
+          return Promise.resolve(sourceSafe);
+        }
+        return Promise.resolve(targetSafe);
+      });
 
       const result = await service.analyzeBridge({
         chainId: mockChainId,
@@ -1352,18 +1345,18 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(sourceSafe),
+            getSafe: vi.fn().mockResolvedValue(sourceSafe),
           });
         }
         if (chainId !== mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(targetSafe),
+            getSafe: vi.fn().mockResolvedValue(targetSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null),
+          getSafe: vi.fn().mockResolvedValue(null),
         });
       });
 
@@ -1419,12 +1412,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(sourceSafe),
+            getSafe: vi.fn().mockResolvedValue(sourceSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(targetSafe),
+          getSafe: vi.fn().mockResolvedValue(targetSafe),
         });
       });
 
@@ -1469,12 +1462,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(sourceSafe),
+            getSafe: vi.fn().mockResolvedValue(sourceSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(targetSafe),
+          getSafe: vi.fn().mockResolvedValue(targetSafe),
         });
       });
 
@@ -1531,12 +1524,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
+            getSafe: vi.fn().mockResolvedValue(mockSourceSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null),
+          getSafe: vi.fn().mockResolvedValue(null),
         });
       });
 
@@ -1581,7 +1574,7 @@ describe('RecipientAnalysisService', () => {
 
     it('should handle JSON parsing errors in cached data gracefully', async () => {
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
-      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+      (mockTransactionApi.getTransfers as Mock).mockResolvedValue(
         mockTransferPage(3),
       );
 
@@ -1609,9 +1602,9 @@ describe('RecipientAnalysisService', () => {
       await fakeCacheService.hSet(cacheDir, 'invalid json data', 3600);
 
       // Reset mocks
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       extractRecipientsSpy.mockReturnValue([mockRecipientAddress]);
-      (mockTransactionApi.getTransfers as jest.Mock).mockResolvedValue(
+      (mockTransactionApi.getTransfers as Mock).mockResolvedValue(
         mockTransferPage(3),
       );
 
@@ -1660,12 +1653,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
+            getSafe: vi.fn().mockResolvedValue(mockSourceSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null),
+          getSafe: vi.fn().mockResolvedValue(null),
         });
       });
 
@@ -1712,12 +1705,12 @@ describe('RecipientAnalysisService', () => {
         if (chainId === mockChainId) {
           return Promise.resolve({
             ...mockTransactionApi,
-            getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
+            getSafe: vi.fn().mockResolvedValue(mockSourceSafe),
           });
         }
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(null),
+          getSafe: vi.fn().mockResolvedValue(null),
         });
       });
 
@@ -1757,7 +1750,7 @@ describe('RecipientAnalysisService', () => {
       mockTransactionApiManager.getApi.mockImplementation(() => {
         return Promise.resolve({
           ...mockTransactionApi,
-          getSafe: jest.fn().mockResolvedValue(mockSourceSafe),
+          getSafe: vi.fn().mockResolvedValue(mockSourceSafe),
           getTransfers: mockTransactionApi.getTransfers,
         });
       });

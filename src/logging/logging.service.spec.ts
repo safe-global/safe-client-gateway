@@ -1,20 +1,21 @@
 import { faker } from '@faker-js/faker';
 import type { ClsService } from 'nestjs-cls';
+import type { MockedObject } from 'vitest';
 import type winston from 'winston';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { RequestScopedLoggingService } from '@/logging/logging.service';
 
-const mockClsService = jest.mocked({
-  getId: jest.fn(),
-} as jest.MockedObjectDeep<ClsService>);
+const mockClsService = vi.mocked({
+  getId: vi.fn(),
+} as MockedObject<ClsService>);
 
 const mockLogger = {
-  log: jest.fn(),
-} as jest.MockedObjectDeep<winston.Logger>;
+  log: vi.fn(),
+} as MockedObject<winston.Logger>;
 
-const mockConfigurationService = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('RequestScopedLoggingService', () => {
   const systemTime: Date = faker.date.recent();
@@ -24,12 +25,12 @@ describe('RequestScopedLoggingService', () => {
   let loggingService: RequestScopedLoggingService;
 
   beforeAll(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(systemTime);
+    vi.useFakeTimers();
+    vi.setSystemTime(systemTime);
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockConfigurationService.get.mockImplementation((key) => {
       switch (key) {
         case 'about.version':

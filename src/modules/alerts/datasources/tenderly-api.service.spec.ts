@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -11,10 +13,10 @@ import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-del
 import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
 
 const networkService = {
-  post: jest.fn(),
-  delete: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
-const mockNetworkService = jest.mocked(networkService);
+  post: vi.fn(),
+  delete: vi.fn(),
+} as MockedObject<INetworkService>;
+const mockNetworkService = vi.mocked(networkService);
 
 describe('TenderlyApi', () => {
   let service: TenderlyApi;
@@ -27,7 +29,7 @@ describe('TenderlyApi', () => {
   let tenderlyProject: string;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     tenderlyBaseUri = faker.internet.url({ appendSlash: false });
     tenderlyApiKey = faker.string.hexadecimal({ length: 32 });

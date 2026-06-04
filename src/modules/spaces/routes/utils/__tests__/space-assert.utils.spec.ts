@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
@@ -12,16 +13,16 @@ import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/me
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 const spacesRepositoryMock = {
-  findOne: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
+  findOne: vi.fn(),
+} as MockedObject<ISpacesRepository>;
 
 const membersRepositoryMock = {
-  findOne: jest.fn(),
-} as jest.MockedObjectDeep<IMembersRepository>;
+  findOne: vi.fn(),
+} as MockedObject<IMembersRepository>;
 
 describe('space-assert.utils', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('assertAdmin', () => {

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import type { Mocked } from 'vitest';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
@@ -34,7 +36,7 @@ import { SafeShieldService } from './safe-shield.service';
 
 describe('SafeShieldController (Unit)', () => {
   let controller: SafeShieldController;
-  let safeShieldService: jest.Mocked<SafeShieldService>;
+  let safeShieldService: Mocked<SafeShieldService>;
   let moduleRef: TestingModule;
 
   const mockChainId = faker.number.int({ min: 1, max: 999999 }).toString();
@@ -42,7 +44,7 @@ describe('SafeShieldController (Unit)', () => {
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     moduleRef = await Test.createTestingModule({
       controllers: [SafeShieldController],
@@ -50,9 +52,9 @@ describe('SafeShieldController (Unit)', () => {
         {
           provide: SafeShieldService,
           useValue: {
-            analyzeRecipient: jest.fn(),
-            analyzeCounterparty: jest.fn(),
-            analyzeThreats: jest.fn(),
+            analyzeRecipient: vi.fn(),
+            analyzeCounterparty: vi.fn(),
+            analyzeThreats: vi.fn(),
           },
         },
       ],

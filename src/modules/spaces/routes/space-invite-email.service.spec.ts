@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -18,20 +19,20 @@ const BASE_URI = 'https://app.safe.global';
 const INVITE_URL = 'https://app.safe.global/welcome/spaces';
 
 const configurationServiceMock = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 const loggingServiceMock = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const spacesRepositoryMock = {
-  findOneOrFail: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
+  findOneOrFail: vi.fn(),
+} as MockedObject<ISpacesRepository>;
 
 const sesEmailQueueServiceMock = {
-  enqueue: jest.fn(),
-} as jest.MockedObjectDeep<SesEmailQueueService>;
+  enqueue: vi.fn(),
+} as MockedObject<SesEmailQueueService>;
 
 describe('SpaceInviteEmailService', () => {
   let service: SpaceInviteEmailService;
@@ -48,7 +49,7 @@ describe('SpaceInviteEmailService', () => {
     );
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeWebApp.baseUri') {
         return BASE_URI;

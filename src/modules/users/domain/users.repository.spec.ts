@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
+import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
@@ -20,44 +22,44 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 }
 
 describe('UsersRepository', () => {
-  const walletsRepository = {} as jest.MockedObjectDeep<IWalletsRepository>;
+  const walletsRepository = {} as MockedObject<IWalletsRepository>;
 
-  let postgresDatabaseService: jest.MockedObjectDeep<PostgresDatabaseService>;
+  let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
-    find: jest.Mock;
-    findOne: jest.Mock;
-    findOneOrFail: jest.Mock;
-    update: jest.Mock;
-    createQueryBuilder: jest.Mock;
+    find: Mock;
+    findOne: Mock;
+    findOneOrFail: Mock;
+    update: Mock;
+    createQueryBuilder: Mock;
   };
-  let emailUpdateExecute: jest.Mock;
+  let emailUpdateExecute: Mock;
   let target: UsersRepository;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     // Chainable stub for persistEmail's UPDATE ... WHERE email IS NULL query.
-    emailUpdateExecute = jest.fn().mockResolvedValue(undefined);
+    emailUpdateExecute = vi.fn().mockResolvedValue(undefined);
     const queryBuilder = {
-      update: jest.fn().mockReturnThis(),
-      set: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
       execute: emailUpdateExecute,
     };
 
     userRepository = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      findOneOrFail: jest.fn(),
-      update: jest.fn(),
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      find: vi.fn(),
+      findOne: vi.fn(),
+      findOneOrFail: vi.fn(),
+      update: vi.fn(),
+      createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
     };
 
     postgresDatabaseService = {
-      getRepository: jest.fn().mockResolvedValue(userRepository),
-      transaction: jest.fn(),
-    } as jest.MockedObjectDeep<PostgresDatabaseService>;
+      getRepository: vi.fn().mockResolvedValue(userRepository),
+      transaction: vi.fn(),
+    } as MockedObject<PostgresDatabaseService>;
 
     target = new UsersRepository(
       postgresDatabaseService,
@@ -73,17 +75,17 @@ describe('UsersRepository', () => {
       racedUserId?: number;
     }) => {
       const queryBuilder = {
-        insert: jest.fn().mockReturnThis(),
-        into: jest.fn().mockReturnThis(),
-        values: jest.fn().mockReturnThis(),
-        orIgnore: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue({
+        insert: vi.fn().mockReturnThis(),
+        into: vi.fn().mockReturnThis(),
+        values: vi.fn().mockReturnThis(),
+        orIgnore: vi.fn().mockReturnThis(),
+        execute: vi.fn().mockResolvedValue({
           identifiers: args?.walletInsertIdentifiers ?? [{ id: 1 }],
         }),
       };
 
       return {
-        findOne: jest
+        findOne: vi
           .fn()
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce(
@@ -95,11 +97,11 @@ describe('UsersRepository', () => {
                 }
               : null,
           ),
-        insert: jest.fn().mockResolvedValue({
+        insert: vi.fn().mockResolvedValue({
           identifiers: [{ id: args?.createdUserId ?? 1 }],
         }),
-        createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
-        delete: jest.fn(),
+        createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
+        delete: vi.fn(),
       };
     };
 

@@ -9,12 +9,12 @@ import { Wallet as DbWallet } from '@/modules/wallets/datasources/entities/walle
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
-const mockUsersRepository = jest.mocked({
-  find: jest.fn(),
+const mockUsersRepository = vi.mocked({
+  find: vi.fn(),
 } as unknown as IUsersRepository);
 
-const mockWalletsRepository = jest.mocked({
-  find: jest.fn(),
+const mockWalletsRepository = vi.mocked({
+  find: vi.fn(),
 } as unknown as IWalletsRepository);
 
 const buildUser = (overrides: Partial<DbUser>): DbUser =>
@@ -34,7 +34,7 @@ describe('UserIdentityResolverService', () => {
   let service: UserIdentityResolverService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     service = new UserIdentityResolverService(
       mockUsersRepository,
       mockWalletsRepository,

@@ -13,14 +13,14 @@ import {
   findTsFiles,
 } from './validate-env-json';
 
-jest.mock('node:fs');
-jest.mock('./env-json-helpers', () => ({
-  ...jest.requireActual('./env-json-helpers'),
-  readDirectory: jest.fn(),
+vi.mock('node:fs');
+vi.mock('./env-json-helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./env-json-helpers')>()),
+  readDirectory: vi.fn(),
 }));
 
-const mockFs = jest.mocked(fs);
-const mockReadDirectory = jest.mocked(readDirectory);
+const mockFs = vi.mocked(fs);
+const mockReadDirectory = vi.mocked(readDirectory);
 
 /**
  * Helper to create a DirectoryEntry representing a file
@@ -40,13 +40,13 @@ describe('validate-env-json', () => {
   const SRC_PATH = path.join(PROJECT_ROOT, 'src');
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
+    vi.clearAllMocks();
+    vi.spyOn(console, 'log').mockImplementation();
+    vi.spyOn(console, 'error').mockImplementation();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('findTsFiles', () => {
@@ -199,9 +199,7 @@ describe('validate-env-json', () => {
         },
       ];
 
-      const mockConsoleError = jest
-        .spyOn(console, 'error')
-        .mockImplementation();
+      const mockConsoleError = vi.spyOn(console, 'error').mockImplementation();
 
       const result = checkDuplicates(envVars);
 
@@ -298,9 +296,7 @@ describe('validate-env-json', () => {
         },
       ];
 
-      const mockConsoleError = jest
-        .spyOn(console, 'error')
-        .mockImplementation();
+      const mockConsoleError = vi.spyOn(console, 'error').mockImplementation();
 
       const result = checkDuplicates(envVars);
 

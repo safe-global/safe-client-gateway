@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject, MockInstance } from 'vitest';
 import winston from 'winston';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -7,18 +9,18 @@ import {
   winstonTransportsFactory,
 } from '@/logging/logging.module';
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('logger factory', () => {
-  let consoleSpy: jest.SpyInstance;
+  let consoleSpy: MockInstance;
   let logger: winston.Logger;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
-    consoleSpy = jest.spyOn(winston.transports.Console.prototype, 'log');
+    consoleSpy = vi.spyOn(winston.transports.Console.prototype, 'log');
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       switch (key) {
         case 'log.silent': {

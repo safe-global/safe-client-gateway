@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Request } from 'express';
+import type { MockedObject } from 'vitest';
 import { getRouteUrl } from '@/routes/common/decorators/utils';
 
 describe('utils tests', () => {
   describe('getRouteUrl tests', () => {
     const request = {
-      get: jest.fn(),
+      get: vi.fn(),
       originalUrl: faker.system.filePath(),
       protocol: faker.internet.protocol(),
-    } as jest.MockedObjectDeep<Request>;
+    } as MockedObject<Request>;
 
-    const requestMock = jest.mocked(request);
+    const requestMock = vi.mocked(request);
 
     it('Uses X-Forwarded-Proto as protocol if set', () => {
       const protocol = faker.internet.protocol();

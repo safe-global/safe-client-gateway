@@ -9,7 +9,7 @@ describe('Contract Mapper', () => {
   let mapper: ContractMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mapper = new ContractMapper();
   });

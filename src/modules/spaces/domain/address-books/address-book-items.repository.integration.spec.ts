@@ -6,6 +6,7 @@ import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -33,15 +34,15 @@ import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('AddressBookItemsRepository', () => {
   let dbService: PostgresDatabaseService;
@@ -96,7 +97,7 @@ describe('AddressBookItemsRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: jest.fn().mockImplementation((key: string) => {
+      getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -107,7 +108,7 @@ describe('AddressBookItemsRepository', () => {
           return testConfiguration.spaces.addressBooks.maxItems;
         }
       }),
-    } as jest.MockedObjectDeep<ConfigService>;
+    } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
       mockLoggingService,
       dbService,
@@ -134,7 +135,7 @@ describe('AddressBookItemsRepository', () => {
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   afterAll(async () => {

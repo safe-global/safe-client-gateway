@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -12,36 +14,36 @@ import { TransactionApiManager } from '@/modules/transactions/datasources/transa
 import { rawify } from '@/validation/entities/raw.entity';
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
-const configurationServiceMock = jest.mocked(configurationService);
+const configurationServiceMock = vi.mocked(configurationService);
 
 const configApi = {
-  getChain: jest.fn(),
-} as jest.MockedObjectDeep<IConfigApi>;
+  getChain: vi.fn(),
+} as MockedObject<IConfigApi>;
 
-const configApiMock = jest.mocked(configApi);
+const configApiMock = vi.mocked(configApi);
 
 const dataSource = {
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>;
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>;
 
-const dataSourceMock = jest.mocked(dataSource);
+const dataSourceMock = vi.mocked(dataSource);
 
-const cacheService = {} as jest.MockedObjectDeep<ICacheService>;
+const cacheService = {} as MockedObject<ICacheService>;
 
-const httpErrorFactory = {} as jest.MockedObjectDeep<HttpErrorFactory>;
+const httpErrorFactory = {} as MockedObject<HttpErrorFactory>;
 
-const networkService = {} as jest.MockedObjectDeep<INetworkService>;
+const networkService = {} as MockedObject<INetworkService>;
 
 const mockLoggingService = {
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('Transaction API Manager Tests', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   const txServiceUrl = faker.internet.url({ appendSlash: false });

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
@@ -13,18 +15,18 @@ import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/mes
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
-const mockLoggingRepository = jest.mocked({
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingRepository = vi.mocked({
+  error: vi.fn(),
+} as MockedObject<ILoggingService>);
 
-const mockBlocklistService = jest.mocked({
-  getBlocklist: jest.fn(),
-  clearCache: jest.fn(),
-} as jest.MockedObjectDeep<IBlocklistService>);
+const mockBlocklistService = vi.mocked({
+  getBlocklist: vi.fn(),
+  clearCache: vi.fn(),
+} as MockedObject<IBlocklistService>);
 
 describe('MessageVerifierHelper', () => {
   let target: MessageVerifierHelper;
@@ -42,7 +44,7 @@ describe('MessageVerifierHelper', () => {
   }
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockBlocklistService.getBlocklist.mockReturnValue([]);
 
     initTarget(configuration);

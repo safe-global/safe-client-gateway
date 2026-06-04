@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import '@/__tests__/matchers/to-be-string-or-null';
 import type { Server } from 'node:net';
-import { expect } from '@jest/globals';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { expect } from 'vitest';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 
 describe('Get about e2e test', () => {

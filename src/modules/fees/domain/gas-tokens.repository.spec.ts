@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -9,17 +11,17 @@ import { GasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockLoggingService = {
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
 const mockConfigApi = {
-  getGasTokens: jest.fn(),
-} as jest.MockedObjectDeep<IConfigApi>;
+  getGasTokens: vi.fn(),
+} as MockedObject<IConfigApi>;
 
 describe('GasTokensRepository', () => {
   let target: GasTokensRepository;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new GasTokensRepository(mockLoggingService, mockConfigApi);
   });
 

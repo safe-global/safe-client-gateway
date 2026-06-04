@@ -5,6 +5,7 @@ import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { IsNull } from 'typeorm';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
@@ -30,20 +31,20 @@ describe('NotificationsRepositoryV2', () => {
   const notificationSubscriptionRepository = { ...mockRepository };
   const notificationSubscriptionsRepository = { ...mockRepository };
   const mockLoggingService = {
-    debug: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>;
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  } as MockedObject<ILoggingService>;
   const mockPushNotificationsApi: IPushNotificationsApi = {
-    enqueueNotification: jest.fn(),
+    enqueueNotification: vi.fn(),
   };
   const mockConfigService = {
-    getOrThrow: jest.fn(),
-  } as jest.MockedObjectDeep<ConfigService>;
+    getOrThrow: vi.fn(),
+  } as MockedObject<ConfigService>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     notificationsRepository = new NotificationsRepositoryV2(
       mockPushNotificationsApi,
       mockLoggingService,
@@ -66,7 +67,7 @@ describe('NotificationsRepositoryV2', () => {
             id: deviceId,
           },
         ],
-        raw: jest.fn(),
+        raw: vi.fn(),
       });
       mockEntityManager.findOneOrFail.mockResolvedValue({
         id: deviceId,

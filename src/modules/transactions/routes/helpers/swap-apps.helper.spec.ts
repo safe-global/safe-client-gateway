@@ -1,16 +1,17 @@
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { fullAppDataBuilder } from '@/modules/swaps/domain/entities/__tests__/full-app-data.builder';
 import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
-const configurationServiceMock = jest.mocked(configurationService);
+const configurationServiceMock = vi.mocked(configurationService);
 
 describe('SwapAppsHelper', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('Restricting disabled', () => {

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -13,24 +15,24 @@ import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__test
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockCacheService = jest.mocked({
-  increment: jest.fn(),
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>);
+const mockCacheService = vi.mocked({
+  increment: vi.fn(),
+  hGet: vi.fn(),
+  hSet: vi.fn(),
+} as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockNetworkService = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockHttpErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as jest.MockedObjectDeep<HttpErrorFactory>);
+const mockHttpErrorFactory = vi.mocked({
+  from: vi.fn(),
+} as MockedObject<HttpErrorFactory>);
 
 describe('ZerionBalancesApiService', () => {
   let service: ZerionBalancesApi;
@@ -48,7 +50,7 @@ describe('ZerionBalancesApiService', () => {
   );
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.apiKey',

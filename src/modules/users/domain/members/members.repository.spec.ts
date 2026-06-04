@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
 import { QueryFailedError } from 'typeorm';
+import type { Mocked, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -20,18 +21,18 @@ import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/
 
 describe('MembersRepository', () => {
   const usersRepository = {
-    create: jest.fn(),
-    findOrCreateByWalletAddress: jest.fn(),
-    updateStatus: jest.fn(),
-  } as jest.MockedObjectDeep<IUsersRepository>;
+    create: vi.fn(),
+    findOrCreateByWalletAddress: vi.fn(),
+    updateStatus: vi.fn(),
+  } as MockedObject<IUsersRepository>;
   const spacesRepository = {
-    findOneOrFail: jest.fn(),
-  } as jest.MockedObjectDeep<ISpacesRepository>;
+    findOneOrFail: vi.fn(),
+  } as MockedObject<ISpacesRepository>;
 
-  let entityManager: jest.Mocked<
+  let entityManager: Mocked<
     Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
   >;
-  let postgresDatabaseService: jest.MockedObjectDeep<PostgresDatabaseService>;
+  let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let target: MembersRepository;
 
   const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -40,20 +41,20 @@ describe('MembersRepository', () => {
   let inviteExpiresAt: Date;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     inviteExpiresAt = faker.date.future();
     entityManager = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      insert: jest.fn(),
-      update: jest.fn(),
+      find: vi.fn(),
+      findOne: vi.fn(),
+      insert: vi.fn(),
+      update: vi.fn(),
     };
     postgresDatabaseService = {
-      transaction: jest
+      transaction: vi
         .fn()
         .mockImplementation((callback) => callback(entityManager)),
-    } as jest.MockedObjectDeep<PostgresDatabaseService>;
+    } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
 
     target = new MembersRepository(

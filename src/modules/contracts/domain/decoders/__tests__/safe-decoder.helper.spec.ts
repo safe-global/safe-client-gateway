@@ -13,7 +13,7 @@ describe('SafeDecoder', () => {
   let target: SafeDecoder;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new SafeDecoder();
   });
 

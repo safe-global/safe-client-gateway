@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { EntityManager } from 'typeorm';
+import type { MockedObject } from 'vitest';
 import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
 import { mockQueryBuilder } from '@/datasources/db/v2/__tests__/querybuilder.mock';
 
 export const mockEntityManager = {
-  find: jest.fn(),
-  findOneOrFail: jest.fn(),
-  query: jest.fn(),
-  upsert: jest.fn(),
-  createQueryBuilder: jest.fn().mockImplementation(() => mockQueryBuilder),
-  getRepository: jest.fn(),
+  find: vi.fn(),
+  findOneOrFail: vi.fn(),
+  query: vi.fn(),
+  upsert: vi.fn(),
+  createQueryBuilder: vi.fn().mockImplementation(() => mockQueryBuilder),
+  getRepository: vi.fn(),
   connection: mockPostgresDataSource,
-} as jest.MockedObjectDeep<EntityManager>;
+} as unknown as MockedObject<EntityManager>;

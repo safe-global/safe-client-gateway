@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -14,24 +16,24 @@ import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/sa
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>;
-const mockDataSource = jest.mocked(dataSource);
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>;
+const mockDataSource = vi.mocked(dataSource);
 
 const cacheService = {
-  deleteByKey: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>;
-const mockCacheService = jest.mocked(cacheService);
+  deleteByKey: vi.fn(),
+  hSet: vi.fn(),
+} as MockedObject<ICacheService>;
+const mockCacheService = vi.mocked(cacheService);
 
 const httpErrorFactory = {
-  from: jest.fn(),
-} as jest.MockedObjectDeep<HttpErrorFactory>;
-const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
+  from: vi.fn(),
+} as MockedObject<HttpErrorFactory>;
+const mockHttpErrorFactory = vi.mocked(httpErrorFactory);
 
 const mockLoggingService = {
-  info: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  info: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('ConfigApi', () => {
   const baseUri = faker.internet.url({ appendSlash: false });
@@ -55,7 +57,7 @@ describe('ConfigApi', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new ConfigApi(
       dataSource,
       mockCacheService,
@@ -366,11 +368,11 @@ describe('ConfigApi', () => {
 
   describe('Cache-clearing tests', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterAll(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('clear safe apps for a given chain should trigger delete on cache service', async () => {

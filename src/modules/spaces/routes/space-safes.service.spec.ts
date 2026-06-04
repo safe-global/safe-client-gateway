@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -19,24 +20,24 @@ import type { IMembersRepository } from '@/modules/users/domain/members/members.
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 
 const spaceSafesRepositoryMock = {
-  create: jest.fn(),
-  findBySpaceId: jest.fn(),
-  delete: jest.fn(),
-} as jest.MockedObjectDeep<ISpaceSafesRepository>;
+  create: vi.fn(),
+  findBySpaceId: vi.fn(),
+  delete: vi.fn(),
+} as MockedObject<ISpaceSafesRepository>;
 
 const spacesRepositoryMock = {
-  findOne: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
+  findOne: vi.fn(),
+} as MockedObject<ISpacesRepository>;
 
 const membersRepositoryMock = {
-  findOne: jest.fn(),
-} as jest.MockedObjectDeep<IMembersRepository>;
+  findOne: vi.fn(),
+} as MockedObject<IMembersRepository>;
 
 describe('SpaceSafesService', () => {
   let service: SpaceSafesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new SpaceSafesService(
       spaceSafesRepositoryMock,
       spacesRepositoryMock,

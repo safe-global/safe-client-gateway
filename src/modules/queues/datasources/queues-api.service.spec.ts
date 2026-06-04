@@ -1,29 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
 import { QueueApiService } from '@/modules/queues/datasources/queues-api.service';
 
 const mockQueueConsumer = {
   connection: {
-    isConnected: jest.fn(),
+    isConnected: vi.fn(),
   },
   channel: {
-    consume: jest.fn(),
-    ack: jest.fn(),
+    consume: vi.fn(),
+    ack: vi.fn(),
   },
-} as jest.MockedObjectDeep<QueueConsumer>;
+} as MockedObject<QueueConsumer>;
 
 const mockLoggingService = {
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('QueuesApi', () => {
   let service: QueueApiService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('isReady', () => {
@@ -45,7 +47,7 @@ describe('QueuesApi', () => {
   describe('subscribe', () => {
     it('should subscribe to the queue', async () => {
       service = new QueueApiService(mockQueueConsumer, mockLoggingService);
-      const fn = jest.fn();
+      const fn = vi.fn();
 
       await service.subscribe(faker.string.sample(), fn);
 

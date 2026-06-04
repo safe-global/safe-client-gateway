@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -8,6 +9,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -48,9 +50,9 @@ describe('Add transaction confirmations - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let loggingService: jest.MockedObjectDeep<ILoggingService>;
-  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
+  let networkService: MockedObject<INetworkService>;
+  let loggingService: MockedObject<ILoggingService>;
+  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -87,14 +89,14 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
-    jest.spyOn(loggingService, 'error');
+    vi.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   }
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -605,9 +607,9 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       });
       await initApp(testConfiguration);
 
-      jest
-        .spyOn(blocklistService, 'getBlocklist')
-        .mockReturnValue([signer.address]);
+      vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+        signer.address,
+      ]);
 
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const transaction = multisigToJson(

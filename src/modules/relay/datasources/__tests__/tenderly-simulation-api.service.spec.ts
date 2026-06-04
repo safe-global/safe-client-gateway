@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex, toEventSelector } from 'viem';
+import type { Mock, MockedObject } from 'vitest';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -16,24 +17,24 @@ const SAFE_EXECUTION_FAILURE_TOPIC = toEventSelector(
 
 const SIMULATION_URL = 'https://simulation.safe.global/';
 
-const mockNetworkService = jest.mocked({
-  post: jest.fn(),
-} as unknown as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  post: vi.fn(),
+} as unknown as MockedObject<INetworkService>);
 
 const mockPublicClient = {
-  getBlock: jest.fn(),
+  getBlock: vi.fn(),
 };
 
-const mockBlockchainApiManager = jest.mocked({
-  getApi: jest.fn(),
-} as unknown as jest.MockedObjectDeep<IBlockchainApiManager>);
+const mockBlockchainApiManager = vi.mocked({
+  getApi: vi.fn(),
+} as unknown as MockedObject<IBlockchainApiManager>);
 
-const mockLoggingService = jest.mocked({
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>);
 
 function fakeAddress(): Address {
   return getAddress(faker.finance.ethereumAddress());
@@ -82,12 +83,12 @@ describe('TenderlySimulationApi', () => {
   let blockGasLimit: bigint;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     blockGasLimit = BigInt(
       faker.number.int({ min: 30_000_000, max: 50_000_000 }),
     );
-    (mockPublicClient.getBlock as jest.Mock).mockResolvedValue({
+    (mockPublicClient.getBlock as Mock).mockResolvedValue({
       gasLimit: blockGasLimit,
     });
     mockBlockchainApiManager.getApi.mockResolvedValue(
@@ -309,12 +310,12 @@ describe('TenderlySimulationApi', () => {
       await target.simulate(args);
       await target.simulate(args);
 
-      expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(1);
+      expect(mockPublicClient.getBlock as Mock).toHaveBeenCalledTimes(1);
       expect(mockBlockchainApiManager.getApi).toHaveBeenCalledTimes(1);
     });
 
     it('refetches the block gas limit when the cache entry has expired', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       try {
         const args = fakeArgs();
         mockNetworkService.post.mockResolvedValue({
@@ -323,12 +324,12 @@ describe('TenderlySimulationApi', () => {
         } as never);
 
         await target.simulate(args);
-        jest.advanceTimersByTime(31_000);
+        vi.advanceTimersByTime(31_000);
         await target.simulate(args);
 
-        expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(2);
+        expect(mockPublicClient.getBlock as Mock).toHaveBeenCalledTimes(2);
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
 
@@ -343,7 +344,7 @@ describe('TenderlySimulationApi', () => {
       await target.simulate(argsA);
       await target.simulate(argsB);
 
-      expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(2);
+      expect(mockPublicClient.getBlock as Mock).toHaveBeenCalledTimes(2);
       expect(mockBlockchainApiManager.getApi).toHaveBeenNthCalledWith(1, '1');
       expect(mockBlockchainApiManager.getApi).toHaveBeenNthCalledWith(2, '137');
     });
@@ -351,7 +352,7 @@ describe('TenderlySimulationApi', () => {
     it('deduplicates concurrent block-gas-limit fetches on a cold cache', async () => {
       const args = fakeArgs();
       let resolveBlock: (block: { gasLimit: bigint }) => void = () => {};
-      (mockPublicClient.getBlock as jest.Mock).mockReturnValueOnce(
+      (mockPublicClient.getBlock as Mock).mockReturnValueOnce(
         new Promise((resolve) => {
           resolveBlock = resolve;
         }),
@@ -365,13 +366,13 @@ describe('TenderlySimulationApi', () => {
       resolveBlock({ gasLimit: blockGasLimit });
       await Promise.all([first, second]);
 
-      expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(1);
+      expect(mockPublicClient.getBlock as Mock).toHaveBeenCalledTimes(1);
       expect(mockBlockchainApiManager.getApi).toHaveBeenCalledTimes(1);
     });
 
     it('evicts the cache entry when the block-gas-limit fetch rejects so the next caller retries', async () => {
       const args = fakeArgs();
-      (mockPublicClient.getBlock as jest.Mock)
+      (mockPublicClient.getBlock as Mock)
         .mockRejectedValueOnce(new Error('RPC unreachable'))
         .mockResolvedValueOnce({ gasLimit: blockGasLimit });
       mockNetworkService.post.mockResolvedValue({
@@ -387,12 +388,12 @@ describe('TenderlySimulationApi', () => {
         reason: 'Simulation could not be completed',
       });
       expect(secondResult).toEqual({ status: 'success' });
-      expect(mockPublicClient.getBlock as jest.Mock).toHaveBeenCalledTimes(2);
+      expect(mockPublicClient.getBlock as Mock).toHaveBeenCalledTimes(2);
     });
 
     it('returns indeterminate when the latest block gas limit cannot be fetched', async () => {
       const args = fakeArgs();
-      (mockPublicClient.getBlock as jest.Mock).mockRejectedValue(
+      (mockPublicClient.getBlock as Mock).mockRejectedValue(
         new Error('RPC unreachable'),
       );
 

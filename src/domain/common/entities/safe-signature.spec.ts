@@ -12,6 +12,13 @@ import {
   SIGNATURE_HEX_LENGTH,
 } from '@/domain/common/utils/signatures';
 
+// `vi.spyOn` cannot redefine read-only ESM named exports, so partially mock
+// viem with a spy that wraps the real `getAddress` implementation.
+vi.mock('viem', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('viem')>();
+  return { ...actual, getAddress: vi.fn(actual.getAddress) };
+});
+
 describe('SafeSignature', () => {
   it('should create an instance', () => {
     const baseSignature = faker.string.hexadecimal({
@@ -247,7 +254,8 @@ describe('SafeSignature', () => {
     });
 
     it('should memoize the owner', async () => {
-      const getAddressSpy = jest.spyOn(viem, 'getAddress');
+      const getAddressSpy = vi.mocked(viem.getAddress);
+      getAddressSpy.mockClear();
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);

@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { fakeJson } from '@/__tests__/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -10,19 +12,19 @@ import { NetworkResponseError } from '@/datasources/network/entities/network.err
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 
-const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
+const mockLoggingService: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
 };
 
 const networkService = {
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<INetworkService>;
 
-const mockNetworkService = jest.mocked(networkService);
+const mockNetworkService = vi.mocked(networkService);
 
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;
@@ -30,8 +32,8 @@ describe('CacheFirstDataSource', () => {
   let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    jest.useFakeTimers();
+    vi.resetAllMocks();
+    vi.useFakeTimers();
     fakeCacheService = new FakeCacheService();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('features.debugLogs', true);
@@ -45,7 +47,7 @@ describe('CacheFirstDataSource', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('get', () => {
@@ -83,7 +85,7 @@ describe('CacheFirstDataSource', () => {
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
       const notFoundExpireTimeSeconds = faker.number.int();
       const data = JSON.parse(fakeJson());
-      const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
+      const invalidationTimeMs = Date.now(); // invalidation happens at this point in time
       await fakeCacheService.hSet(
         new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
@@ -98,7 +100,7 @@ describe('CacheFirstDataSource', () => {
         }
       });
 
-      jest.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
+      vi.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
       const actual = await cacheFirstDataSource.get({
         cacheDir,
         url: targetUrl,
@@ -119,7 +121,7 @@ describe('CacheFirstDataSource', () => {
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
       const notFoundExpireTimeSeconds = faker.number.int();
       const data = JSON.parse(fakeJson());
-      const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
+      const invalidationTimeMs = Date.now() + 1; // invalidation happens 1 ms after this point in time
       await fakeCacheService.hSet(
         new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
@@ -194,7 +196,7 @@ describe('CacheFirstDataSource', () => {
           notFoundExpireTimeSeconds,
           expireTimeSeconds: faker.number.int({ min: 1 }),
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
       expect(fakeCacheService.keyCount()).toBe(1);
@@ -222,7 +224,7 @@ describe('CacheFirstDataSource', () => {
           url: targetUrl,
           notFoundExpireTimeSeconds,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       await expect(
         cacheFirstDataSource.get({
@@ -230,17 +232,17 @@ describe('CacheFirstDataSource', () => {
           url: targetUrl,
           notFoundExpireTimeSeconds,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
       expect(fakeCacheService.keyCount()).toBe(1);
     });
 
     it('should cache not found errors with the default TTL', async () => {
-      const mockCache = jest.mocked({
-        hGet: jest.fn(),
-        hSet: jest.fn(),
-      } as jest.MockedObjectDeep<ICacheService>);
+      const mockCache = vi.mocked({
+        hGet: vi.fn(),
+        hSet: vi.fn(),
+      } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
         mockCache,
@@ -271,7 +273,7 @@ describe('CacheFirstDataSource', () => {
           url: targetUrl,
           notFoundExpireTimeSeconds,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockCache.hSet).toHaveBeenCalledWith(
         cacheDir,
@@ -281,10 +283,10 @@ describe('CacheFirstDataSource', () => {
     });
 
     it('should cache not found errors with a specific TTL', async () => {
-      const mockCache = jest.mocked({
-        hGet: jest.fn(),
-        hSet: jest.fn(),
-      } as jest.MockedObjectDeep<ICacheService>);
+      const mockCache = vi.mocked({
+        hGet: vi.fn(),
+        hSet: vi.fn(),
+      } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
         mockCache,
@@ -316,7 +318,7 @@ describe('CacheFirstDataSource', () => {
           notFoundExpireTimeSeconds,
           expireTimeSeconds: faker.number.int({ min: 1 }),
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockCache.hSet).toHaveBeenCalledWith(
         cacheDir,
@@ -364,7 +366,7 @@ describe('CacheFirstDataSource', () => {
       const notFoundExpireTimeSeconds = faker.number.int();
       const res = JSON.parse(fakeJson());
       const data = JSON.parse(fakeJson());
-      const invalidationTimeMs = jest.now(); // invalidation happens at this point in time
+      const invalidationTimeMs = Date.now(); // invalidation happens at this point in time
       await fakeCacheService.hSet(
         new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
@@ -379,7 +381,7 @@ describe('CacheFirstDataSource', () => {
         }
       });
 
-      jest.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
+      vi.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
       const actual = await cacheFirstDataSource.post({
         cacheDir,
         url: targetUrl,
@@ -402,7 +404,7 @@ describe('CacheFirstDataSource', () => {
       const notFoundExpireTimeSeconds = faker.number.int();
       const res = JSON.parse(fakeJson());
       const data = JSON.parse(fakeJson());
-      const invalidationTimeMs = jest.now() + 1; // invalidation happens 1 ms after this point in time
+      const invalidationTimeMs = Date.now() + 1; // invalidation happens 1 ms after this point in time
       await fakeCacheService.hSet(
         new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
         invalidationTimeMs.toString(),
@@ -482,7 +484,7 @@ describe('CacheFirstDataSource', () => {
           expireTimeSeconds: faker.number.int({ min: 1 }),
           data,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
       expect(fakeCacheService.keyCount()).toBe(1);
@@ -512,7 +514,7 @@ describe('CacheFirstDataSource', () => {
           notFoundExpireTimeSeconds,
           data,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       await expect(
         cacheFirstDataSource.post({
@@ -521,17 +523,17 @@ describe('CacheFirstDataSource', () => {
           notFoundExpireTimeSeconds,
           data,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
       expect(fakeCacheService.keyCount()).toBe(1);
     });
 
     it('should cache not found errors with the default TTL', async () => {
-      const mockCache = jest.mocked({
-        hGet: jest.fn(),
-        hSet: jest.fn(),
-      } as jest.MockedObjectDeep<ICacheService>);
+      const mockCache = vi.mocked({
+        hGet: vi.fn(),
+        hSet: vi.fn(),
+      } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
         mockCache,
@@ -564,7 +566,7 @@ describe('CacheFirstDataSource', () => {
           notFoundExpireTimeSeconds,
           data,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockCache.hSet).toHaveBeenCalledWith(
         cacheDir,
@@ -574,10 +576,10 @@ describe('CacheFirstDataSource', () => {
     });
 
     it('should cache not found errors with a specific TTL', async () => {
-      const mockCache = jest.mocked({
-        hGet: jest.fn(),
-        hSet: jest.fn(),
-      } as jest.MockedObjectDeep<ICacheService>);
+      const mockCache = vi.mocked({
+        hGet: vi.fn(),
+        hSet: vi.fn(),
+      } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
         mockCache,
@@ -611,7 +613,7 @@ describe('CacheFirstDataSource', () => {
           expireTimeSeconds: faker.number.int({ min: 1 }),
           data,
         }),
-      ).rejects.toThrow(expectedError);
+      ).rejects.toThrow(NetworkResponseError);
 
       expect(mockCache.hSet).toHaveBeenCalledWith(
         cacheDir,
