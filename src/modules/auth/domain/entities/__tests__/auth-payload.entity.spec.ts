@@ -380,9 +380,10 @@ describe('AuthPayload entity', () => {
           code: 'invalid_union',
           discriminator: 'auth_method',
           errors: [],
-          message: 'Invalid input',
+          message: "Invalid discriminator value. Expected 'siwe' | 'oidc'",
           note: 'No matching discriminator',
           path: ['auth_method'],
+          options: [AuthMethod.Siwe, AuthMethod.Oidc],
         },
       ]);
     });

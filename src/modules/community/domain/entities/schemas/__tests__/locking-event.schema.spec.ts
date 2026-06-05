@@ -430,7 +430,8 @@ describe('Locking event schemas', () => {
           code: 'invalid_union',
           discriminator: 'eventType',
           errors: [],
-          message: 'Invalid input',
+          message: expect.stringContaining('Invalid discriminator value.'),
+          options: expect.any(Array),
           note: 'No matching discriminator',
           path: ['eventType'],
         },
@@ -476,9 +477,10 @@ describe('Locking event schemas', () => {
           code: 'invalid_union',
           discriminator: 'eventType',
           errors: [],
-          message: 'Invalid input',
+          message: expect.stringContaining('Invalid discriminator value.'),
           note: 'No matching discriminator',
           path: ['results', 0, 'eventType'],
+          options: expect.any(Array),
         },
       ]);
     });
