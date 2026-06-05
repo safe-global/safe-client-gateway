@@ -25,6 +25,7 @@ import { AddressBooksController } from '@/modules/spaces/routes/address-books.co
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
@@ -67,6 +68,7 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     SpacesService,
     SpaceSafesService,
     MembersService,
+    SpaceInviteEmailService,
     {
       provide: ISpacesRepository,
       useClass: SpacesRepository,

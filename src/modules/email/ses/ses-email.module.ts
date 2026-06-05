@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
@@ -15,6 +15,7 @@ import { AwsSesEmailService } from '@/modules/email/ses/datasources/aws-ses-emai
 import { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
 import { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
 
+@Global()
 @Module({
   imports: [
     BullModule.registerQueueAsync({

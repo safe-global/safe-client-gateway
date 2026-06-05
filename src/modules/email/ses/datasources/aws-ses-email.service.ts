@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
@@ -21,9 +22,16 @@ export class AwsSesEmailService implements IEmailService {
     );
     const fromName =
       this.configurationService.getOrThrow<string>('email.ses.fromName');
+    const webIdentityTokenFile = this.configurationService.get<string>(
+      'email.ses.webIdentityTokenFile',
+    );
 
     this.client = new SESv2Client({
       maxAttempts: 1, //do not retry at the SDK level, let the JobQueue handle retries with backoff
+      // Prefer IRSA over static env keys when running in EKS.
+      ...(webIdentityTokenFile && {
+        credentials: fromTokenFile(),
+      }),
     });
     this.fromAddress = this.formatRfc5322Address(fromName, fromEmail);
   }

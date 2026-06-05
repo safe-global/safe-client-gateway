@@ -67,6 +67,7 @@ export const RootConfigurationSchema = z
     AWS_REGION: z.string().optional(),
     AWS_SES_FROM_EMAIL: z.email().optional(),
     AWS_SES_FROM_NAME: z.string().optional(),
+    AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),

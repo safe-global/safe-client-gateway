@@ -5,7 +5,7 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
-import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
+import type { Invitation as RouteInvitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import type {
   MemberDto,
@@ -13,6 +13,7 @@ import type {
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
+import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
@@ -25,6 +26,7 @@ export class MembersService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly spaceInviteEmailService: SpaceInviteEmailService,
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('spaces.maxInvites');
@@ -33,11 +35,18 @@ export class MembersService {
     );
   }
 
+  /**
+   * Invites users and queues invite emails for email invites.
+   *
+   * @param args.authPayload - Authenticated caller.
+   * @param args.spaceId - Target space ID.
+   * @param args.inviteUsersDto - Users to invite.
+   */
   public async inviteUser(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
-  }): Promise<Array<Invitation>> {
+  }): Promise<Array<RouteInvitation>> {
     await this.assertActiveAdmin({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
@@ -45,12 +54,20 @@ export class MembersService {
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
-    return await this.membersRepository.inviteUsers({
+    const invitations = await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
     });
+
+    // Only queue emails after invite creation succeeds.
+    await this.spaceInviteEmailService.enqueueInviteEmails({
+      users: args.inviteUsersDto.users,
+      spaceId: args.spaceId,
+    });
+
+    return invitations;
   }
 
   public async acceptInvite(args: {
