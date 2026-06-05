@@ -25,5 +25,7 @@
     "^@/abis/(.*)$": "<rootDir>/abis/$1",
     "^@/(.*)$": "<rootDir>/src/$1"
   },
-  "globalSetup": "<rootDir>/test/global-setup.ts"
+  "globalSetup": "<rootDir>/test/global-setup.ts",
+  "setupFilesAfterEnv": ["<rootDir>/test/faker-setup.ts"],
+  "clearMocks": true
 }
