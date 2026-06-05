@@ -251,6 +251,36 @@ export class MembersRepository implements IMembersRepository {
     throw duplicateInviteError();
   }
 
+  public async renewInvite(args: {
+    spaceId: Space['id'];
+    userId: User['id'];
+    inviteExpiresAt: Date;
+  }): Promise<Invitation> {
+    const member = await this.findOneOrFail({
+      user: { id: args.userId },
+      space: { id: args.spaceId },
+    });
+
+    if (member.status !== 'INVITED') {
+      throw new ConflictException('Only a pending invitation can be renewed.');
+    }
+
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await entityManager.update(DbMember, member.id, {
+        inviteExpiresAt: args.inviteExpiresAt,
+      });
+    });
+
+    return {
+      userId: args.userId,
+      spaceId: args.spaceId,
+      name: member.name,
+      role: member.role,
+      status: member.status,
+      invitedBy: member.invitedBy,
+    };
+  }
+
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

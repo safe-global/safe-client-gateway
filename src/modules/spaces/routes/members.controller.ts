@@ -189,6 +189,54 @@ export class MembersController {
   }
 
   @ApiOperation({
+    summary: 'Renew space invitation',
+    description:
+      'Renews a pending invitation to a space, refreshing its expiry. ' +
+      'Only space admins can renew, and only pending invitations can be renewed.' +
+      'Note: renewal for email invites also resends the invitation email.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'number',
+    description: 'Space ID containing the invitation',
+    example: 1,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the invited member',
+    example: 123,
+  })
+  @ApiOkResponse({
+    description: 'Invitation renewed successfully',
+    type: Invitation,
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not an active admin of this space',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or member not found',
+  })
+  @ApiConflictResponse({
+    description: 'Invitation is not in a pending state',
+  })
+  @Post('/:spaceId/members/:userId/invite/renew')
+  @UseGuards(AuthGuard)
+  public async renewInvite(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    spaceId: number,
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: number,
+  ): Promise<Invitation> {
+    return await this.membersService.renewInvite({
+      authPayload,
+      spaceId,
+      userId,
+    });
+  }
+
+  @ApiOperation({
     summary: 'Get space members',
     description:
       'Retrieves all members of a space including their roles, status, and membership information.',

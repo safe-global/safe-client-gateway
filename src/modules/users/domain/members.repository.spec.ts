@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { QueryFailedError } from 'typeorm';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -255,6 +256,100 @@ describe('MembersRepository', () => {
         ),
       );
       expect(entityManager.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe('renewInvite', () => {
+    let dbMembersRepository: { findOne: jest.Mock };
+
+    beforeEach(() => {
+      dbMembersRepository = { findOne: jest.fn() };
+      postgresDatabaseService.getRepository = jest
+        .fn()
+        .mockResolvedValue(dbMembersRepository);
+    });
+
+    it('should refresh the expiry of a pending invite, preserving the invite metadata', async () => {
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'INVITED')
+        .with('role', 'MEMBER')
+        .with('invitedBy', authenticatedUserId)
+        .with('inviteExpiresAt', faker.date.past())
+        .build();
+      dbMembersRepository.findOne.mockResolvedValue(existingMember);
+
+      await expect(
+        target.renewInvite({
+          spaceId: space.id,
+          userId: existingMember.user.id,
+          inviteExpiresAt,
+        }),
+      ).resolves.toEqual({
+        userId: existingMember.user.id,
+        spaceId: space.id,
+        name: existingMember.name,
+        role: existingMember.role,
+        status: 'INVITED',
+        invitedBy: existingMember.invitedBy,
+      });
+
+      expect(entityManager.update).toHaveBeenCalledWith(
+        DbMember,
+        existingMember.id,
+        { inviteExpiresAt },
+      );
+    });
+
+    it('should throw a NotFoundException when the member does not exist', async () => {
+      dbMembersRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        target.renewInvite({
+          spaceId: space.id,
+          userId: faker.number.int(),
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(new NotFoundException('Member not found.'));
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw a ConflictException when the member is active', async () => {
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .build();
+      dbMembersRepository.findOne.mockResolvedValue(existingMember);
+
+      await expect(
+        target.renewInvite({
+          spaceId: space.id,
+          userId: existingMember.user.id,
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(
+        new ConflictException('Only a pending invitation can be renewed.'),
+      );
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw a ConflictException when the member declined (not renewable)', async () => {
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'DECLINED')
+        .build();
+      dbMembersRepository.findOne.mockResolvedValue(existingMember);
+
+      await expect(
+        target.renewInvite({
+          spaceId: space.id,
+          userId: existingMember.user.id,
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(
+        new ConflictException('Only a pending invitation can be renewed.'),
+      );
+      expect(entityManager.update).not.toHaveBeenCalled();
     });
   });
 });

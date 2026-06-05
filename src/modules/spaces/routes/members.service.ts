@@ -53,6 +53,22 @@ export class MembersService {
     });
   }
 
+  public async renewInvite(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+  }): Promise<Invitation> {
+    await this.assertActiveAdmin({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+    return await this.membersRepository.renewInvite({
+      spaceId: args.spaceId,
+      userId: args.userId,
+      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+    });
+  }
+
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

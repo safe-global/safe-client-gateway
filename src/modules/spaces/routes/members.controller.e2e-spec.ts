@@ -514,6 +514,98 @@ describe('MembersController', () => {
     });
   });
 
+  describe('POST /v1/spaces/:spaceId/members/:userId/invite/renew', () => {
+    it('should renew a pending invite, preserving its metadata', async () => {
+      const { accessToken, spaceId, userId } = await createSpaceForSigner(
+        nameBuilder(),
+      );
+      const inviteeAddress = getAddress(faker.finance.ethereumAddress());
+      const inviteeName = faker.person.firstName();
+
+      const inviteResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            { role: 'MEMBER', address: inviteeAddress, name: inviteeName },
+          ],
+        })
+        .expect(201);
+      const inviteeUserId = inviteResponse.body[0].userId;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/${inviteeUserId}/invite/renew`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(201)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            userId: inviteeUserId,
+            spaceId,
+            name: inviteeName,
+            role: 'MEMBER',
+            status: 'INVITED',
+            invitedBy: userId,
+          }),
+        );
+    });
+
+    it('should throw a 403 if the signer is not an active admin of the space', async () => {
+      const { spaceId } = await createSpaceForSigner(nameBuilder());
+      const targetUserId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/${targetUserId}/invite/renew`)
+        .set('Cookie', [`access_token=${nonMemberToken()}`])
+        .expect(403)
+        .expect({
+          message: 'User is not an active admin.',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
+    it('should throw a 404 if the target member does not exist', async () => {
+      const { accessToken, spaceId } = await createSpaceForSigner(
+        nameBuilder(),
+      );
+      const missingUserId = faker.number.int({
+        min: 69420,
+        max: DB_MAX_SAFE_INTEGER,
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/${missingUserId}/invite/renew`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404)
+        .expect({
+          message: 'Member not found.',
+          error: 'Not Found',
+          statusCode: 404,
+        });
+    });
+
+    it('should throw a 409 when the target is already an active member', async () => {
+      // The admin themselves is an ACTIVE member, so resending for their own
+      // userId must conflict.
+      const { accessToken, spaceId, userId } = await createSpaceForSigner(
+        nameBuilder(),
+      );
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/${userId}/invite/renew`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(409)
+        .expect({
+          message: 'Only a pending invitation can be resent.',
+          error: 'Conflict',
+          statusCode: 409,
+        });
+    });
+  });
+
   describe('POST /v1/spaces/:spaceId/members/accept', () => {
     it('should accept an invite for a user', async () => {
       const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
