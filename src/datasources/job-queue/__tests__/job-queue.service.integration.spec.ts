@@ -52,8 +52,18 @@ describe('JobQueueService & TestJobConsumer integration', () => {
   });
 
   afterEach(async () => {
-    consumer.cleanup();
+    // Remove jobs that have not started yet, then wait for already-active jobs
+    // to emit their terminal (completed/failed) event before clearing state.
+    // BullMQ delivers those events asynchronously, so clearing eagerly lets a
+    // prior job's event land in the next test and pollute its assertions.
     await queue.drain(true);
+    await waitUntil(
+      () =>
+        consumer.completedJobs.length + consumer.failedJobs.length ===
+        consumer.handledJobs.length,
+      10000,
+    );
+    consumer.cleanup();
   });
 
   afterAll(async () => {
