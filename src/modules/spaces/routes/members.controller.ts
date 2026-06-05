@@ -444,6 +444,12 @@ export class MembersController {
     description: 'Not authenticated',
   })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to remove own membership from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Delete('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async selfRemove(
