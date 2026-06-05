@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 
 // Seed faker per test file so a failing run's data can be reproduced: the seed
