@@ -52,16 +52,13 @@ export interface IMembersRepository {
   }): Promise<Array<Invitation>>;
 
   /**
-   * Renews a pending space invitation, refreshing its expiry.
-   * Only invitations in the `INVITED` state can be renewed; the original
-   * `invitedBy`, `name` and `role` are preserved. Active or declined
-   * members cannot be renewed.
+   * Refreshes the expiry of an existing invite. Callers are responsible for
+   * loading the member and enforcing that it is still pending.
    */
   renewInvite(args: {
-    spaceId: Space['id'];
-    userId: User['id'];
+    memberId: Member['id'];
     inviteExpiresAt: Date;
-  }): Promise<Invitation>;
+  }): Promise<void>;
 
   /**
    * Accepts a pending space invite for the authenticated user.

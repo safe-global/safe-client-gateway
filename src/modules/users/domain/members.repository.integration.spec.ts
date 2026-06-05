@@ -1125,18 +1125,16 @@ describe('MembersRepository', () => {
   });
 
   describe('renewInvite', () => {
-    it('should refresh the expiry of an expired pending invite, preserving the invite metadata', async () => {
+    it("should refresh the member's inviteExpiresAt, leaving the rest untouched", async () => {
       const invitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const inviteeName = nameBuilder();
       const expiredAt = faker.date.past();
       const renewedInviteExpiresAt = faker.date.future();
       const invitee = await dbUserRepo.insert({ status: 'PENDING' });
-      const inviteeId = invitee.generatedMaps[0].id as User['id'];
       const space = await dbSpacesRepository.insert({
         name: nameBuilder(),
         status: 'ACTIVE',
       });
-      const spaceId = space.generatedMaps[0].id;
       const memberInsert = await dbMembersRepository.insert({
         user: invitee.generatedMaps[0],
         space: space.generatedMaps[0],
@@ -1150,19 +1148,12 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.renewInvite({
-          spaceId,
-          userId: inviteeId,
+          memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
         }),
-      ).resolves.toEqual({
-        userId: inviteeId,
-        spaceId,
-        name: inviteeName,
-        role: 'MEMBER',
-        status: 'INVITED',
-        invitedBy,
-      });
+      ).resolves.toBeUndefined();
 
+      // Only the expiry changes; status/name/role/invitedBy are untouched.
       await expect(
         dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
       ).resolves.toEqual(
@@ -1175,76 +1166,6 @@ describe('MembersRepository', () => {
           inviteExpiresAt: renewedInviteExpiresAt,
         }),
       );
-    });
-
-    it('should throw a NotFoundException when the member does not exist', async () => {
-      const space = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-
-      await expect(
-        membersRepository.renewInvite({
-          spaceId,
-          userId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-          inviteExpiresAt: faker.date.future(),
-        }),
-      ).rejects.toThrow('Member not found.');
-    });
-
-    it('should throw when trying to renew an active member', async () => {
-      const activeUser = await dbUserRepo.insert({ status: 'ACTIVE' });
-      const activeUserId = activeUser.generatedMaps[0].id as User['id'];
-      const space = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: activeUser.generatedMaps[0],
-        space: space.generatedMaps[0],
-        name: nameBuilder(),
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        inviteExpiresAt: null,
-      });
-
-      await expect(
-        membersRepository.renewInvite({
-          spaceId,
-          userId: activeUserId,
-          inviteExpiresAt: faker.date.future(),
-        }),
-      ).rejects.toThrow('Only a pending invitation can be renewed.');
-    });
-
-    it('should throw when trying to renew a declined member', async () => {
-      const declinedUser = await dbUserRepo.insert({ status: 'PENDING' });
-      const declinedUserId = declinedUser.generatedMaps[0].id as User['id'];
-      const space = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: declinedUser.generatedMaps[0],
-        space: space.generatedMaps[0],
-        name: nameBuilder(),
-        role: 'MEMBER',
-        status: 'DECLINED',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        inviteExpiresAt: null,
-      });
-
-      await expect(
-        membersRepository.renewInvite({
-          spaceId,
-          userId: declinedUserId,
-          inviteExpiresAt: faker.date.future(),
-        }),
-      ).rejects.toThrow('Only a pending invitation can be renewed.');
     });
   });
 

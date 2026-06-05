@@ -252,33 +252,14 @@ export class MembersRepository implements IMembersRepository {
   }
 
   public async renewInvite(args: {
-    spaceId: Space['id'];
-    userId: User['id'];
+    memberId: Member['id'];
     inviteExpiresAt: Date;
-  }): Promise<Invitation> {
-    const member = await this.findOneOrFail({
-      user: { id: args.userId },
-      space: { id: args.spaceId },
+  }): Promise<void> {
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    await membersRepository.update(args.memberId, {
+      inviteExpiresAt: args.inviteExpiresAt,
     });
-
-    if (member.status !== 'INVITED') {
-      throw new ConflictException('Only a pending invitation can be renewed.');
-    }
-
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbMember, member.id, {
-        inviteExpiresAt: args.inviteExpiresAt,
-      });
-    });
-
-    return {
-      userId: args.userId,
-      spaceId: args.spaceId,
-      name: member.name,
-      role: member.role,
-      status: member.status,
-      invitedBy: member.invitedBy,
-    };
   }
 
   public async acceptInvite(args: {
