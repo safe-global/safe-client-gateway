@@ -5,7 +5,7 @@ import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity'
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const TxDataResponseSchema = z.object({
-  chainId: z.number(),
+  chainId: z.union([z.string(), z.number().transform((n) => String(n))]),
   safeAddress: AddressSchema,
   safeTxGas: z.string(),
   baseGas: z.string(),

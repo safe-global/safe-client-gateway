@@ -9,8 +9,8 @@ import type {
 } from '@/modules/fees/domain/entities/tx-fees-response.entity';
 
 export class FeePreviewTxData {
-  @ApiProperty({ description: 'Chain ID', example: 1 })
-  chainId: number;
+  @ApiProperty({ description: 'Chain ID', example: '1' })
+  chainId: string;
 
   @ApiProperty({ description: 'Safe address', example: '0x...' })
   safeAddress: Address;
