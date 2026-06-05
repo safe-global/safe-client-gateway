@@ -57,6 +57,13 @@ describe('TxDataResponseSchema', () => {
     { chainId: '' },
     { chainId: '-1' },
     { chainId: -1 },
+    { chainId: 0 },
+    { chainId: '0' },
+    { chainId: 1.5 },
+    { chainId: '1.5' },
+    { chainId: '01' },
+    { chainId: true },
+    { chainId: null },
   ])('should not allow an invalid chainId "$chainId"', ({ chainId }) => {
     const txData = {
       chainId,
