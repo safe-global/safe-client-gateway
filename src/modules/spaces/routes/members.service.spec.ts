@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -21,7 +25,9 @@ const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const membersRepositoryMock = {
   findActiveAdmin: jest.fn(),
   findAuthorizedMembersOrFail: jest.fn(),
+  findOneOrFail: jest.fn(),
   inviteUsers: jest.fn(),
+  renewInvite: jest.fn(),
 } as jest.MockedObjectDeep<IMembersRepository>;
 
 const configurationServiceMock = {
@@ -213,6 +219,104 @@ describe('MembersService', () => {
           authPayload,
           spaceId,
           users: [],
+          inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+        });
+      } finally {
+        jest.useRealTimers();
+      }
+    });
+  });
+
+  describe('renewInvite', () => {
+    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+
+      await expect(
+        service.renewInvite({ authPayload, spaceId, userId }),
+      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
+      expect(membersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
+    });
+
+    it('should propagate NotFoundException when the member does not exist', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockRejectedValue(
+        new NotFoundException('Member not found.'),
+      );
+
+      await expect(
+        service.renewInvite({ authPayload, spaceId, userId }),
+      ).rejects.toThrow(new NotFoundException('Member not found.'));
+      expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      'ACTIVE',
+      'DECLINED',
+    ] as const)('should throw ConflictException without renewing when the member is %s', async (status) => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      const targetMember = memberBuilder().with('status', status).build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+
+      await expect(
+        service.renewInvite({ authPayload, spaceId, userId }),
+      ).rejects.toThrow(
+        new ConflictException('Only a pending invitation can be renewed.'),
+      );
+      expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
+    });
+
+    it('should renew the invite and return the preserved invitation metadata', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const targetMember = memberBuilder()
+        .with('status', 'INVITED')
+        .with('role', 'MEMBER')
+        .build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      const now = new Date('2026-01-15T00:00:00Z');
+      jest.useFakeTimers().setSystemTime(now);
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+
+      try {
+        await expect(
+          service.renewInvite({ authPayload, spaceId, userId }),
+        ).resolves.toEqual({
+          userId,
+          spaceId,
+          name: targetMember.name,
+          role: targetMember.role,
+          status: 'INVITED',
+          invitedBy: targetMember.invitedBy,
+        });
+        expect(membersRepositoryMock.renewInvite).toHaveBeenCalledWith({
+          memberId: targetMember.id,
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
         });
       } finally {

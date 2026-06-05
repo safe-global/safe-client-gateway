@@ -967,6 +967,59 @@ describe('MembersRepository', () => {
       );
     });
 
+    it('should throw when reinviting a declined member to the same space', async () => {
+      // A declined invite cannot be renewed; re-inviting must be rejected.
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const { user: owner, authPayload } = await createSiweUser();
+      const { user: declinedMember } = await createSiweUser();
+      const declinedMemberAddress = getAddress(faker.finance.ethereumAddress());
+      await dbWalletRepo.insert({
+        user: declinedMember,
+        address: declinedMemberAddress,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+      });
+      await dbMembersRepository.insert({
+        user: declinedMember,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: 'MEMBER',
+        status: 'DECLINED',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: null,
+      });
+
+      await expect(
+        membersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: [
+            {
+              type: InviteType.Wallet,
+              address: declinedMemberAddress,
+              role: 'ADMIN',
+              name: faker.person.firstName(),
+            },
+          ],
+          inviteExpiresAt: faker.date.future(),
+        }),
+      ).rejects.toThrow(
+        `${declinedMemberAddress} is already in this workspace or has a pending invite.`,
+      );
+    });
+
     it('should invite by email, creating a PENDING placeholder user', async () => {
       const inviteExpiresAt = faker.date.future();
       const { user: owner, authPayload } = await createSiweUser();
@@ -1068,6 +1121,51 @@ describe('MembersRepository', () => {
           inviteExpiresAt,
         }),
       ).rejects.toThrow('Workspace not found.');
+    });
+  });
+
+  describe('renewInvite', () => {
+    it("should refresh the member's inviteExpiresAt, leaving the rest untouched", async () => {
+      const invitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const inviteeName = nameBuilder();
+      const expiredAt = faker.date.past();
+      const renewedInviteExpiresAt = faker.date.future();
+      const invitee = await dbUserRepo.insert({ status: 'PENDING' });
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const memberInsert = await dbMembersRepository.insert({
+        user: invitee.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: inviteeName,
+        role: 'MEMBER',
+        status: 'INVITED',
+        invitedBy,
+        inviteExpiresAt: expiredAt,
+      });
+      const memberId = memberInsert.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.renewInvite({
+          memberId,
+          inviteExpiresAt: renewedInviteExpiresAt,
+        }),
+      ).resolves.toBeUndefined();
+
+      // Only the expiry changes; status/name/role/invitedBy are untouched.
+      await expect(
+        dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: memberId,
+          name: inviteeName,
+          role: 'MEMBER',
+          status: 'INVITED',
+          invitedBy,
+          inviteExpiresAt: renewedInviteExpiresAt,
+        }),
+      );
     });
   });
 

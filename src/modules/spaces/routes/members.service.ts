@@ -53,6 +53,37 @@ export class MembersService {
     });
   }
 
+  public async renewInvite(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+  }): Promise<Invitation> {
+    await this.assertActiveAdmin({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+    const member = await this.membersRepository.findOneOrFail({
+      user: { id: args.userId },
+      space: { id: args.spaceId },
+    });
+    if (member.status !== 'INVITED') {
+      throw new ConflictException('Only a pending invitation can be renewed.');
+    }
+    await this.membersRepository.renewInvite({
+      memberId: member.id,
+      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+    });
+
+    return {
+      userId: args.userId,
+      spaceId: args.spaceId,
+      name: member.name,
+      role: member.role,
+      status: member.status,
+      invitedBy: member.invitedBy,
+    };
+  }
+
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

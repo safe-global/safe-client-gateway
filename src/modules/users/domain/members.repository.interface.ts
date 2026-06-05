@@ -39,8 +39,10 @@ export interface IMembersRepository {
 
   /**
    * Invites users to a space until the provided expiry date.
-   * Existing invited members are overwritten with the new invite data.
-   * Active members cannot be invited again.
+   * Existing invited members are renewed: the stored invite data is
+   * overwritten with the new invite, including a refreshed expiry. This
+   * doubles as resending a (lapsed) invite.
+   * Active and declined members cannot be (re-)invited.
    */
   inviteUsers(args: {
     authPayload: AuthPayload;
@@ -48,6 +50,15 @@ export interface IMembersRepository {
     users: Array<InviteUserInput>;
     inviteExpiresAt: Date;
   }): Promise<Array<Invitation>>;
+
+  /**
+   * Refreshes the expiry of an existing invite. Callers are responsible for
+   * loading the member and enforcing that it is still pending.
+   */
+  renewInvite(args: {
+    memberId: Member['id'];
+    inviteExpiresAt: Date;
+  }): Promise<void>;
 
   /**
    * Accepts a pending space invite for the authenticated user.

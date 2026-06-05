@@ -251,6 +251,17 @@ export class MembersRepository implements IMembersRepository {
     throw duplicateInviteError();
   }
 
+  public async renewInvite(args: {
+    memberId: Member['id'];
+    inviteExpiresAt: Date;
+  }): Promise<void> {
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    await membersRepository.update(args.memberId, {
+      inviteExpiresAt: args.inviteExpiresAt,
+    });
+  }
+
   public async acceptInvite(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

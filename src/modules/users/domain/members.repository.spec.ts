@@ -191,6 +191,37 @@ describe('MembersRepository', () => {
       expect(entityManager.update).not.toHaveBeenCalled();
     });
 
+    it('should throw without attempting an insert when the existing member declined', async () => {
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'DECLINED')
+        .build();
+      const wallet = walletBuilder().with('user', existingMember.user).build();
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'ADMIN' as const,
+        name: nameBuilder(),
+      };
+      entityManager.find.mockResolvedValue([wallet]);
+      entityManager.findOne.mockResolvedValue(existingMember);
+
+      await expect(
+        target.inviteUsers({
+          authPayload,
+          spaceId: space.id,
+          users: [userToInvite],
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(
+        new UniqueConstraintError(
+          `${wallet.address} is already in this workspace or has a pending invite.`,
+        ),
+      );
+      expect(entityManager.insert).not.toHaveBeenCalled();
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
     it('should translate insert unique constraint races to a domain error', async () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
@@ -222,6 +253,27 @@ describe('MembersRepository', () => {
         ),
       );
       expect(entityManager.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe('renewInvite', () => {
+    let dbMembersRepository: { update: jest.Mock };
+
+    beforeEach(() => {
+      dbMembersRepository = { update: jest.fn() };
+      postgresDatabaseService.getRepository = jest
+        .fn()
+        .mockResolvedValue(dbMembersRepository);
+    });
+
+    it("should update the member's inviteExpiresAt by id", async () => {
+      const memberId = faker.number.int();
+
+      await target.renewInvite({ memberId, inviteExpiresAt });
+
+      expect(dbMembersRepository.update).toHaveBeenCalledWith(memberId, {
+        inviteExpiresAt,
+      });
     });
   });
 });
