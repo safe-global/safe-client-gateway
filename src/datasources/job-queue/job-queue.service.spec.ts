@@ -35,14 +35,14 @@ describe('JobQueueService', () => {
       expect(result).toBe(mockJob);
     });
 
-    it('should return null if job does not exist', async () => {
+    it('should return undefined if job does not exist', async () => {
       const jobId = faker.string.uuid();
-      mockQueue.getJob.mockResolvedValue(null);
+      mockQueue.getJob.mockResolvedValue(undefined);
 
       const result = await service.getJob(jobId);
 
       expect(mockQueue.getJob).toHaveBeenCalledWith(jobId);
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     it('should propagate errors from the queue', async () => {

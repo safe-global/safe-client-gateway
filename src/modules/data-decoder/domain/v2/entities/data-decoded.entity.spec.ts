@@ -263,6 +263,12 @@ describe('DataDecoded', () => {
           message: 'Invalid input: expected string, received undefined',
           path: ['type'],
         },
+        {
+          code: 'invalid_type',
+          expected: 'nonoptional',
+          message: 'Invalid input: expected nonoptional, received undefined',
+          path: ['value'],
+        },
       ]);
     });
   });

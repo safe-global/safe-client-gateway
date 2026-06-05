@@ -11,9 +11,9 @@ export interface IJobQueueService {
   /**
    * Retrieves the metadata of a job by its ID
    * @param jobId - The unique identifier of the job
-   * @returns Promise resolving to the Job object or null if not found
+   * @returns Promise resolving to the Job object or undefined if not found
    */
-  getJob(jobId: string): Promise<Job | null>;
+  getJob(jobId: string): Promise<Job | undefined>;
 
   /**
    * Adds a job to the queue
