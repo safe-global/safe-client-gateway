@@ -1,15 +1,15 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-04-21T14:55:46.308Z | Period: 2026-01-16 to 2026-04-21
+Generated: 2026-06-05T09:59:56.584Z | Period: 2026-01-16 to 2026-06-05
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 784 |
-| Flaky commits (pass + fail on same SHA) | 58 |
-| Flakiness rate | 7.4% |
-| Cascade baseline | 1 failures (6 tests) |
+| Total unique commits | 1317 |
+| Flaky commits (pass + fail on same SHA) | 95 |
+| Flakiness rate | 7.2% |
+| Cascade baseline | 1 failures (8 tests) |
 
 ## Weekly Trend
 
@@ -32,30 +32,41 @@ Generated: 2026-04-21T14:55:46.308Z | Period: 2026-01-16 to 2026-04-21
 | 2026-04-06 | 116 | 11 | 9.5% |
 | 2026-04-13 | 11 | 0 | 0% |
 | 2026-04-20 | 19 | 1 | 5.3% |
+| 2026-04-27 | 109 | 9 | 8.3% |
+| 2026-05-03 | 9 | 1 | 11.1% |
+| 2026-05-04 | 129 | 7 | 5.4% |
+| 2026-05-10 | 1 | 0 | 0% |
+| 2026-05-11 | 39 | 1 | 2.6% |
+| 2026-05-17 | 1 | 0 | 0% |
+| 2026-05-18 | 79 | 9 | 11.4% |
+| 2026-05-25 | 60 | 4 | 6.7% |
+| 2026-06-01 | 106 | 6 | 5.7% |
 
 ## Flaky Test Leaderboard (Non-Cascade)
 
 | File | Failures | Status | Fix PR |
 |------|----------|--------|--------|
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 16 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 7 | Open | [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 6 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 6 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 10 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 9 | Open | [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) |
+| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 8 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 7 | Open | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
+| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 7 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/routes/common/guards/rate-limit.guard.spec.ts` | 7 | Open | - |
+| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 6 | Fixed | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
+| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 6 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 6 | Open | - |
 | `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 5 | Fixed | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
-| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 5 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 5 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 5 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 4 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 3 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 3 | Open | - |
-| `src/routes/common/guards/rate-limit.guard.spec.ts` | 3 | Open | - |
+| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 5 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/domain/common/entities/safe-signature.spec.ts` | 4 | Open | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/domain/common/entities/safe-signature.spec.ts` | 2 | Fixed | [#2647](https://github.com/safe-global/safe-client-gateway/pull/2647) |
+| `src/modules/users/domain/users.repository.integration.spec.ts` | 2 | Open | - |
+| `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | Open | - |
 
 ## Cascade Tests
 
-These 6 tests all failed exactly 1 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
+These 8 tests all failed exactly 1 times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).
 
 <details>
 <summary>Click to expand cascade test list</summary>
@@ -66,10 +77,97 @@ These 6 tests all failed exactly 1 times, suggesting they fail together as a cas
 - `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts`
 - `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts`
 - `src/modules/auth/routes/auth.controller.integration.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts`
+- `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts`
 
 </details>
 
 ## Fix PRs
+
+### [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) - feat: replace Jest with Vitest (Open)
+
+- `scripts/env-json-helpers.spec.ts`
+- `scripts/generate-env.spec.ts`
+- `scripts/validate-env-json.spec.ts`
+- `src/__tests__/matchers/to-be-string-or-null.spec.ts`
+- `src/config/nest.configuration.service.spec.ts`
+- `src/datasources/cache/__tests__/fake.cache.service.spec.ts`
+- `src/datasources/cache/cache.first.data.source.spec.ts`
+- `src/datasources/cache/redis.cache.service.integration.spec.ts`
+- `src/datasources/cache/redis.cache.service.key-prefix.spec.ts`
+- `src/datasources/circuit-breaker/circuit-breaker.service.spec.ts`
+- `src/datasources/config-api/config-api.service.spec.ts`
+- `src/datasources/db/v1/cached-query-resolver.spec.ts`
+- `src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts`
+- `src/datasources/db/v1/postgres-database.migrator.integration.spec.ts`
+- `src/datasources/db/v2/database-migrator.service.integration.spec.ts`
+- `src/datasources/db/v2/postgres-database.service.integration.spec.ts`
+- `src/datasources/fee-service-api/fee-service-api.service.spec.ts`
+- `src/datasources/job-queue/__tests__/test.job.consumer.spec.ts`
+- `src/datasources/job-queue/job-queue.service.spec.ts`
+- `src/datasources/jwt/jwt.service.spec.ts`
+- `src/datasources/locking-api/fingerprint-api.service.spec.ts`
+- `src/datasources/locking-api/locking-api.service.spec.ts`
+- `src/datasources/network/auth/tx-auth-headers.helper.spec.ts`
+- `src/datasources/network/fetch.network.service.spec.ts`
+- `src/datasources/network/network.module.integration.spec.ts`
+- `src/datasources/push-notifications-api/firebase-cloud-messaging-api.service.spec.ts`
+- `src/datasources/storage/aws-cloud-storage-api.service.spec.ts`
+- `src/domain/common/entities/safe-signature.spec.ts`
+- `src/logging/__tests__/logger-factory.spec.ts`
+- `src/logging/logging.service.spec.ts`
+- `src/modules/alerts/datasources/tenderly-api.service.spec.ts`
+- `src/modules/alerts/domain/contracts/decoders/__tests__/delay-modifier-decoder.helper.spec.ts`
+- `src/modules/alerts/routes/alerts.controller.integration.spec.ts`
+- `src/modules/auth/oidc/auth0/datasources/auth0-api.service.spec.ts`
+- `src/modules/auth/oidc/auth0/domain/auth0-token.verifier.spec.ts`
+- `src/modules/auth/oidc/auth0/domain/auth0.repository.spec.ts`
+- `src/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard.spec.ts`
+- `src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts`
+- `src/modules/auth/oidc/routes/oidc-auth.service.spec.ts`
+- `src/modules/auth/routes/auth.controller.integration.spec.ts`
+- `src/modules/auth/routes/auth.service.spec.ts`
+- `src/modules/auth/routes/decorators/auth.decorator.integration.spec.ts`
+- `src/modules/auth/routes/guards/auth.guard.integration.spec.ts`
+- `src/modules/auth/routes/guards/optional-auth.guard.integration.spec.ts`
+- `src/modules/balances/datasources/balances-api.manager.spec.ts`
+- `src/modules/balances/datasources/coingecko-api.service.spec.ts`
+- `src/modules/balances/datasources/zerion-balances-api.service.spec.ts`
+- `src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.integration.spec.ts`
+- `src/modules/balances/routes/balances.controller.integration.spec.ts`
+- `src/modules/blockchain/datasources/blockchain-api.manager.spec.ts`
+- `src/modules/bridge/datasources/lifi-api.service.spec.ts`
+- `src/modules/chains/domain/chains.repository.spec.ts`
+- `src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts`
+- `src/modules/chains/feature-flags/feature-flag.service.spec.ts`
+- `src/modules/chains/routes/chains.controller.integration.spec.ts`
+- `src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts`
+- `src/modules/chains/routes/v2/chains.v2.service.spec.ts`
+- `src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.integration.spec.ts`
+- `src/modules/collectibles/routes/collectibles.controller.integration.spec.ts`
+- `src/modules/community/routes/community.controller.integration.spec.ts`
+- `src/modules/contracts/domain/contracts.repository.spec.ts`
+- `src/modules/contracts/domain/decoders/__tests__/multi-send-decoder.helper.spec.ts`
+- `src/modules/contracts/domain/decoders/__tests__/safe-decoder.helper.spec.ts`
+- `src/modules/contracts/routes/contracts.controller.integration.spec.ts`
+- `src/modules/contracts/routes/mappers/contract.mapper.spec.ts`
+- `src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts`
+- `src/modules/csv-export/v1/consumers/csv-export.consumer.spec.ts`
+- `src/modules/csv-export/v1/csv-export.service.spec.ts`
+- `src/modules/csv-export/v1/datasources/export-api.manager.spec.ts`
+- `src/modules/csv-export/v1/datasources/export-api.service.spec.ts`
+- `src/modules/data-decoder/datasources/data-decoder-api.service.spec.ts`
+- `src/modules/delegate/routes/delegates.controller.integration.spec.ts`
+- `src/modules/delegate/routes/v2/delegates.v2.controller.integration.spec.ts`
+
+### [#3118](https://github.com/safe-global/safe-client-gateway/pull/3118) - test: Document create signed msg returns 200 (Open)
+
+- `src/modules/messages/routes/messages.controller.integration.spec.ts`
+
+### [#3134](https://github.com/safe-global/safe-client-gateway/pull/3134) - chore: extra tests for resend invites (Open)
+
+- `src/modules/users/domain/members.repository.integration.spec.ts`
+- `src/modules/users/domain/members.repository.spec.ts`
 
 ### [#3014](https://github.com/safe-global/safe-client-gateway/pull/3014) - fix: add missing app.close() teardown in integration tests (Merged)
 
@@ -470,85 +568,15 @@ These 6 tests all failed exactly 1 times, suggesting they fail together as a cas
 - `src/routes/transactions/mappers/common/swap-order.mapper.spec.ts`
 - `src/routes/transactions/mappers/common/twap-order.mapper.spec.ts`
 
-### [#2668](https://github.com/safe-global/safe-client-gateway/pull/2668) - test(spaces): overrides`SpacesCreationRateLimitGuard` to `SpaceSafesController` tests (Merged)
-
-- `src/routes/spaces/space-safes.controller.spec.ts`
-
-### [#2647](https://github.com/safe-global/safe-client-gateway/pull/2647) - fix(test): flaky tests (Merged)
-
-- `src/domain/common/entities/safe-signature.spec.ts`
-- `src/routes/notifications/v2/notifications.controller.spec.ts`
-- `src/routes/transactions/transactions-history.imitation-transactions.controller.spec.ts`
-
-### [#2644](https://github.com/safe-global/safe-client-gateway/pull/2644) - chore(test): refactor tests to use common TestingModule (Merged)
-
-- `src/domain/notifications/v2/entities/__tests__/delete-all-subscriptions.dto.entity.spec.ts`
-- `src/routes/accounts/accounts.controller.spec.ts`
-- `src/routes/accounts/address-books/address-books.controller.spec.ts`
-- `src/routes/accounts/counterfactual-safes/counterfactual-safes.controller.spec.ts`
-- `src/routes/alerts/alerts.controller.spec.ts`
-- `src/routes/auth/auth.controller.spec.ts`
-- `src/routes/balances/__tests__/controllers/zerion-balances.controller.spec.ts`
-- `src/routes/balances/balances.controller.spec.ts`
-- `src/routes/chains/chains.controller.spec.ts`
-- `src/routes/collectibles/__tests__/controllers/zerion-collectibles.controller.spec.ts`
-- `src/routes/collectibles/collectibles.controller.spec.ts`
-- `src/routes/community/community.controller.spec.ts`
-- `src/routes/contracts/contracts.controller.spec.ts`
-- `src/routes/delegates/delegates.controller.spec.ts`
-- `src/routes/delegates/v2/delegates.v2.controller.spec.ts`
-- `src/routes/estimations/estimations.controller.spec.ts`
-- `src/routes/health/health.controller.spec.ts`
-- `src/routes/hooks/hooks-cache.spec.ts`
-- `src/routes/hooks/hooks-notifications.spec.ts`
-- `src/routes/hooks/hooks.controller.spec.ts`
-- `src/routes/hooks/hooks.http.controller.spec.ts`
-- `src/routes/messages/messages.controller.spec.ts`
-- `src/routes/notifications/v1/notifications.controller.spec.ts`
-- `src/routes/notifications/v2/notifications.controller.spec.ts`
-- `src/routes/owners/owners.controller.v1.spec.ts`
-- `src/routes/owners/owners.controller.v2.spec.ts`
-- `src/routes/recovery/recovery.controller.spec.ts`
-- `src/routes/relay/relay.controller.spec.ts`
-- `src/routes/root/root.controller.spec.ts`
-- `src/routes/safe-apps/safe-apps.controller.spec.ts`
-- `src/routes/safes/safes.controller.nonces.spec.ts`
-- `src/routes/safes/safes.controller.overview.spec.ts`
-- `src/routes/safes/safes.controller.spec.ts`
-- `src/routes/spaces/address-books.controller.spec.ts`
-- `src/routes/spaces/members.controller.spec.ts`
-- `src/routes/spaces/space-safes.controller.spec.ts`
-- `src/routes/spaces/spaces.controller.spec.ts`
-- `src/routes/targeted-messaging/targeted-messaging.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/delete-transaction.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/get-creation-transaction.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/get-transaction-by-id.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/list-incoming-transfers-by-safe.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/list-module-transactions-by-safe.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/list-multisig-transactions-by-safe.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/preview-transaction.transactions.controller.spec.ts`
-- `src/routes/transactions/__tests__/controllers/propose-transaction.transactions.controller.spec.ts`
-- `src/routes/transactions/transactions-history.controller.spec.ts`
-- `src/routes/transactions/transactions-history.imitation-transactions.controller.spec.ts`
-- `src/routes/users/users.controller.spec.ts`
-
-### [#2643](https://github.com/safe-global/safe-client-gateway/pull/2643) - refactor: Remove unused chainId variable from LimitAddressesMapper tests to fix a flaky test (Merged)
-
-- `src/domain/relay/limit-addresses.mapper.spec.ts`
-
-### [#2588](https://github.com/safe-global/safe-client-gateway/pull/2588) - feat: Add ORM query cache key and Redis integration for notifications tests (Merged)
-
-- `src/domain/notifications/v2/notifications.repository.integration.spec.ts`
-
 ## Still-Open Flaky Tests
 
-- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (7 failures)
-- `src/datasources/cache/redis.cache.service.integration.spec.ts` (5 failures)
-- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (3 failures)
-- `src/routes/common/guards/rate-limit.guard.spec.ts` (3 failures)
+- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (9 failures)
+- `src/datasources/cache/redis.cache.service.integration.spec.ts` (7 failures)
+- `src/routes/common/guards/rate-limit.guard.spec.ts` (7 failures)
+- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (6 failures)
+- `src/domain/common/entities/safe-signature.spec.ts` (4 failures)
+- `src/modules/users/domain/users.repository.integration.spec.ts` (2 failures)
+- `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures)
 
 ---
 
