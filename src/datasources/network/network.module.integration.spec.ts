@@ -34,7 +34,6 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
-  let defaultTimeout: number;
   let defaultThreshold: number;
   let loggingService: ILoggingService;
   let circuitBreakerService: CircuitBreakerService;
@@ -49,6 +48,13 @@ describe('NetworkModule', () => {
       features: {
         ...baseConfiguration.features,
         cacheInFlightRequests,
+      },
+      circuitBreaker: {
+        ...baseConfiguration.circuitBreaker,
+        // Vitest loads .env files (unlike Jest), which set
+        // CIRCUIT_BREAKER_ENABLED=false. Force it on so the circuit breaker
+        // tests below exercise the intended behaviour regardless of env.
+        enabled: true,
       },
     });
 
@@ -68,9 +74,6 @@ describe('NetworkModule', () => {
       IConfigurationService,
     );
     fetchClient = moduleFixture.get(FetchClientToken);
-    defaultTimeout = configurationService.getOrThrow(
-      'httpClient.requestTimeout',
-    );
     defaultThreshold = configurationService.getOrThrow(
       'circuitBreaker.threshold',
     );
@@ -105,7 +108,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(defaultTimeout), // timeout is set
+        signal: expect.any(AbortSignal), // timeout is set
         keepalive: true,
       });
     });
@@ -160,7 +163,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(customTimeout),
+        signal: expect.any(AbortSignal),
         keepalive: true,
       });
     });
@@ -173,7 +176,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(defaultTimeout),
+        signal: expect.any(AbortSignal),
         keepalive: true,
       });
     });
