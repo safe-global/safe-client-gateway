@@ -13,7 +13,7 @@ import type {
 
 export function txDataResponseBuilder(): IBuilder<TxDataResponse> {
   return new Builder<TxDataResponse>()
-    .with('chainId', faker.number.int({ min: 1, max: 100 }))
+    .with('chainId', faker.number.int({ min: 1, max: 99999 }).toString())
     .with('safeAddress', getAddress(faker.finance.ethereumAddress()))
     .with('safeTxGas', faker.string.numeric({ length: 6 }))
     .with('baseGas', faker.string.numeric({ length: 5 }))
