@@ -52,6 +52,23 @@ describe('TxDataResponseSchema', () => {
     }
   });
 
+  it('should not allow a non-numeric string chainId', () => {
+    const txData = {
+      chainId: 'abc',
+      safeAddress: getAddress(faker.finance.ethereumAddress()),
+      safeTxGas: '150000',
+      baseGas: '48564',
+      gasPrice: '195000000000000',
+      gasToken: getAddress(zeroAddress),
+      refundReceiver: getAddress(zeroAddress),
+      numberSignatures: 2,
+    };
+
+    const result = TxDataResponseSchema.safeParse(txData);
+
+    expect(result.success).toBe(false);
+  });
+
   it('should not allow an invalid safeAddress', () => {
     const txData = {
       chainId: '1',
