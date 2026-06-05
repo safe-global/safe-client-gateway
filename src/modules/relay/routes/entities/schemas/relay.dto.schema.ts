@@ -30,4 +30,5 @@ export const RelayDtoSchema = z.object({
       }
     }),
   safeTxHash: HexSchema.optional(),
+  acceptUnverifiedSimulation: z.boolean().optional(),
 });

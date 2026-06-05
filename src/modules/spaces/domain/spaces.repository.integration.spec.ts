@@ -465,7 +465,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findOneOrFail({ where: { id: spaceId } }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
   });
 
@@ -559,7 +559,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findOrFail({ where: { id: spaceId } }),
-      ).rejects.toThrow('Spaces not found.');
+      ).rejects.toThrow('Workspaces not found.');
     });
   });
 
@@ -657,7 +657,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findOneByUserIdOrFail({ userId }),
-      ).rejects.toThrow(`Space not found. UserId = ${userId}`);
+      ).rejects.toThrow(`Workspace not found. UserId = ${userId}`);
     });
   });
 

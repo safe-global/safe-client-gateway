@@ -57,7 +57,7 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this space'),
+        new ForbiddenException('User is not an admin of this workspace'),
       );
     });
   });
@@ -98,7 +98,7 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this space'),
+        new ForbiddenException('User is not a member of this workspace'),
       );
     });
   });

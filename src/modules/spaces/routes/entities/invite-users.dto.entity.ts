@@ -2,13 +2,12 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import {
-  makeNameSchema,
-  NAME_MAX_LENGTH,
-  NAME_MIN_LENGTH,
-} from '@/domain/common/schemas/name.schema';
+import { makeNameSchema } from '@/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import {
+  MEMBER_NAME_MAX_LENGTH,
+  MemberRole,
+} from '@/modules/users/domain/entities/member.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import {
   type EmailAddress,
@@ -22,7 +21,7 @@ export const InviteType = {
 
 const SharedInviteFields = {
   role: z.enum(getStringEnumKeys(MemberRole)),
-  name: makeNameSchema(),
+  name: makeNameSchema({ maxLength: MEMBER_NAME_MAX_LENGTH }),
 };
 
 const WalletInviteUserSchema = z
@@ -71,11 +70,7 @@ class WalletInviteUserDto implements z.infer<typeof WalletInviteUserSchema> {
   @ApiProperty({ enum: getStringEnumKeys(MemberRole) })
   public readonly role!: keyof typeof MemberRole;
 
-  @ApiProperty({
-    type: String,
-    minLength: NAME_MIN_LENGTH,
-    maxLength: NAME_MAX_LENGTH,
-  })
+  @ApiProperty({ type: String, maxLength: MEMBER_NAME_MAX_LENGTH })
   public readonly name!: string;
 }
 
@@ -89,11 +84,7 @@ class EmailInviteUserDto implements z.infer<typeof EmailInviteUserSchema> {
   @ApiProperty({ enum: getStringEnumKeys(MemberRole) })
   public readonly role!: keyof typeof MemberRole;
 
-  @ApiProperty({
-    type: String,
-    minLength: NAME_MIN_LENGTH,
-    maxLength: NAME_MAX_LENGTH,
-  })
+  @ApiProperty({ type: String, maxLength: MEMBER_NAME_MAX_LENGTH })
   public readonly name!: string;
 }
 

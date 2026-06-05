@@ -422,7 +422,7 @@ describe('SpaceSafesRepository', () => {
         }),
       ).rejects.toThrow(
         new BadRequestException(
-          `This Space only allows a maximum of ${maxSafesPerSpace} Safe Accounts. You can only add up to 1 more.`,
+          `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts. You can only add up to 1 more.`,
         ),
       );
 
@@ -571,7 +571,7 @@ describe('SpaceSafesRepository', () => {
         spaceSafesRepo.findOrFail({
           where: { space: { id: spaceId } },
         }),
-      ).rejects.toThrow(new NotFoundException('Space has no Safes.'));
+      ).rejects.toThrow(new NotFoundException('Workspace has no Safes.'));
     });
   });
 
@@ -659,7 +659,7 @@ describe('SpaceSafesRepository', () => {
         spaceSafesRepo.findOrFail({
           where: { space: { id: spaceId } },
         }),
-      ).rejects.toThrow(new NotFoundException('Space has no Safes.'));
+      ).rejects.toThrow(new NotFoundException('Workspace has no Safes.'));
     });
 
     it('should delete multiple SpaceSafes', async () => {
@@ -691,7 +691,7 @@ describe('SpaceSafesRepository', () => {
         spaceSafesRepo.findOrFail({
           where: { space: { id: spaceId } },
         }),
-      ).rejects.toThrow(new NotFoundException('Space has no Safes.'));
+      ).rejects.toThrow(new NotFoundException('Workspace has no Safes.'));
     });
 
     it('should throw NotFoundException if provided SpaceSafe is not found', async () => {
@@ -719,7 +719,7 @@ describe('SpaceSafesRepository', () => {
             },
           ],
         }),
-      ).rejects.toThrow(new NotFoundException('Space has no Safes.'));
+      ).rejects.toThrow(new NotFoundException('Workspace has no Safes.'));
     });
 
     it('should throw NotFoundException if none of the provided SpaceSafes is found', async () => {
@@ -754,7 +754,7 @@ describe('SpaceSafesRepository', () => {
             },
           ],
         }),
-      ).rejects.toThrow(new NotFoundException('Space has no Safes.'));
+      ).rejects.toThrow(new NotFoundException('Workspace has no Safes.'));
     });
 
     it('should delete found SpaceSafes and ignore not found', async () => {

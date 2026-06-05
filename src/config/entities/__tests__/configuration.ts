@@ -398,6 +398,9 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       feePreviewTtlSeconds: 60,
     },
+    simulation: {
+      enabledChainIds: [],
+    },
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),

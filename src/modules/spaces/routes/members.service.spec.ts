@@ -50,9 +50,10 @@ describe('MembersService', () => {
   });
 
   describe('get', () => {
-    it('should hide stored email for invited members', async () => {
+    it('should hide stored email for invited members when the caller is not an active admin', async () => {
       const email = fakeEmailAddress();
-      const member = memberBuilder()
+      const invitedMember = memberBuilder()
+        .with('role', 'MEMBER')
         .with('status', 'INVITED')
         .with(
           'user',
@@ -63,20 +64,97 @@ describe('MembersService', () => {
       const spaceId = faker.number.int({ min: 1 });
 
       membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
-        member,
+        invitedMember,
       ]);
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
 
       await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
         members: [
           {
-            ...member,
+            ...invitedMember,
             user: {
-              ...member.user,
+              id: invitedMember.user.id,
+              status: invitedMember.user.status,
               email: null,
             },
           },
         ],
       });
+      expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalledWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+      });
+    });
+
+    it('should expose stored email for invited members when the caller is an active admin', async () => {
+      const email = fakeEmailAddress();
+      const invitedMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'INVITED')
+        .with(
+          'user',
+          userBuilder().with('email', email).with('status', 'PENDING').build(),
+        )
+        .build();
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const callerMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerMember,
+        invitedMember,
+      ]);
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(callerMember);
+
+      await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
+        members: [
+          {
+            ...callerMember,
+            user: {
+              id: callerMember.user.id,
+              status: callerMember.user.status,
+              email: callerMember.user.email,
+            },
+          },
+          {
+            ...invitedMember,
+            user: {
+              id: invitedMember.user.id,
+              status: invitedMember.user.status,
+              email,
+            },
+          },
+        ],
+      });
+    });
+
+    it('should not expose extUserId in the member user', async () => {
+      const invitedMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'INVITED')
+        .with(
+          'user',
+          userBuilder()
+            .with('extUserId', faker.string.uuid())
+            .with('status', 'PENDING')
+            .build(),
+        )
+        .build();
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        invitedMember,
+      ]);
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[0].user).not.toHaveProperty('extUserId');
     });
   });
 

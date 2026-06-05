@@ -155,7 +155,7 @@ export class UserAddressBookItemsRepository
     });
     if (existingCount + args.newItemsCount > this.maxItems) {
       throw new BadRequestException(
-        `This Space only allows a maximum of ${this.maxItems} private contacts per user. You can only add up to ${this.maxItems - existingCount} more.`,
+        `This Workspace only allows a maximum of ${this.maxItems} private contacts per user. You can only add up to ${this.maxItems - existingCount} more.`,
       );
     }
   }

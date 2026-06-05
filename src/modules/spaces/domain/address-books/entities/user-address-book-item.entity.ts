@@ -3,8 +3,8 @@
 import type { Address } from 'viem';
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { makeNameSchema } from '@/domain/common/schemas/name.schema';
-import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressBookItemSchema } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
@@ -23,9 +23,9 @@ export const UserAddressBookItemSchema: z.ZodType<
 > = RowSchema.extend({
   space: z.lazy(() => SpaceSchema),
   creator: z.lazy(() => UserSchema),
-  chainIds: z.array(z.string()),
-  address: AddressSchema as z.ZodType<Address>,
-  name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
+  chainIds: z.array(ChainIdSchema),
+  address: AddressSchema,
+  name: AddressBookItemSchema.shape.name,
 });
 
 export type UserAddressBookItem = z.infer<typeof UserAddressBookItemSchema>;
