@@ -52,25 +52,27 @@ describe('TxDataResponseSchema', () => {
     }
   });
 
-  it.each([{ chainId: 'abc' }, { chainId: '' }, { chainId: '-1' }, { chainId: -1 }])(
-    'should not allow an invalid chainId "$chainId"',
-    ({ chainId }) => {
-      const txData = {
-        chainId,
-        safeAddress: getAddress(faker.finance.ethereumAddress()),
-        safeTxGas: '150000',
-        baseGas: '48564',
-        gasPrice: '195000000000000',
-        gasToken: getAddress(zeroAddress),
-        refundReceiver: getAddress(zeroAddress),
-        numberSignatures: 2,
-      };
+  it.each([
+    { chainId: 'abc' },
+    { chainId: '' },
+    { chainId: '-1' },
+    { chainId: -1 },
+  ])('should not allow an invalid chainId "$chainId"', ({ chainId }) => {
+    const txData = {
+      chainId,
+      safeAddress: getAddress(faker.finance.ethereumAddress()),
+      safeTxGas: '150000',
+      baseGas: '48564',
+      gasPrice: '195000000000000',
+      gasToken: getAddress(zeroAddress),
+      refundReceiver: getAddress(zeroAddress),
+      numberSignatures: 2,
+    };
 
-      const result = TxDataResponseSchema.safeParse(txData);
+    const result = TxDataResponseSchema.safeParse(txData);
 
-      expect(result.success).toBe(false);
-    },
-  );
+    expect(result.success).toBe(false);
+  });
 
   it('should not allow an invalid safeAddress', () => {
     const txData = {
