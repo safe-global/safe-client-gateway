@@ -151,7 +151,7 @@ describe('FeeServiceApi', () => {
       .with(
         'txData',
         txDataResponseBuilder()
-          .with('chainId', 1)
+          .with('chainId', '1')
           .with('safeAddress', safeAddress)
           .with('gasToken', request.gasToken)
           .with('numberSignatures', request.numberSignatures)
