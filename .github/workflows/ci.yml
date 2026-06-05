@@ -4,9 +4,22 @@ name: CI
 
 on:
   push:
+    # Only build on pushes to main. PRs are validated via the `pull_request`
+    # event below, so leaving `push:` unscoped made every PR commit run the
+    # whole pipeline twice. `main` pushes still run docker-publish-staging +
+    # autodeploy; releases use the `release` event.
+    branches:
+      - main
   pull_request:
   release:
     types: [released]
+
+# Cancel superseded runs for the same ref (e.g. rapid PR pushes) so stale
+# builds stop hogging runners. `main` is exempt so an in-flight staging deploy
+# is never cancelled by a follow-up merge.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -64,7 +77,17 @@ jobs:
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
-      - run: yarn install --immutable
+      # Cache the linked node_modules so jobs skip the install/link step on a
+      # warm cache. Keyed on the lockfile + Node major; any dependency change
+      # busts it and the conditional install below repopulates it.
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
       - run: yarn run env:validate:silent
 
   biome:
@@ -75,7 +98,14 @@ jobs:
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
-      - run: yarn install --immutable
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
       - run: yarn run format-check
       - run: yarn run lint-check
 
@@ -124,8 +154,18 @@ jobs:
         with:
           node-version: '22.11.0' # jod
           cache: 'yarn'
-      - run: yarn install --immutable
-      - run: yarn run build
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('yarn.lock') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+      # Tests are transformed straight from `src` by the test runner, so the
+      # full `nest build` (compile to dist) isn't needed here — only the
+      # generated ABIs that the `@/abis` import alias resolves to.
+      - run: yarn generate-abis
       - run: yarn run test:unit:cov
         env:
           REDIS_HOST: localhost
@@ -187,8 +227,16 @@ jobs:
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
-      - run: yarn install --immutable
-      - run: yarn run build
+      - name: Cache node_modules
+        id: node-modules
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: yarn install --immutable
+      # See unit-tests: only the generated ABIs are needed here, not a full build.
+      - run: yarn generate-abis
       - run: yarn run test:integration:cov
         env:
           REDIS_HOST: localhost
@@ -222,6 +270,8 @@ jobs:
           parallel-finished: true
           fail-on-error: false
 
+  # Production runs on amd64 only, so we build a single-arch image. ubuntu-latest
+  # is amd64, so the build is native — no QEMU emulation needed.
   docker-publish-staging:
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: [biome, tests-finish]
@@ -231,9 +281,6 @@ jobs:
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
-      - uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
-        with:
-          platforms: arm64
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -241,7 +288,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
@@ -260,9 +307,6 @@ jobs:
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
-      - uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
-        with:
-          platforms: arm64
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -270,7 +314,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
