@@ -472,6 +472,7 @@ export default (): ReturnType<typeof configuration> => ({
       11155111: faker.internet.url({ appendSlash: false }),
       59144: faker.internet.url({ appendSlash: false }),
       9745: faker.internet.url({ appendSlash: false }),
+      57073: faker.internet.url({ appendSlash: false }),
     },
     explorerBaseUri: faker.internet.url({ appendSlash: true }),
     restrictApps: false,
