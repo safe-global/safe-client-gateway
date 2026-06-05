@@ -8,6 +8,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
+import { MemberSchema } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserSchema } from '@/modules/users/domain/entities/user.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -36,7 +37,7 @@ export const AddressBookRequestSchema: z.ZodType<
   address: AddressSchema as z.ZodType<Address>,
   name: makeNameSchema({ maxLength: ADDRESS_BOOK_NAME_MAX_LENGTH }),
   status: z.enum(getStringEnumKeys(AddressBookRequestStatus)),
-  reviewedBy: z.number().int().nullable(),
+  reviewedBy: MemberSchema.shape.invitedBy,
 });
 
 export type AddressBookRequest = z.infer<typeof AddressBookRequestSchema>;

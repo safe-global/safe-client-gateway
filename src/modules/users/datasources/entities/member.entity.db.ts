@@ -8,14 +8,13 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import type { Address } from 'viem';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
-import { nullableDatabaseAddressTransformer } from '@/domain/common/transformers/nullableDatabaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
   type Member as DomainMember,
+  MEMBER_NAME_MAX_LENGTH,
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
@@ -58,7 +57,7 @@ export class Member implements DomainMember {
   })
   space!: Space;
 
-  @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
+  @Column({ type: 'varchar', length: MEMBER_NAME_MAX_LENGTH })
   name!: string;
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH, nullable: true })
@@ -80,12 +79,17 @@ export class Member implements DomainMember {
 
   @Column({
     name: 'invited_by',
-    type: 'varchar',
-    length: 42,
+    type: 'integer',
     nullable: true,
-    transformer: nullableDatabaseAddressTransformer,
   })
-  invitedBy!: Address | null;
+  invitedBy!: number | null;
+
+  @Column({
+    name: 'invite_expires_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  inviteExpiresAt!: Date | null;
 
   @Column({
     name: 'created_at',

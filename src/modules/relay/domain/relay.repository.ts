@@ -20,6 +20,7 @@ export class RelayRepository {
     data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: Hex;
+    acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
     return this.relayManager.getRelayer(args.chainId, args.data).relay(args);
   }

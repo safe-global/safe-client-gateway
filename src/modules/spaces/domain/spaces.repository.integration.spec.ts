@@ -235,6 +235,7 @@ describe('SpacesRepository', () => {
         name: expect.any(String),
         alias: null,
         invitedBy: null,
+        inviteExpiresAt: null,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         user: {
@@ -292,6 +293,49 @@ describe('SpacesRepository', () => {
       ).rejects.toThrow();
     });
 
+    it('should not count OIDC-invited memberships toward the space creation limit', async () => {
+      const config = jest.mocked({
+        getOrThrow: jest.fn(),
+      } as jest.MockedObjectDeep<IConfigurationService>);
+      config.getOrThrow.mockImplementation((key) => {
+        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+      });
+      const target = new SpacesRepository(postgresDatabaseService, config);
+
+      const invitee = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const inviteeId = invitee.identifiers[0].id as User['id'];
+
+      const admin = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const adminId = admin.identifiers[0].id as User['id'];
+
+      // Admin creates a space and invites the invitee (invitedBy = adminId)
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user: invitee.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: adminId,
+      });
+
+      // Invitee should still be able to create their own space
+      // (the invited membership should NOT count toward the limit)
+      await expect(
+        target.create({
+          userId: inviteeId,
+          name: nameBuilder(),
+          status: 'ACTIVE',
+        }),
+      ).resolves.toEqual({
+        id: expect.any(Number),
+        name: expect.any(String),
+      });
+    });
+
     it('should set the name of the space', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = nameBuilder();
@@ -327,6 +371,7 @@ describe('SpacesRepository', () => {
         name: `${spaceName} creator`,
         alias: null,
         invitedBy: null,
+        inviteExpiresAt: null,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         user: {
@@ -420,7 +465,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findOneOrFail({ where: { id: spaceId } }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
   });
 
@@ -514,7 +559,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findOrFail({ where: { id: spaceId } }),
-      ).rejects.toThrow('Spaces not found.');
+      ).rejects.toThrow('Workspaces not found.');
     });
   });
 
@@ -612,7 +657,7 @@ describe('SpacesRepository', () => {
 
       await expect(
         spacesRepository.findOneByUserIdOrFail({ userId }),
-      ).rejects.toThrow(`Space not found. UserId = ${userId}`);
+      ).rejects.toThrow(`Workspace not found. UserId = ${userId}`);
     });
   });
 

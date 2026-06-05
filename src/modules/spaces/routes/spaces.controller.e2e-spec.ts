@@ -191,7 +191,7 @@ describe('SpacesController', () => {
         .send({ name: nameBuilder() })
         .expect(403)
         .expect({
-          message: 'User has reached the maximum number of Spaces.',
+          message: 'User has reached the maximum number of Workspaces.',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -364,6 +364,7 @@ describe('SpacesController', () => {
                   name: expect.any(String),
                   alias: null,
                   invitedBy: null,
+                  inviteExpiresAt: null,
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
                   status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
                   createdAt: expect.any(String),
@@ -389,6 +390,7 @@ describe('SpacesController', () => {
                   name: expect.any(String),
                   alias: null,
                   invitedBy: null,
+                  inviteExpiresAt: null,
                   role: getEnumKey(MemberRole, MemberRole.ADMIN),
                   status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
                   createdAt: expect.any(String),
@@ -483,6 +485,7 @@ describe('SpacesController', () => {
                 name: expect.any(String),
                 alias: null,
                 invitedBy: null,
+                inviteExpiresAt: null,
                 status: getEnumKey(MemberStatus, MemberStatus.ACTIVE),
                 role: getEnumKey(MemberRole, MemberRole.ADMIN),
                 createdAt: expect.any(String),
@@ -554,7 +557,8 @@ describe('SpacesController', () => {
                   }),
                 }),
                 expect.objectContaining({
-                  invitedBy: adminAuthPayloadDto.signer_address,
+                  invitedBy: userId,
+                  invitedByName: adminAuthPayloadDto.signer_address,
                   status: getEnumKey(MemberStatus, MemberStatus.INVITED),
                   role: getEnumKey(MemberRole, MemberRole.MEMBER),
                   user: expect.objectContaining({
@@ -612,7 +616,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -633,7 +637,7 @@ describe('SpacesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'Space not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });

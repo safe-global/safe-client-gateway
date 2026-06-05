@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, GoneException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
-import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -24,6 +23,10 @@ import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
@@ -35,6 +38,7 @@ import { MembersRepository } from '@/modules/users/domain/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -129,7 +133,6 @@ describe('MembersRepository', () => {
       postgresDatabaseService,
       new UsersRepository(postgresDatabaseService, walletsRepo),
       new SpacesRepository(postgresDatabaseService, mockConfigurationService),
-      walletsRepo,
     );
   });
 
@@ -189,7 +192,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         status: faker.helpers.arrayElement(MemberStatusKeys),
         role: faker.helpers.arrayElement(MemberRoleKeys),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       const after = Date.now();
@@ -227,7 +230,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         status: 'ACTIVE',
         role: faker.helpers.arrayElement(MemberRoleKeys),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       const memberId = prevMember.identifiers[0].id as User['id'];
@@ -258,7 +261,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
       const memberStatus = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -286,6 +289,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -310,7 +314,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
       const memberStatus = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user = await dbUserRepo.insert({
         status: userStatus,
       });
@@ -338,6 +342,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -366,8 +371,8 @@ describe('MembersRepository', () => {
       const memberStatus2 = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole1 = faker.helpers.arrayElement(MemberRoleKeys);
       const memberRole2 = faker.helpers.arrayElement(MemberRoleKeys);
-      const member1InvitedBy = getAddress(faker.finance.ethereumAddress());
-      const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+      const member1InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const member2InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user1 = await dbUserRepo.insert({
         status: userStatus1,
       });
@@ -410,6 +415,7 @@ describe('MembersRepository', () => {
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
         {
@@ -420,6 +426,7 @@ describe('MembersRepository', () => {
           role: memberRole2,
           status: memberStatus2,
           invitedBy: member2InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -449,8 +456,8 @@ describe('MembersRepository', () => {
       const member2Status = faker.helpers.arrayElement(MemberStatusKeys);
       const memberRole1 = faker.helpers.arrayElement(MemberRoleKeys);
       const memberRole2 = faker.helpers.arrayElement(MemberRoleKeys);
-      const member1InvitedBy = getAddress(faker.finance.ethereumAddress());
-      const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+      const member1InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const member2InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const user1 = await dbUserRepo.insert({
         status: userStatus1,
       });
@@ -491,6 +498,7 @@ describe('MembersRepository', () => {
           role: memberRole1,
           status: memberStatus1,
           invitedBy: member1InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
         {
@@ -501,6 +509,7 @@ describe('MembersRepository', () => {
           role: memberRole2,
           status: member2Status,
           invitedBy: member2InvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
         },
       ]);
@@ -559,7 +568,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -585,7 +594,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'ADMIN',
         status: nonActiveStatus,
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -621,7 +630,7 @@ describe('MembersRepository', () => {
         name: nameBuilder(),
         role: 'ADMIN',
         status: 'INVITED',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -646,10 +655,11 @@ describe('MembersRepository', () => {
     it('should invite users to a space and return the members', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
+      const inviteExpiresAt = faker.date.future();
       const {
+        userId: adminUserId,
         user: owner,
         authPayload,
-        authPayloadDto,
       } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -662,11 +672,12 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: null,
       });
       const users = faker.helpers.multiple(
         () => {
           return {
+            type: InviteType.Wallet,
             address: getAddress(faker.finance.ethereumAddress()),
             role: faker.helpers.arrayElement(MemberRoleKeys),
             name: faker.person.firstName(),
@@ -679,6 +690,7 @@ describe('MembersRepository', () => {
         authPayload,
         spaceId,
         users,
+        inviteExpiresAt,
       });
 
       expect(member).toEqual(
@@ -689,16 +701,21 @@ describe('MembersRepository', () => {
             name: user.name,
             role: user.role,
             status: 'INVITED',
-            invitedBy: authPayloadDto.signer_address,
+            invitedBy: adminUserId,
           };
         }),
       );
     });
 
-    it('should invite users as OIDC admin with invitedBy null', async () => {
+    it('should invite users as OIDC admin with invitedBy set to user id', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
-      const { user: owner, authPayload } = await createOidcUser();
+      const inviteExpiresAt = faker.date.future();
+      const {
+        userId: adminUserId,
+        user: owner,
+        authPayload,
+      } = await createOidcUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -710,11 +727,12 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: null,
       });
       const users = faker.helpers.multiple(
         () => {
           return {
+            type: InviteType.Wallet,
             address: getAddress(faker.finance.ethereumAddress()),
             role: faker.helpers.arrayElement(MemberRoleKeys),
             name: faker.person.firstName(),
@@ -727,6 +745,7 @@ describe('MembersRepository', () => {
         authPayload,
         spaceId,
         users,
+        inviteExpiresAt,
       });
 
       expect(member).toEqual(
@@ -737,7 +756,7 @@ describe('MembersRepository', () => {
             name: user.name,
             role: user.role,
             status: 'INVITED',
-            invitedBy: null,
+            invitedBy: adminUserId,
           };
         }),
       );
@@ -746,6 +765,7 @@ describe('MembersRepository', () => {
     it('should not create PENDING users for existing ones', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
+      const inviteExpiresAt = faker.date.future();
       const { user: owner, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -758,7 +778,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -776,11 +796,13 @@ describe('MembersRepository', () => {
         spaceId,
         users: [
           {
+            type: InviteType.Wallet,
             address: memberWallet,
             role: memberRole,
             name: memberName,
           },
         ],
+        inviteExpiresAt,
       });
 
       await expect(
@@ -808,31 +830,251 @@ describe('MembersRepository', () => {
       ]);
     });
 
+    it('should update an existing invite when reinviting the same user to the same space', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const existingInviteExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      const renewedInviteExpiresAt = new Date(Date.now() + 60 * 60 * 1000);
+      const {
+        user: owner,
+        userId: ownerId,
+        authPayload,
+      } = await createSiweUser();
+      const inviteeAddress = getAddress(faker.finance.ethereumAddress());
+      const inviteeName = faker.person.firstName();
+      const updatedInviteeName = faker.person.firstName();
+      const invitee = await dbUserRepo.insert({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: invitee.generatedMaps[0],
+        address: inviteeAddress,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const existingInvite = await dbMembersRepository.insert({
+        user: invitee.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: inviteeName,
+        role: 'MEMBER',
+        status: 'INVITED',
+        invitedBy: ownerId,
+        inviteExpiresAt: existingInviteExpiresAt,
+      });
+      const existingInviteId = existingInvite.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: [
+            {
+              type: InviteType.Wallet,
+              address: inviteeAddress,
+              role: 'ADMIN',
+              name: updatedInviteeName,
+            },
+          ],
+          inviteExpiresAt: renewedInviteExpiresAt,
+        }),
+      ).resolves.toEqual([
+        {
+          userId: invitee.generatedMaps[0].id,
+          spaceId,
+          name: updatedInviteeName,
+          role: 'ADMIN',
+          status: 'INVITED',
+          invitedBy: ownerId,
+        },
+      ]);
+
+      await expect(
+        dbMembersRepository.findOneOrFail({
+          where: { id: existingInviteId },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          id: existingInviteId,
+          name: updatedInviteeName,
+          role: 'ADMIN',
+          status: 'INVITED',
+          invitedBy: ownerId,
+          inviteExpiresAt: renewedInviteExpiresAt,
+        }),
+      );
+    });
+
+    it('should throw when reinviting an active member to the same space', async () => {
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const { user: owner, authPayload } = await createSiweUser();
+      const { user: activeMember } = await createSiweUser();
+      const activeMemberAddress = getAddress(faker.finance.ethereumAddress());
+      await dbWalletRepo.insert({
+        user: activeMember,
+        address: activeMemberAddress,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+      });
+      await dbMembersRepository.insert({
+        user: activeMember,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: null,
+      });
+
+      await expect(
+        membersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: [
+            {
+              type: InviteType.Wallet,
+              address: activeMemberAddress,
+              role: 'ADMIN',
+              name: faker.person.firstName(),
+            },
+          ],
+          inviteExpiresAt: faker.date.future(),
+        }),
+      ).rejects.toThrow(
+        `${activeMemberAddress} is already in this workspace or has a pending invite.`,
+      );
+    });
+
+    it('should invite by email, creating a PENDING placeholder user', async () => {
+      const inviteExpiresAt = faker.date.future();
+      const { user: owner, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const inviteEmail = EmailAddressSchema.parse(faker.internet.email());
+      const inviteName = nameBuilder();
+
+      const invitations = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            type: InviteType.Email,
+            email: inviteEmail,
+            role: 'MEMBER',
+            name: inviteName,
+          },
+        ],
+        inviteExpiresAt,
+      });
+
+      expect(invitations).toHaveLength(1);
+      const placeholder = await dbUserRepo.findOneOrFail({
+        where: { id: invitations[0].userId },
+      });
+      expect(placeholder.status).toBe('PENDING');
+      expect(placeholder.email).toBe(inviteEmail);
+      expect(placeholder.extUserId).toBeNull();
+    });
+
+    it('should reuse the existing user when invited by email matches an ACTIVE account', async () => {
+      const inviteExpiresAt = faker.date.future();
+      const { user: owner, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const existingEmail = EmailAddressSchema.parse(faker.internet.email());
+      const existingInsert = await dbUserRepo.insert({
+        status: 'ACTIVE',
+        email: existingEmail,
+        extUserId: faker.string.uuid(),
+      });
+      const existingUserId = existingInsert.generatedMaps[0].id;
+
+      const invitations = await membersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            type: InviteType.Email,
+            email: existingEmail,
+            role: 'MEMBER',
+            name: nameBuilder(),
+          },
+        ],
+        inviteExpiresAt,
+      });
+
+      expect(invitations).toHaveLength(1);
+      expect(invitations[0].userId).toBe(existingUserId);
+    });
+
     it('should throw an error if the space does not exist', async () => {
+      const inviteExpiresAt = faker.date.future();
       const { authPayload } = await createSiweUser();
       const spaceId = faker.number.int({
         min: 69420,
         max: DB_MAX_SAFE_INTEGER,
       });
-      const users: Array<{
-        address: Address;
-        role: keyof typeof MemberRole;
-        name: string;
-      }> = [];
+      const users: Array<InviteUserInput> = [];
 
       await expect(
         membersRepository.inviteUsers({
           authPayload,
           spaceId,
           users,
+          inviteExpiresAt,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
   });
 
   describe('acceptInvite', () => {
     it('should accept an invite to a space, setting the member and user to ACTIVE', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -867,6 +1109,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -890,6 +1133,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -907,7 +1151,8 @@ describe('MembersRepository', () => {
     });
 
     it('should accept an invite for OIDC user', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -942,6 +1187,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -962,6 +1208,7 @@ describe('MembersRepository', () => {
           id: memberId,
           status: 'ACTIVE',
           name: memberName,
+          inviteExpiresAt: null,
         }),
       );
     });
@@ -970,7 +1217,8 @@ describe('MembersRepository', () => {
       ['SIWE', createSiweUser],
       ['OIDC', createOidcUser],
     ] as const)('should accept an invite to a space and override the name (%s)', async (_label, createUser) => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1005,6 +1253,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
       const updatedName = nameBuilder();
@@ -1029,6 +1278,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'ACTIVE',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1064,7 +1314,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1075,7 +1325,7 @@ describe('MembersRepository', () => {
             name: adminName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if not authenticated', async () => {
@@ -1112,7 +1362,7 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the space does not exist', async () => {
@@ -1131,7 +1381,7 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
@@ -1153,7 +1403,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -1161,7 +1411,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1170,7 +1420,7 @@ describe('MembersRepository', () => {
           spaceId,
           payload: { name: memberName },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
@@ -1199,7 +1449,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user,
@@ -1207,7 +1457,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1218,13 +1468,79 @@ describe('MembersRepository', () => {
             name: memberName,
           },
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
+    });
+
+    it('should throw GoneException if the invite has expired', async () => {
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.past();
+
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const { userId, user, authPayload } = await createSiweUser({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const member = await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: memberRole,
+        status: 'INVITED',
+        invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
+      });
+      const memberId = member.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.acceptInvite({
+          authPayload,
+          spaceId,
+          payload: { name: memberName },
+        }),
+      ).rejects.toThrow(new GoneException('Invitation has expired.'));
+
+      // The row is untouched: still INVITED with the same expiry, and the
+      // user is still PENDING.
+      await expect(
+        dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          status: 'INVITED',
+          inviteExpiresAt: memberInviteExpiresAt,
+        }),
+      );
+      await expect(
+        dbUserRepo.findOneOrFail({ where: { id: userId } }),
+      ).resolves.toEqual(expect.objectContaining({ status: 'PENDING' }));
     });
   });
 
   describe('declineInvite', () => {
     it('should accept an invite to a space, setting the member to DECLINED', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1259,6 +1575,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -1279,6 +1596,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'DECLINED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
       await expect(
@@ -1296,7 +1614,8 @@ describe('MembersRepository', () => {
     });
 
     it('should decline an invite for OIDC user', async () => {
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.future();
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const memberName = nameBuilder();
@@ -1331,6 +1650,7 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: 'INVITED',
         invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -1348,6 +1668,7 @@ describe('MembersRepository', () => {
           id: memberId,
           status: 'DECLINED',
           name: memberName,
+          inviteExpiresAt: null,
         }),
       );
     });
@@ -1371,7 +1692,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1379,7 +1700,7 @@ describe('MembersRepository', () => {
           authPayload: nonMemberAuthPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if not authenticated', async () => {
@@ -1408,7 +1729,7 @@ describe('MembersRepository', () => {
           authPayload: new AuthPayload(authPayloadDto),
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the space does not exist', async () => {
@@ -1423,7 +1744,7 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is already a member of the space', async () => {
@@ -1445,7 +1766,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -1453,7 +1774,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1461,7 +1782,7 @@ describe('MembersRepository', () => {
           authPayload: memberAuthPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
     });
 
     it('should throw an error if the user is not INVITED to the space', async () => {
@@ -1490,7 +1811,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user,
@@ -1498,7 +1819,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: memberRole,
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1506,7 +1827,67 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).rejects.toThrow('Space not found.');
+      ).rejects.toThrow('Workspace not found.');
+    });
+
+    it('should throw GoneException if the invite has expired', async () => {
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const memberInviteExpiresAt = faker.date.past();
+      const spaceName = nameBuilder();
+      const adminName = nameBuilder();
+      const memberName = nameBuilder();
+      const admin = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const { userId, user, authPayload } = await createSiweUser({
+        status: 'PENDING',
+      });
+      await dbWalletRepo.insert({
+        user: admin.generatedMaps[0],
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const memberRole = faker.helpers.arrayElement(MemberRoleKeys);
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: adminName,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const member = await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: memberName,
+        role: memberRole,
+        status: 'INVITED',
+        invitedBy: memberInvitedBy,
+        inviteExpiresAt: memberInviteExpiresAt,
+      });
+      const memberId = member.identifiers[0].id as Member['id'];
+
+      await expect(
+        membersRepository.declineInvite({ authPayload, spaceId }),
+      ).rejects.toThrow(new GoneException('Invitation has expired.'));
+
+      // The row is untouched: still INVITED with the same expiry, and the
+      // user is still PENDING.
+      await expect(
+        dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          status: 'INVITED',
+          inviteExpiresAt: memberInviteExpiresAt,
+        }),
+      );
+      await expect(
+        dbUserRepo.findOneOrFail({ where: { id: userId } }),
+      ).resolves.toEqual(expect.objectContaining({ status: 'PENDING' }));
     });
   });
 
@@ -1517,7 +1898,7 @@ describe('MembersRepository', () => {
       const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
         UserStatusKeys,
       );
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const { userId, user, authPayload } = await createSiweUser({
         status: userStatus,
       });
@@ -1551,6 +1932,7 @@ describe('MembersRepository', () => {
           role: memberRole,
           status: 'ACTIVE',
           invitedBy: memberInvitedBy,
+          inviteExpiresAt: null,
           updatedAt: expect.any(Date),
           user: {
             createdAt: expect.any(Date),
@@ -1570,7 +1952,7 @@ describe('MembersRepository', () => {
       const userStatus = faker.helpers.arrayElement<'ACTIVE' | 'PENDING'>(
         UserStatusKeys,
       );
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const { user, authPayload } = await createOidcUser({
         status: userStatus,
       });
@@ -1633,7 +2015,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -1657,14 +2039,14 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
 
     it('should throw an error if the user is not an active member of the space', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -1676,7 +2058,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'DECLINED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1686,7 +2068,67 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException for an expired invited caller', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: faker.date.past(),
+      });
+
+      await expect(
+        membersRepository.findAuthorizedMembersOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the workspace.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException for an invited caller with no invite expiry', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: null,
+      });
+
+      await expect(
+        membersRepository.findAuthorizedMembersOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -1701,7 +2143,7 @@ describe('MembersRepository', () => {
     ] as const)('should return the membership row for a %s caller with %s status', async (_authLabel, memberStatus, createUser) => {
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
-      const memberInvitedBy = getAddress(faker.finance.ethereumAddress());
+      const memberInvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const { userId, user, authPayload } = await createUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
@@ -1716,6 +2158,8 @@ describe('MembersRepository', () => {
         role: memberRole,
         status: memberStatus,
         invitedBy: memberInvitedBy,
+        inviteExpiresAt:
+          memberStatus === 'INVITED' ? faker.date.future() : null,
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -1739,7 +2183,7 @@ describe('MembersRepository', () => {
 
     it('should throw ForbiddenException for a DECLINED caller', async () => {
       const spaceName = nameBuilder();
-      const { user, authPayload, authPayloadDto } = await createSiweUser();
+      const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: spaceName,
         status: 'ACTIVE',
@@ -1751,7 +2195,7 @@ describe('MembersRepository', () => {
         name: faker.person.firstName(),
         role: faker.helpers.arrayElement(MemberRoleKeys),
         status: 'DECLINED',
-        invitedBy: authPayloadDto.signer_address,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1761,7 +2205,67 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException for an expired invited caller', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: faker.date.past(),
+      });
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the workspace.',
+        ),
+      );
+    });
+
+    it('should throw ForbiddenException for an invited caller with no invite expiry', async () => {
+      const spaceName = nameBuilder();
+      const { user, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: spaceName,
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: null,
+      });
+
+      await expect(
+        membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -1782,7 +2286,7 @@ describe('MembersRepository', () => {
         }),
       ).rejects.toThrow(
         new ForbiddenException(
-          'The user is not an active member of the space.',
+          'The user is not an active member of the workspace.',
         ),
       );
     });
@@ -1813,7 +2317,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member.generatedMaps[0],
@@ -1821,7 +2325,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1858,7 +2362,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member.generatedMaps[0],
@@ -1866,7 +2370,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1910,7 +2414,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       // Add the user to space1
       await dbMembersRepository.insert({
@@ -1919,7 +2423,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       // Add the user to space2
       await dbMembersRepository.insert({
@@ -1928,7 +2432,7 @@ describe('MembersRepository', () => {
         name: member2Name,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -1955,7 +2459,8 @@ describe('MembersRepository', () => {
         alias: null,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: expect.any(String),
+        invitedBy: expect.any(Number),
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
         space: expect.objectContaining({ id: spaceId }),
       });
@@ -1975,7 +2480,8 @@ describe('MembersRepository', () => {
         alias: null,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: expect.any(String),
+        invitedBy: expect.any(Number),
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
         space: expect.objectContaining({ id: space2Id }),
       });
@@ -2000,7 +2506,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -2008,7 +2514,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2040,7 +2546,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -2048,7 +2554,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2105,7 +2611,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member.generatedMaps[0],
@@ -2113,7 +2619,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2141,7 +2647,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2180,7 +2686,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
@@ -2188,7 +2694,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2229,7 +2735,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
@@ -2237,7 +2743,7 @@ describe('MembersRepository', () => {
         name: memberName2,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2290,7 +2796,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const member = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
@@ -2298,7 +2804,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const memberId = member.identifiers[0].id as Member['id'];
 
@@ -2309,9 +2815,9 @@ describe('MembersRepository', () => {
         name: admin2Name,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
-      const member2InvitedBy = getAddress(faker.finance.ethereumAddress());
+      const member2InvitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const member2 = await dbMembersRepository.insert({
         user: memberUser.generatedMaps[0],
         space: space2.generatedMaps[0],
@@ -2345,6 +2851,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: member2InvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -2367,7 +2874,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       await dbMembersRepository.insert({
         user: member,
@@ -2375,7 +2882,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2424,7 +2931,7 @@ describe('MembersRepository', () => {
         space: space.generatedMaps[0],
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2475,7 +2982,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2512,7 +3019,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMember = await dbMembersRepository.insert({
         user: signerUser,
@@ -2520,7 +3027,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMemberId = signerMember.identifiers[0].id;
 
@@ -2559,7 +3066,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMember = await dbMembersRepository.insert({
         user: signerUser,
@@ -2567,7 +3074,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMemberId = signerMember.identifiers[0].id;
 
@@ -2609,7 +3116,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMember = await dbMembersRepository.insert({
         user: signerUser,
@@ -2617,7 +3124,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMemberId = signerMember.identifiers[0].id;
 
@@ -2667,7 +3174,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMember1 = await dbMembersRepository.insert({
         user: signerUser,
@@ -2675,14 +3182,14 @@ describe('MembersRepository', () => {
         name: member1Name,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
       const signerMemberId1 = signerMember1.identifiers[0].id;
 
       // Add to second space
-      const signerMember2InvitedBy = getAddress(
-        faker.finance.ethereumAddress(),
-      );
+      const signerMember2InvitedBy = faker.number.int({
+        max: DB_MAX_SAFE_INTEGER,
+      });
       const signerMember2 = await dbMembersRepository.insert({
         user: signerUser,
         space: space2.generatedMaps[0],
@@ -2716,6 +3223,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         invitedBy: signerMember2InvitedBy,
+        inviteExpiresAt: null,
         updatedAt: expect.any(Date),
       });
     });
@@ -2735,7 +3243,7 @@ describe('MembersRepository', () => {
         name: signerMemberName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2768,7 +3276,7 @@ describe('MembersRepository', () => {
         name: adminName,
         role: 'ADMIN',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2798,7 +3306,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2832,7 +3340,7 @@ describe('MembersRepository', () => {
         name: memberName,
         role: 'MEMBER',
         status: 'ACTIVE',
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2870,7 +3378,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         alias: nameBuilder(),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2907,7 +3415,7 @@ describe('MembersRepository', () => {
         role: 'MEMBER',
         status: 'ACTIVE',
         alias: nameBuilder(),
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -2946,7 +3454,7 @@ describe('MembersRepository', () => {
         role: 'ADMIN',
         status: 'ACTIVE',
         alias: null,
-        invitedBy: getAddress(faker.finance.ethereumAddress()),
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
       });
 
       await expect(
@@ -3045,7 +3553,7 @@ describe('MembersRepository', () => {
       name: nameBuilder(),
       status: 'ACTIVE',
       role: 'ADMIN',
-      invitedBy: getAddress(faker.finance.ethereumAddress()),
+      invitedBy: null,
     });
     return {
       spaceId: space.generatedMaps[0].id,

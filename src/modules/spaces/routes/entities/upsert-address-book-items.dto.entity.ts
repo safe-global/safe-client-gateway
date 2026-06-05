@@ -2,12 +2,14 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressBookItemSchema as BaseAddressBookItemSchema } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 const AddressBookItemSchema = z.object({
-  name: z.string(),
+  name: BaseAddressBookItemSchema.shape.name,
   address: AddressSchema,
-  chainIds: z.array(z.string()),
+  chainIds: z.array(ChainIdSchema),
 });
 
 class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {

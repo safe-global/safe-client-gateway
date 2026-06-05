@@ -5,16 +5,22 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import type {
+  RelayFeeConfiguration,
+  RelaySimulationConfiguration,
+} from '@/modules/relay/domain/entities/relay.configuration';
 import {
   type Relay,
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
+import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
+import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
@@ -22,18 +28,32 @@ import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interfa
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
+/**
+ * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
+ * On-chain the caller is Gelato's dispatcher; using a non-Safe sentinel keeps
+ * `msg.sender`/`tx.origin` distinct from the Safe so refund-receiver-zero
+ * flows debit the Safe to a third party (as they would in production).
+ */
+const SIMULATION_SENDER_SENTINEL: Address =
+  '0x000000000000000000000000000000000000dEaD';
+
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
   private readonly relayFeeConfiguration: RelayFeeConfiguration;
+  private readonly relaySimulationConfiguration: RelaySimulationConfiguration;
 
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
+    @Inject(ITenderlySimulationApi)
+    private readonly tenderlySimulationApi: ITenderlySimulationApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {
     this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
+    this.relaySimulationConfiguration =
+      configurationService.getOrThrow('relay.simulation');
   }
 
   /**
@@ -68,7 +88,7 @@ export class RelayFeeRelayer implements IRelayer {
     if (!feeServiceResult.canRelay) {
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
-        message: `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}`,
+        message: `relay-fee canRelay denied for ${args.address} on chain ${args.chainId}: fee service rejected safeTxHash ${args.safeTxHash}`,
       });
       return { result: false, currentCount: 0, limit: 0 };
     }
@@ -101,8 +121,16 @@ export class RelayFeeRelayer implements IRelayer {
     data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: Hex;
+    acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
-    const { version, chainId, to, data } = args;
+    const {
+      version,
+      chainId,
+      to,
+      data,
+      safeTxHash,
+      acceptUnverifiedSimulation,
+    } = args;
     const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
 
     // The relay request must match one of the supported transaction.
@@ -117,8 +145,10 @@ export class RelayFeeRelayer implements IRelayer {
       await this.validateExecTransaction({
         chainId,
         to,
+        data,
         decoded,
-        safeTxHash: args.safeTxHash,
+        safeTxHash: safeTxHash,
+        acceptUnverifiedSimulation: acceptUnverifiedSimulation,
       });
     } else if (decoded !== null) {
       // Branch 2: the data decoded as execTransaction but failed validity rules.
@@ -162,10 +192,19 @@ export class RelayFeeRelayer implements IRelayer {
   private async validateExecTransaction(args: {
     chainId: string;
     to: Address;
+    data: Hex;
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
+    acceptUnverifiedSimulation: boolean | undefined;
   }): Promise<void> {
-    const { chainId, to, decoded, safeTxHash } = args;
+    const {
+      chainId,
+      to,
+      data,
+      decoded,
+      safeTxHash,
+      acceptUnverifiedSimulation,
+    } = args;
 
     if (!safeTxHash) {
       throw new RelayTxDeniedError(undefined);
@@ -182,17 +221,64 @@ export class RelayFeeRelayer implements IRelayer {
       throw new SafeTxHashMismatchError(safeTxHash);
     }
 
-    const feeServiceResult = await this.feeServiceApi.canRelay({
-      chainId,
-      safeTxHash,
-    });
+    // Fee-service eligibility and Tenderly simulation are independent — fire
+    // them in parallel to avoid serializing two RTTs per relay.
+    const simulationEnabled =
+      this.relaySimulationConfiguration.enabledChainIds.includes(chainId);
+    const [feeServiceResult, simulation] = await Promise.all([
+      this.feeServiceApi.canRelay({ chainId, safeTxHash }),
+      simulationEnabled
+        ? this.tenderlySimulationApi.simulate({
+            chainId,
+            // Sentinel EOA — we use a non-Safe placeholder rather than the
+            // Safe itself so that `msg.sender`/`tx.origin` ≠ Safe during
+            // simulation. This surfaces issues that would only appear when
+            // relayed by an external dispatcher (most notably: when
+            // `refundReceiver` is the zero address, the refund is paid to
+            // `tx.origin`; simulating with `from = Safe` would have the Safe
+            // pay itself and hide insufficient token balance for the refund).
+            from: SIMULATION_SENDER_SENTINEL,
+            to,
+            data,
+          })
+        : Promise.resolve(null),
+    ]);
 
+    // Fee-service denial takes precedence over a simulation failure to keep
+    // the error class users see consistent with the previous serial flow.
     if (!feeServiceResult.canRelay) {
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
         message: `relay-fee relay denied for ${to} on chain ${chainId}: fee service rejected safeTxHash ${safeTxHash}`,
       });
       throw new RelayTxDeniedError(safeTxHash);
+    }
+
+    if (simulation?.status === 'failed') {
+      // Tenderly confirmed the transaction would revert => Block relay
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee relay denied for ${to} on chain ${chainId}: simulation failed (${simulation.reason}) for safeTxHash ${safeTxHash}`,
+      });
+      throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
+    }
+
+    if (simulation?.status === 'indeterminate') {
+      if (!acceptUnverifiedSimulation) {
+        this.loggingService.warn({
+          type: LogType.TxRelayEligibility,
+          message: `relay-fee relay deferred for ${to} on chain ${chainId}: simulation indeterminate (${simulation.reason}) for safeTxHash ${safeTxHash}`,
+        });
+        throw new RelaySimulationIndeterminateError(
+          safeTxHash,
+          simulation.reason,
+        );
+      }
+
+      this.loggingService.warn({
+        type: LogType.TxRelayEligibility,
+        message: `relay-fee relay proceeding for ${to} on chain ${chainId} despite indeterminate simulation (${simulation.reason}) for safeTxHash ${safeTxHash}: user override`,
+      });
     }
   }
 
