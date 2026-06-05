@@ -12,7 +12,7 @@ import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 export class JobQueueService implements IJobQueueService {
   constructor(private readonly queue: Queue) {}
 
-  public async getJob(jobId: string): Promise<Job | null> {
+  public async getJob(jobId: string): Promise<Job | undefined> {
     return await this.queue.getJob(jobId);
   }
 
