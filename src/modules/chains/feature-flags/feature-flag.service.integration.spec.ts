@@ -2,6 +2,7 @@
 
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -74,9 +75,7 @@ describe('FeatureFlagService Integration', () => {
       const featureFlagSvc =
         moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
       const networkService =
-        moduleFixture.get<jest.MockedObjectDeep<INetworkService>>(
-          NetworkService,
-        );
+        moduleFixture.get<MockedObject<INetworkService>>(NetworkService);
 
       expect(configService.getOrThrow<string>('safeConfig.cgwServiceKey')).toBe(
         CUSTOM_CGW_KEY,

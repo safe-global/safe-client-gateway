@@ -4,18 +4,19 @@ import { faker } from '@faker-js/faker';
 import type { ArgumentsHost } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import type { Hex } from 'viem';
+import type { Mock } from 'vitest';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
 
 function buildMockHost(): {
   host: ArgumentsHost;
-  mockStatus: jest.Mock;
-  mockJson: jest.Mock;
+  mockStatus: Mock;
+  mockJson: Mock;
 } {
-  const mockJson = jest.fn();
-  const mockStatus = jest.fn().mockReturnValue({ json: mockJson });
-  const mockGetResponse = jest.fn().mockReturnValue({ status: mockStatus });
-  const mockSwitchToHttp = jest
+  const mockJson = vi.fn();
+  const mockStatus = vi.fn().mockReturnValue({ json: mockJson });
+  const mockGetResponse = vi.fn().mockReturnValue({ status: mockStatus });
+  const mockSwitchToHttp = vi
     .fn()
     .mockReturnValue({ getResponse: mockGetResponse });
   const host = {

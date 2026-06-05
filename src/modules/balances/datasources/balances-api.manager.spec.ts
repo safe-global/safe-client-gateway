@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -16,65 +18,65 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { rawify } from '@/validation/entities/raw.entity';
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
-const configurationServiceMock = jest.mocked(configurationService);
+const configurationServiceMock = vi.mocked(configurationService);
 
 const configApi = {
-  getChain: jest.fn(),
-} as jest.MockedObjectDeep<IConfigApi>;
+  getChain: vi.fn(),
+} as MockedObject<IConfigApi>;
 
-const configApiMock = jest.mocked(configApi);
+const configApiMock = vi.mocked(configApi);
 
 const dataSource = {
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>;
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>;
 
-const dataSourceMock = jest.mocked(dataSource);
+const dataSourceMock = vi.mocked(dataSource);
 
-const cacheService = {} as jest.MockedObjectDeep<ICacheService>;
+const cacheService = {} as MockedObject<ICacheService>;
 
 const httpErrorFactory = {
-  from: jest.fn(),
-} as jest.MockedObjectDeep<HttpErrorFactory>;
+  from: vi.fn(),
+} as MockedObject<HttpErrorFactory>;
 
 const transactionApiManagerMock = {
-  getApi: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApiManager>;
+  getApi: vi.fn(),
+} as MockedObject<ITransactionApiManager>;
 
 const transactionApiMock = {
-  isSafe: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApi>;
+  isSafe: vi.fn(),
+} as MockedObject<ITransactionApi>;
 
 const zerionBalancesApi = {
-  getBalances: jest.fn(),
-  clearBalances: jest.fn(),
-  getCollectibles: jest.fn(),
-  clearCollectibles: jest.fn(),
-  getFiatCodes: jest.fn(),
-  getBalance: jest.fn(),
+  getBalances: vi.fn(),
+  clearBalances: vi.fn(),
+  getCollectibles: vi.fn(),
+  clearCollectibles: vi.fn(),
+  getFiatCodes: vi.fn(),
+  getBalance: vi.fn(),
 } as IBalancesApi;
 
-const zerionBalancesApiMock = jest.mocked(zerionBalancesApi);
+const zerionBalancesApiMock = vi.mocked(zerionBalancesApi);
 
 const coingeckoApi = {
-  getNativeCoinPrice: jest.fn(),
-  getTokenPrices: jest.fn(),
-  getFiatCodes: jest.fn(),
+  getNativeCoinPrice: vi.fn(),
+  getTokenPrices: vi.fn(),
+  getFiatCodes: vi.fn(),
 } as IPricesApi;
 
-const coingeckoApiMock = jest.mocked(coingeckoApi);
+const coingeckoApiMock = vi.mocked(coingeckoApi);
 
 const networkService = {
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<INetworkService>;
 
-const networkServiceMock = jest.mocked(networkService);
+const networkServiceMock = vi.mocked(networkService);
 
 beforeEach(() => {
-  jest.resetAllMocks();
+  vi.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
     if (key === 'features.zerionBalancesEnabled') return false;
     if (key === 'features.counterfactualBalances') return true;

@@ -43,7 +43,7 @@ export class BlocklistGuard implements CanActivate {
     const request: Request = context.switchToHttp().getRequest();
     const addressParam = request.params[this.parameterName];
 
-    if (!(addressParam && isAddress(addressParam))) {
+    if (!(typeof addressParam === 'string' && isAddress(addressParam))) {
       return true;
     }
 

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -13,10 +15,10 @@ import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
-  let queuesApi: jest.MockedObjectDeep<IQueueReadiness>;
+  let queuesApi: MockedObject<IQueueReadiness>;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const moduleFixture = await createTestModule({
       config: configuration,

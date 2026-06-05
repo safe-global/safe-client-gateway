@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -19,20 +20,20 @@ const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const membersRepositoryMock = {
-  findActiveAdmin: jest.fn(),
-  findAuthorizedMembersOrFail: jest.fn(),
-  inviteUsers: jest.fn(),
-} as jest.MockedObjectDeep<IMembersRepository>;
+  findActiveAdmin: vi.fn(),
+  findAuthorizedMembersOrFail: vi.fn(),
+  inviteUsers: vi.fn(),
+} as MockedObject<IMembersRepository>;
 
 const configurationServiceMock = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 describe('MembersService', () => {
   let service: MembersService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
       switch (key) {
         case 'spaces.maxInvites':
@@ -199,7 +200,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
       const now = new Date('2026-01-15T00:00:00Z');
-      jest.useFakeTimers().setSystemTime(now);
+      vi.useFakeTimers().setSystemTime(now);
 
       membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
       membersRepositoryMock.inviteUsers.mockResolvedValue([]);
@@ -216,7 +217,7 @@ describe('MembersService', () => {
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
         });
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
   });

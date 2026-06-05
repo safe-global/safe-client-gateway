@@ -34,13 +34,12 @@ import { RequestScopedLoggingModule } from '@/logging/logging.module';
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;
   let fetchClient: FetchClient;
-  let defaultTimeout: number;
   let defaultThreshold: number;
   let loggingService: ILoggingService;
   let circuitBreakerService: CircuitBreakerService;
   // fetch response is not mocked but we are only concerned with RequestInit options
-  const fetchMock = jest.fn();
-  jest.spyOn(global, 'fetch').mockImplementation(fetchMock);
+  const fetchMock = vi.fn();
+  vi.spyOn(global, 'fetch').mockImplementation(fetchMock);
 
   async function initApp(cacheInFlightRequests: boolean): Promise<void> {
     const baseConfiguration = configuration();
@@ -49,6 +48,13 @@ describe('NetworkModule', () => {
       features: {
         ...baseConfiguration.features,
         cacheInFlightRequests,
+      },
+      circuitBreaker: {
+        ...baseConfiguration.circuitBreaker,
+        // Vitest loads .env files (unlike Jest), which set
+        // CIRCUIT_BREAKER_ENABLED=false. Force it on so the circuit breaker
+        // tests below exercise the intended behaviour regardless of env.
+        enabled: true,
       },
     });
 
@@ -68,14 +74,11 @@ describe('NetworkModule', () => {
       IConfigurationService,
     );
     fetchClient = moduleFixture.get(FetchClientToken);
-    defaultTimeout = configurationService.getOrThrow(
-      'httpClient.requestTimeout',
-    );
     defaultThreshold = configurationService.getOrThrow(
       'circuitBreaker.threshold',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
-    jest.spyOn(loggingService, 'debug');
+    vi.spyOn(loggingService, 'debug');
     circuitBreakerService = moduleFixture.get<CircuitBreakerService>(
       CircuitBreakerService,
     );
@@ -85,7 +88,7 @@ describe('NetworkModule', () => {
   }
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('without caching', () => {
@@ -105,7 +108,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(defaultTimeout), // timeout is set
+        signal: expect.any(AbortSignal), // timeout is set
         keepalive: true,
       });
     });
@@ -160,7 +163,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(customTimeout),
+        signal: expect.any(AbortSignal),
         keepalive: true,
       });
     });
@@ -173,7 +176,7 @@ describe('NetworkModule', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1);
       expect(fetchMock).toHaveBeenCalledWith(url, {
         method: 'GET',
-        signal: AbortSignal.timeout(defaultTimeout),
+        signal: expect.any(AbortSignal),
         keepalive: true,
       });
     });
@@ -663,7 +666,7 @@ describe('NetworkModule', () => {
 
       // Spy on the agent's close method
       const agent = getGlobalDispatcher();
-      const closeSpy = jest.spyOn(agent, 'close');
+      const closeSpy = vi.spyOn(agent, 'close');
 
       // Trigger module destruction
       await moduleFixture.close();

@@ -7,21 +7,22 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { faker } from '@faker-js/faker';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { mockClient } from 'aws-sdk-client-mock';
+import type { MockedClass, MockedFunction, MockedObject } from 'vitest';
 import { AwsCloudStorageApiService } from '@/datasources/storage/aws-cloud-storage-api.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 
-jest.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: jest.fn(),
+vi.mock('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: vi.fn(),
 }));
 
-jest.mock('@aws-sdk/lib-storage', () => ({
-  Upload: jest.fn(),
+vi.mock('@aws-sdk/lib-storage', () => ({
+  Upload: vi.fn(),
 }));
 
 const loggingService = {
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
-const mockLoggingService = jest.mocked(loggingService);
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
+const mockLoggingService = vi.mocked(loggingService);
 
 describe('AwsCloudStorageApiService', () => {
   let target: AwsCloudStorageApiService;
@@ -33,7 +34,7 @@ describe('AwsCloudStorageApiService', () => {
   const basePath = 'base/path';
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     target = new AwsCloudStorageApiService(
       accessKeyId,
@@ -102,7 +103,7 @@ describe('AwsCloudStorageApiService', () => {
 
   describe('createUploadStream', () => {
     const fileName = 'test-file.csv';
-    const mockUpload = Upload as jest.MockedClass<typeof Upload>;
+    const mockUpload = Upload as MockedClass<typeof Upload>;
     let content: string;
     let body: Readable;
     let ETag: string;
@@ -116,16 +117,15 @@ describe('AwsCloudStorageApiService', () => {
     });
 
     it('should create upload stream and return upload promise', async () => {
-      const mockDone = jest.fn().mockResolvedValue({ ETag });
+      const mockDone = vi.fn().mockResolvedValue({ ETag });
 
-      mockUpload.mockImplementation(
-        () =>
-          ({
-            done: mockDone,
-            on: jest.fn(),
-            off: jest.fn(),
-          }) as unknown as Upload,
-      );
+      mockUpload.mockImplementation(function () {
+        return {
+          done: mockDone,
+          on: vi.fn(),
+          off: vi.fn(),
+        } as unknown as Upload;
+      });
 
       const resultPromise = target.createUploadStream(fileName, body, {
         ContentType: 'text/csv',
@@ -149,14 +149,13 @@ describe('AwsCloudStorageApiService', () => {
     it('should handle upload errors', async () => {
       const uploadError = new Error('Upload failed');
 
-      mockUpload.mockImplementation(
-        () =>
-          ({
-            done: jest.fn().mockRejectedValue(uploadError),
-            on: jest.fn(),
-            off: jest.fn(),
-          }) as unknown as Upload,
-      );
+      mockUpload.mockImplementation(function () {
+        return {
+          done: vi.fn().mockRejectedValue(uploadError),
+          on: vi.fn(),
+          off: vi.fn(),
+        } as unknown as Upload;
+      });
 
       await expect(target.createUploadStream(fileName, body)).rejects.toThrow(
         uploadError,
@@ -181,14 +180,13 @@ describe('AwsCloudStorageApiService', () => {
         mockLoggingService,
       );
 
-      mockUpload.mockImplementation(
-        () =>
-          ({
-            done: jest.fn().mockResolvedValue({}),
-            on: jest.fn(),
-            off: jest.fn(),
-          }) as unknown as Upload,
-      );
+      mockUpload.mockImplementation(function () {
+        return {
+          done: vi.fn().mockResolvedValue({}),
+          on: vi.fn(),
+          off: vi.fn(),
+        } as unknown as Upload;
+      });
 
       await target.createUploadStream(fileName, body);
 
@@ -203,17 +201,16 @@ describe('AwsCloudStorageApiService', () => {
     });
 
     it('should track httpUploadProgress event on upload', async () => {
-      const mockOn = jest.fn();
-      const mockOff = jest.fn();
+      const mockOn = vi.fn();
+      const mockOff = vi.fn();
 
-      mockUpload.mockImplementation(
-        () =>
-          ({
-            done: jest.fn().mockResolvedValue({ ETag }),
-            on: mockOn,
-            off: mockOff,
-          }) as unknown as Upload,
-      );
+      mockUpload.mockImplementation(function () {
+        return {
+          done: vi.fn().mockResolvedValue({ ETag }),
+          on: mockOn,
+          off: mockOff,
+        } as unknown as Upload;
+      });
 
       await target.createUploadStream(fileName, body, {
         ContentType: 'text/csv',
@@ -231,7 +228,7 @@ describe('AwsCloudStorageApiService', () => {
   });
 
   describe('getSignedUrl', () => {
-    const getSignedUrlMock = getSignedUrl as jest.MockedFunction<
+    const getSignedUrlMock = getSignedUrl as MockedFunction<
       typeof getSignedUrl
     >;
 

@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import chunk from 'lodash/chunk';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   limitAndOffsetUrlFactory,
@@ -18,22 +20,21 @@ import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 const mockLoggingService = {
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
 const mockConfigApi = {
-  getChains: jest.fn(),
-  getChainsV2: jest.fn(),
-  getChainV2: jest.fn(),
-  clearChainV2: jest.fn(),
-} as jest.MockedObjectDeep<IConfigApi>;
+  getChains: vi.fn(),
+  getChainsV2: vi.fn(),
+  getChainV2: vi.fn(),
+  clearChainV2: vi.fn(),
+} as MockedObject<IConfigApi>;
 const mockEtherscanApi = {
-  getGasPrice: jest.fn(),
-} as jest.MockedObjectDeep<IEtherscanApi>;
-const mockTransactionApiManager =
-  {} as jest.MockedObjectDeep<ITransactionApiManager>;
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+  getGasPrice: vi.fn(),
+} as MockedObject<IEtherscanApi>;
+const mockTransactionApiManager = {} as MockedObject<ITransactionApiManager>;
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 /**
  * Note: all other methods of the repository are tested in situ.
@@ -50,7 +51,7 @@ describe('ChainsRepository', () => {
   const maxSequentialPages = 3;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'safeConfig.chains.maxSequentialPages')

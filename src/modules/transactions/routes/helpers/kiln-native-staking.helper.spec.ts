@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { concat, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
   multiSendEncoder,
@@ -18,14 +20,14 @@ import { KilnNativeStakingHelper } from '@/modules/transactions/routes/helpers/k
 import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
 
 const mockLoggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('KilnNativeStakingHelper', () => {
   let target: KilnNativeStakingHelper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const transactionFinder = new TransactionFinder(multiSendDecoder);

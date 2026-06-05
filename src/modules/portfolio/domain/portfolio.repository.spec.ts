@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -17,35 +18,35 @@ import { rawify } from '@/validation/entities/raw.entity';
 
 describe('PortfolioRepository', () => {
   let repository: PortfolioRepository;
-  let mockPortfolioApi: jest.MockedObjectDeep<IPortfolioApi>;
-  let mockCacheService: jest.MockedObjectDeep<ICacheService>;
-  let mockConfigService: jest.MockedObjectDeep<IConfigurationService>;
+  let mockPortfolioApi: MockedObject<IPortfolioApi>;
+  let mockCacheService: MockedObject<ICacheService>;
+  let mockConfigService: MockedObject<IConfigurationService>;
 
   const defaultCacheTtl = 30;
   const defaultDustThreshold = 0.001;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockPortfolioApi = {
-      getPortfolio: jest.fn(),
-    } as jest.MockedObjectDeep<IPortfolioApi>;
+      getPortfolio: vi.fn(),
+    } as MockedObject<IPortfolioApi>;
 
     mockCacheService = {
-      hGet: jest.fn(),
-      hSet: jest.fn(),
-      deleteByKey: jest.fn(),
-    } as jest.MockedObjectDeep<ICacheService>;
+      hGet: vi.fn(),
+      hSet: vi.fn(),
+      deleteByKey: vi.fn(),
+    } as MockedObject<ICacheService>;
 
     mockConfigService = {
-      get: jest.fn(),
-      getOrThrow: jest.fn().mockImplementation((key: string) => {
+      get: vi.fn(),
+      getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'portfolio.cache.ttlSeconds') return defaultCacheTtl;
         if (key === 'portfolio.filters.dustThresholdUsd')
           return defaultDustThreshold;
         throw new Error(`Unexpected config key: ${key}`);
       }),
-    } as unknown as jest.MockedObjectDeep<IConfigurationService>;
+    } as unknown as MockedObject<IConfigurationService>;
 
     repository = new PortfolioRepository(
       mockPortfolioApi,

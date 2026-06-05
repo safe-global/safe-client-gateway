@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -15,19 +16,19 @@ import type { IUsersRepository } from '@/modules/users/domain/users.repository.i
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const authRepositoryMock = {
-  signToken: jest.fn(),
-  verifyToken: jest.fn(),
-  decodeToken: jest.fn(),
-} as jest.MockedObjectDeep<IAuthRepository>;
+  signToken: vi.fn(),
+  verifyToken: vi.fn(),
+  decodeToken: vi.fn(),
+} as MockedObject<IAuthRepository>;
 
 const usersRepositoryMock = {
-  findOrCreateByExtUserIdAndEmail: jest.fn(),
-} as jest.MockedObjectDeep<IUsersRepository>;
+  findOrCreateByExtUserIdAndEmail: vi.fn(),
+} as MockedObject<IUsersRepository>;
 
 const auth0RepositoryMock = {
-  getAuthorizationUrl: jest.fn(),
-  authenticateWithAuthorizationCode: jest.fn(),
-} as jest.MockedObjectDeep<IAuth0Repository>;
+  getAuthorizationUrl: vi.fn(),
+  authenticateWithAuthorizationCode: vi.fn(),
+} as MockedObject<IAuth0Repository>;
 
 describe('OidcAuthService', () => {
   let target: OidcAuthService;
@@ -36,8 +37,8 @@ describe('OidcAuthService', () => {
   let postLoginRedirectUri: string;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    jest.useFakeTimers();
+    vi.resetAllMocks();
+    vi.useFakeTimers();
 
     maxValidityPeriodInSeconds = faker.number.int({ min: 3600, max: 86400 });
     stateTtlMs = faker.number.int({ min: 60_000, max: 300_000 });
@@ -64,13 +65,13 @@ describe('OidcAuthService', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('authenticateWithOidc', () => {
     it('should return an access token with expiration time from OIDC token', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
@@ -118,7 +119,7 @@ describe('OidcAuthService', () => {
 
     it('should use max expiration time when OIDC token has no exp', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
@@ -165,7 +166,7 @@ describe('OidcAuthService', () => {
 
     it('should pass a verified email when finding or creating the user', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
@@ -193,7 +194,7 @@ describe('OidcAuthService', () => {
 
     it('should throw UnauthorizedException when the email is not verified', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const email = fakeEmailAddress();
@@ -219,7 +220,7 @@ describe('OidcAuthService', () => {
 
     it('should throw UnauthorizedException when email_verified is undefined', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const email = fakeEmailAddress();
@@ -239,7 +240,7 @@ describe('OidcAuthService', () => {
 
     it('should throw UnauthorizedException when the email claim is missing', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
 
@@ -262,7 +263,7 @@ describe('OidcAuthService', () => {
 
     it('should propagate errors from finding or creating the user with email', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const email = fakeEmailAddress();
@@ -292,7 +293,7 @@ describe('OidcAuthService', () => {
 
     it('should throw ForbiddenException when exp exceeds max', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const exp = new Date(
@@ -320,7 +321,7 @@ describe('OidcAuthService', () => {
 
     it('should not throw when exp equals max validity', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const userId = faker.number.int();
@@ -363,7 +364,7 @@ describe('OidcAuthService', () => {
 
     it('should propagate errors from findOrCreateByExtUserIdAndEmail', async () => {
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const extUserId = `auth0|${faker.string.uuid()}`;
       const email = fakeEmailAddress();

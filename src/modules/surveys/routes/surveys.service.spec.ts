@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { surveyBuilder } from '@/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
@@ -22,15 +23,15 @@ import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/me
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
 const surveysRepositoryMock = {
-  findActiveBySlug: jest.fn(),
-  findActiveBySlugOrFail: jest.fn(),
-  findResponse: jest.fn(),
-  upsertResponse: jest.fn(),
-} as jest.MockedObjectDeep<ISurveysRepository>;
+  findActiveBySlug: vi.fn(),
+  findActiveBySlugOrFail: vi.fn(),
+  findResponse: vi.fn(),
+  upsertResponse: vi.fn(),
+} as MockedObject<ISurveysRepository>;
 
 const membersRepositoryMock = {
-  findOne: jest.fn(),
-} as unknown as jest.MockedObjectDeep<IMembersRepository>;
+  findOne: vi.fn(),
+} as unknown as MockedObject<IMembersRepository>;
 
 function buildSurvey(pages: Array<SurveyPage>): Survey {
   return surveyBuilder()
@@ -54,7 +55,7 @@ describe('SurveysService', () => {
   let userId: number;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new SurveysService(surveysRepositoryMock, membersRepositoryMock);
     userId = faker.number.int({ min: 1, max: 1_000_000 });
     spaceId = faker.number.int({ min: 1, max: 1_000_000 });

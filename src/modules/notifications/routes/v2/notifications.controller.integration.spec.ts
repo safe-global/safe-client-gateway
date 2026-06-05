@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -37,8 +38,8 @@ describe('Notifications Controller V2', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let jwtService: IJwtService;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
+  let networkService: MockedObject<INetworkService>;
+  let notificationsRepository: MockedObject<INotificationsRepositoryV2>;
 
   beforeAll(async () => {
     const defaultConfiguration = configuration();
@@ -81,7 +82,7 @@ describe('Notifications Controller V2', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('POST /v2/register/notifications', () => {

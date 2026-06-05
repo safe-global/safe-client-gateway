@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -26,7 +27,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Safes V2 Controller Overview', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let pricesProviderUrl: string;
   let zerionBaseUri: string;
 
@@ -34,7 +35,7 @@ describe('Safes V2 Controller Overview', () => {
   const nonZerionChainId = '10'; // Optimism - not enabled for Zerion
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),
@@ -330,7 +331,7 @@ describe('Safes V2 Controller Overview', () => {
       const testPricesProviderUrl = moduleFixture
         .get<IConfigurationService>(IConfigurationService)
         .getOrThrow('balances.providers.safe.prices.baseUri');
-      const testNetworkService: jest.MockedObjectDeep<INetworkService> =
+      const testNetworkService: MockedObject<INetworkService> =
         moduleFixture.get(NetworkService);
 
       const chain = chainBuilder()

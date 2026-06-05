@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -19,28 +21,28 @@ import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.reposi
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const repositoryMock = {
-  findAllBySpaceId: jest.fn(),
-  upsertMany: jest.fn(),
-  deleteByAddress: jest.fn(),
-} as jest.MockedObjectDeep<IAddressBookItemsRepository>;
+  findAllBySpaceId: vi.fn(),
+  upsertMany: vi.fn(),
+  deleteByAddress: vi.fn(),
+} as MockedObject<IAddressBookItemsRepository>;
 
 const configurationServiceMock = {
-  getOrThrow: jest.fn().mockReturnValue(20),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn().mockReturnValue(20),
+} as MockedObject<IConfigurationService>;
 
 const usersRepositoryMock = {
-  find: jest.fn(),
-} as jest.MockedObjectDeep<IUsersRepository>;
+  find: vi.fn(),
+} as MockedObject<IUsersRepository>;
 
 const walletsRepositoryMock = {
-  find: jest.fn(),
-} as jest.MockedObjectDeep<IWalletsRepository>;
+  find: vi.fn(),
+} as MockedObject<IWalletsRepository>;
 
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     configurationServiceMock.getOrThrow.mockReturnValue(20);
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);

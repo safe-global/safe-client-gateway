@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { expect } from '@jest/globals';
+import { expect } from 'vitest';
 import '@/__tests__/matchers/to-be-string-or-null';
 import { faker } from '@faker-js/faker';
 

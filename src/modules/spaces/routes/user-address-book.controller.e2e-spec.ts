@@ -58,7 +58,7 @@ describe('UserAddressBookController', () => {
   }
 
   beforeAll(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     app = await initApp();
   });
 

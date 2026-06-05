@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
@@ -19,22 +20,22 @@ import { TransactionInfoType } from '@/modules/transactions/routes/entities/tran
 import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
 import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/common/vault-transaction.mapper';
 
-const mockEarnRepository = jest.mocked({
-  getDeployment: jest.fn(),
-  getDefiVaultStats: jest.fn(),
-  getDefiVaultStake: jest.fn(),
-  getDefiMorphoExtraRewards: jest.fn(),
-} as jest.MockedObjectDeep<EarnRepository>);
+const mockEarnRepository = vi.mocked({
+  getDeployment: vi.fn(),
+  getDefiVaultStats: vi.fn(),
+  getDefiVaultStake: vi.fn(),
+  getDefiMorphoExtraRewards: vi.fn(),
+} as MockedObject<EarnRepository>);
 
 const mockTokenRepository = {
-  getToken: jest.fn(),
-} as jest.MockedObjectDeep<ITokenRepository>;
+  getToken: vi.fn(),
+} as MockedObject<ITokenRepository>;
 
 describe('VaultTransactionMapper', () => {
   let target: VaultTransactionMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     target = new VaultTransactionMapper(
       mockEarnRepository,

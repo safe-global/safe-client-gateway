@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
@@ -12,27 +14,27 @@ import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 
 describe('PortfolioApiService', () => {
   let service: PortfolioApiService;
-  let mockDomainService: jest.MockedObjectDeep<IDomainPortfolioService>;
-  let mockChainsRepository: jest.MockedObjectDeep<IChainsRepository>;
+  let mockDomainService: MockedObject<IDomainPortfolioService>;
+  let mockChainsRepository: MockedObject<IChainsRepository>;
   let portfolioRouteMapper: PortfolioRouteMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockDomainService = {
-      getPortfolio: jest.fn(),
-      clearPortfolio: jest.fn(),
-    } as jest.MockedObjectDeep<IDomainPortfolioService>;
+      getPortfolio: vi.fn(),
+      clearPortfolio: vi.fn(),
+    } as MockedObject<IDomainPortfolioService>;
 
     mockChainsRepository = {
-      getChain: jest.fn(),
-      getChains: jest.fn(),
-      getAllChains: jest.fn(),
-      clearChain: jest.fn(),
-      getSingletons: jest.fn(),
-      getIndexingStatus: jest.fn(),
-      isSupportedChain: jest.fn(),
-    } as jest.MockedObjectDeep<IChainsRepository>;
+      getChain: vi.fn(),
+      getChains: vi.fn(),
+      getAllChains: vi.fn(),
+      clearChain: vi.fn(),
+      getSingletons: vi.fn(),
+      getIndexingStatus: vi.fn(),
+      isSupportedChain: vi.fn(),
+    } as MockedObject<IChainsRepository>;
 
     portfolioRouteMapper = new PortfolioRouteMapper();
 

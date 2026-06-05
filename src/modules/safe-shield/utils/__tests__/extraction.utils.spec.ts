@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import type {
   DataDecoded,
   DataDecodedParameter,
@@ -16,10 +17,10 @@ import {
 
 const mockErc20Decoder = {
   helpers: {
-    isTransfer: jest.fn(),
-    isTransferFrom: jest.fn(),
+    isTransfer: vi.fn(),
+    isTransferFrom: vi.fn(),
   },
-} as jest.MockedObjectDeep<Erc20Decoder>;
+} as MockedObject<Erc20Decoder>;
 
 const createDataDecoded = (
   overrides: Partial<DataDecoded> = {},
@@ -43,7 +44,7 @@ const createTransaction = (
 
 describe('extraction.utils', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('extractContracts', () => {

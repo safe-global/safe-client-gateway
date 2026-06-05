@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
@@ -18,23 +20,23 @@ import type { AddressInfoHelper } from '@/routes/common/address-info/address-inf
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
-const addressInfoHelper = jest.mocked({
-  getOrDefault: jest.fn(),
-} as jest.MockedObjectDeep<AddressInfoHelper>);
+const addressInfoHelper = vi.mocked({
+  getOrDefault: vi.fn(),
+} as MockedObject<AddressInfoHelper>);
 
-const tokenRepository = jest.mocked({
-  getToken: jest.fn(),
-} as jest.MockedObjectDeep<TokenRepository>);
+const tokenRepository = vi.mocked({
+  getToken: vi.fn(),
+} as MockedObject<TokenRepository>);
 
-const safeRepository = jest.mocked({
-  getMultisigTransactions: jest.fn(),
-} as jest.MockedObjectDeep<SafeRepository>);
+const safeRepository = vi.mocked({
+  getMultisigTransactions: vi.fn(),
+} as MockedObject<SafeRepository>);
 
 describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionExecutionDetailsMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mapper = new MultisigTransactionExecutionDetailsMapper(
       addressInfoHelper,

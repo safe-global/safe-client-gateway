@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '@/domain/common/constants';
 import {
@@ -16,15 +17,15 @@ import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tes
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockLoggingService = {
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
 const mockDataDecoderApi = {
-  getContracts: jest.fn(),
-  getTrustedForDelegateCallContracts: jest.fn(),
-} as jest.MockedObjectDeep<IDataDecoderApi>;
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+  getContracts: vi.fn(),
+  getTrustedForDelegateCallContracts: vi.fn(),
+} as MockedObject<IDataDecoderApi>;
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('ContractsRepository', () => {
   let target: ContractsRepository;
@@ -46,7 +47,7 @@ describe('ContractsRepository', () => {
   }
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     initTarget({ trustedList: false });
   });
 

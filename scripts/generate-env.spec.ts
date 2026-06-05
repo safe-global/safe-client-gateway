@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import type { Mocked, MockedFunction } from 'vitest';
 import {
   type EnvVariable,
   isSymbolicLink,
@@ -19,33 +21,33 @@ import {
   mockProcessExit,
 } from './test-utils';
 
-jest.mock('node:fs');
-jest.mock('./env-json-helpers', () => ({
-  ...jest.requireActual('./env-json-helpers'),
-  loadEnvJson: jest.fn(),
-  isSymbolicLink: jest.fn(),
-  setFilePermissions: jest.fn(),
+vi.mock('node:fs');
+vi.mock('./env-json-helpers', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./env-json-helpers')>()),
+  loadEnvJson: vi.fn(),
+  isSymbolicLink: vi.fn(),
+  setFilePermissions: vi.fn(),
 }));
 
-const mockFs: jest.Mocked<typeof fs> = jest.mocked(fs);
-const mockLoadEnvJson: jest.MockedFunction<typeof loadEnvJson> =
-  jest.mocked(loadEnvJson);
-const mockIsSymbolicLink: jest.MockedFunction<typeof isSymbolicLink> =
-  jest.mocked(isSymbolicLink);
+const mockFs: Mocked<typeof fs> = vi.mocked(fs);
+const mockLoadEnvJson: MockedFunction<typeof loadEnvJson> =
+  vi.mocked(loadEnvJson);
+const mockIsSymbolicLink: MockedFunction<typeof isSymbolicLink> =
+  vi.mocked(isSymbolicLink);
 
 describe('generate-env', () => {
   const ENV_OUTPUT_PATH = path.join(PROJECT_ROOT, '.env');
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.spyOn(console, 'log').mockImplementation();
-    jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(Date, 'now').mockReturnValue(1234567890000);
+    vi.clearAllMocks();
+    vi.spyOn(console, 'log').mockImplementation();
+    vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(Date, 'now').mockReturnValue(1234567890000);
     mockIsSymbolicLink.mockReturnValue(false);
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('parseExistingEnv', () => {
@@ -349,7 +351,7 @@ ANOTHER_VAR=123
       mockIsSymbolicLink.mockReturnValue(true);
 
       const exitSpy = mockProcessExit();
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
 
       expect(() => updateEnvFile()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -375,7 +377,7 @@ ANOTHER_VAR=123
       mockIsSymbolicLink.mockReturnValue(true);
 
       const exitSpy = mockProcessExit();
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
 
       expect(() => generateNewEnvFile()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -512,7 +514,7 @@ ANOTHER_VAR=123
       mockFs.existsSync.mockReturnValue(true);
 
       const exitSpy = mockProcessExit();
-      const errorSpy = jest.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
 
       expect(() => generateEnvFile()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(

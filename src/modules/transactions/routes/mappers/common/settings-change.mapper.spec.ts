@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
@@ -19,9 +21,9 @@ import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/comm
 import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
-const addressInfoHelper = jest.mocked({
-  getOrDefault: jest.fn(),
-} as jest.MockedObjectDeep<AddressInfoHelper>);
+const addressInfoHelper = vi.mocked({
+  getOrDefault: vi.fn(),
+} as MockedObject<AddressInfoHelper>);
 
 describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   let mapper: SettingsChangeMapper;

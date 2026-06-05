@@ -31,7 +31,7 @@ describe('MembersController', () => {
   let maxInvites: number;
 
   beforeAll(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({

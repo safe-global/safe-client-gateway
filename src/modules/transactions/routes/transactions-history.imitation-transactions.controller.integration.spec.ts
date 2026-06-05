@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { type Address, getAddress, parseUnits, zeroAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -47,7 +49,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   const lookupDistance = 2;
   const prefixLength = 3;
   const suffixLength = 4;
@@ -59,7 +61,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
   const safe = safeBuilder().with('owners', [signer.address]).build();
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),

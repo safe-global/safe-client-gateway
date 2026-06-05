@@ -15,18 +15,18 @@
     "start:prod": "node --env-file=.env dist/src/main",
     "lint": "biome check --fix",
     "lint-check": "biome check",
-    "test": "node --env-file-if-exists=./.env.test ./node_modules/.bin/jest",
-    "test:watch": "yarn test --watch",
-    "test:cov": "yarn test --coverage",
-    "test:debug": "node --env-file-if-exists=./.env.test --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:unit": "yarn test --config ./test/jest-unit.json",
-    "test:unit:cov": "yarn test --coverage --config ./test/jest-unit.json",
-    "test:integration": "yarn test --config ./test/jest-integration.json",
-    "test:integration:cov": "yarn test --coverage --config ./test/jest-integration.json",
-    "test:e2e": "yarn test --config ./test/jest-e2e.json",
-    "test:e2e:cov": "yarn test --coverage --config ./test/jest-e2e.json",
-    "test:all": "yarn test --config ./test/jest-all.json",
-    "test:all:cov": "yarn test --coverage --config ./test/jest-all.json",
+    "test": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project unit",
+    "test:watch": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest --project unit",
+    "test:cov": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project unit --coverage",
+    "test:debug": "node --env-file-if-exists=./.env.test --inspect-brk ./node_modules/.bin/vitest run --project unit --no-file-parallelism",
+    "test:unit": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project unit",
+    "test:unit:cov": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project unit --coverage",
+    "test:integration": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project integration",
+    "test:integration:cov": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project integration --coverage",
+    "test:e2e": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project e2e",
+    "test:e2e:cov": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project e2e --coverage",
+    "test:all": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run",
+    "test:all:cov": "node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --coverage",
     "typeorm": "node --env-file=.env -r tsconfig-paths/register ./node_modules/typeorm/cli -d ./dist/src/config/entities/orm.config.js",
     "migration:create": "node --env-file=.env -r tsconfig-paths/register ./node_modules/typeorm/cli migration:create ./migrations/${0}",
     "migration:generate": "yarn typeorm migration:generate ./migrations/${0}",
@@ -88,66 +88,27 @@
     "@nestjs/schematics": "11.0.5",
     "@nestjs/testing": "11.1.24",
     "@smithy/util-stream": "4.5.5",
+    "@swc/core": "1.15.40",
     "@types/amqplib": "0",
     "@types/cookie-parser": "1.4.8",
     "@types/express": "5.0.6",
-    "@types/jest": "30.0.0",
     "@types/jsonwebtoken": "9",
     "@types/lodash": "4.17.24",
     "@types/node": "25.9.1",
     "@types/sanitize-html": "2",
     "@types/semver": "7.7.0",
     "@types/supertest": "7.2.0",
+    "@vitest/coverage-v8": "4.1.7",
     "aws-sdk-client-mock": "4.1.0",
     "husky": "9.1.7",
-    "jest": "30.3.0",
     "source-map-support": "0.5.21",
     "supertest": "7.2.2",
-    "ts-jest": "29.4.9",
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
     "tsconfig-paths": "4.2.0",
-    "typescript": "5.9.3"
-  },
-  "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
-    "testRegex": ".*\\.spec\\.ts$",
-    "testPathIgnorePatterns": [
-      "\\.integration\\.spec\\.ts$",
-      "\\.e2e-spec\\.ts$"
-    ],
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "transformIgnorePatterns": [
-      "node_modules/(?!(?:@faker-js|jose)/).+"
-    ],
-    "roots": [
-      "./src",
-      "./migrations",
-      "./scripts"
-    ],
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
-    "coverageDirectory": "./coverage",
-    "coveragePathIgnorePatterns": [
-      "index.ts",
-      ".+\\/__tests__\\/.+\\.builder.(t|j)s",
-      ".+\\/__tests__\\/.+\\.factory.(t|j)s",
-      ".e2e-spec.ts",
-      ".integration.spec.ts"
-    ],
-    "testEnvironment": "node",
-    "moduleNameMapper": {
-      "^@/abis/(.*)$": "<rootDir>/abis/$1",
-      "^@/(.*)$": "<rootDir>/src/$1"
-    },
-    "globalSetup": "<rootDir>/test/global-setup.ts"
+    "typescript": "5.9.3",
+    "unplugin-swc": "1.5.9",
+    "vitest": "4.1.7"
   },
   "main": "main.ts",
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",

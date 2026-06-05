@@ -9,14 +9,16 @@ import {
   TransientEmailError,
 } from '@/modules/email/ses/domain/errors/email.errors';
 
-const mockSend = jest.fn();
+const mockSend = vi.fn();
 
-jest.mock('@aws-sdk/client-sesv2', () => ({
-  ...jest.requireActual('@aws-sdk/client-sesv2'),
-  SESv2Client: jest.fn().mockImplementation(() => ({
-    send: mockSend,
-  })),
-  SendEmailCommand: jest.fn().mockImplementation((input) => input),
+vi.mock('@aws-sdk/client-sesv2', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@aws-sdk/client-sesv2')>()),
+  SESv2Client: vi.fn().mockImplementation(function () {
+    return { send: mockSend };
+  }),
+  SendEmailCommand: vi.fn().mockImplementation(function (input) {
+    return input;
+  }),
 }));
 
 describe('SesEmailService', () => {
@@ -33,7 +35,7 @@ describe('SesEmailService', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('email.ses.fromEmail', sesFromEmail);

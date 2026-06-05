@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -16,40 +18,40 @@ import type { TransactionVerifierHelper } from '@/modules/transactions/routes/he
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
-  getApi: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApiManager>;
+  getApi: vi.fn(),
+} as MockedObject<ITransactionApiManager>;
 
 const mockTransactionApi = {
-  getSafesByOwnerV2: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApi>;
+  getSafesByOwnerV2: vi.fn(),
+} as MockedObject<ITransactionApi>;
 
 const mockLoggingService = {
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  error: vi.fn(),
+  warn: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const mockChainsRepository = {
-  getAllChains: jest.fn(),
-} as jest.MockedObjectDeep<IChainsRepository>;
+  getAllChains: vi.fn(),
+} as MockedObject<IChainsRepository>;
 
 const mockTransactionVerifier = {
-  verifyApiTransaction: jest.fn(),
-  verifyConfirmation: jest.fn(),
-  verifyProposal: jest.fn(),
-} as jest.MockedObjectDeep<TransactionVerifierHelper>;
+  verifyApiTransaction: vi.fn(),
+  verifyConfirmation: vi.fn(),
+  verifyProposal: vi.fn(),
+} as MockedObject<TransactionVerifierHelper>;
 
 const mockConfigurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeConfig.safes.maxSequentialPages') {
         return maxSequentialPages;

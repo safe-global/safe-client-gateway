@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -18,15 +19,15 @@ import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity'
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockNetworkService = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockDataSource = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+const mockDataSource = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<CacheFirstDataSource>);
 
 describe('FeeServiceApi', () => {
   let target: FeeServiceApi;
@@ -35,7 +36,7 @@ describe('FeeServiceApi', () => {
   let baseUri: string;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();

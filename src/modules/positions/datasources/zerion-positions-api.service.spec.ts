@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -18,17 +20,17 @@ import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zer
 import { rawify } from '@/validation/entities/raw.entity';
 
 const loggingService = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const networkService = {
-  get: jest.fn(),
-  post: jest.fn(),
-  delete: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
+  get: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+} as MockedObject<INetworkService>;
 
 function buildZerionLoanBalance(args: {
   chainName: string;
@@ -77,7 +79,7 @@ describe('ZerionPositionsApi', () => {
   describe('Normalization caching tests', () => {
     let cacheService: FakeCacheService;
     let configurationService: FakeConfigurationService;
-    let zerionChainMappingService: jest.MockedObjectDeep<ZerionChainMappingService>;
+    let zerionChainMappingService: MockedObject<ZerionChainMappingService>;
     let target: ZerionPositionsApi;
 
     const chainName = 'ethereum';
@@ -88,7 +90,7 @@ describe('ZerionPositionsApi', () => {
     } as Chain;
 
     beforeEach(() => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       cacheService = new FakeCacheService();
       configurationService = new FakeConfigurationService();
       configurationService.set(
@@ -106,9 +108,9 @@ describe('ZerionPositionsApi', () => {
       });
 
       zerionChainMappingService = {
-        getChainIdFromNetwork: jest.fn(),
-        getNetworkFromChainId: jest.fn().mockResolvedValue(chainName),
-      } as unknown as jest.MockedObjectDeep<ZerionChainMappingService>;
+        getChainIdFromNetwork: vi.fn(),
+        getNetworkFromChainId: vi.fn().mockResolvedValue(chainName),
+      } as unknown as MockedObject<ZerionChainMappingService>;
 
       target = new ZerionPositionsApi(
         cacheService,
@@ -211,32 +213,32 @@ describe('ZerionPositionsApi', () => {
       ]),
     );
 
-    const mockCacheService = jest.mocked({
-      hGet: jest.fn(),
-      hSet: jest.fn(),
-      deleteByKey: jest.fn(),
-    } as jest.MockedObjectDeep<ICacheService>);
+    const mockCacheService = vi.mocked({
+      hGet: vi.fn(),
+      hSet: vi.fn(),
+      deleteByKey: vi.fn(),
+    } as MockedObject<ICacheService>);
 
     const mockLoggingService = {
-      debug: jest.fn(),
-      warn: jest.fn(),
-    } as jest.MockedObjectDeep<ILoggingService>;
+      debug: vi.fn(),
+      warn: vi.fn(),
+    } as MockedObject<ILoggingService>;
 
-    const mockNetworkService = jest.mocked({
-      get: jest.fn(),
-    } as jest.MockedObjectDeep<INetworkService>);
+    const mockNetworkService = vi.mocked({
+      get: vi.fn(),
+    } as MockedObject<INetworkService>);
 
-    const mockHttpErrorFactory = jest.mocked({
-      from: jest.fn(),
-    } as jest.MockedObjectDeep<HttpErrorFactory>);
+    const mockHttpErrorFactory = vi.mocked({
+      from: vi.fn(),
+    } as MockedObject<HttpErrorFactory>);
 
-    const mockChainMappingService = jest.mocked({
-      getNetworkFromChainId: jest.fn(),
-      getChainIdFromNetwork: jest.fn(),
-    } as jest.MockedObjectDeep<ZerionChainMappingService>);
+    const mockChainMappingService = vi.mocked({
+      getNetworkFromChainId: vi.fn(),
+      getChainIdFromNetwork: vi.fn(),
+    } as MockedObject<ZerionChainMappingService>);
 
     beforeEach(() => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set(
         'balances.providers.zerion.apiKey',
