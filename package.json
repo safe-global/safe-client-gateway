@@ -79,7 +79,7 @@
     "undici": "8.2.0",
     "viem": "2.51.2",
     "winston": "3.19.0",
-    "zod": "4.3.6"
+    "zod": "4.4.3"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.12",

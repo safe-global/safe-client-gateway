@@ -61,9 +61,10 @@ describe('EventSchema', () => {
         code: 'invalid_union',
         discriminator: 'type',
         errors: [],
-        message: 'Invalid input',
+        message: expect.stringContaining('Invalid discriminator value.'),
         note: 'No matching discriminator',
         path: ['type'],
+        options: expect.any(Array),
       }),
     ]);
   });
