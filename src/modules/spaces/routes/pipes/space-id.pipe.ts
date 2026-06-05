@@ -58,8 +58,9 @@ export class LegacySpaceIdPipe
 
   async transform(value: string): Promise<Space['id']> {
     if (NUMERIC_REGEX.test(value)) {
-      const numericId = Number(value);
-      if (!Number.isSafeInteger(numericId) || numericId > DB_MAX_SAFE_INTEGER) {
+      // DB_MAX_SAFE_INTEGER is below Number.MAX_SAFE_INTEGER, so this bound also
+      // rejects any value that would lose integer precision.
+      if (Number(value) > DB_MAX_SAFE_INTEGER) {
         throw new BadRequestException(INVALID_SPACE_IDENTIFIER_MESSAGE);
       }
     } else if (!UUID_REGEX.test(value)) {

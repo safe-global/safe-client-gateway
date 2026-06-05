@@ -98,6 +98,8 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
       provide: IAddressBookRequestsRepository,
       useClass: AddressBookRequestsRepository,
     },
+    // SpaceIdPipe (UUID-only) is wired but unused for now; controllers switch
+    // to it once the FE drops the numeric Space id. Do not delete as unused.
     SpaceIdPipe,
     LegacySpaceIdPipe,
   ],

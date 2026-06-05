@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -26,6 +27,9 @@ import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
@@ -230,8 +234,8 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   // TODO: remove after FE removes numeric Space ID fallback.
-  // Input format is validated upstream by LegacySpaceIdPipe; this method only
-  // branches on numeric-vs-UUID and performs the lookup.
+  // UUID is re-validated here (defence in depth) so a malformed string can't
+  // reach Postgres as a UUID and surface as a raw 500 instead of a 400.
   public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
     if (/^\d+$/.test(value)) {
       const space = await this.findOneOrFail({
@@ -239,6 +243,9 @@ export class SpacesRepository implements ISpacesRepository {
         select: { id: true },
       });
       return space.id;
+    }
+    if (!UUID_REGEX.test(value)) {
+      throw new BadRequestException('Invalid space identifier');
     }
     return await this.findIdByUuid(value as Space['uuid']);
   }
