@@ -10,7 +10,28 @@ import {
 } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 
 describe('TxDataResponseSchema', () => {
-  it('should validate valid tx data', () => {
+  it('should accept chainId as a string and keep it as string', () => {
+    const txData = {
+      chainId: '1',
+      safeAddress: getAddress(faker.finance.ethereumAddress()),
+      safeTxGas: '150000',
+      baseGas: '48564',
+      gasPrice: '195000000000000',
+      gasToken: getAddress(zeroAddress),
+      refundReceiver: getAddress(zeroAddress),
+      numberSignatures: 2,
+    };
+
+    const result = TxDataResponseSchema.safeParse(txData);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(typeof result.data.chainId).toBe('string');
+      expect(result.data.chainId).toBe('1');
+    }
+  });
+
+  it('should accept chainId as a number and coerce it to string', () => {
     const txData = {
       chainId: 1,
       safeAddress: getAddress(faker.finance.ethereumAddress()),
@@ -25,11 +46,15 @@ describe('TxDataResponseSchema', () => {
     const result = TxDataResponseSchema.safeParse(txData);
 
     expect(result.success).toBe(true);
+    if (result.success) {
+      expect(typeof result.data.chainId).toBe('string');
+      expect(result.data.chainId).toBe('1');
+    }
   });
 
   it('should not allow an invalid safeAddress', () => {
     const txData = {
-      chainId: 1,
+      chainId: '1',
       safeAddress: 'invalid',
       safeTxGas: '150000',
       baseGas: '48564',
