@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { ObjectLiteral, SelectQueryBuilder } from 'typeorm';
 import type { MockedObject } from 'vitest';
 
