@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { fullAppDataBuilder } from '@/modules/swaps/domain/entities/__tests__/full-app-data.builder';
