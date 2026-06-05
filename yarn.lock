@@ -2163,10 +2163,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ioredis/commands@npm:^1.1.1":
-  version: 1.2.0
-  resolution: "@ioredis/commands@npm:1.2.0"
-  checksum: 10/a8253c9539b7e5463d4a98e6aa5b1b863fb4a4978191ba9dc42ec2c0fb5179d8d1fe4a29096d5954f91ba9600d1bdc6c1d18b044eab36f645f267fd37d7c0906
+"@ioredis/commands@npm:1.5.1":
+  version: 1.5.1
+  resolution: "@ioredis/commands@npm:1.5.1"
+  checksum: 10/7efb0339302094aed30903ccbf8ca24d6048cff0d556114f43004c2e02d0808e6619a814ca72d6ea00586972fab7aae6c18892f9feabea56e632fb2db34b09db
   languageName: node
   linkType: hard
 
@@ -5406,18 +5406,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^5.56.0":
-  version: 5.56.0
-  resolution: "bullmq@npm:5.56.0"
+"bullmq@npm:^5.77.6":
+  version: 5.77.6
+  resolution: "bullmq@npm:5.77.6"
   dependencies:
-    cron-parser: "npm:^4.9.0"
-    ioredis: "npm:^5.4.1"
-    msgpackr: "npm:^1.11.2"
-    node-abort-controller: "npm:^3.1.1"
-    semver: "npm:^7.5.4"
-    tslib: "npm:^2.0.0"
-    uuid: "npm:^9.0.0"
-  checksum: 10/7a009082a4d88804caeac703bbac9e9c82d6d67aec619ad4dd2b6fde3bc2a72d42d4ca5c32636acda76715249f03bd0f2532198da6c6cc13623c8b992d25eb52
+    cron-parser: "npm:4.9.0"
+    ioredis: "npm:5.10.1"
+    msgpackr: "npm:2.0.1"
+    node-abort-controller: "npm:3.1.1"
+    semver: "npm:7.8.0"
+    tslib: "npm:2.8.1"
+  peerDependencies:
+    redis: ">=5.0.0"
+  peerDependenciesMeta:
+    redis:
+      optional: true
+  checksum: 10/6003707988972389574e24ae2685152dc68d53d9a4b51d49866f2910c56cc51dbf8ce301e90f289ee5a9e0c0b233fd96b27a0fca105144642074836e4565f8df
   languageName: node
   linkType: hard
 
@@ -5933,7 +5937,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cron-parser@npm:^4.9.0":
+"cron-parser@npm:4.9.0":
   version: 4.9.0
   resolution: "cron-parser@npm:4.9.0"
   dependencies:
@@ -7314,11 +7318,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ioredis@npm:^5.4.1":
-  version: 5.6.1
-  resolution: "ioredis@npm:5.6.1"
+"ioredis@npm:5.10.1":
+  version: 5.10.1
+  resolution: "ioredis@npm:5.10.1"
   dependencies:
-    "@ioredis/commands": "npm:^1.1.1"
+    "@ioredis/commands": "npm:1.5.1"
     cluster-key-slot: "npm:^1.1.0"
     debug: "npm:^4.3.4"
     denque: "npm:^2.1.0"
@@ -7327,7 +7331,7 @@ __metadata:
     redis-errors: "npm:^1.2.0"
     redis-parser: "npm:^3.0.0"
     standard-as-callback: "npm:^2.1.0"
-  checksum: 10/632186e21f2d8b94a12918b5feef0f5df70315e303988989adb0d190377759ffa601660be7536489c0768803a0fb6eb94f861b33c1fcfc673d518fdd31c541e2
+  checksum: 10/a85786fc17e7180ac342219ebef5c138b82d056c44c00470a1827f7a4b2499041fa13f253b337aeca2ab6681a2bf52b622ca541e9c9a993d81f1b1e6f21ab59a
   languageName: node
   linkType: hard
 
@@ -8700,15 +8704,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"msgpackr@npm:^1.11.2":
-  version: 1.11.4
-  resolution: "msgpackr@npm:1.11.4"
+"msgpackr@npm:2.0.1":
+  version: 2.0.1
+  resolution: "msgpackr@npm:2.0.1"
   dependencies:
     msgpackr-extract: "npm:^3.0.2"
   dependenciesMeta:
     msgpackr-extract:
       optional: true
-  checksum: 10/131d9d676c8b931fb522550913afd390d361bd9dde993e9927f5ad35d58d9165c940433800b69a2caff556db632c3c510bc064cc3a5776e1c2d63a7cb280a470
+  checksum: 10/9b51a18832e86b27a3187cea5dfbff5d146d643f4beb24f8cf086a5c5a1ae3e4bfaa0459c7fd9b1cca6d2d68cfc3c03b2235ff63f3895d9d8a46bceda241ec4f
   languageName: node
   linkType: hard
 
@@ -8802,7 +8806,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"node-abort-controller@npm:^3.0.1, node-abort-controller@npm:^3.1.1":
+"node-abort-controller@npm:3.1.1, node-abort-controller@npm:^3.0.1":
   version: 3.1.1
   resolution: "node-abort-controller@npm:3.1.1"
   checksum: 10/0a2cdb7ec0aeaf3cb31e1ca0e192f5add48f1c5c9c9ed822129f9dddbd9432f69b7425982f94ce803c56a2104884530aa67cd57696e5774b2e5b8ec2f58de042
@@ -9660,7 +9664,7 @@ __metadata:
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:1.0.3"
     aws-sdk-client-mock: "npm:4.1.0"
-    bullmq: "npm:^5.56.0"
+    bullmq: "npm:^5.77.6"
     cache-manager: "npm:7.2.8"
     cookie-parser: "npm:1.4.7"
     csv-stringify: "npm:^6.7.0"
@@ -9761,6 +9765,15 @@ __metadata:
   bin:
     semver: bin/semver.js
   checksum: 10/4cfa1eb91ef3751e20fc52e47a935a0118d56d6f15a837ab814da0c150778ba2ca4f1a4d9068b33070ea4273629e615066664c2cfcd7c272caf7a8a0f6518b2c
+  languageName: node
+  linkType: hard
+
+"semver@npm:7.8.0":
+  version: 7.8.0
+  resolution: "semver@npm:7.8.0"
+  bin:
+    semver: bin/semver.js
+  checksum: 10/039a8f68a581c03c1ac17c990316da57a79a93af9b109b712739c50cd4d464079f7e3fee31c008b472e390c7ba48a11ed2b86e91d8602bf06059d4a266db1426
   languageName: node
   linkType: hard
 
@@ -10598,7 +10611,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.8.1, tslib@npm:^2.0.0, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.6.2, tslib@npm:^2.8.1":
+"tslib@npm:2.8.1, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.6.2, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
   checksum: 10/3e2e043d5c2316461cb54e5c7fe02c30ef6dccb3384717ca22ae5c6b5bc95232a6241df19c622d9c73b809bea33b187f6dbc73030963e29950c2141bc32a79f7
@@ -10971,15 +10984,6 @@ __metadata:
   bin:
     uuid: dist/esm/bin/uuid
   checksum: 10/d2da43b49b154d154574891ced66d0c83fc70caaad87e043400cf644423b067542d6f3eb641b7c819224a7cd3b4c2f21906acbedd6ec9c6a05887aa9115a9cf5
-  languageName: node
-  linkType: hard
-
-"uuid@npm:^9.0.0":
-  version: 9.0.1
-  resolution: "uuid@npm:9.0.1"
-  bin:
-    uuid: dist/bin/uuid
-  checksum: 10/9d0b6adb72b736e36f2b1b53da0d559125ba3e39d913b6072f6f033e0c87835b414f0836b45bcfaf2bdf698f92297fea1c3cc19b0b258bc182c9c43cc0fab9f2
   languageName: node
   linkType: hard
 
