@@ -40,8 +40,7 @@ export class SpacesService {
     await this.usersRepository.findOneOrFail({ id: userId });
     await this.usersRepository.activateIfPending(userId);
 
-    const result = await this.spacesRepository.create({ userId, ...args });
-    return { id: result.id, uuid: result.uuid, name: result.name };
+    return await this.spacesRepository.create({ userId, ...args });
   }
 
   public getActiveOrInvitedSpaces(
@@ -130,8 +129,7 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
-    const result = await this.spacesRepository.update(args);
-    return { id: result.id, uuid: result.uuid };
+    return await this.spacesRepository.update(args);
   }
 
   /**

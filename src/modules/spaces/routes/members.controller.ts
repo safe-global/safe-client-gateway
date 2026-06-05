@@ -369,6 +369,12 @@ export class MembersController {
     description: 'Space or member not found',
   })
   @ApiBody({ type: UpdateMemberAliasDto })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to update own member alias in',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
   public async updateAlias(

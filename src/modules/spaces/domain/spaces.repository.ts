@@ -17,6 +17,7 @@ import {
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { UUID_REGEX } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
@@ -27,9 +28,6 @@ import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {

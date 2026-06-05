@@ -6,7 +6,7 @@ import {
   Injectable,
   type PipeTransform,
 } from '@nestjs/common';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { DB_MAX_SAFE_INTEGER, UUID_REGEX } from '@/domain/common/constants';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 
@@ -16,8 +16,6 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
  */
 export const INVALID_SPACE_IDENTIFIER_MESSAGE = 'Invalid space identifier';
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NUMERIC_REGEX = /^\d+$/;
 
 /**

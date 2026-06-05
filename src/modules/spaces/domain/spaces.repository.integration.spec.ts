@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
+import { BadRequestException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -551,6 +552,17 @@ describe('SpacesRepository', () => {
       await expect(
         spacesRepository.findIdByIdOrUuid(String(spaceId)),
       ).rejects.toThrow('Workspace not found.');
+    });
+
+    it.each([
+      ['empty string', ''],
+      ['non-UUID text', faker.lorem.word()],
+      ['UUID missing a segment', faker.string.uuid().slice(0, -13)],
+      ['UUID with a non-hex character', `${faker.string.uuid().slice(0, -1)}g`],
+    ])('should throw BadRequestException for a malformed identifier (%s)', async (_label, value) => {
+      await expect(spacesRepository.findIdByIdOrUuid(value)).rejects.toThrow(
+        new BadRequestException('Invalid space identifier'),
+      );
     });
   });
 
