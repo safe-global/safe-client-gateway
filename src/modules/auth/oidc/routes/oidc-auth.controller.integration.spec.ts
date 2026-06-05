@@ -344,6 +344,8 @@ describe('OidcAuthController', () => {
 
         const auth0Token = signAuth0Token({
           sub: faker.string.uuid(),
+          email: faker.internet.email(),
+          email_verified: true,
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });
@@ -584,6 +586,8 @@ describe('OidcAuthController', () => {
 
         const auth0Token = signAuth0Token({
           sub: faker.string.uuid(),
+          email: faker.internet.email(),
+          email_verified: true,
           exp: Math.floor(expirationTime.getTime() / 1_000),
           iat: Math.floor(Date.now() / 1_000),
         });

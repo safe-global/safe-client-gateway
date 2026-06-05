@@ -57,7 +57,7 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this space'),
+        new ForbiddenException('User is not an admin of this workspace'),
       );
     });
   });
@@ -73,12 +73,19 @@ describe('space-assert.utils', () => {
         assertMember(membersRepositoryMock, spaceId, userId),
       ).resolves.toBeUndefined();
 
-      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith(
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith([
         expect.objectContaining({
           user: { id: userId },
           space: { id: spaceId },
+          status: 'ACTIVE',
         }),
-      );
+        expect.objectContaining({
+          user: { id: userId },
+          space: { id: spaceId },
+          status: 'INVITED',
+          inviteExpiresAt: expect.anything(),
+        }),
+      ]);
     });
 
     it('should throw ForbiddenException when user is not member', async () => {
@@ -91,7 +98,7 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this space'),
+        new ForbiddenException('User is not a member of this workspace'),
       );
     });
   });

@@ -53,7 +53,6 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
   afterEach(async () => {
     consumer.cleanup();
-    await (await queue.client).flushdb();
     await queue.drain(true);
   });
 
