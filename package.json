@@ -39,11 +39,11 @@
     "env:generate:update": "ts-node scripts/generate-env.ts --update"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.1033.0",
-    "@aws-sdk/client-s3": "3.1033.0",
-    "@aws-sdk/client-sesv2": "3.1033.0",
-    "@aws-sdk/lib-storage": "3.1033.0",
-    "@aws-sdk/s3-request-presigner": "3.1033.0",
+    "@aws-sdk/client-kms": "3.1056.0",
+    "@aws-sdk/client-s3": "3.1056.0",
+    "@aws-sdk/client-sesv2": "3.1056.0",
+    "@aws-sdk/lib-storage": "3.1056.0",
+    "@aws-sdk/s3-request-presigner": "3.1056.0",
     "@blockaid/client": "^0.65.0",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.10.0",
     "@nestjs/bullmq": "^11.0.3",
@@ -77,7 +77,7 @@
     "semver": "7.7.1",
     "typeorm": "0.3.28",
     "undici": "8.2.0",
-    "viem": "2.23.5",
+    "viem": "2.51.2",
     "winston": "3.19.0",
     "zod": "4.4.3"
   },
