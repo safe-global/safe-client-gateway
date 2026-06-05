@@ -968,7 +968,7 @@ describe('MembersRepository', () => {
     });
 
     it('should throw when reinviting a declined member to the same space', async () => {
-      // A declined invite cannot be resent; re-inviting must be rejected.
+      // A declined invite cannot be renewed; re-inviting must be rejected.
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
       const { user: owner, authPayload } = await createSiweUser();

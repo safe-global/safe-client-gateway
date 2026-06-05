@@ -193,8 +193,6 @@ describe('MembersRepository', () => {
     });
 
     it('should throw without attempting an insert when the existing member declined', async () => {
-      // A declined invite cannot be resent: re-inviting must be rejected
-      // rather than reviving the member.
       const existingMember = memberBuilder()
         .with('space', space)
         .with('status', 'DECLINED')

@@ -599,7 +599,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(409)
         .expect({
-          message: 'Only a pending invitation can be resent.',
+          message: 'Only a pending invitation can be renewed.',
           error: 'Conflict',
           statusCode: 409,
         });
