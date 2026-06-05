@@ -60,7 +60,7 @@
     "@safe-global/safe-modules-deployments": "3.0.3",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "1.0.3",
-    "bullmq": "^5.56.0",
+    "bullmq": "^5.77.6",
     "cache-manager": "7.2.8",
     "cookie-parser": "1.4.7",
     "csv-stringify": "^6.7.0",
