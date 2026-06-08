@@ -140,6 +140,7 @@ export class SafesV2Service {
     const { chain, safeAddress, currency, trusted } = args;
 
     if (
+      chain.balancesProvider?.enabled &&
       this.zerionBalancesEnabled &&
       this.getZerionChainName(chain) &&
       (await this.isPortfolioEndpointFeatureEnabled(chain))
