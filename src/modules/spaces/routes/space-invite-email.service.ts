@@ -20,8 +20,6 @@ import {
   SPACE_INVITE_PATH,
 } from '@/modules/spaces/routes/templates/space-invite-email.template';
 
-const DEFAULT_WORKSPACE_NAME = 'Safe workspace';
-
 /**
  * Builds and enqueues space invite emails.
  */
@@ -67,11 +65,11 @@ export class SpaceInviteEmailService {
     }
 
     try {
-      const space = await this.spacesRepository.findOne({
+      const space = await this.spacesRepository.findOneOrFail({
         where: { id: args.spaceId },
         select: { name: true },
       });
-      const workspaceName = space?.name ?? DEFAULT_WORKSPACE_NAME;
+      const workspaceName = space.name;
 
       const jobs = emailInvites.map((invitation) => {
         const templateArgs = {

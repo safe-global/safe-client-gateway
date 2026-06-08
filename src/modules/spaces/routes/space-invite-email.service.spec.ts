@@ -5,6 +5,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   emailInviteUserDtoBuilder,
@@ -24,7 +25,7 @@ const loggingServiceMock = {
 } as jest.MockedObjectDeep<ILoggingService>;
 
 const spacesRepositoryMock = {
-  findOne: jest.fn(),
+  findOneOrFail: jest.fn(),
 } as jest.MockedObjectDeep<ISpacesRepository>;
 
 const sesEmailQueueServiceMock = {
@@ -54,9 +55,9 @@ describe('SpaceInviteEmailService', () => {
       throw new Error(`Unexpected config key: ${key}`);
     });
     workspaceName = nameBuilder();
-    spacesRepositoryMock.findOne.mockResolvedValue({
-      name: workspaceName,
-    } as Awaited<ReturnType<ISpacesRepository['findOne']>>);
+    spacesRepositoryMock.findOneOrFail.mockResolvedValue(
+      spaceBuilder().with('name', workspaceName).build(),
+    );
     service = buildService(sesEmailQueueServiceMock);
   });
 
@@ -84,18 +85,21 @@ describe('SpaceInviteEmailService', () => {
     );
   });
 
-  it('should fall back to a default workspace name when the space cannot be resolved', async () => {
+  it('should swallow and log errors raised while resolving the space', async () => {
     const spaceId = faker.number.int({ min: 1 });
     const invite = emailInviteUserDtoBuilder().build();
-    spacesRepositoryMock.findOne.mockResolvedValue(null);
+    spacesRepositoryMock.findOneOrFail.mockRejectedValueOnce(
+      new Error('Space not found'),
+    );
     sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
 
-    await service.enqueueInviteEmails({ users: [invite], spaceId });
+    await expect(
+      service.enqueueInviteEmails({ users: [invite], spaceId }),
+    ).resolves.toBeUndefined();
 
-    expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledWith(
-      expect.objectContaining({
-        textBody: expect.stringContaining('Safe workspace'),
-      }),
+    expect(sesEmailQueueServiceMock.enqueue).not.toHaveBeenCalled();
+    expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+      'Error while enqueueing space invite email: Space not found',
     );
   });
 
@@ -108,7 +112,7 @@ describe('SpaceInviteEmailService', () => {
       spaceId,
     });
 
-    expect(spacesRepositoryMock.findOne).not.toHaveBeenCalled();
+    expect(spacesRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
     expect(sesEmailQueueServiceMock.enqueue).not.toHaveBeenCalled();
   });
 
@@ -124,7 +128,7 @@ describe('SpaceInviteEmailService', () => {
       }),
     ).resolves.toBeUndefined();
 
-    expect(spacesRepositoryMock.findOne).not.toHaveBeenCalled();
+    expect(spacesRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
     expect(sesEmailQueueServiceMock.enqueue).not.toHaveBeenCalled();
   });
 

@@ -5,7 +5,7 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
-import type { Invitation as RouteInvitation } from '@/modules/spaces/routes/entities/invitation.entity';
+import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
 import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import type {
   MemberDto,
@@ -46,7 +46,7 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
-  }): Promise<Array<RouteInvitation>> {
+  }): Promise<Array<Invitation>> {
     await this.assertActiveAdmin({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
