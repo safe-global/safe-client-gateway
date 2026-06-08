@@ -30,6 +30,8 @@ describe('SesEmailService', () => {
 
   const sesFromEmail = faker.internet.email();
   const sesFromName = 'Safe';
+  const accessKeyId = faker.string.uuid();
+  const secretAccessKey = faker.string.uuid();
 
   const sendArgs = (): { to: string; subject: string; htmlBody: string } => ({
     to: faker.internet.email(),
@@ -43,14 +45,23 @@ describe('SesEmailService', () => {
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('email.ses.fromEmail', sesFromEmail);
     fakeConfigurationService.set('email.ses.fromName', sesFromName);
+    fakeConfigurationService.set('email.ses.aws.accessKeyId', accessKeyId);
+    fakeConfigurationService.set(
+      'email.ses.aws.secretAccessKey',
+      secretAccessKey,
+    );
 
     service = new AwsSesEmailService(fakeConfigurationService);
   });
 
   describe('constructor', () => {
-    it('should use the default AWS credential chain when web identity token file is not set', () => {
+    it('should use SES static credentials when web identity token file is not set', () => {
       expect(SESv2Client).toHaveBeenCalledWith({
         maxAttempts: 1,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
       });
       expect(fromTokenFile).not.toHaveBeenCalled();
     });
@@ -58,7 +69,7 @@ describe('SesEmailService', () => {
     it('should use web identity credentials when web identity token file is set', () => {
       jest.clearAllMocks();
       fakeConfigurationService.set(
-        'email.ses.webIdentityTokenFile',
+        'email.ses.aws.webIdentityTokenFile',
         '/var/run/secrets/eks.amazonaws.com/serviceaccount/token',
       );
 

@@ -156,7 +156,11 @@ export default (): ReturnType<typeof configuration> => ({
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),
-      webIdentityTokenFile: faker.system.filePath(),
+      aws: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy',
+        webIdentityTokenFile: faker.system.filePath(),
+      },
       queue: {
         removeOnComplete: {
           age: faker.number.int({ min: 0, max: 3600 }),
