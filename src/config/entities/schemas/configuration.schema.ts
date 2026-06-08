@@ -194,41 +194,35 @@ export const RootConfigurationSchema = z
   })
   .superRefine((config, ctx) => {
     // Check for AWS_* and Blockaid fields in production and staging environments
-    for (const field of [
-      'AWS_ACCESS_KEY_ID',
-      'AWS_KMS_ENCRYPTION_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
-      'AWS_REGION',
-      'CSV_AWS_ACCESS_KEY_ID',
-      'CSV_AWS_SECRET_ACCESS_KEY',
-      'BLOCKAID_CLIENT_API_KEY',
+    for (const {
+      field,
+      requiredWhen = true,
+      message = 'is required in production and staging environments',
+    } of [
+      { field: 'AWS_ACCESS_KEY_ID' },
+      { field: 'AWS_KMS_ENCRYPTION_KEY_ID' },
+      { field: 'AWS_SECRET_ACCESS_KEY' },
+      { field: 'AWS_REGION' },
+      { field: 'CSV_AWS_ACCESS_KEY_ID' },
+      { field: 'CSV_AWS_SECRET_ACCESS_KEY' },
+      { field: 'BLOCKAID_CLIENT_API_KEY' },
+      // SES permissions are set via IRSA in deployed environments, not static AWS keys.
+      {
+        field: 'AWS_WEB_IDENTITY_TOKEN_FILE',
+        requiredWhen: config.FF_SES_EMAIL?.toLowerCase() === 'true',
+        message:
+          'is required in production and staging environments when SES email is enabled',
+      },
     ]) {
       if (
         config.CGW_ENV &&
         config instanceof Object &&
         ['production', 'staging'].includes(config.CGW_ENV) &&
+        requiredWhen &&
         !(config as Record<string, unknown>)[field]
       ) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `is required in production and staging environments`,
-          path: [field],
-        });
+        ctx.addIssue({ code: 'custom', message, path: [field] });
       }
-    }
-
-    // SES permissions are set via IRSA in deployed environments, not static AWS keys.
-    if (
-      config.CGW_ENV &&
-      ['production', 'staging'].includes(config.CGW_ENV) &&
-      config.FF_SES_EMAIL?.toLowerCase() === 'true' &&
-      !config.AWS_WEB_IDENTITY_TOKEN_FILE
-    ) {
-      ctx.addIssue({
-        code: 'custom',
-        message: `is required in production and staging environments when SES email is enabled`,
-        path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
-      });
     }
   });
 
