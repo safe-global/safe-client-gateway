@@ -68,6 +68,7 @@ export const RootConfigurationSchema = z
     AWS_SES_FROM_EMAIL: z.email().optional(),
     AWS_SES_FROM_NAME: z.string().optional(),
     AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
+    FF_SES_EMAIL: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -214,6 +215,20 @@ export const RootConfigurationSchema = z
           path: [field],
         });
       }
+    }
+
+    // SES permissions are set via IRSA in deployed environments, not static AWS keys.
+    if (
+      config.CGW_ENV &&
+      ['production', 'staging'].includes(config.CGW_ENV) &&
+      config.FF_SES_EMAIL?.toLowerCase() === 'true' &&
+      !config.AWS_WEB_IDENTITY_TOKEN_FILE
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `is required in production and staging environments when SES email is enabled`,
+        path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
+      });
     }
   });
 

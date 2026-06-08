@@ -58,7 +58,7 @@ describe('SesEmailService', () => {
     it('should use web identity credentials when web identity token file is set', () => {
       jest.clearAllMocks();
       fakeConfigurationService.set(
-        'email.ses.webIdentityTokenFile',
+        'aws.webIdentityTokenFile',
         '/var/run/secrets/eks.amazonaws.com/serviceaccount/token',
       );
 
