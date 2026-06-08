@@ -2,8 +2,10 @@
 
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import configuration from '@/config/entities/configuration';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
 import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { AddressBookRequest } from '@/modules/spaces/datasources/entities/address-book-request.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -37,6 +39,8 @@ import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity
 import { UsersModule } from '@/modules/users/users.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 
+const isSesEmailFeatureEnabled = configuration().features.sesEmail;
+
 @Module({
   imports: [
     PostgresDatabaseModuleV2,
@@ -50,6 +54,7 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
+    ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
     UserIdentityResolverModule,
     WalletsModule,
   ],
