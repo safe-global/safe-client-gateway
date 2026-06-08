@@ -4126,12 +4126,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"amqplib@npm:1.0.3":
-  version: 1.0.3
-  resolution: "amqplib@npm:1.0.3"
-  dependencies:
-    buffer-more-ints: "npm:~1.0.0"
-  checksum: 10/9c30e9097da327867c798ecea69d841dcb214f395dc917bc4261b741a7a6fe5b3acd4f359ac515456c43d8c68fcd490d49ca55b50365acafa6851f5fc7435fb3
+"amqplib@npm:2.0.1":
+  version: 2.0.1
+  resolution: "amqplib@npm:2.0.1"
+  checksum: 10/731c9e8847c620d67e1546a4a98f9364e47c7b413c17d3eb35b38e4709da002e0da4d3f2186df3feb6123113e0a96aa684c2cce762bfbd415eab446ff385df52
   languageName: node
   linkType: hard
 
@@ -4535,13 +4533,6 @@ __metadata:
   version: 1.1.2
   resolution: "buffer-from@npm:1.1.2"
   checksum: 10/0448524a562b37d4d7ed9efd91685a5b77a50672c556ea254ac9a6d30e3403a517d8981f10e565db24e8339413b43c97ca2951f10e399c6125a0d8911f5679bb
-  languageName: node
-  linkType: hard
-
-"buffer-more-ints@npm:~1.0.0":
-  version: 1.0.0
-  resolution: "buffer-more-ints@npm:1.0.0"
-  checksum: 10/603a7f35793426c8efd733eb716c2c3bf3e2f5bab95ca13ba31546d89ead3636586479c5a0d8438dd015115361a3b09b1b37ddabc170b6d42bc6c6dc2554dc61
   languageName: node
   linkType: hard
 
@@ -8842,7 +8833,7 @@ __metadata:
     "@types/semver": "npm:7.7.0"
     "@types/supertest": "npm:7.2.0"
     amqp-connection-manager: "npm:5.0.0"
-    amqplib: "npm:1.0.3"
+    amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
     bullmq: "npm:^5.77.6"
     cache-manager: "npm:7.2.8"
