@@ -23,9 +23,6 @@ export default (): ReturnType<typeof configuration> => ({
     port: faker.internet.port().toString(),
     allowCors: faker.datatype.boolean(),
   },
-  aws: {
-    webIdentityTokenFile: faker.system.filePath(),
-  },
   auth: {
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
@@ -159,6 +156,7 @@ export default (): ReturnType<typeof configuration> => ({
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),
+      webIdentityTokenFile: faker.system.filePath(),
       queue: {
         removeOnComplete: {
           age: faker.number.int({ min: 0, max: 3600 }),

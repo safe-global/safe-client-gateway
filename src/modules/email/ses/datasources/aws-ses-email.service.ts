@@ -23,7 +23,7 @@ export class AwsSesEmailService implements IEmailService {
     const fromName =
       this.configurationService.getOrThrow<string>('email.ses.fromName');
     const webIdentityTokenFile = this.configurationService.get<string>(
-      'aws.webIdentityTokenFile',
+      'email.ses.webIdentityTokenFile',
     );
 
     this.client = new SESv2Client({

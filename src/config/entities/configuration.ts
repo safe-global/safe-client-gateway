@@ -39,11 +39,6 @@ export default () => ({
     port: process.env.APPLICATION_PORT || '3000',
     allowCors: process.env.ALLOW_CORS?.toLowerCase() === 'true',
   },
-  aws: {
-    // EKS service-account token path. When present, AWS clients can use IRSA
-    // instead of static AWS env keys.
-    webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
-  },
   auth: {
     token: process.env.AUTH_TOKEN,
     nonceTtlSeconds: Number.parseInt(
@@ -273,6 +268,8 @@ export default () => ({
       fromEmail: process.env.AWS_SES_FROM_EMAIL,
       // Display name shown in the "From" field. Defaults to 'Safe'.
       fromName: process.env.AWS_SES_FROM_NAME || 'Safe',
+      // EKS service-account token path. SES uses this for IRSA in deployed environments.
+      webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
       // BullMQ queue configuration for email sending.
       queue: {
         removeOnComplete: {
