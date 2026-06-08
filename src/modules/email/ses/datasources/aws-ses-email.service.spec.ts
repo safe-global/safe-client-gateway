@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { MessageRejected } from '@aws-sdk/client-sesv2';
+import { MessageRejected, SESv2Client } from '@aws-sdk/client-sesv2';
+import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { AwsSesEmailService } from '@/modules/email/ses/datasources/aws-ses-email.service';
@@ -19,12 +20,18 @@ jest.mock('@aws-sdk/client-sesv2', () => ({
   SendEmailCommand: jest.fn().mockImplementation((input) => input),
 }));
 
+jest.mock('@aws-sdk/credential-provider-web-identity', () => ({
+  fromTokenFile: jest.fn().mockReturnValue('mockCredentials'),
+}));
+
 describe('SesEmailService', () => {
   let service: AwsSesEmailService;
   let fakeConfigurationService: FakeConfigurationService;
 
   const sesFromEmail = faker.internet.email();
   const sesFromName = 'Safe';
+  const accessKeyId = faker.string.uuid();
+  const secretAccessKey = faker.string.uuid();
 
   const sendArgs = (): { to: string; subject: string; htmlBody: string } => ({
     to: faker.internet.email(),
@@ -38,8 +45,42 @@ describe('SesEmailService', () => {
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('email.ses.fromEmail', sesFromEmail);
     fakeConfigurationService.set('email.ses.fromName', sesFromName);
+    fakeConfigurationService.set('email.ses.aws.accessKeyId', accessKeyId);
+    fakeConfigurationService.set(
+      'email.ses.aws.secretAccessKey',
+      secretAccessKey,
+    );
 
     service = new AwsSesEmailService(fakeConfigurationService);
+  });
+
+  describe('constructor', () => {
+    it('should use SES static credentials when web identity token file is not set', () => {
+      expect(SESv2Client).toHaveBeenCalledWith({
+        maxAttempts: 1,
+        credentials: {
+          accessKeyId,
+          secretAccessKey,
+        },
+      });
+      expect(fromTokenFile).not.toHaveBeenCalled();
+    });
+
+    it('should use web identity credentials when web identity token file is set', () => {
+      jest.clearAllMocks();
+      fakeConfigurationService.set(
+        'email.ses.aws.webIdentityTokenFile',
+        '/var/run/secrets/eks.amazonaws.com/serviceaccount/token',
+      );
+
+      service = new AwsSesEmailService(fakeConfigurationService);
+
+      expect(fromTokenFile).toHaveBeenCalledTimes(1);
+      expect(SESv2Client).toHaveBeenCalledWith({
+        maxAttempts: 1,
+        credentials: 'mockCredentials',
+      });
+    });
   });
 
   describe('send', () => {

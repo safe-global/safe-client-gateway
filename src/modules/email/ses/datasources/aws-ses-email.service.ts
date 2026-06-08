@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { SESv2Client, SendEmailCommand } from '@aws-sdk/client-sesv2';
+import {
+  SESv2Client,
+  type SESv2ClientConfig,
+  SendEmailCommand,
+} from '@aws-sdk/client-sesv2';
+import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
@@ -11,6 +16,7 @@ export class AwsSesEmailService implements IEmailService {
   private static readonly SES_CHARSET = 'UTF-8';
   private readonly client: SESv2Client;
   private readonly fromAddress: string;
+  private readonly credentials: SESv2ClientConfig['credentials'];
 
   constructor(
     @Inject(IConfigurationService)
@@ -21,9 +27,28 @@ export class AwsSesEmailService implements IEmailService {
     );
     const fromName =
       this.configurationService.getOrThrow<string>('email.ses.fromName');
+    const webIdentityTokenFile = this.configurationService.get<string>(
+      'email.ses.aws.webIdentityTokenFile',
+    );
+
+    // Local development uses SES-specific static AWS keys. Deployed environments
+    // use IRSA via the projected web identity token file, so SES does not pick up
+    // the generic AWS keys used by other integrations.
+    this.credentials = webIdentityTokenFile
+      ? fromTokenFile()
+      : {
+          accessKeyId: this.configurationService.getOrThrow<string>(
+            'email.ses.aws.accessKeyId',
+          ),
+          secretAccessKey: this.configurationService.getOrThrow<string>(
+            'email.ses.aws.secretAccessKey',
+          ),
+        };
 
     this.client = new SESv2Client({
       maxAttempts: 1, //do not retry at the SDK level, let the JobQueue handle retries with backoff
+      // Prefer IRSA over static env keys when running in EKS.
+      credentials: this.credentials,
     });
     this.fromAddress = this.formatRfc5322Address(fromName, fromEmail);
   }

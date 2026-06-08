@@ -415,7 +415,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/credential-provider-web-identity@npm:^3.972.45":
+"@aws-sdk/credential-provider-web-identity@npm:3.972.45, @aws-sdk/credential-provider-web-identity@npm:^3.972.45":
   version: 3.972.45
   resolution: "@aws-sdk/credential-provider-web-identity@npm:3.972.45"
   dependencies:
@@ -8808,6 +8808,7 @@ __metadata:
     "@aws-sdk/client-kms": "npm:3.1056.0"
     "@aws-sdk/client-s3": "npm:3.1056.0"
     "@aws-sdk/client-sesv2": "npm:3.1056.0"
+    "@aws-sdk/credential-provider-web-identity": "npm:3.972.45"
     "@aws-sdk/lib-storage": "npm:3.1056.0"
     "@aws-sdk/s3-request-presigner": "npm:3.1056.0"
     "@biomejs/biome": "npm:2.4.12"

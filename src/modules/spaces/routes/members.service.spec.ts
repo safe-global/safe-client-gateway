@@ -12,8 +12,13 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  emailInviteUserDtoBuilder,
+  walletInviteUserDtoBuilder,
+} from '@/modules/spaces/routes/entities/__tests__/invite-user.dto.builder';
 import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import type { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
@@ -34,6 +39,10 @@ const configurationServiceMock = {
   getOrThrow: jest.fn(),
 } as jest.MockedObjectDeep<IConfigurationService>;
 
+const spaceInviteEmailServiceMock = {
+  enqueueInviteEmails: jest.fn(),
+} as jest.MockedObjectDeep<SpaceInviteEmailService>;
+
 describe('MembersService', () => {
   let service: MembersService;
 
@@ -52,6 +61,7 @@ describe('MembersService', () => {
     service = new MembersService(
       membersRepositoryMock,
       configurationServiceMock,
+      spaceInviteEmailServiceMock,
     );
   });
 
@@ -221,9 +231,56 @@ describe('MembersService', () => {
           users: [],
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
         });
+        expect(
+          spaceInviteEmailServiceMock.enqueueInviteEmails,
+        ).toHaveBeenCalledWith({ users: [], spaceId });
       } finally {
         jest.useRealTimers();
       }
+    });
+
+    it('should delegate invite email sending to the SpaceInviteEmailService', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const emailInvite = emailInviteUserDtoBuilder().build();
+      const walletInvite = walletInviteUserDtoBuilder().build();
+      const inviteUsersDto: InviteUsersDto = {
+        users: [emailInvite, walletInvite],
+      };
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      const emailInvitation = {
+        userId: faker.number.int({ min: 1 }),
+        spaceId,
+        name: emailInvite.name,
+        role: emailInvite.role,
+        status: 'INVITED' as const,
+        invitedBy: Number(authPayload.sub),
+      };
+      const walletInvitation = {
+        userId: faker.number.int({ min: 1 }),
+        spaceId,
+        name: walletInvite.name,
+        role: walletInvite.role,
+        status: 'INVITED' as const,
+        invitedBy: Number(authPayload.sub),
+      };
+      const invitations = [emailInvitation, walletInvitation];
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.inviteUsers.mockResolvedValue(invitations);
+
+      await expect(
+        service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
+      ).resolves.toEqual(invitations);
+
+      expect(
+        spaceInviteEmailServiceMock.enqueueInviteEmails,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceInviteEmailServiceMock.enqueueInviteEmails,
+      ).toHaveBeenCalledWith({ users: inviteUsersDto.users, spaceId });
     });
   });
 
