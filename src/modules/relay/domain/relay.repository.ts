@@ -27,8 +27,12 @@ export class RelayRepository {
   }): Promise<Relay> {
     const chain = await this.chainsRepository.getChain(args.chainId);
     return this.relayManager
-      .getRelayer(chain.relayerType, args.data)
-      .relay(args);
+      .getRelayer(chain.relayer?.type ?? null, args.data)
+      .relay({
+        ...args,
+        simulationEnabled:
+          chain.relayer?.enableTenderlySimulationBeforeRelay ?? false,
+      });
   }
 
   getTaskStatus(args: {
@@ -45,7 +49,7 @@ export class RelayRepository {
   }): Promise<{ remaining: number; limit: number }> {
     const chain = await this.chainsRepository.getChain(args.chainId);
     return this.relayManager
-      .getRelayer(chain.relayerType)
+      .getRelayer(chain.relayer?.type ?? null)
       .getRelaysRemaining(args);
   }
 }

@@ -1,29 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
-import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
+import { Inject, Injectable } from "@nestjs/common";
+import type { Address, Hex } from "viem";
+import { LogType } from "@/domain/common/entities/log-type.entity";
+import { IFeeServiceApi } from "@/domain/interfaces/fee-service-api.interface";
+import { IRelayApi } from "@/domain/interfaces/relay-api.interface";
+import { ITenderlySimulationApi } from "@/domain/interfaces/tenderly-simulation-api.interface";
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { RelaySimulationConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+} from "@/logging/logging.interface";
 import {
   type Relay,
   RelaySchema,
-} from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
-import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
-import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
-import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
-import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
+} from "@/modules/relay/domain/entities/relay.entity";
+import type { RelayEligibility } from "@/modules/relay/domain/entities/relay-eligibility.entity";
+import { RelaySimulationFailedError } from "@/modules/relay/domain/errors/relay-simulation-failed.error";
+import { RelaySimulationIndeterminateError } from "@/modules/relay/domain/errors/relay-simulation-indeterminate.error";
+import { RelayTxDeniedError } from "@/modules/relay/domain/errors/relay-tx-denied.error";
+import { SafeTxHashMismatchError } from "@/modules/relay/domain/errors/safe-tx-hash-mismatch.error";
+import { UnofficialProxyFactoryError } from "@/modules/relay/domain/errors/unofficial-proxy-factory.error";
+import type { IRelayer } from "@/modules/relay/domain/interfaces/relayer.interface";
+import { RelayTransactionHelper } from "@/modules/relay/domain/relay-transaction-helper";
+import { SafeTransaction } from "@/modules/transactions/domain/entities/safe-transaction.entity";
 
 /**
  * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
@@ -32,24 +30,18 @@ import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-tra
  * flows debit the Safe to a third party (as they would in production).
  */
 const SIMULATION_SENDER_SENTINEL: Address =
-  '0x000000000000000000000000000000000000dEaD';
+  "0x000000000000000000000000000000000000dEaD";
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
-  private readonly relaySimulationConfiguration: RelaySimulationConfiguration;
-
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
     @Inject(ITenderlySimulationApi)
     private readonly tenderlySimulationApi: ITenderlySimulationApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
-  ) {
-    this.relaySimulationConfiguration =
-      configurationService.getOrThrow('relay.simulation');
-  }
+  ) {}
 
   /**
    * Checks whether the fee service permits relaying for the given Safe.
@@ -112,6 +104,7 @@ export class RelayFeeRelayer implements IRelayer {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
+    simulationEnabled?: boolean;
   }): Promise<Relay> {
     const {
       version,
@@ -120,6 +113,7 @@ export class RelayFeeRelayer implements IRelayer {
       data,
       safeTxHash,
       acceptUnverifiedSimulation,
+      simulationEnabled,
     } = args;
     const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
 
@@ -139,6 +133,7 @@ export class RelayFeeRelayer implements IRelayer {
         decoded,
         safeTxHash: safeTxHash,
         acceptUnverifiedSimulation: acceptUnverifiedSimulation,
+        simulationEnabled: simulationEnabled ?? false,
       });
     } else if (decoded !== null) {
       // Branch 2: the data decoded as execTransaction but failed validity rules.
@@ -186,6 +181,7 @@ export class RelayFeeRelayer implements IRelayer {
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
     acceptUnverifiedSimulation: boolean | undefined;
+    simulationEnabled: boolean;
   }): Promise<void> {
     const {
       chainId,
@@ -194,6 +190,7 @@ export class RelayFeeRelayer implements IRelayer {
       decoded,
       safeTxHash,
       acceptUnverifiedSimulation,
+      simulationEnabled,
     } = args;
 
     if (!safeTxHash) {
@@ -212,9 +209,9 @@ export class RelayFeeRelayer implements IRelayer {
     }
 
     // Fee-service eligibility and Tenderly simulation are independent — fire
-    // them in parallel to avoid serializing two RTTs per relay.
-    const simulationEnabled =
-      this.relaySimulationConfiguration.enabledChainIds.includes(chainId);
+    // them in parallel to avoid serializing two RTTs per relay. Simulation is
+    // gated per-chain by the chain's
+    // `relayer.enableTenderlySimulationBeforeRelay` flag.
     const [feeServiceResult, simulation] = await Promise.all([
       this.feeServiceApi.canRelay({ chainId, safeTxHash }),
       simulationEnabled
@@ -244,7 +241,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(safeTxHash);
     }
 
-    if (simulation?.status === 'failed') {
+    if (simulation?.status === "failed") {
       // Tenderly confirmed the transaction would revert => Block relay
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
@@ -253,7 +250,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
     }
 
-    if (simulation?.status === 'indeterminate') {
+    if (simulation?.status === "indeterminate") {
       if (!acceptUnverifiedSimulation) {
         this.loggingService.warn({
           type: LogType.TxRelayEligibility,

@@ -3,7 +3,6 @@
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
@@ -56,21 +55,15 @@ function fakeAddress(): Address {
 
 describe('RelayFeeRelayer', () => {
   let target: RelayFeeRelayer;
-  let fakeConfigurationService: FakeConfigurationService;
   let chainId: string;
 
   beforeEach(() => {
     jest.resetAllMocks();
 
     chainId = faker.string.numeric();
-    fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('relay.simulation', {
-      enabledChainIds: [],
-    });
 
     target = new RelayFeeRelayer(
       mockLoggingService,
-      fakeConfigurationService,
       mockRelayApi,
       mockFeeServiceApi,
       mockTenderlySimulationApi,
@@ -407,20 +400,6 @@ describe('RelayFeeRelayer', () => {
     describe('simulation gate', () => {
       const simulationChainId = '137';
 
-      function configureSimulationEnabled(chainIds: Array<string>): void {
-        fakeConfigurationService.set('relay.simulation', {
-          enabledChainIds: chainIds,
-        });
-        target = new RelayFeeRelayer(
-          mockLoggingService,
-          fakeConfigurationService,
-          mockRelayApi,
-          mockFeeServiceApi,
-          mockTenderlySimulationApi,
-          mockRelayTransactionHelper,
-        );
-      }
-
       function arrangeValidExecTransaction(): void {
         mockRelayTransactionHelper.decodeExecTransaction.mockReturnValue(
           fakeDecoded,
@@ -432,8 +411,7 @@ describe('RelayFeeRelayer', () => {
         mockFeeServiceApi.canRelay.mockResolvedValue({ canRelay: true });
       }
 
-      it('skips simulation when chainId is not in relay.simulation.enabledChainIds', async () => {
-        configureSimulationEnabled([]); // empty -> gate disabled for every chain
+      it('skips simulation when simulationEnabled is false', async () => {
         arrangeValidExecTransaction();
         const taskId = faker.string.uuid();
         mockRelayApi.relay.mockResolvedValueOnce({ taskId });
@@ -445,6 +423,7 @@ describe('RelayFeeRelayer', () => {
           data: '0x' as Hex,
           gasLimit: null,
           safeTxHash: fakeSafeTxHash(),
+          simulationEnabled: false,
         });
 
         expect(result).toEqual({ taskId });
@@ -453,7 +432,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('runs simulation and relays when the simulation succeeds', async () => {
-        configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
           status: 'success',
@@ -469,6 +447,7 @@ describe('RelayFeeRelayer', () => {
           data: '0x' as Hex,
           gasLimit: null,
           safeTxHash: fakeSafeTxHash(),
+          simulationEnabled: true,
         });
 
         expect(result).toEqual({ taskId });
@@ -482,7 +461,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('throws RelaySimulationFailedError and never relays when the simulation fails', async () => {
-        configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
           status: 'failed',
@@ -498,6 +476,7 @@ describe('RelayFeeRelayer', () => {
             data: '0x' as Hex,
             gasLimit: null,
             safeTxHash,
+            simulationEnabled: true,
           }),
         ).rejects.toThrow(RelaySimulationFailedError);
 
@@ -512,7 +491,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('throws RelaySimulationIndeterminateError when simulation is indeterminate and the user has not acknowledged it', async () => {
-        configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
           status: 'indeterminate',
@@ -528,6 +506,7 @@ describe('RelayFeeRelayer', () => {
             data: '0x' as Hex,
             gasLimit: null,
             safeTxHash,
+            simulationEnabled: true,
           }),
         ).rejects.toThrow(RelaySimulationIndeterminateError);
 
@@ -542,7 +521,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('relays despite an indeterminate simulation when the user has acknowledged it', async () => {
-        configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
           status: 'indeterminate',
@@ -560,6 +538,7 @@ describe('RelayFeeRelayer', () => {
           gasLimit: null,
           safeTxHash,
           acceptUnverifiedSimulation: true,
+          simulationEnabled: true,
         });
 
         expect(result).toEqual({ taskId });
@@ -572,7 +551,6 @@ describe('RelayFeeRelayer', () => {
       });
 
       it('throws RelaySimulationFailedError whith acceptUnverifiedSimulation not overriding a confirmed simulation failure', async () => {
-        configureSimulationEnabled([simulationChainId]);
         arrangeValidExecTransaction();
         mockTenderlySimulationApi.simulate.mockResolvedValueOnce({
           status: 'failed',
@@ -588,6 +566,7 @@ describe('RelayFeeRelayer', () => {
             gasLimit: null,
             safeTxHash: fakeSafeTxHash(),
             acceptUnverifiedSimulation: true,
+            simulationEnabled: true,
           }),
         ).rejects.toThrow(RelaySimulationFailedError);
 

@@ -27,9 +27,3 @@ export type RelayFeeConfiguration = {
   /** TTL in seconds for cached fee preview responses; set to 0 to disable caching */
   feePreviewTtlSeconds: number;
 };
-
-/** Configuration for pre-relay transaction simulation via Tenderly. */
-export type RelaySimulationConfiguration = {
-  /** Chain IDs for which pre-relay Tenderly simulation is enabled */
-  enabledChainIds: Array<string>;
-};

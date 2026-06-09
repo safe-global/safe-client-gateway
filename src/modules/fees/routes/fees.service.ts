@@ -53,7 +53,7 @@ export class FeesService {
     feePreviewDto: FeePreviewTransactionDto;
   }): Promise<FeePreviewResponse> {
     const chain = await this.chainsRepository.getChain(args.chainId);
-    if (chain.relayerType !== RelayerType.RELAY_FEE) {
+    if (chain.relayer?.type !== RelayerType.RELAY_FEE) {
       throw new BadRequestException(
         'Pay with Safe not available for this chain',
       );

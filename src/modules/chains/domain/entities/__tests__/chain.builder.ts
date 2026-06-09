@@ -11,10 +11,10 @@ import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__
 import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
 import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
 import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
+import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-uri.builder';
 import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 
 export function chainBuilder(): IBuilder<Chain> {
   return new Builder<Chain>()
@@ -49,11 +49,5 @@ export function chainBuilder(): IBuilder<Chain> {
     .with('disabledWallets', [faker.word.sample(), faker.word.sample()])
     .with('features', [faker.word.sample(), faker.word.sample()])
     .with('recommendedMasterCopyVersion', faker.system.semver())
-    .with(
-      'relayerType',
-      faker.helpers.arrayElement([
-        ...Object.values(RelayerType),
-        null,
-      ]) as Chain['relayerType'],
-    );
+    .with('relayer', relayerBuilder().build());
 }

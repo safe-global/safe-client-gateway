@@ -12,6 +12,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
@@ -58,7 +59,9 @@ describe('Fees Controller', () => {
   });
 
   it('should return 400 if relay-fee is not available for the chain', async () => {
-    const chain = chainBuilder().with('relayerType', null).build();
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', null).build())
+      .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
     networkService.get.mockImplementation(({ url }) => {
@@ -79,7 +82,10 @@ describe('Fees Controller', () => {
 
   it('should throw a validation error for invalid data', async () => {
     const chain = chainBuilder()
-      .with('relayerType', RelayerType.RELAY_FEE)
+      .with(
+        'relayer',
+        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
@@ -108,7 +114,10 @@ describe('Fees Controller', () => {
 
   it('should return fee preview with relayCost when fee service returns new format', async () => {
     const chain = chainBuilder()
-      .with('relayerType', RelayerType.RELAY_FEE)
+      .with(
+        'relayer',
+        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const feePreviewDto = feePreviewTransactionDtoBuilder()
@@ -152,7 +161,10 @@ describe('Fees Controller', () => {
 
   it('should throw a validation error for invalid numberSignatures', async () => {
     const chain = chainBuilder()
-      .with('relayerType', RelayerType.RELAY_FEE)
+      .with(
+        'relayer',
+        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 

@@ -71,6 +71,13 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const RelayerSchema = z.object({
+  type: z.enum(RelayerType).nullable().catch(null),
+  safeCreationSponsored: z.boolean().catch(false),
+  safeTransactionSponsored: z.boolean().catch(false),
+  enableTenderlySimulationBeforeRelay: z.boolean().catch(false),
+});
+
 function removeTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
 }
@@ -105,7 +112,7 @@ export const ChainSchema = z.object({
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
   recommendedMasterCopyVersion: z.string(),
-  relayerType: z.enum(RelayerType).nullable().catch(null),
+  relayer: RelayerSchema.nullable().catch(null),
 });
 
 // TODO: Merge schema definitions with ChainEntity.

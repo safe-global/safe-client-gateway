@@ -29,6 +29,9 @@ export interface IRelayer {
    * @param {Hex} args.data - The transaction data
    * @param {bigint | null} args.gasLimit - The gas limit or null for automatic
    * @param {Hex} [args.safeTxHash] - Optional Safe transaction hash for relay-fee
+   * @param {boolean} [args.simulationEnabled] - Whether pre-relay Tenderly
+   *   simulation is enabled for the chain (sourced from the chain's relayer
+   *   config). Only honoured by the relay-fee relayer.
    * @returns Relay result
    */
   relay(args: {
@@ -39,6 +42,7 @@ export interface IRelayer {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
+    simulationEnabled?: boolean;
   }): Promise<Relay>;
 
   /**
