@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { BadRequestException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
@@ -21,6 +20,7 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const mockLoggingService = {
   debug: jest.fn(),
@@ -463,8 +463,6 @@ describe('SpacesRepository', () => {
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
-        members: undefined,
-        safes: undefined,
       });
     });
 
@@ -498,9 +496,9 @@ describe('SpacesRepository', () => {
     });
 
     it('should throw if no space has the UUID', async () => {
-      await expect(
-        spacesRepository.findIdByUuid(faker.string.uuid() as UUID),
-      ).rejects.toThrow('Workspace not found.');
+      await expect(spacesRepository.findIdByUuid(fakeUuid())).rejects.toThrow(
+        'Workspace not found.',
+      );
     });
   });
 

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
 import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 export function notificationDeviceBuilder(): IBuilder<NotificationDevice> {
   return new Builder<NotificationDevice>()
     .with('id', faker.number.int())
-    .with('device_uuid', faker.string.uuid() as UUID)
+    .with('device_uuid', fakeUuid())
     .with('device_type', faker.helpers.enumValue(DeviceType))
     .with(
       'cloud_messaging_token',

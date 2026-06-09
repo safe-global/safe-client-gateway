@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
@@ -22,6 +21,7 @@ import type {
 import { SurveysService } from '@/modules/surveys/routes/surveys.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const surveysRepositoryMock = {
   findActiveBySlug: jest.fn(),
@@ -68,9 +68,7 @@ describe('SurveysService', () => {
     );
     userId = faker.number.int({ min: 1, max: 1_000_000 });
     spaceId = faker.number.int({ min: 1, max: 1_000_000 });
-    spacesRepositoryMock.findUuidById.mockResolvedValue(
-      faker.string.uuid() as UUID,
-    );
+    spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
     authPayload = new AuthPayload(
       oidcAuthPayloadDtoBuilder().with('sub', String(userId)).build(),
     );

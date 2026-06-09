@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { UUID } from 'node:crypto';
+
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
@@ -19,6 +19,7 @@ import type { IUsersRepository } from '@/modules/users/domain/users.repository.i
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const repositoryMock = {
   findAllBySpaceId: jest.fn(),
@@ -50,9 +51,7 @@ describe('AddressBooksService', () => {
     configurationServiceMock.getOrThrow.mockReturnValue(20);
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
-    spacesRepositoryMock.findUuidById.mockResolvedValue(
-      faker.string.uuid() as UUID,
-    );
+    spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
     service = new AddressBooksService(
       repositoryMock,
       new UserIdentityResolverService(

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
   ForbiddenException,
@@ -24,6 +23,7 @@ import type { IMembersRepository } from '@/modules/users/domain/members.reposito
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
   create: jest.fn(),
@@ -137,20 +137,26 @@ describe('SpacesService', () => {
       });
     });
 
+    // The query must find ALL of the user's spaces, so every `where` clause
+    // filters by user + status only. If a clause also filtered by `space`, the
+    // user's other spaces would be silently excluded.
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ])('should not scope the membership query to any space for %s user', async (_label, builder) => {
+    ])('should query memberships by user without filtering by space for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
 
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await service.getActiveOrInvitedSpaces(authPayload);
 
-      const options = membersRepositoryMock.find.mock.calls[0][0];
-      const where = options?.where as Array<Record<string, unknown>>;
-      expect(where.length).toBeGreaterThan(0);
-      for (const clause of where) {
+      const where = membersRepositoryMock.find.mock.calls[0][0]?.where;
+      const clauses = Array.isArray(where) ? where : [where];
+
+      expect(clauses.length).toBeGreaterThan(0);
+      for (const clause of clauses) {
+        expect(clause).toMatchObject({ user: { id: userId } });
         expect(clause).not.toHaveProperty('space');
       }
     });
@@ -643,7 +649,7 @@ describe('SpacesService', () => {
       const name = faker.word.noun();
       const repositoryResponse = {
         id: faker.number.int(),
-        uuid: faker.string.uuid() as UUID,
+        uuid: fakeUuid(),
         name,
       };
 
@@ -676,7 +682,7 @@ describe('SpacesService', () => {
       const userId = Number(authPayload.sub);
       const expectedResponse = {
         id: faker.number.int(),
-        uuid: faker.string.uuid() as UUID,
+        uuid: fakeUuid(),
         name: faker.word.noun(),
       };
 
@@ -732,7 +738,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should update space for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid() as UUID;
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
 

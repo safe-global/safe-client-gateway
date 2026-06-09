@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
   ConflictException,
@@ -25,6 +24,7 @@ import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/me
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -254,7 +254,7 @@ describe('MembersService', () => {
         .with('role', 'ADMIN')
         .with('status', 'ACTIVE')
         .build();
-      const spaceUuid = faker.string.uuid() as UUID;
+      const spaceUuid = fakeUuid();
       const emailInvitation = {
         userId: faker.number.int({ min: 1 }),
         spaceId,
@@ -353,7 +353,7 @@ describe('MembersService', () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
-      const spaceUuid = faker.string.uuid() as UUID;
+      const spaceUuid = fakeUuid();
       const targetMember = memberBuilder()
         .with('status', 'INVITED')
         .with('role', 'MEMBER')

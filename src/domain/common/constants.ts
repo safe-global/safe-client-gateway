@@ -17,3 +17,8 @@ export const SAFE_TRANSACTION_SERVICE_MAX_LIMIT = 200;
  */
 export const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Matches a non-negative integer string (digits only).
+ */
+export const NUMERIC_REGEX = /^\d+$/;

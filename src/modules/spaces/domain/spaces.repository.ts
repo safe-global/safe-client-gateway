@@ -17,7 +17,7 @@ import {
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UUID_REGEX } from '@/domain/common/constants';
+import { NUMERIC_REGEX, UUID_REGEX } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
@@ -245,7 +245,7 @@ export class SpacesRepository implements ISpacesRepository {
   // UUID is re-validated here (defence in depth) so a malformed string can't
   // reach Postgres as a UUID and surface as a raw 500 instead of a 400.
   public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
-    if (/^\d+$/.test(value)) {
+    if (NUMERIC_REGEX.test(value)) {
       const space = await this.findOneOrFail({
         where: { id: Number(value) },
         select: { id: true },
