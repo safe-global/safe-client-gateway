@@ -106,10 +106,10 @@ export class MembersService {
     return {
       userId: args.userId,
       spaceId: args.spaceId,
-      name: name,
-      role: role,
-      status: status,
-      invitedBy: invitedBy,
+      name,
+      role,
+      status,
+      invitedBy,
     };
   }
 

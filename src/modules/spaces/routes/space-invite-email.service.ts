@@ -101,16 +101,18 @@ export class SpaceInviteEmailService {
     }
 
     try {
-      const { name } = await this.spacesRepository.findOneOrFail({
-        where: { id: spaceId },
-        select: { name: true },
-      });
+      const { name: workspaceName } = await this.spacesRepository.findOneOrFail(
+        {
+          where: { id: spaceId },
+          select: { name: true },
+        },
+      );
 
       const jobs = recipients.map((recipient) => {
         const templateArgs = {
           name: recipient.name,
           email: recipient.email,
-          workspaceName: name,
+          workspaceName,
           actionUrl: this.inviteUrl,
         };
 
