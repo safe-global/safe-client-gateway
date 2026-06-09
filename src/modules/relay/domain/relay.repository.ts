@@ -25,13 +25,13 @@ export class RelayRepository {
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
-    const chain = await this.chainsRepository.getChain(args.chainId);
+    const { relayer } = await this.chainsRepository.getChain(args.chainId);
     return this.relayManager
-      .getRelayer(chain.relayer?.type ?? null, args.data)
+      .getRelayer(relayer?.type ?? null, args.data)
       .relay({
         ...args,
         simulationEnabled:
-          chain.relayer?.enableTenderlySimulationBeforeRelay ?? false,
+          relayer?.enableTenderlySimulationBeforeRelay ?? false,
       });
   }
 
@@ -47,9 +47,9 @@ export class RelayRepository {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
-    const chain = await this.chainsRepository.getChain(args.chainId);
+    const { relayer } = await this.chainsRepository.getChain(args.chainId);
     return this.relayManager
-      .getRelayer(chain.relayer?.type ?? null)
+      .getRelayer(relayer?.type ?? null)
       .getRelaysRemaining(args);
   }
 }
