@@ -195,9 +195,10 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID containing the invitation',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID containing the invitation (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'userId',
