@@ -407,7 +407,7 @@ describe('MembersService', () => {
 
       expect(membersRepositoryMock.findOneOrFail).toHaveBeenCalledWith(
         { user: { id: userId }, space: { id: spaceId } },
-        { user: true },
+        { user: true, space: true },
       );
     });
 
