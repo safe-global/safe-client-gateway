@@ -25,6 +25,7 @@ import { NotificationType as NotificationTypeEnum } from '@/modules/notification
 import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
@@ -1059,7 +1060,7 @@ describe('NotificationsRepositoryV2', () => {
       const deleteAllSubscriptionsDto = [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ];

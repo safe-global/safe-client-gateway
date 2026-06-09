@@ -49,6 +49,7 @@ import {
   UpdateRoleDtoSchema,
 } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -66,9 +67,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to invite users to',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to invite users to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: InviteUsersDto,
@@ -93,8 +94,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(InviteUsersDtoSchema))
     inviteUsersDto: InviteUsersDto,
   ): Promise<Array<Invitation>> {
@@ -112,9 +112,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to accept invitation for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to accept invitation for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: AcceptInviteDto,
@@ -139,8 +139,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(AcceptInviteDtoSchema))
     acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
@@ -158,9 +157,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to decline invitation for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to decline invitation for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Invitation declined successfully',
@@ -179,8 +178,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<void> {
     return await this.membersService.declineInvite({
       authPayload,
@@ -197,9 +195,10 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID containing the invitation',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID containing the invitation (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'userId',
@@ -224,8 +223,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async renewInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<Invitation> {
@@ -243,9 +241,10 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to get members for',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID to get members for (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space members retrieved successfully',
@@ -262,8 +261,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<MembersDto> {
     return await this.membersService.get({
       authPayload,
@@ -279,9 +277,10 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: "Space ID to fetch the caller's membership for",
-    example: 1,
+    type: 'string',
+    description:
+      "Space UUID to fetch the caller's membership for (numeric ID accepted for legacy clients, deprecated)",
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Membership retrieved successfully',
@@ -296,8 +295,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getMembership(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<MemberDto> {
     return await this.membersService.getSelfMembership({
       authPayload,
@@ -312,9 +310,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID containing the member',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID containing the member',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'userId',
@@ -346,8 +344,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
@@ -372,12 +369,17 @@ export class MembersController {
     description: 'Space or member not found',
   })
   @ApiBody({ type: UpdateMemberAliasDto })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to update own member alias in',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
   public async updateAlias(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
     updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
@@ -395,9 +397,9 @@ export class MembersController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to remove member from',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to remove member from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'userId',
@@ -424,8 +426,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<void> {
@@ -449,12 +450,17 @@ export class MembersController {
     description: 'Not authenticated',
   })
   @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to remove own membership from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @Delete('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async selfRemove(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<void> {
     return await this.membersService.selfRemove({
       authPayload,

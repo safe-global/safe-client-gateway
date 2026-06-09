@@ -12,6 +12,7 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
@@ -23,6 +24,7 @@ import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/me
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -252,9 +254,11 @@ describe('MembersService', () => {
         .with('role', 'ADMIN')
         .with('status', 'ACTIVE')
         .build();
+      const spaceUuid = fakeUuid();
       const emailInvitation = {
         userId: faker.number.int({ min: 1 }),
         spaceId,
+        spaceUuid,
         name: emailInvite.name,
         role: emailInvite.role,
         status: 'INVITED' as const,
@@ -263,6 +267,7 @@ describe('MembersService', () => {
       const walletInvitation = {
         userId: faker.number.int({ min: 1 }),
         spaceId,
+        spaceUuid,
         name: walletInvite.name,
         role: walletInvite.role,
         status: 'INVITED' as const,
@@ -348,9 +353,11 @@ describe('MembersService', () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
+      const spaceUuid = fakeUuid();
       const targetMember = memberBuilder()
         .with('status', 'INVITED')
         .with('role', 'MEMBER')
+        .with('space', { id: spaceId, uuid: spaceUuid } as Space)
         .build();
       const adminMember = memberBuilder()
         .with('role', 'ADMIN')
@@ -368,6 +375,7 @@ describe('MembersService', () => {
         ).resolves.toEqual({
           userId,
           spaceId,
+          spaceUuid,
           name: targetMember.name,
           role: targetMember.role,
           status: 'INVITED',
@@ -399,7 +407,7 @@ describe('MembersService', () => {
 
       expect(membersRepositoryMock.findOneOrFail).toHaveBeenCalledWith(
         { user: { id: userId }, space: { id: spaceId } },
-        { user: true },
+        { user: true, space: true },
       );
     });
 

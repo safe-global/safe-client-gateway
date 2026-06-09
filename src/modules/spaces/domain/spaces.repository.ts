@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
+  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -16,6 +17,7 @@ import {
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { NUMERIC_REGEX, UUID_REGEX } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
@@ -27,7 +29,6 @@ import {
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 
-// TODO: Add tests
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
   private readonly maxSpaceCreationsPerUser: number;
@@ -48,7 +49,7 @@ export class SpacesRepository implements ISpacesRepository {
     userId: number;
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'name'>> {
+  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 
@@ -80,6 +81,7 @@ export class SpacesRepository implements ISpacesRepository {
 
     return {
       id: insertResult.id,
+      uuid: insertResult.uuid,
       name: insertResult.name,
     };
   }
@@ -201,13 +203,59 @@ export class SpacesRepository implements ISpacesRepository {
   public async update(args: {
     id: Space['id'];
     updatePayload: QueryDeepPartialEntity<Space>;
-  }): Promise<Pick<Space, 'id'>> {
+  }): Promise<Pick<Space, 'id' | 'uuid'>> {
     const spaceRepository =
       await this.postgresDatabaseService.getRepository(Space);
 
-    await spaceRepository.update(args.id, args.updatePayload);
+    const result = await spaceRepository
+      .createQueryBuilder()
+      .update(Space)
+      .set(args.updatePayload)
+      .where({ id: args.id })
+      .returning(['id', 'uuid'])
+      .execute();
 
-    return { id: args.id };
+    const row = result.raw[0] as Pick<Space, 'id' | 'uuid'> | undefined;
+    if (!row) {
+      throw new NotFoundException('Workspace not found.');
+    }
+
+    return { id: row.id, uuid: row.uuid };
+  }
+
+  public async findIdByUuid(uuid: Space['uuid']): Promise<Space['id']> {
+    const space = await this.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
+  }
+
+  // TODO: remove after FE removes numeric Space ID fallback. Used to echo the
+  // Space UUID alongside the deprecated numeric id in responses.
+  public async findUuidById(id: Space['id']): Promise<Space['uuid']> {
+    const space = await this.findOneOrFail({
+      where: { id },
+      select: { uuid: true },
+    });
+    return space.uuid;
+  }
+
+  // TODO: remove after FE removes numeric Space ID fallback.
+  // UUID is re-validated here (defence in depth) so a malformed string can't
+  // reach Postgres as a UUID and surface as a raw 500 instead of a 400.
+  public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
+    if (NUMERIC_REGEX.test(value)) {
+      const space = await this.findOneOrFail({
+        where: { id: Number(value) },
+        select: { id: true },
+      });
+      return space.id;
+    }
+    if (!UUID_REGEX.test(value)) {
+      throw new BadRequestException('Invalid space identifier');
+    }
+    return await this.findIdByUuid(value as Space['uuid']);
   }
 
   // @todo Add a soft delete method

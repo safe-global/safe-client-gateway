@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
@@ -10,6 +11,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
@@ -17,6 +19,7 @@ import type { IUsersRepository } from '@/modules/users/domain/users.repository.i
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const repositoryMock = {
   findAllBySpaceId: jest.fn(),
@@ -36,6 +39,10 @@ const walletsRepositoryMock = {
   find: jest.fn(),
 } as jest.MockedObjectDeep<IWalletsRepository>;
 
+const spacesRepositoryMock = {
+  findUuidById: jest.fn(),
+} as jest.MockedObjectDeep<ISpacesRepository>;
+
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
@@ -44,6 +51,7 @@ describe('AddressBooksService', () => {
     configurationServiceMock.getOrThrow.mockReturnValue(20);
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
+    spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
     service = new AddressBooksService(
       repositoryMock,
       new UserIdentityResolverService(
@@ -51,6 +59,7 @@ describe('AddressBooksService', () => {
         walletsRepositoryMock,
       ),
       configurationServiceMock,
+      spacesRepositoryMock,
     );
   });
 

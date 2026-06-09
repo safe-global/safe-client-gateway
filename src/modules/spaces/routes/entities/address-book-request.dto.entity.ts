@@ -55,8 +55,16 @@ export class AddressBookRequestItemDto {
 }
 
 export class AddressBookRequestsDto {
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    deprecated: true,
+    description:
+      'Numeric Space id (deprecated, use spaceUuid). Kept for FE fallback',
+  })
   public spaceId!: string;
+
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  public spaceUuid!: string;
 
   @ApiProperty({ type: AddressBookRequestItemDto, isArray: true })
   public data!: Array<AddressBookRequestItemDto>;

@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
 import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('DeleteAllSubscriptionsDtoSchema', () => {
   it('should validate a valid DeleteAllSubscriptionsDto', () => {
@@ -36,7 +37,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
     const subscriptions = [
       {
         chainId: faker.string.numeric(),
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         safeAddress: getAddress(faker.finance.ethereumAddress()),
       },
     ];
@@ -116,7 +117,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       subscriptions: [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: nonChecksummedAddress as Address,
         },
       ],
@@ -136,7 +137,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       subscriptions: [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: 'not-an-address' as Address,
         },
       ],
@@ -160,12 +161,12 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       subscriptions: [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ],
@@ -183,7 +184,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       subscriptions: [
         {
           chainId: 123 as unknown as string,
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ],
@@ -208,7 +209,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       subscriptions: [
         {
           chainId: faker.string.alpha(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ],
@@ -232,7 +233,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: getAddress(faker.finance.ethereumAddress()),
         },
@@ -251,7 +252,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           // signerAddress intentionally omitted
         },
@@ -274,7 +275,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: nonChecksummedAddress as Address,
         },
@@ -295,7 +296,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: 'not-an-address' as Address,
         },
@@ -320,7 +321,7 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: null,
         },
@@ -342,19 +343,19 @@ describe('DeleteAllSubscriptionsDtoSchema', () => {
       .with('subscriptions', [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           // signerAddress omitted (undefined)
         },
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: null,
         },
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
           signerAddress: getAddress(faker.finance.ethereumAddress()),
         },

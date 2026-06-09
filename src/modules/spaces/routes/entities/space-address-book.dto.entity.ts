@@ -48,8 +48,16 @@ export class SpaceAddressBookItemDto {
 }
 
 export class SpaceAddressBookDto {
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    deprecated: true,
+    description:
+      'Numeric Space id (deprecated, use spaceUuid). Kept for FE fallback',
+  })
   public spaceId!: string;
+
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  public spaceUuid!: string;
 
   @ApiProperty({ type: SpaceAddressBookItemDto, isArray: true })
   public data!: Array<SpaceAddressBookItemDto>;
@@ -83,8 +91,16 @@ export class UserAddressBookItemDto {
 }
 
 export class UserAddressBookDto {
-  @ApiProperty({ type: String })
+  @ApiProperty({
+    type: String,
+    deprecated: true,
+    description:
+      'Numeric Space id (deprecated, use spaceUuid). Kept for FE fallback',
+  })
   public spaceId!: string;
+
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  public spaceUuid!: string;
 
   @ApiProperty({ type: UserAddressBookItemDto, isArray: true })
   public data!: Array<UserAddressBookItemDto>;
