@@ -432,6 +432,60 @@ describe('SpaceSafesRepository', () => {
       );
     });
 
+    it('should not mention remaining slots when the Space is already at the limit', async () => {
+      const user = await dbUserRepo.insert({
+        status: 'ACTIVE',
+      });
+      const userId = user.identifiers[0].id as User['id'];
+      await dbWalletRepo.insert({
+        user: { id: userId },
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      await dbMembersRepository.insert({
+        user: { id: userId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        name: faker.word.noun(),
+        space: { id: spaceId },
+      });
+
+      await spaceSafesRepo.create({
+        spaceId: spaceId,
+        payload: faker.helpers.multiple(
+          () => ({
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+          }),
+          { count: maxSafesPerSpace },
+        ),
+      });
+
+      await expect(
+        spaceSafesRepo.create({
+          spaceId: spaceId,
+          payload: [
+            {
+              chainId: faker.string.numeric(),
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+        }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts.`,
+        ),
+      );
+
+      await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toHaveLength(
+        maxSafesPerSpace,
+      );
+    });
+
     it('should fail if a SpaceSafe with the same address and chainId already exists', async () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
