@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -8,6 +9,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
@@ -364,6 +366,7 @@ describe('ZerionPositionsApi', () => {
           undefined,
         );
 
+        const message = `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`;
         await expect(
           service.getPositions({
             chain,
@@ -371,8 +374,11 @@ describe('ZerionPositionsApi', () => {
             fiatCode,
           }),
         ).rejects.toThrow(
-          `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`,
+          new HttpExceptionNoLog(message, HttpStatus.UNPROCESSABLE_ENTITY),
         );
+        // Logged as warning so it does not trigger error alerts for
+        // networks that Zerion does not support.
+        expect(mockLoggingService.warn).toHaveBeenCalledWith(message);
       });
 
       it('should use chain mapping service when chainName is not configured', async () => {
