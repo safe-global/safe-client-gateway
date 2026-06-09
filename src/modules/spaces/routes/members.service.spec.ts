@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
   ConflictException,
@@ -12,6 +13,7 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
@@ -252,9 +254,11 @@ describe('MembersService', () => {
         .with('role', 'ADMIN')
         .with('status', 'ACTIVE')
         .build();
+      const spaceUuid = faker.string.uuid() as UUID;
       const emailInvitation = {
         userId: faker.number.int({ min: 1 }),
         spaceId,
+        spaceUuid,
         name: emailInvite.name,
         role: emailInvite.role,
         status: 'INVITED' as const,
@@ -263,6 +267,7 @@ describe('MembersService', () => {
       const walletInvitation = {
         userId: faker.number.int({ min: 1 }),
         spaceId,
+        spaceUuid,
         name: walletInvite.name,
         role: walletInvite.role,
         status: 'INVITED' as const,
@@ -348,9 +353,11 @@ describe('MembersService', () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
+      const spaceUuid = faker.string.uuid() as UUID;
       const targetMember = memberBuilder()
         .with('status', 'INVITED')
         .with('role', 'MEMBER')
+        .with('space', { id: spaceId, uuid: spaceUuid } as Space)
         .build();
       const adminMember = memberBuilder()
         .with('role', 'ADMIN')
@@ -368,6 +375,7 @@ describe('MembersService', () => {
         ).resolves.toEqual({
           userId,
           spaceId,
+          spaceUuid,
           name: targetMember.name,
           role: targetMember.role,
           status: 'INVITED',

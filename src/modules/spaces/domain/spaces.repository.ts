@@ -231,6 +231,16 @@ export class SpacesRepository implements ISpacesRepository {
     return space.id;
   }
 
+  // TODO: remove after FE removes numeric Space ID fallback. Used to echo the
+  // Space UUID alongside the deprecated numeric id in responses.
+  public async findUuidById(id: Space['id']): Promise<Space['uuid']> {
+    const space = await this.findOneOrFail({
+      where: { id },
+      select: { uuid: true },
+    });
+    return space.uuid;
+  }
+
   // TODO: remove after FE removes numeric Space ID fallback.
   // UUID is re-validated here (defence in depth) so a malformed string can't
   // reach Postgres as a UUID and surface as a raw 500 instead of a 400.

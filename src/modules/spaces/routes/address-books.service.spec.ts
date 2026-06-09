@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
@@ -10,6 +11,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
@@ -36,6 +38,10 @@ const walletsRepositoryMock = {
   find: jest.fn(),
 } as jest.MockedObjectDeep<IWalletsRepository>;
 
+const spacesRepositoryMock = {
+  findUuidById: jest.fn(),
+} as jest.MockedObjectDeep<ISpacesRepository>;
+
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
@@ -44,6 +50,9 @@ describe('AddressBooksService', () => {
     configurationServiceMock.getOrThrow.mockReturnValue(20);
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
+    spacesRepositoryMock.findUuidById.mockResolvedValue(
+      faker.string.uuid() as UUID,
+    );
     service = new AddressBooksService(
       repositoryMock,
       new UserIdentityResolverService(
@@ -51,6 +60,7 @@ describe('AddressBooksService', () => {
         walletsRepositoryMock,
       ),
       configurationServiceMock,
+      spacesRepositoryMock,
     );
   });
 

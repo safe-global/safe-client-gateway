@@ -66,6 +66,9 @@ export interface ISpacesRepository {
   findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
 
   // TODO: remove after FE removes numeric Space ID fallback.
+  findUuidById(id: Space['id']): Promise<Space['uuid']>;
+
+  // TODO: remove after FE removes numeric Space ID fallback.
   findIdByIdOrUuid(value: string): Promise<Space['id']>;
 
   delete(id: number): Promise<void>;

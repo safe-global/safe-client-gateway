@@ -170,16 +170,20 @@ export class AddressBookRequestsService {
     spaceId: Space['id'],
     requests: Array<AddressBookRequest>,
   ): Promise<AddressBookRequestsDto> {
-    const identityMap = await this.identityResolver.resolveMany(
-      requests.flatMap((r) =>
-        r.reviewedBy !== null
-          ? [r.requestedBy.id, r.reviewedBy]
-          : [r.requestedBy.id],
+    const [identityMap, spaceUuid] = await Promise.all([
+      this.identityResolver.resolveMany(
+        requests.flatMap((r) =>
+          r.reviewedBy !== null
+            ? [r.requestedBy.id, r.reviewedBy]
+            : [r.requestedBy.id],
+        ),
       ),
-    );
+      this.spacesRepository.findUuidById(spaceId),
+    ]);
 
     return {
       spaceId: spaceId.toString(),
+      spaceUuid,
       data: requests.map((request) => this.toDto(request, identityMap)),
     };
   }

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
@@ -8,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { surveyBuilder } from '@/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
 import type {
   Survey,
@@ -32,6 +34,10 @@ const membersRepositoryMock = {
   findOne: jest.fn(),
 } as unknown as jest.MockedObjectDeep<IMembersRepository>;
 
+const spacesRepositoryMock = {
+  findUuidById: jest.fn(),
+} as jest.MockedObjectDeep<ISpacesRepository>;
+
 function buildSurvey(pages: Array<SurveyPage>): Survey {
   return surveyBuilder()
     .with('slug', 'onboarding')
@@ -55,9 +61,16 @@ describe('SurveysService', () => {
 
   beforeEach(() => {
     jest.resetAllMocks();
-    service = new SurveysService(surveysRepositoryMock, membersRepositoryMock);
+    service = new SurveysService(
+      surveysRepositoryMock,
+      membersRepositoryMock,
+      spacesRepositoryMock,
+    );
     userId = faker.number.int({ min: 1, max: 1_000_000 });
     spaceId = faker.number.int({ min: 1, max: 1_000_000 });
+    spacesRepositoryMock.findUuidById.mockResolvedValue(
+      faker.string.uuid() as UUID,
+    );
     authPayload = new AuthPayload(
       oidcAuthPayloadDtoBuilder().with('sub', String(userId)).build(),
     );

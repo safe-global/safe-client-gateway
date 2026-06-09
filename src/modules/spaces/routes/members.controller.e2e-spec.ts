@@ -88,7 +88,12 @@ describe('MembersController', () => {
   // Callers reuse the returned `accessToken` for their admin operations.
   const createSpaceForSigner = async (
     spaceName: string,
-  ): Promise<{ accessToken: string; spaceId: number; userId: number }> => {
+  ): Promise<{
+    accessToken: string;
+    spaceId: number;
+    spaceUuid: string;
+    userId: number;
+  }> => {
     const walletResponse = await request(app.getHttpServer())
       .post('/v1/users/wallet')
       .set('Cookie', [
@@ -102,7 +107,12 @@ describe('MembersController', () => {
       .set('Cookie', [`access_token=${accessToken}`])
       .send({ name: spaceName })
       .expect(201);
-    return { accessToken, spaceId: createSpaceResponse.body.id, userId };
+    return {
+      accessToken,
+      spaceId: createSpaceResponse.body.id,
+      spaceUuid: createSpaceResponse.body.uuid,
+      userId,
+    };
   };
 
   it('should require authentication for every endpoint', () => {
@@ -123,7 +133,7 @@ describe('MembersController', () => {
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
 
-      const { accessToken, spaceId, userId } =
+      const { accessToken, spaceId, spaceUuid, userId } =
         await createSpaceForSigner(spaceName);
 
       await request(app.getHttpServer())
@@ -149,6 +159,7 @@ describe('MembersController', () => {
             {
               userId: expect.any(Number),
               spaceId,
+              spaceUuid,
               name: user1Name,
               role: 'ADMIN',
               status: 'INVITED',
@@ -157,6 +168,7 @@ describe('MembersController', () => {
             {
               userId: expect.any(Number),
               spaceId,
+              spaceUuid,
               name: user2Name,
               role: 'MEMBER',
               status: 'INVITED',
@@ -513,9 +525,8 @@ describe('MembersController', () => {
 
   describe('POST /v1/spaces/:spaceId/members/:userId/invite/renew', () => {
     it('should renew a pending invite, preserving its metadata', async () => {
-      const { accessToken, spaceId, userId } = await createSpaceForSigner(
-        nameBuilder(),
-      );
+      const { accessToken, spaceId, spaceUuid, userId } =
+        await createSpaceForSigner(nameBuilder());
       const inviteeAddress = getAddress(faker.finance.ethereumAddress());
       const inviteeName = faker.person.firstName();
 
@@ -538,6 +549,7 @@ describe('MembersController', () => {
           expect(body).toEqual({
             userId: inviteeUserId,
             spaceId,
+            spaceUuid,
             name: inviteeName,
             role: 'MEMBER',
             status: 'INVITED',

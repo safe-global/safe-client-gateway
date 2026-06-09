@@ -79,13 +79,13 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
-    const { id, user, name, status, role, invitedBy } =
+    const { id, user, name, status, role, invitedBy, space } =
       await this.membersRepository.findOneOrFail(
         {
           user: { id: args.userId },
           space: { id: args.spaceId },
         },
-        { user: true },
+        { user: true, space: true },
       );
     if (status !== 'INVITED') {
       throw new ConflictException('Only a pending invitation can be renewed.');
@@ -106,6 +106,7 @@ export class MembersService {
     return {
       userId: args.userId,
       spaceId: args.spaceId,
+      spaceUuid: space.uuid,
       name,
       role,
       status,
