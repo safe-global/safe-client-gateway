@@ -41,6 +41,7 @@ const configurationServiceMock = {
 
 const spaceInviteEmailServiceMock = {
   enqueueInviteEmails: jest.fn(),
+  enqueueRenewalEmail: jest.fn(),
 } as jest.MockedObjectDeep<SpaceInviteEmailService>;
 
 describe('MembersService', () => {
@@ -379,6 +380,84 @@ describe('MembersService', () => {
       } finally {
         jest.useRealTimers();
       }
+    });
+
+    it('should load the member with its user relation', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const targetMember = memberBuilder().with('status', 'INVITED').build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+
+      await service.renewInvite({ authPayload, spaceId, userId });
+
+      expect(membersRepositoryMock.findOneOrFail).toHaveBeenCalledWith(
+        { user: { id: userId }, space: { id: spaceId } },
+        { user: true },
+      );
+    });
+
+    it('should enqueue a renewal email when the invited member has an email', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const email = fakeEmailAddress();
+      const targetMember = memberBuilder()
+        .with('status', 'INVITED')
+        .with('role', 'MEMBER')
+        .with('user', userBuilder().with('email', email).build())
+        .build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+
+      await service.renewInvite({ authPayload, spaceId, userId });
+
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).toHaveBeenCalledWith({
+        name: targetMember.name,
+        email,
+        spaceId,
+      });
+    });
+
+    it('should not enqueue a renewal email when the invited member has no email', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const targetMember = memberBuilder()
+        .with('status', 'INVITED')
+        .with('role', 'MEMBER')
+        .with('user', userBuilder().with('email', null).build())
+        .build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+
+      await service.renewInvite({ authPayload, spaceId, userId });
+
+      expect(membersRepositoryMock.renewInvite).toHaveBeenCalledTimes(1);
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).not.toHaveBeenCalled();
     });
   });
 });

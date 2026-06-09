@@ -195,7 +195,14 @@ export const RootConfigurationSchema = z
     CAPTCHA_SECRET_KEY: z.string().optional(),
   })
   .superRefine((config, ctx) => {
-    // Check for AWS_* and Blockaid fields in production and staging environments
+    // These fields are only required in deployed (production/staging) environments.
+    const isDeployedEnv =
+      !!config.CGW_ENV && ['production', 'staging'].includes(config.CGW_ENV);
+    if (!isDeployedEnv) {
+      return;
+    }
+    const isSesEnabled = config.FF_SES_EMAIL?.toLowerCase() === 'true';
+
     for (const {
       field,
       requiredWhen = true,
@@ -211,18 +218,12 @@ export const RootConfigurationSchema = z
       // SES permissions are set via IRSA in deployed environments, not static AWS keys.
       {
         field: 'AWS_WEB_IDENTITY_TOKEN_FILE',
-        requiredWhen: config.FF_SES_EMAIL?.toLowerCase() === 'true',
+        requiredWhen: isSesEnabled,
         message:
           'is required in production and staging environments when SES email is enabled',
       },
     ]) {
-      if (
-        config.CGW_ENV &&
-        config instanceof Object &&
-        ['production', 'staging'].includes(config.CGW_ENV) &&
-        requiredWhen &&
-        !(config as Record<string, unknown>)[field]
-      ) {
+      if (requiredWhen && !(config as Record<string, unknown>)[field]) {
         ctx.addIssue({ code: 'custom', message, path: [field] });
       }
     }
