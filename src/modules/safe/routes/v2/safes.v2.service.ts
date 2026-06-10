@@ -39,7 +39,7 @@ type ResolvedEntry = {
 @Injectable()
 export class SafesV2Service {
   private readonly maxOverviews: number;
-  private readonly zerionBalancesEnabled: boolean;
+  private readonly zerionEnabled: boolean;
 
   constructor(
     @Inject(ISafeRepository)
@@ -58,8 +58,8 @@ export class SafesV2Service {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
     );
-    this.zerionBalancesEnabled = configurationService.getOrThrow<boolean>(
-      'features.zerionBalancesEnabled',
+    this.zerionEnabled = configurationService.getOrThrow<boolean>(
+      'features.zerionEnabled',
     );
   }
 
@@ -202,7 +202,7 @@ export class SafesV2Service {
   private async resolveZerionEligibility(
     chainsById: Map<string, Chain | null>,
   ): Promise<Map<string, boolean>> {
-    if (!this.zerionBalancesEnabled) {
+    if (!this.zerionEnabled) {
       return new Map();
     }
     return new Map(
