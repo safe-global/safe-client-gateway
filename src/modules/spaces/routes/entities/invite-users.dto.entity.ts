@@ -46,6 +46,7 @@ export const InviteUserSchema = z.discriminatedUnion('type', [
 ]);
 
 export type InviteUserInput = z.infer<typeof InviteUserSchema>;
+export type EmailInviteUserInput = z.infer<typeof EmailInviteUserSchema>;
 
 // Defaults missing `type` to wallet so legacy clients keep working.
 // TODO: remove once wallet-1 wa-2052 ships.

@@ -50,7 +50,7 @@ export class SpacesService {
   }
 
   public async getActiveOrInvitedSpace(
-    id: number,
+    id: Space['id'],
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     const [space] = await this.findSpaces(authPayload, id);
@@ -62,7 +62,7 @@ export class SpacesService {
 
   private async findSpaces(
     authPayload: AuthPayload,
-    spaceId?: number,
+    spaceId?: Space['id'],
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
@@ -81,6 +81,7 @@ export class SpacesService {
       where: { id: In(members.map((member) => member.space.id)) },
       select: {
         id: true,
+        uuid: true,
         name: true,
         members: {
           role: true,
@@ -104,6 +105,7 @@ export class SpacesService {
 
       return {
         id: space.id,
+        uuid: space.uuid,
         name: space.name,
         members: space.members.map((member) => ({
           ...member,

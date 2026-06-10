@@ -6,6 +6,7 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { UserAddressBookItem } from '@/modules/spaces/domain/address-books/entities/user-address-book-item.entity';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UserAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
@@ -21,6 +22,8 @@ export class UserAddressBookService {
     private readonly membersRepository: IMembersRepository,
     @Inject(UserIdentityResolverService)
     private readonly identityResolver: UserIdentityResolverService,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
   ) {}
 
   public async findAll(
@@ -75,12 +78,16 @@ export class UserAddressBookService {
     userId: number,
     items: Array<UserAddressBookItem>,
   ): Promise<UserAddressBookDto> {
-    const identityMap = await this.identityResolver.resolveMany([userId]);
+    const [identityMap, spaceUuid] = await Promise.all([
+      this.identityResolver.resolveMany([userId]),
+      this.spacesRepository.findUuidById(spaceId),
+    ]);
     const createdBy =
       identityMap.get(userId) ?? UserIdentityResolverService.DELETED_USER_LABEL;
 
     return {
       spaceId: spaceId.toString(),
+      spaceUuid,
       data: items.map((item) => ({
         name: item.name,
         address: item.address,

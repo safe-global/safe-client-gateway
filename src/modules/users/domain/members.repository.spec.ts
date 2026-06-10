@@ -85,6 +85,7 @@ describe('MembersRepository', () => {
         {
           userId: wallet.user.id,
           spaceId: space.id,
+          spaceUuid: space.uuid,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
