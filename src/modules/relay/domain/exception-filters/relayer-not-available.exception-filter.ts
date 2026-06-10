@@ -19,9 +19,14 @@ export class RelayerNotAvailableExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    response.status(HttpStatus.FORBIDDEN).json({
+    const statusCode =
+      exception instanceof RelayerTypeNotImplementedError
+        ? HttpStatus.NOT_IMPLEMENTED
+        : HttpStatus.FORBIDDEN;
+
+    response.status(statusCode).json({
       message: exception.message,
-      statusCode: HttpStatus.FORBIDDEN,
+      statusCode,
     });
   }
 }
