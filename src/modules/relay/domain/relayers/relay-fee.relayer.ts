@@ -332,7 +332,7 @@ export class RelayFeeRelayer implements IRelayer {
     // Without a safeTxHash we cannot query the fee service; report optimistically
     // since per-transaction eligibility is enforced in relay().
     if (!args.safeTxHash) {
-      return { remaining: 1, limit: 1 };
+      return { remaining: 0, limit: 0 };
     }
 
     // For relay-fee, the FeeService API is the authority on relay eligibility.
