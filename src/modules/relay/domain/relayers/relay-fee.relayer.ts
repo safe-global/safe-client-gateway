@@ -1,27 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from "@nestjs/common";
-import type { Address, Hex } from "viem";
-import { LogType } from "@/domain/common/entities/log-type.entity";
-import { IFeeServiceApi } from "@/domain/interfaces/fee-service-api.interface";
-import { IRelayApi } from "@/domain/interfaces/relay-api.interface";
-import { ITenderlySimulationApi } from "@/domain/interfaces/tenderly-simulation-api.interface";
+import { Inject, Injectable } from '@nestjs/common';
+import type { Address, Hex } from 'viem';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
+import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from "@/logging/logging.interface";
+} from '@/logging/logging.interface';
 import {
   type Relay,
   RelaySchema,
-} from "@/modules/relay/domain/entities/relay.entity";
-import type { RelayEligibility } from "@/modules/relay/domain/entities/relay-eligibility.entity";
-import { RelaySimulationFailedError } from "@/modules/relay/domain/errors/relay-simulation-failed.error";
-import { RelaySimulationIndeterminateError } from "@/modules/relay/domain/errors/relay-simulation-indeterminate.error";
-import { RelayTxDeniedError } from "@/modules/relay/domain/errors/relay-tx-denied.error";
-import { SafeTxHashMismatchError } from "@/modules/relay/domain/errors/safe-tx-hash-mismatch.error";
-import { UnofficialProxyFactoryError } from "@/modules/relay/domain/errors/unofficial-proxy-factory.error";
-import type { IRelayer } from "@/modules/relay/domain/interfaces/relayer.interface";
-import { RelayTransactionHelper } from "@/modules/relay/domain/relay-transaction-helper";
-import { SafeTransaction } from "@/modules/transactions/domain/entities/safe-transaction.entity";
+} from '@/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
+import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
+import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
+import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
+import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
+import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
 
 /**
  * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
@@ -30,7 +30,7 @@ import { SafeTransaction } from "@/modules/transactions/domain/entities/safe-tra
  * flows debit the Safe to a third party (as they would in production).
  */
 const SIMULATION_SENDER_SENTINEL: Address =
-  "0x000000000000000000000000000000000000dEaD";
+  '0x000000000000000000000000000000000000dEaD';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
@@ -241,7 +241,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(safeTxHash);
     }
 
-    if (simulation?.status === "failed") {
+    if (simulation?.status === 'failed') {
       // Tenderly confirmed the transaction would revert => Block relay
       this.loggingService.warn({
         type: LogType.TxRelayEligibility,
@@ -250,7 +250,7 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
     }
 
-    if (simulation?.status === "indeterminate") {
+    if (simulation?.status === 'indeterminate') {
       if (!acceptUnverifiedSimulation) {
         this.loggingService.warn({
           type: LogType.TxRelayEligibility,
