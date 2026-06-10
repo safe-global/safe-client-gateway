@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import uniqBy from 'lodash/uniqBy';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
@@ -10,6 +10,8 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
@@ -58,6 +60,10 @@ export class PushNotificationService implements IPushNotificationService {
     private readonly messagesRepository: IMessagesRepository,
     @Inject(INotificationsRepositoryV2)
     private readonly notificationsRepository: INotificationsRepositoryV2,
+    @Inject(IBalancesRepository)
+    private readonly balancesRepository: IBalancesRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
   /**
    * Enqueues a push notification event for processing.
@@ -85,6 +91,22 @@ export class PushNotificationService implements IPushNotificationService {
    */
   async processEvent(event: Event): Promise<number> {
     if (!this.isEventToNotify(event)) {
+      return 0;
+    }
+
+    // Drop incoming token transfers for spam/unknown tokens so notifications match
+    // what the app actually shows in its (spam-filtered) asset list. See WA-1677.
+    if (
+      event.type === TransactionEventType.INCOMING_TOKEN &&
+      !(await this.isTokenOnAssetList(event))
+    ) {
+      this.loggingService.info({
+        type: LogType.NotificationSpamTokenDropped,
+        eventType: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        tokenAddress: event.tokenAddress,
+      });
       return 0;
     }
 
@@ -425,6 +447,42 @@ export class PushNotificationService implements IPushNotificationService {
     }
 
     return event;
+  }
+
+  /**
+   * Checks whether the incoming token is present in the Safe's spam-filtered balances.
+   * A token, filtered out as spam never appears in the asset list, so the notification is suppressed.
+   *
+   * Fails safe: if the chain or balances lookup is unavailable, returns false so the
+   * push is suppressed rather than risking a notification for a possible spam token.
+   *
+   * @param event - {@link IncomingTokenEvent} to check
+   * @returns True if the token is on the Safe's asset list, false otherwise
+   */
+  private async isTokenOnAssetList(
+    event: IncomingTokenEvent,
+  ): Promise<boolean> {
+    try {
+      const chain = await this.chainsRepository.getChain(event.chainId);
+      const balances = await this.balancesRepository.getBalances({
+        chain,
+        safeAddress: event.address,
+        fiatCode: 'USD',
+        // Mirror the asset-list defaults so push matches what the app shows.
+        trusted: false,
+        excludeSpam: true,
+      });
+      return balances.some(
+        (balance) =>
+          balance.tokenAddress !== null &&
+          isAddressEqual(balance.tokenAddress, event.tokenAddress),
+      );
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to check token asset list for chain=${event.chainId} safe=${event.address} token=${event.tokenAddress}: ${asError(error).message}`,
+      );
+      return false;
+    }
   }
 
   /**

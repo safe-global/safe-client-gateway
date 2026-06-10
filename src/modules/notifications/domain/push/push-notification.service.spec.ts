@@ -8,6 +8,10 @@ import { LogType } from '@/domain/common/entities/log-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
+import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
+import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
@@ -19,6 +23,7 @@ import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tes
 import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
 import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
 import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
 import type { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
@@ -69,6 +74,14 @@ const mockNotificationsRepository = jest.mocked({
   getSubscribersBySafe: jest.fn(),
 } as jest.MockedObjectDeep<INotificationsRepositoryV2>);
 
+const mockBalancesRepository = jest.mocked({
+  getBalances: jest.fn(),
+} as jest.MockedObjectDeep<IBalancesRepository>);
+
+const mockChainsRepository = jest.mocked({
+  getChain: jest.fn(),
+} as jest.MockedObjectDeep<IChainsRepository>);
+
 function createSafe(
   overrides?: Partial<{ owners: Array<Address>; threshold: number }>,
 ): Safe {
@@ -95,8 +108,24 @@ describe('PushNotificationService (Unit)', () => {
       mockDelegatesRepository,
       mockMessagesRepository,
       mockNotificationsRepository,
+      mockBalancesRepository,
+      mockChainsRepository,
     );
+
+    mockChainsRepository.getChain.mockResolvedValue(chainBuilder().build());
+    mockBalancesRepository.getBalances.mockResolvedValue([]);
   });
+
+  /**
+   * Stubs the balances response so the incoming token appears on the Safe's
+   * asset list (i.e. it passed the spam filter), allowing the notification to
+   * proceed past the spam gate.
+   */
+  function allowToken(event: { tokenAddress: Address }): void {
+    mockBalancesRepository.getBalances.mockResolvedValue([
+      balanceBuilder().with('tokenAddress', event.tokenAddress).build(),
+    ]);
+  }
 
   describe('enqueueEvent', () => {
     it('should call addJob with PUSH_NOTIFICATION_EVENT and the event', async () => {
@@ -151,6 +180,9 @@ describe('PushNotificationService (Unit)', () => {
       notifiableBuilders,
     )('should process $name events (notifiable)', async ({ builder }) => {
       const event = builder().build();
+      if (event.type === TransactionEventType.INCOMING_TOKEN) {
+        allowToken(event);
+      }
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
       // For owner-only events, provide a Safe
       mockSafeRepository.getSafe.mockResolvedValue(createSafe());
@@ -181,6 +213,7 @@ describe('PushNotificationService (Unit)', () => {
   describe('processEvent - subscriber resolution', () => {
     it('should return all subscribers for non-owner-only events (INCOMING_TOKEN)', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub1 = createSubscriber();
       const sub2 = createSubscriber();
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
@@ -241,6 +274,7 @@ describe('PushNotificationService (Unit)', () => {
 
     it('should handle empty subscriber list', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
 
       const result = await service.processEvent(event);
@@ -258,6 +292,9 @@ describe('PushNotificationService (Unit)', () => {
       ['INCOMING_ETHER', incomingEtherEventBuilder],
     ])('should suppress %s self-send (from === address)', async (_type, builderFn) => {
       const event = builderFn().build();
+      if (event.type === TransactionEventType.INCOMING_TOKEN) {
+        allowToken(event);
+      }
       const sub = createSubscriber();
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
@@ -407,6 +444,7 @@ describe('PushNotificationService (Unit)', () => {
   describe('processEvent - delivery resilience', () => {
     it('should continue enqueuing after one addJob failure', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub1 = createSubscriber();
       const sub2 = createSubscriber();
 
@@ -505,6 +543,7 @@ describe('PushNotificationService (Unit)', () => {
 
     it('should not call getSafe for non-owner-only events (INCOMING_TOKEN)', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub = createSubscriber();
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
@@ -531,6 +570,7 @@ describe('PushNotificationService (Unit)', () => {
   describe('processEvent - logging on silent errors', () => {
     it('should log warning and suppress notification when getIncomingTransfers fails', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub = createSubscriber();
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
@@ -555,6 +595,7 @@ describe('PushNotificationService (Unit)', () => {
   describe('processEvent - structured logging', () => {
     it('should log NotificationDeliveryQueued for each delivery job created', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub1 = createSubscriber();
       const sub2 = createSubscriber();
 
@@ -593,6 +634,7 @@ describe('PushNotificationService (Unit)', () => {
 
     it('should log NotificationEventProcessed after event processing completes', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub = createSubscriber();
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
@@ -623,6 +665,7 @@ describe('PushNotificationService (Unit)', () => {
 
     it('should log NotificationEventProcessed with deliveryJobCount 0 for skipped events', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
 
@@ -634,6 +677,163 @@ describe('PushNotificationService (Unit)', () => {
           deliveryJobCount: 0,
         }),
       );
+    });
+  });
+
+  // ── processEvent: Spam Token Filtering ──
+
+  describe('processEvent - spam token filtering (INCOMING_TOKEN)', () => {
+    it('should suppress the push when the token is NOT on the asset list (spam)', async () => {
+      const event = incomingTokenEventBuilder().build();
+      // Token absent from the spam-filtered balances → treated as spam.
+      mockBalancesRepository.getBalances.mockResolvedValue([
+        balanceBuilder().build(),
+      ]);
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(0);
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+      // Gated before subscriber resolution — no wasted lookups.
+      expect(
+        mockNotificationsRepository.getSubscribersBySafe,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should log NotificationSpamTokenDropped when dropped as spam', async () => {
+      const event = incomingTokenEventBuilder().build();
+      mockBalancesRepository.getBalances.mockResolvedValue([]);
+
+      await service.processEvent(event);
+
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.NotificationSpamTokenDropped,
+          eventType: event.type,
+          chainId: event.chainId,
+          address: event.address,
+          tokenAddress: event.tokenAddress,
+        }),
+      );
+
+      expect(mockLoggingService.info).not.toHaveBeenCalledWith(
+        expect.objectContaining({ type: LogType.NotificationEventProcessed }),
+      );
+    });
+
+    it('should push when the token IS on the asset list', async () => {
+      const event = incomingTokenEventBuilder().build();
+      allowToken(event);
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+        pageBuilder<Transfer>()
+          .with('results', [
+            nativeTokenTransferBuilder()
+              .with('transactionHash', event.txHash as Hash)
+              .with('from', addr())
+              .build(),
+          ])
+          .build(),
+      );
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(1);
+      expect(mockBalancesRepository.getBalances).toHaveBeenCalledWith(
+        expect.objectContaining({
+          safeAddress: event.address,
+          trusted: false,
+          excludeSpam: true,
+        }),
+      );
+    });
+
+    it('should match the token case-insensitively (checksum vs lowercase)', async () => {
+      const event = incomingTokenEventBuilder().build();
+      // Balance carries the same address in lowercase form.
+      mockBalancesRepository.getBalances.mockResolvedValue([
+        balanceBuilder()
+          .with('tokenAddress', event.tokenAddress.toLowerCase() as Address)
+          .build(),
+      ]);
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+        pageBuilder<Transfer>().with('results', []).build(),
+      );
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(1);
+    });
+
+    it('should NOT apply the gate to INCOMING_ETHER (native) events', async () => {
+      const event = incomingEtherEventBuilder().build();
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+        pageBuilder<Transfer>().with('results', []).build(),
+      );
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(1);
+      expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
+    });
+
+    it('should NOT apply the gate to non-asset events (EXECUTED_MULTISIG_TRANSACTION)', async () => {
+      const event = executedTransactionEventBuilder().build();
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      await service.processEvent(event);
+
+      expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
+    });
+
+    it('should fail safe (suppress) and log when getBalances throws', async () => {
+      const event = incomingTokenEventBuilder().build();
+      mockBalancesRepository.getBalances.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(0);
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to check token asset list'),
+      );
+    });
+
+    it('should fail safe (suppress) when getChain throws', async () => {
+      const event = incomingTokenEventBuilder().build();
+      mockChainsRepository.getChain.mockRejectedValue(
+        new Error('Unknown chain'),
+      );
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(0);
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
     });
   });
 
@@ -747,6 +947,7 @@ describe('PushNotificationService (Unit)', () => {
   describe('processEvent - deduplication', () => {
     it('should deduplicate subscribers by cloudMessagingToken', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sharedToken = faker.string.alphanumeric(32);
       const sub1 = { ...createSubscriber(), cloudMessagingToken: sharedToken };
       const sub2 = { ...createSubscriber(), cloudMessagingToken: sharedToken };
@@ -844,6 +1045,7 @@ describe('PushNotificationService (Unit)', () => {
   describe('processEvent - incoming transfers edge cases', () => {
     it('should send notification when getIncomingTransfers returns empty results', async () => {
       const event = incomingTokenEventBuilder().build();
+      allowToken(event);
       const sub = createSubscriber();
 
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
