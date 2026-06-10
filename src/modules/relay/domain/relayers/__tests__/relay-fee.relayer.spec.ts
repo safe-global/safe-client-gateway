@@ -576,13 +576,13 @@ describe('RelayFeeRelayer', () => {
   });
 
   describe('getRelaysRemaining', () => {
-    it('should return optimistic 1 when no safeTxHash is provided', async () => {
+    it('should return 0 when no safeTxHash is provided', async () => {
       const result = await target.getRelaysRemaining({
         chainId,
         address: fakeAddress(),
       });
 
-      expect(result).toEqual({ remaining: 1, limit: 1 });
+      expect(result).toEqual({ remaining: 0, limit: 0 });
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
     });
 
