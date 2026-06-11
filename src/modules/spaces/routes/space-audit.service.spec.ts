@@ -330,6 +330,29 @@ describe('SpaceAuditService', () => {
         );
       });
 
+      it('should build page links from the clamped values, not the raw cursor', async () => {
+        mockViewer();
+        spaceAuditRepository.findBySpaceId.mockResolvedValue([
+          [spaceAuditLogBuilder().with('spaceId', spaceId).build()],
+          150,
+        ]);
+        const oversizedCursorUrl = new URL(
+          `https://safe.test/v1/spaces/${spaceId}/audit-log?cursor=limit%3D500%26offset%3D0`,
+        );
+
+        const page = await service.getAuditLog({
+          authPayload,
+          spaceId,
+          routeUrl: oversizedCursorUrl,
+          paginationData: PaginationData.fromCursor(oversizedCursorUrl),
+          filters: {},
+        });
+
+        // 100 of 150 rows were sent — there must be a next page at offset 100.
+        expect(page.next).toContain('cursor=limit%3D100%26offset%3D100');
+        expect(page.previous).toBeNull();
+      });
+
       it('should floor a negative offset at 0', async () => {
         mockViewer();
 

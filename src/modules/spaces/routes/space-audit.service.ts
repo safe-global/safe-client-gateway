@@ -57,6 +57,9 @@ export class SpaceAuditService {
 
     const limit = Math.min(args.paginationData.limit, MAX_LIMIT);
     const offset = Math.max(args.paginationData.offset, 0);
+    // Page links must be derived from the clamped values, not the raw cursor.
+    const normalizedUrl = new URL(args.routeUrl);
+    normalizedUrl.searchParams.set('cursor', `limit=${limit}&offset=${offset}`);
 
     const [rows, count] = await this.spaceAuditRepository.findBySpaceId({
       spaceId: args.spaceId,
@@ -78,8 +81,8 @@ export class SpaceAuditService {
 
     return {
       count,
-      next: buildNextPageURL(args.routeUrl, count)?.toString() ?? null,
-      previous: buildPreviousPageURL(args.routeUrl)?.toString() ?? null,
+      next: buildNextPageURL(normalizedUrl, count)?.toString() ?? null,
+      previous: buildPreviousPageURL(normalizedUrl)?.toString() ?? null,
       results: rows.map((row) => this.toEntryDto(row, display)),
     };
   }
