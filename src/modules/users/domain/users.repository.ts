@@ -13,6 +13,9 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
+import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
@@ -28,6 +31,8 @@ export class UsersRepository implements IUsersRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
+    @Inject(ISpaceAuditRepository)
+    private readonly spaceAuditRepository: ISpaceAuditRepository,
   ) {}
 
   public async findOneOrFail(
@@ -150,10 +155,27 @@ export class UsersRepository implements IUsersRepository {
   public async delete(authPayload: AuthPayload): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
-    const userRepository =
-      await this.postgresDatabaseService.getRepository(DbUser);
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const memberships = await entityManager.find(DbMember, {
+        where: { user: { id: userId } },
+        relations: { space: true },
+      });
 
-    await userRepository.delete({ id: userId });
+      for (const membership of memberships) {
+        if (membership.status === 'DECLINED') {
+          continue;
+        }
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: membership.space.id,
+          spaceUuid: membership.space.uuid,
+          eventType: SpaceAuditEventType.MEMBER_LEFT,
+          actorUserId: userId,
+          payload: { targetUserId: userId, accountDeleted: true },
+        });
+      }
+
+      await entityManager.delete(DbUser, { id: userId });
+    });
   }
 
   public async deleteWalletFromUser(args: {

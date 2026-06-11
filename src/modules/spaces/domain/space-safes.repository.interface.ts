@@ -13,6 +13,7 @@ export const ISpaceSafesRepository = Symbol('ISpaceSafesRepository');
 export interface ISpaceSafesRepository {
   create(args: {
     spaceId: Space['id'];
+    actorUserId: number;
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
@@ -35,6 +36,7 @@ export interface ISpaceSafesRepository {
 
   delete(args: {
     spaceId: Space['id'];
+    actorUserId: number;
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];

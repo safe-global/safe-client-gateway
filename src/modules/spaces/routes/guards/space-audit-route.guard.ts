@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { type CanActivate, Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+
+@Injectable()
+export class SpaceAuditRouteGuard implements CanActivate {
+  constructor(
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {}
+
+  canActivate(): boolean {
+    return this.configurationService.getOrThrow<boolean>(
+      'features.spaceAuditLog',
+    );
+  }
+}

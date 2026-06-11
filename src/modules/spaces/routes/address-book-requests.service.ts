@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Address } from 'viem';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -42,6 +43,8 @@ export class AddressBookRequestsService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(UserIdentityResolverService)
     private readonly identityResolver: UserIdentityResolverService,
+    @Inject(PostgresDatabaseService)
+    private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
   public async findPending(
@@ -115,17 +118,18 @@ export class AddressBookRequestsService {
       spaceId,
     });
 
-    const claimed = await this.requestsRepository.transitionFromPending({
-      id: requestId,
-      spaceId,
-      toStatus: 'APPROVED',
-      reviewedBy: userId,
-    });
-    if (!claimed) {
-      throw new BadRequestException('Only pending requests can be approved.');
-    }
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const claimed = await this.requestsRepository.transitionFromPending({
+        id: requestId,
+        spaceId,
+        toStatus: 'APPROVED',
+        reviewedBy: userId,
+        entityManager,
+      });
+      if (!claimed) {
+        throw new BadRequestException('Only pending requests can be approved.');
+      }
 
-    try {
       await this.spaceAddressBookRepository.upsertMany({
         authPayload,
         spaceId,
@@ -137,14 +141,9 @@ export class AddressBookRequestsService {
           },
         ],
         createdByOverride: request.requestedBy.id,
+        entityManager,
       });
-    } catch (err) {
-      await this.requestsRepository.revertToPending({
-        id: requestId,
-        spaceId,
-      });
-      throw err;
-    }
+    });
   }
 
   public async reject(
