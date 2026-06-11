@@ -18,6 +18,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
@@ -103,6 +104,7 @@ describe('UsersRepository', () => {
     usersRepository = new UsersRepository(
       postgresDatabaseService,
       new WalletsRepository(postgresDatabaseService),
+      createMockSpaceAuditRepository(),
     );
   });
 
