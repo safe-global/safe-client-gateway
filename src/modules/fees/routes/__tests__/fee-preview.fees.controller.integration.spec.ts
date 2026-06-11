@@ -76,7 +76,9 @@ describe('Fees Controller', () => {
       .send(feePreviewTransactionDtoBuilder().build())
       .expect(400)
       .expect(({ body }) => {
-        expect(body.message).toBe('Pay with Safe not available for this chain');
+        expect(body.message).toBe(
+          `Accessing fee preview is only available for chains with ${RelayerType.RELAY_FEE} relayer`,
+        );
       });
   });
 
