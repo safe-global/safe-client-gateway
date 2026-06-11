@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from "@nestjs/common";
-import type { Address } from "viem";
-import { IFeeServiceApi } from "@/domain/interfaces/fee-service-api.interface";
-import { IChainsRepository } from "@/modules/chains/domain/chains.repository.interface";
-import { FeePreviewResponse } from "@/modules/fees/routes/entities/fee-preview-response.entity";
-import type { FeePreviewTransactionDto } from "@/modules/fees/routes/entities/fee-preview-transaction.dto.entity";
-import { RelayerType } from "@/modules/relay/domain/entities/relayer-type.entity";
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
+import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
+import type { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 
 @Injectable()
 export class FeesService {
