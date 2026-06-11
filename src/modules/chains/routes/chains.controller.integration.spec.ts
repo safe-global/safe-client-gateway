@@ -119,6 +119,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[0].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[0].relayer,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -148,6 +149,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[1].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[1].relayer,
             },
           ],
         });
@@ -236,6 +238,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[0].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[0].relayer,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -265,6 +268,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[1].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[1].relayer,
             },
           ],
         });
@@ -338,6 +342,7 @@ describe('Chains Controller', () => {
           : chainDomain.ensRegistryAddress,
         balancesProvider: chainDomain.balancesProvider,
         recommendedMasterCopyVersion: chainDomain.recommendedMasterCopyVersion,
+        relayer: chainDomain.relayer,
       };
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainDomain),
