@@ -162,7 +162,7 @@ describe('Auth-redirect helper functions', () => {
       });
 
       it('should accept subdomain of allowed domain', () => {
-        const subdomain = faker.word.noun();
+        const subdomain = faker.internet.domainWord();
         const path = `/${faker.word.noun()}`;
         const url = `https://${subdomain}.${allowedDomain}${path}`;
 
