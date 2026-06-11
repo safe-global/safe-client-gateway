@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -82,6 +83,11 @@ describe('DataDecoderApi', () => {
         url: getDataDecodedUrl,
         notFoundExpireTimeSeconds,
         data: { chainId, to, data },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
+        },
       });
     });
 
@@ -123,6 +129,11 @@ describe('DataDecoderApi', () => {
         url: getDataDecodedUrl,
         notFoundExpireTimeSeconds,
         data: { chainId, to, data },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
+        },
       });
     });
   });
@@ -159,6 +170,9 @@ describe('DataDecoderApi', () => {
             chain_ids: contract.chainId.toString(),
             limit: undefined,
             offset: undefined,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });
@@ -209,6 +223,9 @@ describe('DataDecoderApi', () => {
             limit: undefined,
             offset: undefined,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
         },
       });
     });
@@ -254,6 +271,9 @@ describe('DataDecoderApi', () => {
             limit,
             offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
         },
       });
     });
@@ -292,6 +312,9 @@ describe('DataDecoderApi', () => {
             trusted_for_delegate_call: true,
             limit: undefined,
             offset: undefined,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });
@@ -340,6 +363,9 @@ describe('DataDecoderApi', () => {
             trusted_for_delegate_call: true,
             limit: undefined,
             offset: undefined,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });
