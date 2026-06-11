@@ -263,7 +263,7 @@ describe('SpacesService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].safeCount).toBe(2);
-      expect(result[1].safeCount).toBe(1);
+      expect(result[1].safeCount).toBe(0);
     });
 
     it('should populate invitedByName with wallet address for INVITED member', async () => {
@@ -312,6 +312,40 @@ describe('SpacesService', () => {
           invitedByName: walletAddress,
         }),
       );
+    });
+
+    it('should hide the roster and safe count from a pending invitee', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const caller = userBuilder().with('id', callerUserId).build();
+      const otherUser = userBuilder().with('id', faker.number.int()).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .build();
+      const otherMember = memberBuilder()
+        .with('user', otherUser)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('members', [callerMember, otherMember])
+          .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
+          .build(),
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].members).toHaveLength(1);
+      expect(result[0].members[0].user.id).toBe(callerUserId);
+      expect(result[0].safeCount).toBe(0);
     });
 
     it('should populate invitedByName with email for OIDC inviter (no wallet)', async () => {

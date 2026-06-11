@@ -97,7 +97,7 @@ describe('AddressBooksController', () => {
 
     it('should get an empty Space Address Book as member', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await inviteActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -147,7 +147,7 @@ describe('AddressBooksController', () => {
 
     it('should get a Space Address Book with items as member', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await inviteActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -183,7 +183,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the user declined the membership', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await invitePendingMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -590,7 +590,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the member is not an admin', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await invitePendingMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -720,7 +720,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the member is not an ADMIN', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await invitePendingMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -796,7 +796,9 @@ describe('AddressBooksController', () => {
     };
   };
 
-  const inviteMember = async (args: {
+  // Invites a member WITHOUT accepting — the member stays INVITED (pending)
+  // and may not read the space address book.
+  const invitePendingMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
@@ -811,6 +813,40 @@ describe('AddressBooksController', () => {
       .post(`/v1/spaces/${args.spaceId}/members/invite`)
       .set('Cookie', [`access_token=${args.adminAccessToken}`])
       .send({ users: [member] })
+      .expect(201);
+    return { memberAccessToken };
+  };
+
+  // Invites and accepts a member so they are ACTIVE — only active members may
+  // read a space's address book (see getSpaceAs / assertMember).
+  const inviteActiveMember = async (args: {
+    spaceId: string;
+    adminAccessToken: string;
+  }): Promise<{ memberAccessToken: string }> => {
+    const memberName = faker.person.firstName();
+    const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const inviteResponse = await request(app.getHttpServer())
+      .post(`/v1/spaces/${args.spaceId}/members/invite`)
+      .set('Cookie', [`access_token=${args.adminAccessToken}`])
+      .send({
+        users: [
+          {
+            role: 'MEMBER',
+            name: memberName,
+            address: memberAuthPayloadDto.signer_address,
+          },
+        ],
+      })
+      .expect(201);
+    const memberAccessToken = jwtService.sign(
+      siweAuthPayloadDtoBuilder()
+        .with('sub', inviteResponse.body[0].userId.toString())
+        .build(),
+    );
+    await request(app.getHttpServer())
+      .post(`/v1/spaces/${args.spaceId}/members/accept`)
+      .set('Cookie', [`access_token=${memberAccessToken}`])
+      .send({ name: memberName })
       .expect(201);
     return { memberAccessToken };
   };

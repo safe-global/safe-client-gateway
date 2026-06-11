@@ -266,6 +266,21 @@ describe('AddressBookItemsRepository', () => {
         }),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
+
+    it('should throw a NotFoundException if the user is only INVITED (not accepted)', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const authPayload = await addMemberToSpaceWithStatus(
+        spaceId,
+        'INVITED',
+        faker.date.future(),
+      );
+      await expect(
+        addressBookItemsRepository.findAllBySpaceId({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
+    });
   });
 
   describe('upsertMany', () => {
