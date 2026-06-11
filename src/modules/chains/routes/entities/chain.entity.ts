@@ -31,6 +31,7 @@ import {
   NativeCurrency as ApiNativeCurrency,
   type NativeCurrency,
 } from '@/modules/chains/routes/entities/native-currency.entity';
+import { Relayer } from '@/modules/chains/routes/entities/relayer.entity';
 import {
   RpcUri as ApiRpcUri,
   type RpcUri,
@@ -97,6 +98,8 @@ export class Chain {
   theme: ApiTheme;
   @ApiPropertyOptional({ type: String, nullable: true })
   recommendedMasterCopyVersion: string | null;
+  @ApiPropertyOptional({ type: Relayer, nullable: true })
+  relayer: Relayer | null;
 
   constructor(args: {
     chainId: string;
@@ -121,6 +124,7 @@ export class Chain {
     chainLogoUri: string | null;
     balancesProvider: BalancesProvider;
     recommendedMasterCopyVersion: string | null;
+    relayer: Relayer | null;
   }) {
     this.chainId = args.chainId;
     this.chainName = args.chainName;
@@ -144,5 +148,6 @@ export class Chain {
     this.theme = args.theme;
     this.balancesProvider = args.balancesProvider;
     this.recommendedMasterCopyVersion = args.recommendedMasterCopyVersion;
+    this.relayer = args.relayer;
   }
 }
