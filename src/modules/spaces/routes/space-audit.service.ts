@@ -159,6 +159,7 @@ export class SpaceAuditService {
     const members = await this.membersRepository.find({
       where: { space: { id: spaceId }, status: 'ACTIVE' },
       relations: { user: true },
+      select: { id: true, user: { id: true } },
     });
     return new Set(members.map((member) => member.user.id));
   }

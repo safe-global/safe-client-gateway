@@ -13,17 +13,21 @@ import { DateStringSchema } from '@/validation/entities/schemas/date-string.sche
 export const SpaceAuditEventTypesQuerySchema = z
   .string()
   .transform((str, ctx) => {
-    return str.split(',').map((item) => {
-      const result = SpaceAuditEventTypeSchema.safeParse(item);
-      if (!result.success) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `Invalid event type "${item}"`,
-        });
-        return z.NEVER;
-      }
-      return result.data;
-    });
+    // An empty param behaves like an omitted one.
+    return str
+      .split(',')
+      .filter(Boolean)
+      .map((item) => {
+        const result = SpaceAuditEventTypeSchema.safeParse(item);
+        if (!result.success) {
+          ctx.addIssue({
+            code: 'custom',
+            message: `Invalid event type "${item}"`,
+          });
+          return z.NEVER;
+        }
+        return result.data;
+      });
   })
   .optional();
 

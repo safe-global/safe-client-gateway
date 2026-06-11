@@ -335,7 +335,7 @@ describe('SpaceAuditRepository', () => {
       }
     });
 
-    it('should record MEMBER_LEFT with accountDeleted for every space on user deletion', async () => {
+    it('should record MEMBER_LEFT with accountDeleted only for ACTIVE memberships on user deletion', async () => {
       const spaceA = await createSpaceWithAdmin();
       const spaceB = await createSpaceWithAdmin();
       const invitee = await createSiweUser();
@@ -357,21 +357,32 @@ describe('SpaceAuditRepository', () => {
           inviteExpiresAt: faker.date.future(),
         });
       }
+      // The invitee joins space A but never accepts the space B invite.
+      await membersRepository.acceptInvite({
+        authPayload: invitee.authPayload,
+        spaceId: spaceA.spaceId,
+        payload: { name: nameBuilder() },
+      });
 
       await usersRepository.delete(invitee.authPayload);
 
-      for (const space of [spaceA, spaceB]) {
-        const rows = await dbAuditRepo.findBy({
-          spaceId: space.spaceId,
+      const rowsA = await dbAuditRepo.findBy({
+        spaceId: spaceA.spaceId,
+        eventType: 'MEMBER_LEFT',
+      });
+      expect(rowsA).toHaveLength(1);
+      expect(rowsA[0].actorUserId).toBe(invitee.userId);
+      expect(rowsA[0].payload).toStrictEqual({
+        targetUserId: invitee.userId,
+        accountDeleted: true,
+      });
+      // A pending invite is not a departure.
+      await expect(
+        dbAuditRepo.countBy({
+          spaceId: spaceB.spaceId,
           eventType: 'MEMBER_LEFT',
-        });
-        expect(rows).toHaveLength(1);
-        expect(rows[0].actorUserId).toBe(invitee.userId);
-        expect(rows[0].payload).toStrictEqual({
-          targetUserId: invitee.userId,
-          accountDeleted: true,
-        });
-      }
+        }),
+      ).resolves.toBe(0);
       // The user and the cascading member rows are gone, the audit rows stay.
       await expect(
         dbUserRepo.findOneBy({ id: invitee.userId }),

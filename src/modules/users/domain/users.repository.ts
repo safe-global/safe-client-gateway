@@ -162,7 +162,8 @@ export class UsersRepository implements IUsersRepository {
       });
 
       for (const membership of memberships) {
-        if (membership.status === 'DECLINED') {
+        // Only ACTIVE members "leave" — pending/declined invites just expire.
+        if (membership.status !== 'ACTIVE') {
           continue;
         }
         await this.spaceAuditRepository.record(entityManager, {
