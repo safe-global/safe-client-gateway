@@ -9,11 +9,11 @@ export class AddressBookRequestsPendingUnique1781300000000
     // address can be requested again.
     await queryRunner.query(`
       ALTER TABLE address_book_requests
-        DROP CONSTRAINT "UQ_ABR_space_requester_address";
+        DROP CONSTRAINT UQ_ABR_space_requester_address;
     `);
 
     await queryRunner.query(`
-      CREATE UNIQUE INDEX "UQ_ABR_space_requester_address_pending"
+      CREATE UNIQUE INDEX UQ_ABR_space_requester_address_pending
         ON address_book_requests (space_id, requested_by, address)
         WHERE status = 0;
     `);
@@ -21,12 +21,12 @@ export class AddressBookRequestsPendingUnique1781300000000
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
-      DROP INDEX "UQ_ABR_space_requester_address_pending";
+      DROP INDEX UQ_ABR_space_requester_address_pending;
     `);
 
     await queryRunner.query(`
       ALTER TABLE address_book_requests
-        ADD CONSTRAINT "UQ_ABR_space_requester_address"
+        ADD CONSTRAINT UQ_ABR_space_requester_address
         UNIQUE (space_id, requested_by, address);
     `);
   }
