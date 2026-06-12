@@ -53,3 +53,29 @@ export async function assertMember(
     throw new ForbiddenException('User is not a member of this workspace');
   }
 }
+
+/**
+ * Unlike {@link assertMember}, INVITED members are rejected.
+ *
+ * @returns the membership row, so callers can derive permissions without a
+ * second query.
+ */
+export async function assertActiveMember(
+  membersRepository: IMembersRepository,
+  spaceId: Space['id'],
+  userId: number,
+): Promise<Member> {
+  const member = await membersRepository.findOne({
+    user: { id: userId },
+    space: { id: spaceId },
+    status: 'ACTIVE',
+  });
+
+  if (!member) {
+    throw new ForbiddenException(
+      'User is not an active member of this workspace',
+    );
+  }
+
+  return member;
+}

@@ -17,6 +17,7 @@ import { AddressBookRequestsRepository } from '@/modules/spaces/domain/address-b
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import { UserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository';
 import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
+import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -31,6 +32,8 @@ import {
   LegacySpaceIdPipe,
   SpaceIdPipe,
 } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceAuditController } from '@/modules/spaces/routes/space-audit.controller';
+import { SpaceAuditService } from '@/modules/spaces/routes/space-audit.service';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
@@ -59,6 +62,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
+    SpaceAuditModule,
     UserIdentityResolverModule,
     WalletsModule,
   ],
@@ -67,6 +71,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     UserAddressBookController,
     AddressBookRequestsController,
     SpacesController,
+    SpaceAuditController,
     SpaceSafesController,
     MembersController,
   ],
@@ -75,6 +80,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     UserAddressBookService,
     AddressBookRequestsService,
     SpacesService,
+    SpaceAuditService,
     SpaceSafesService,
     MembersService,
     SpaceInviteEmailService,

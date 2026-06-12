@@ -384,6 +384,10 @@ describe('MembersService', () => {
         expect(membersRepositoryMock.renewInvite).toHaveBeenCalledWith({
           memberId: targetMember.id,
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+          spaceId,
+          spaceUuid,
+          targetUserId: userId,
+          actorUserId: Number(authPayload.sub),
         });
       } finally {
         jest.useRealTimers();

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import type {
+  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
@@ -9,8 +10,10 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
@@ -21,22 +24,36 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISpaceAuditRepository)
+    private readonly spaceAuditRepository: ISpaceAuditRepository,
   ) {
     this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
       'spaces.maxSafesPerSpace',
     );
   }
 
+  private async findSpaceForAuditOrFail(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+  ): Promise<Pick<Space, 'id' | 'uuid'>> {
+    const space = await entityManager.findOne(Space, {
+      where: { id: spaceId },
+      select: { id: true, uuid: true },
+    });
+    if (!space) {
+      throw new NotFoundException('Workspace not found.');
+    }
+    return space;
+  }
+
   public async create(args: {
     spaceId: Space['id'];
+    actorUserId: number;
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
     }>;
   }): Promise<void> {
-    const spaceSafeRepository =
-      await this.postgresDatabaseService.getRepository(SpaceSafe);
-
     const safesToInsert = args.payload.map((safe) => ({
       space: { id: args.spaceId },
       chainId: safe.chainId,
@@ -53,16 +70,35 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       );
     }
 
-    try {
-      await spaceSafeRepository.insert(safesToInsert);
-    } catch (err) {
-      if (isUniqueConstraintError(err)) {
-        throw new UniqueConstraintError(
-          `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
-        );
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      try {
+        await entityManager.insert(SpaceSafe, safesToInsert);
+      } catch (err) {
+        if (isUniqueConstraintError(err)) {
+          throw new UniqueConstraintError(
+            `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
+          );
+        }
+        throw err;
       }
-      throw err;
-    }
+
+      const space = await this.findSpaceForAuditOrFail(
+        entityManager,
+        args.spaceId,
+      );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.SAFE_ADDED,
+        actorUserId: args.actorUserId,
+        payload: {
+          safes: args.payload.map((safe) => ({
+            chainId: safe.chainId,
+            address: safe.address,
+          })),
+        },
+      });
+    });
   }
 
   public async findBySpaceId(
@@ -102,14 +138,12 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
 
   public async delete(args: {
     spaceId: Space['id'];
+    actorUserId: number;
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
     }>;
   }): Promise<void> {
-    const spaceSafeRepository =
-      await this.postgresDatabaseService.getRepository(SpaceSafe);
-
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
       args.payload.map((safe) => {
         return {
@@ -119,10 +153,32 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
         };
       });
 
-    const spaceSafes = await this.findOrFail({
-      where: findSpaceSafesWhereClause,
-    });
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const spaceSafes = await entityManager.find(SpaceSafe, {
+        where: findSpaceSafesWhereClause,
+      });
+      if (spaceSafes.length === 0) {
+        throw new NotFoundException('Workspace has no Safes.');
+      }
 
-    await spaceSafeRepository.remove(spaceSafes);
+      await entityManager.remove(spaceSafes);
+
+      const space = await this.findSpaceForAuditOrFail(
+        entityManager,
+        args.spaceId,
+      );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.SAFE_REMOVED,
+        actorUserId: args.actorUserId,
+        payload: {
+          safes: spaceSafes.map((safe) => ({
+            chainId: safe.chainId,
+            address: safe.address,
+          })),
+        },
+      });
+    });
   }
 }
