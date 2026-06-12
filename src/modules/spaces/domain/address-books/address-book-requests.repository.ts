@@ -77,6 +77,20 @@ export class AddressBookRequestsRepository
     return request;
   }
 
+  public async countPending(args: {
+    spaceId: Space['id'];
+    requestedById: User['id'];
+  }): Promise<number> {
+    const repository = await this.db.getRepository(DbAddressBookRequest);
+    return repository.count({
+      where: {
+        space: { id: args.spaceId },
+        requestedBy: { id: args.requestedById },
+        status: 'PENDING',
+      },
+    });
+  }
+
   public async create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
@@ -96,7 +110,7 @@ export class AddressBookRequestsRepository
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new UniqueConstraintError(
-          'A request for this address already exists.',
+          'A pending request for this address already exists.',
         );
       }
       throw err;
