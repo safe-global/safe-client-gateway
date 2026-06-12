@@ -237,7 +237,8 @@ export class MembersController {
   @ApiOperation({
     summary: 'Get space members',
     description:
-      'Retrieves all members of a space including their roles, status, and membership information.',
+      'Retrieves all members of a space including their roles, status, and membership information. ' +
+      'A pending (INVITED) member only sees their own membership state, not the other members.',
   })
   @ApiParam({
     name: 'spaceId',

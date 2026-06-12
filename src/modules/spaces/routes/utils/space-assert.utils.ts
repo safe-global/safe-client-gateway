@@ -4,10 +4,8 @@ import { ForbiddenException } from '@nestjs/common';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
 export async function isAdmin(
   spacesRepository: ISpacesRepository,
@@ -42,12 +40,11 @@ export async function assertMember(
   spaceId: Space['id'],
   userId: number,
 ): Promise<void> {
-  const member = await membersRepository.findOne(
-    activeOrPendingMemberWhere<Member>(() => ({
-      user: { id: userId },
-      space: { id: spaceId },
-    })),
-  );
+  const member = await membersRepository.findOne({
+    user: { id: userId },
+    space: { id: spaceId },
+    status: 'ACTIVE',
+  });
 
   if (!member) {
     throw new ForbiddenException('User is not a member of this workspace');

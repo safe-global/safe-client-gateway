@@ -111,7 +111,7 @@ describe('UserAddressBookController', () => {
       const { spaceId, accessToken } = await createSpace();
       await createPrivateContact({ spaceId, accessToken });
 
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -128,7 +128,7 @@ describe('UserAddressBookController', () => {
 
     it('should return a member private contacts', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -166,6 +166,23 @@ describe('UserAddressBookController', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/address-book/private`)
+        .expect(403);
+    });
+
+    it('should return 403 for a non-member (never invited)', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      // Seed the inviter's address book so the contacts exist to leak.
+      await createPrivateContact({ spaceId, accessToken });
+
+      // An authenticated user with no membership in this space. Large id so it
+      // can't collide with a real member's (single-digit) sub.
+      const nonMemberAccessToken = accessTokenForUserId(
+        faker.number.int({ min: 69420, max: 2147483647 }),
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(403);
     });
 
@@ -238,7 +255,7 @@ describe('UserAddressBookController', () => {
 
     it('should allow members to create private contacts', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -253,6 +270,26 @@ describe('UserAddressBookController', () => {
           items: [{ name: mockName, address: mockAddress, chainIds: ['1'] }],
         })
         .expect(200);
+    });
+
+    it('should forbid access to a pending member', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { memberAccessToken } = await createPendingMember({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+
+      const mockAddress = getAddress(faker.finance.ethereumAddress());
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/private`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({
+          items: [
+            { name: nameBuilder(), address: mockAddress, chainIds: ['1'] },
+          ],
+        })
+        .expect(403);
     });
 
     it('should upsert private address book entries for an OIDC user', async () => {
@@ -416,21 +453,60 @@ describe('UserAddressBookController', () => {
     };
   };
 
-  const inviteMember = async (args: {
+  const accessTokenForUserId = (userId: number): string =>
+    jwtService.sign(
+      siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
+    );
+
+  const createPendingMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
     const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-    const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-    const member = {
-      role: 'MEMBER',
-      name: faker.person.firstName(),
-      address: memberAuthPayloadDto.signer_address,
-    };
-    await request(app.getHttpServer())
+    const inviteResponse = await request(app.getHttpServer())
       .post(`/v1/spaces/${args.spaceId}/members/invite`)
       .set('Cookie', [`access_token=${args.adminAccessToken}`])
-      .send({ users: [member] })
+      .send({
+        users: [
+          {
+            role: 'MEMBER',
+            name: faker.person.firstName(),
+            address: memberAuthPayloadDto.signer_address,
+          },
+        ],
+      })
+      .expect(201);
+    return {
+      memberAccessToken: accessTokenForUserId(inviteResponse.body[0].userId),
+    };
+  };
+
+  const createActiveMember = async (args: {
+    spaceId: string;
+    adminAccessToken: string;
+  }): Promise<{ memberAccessToken: string }> => {
+    const memberName = faker.person.firstName();
+    const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const inviteResponse = await request(app.getHttpServer())
+      .post(`/v1/spaces/${args.spaceId}/members/invite`)
+      .set('Cookie', [`access_token=${args.adminAccessToken}`])
+      .send({
+        users: [
+          {
+            role: 'MEMBER',
+            name: memberName,
+            address: memberAuthPayloadDto.signer_address,
+          },
+        ],
+      })
+      .expect(201);
+    const memberAccessToken = accessTokenForUserId(
+      inviteResponse.body[0].userId,
+    );
+    await request(app.getHttpServer())
+      .post(`/v1/spaces/${args.spaceId}/members/accept`)
+      .set('Cookie', [`access_token=${memberAccessToken}`])
+      .send({ name: memberName })
       .expect(201);
     return { memberAccessToken };
   };

@@ -14,9 +14,7 @@ import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -109,13 +107,14 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     return await this.spacesRepository.findOneOrFail({
-      where: activeOrPendingMemberWhere<Member>(() => ({
-        role: In(args.memberRoleIn),
-        user: { id: userId },
-      })).map((members) => ({
+      where: {
         id: args.spaceId,
-        members,
-      })),
+        members: {
+          role: In(args.memberRoleIn),
+          user: { id: userId },
+          status: 'ACTIVE',
+        },
+      },
     });
   }
 
