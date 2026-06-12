@@ -78,7 +78,7 @@ export const CreateAddressBookRequestSchema = AddressBookItemSchema.extend({
   chainIds: z
     .array(ChainIdSchema)
     .min(1)
-    .transform((chainIds) => Array.from(new Set(chainIds))),
+    .overwrite((chainIds) => Array.from(new Set(chainIds))),
 });
 
 export class CreateAddressBookRequestDto
