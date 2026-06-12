@@ -198,9 +198,10 @@ export class RedisCacheService
    *
    * @param {number} ttl - The TTL to enforce.
    *
-   * @returns {number} The TTL if it is less than or equal to MAX_TTL, otherwise MAX_TTL.
+   * @returns {number} The integer TTL, capped at MAX_TTL. Floored because Redis
+   * EX/EXPIRE require integer seconds and reject a fractional value.
    */
   private enforceMaxRedisTTL(ttl: number): number {
-    return Math.min(ttl, MAX_TTL);
+    return Math.floor(Math.min(ttl, MAX_TTL));
   }
 }
