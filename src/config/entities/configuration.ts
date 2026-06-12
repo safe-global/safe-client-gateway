@@ -272,6 +272,10 @@ export default () => ({
         accessKeyId: process.env.SES_AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.SES_AWS_SECRET_ACCESS_KEY,
         // EKS service-account token path. SES uses this for IRSA in deployed environments.
+        // Never set manually: the EKS Pod Identity Webhook injects this env var (and
+        // AWS_ROLE_ARN) into pods whose ServiceAccount is annotated with
+        // eks.amazonaws.com/role-arn — the annotation is the only thing set in ArgoCD.
+        // See https://docs.aws.amazon.com/eks/latest/userguide/pod-configuration.html
         webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
       },
       // BullMQ queue configuration for email sending.
