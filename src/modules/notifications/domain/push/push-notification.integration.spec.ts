@@ -285,8 +285,9 @@ describe('Push notification queue integration', () => {
             status: 200,
           });
         }
-        // INCOMING_TOKEN triggers an asset-list (balances) lookup.
-        // Returns a list containing the event token so it counts as non-spam.
+        // INCOMING_TOKEN triggers an asset-list lookup. The test chainId isn't a
+        // Zerion-covered network, so the gate falls back to the balances list;
+        // return a list containing the event token so it counts as non-spam.
         if (
           'tokenAddress' in event &&
           url ===

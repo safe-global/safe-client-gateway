@@ -12,6 +12,7 @@ import {
 import { asError } from '@/logging/utils';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
@@ -41,9 +42,11 @@ import {
   NotificationType,
 } from '@/modules/notifications/domain/v2/entities/notification.entity';
 import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
 import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 @Injectable()
 export class PushNotificationService implements IPushNotificationService {
@@ -64,6 +67,9 @@ export class PushNotificationService implements IPushNotificationService {
     private readonly balancesRepository: IBalancesRepository,
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
+    @Inject(IPortfolioRepository)
+    private readonly portfolioRepository: IPortfolioRepository,
+    private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {}
   /**
    * Enqueues a push notification event for processing.
@@ -450,39 +456,80 @@ export class PushNotificationService implements IPushNotificationService {
   }
 
   /**
-   * Checks whether the incoming token is present in the Safe's spam-filtered balances.
-   * A token, filtered out as spam never appears in the asset list, so the notification is suppressed.
+   * Checks whether the incoming token passes the spam filter: present in the Zerion
+   * portfolio on Zerion-covered chains, otherwise in the balances list.
    *
-   * Fails safe: if the chain or balances lookup is unavailable, returns false so the
-   * push is suppressed rather than risking a notification for a possible spam token.
+   * Fails safe: returns false (suppressing the push) if the lookup is unavailable.
    *
    * @param event - {@link IncomingTokenEvent} to check
-   * @returns True if the token is on the Safe's asset list, false otherwise
+   * @returns True if the token is not spam, false otherwise
    */
   private async isTokenOnAssetList(
     event: IncomingTokenEvent,
   ): Promise<boolean> {
     try {
       const chain = await this.chainsRepository.getChain(event.chainId);
-      const balances = await this.balancesRepository.getBalances({
-        chain,
-        safeAddress: event.address,
-        fiatCode: 'USD',
-        // Mirror the asset-list defaults so push matches what the app shows.
-        trusted: false,
-        excludeSpam: true,
-      });
-      return balances.some(
-        (balance) =>
-          balance.tokenAddress !== null &&
-          isAddressEqual(balance.tokenAddress, event.tokenAddress),
-      );
+      // Prefer the Zerion portfolio (the app's default asset list) where Zerion
+      // covers the chain; otherwise fall back to the balances list.
+      const zerionNetwork = await this.zerionChainMappingService
+        .getNetworkFromChainId(event.chainId, chain.isTestnet)
+        .catch(() => undefined);
+      return zerionNetwork
+        ? await this.isTokenInPortfolio(event, chain)
+        : await this.isTokenInBalances(event, chain);
     } catch (error) {
       this.loggingService.warn(
         `Failed to check token asset list for chain=${event.chainId} safe=${event.address} token=${event.tokenAddress}: ${asError(error).message}`,
       );
       return false;
     }
+  }
+
+  /**
+   * Checks the token against the Zerion portfolio with the spam filter on
+   * (trusted=true → only non-trash). Dust is not excluded: a small legitimate
+   * transfer is not spam.
+   */
+  private async isTokenInPortfolio(
+    event: IncomingTokenEvent,
+    chain: Chain,
+  ): Promise<boolean> {
+    const portfolio = await this.portfolioRepository.getPortfolio({
+      address: event.address,
+      fiatCode: 'USD',
+      chainIds: [event.chainId],
+      trusted: true,
+      excludeDust: false,
+      isTestnet: chain.isTestnet,
+    });
+    return portfolio.tokenBalances.some(
+      (tokenBalance) =>
+        tokenBalance.tokenInfo.address !== null &&
+        tokenBalance.tokenInfo.chainId === event.chainId &&
+        isAddressEqual(tokenBalance.tokenInfo.address, event.tokenAddress),
+    );
+  }
+
+  /**
+   * Checks the token against the balances list (the app's fallback asset list),
+   * mirroring its defaults: trusted=false, excludeSpam=true.
+   */
+  private async isTokenInBalances(
+    event: IncomingTokenEvent,
+    chain: Chain,
+  ): Promise<boolean> {
+    const balances = await this.balancesRepository.getBalances({
+      chain,
+      safeAddress: event.address,
+      fiatCode: 'USD',
+      trusted: false,
+      excludeSpam: true,
+    });
+    return balances.some(
+      (balance) =>
+        balance.tokenAddress !== null &&
+        isAddressEqual(balance.tokenAddress, event.tokenAddress),
+    );
   }
 
   /**

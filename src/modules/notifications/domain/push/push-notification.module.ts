@@ -20,7 +20,9 @@ import { PushNotificationConsumer } from '@/modules/notifications/domain/push/co
 import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
   imports: [
@@ -48,6 +50,8 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
     NotificationsRepositoryV2Module,
     BalancesModule,
     ChainsModule,
+    PortfolioModule,
+    ZerionModule,
   ],
   providers: [
     {
