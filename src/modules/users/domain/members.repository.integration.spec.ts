@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import {
-  ForbiddenException,
-  GoneException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, GoneException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import { getAddress } from 'viem';
@@ -3473,7 +3469,7 @@ describe('MembersRepository', () => {
     it.each([
       ['INVITED'],
       ['DECLINED'],
-    ] as const)('should throw NotFoundException for a %s membership', async (status) => {
+    ] as const)('should throw ForbiddenException for a %s membership', async (status) => {
       const { user, authPayload } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
         name: nameBuilder(),
@@ -3496,7 +3492,11 @@ describe('MembersRepository', () => {
           spaceId,
           alias: nameBuilder(),
         }),
-      ).rejects.toThrow(new NotFoundException('Member not found.'));
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the workspace.',
+        ),
+      );
 
       const unchangedMember = await dbMembersRepository.findOneOrFail({
         where: { id: member.identifiers[0].id },

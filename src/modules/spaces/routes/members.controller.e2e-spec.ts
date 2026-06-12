@@ -1871,6 +1871,43 @@ describe('MembersController', () => {
         });
     });
 
+    it('should throw a 403 for a pending member', async () => {
+      const inviteeAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const spaceName = nameBuilder();
+      const memberName = nameBuilder();
+      const newAlias = nameBuilder();
+
+      const { accessToken, spaceId } = await createSpaceForSigner(spaceName);
+
+      const inviteUsersResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: inviteeAuthPayloadDto.signer_address,
+              name: memberName,
+            },
+          ],
+        })
+        .expect(201);
+      const inviteeAccessToken = accessTokenForUserId(
+        inviteUsersResponse.body[0].userId,
+      );
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/members/alias`)
+        .set('Cookie', [`access_token=${inviteeAccessToken}`])
+        .send({ alias: newAlias })
+        .expect(403)
+        .expect({
+          message: 'The user is not an active member of the workspace.',
+          error: 'Forbidden',
+          statusCode: 403,
+        });
+    });
+
     it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);

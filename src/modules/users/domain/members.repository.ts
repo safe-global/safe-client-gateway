@@ -407,8 +407,20 @@ export class MembersRepository implements IMembersRepository {
 
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
+    const member = await membersRepository.findOne({
+      where: { user: { id: userId }, space: { id: args.spaceId } },
+    });
+    if (!member) {
+      throw new NotFoundException('Member not found.');
+    }
+    if (member.status !== 'ACTIVE') {
+      throw new ForbiddenException(
+        'The user is not an active member of the workspace.',
+      );
+    }
+
     const updateResult = await membersRepository.update(
-      { user: { id: userId }, space: { id: args.spaceId }, status: 'ACTIVE' },
+      { id: member.id },
       { alias: args.alias },
     );
 
