@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import {
@@ -64,7 +64,7 @@ export class SpaceAuditLogEntryDto {
   })
   actor!: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     type: String,
     nullable: true,
     description:

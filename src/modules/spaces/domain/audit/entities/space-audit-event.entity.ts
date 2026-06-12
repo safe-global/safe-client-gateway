@@ -36,10 +36,6 @@ export const SpaceAuditEventTypeSchema = z.enum(
   getStringEnumKeys(SpaceAuditEventType),
 );
 
-const LowercaseAddressSchema = AddressSchema.transform((value) =>
-  value.toLowerCase(),
-);
-
 const UserIdSchema = z.number().int().positive();
 
 const SpaceFieldsSchema = z.object({
@@ -49,11 +45,11 @@ const SpaceFieldsSchema = z.object({
 
 const SpaceSafeSchema = z.object({
   chainId: NumericStringSchema,
-  address: LowercaseAddressSchema,
+  address: AddressSchema,
 });
 
 const AddressBookEntrySchema = z.object({
-  address: LowercaseAddressSchema,
+  address: AddressSchema,
   name: z.string(),
 });
 
@@ -148,7 +144,7 @@ export const AddressBookUpsertedEventSchema = z.object({
 export const AddressBookDeletedEventSchema = z.object({
   eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_DELETED),
   payload: z.object({
-    address: LowercaseAddressSchema,
+    address: AddressSchema,
     name: z.string(),
   }),
 });
@@ -174,3 +170,7 @@ export const SpaceAuditEventSchema = z.discriminatedUnion('eventType', [
 export type SpaceAuditEvent = z.infer<typeof SpaceAuditEventSchema>;
 
 export type SpaceAuditEventPayload = SpaceAuditEvent['payload'];
+
+export type SpaceUpdatedPayload = z.infer<
+  typeof SpaceUpdatedEventSchema
+>['payload'];

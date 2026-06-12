@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import {
-  Between,
+  And,
   type EntityManager,
   type FindOptionsWhere,
   In,
@@ -62,20 +62,19 @@ export class SpaceAuditRepository implements ISpaceAuditRepository {
     const repository =
       await this.postgresDatabaseService.getRepository(SpaceAuditLog);
 
-    const where: FindOptionsWhere<SpaceAuditLog> = { spaceId: args.spaceId };
-    if (args.eventTypes && args.eventTypes.length > 0) {
-      where.eventType = In(args.eventTypes);
-    }
-    if (args.actorUserId !== undefined) {
-      where.actorUserId = args.actorUserId;
-    }
-    if (args.createdAtGte && args.createdAtLte) {
-      where.createdAt = Between(args.createdAtGte, args.createdAtLte);
-    } else if (args.createdAtGte) {
-      where.createdAt = MoreThanOrEqual(args.createdAtGte);
-    } else if (args.createdAtLte) {
-      where.createdAt = LessThanOrEqual(args.createdAtLte);
-    }
+    const createdAtBounds = [
+      ...(args.createdAtGte ? [MoreThanOrEqual(args.createdAtGte)] : []),
+      ...(args.createdAtLte ? [LessThanOrEqual(args.createdAtLte)] : []),
+    ];
+    const where: FindOptionsWhere<SpaceAuditLog> = {
+      spaceId: args.spaceId,
+      ...(args.eventTypes &&
+        args.eventTypes.length > 0 && { eventType: In(args.eventTypes) }),
+      ...(args.actorUserId !== undefined && {
+        actorUserId: args.actorUserId,
+      }),
+      ...(createdAtBounds.length > 0 && { createdAt: And(...createdAtBounds) }),
+    };
 
     // Same-transaction events share created_at — tie-break on id.
     const direction = args.sortDirection === 'asc' ? 'ASC' : 'DESC';

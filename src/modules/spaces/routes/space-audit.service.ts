@@ -20,7 +20,8 @@ import { UserIdentityResolverService } from '@/modules/users/domain/user-identit
 import {
   buildNextPageURL,
   buildPreviousPageURL,
-  type PaginationData,
+  PaginationData,
+  setCursor,
 } from '@/routes/common/pagination/pagination.data';
 
 export const FORMER_MEMBER_LABEL = 'Former member';
@@ -58,8 +59,10 @@ export class SpaceAuditService {
     const limit = Math.min(args.paginationData.limit, MAX_LIMIT);
     const offset = Math.max(args.paginationData.offset, 0);
     // Page links must be derived from the clamped values, not the raw cursor.
-    const normalizedUrl = new URL(args.routeUrl);
-    normalizedUrl.searchParams.set('cursor', `limit=${limit}&offset=${offset}`);
+    const normalizedUrl = setCursor(
+      args.routeUrl,
+      new PaginationData(limit, offset),
+    );
 
     const [rows, count] = await this.spaceAuditRepository.findBySpaceId({
       spaceId: args.spaceId,

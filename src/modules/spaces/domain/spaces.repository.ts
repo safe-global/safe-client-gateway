@@ -14,13 +14,15 @@ import {
   In,
   IsNull,
 } from 'typeorm';
-import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { NUMERIC_REGEX, UUID_REGEX } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import {
+  SpaceAuditEventType,
+  type SpaceUpdatedPayload,
+} from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -215,7 +217,7 @@ export class SpacesRepository implements ISpacesRepository {
 
   public async update(args: {
     id: Space['id'];
-    updatePayload: QueryDeepPartialEntity<Space>;
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
     actorUserId: number;
   }): Promise<Pick<Space, 'id' | 'uuid'>> {
     return await this.postgresDatabaseService.transaction(
@@ -255,33 +257,24 @@ export class SpacesRepository implements ISpacesRepository {
   /** Changed `name`/`status` fields of a space update, or `null` for a no-op. */
   private diffSpaceUpdate(
     current: Pick<Space, 'name' | 'status'>,
-    updatePayload: QueryDeepPartialEntity<Space>,
-  ): {
-    old: { name?: string; status?: keyof typeof SpaceStatus };
-    new: { name?: string; status?: keyof typeof SpaceStatus };
-  } | null {
-    const oldFields: { name?: string; status?: keyof typeof SpaceStatus } = {};
-    const newFields: { name?: string; status?: keyof typeof SpaceStatus } = {};
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>,
+  ): SpaceUpdatedPayload | null {
+    const { name, status } = updatePayload;
+    const oldFields: SpaceUpdatedPayload['old'] = {};
+    const newFields: SpaceUpdatedPayload['new'] = {};
 
-    if (
-      typeof updatePayload.name === 'string' &&
-      updatePayload.name !== current.name
-    ) {
+    if (name !== undefined && name !== current.name) {
       oldFields.name = current.name;
-      newFields.name = updatePayload.name;
+      newFields.name = name;
     }
-    if (
-      typeof updatePayload.status === 'string' &&
-      updatePayload.status !== current.status
-    ) {
+    if (status !== undefined && status !== current.status) {
       oldFields.status = current.status;
-      newFields.status = updatePayload.status;
+      newFields.status = status;
     }
 
-    if (Object.keys(newFields).length === 0) {
-      return null;
-    }
-    return { old: oldFields, new: newFields };
+    return Object.keys(newFields).length > 0
+      ? { old: oldFields, new: newFields }
+      : null;
   }
 
   public async findIdByUuid(uuid: Space['uuid']): Promise<Space['id']> {
