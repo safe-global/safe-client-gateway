@@ -111,7 +111,7 @@ describe('UserAddressBookController', () => {
       const { spaceId, accessToken } = await createSpace();
       await createPrivateContact({ spaceId, accessToken });
 
-      const { memberAccessToken } = await inviteActiveMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -128,7 +128,7 @@ describe('UserAddressBookController', () => {
 
     it('should return a member private contacts', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteActiveMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -255,7 +255,7 @@ describe('UserAddressBookController', () => {
 
     it('should allow members to create private contacts', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteActiveMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -272,9 +272,9 @@ describe('UserAddressBookController', () => {
         .expect(200);
     });
 
-    it('should forbid an invited member who has not accepted', async () => {
+    it('should forbid access to a pending member', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createPendingMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -458,9 +458,7 @@ describe('UserAddressBookController', () => {
       siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
     );
 
-  // Invites a member WITHOUT accepting — the member stays INVITED (pending)
-  // and may not access space contents.
-  const invitePendingMember = async (args: {
+  const createPendingMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
@@ -483,8 +481,7 @@ describe('UserAddressBookController', () => {
     };
   };
 
-  // Invites and accepts a member so they are ACTIVE.
-  const inviteActiveMember = async (args: {
+  const createActiveMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {

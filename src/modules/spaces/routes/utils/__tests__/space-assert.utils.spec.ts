@@ -80,7 +80,7 @@ describe('space-assert.utils', () => {
       });
     });
 
-    it('should throw ForbiddenException when user is only INVITED (not accepted)', async () => {
+    it('should throw ForbiddenException for a pending member', async () => {
       // findOne is queried with status ACTIVE only, so a pending invite yields null
       membersRepositoryMock.findOne.mockResolvedValue(null);
 

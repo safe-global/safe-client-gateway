@@ -69,7 +69,7 @@ describe('AddressBookRequestsController', () => {
   describe('POST /spaces/:spaceId/address-book/requests', () => {
     it('should create a request from a private contact', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -102,7 +102,7 @@ describe('AddressBookRequestsController', () => {
 
     it('should return 404 if private contact does not exist', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -158,7 +158,7 @@ describe('AddressBookRequestsController', () => {
   describe('GET /spaces/:spaceId/address-book/requests', () => {
     it('should return pending requests for admin (all requests)', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -191,11 +191,11 @@ describe('AddressBookRequestsController', () => {
 
     it('should return only own pending requests for member', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken: member1Token } = await invitePendingMember({
+      const { memberAccessToken: member1Token } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
-      const { memberAccessToken: member2Token } = await invitePendingMember({
+      const { memberAccessToken: member2Token } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -246,7 +246,7 @@ describe('AddressBookRequestsController', () => {
   describe('PUT /spaces/:spaceId/address-book/requests/:id/approve', () => {
     it('should approve a request and add contact to shared address book', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -291,7 +291,7 @@ describe('AddressBookRequestsController', () => {
 
     it('should return 403 if member tries to approve', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -321,7 +321,7 @@ describe('AddressBookRequestsController', () => {
         accessToken: adminToken,
         userId: adminUserId,
       } = await createSpaceAsOidcAdmin();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: adminToken,
       });
@@ -364,7 +364,7 @@ describe('AddressBookRequestsController', () => {
   describe('PUT /spaces/:spaceId/address-book/requests/:id/reject', () => {
     it('should reject a pending request', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -407,7 +407,7 @@ describe('AddressBookRequestsController', () => {
 
     it('should return 400 if request is already approved', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -440,7 +440,7 @@ describe('AddressBookRequestsController', () => {
     it('should reject a request as an OIDC admin', async () => {
       const { spaceId, accessToken: adminToken } =
         await createSpaceAsOidcAdmin();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: adminToken,
       });
@@ -519,21 +519,34 @@ describe('AddressBookRequestsController', () => {
     };
   };
 
-  const invitePendingMember = async (args: {
+  const createActiveMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
+    const memberName = faker.person.firstName();
     const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-    const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
-    const member = {
-      role: 'MEMBER',
-      name: faker.person.firstName(),
-      address: memberAuthPayloadDto.signer_address,
-    };
-    await request(app.getHttpServer())
+    const inviteResponse = await request(app.getHttpServer())
       .post(`/v1/spaces/${args.spaceId}/members/invite`)
       .set('Cookie', [`access_token=${args.adminAccessToken}`])
-      .send({ users: [member] })
+      .send({
+        users: [
+          {
+            role: 'MEMBER',
+            name: memberName,
+            address: memberAuthPayloadDto.signer_address,
+          },
+        ],
+      })
+      .expect(201);
+    const memberAccessToken = jwtService.sign(
+      siweAuthPayloadDtoBuilder()
+        .with('sub', inviteResponse.body[0].userId.toString())
+        .build(),
+    );
+    await request(app.getHttpServer())
+      .post(`/v1/spaces/${args.spaceId}/members/accept`)
+      .set('Cookie', [`access_token=${memberAccessToken}`])
+      .send({ name: memberName })
       .expect(201);
     return { memberAccessToken };
   };

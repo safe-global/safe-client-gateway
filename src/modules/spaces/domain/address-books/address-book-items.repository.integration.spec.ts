@@ -267,7 +267,7 @@ describe('AddressBookItemsRepository', () => {
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
-    it('should throw a NotFoundException if the user is only INVITED (not accepted)', async () => {
+    it('should throw a NotFoundException for a pending member', async () => {
       const { spaceId } = await createSpaceAsAdmin();
       const authPayload = await addMemberToSpaceWithStatus(
         spaceId,

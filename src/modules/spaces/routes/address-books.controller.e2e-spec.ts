@@ -97,7 +97,7 @@ describe('AddressBooksController', () => {
 
     it('should get an empty Space Address Book as member', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteActiveMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -147,7 +147,7 @@ describe('AddressBooksController', () => {
 
     it('should get a Space Address Book with items as member', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await inviteActiveMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -183,7 +183,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the user declined the membership', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createPendingMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -590,7 +590,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the member is not an admin', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -720,7 +720,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 404 if the member is not an ADMIN', async () => {
       const { spaceId, accessToken } = await createSpace();
-      const { memberAccessToken } = await invitePendingMember({
+      const { memberAccessToken } = await createActiveMember({
         spaceId,
         adminAccessToken: accessToken,
       });
@@ -796,9 +796,7 @@ describe('AddressBooksController', () => {
     };
   };
 
-  // Invites a member WITHOUT accepting — the member stays INVITED (pending)
-  // and may not read the space address book.
-  const invitePendingMember = async (args: {
+  const createPendingMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
@@ -817,9 +815,7 @@ describe('AddressBooksController', () => {
     return { memberAccessToken };
   };
 
-  // Invites and accepts a member so they are ACTIVE — only active members may
-  // read a space's address book (see getSpaceAs / assertMember).
-  const inviteActiveMember = async (args: {
+  const createActiveMember = async (args: {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {

@@ -314,7 +314,7 @@ describe('SpacesService', () => {
       );
     });
 
-    it('should hide the roster and safe count from a pending invitee', async () => {
+    it('should hide the roster and safe count from a pending member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const callerUserId = Number(authPayload.sub);
       const caller = userBuilder().with('id', callerUserId).build();

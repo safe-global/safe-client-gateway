@@ -2211,7 +2211,7 @@ describe('MembersRepository', () => {
       );
     });
 
-    it('should return only the own membership row for a pending (non-expired) invited caller', async () => {
+    it('should return only their own membership state to a pending member (non-expired invite)', async () => {
       const { user, userId, authPayload } = await createSiweUser();
       const { user: admin, userId: adminUserId } = await createSiweUser();
       const space = await dbSpacesRepository.insert({
