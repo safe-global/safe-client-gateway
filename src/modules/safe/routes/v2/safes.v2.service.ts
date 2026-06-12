@@ -22,7 +22,7 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 @Injectable()
 export class SafesV2Service {
   private readonly maxOverviews: number;
-  private readonly zerionBalancesEnabled: boolean;
+  private readonly zerionEnabled: boolean;
 
   constructor(
     @Inject(ISafeRepository)
@@ -41,8 +41,8 @@ export class SafesV2Service {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
     );
-    this.zerionBalancesEnabled = configurationService.getOrThrow<boolean>(
-      'features.zerionBalancesEnabled',
+    this.zerionEnabled = configurationService.getOrThrow<boolean>(
+      'features.zerionEnabled',
     );
   }
 
@@ -140,7 +140,7 @@ export class SafesV2Service {
     const { chain, safeAddress, currency, trusted } = args;
 
     if (
-      this.zerionBalancesEnabled &&
+      this.zerionEnabled &&
       this.getZerionChainName(chain) &&
       (await this.isPortfolioEndpointFeatureEnabled(chain))
     ) {

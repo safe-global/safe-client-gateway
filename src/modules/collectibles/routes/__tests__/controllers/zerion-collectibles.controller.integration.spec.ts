@@ -32,7 +32,7 @@ describe('Zerion Collectibles Controller', () => {
         ...configuration(),
         features: {
           ...configuration().features,
-          zerionBalancesEnabled: true,
+          zerionEnabled: true,
         },
       }),
     });
