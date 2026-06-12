@@ -762,6 +762,13 @@ export default () => ({
         10,
       ),
     },
+    addressBookRequests: {
+      maxPending: Number.parseInt(
+        process.env.SPACES_MAX_PENDING_ADDRESS_BOOK_REQUESTS_PER_USER ??
+          `${100}`,
+        10,
+      ),
+    },
     maxSafesPerSpace: Number.parseInt(
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
       10,
@@ -792,6 +799,17 @@ export default () => ({
         ),
         windowSeconds: Number.parseInt(
           process.env.SPACES_ADDRESS_BOOK_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
+          10,
+        ),
+      },
+      addressBookRequestCreation: {
+        max: Number.parseInt(
+          process.env.SPACES_ADDRESS_BOOK_REQUESTS_RATE_LIMIT_MAX ?? `${100}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.SPACES_ADDRESS_BOOK_REQUESTS_RATE_LIMIT_WINDOW_SECONDS ??
+            `${600}`,
           10,
         ),
       },

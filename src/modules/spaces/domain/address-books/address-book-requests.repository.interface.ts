@@ -30,6 +30,11 @@ export interface IAddressBookRequestsRepository {
     spaceId: Space['id'];
   }): Promise<AddressBookRequest>;
 
+  countPending(args: {
+    spaceId: Space['id'];
+    requestedById: User['id'];
+  }): Promise<number>;
+
   create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
