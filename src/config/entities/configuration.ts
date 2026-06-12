@@ -813,6 +813,40 @@ export default () => ({
           10,
         ),
       },
+      invitation: {
+        space: {
+          max: Number.parseInt(
+            process.env.SPACES_INVITATION_RATE_LIMIT_MAX ?? `${200}`,
+            10,
+          ),
+          windowSeconds: Number.parseInt(
+            process.env.SPACES_INVITATION_RATE_LIMIT_WINDOW_SECONDS ?? `${600}`,
+            10,
+          ),
+        },
+        recipient: {
+          max: Number.parseInt(
+            process.env.SPACES_INVITATION_RECIPIENT_RATE_LIMIT_MAX ?? `${5}`,
+            10,
+          ),
+          windowSeconds: Number.parseInt(
+            process.env.SPACES_INVITATION_RECIPIENT_RATE_LIMIT_WINDOW_SECONDS ??
+              `${24 * 60 * 60}`,
+            10,
+          ),
+        },
+        emailsAlert: {
+          threshold: Number.parseInt(
+            process.env.SPACES_INVITATION_EMAILS_ALERT_THRESHOLD ?? `${1000}`,
+            10,
+          ),
+          windowSeconds: Number.parseInt(
+            process.env.SPACES_INVITATION_EMAILS_ALERT_WINDOW_SECONDS ??
+              `${60 * 60}`,
+            10,
+          ),
+        },
+      },
     },
   },
   staking: {
