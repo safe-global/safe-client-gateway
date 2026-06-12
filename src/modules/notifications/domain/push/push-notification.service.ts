@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import uniqBy from 'lodash/uniqBy';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
@@ -10,6 +10,9 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
@@ -39,9 +42,11 @@ import {
   NotificationType,
 } from '@/modules/notifications/domain/v2/entities/notification.entity';
 import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
 import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
 
 @Injectable()
 export class PushNotificationService implements IPushNotificationService {
@@ -58,6 +63,13 @@ export class PushNotificationService implements IPushNotificationService {
     private readonly messagesRepository: IMessagesRepository,
     @Inject(INotificationsRepositoryV2)
     private readonly notificationsRepository: INotificationsRepositoryV2,
+    @Inject(IBalancesRepository)
+    private readonly balancesRepository: IBalancesRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
+    @Inject(IPortfolioRepository)
+    private readonly portfolioRepository: IPortfolioRepository,
+    private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {}
   /**
    * Enqueues a push notification event for processing.
@@ -85,6 +97,22 @@ export class PushNotificationService implements IPushNotificationService {
    */
   async processEvent(event: Event): Promise<number> {
     if (!this.isEventToNotify(event)) {
+      return 0;
+    }
+
+    // Drop incoming token transfers for spam/unknown tokens so notifications match
+    // what the app actually shows in its (spam-filtered) asset list. See WA-1677.
+    if (
+      event.type === TransactionEventType.INCOMING_TOKEN &&
+      !(await this.isTokenOnAssetList(event))
+    ) {
+      this.loggingService.info({
+        type: LogType.NotificationSpamTokenDropped,
+        eventType: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        tokenAddress: event.tokenAddress,
+      });
       return 0;
     }
 
@@ -425,6 +453,83 @@ export class PushNotificationService implements IPushNotificationService {
     }
 
     return event;
+  }
+
+  /**
+   * Checks whether the incoming token passes the spam filter: present in the Zerion
+   * portfolio on Zerion-covered chains, otherwise in the balances list.
+   *
+   * Fails safe: returns false (suppressing the push) if the lookup is unavailable.
+   *
+   * @param event - {@link IncomingTokenEvent} to check
+   * @returns True if the token is not spam, false otherwise
+   */
+  private async isTokenOnAssetList(
+    event: IncomingTokenEvent,
+  ): Promise<boolean> {
+    try {
+      const chain = await this.chainsRepository.getChain(event.chainId);
+      // Prefer the Zerion portfolio (the app's default asset list) where Zerion
+      // covers the chain; otherwise fall back to the balances list.
+      const zerionNetwork = await this.zerionChainMappingService
+        .getNetworkFromChainId(event.chainId, chain.isTestnet)
+        .catch(() => undefined);
+      return zerionNetwork
+        ? await this.isTokenInPortfolio(event, chain)
+        : await this.isTokenInBalances(event, chain);
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to check token asset list for chain=${event.chainId} safe=${event.address} token=${event.tokenAddress}: ${asError(error).message}`,
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Checks the token against the Zerion portfolio with the spam filter on
+   * (trusted=true → only non-trash). Dust is not excluded: a small legitimate
+   * transfer is not spam.
+   */
+  private async isTokenInPortfolio(
+    event: IncomingTokenEvent,
+    chain: Chain,
+  ): Promise<boolean> {
+    const portfolio = await this.portfolioRepository.getPortfolio({
+      address: event.address,
+      fiatCode: 'USD',
+      chainIds: [event.chainId],
+      trusted: true,
+      excludeDust: false,
+      isTestnet: chain.isTestnet,
+    });
+    return portfolio.tokenBalances.some(
+      (tokenBalance) =>
+        tokenBalance.tokenInfo.address !== null &&
+        tokenBalance.tokenInfo.chainId === event.chainId &&
+        isAddressEqual(tokenBalance.tokenInfo.address, event.tokenAddress),
+    );
+  }
+
+  /**
+   * Checks the token against the balances list (the app's fallback asset list),
+   * mirroring its defaults: trusted=false, excludeSpam=true.
+   */
+  private async isTokenInBalances(
+    event: IncomingTokenEvent,
+    chain: Chain,
+  ): Promise<boolean> {
+    const balances = await this.balancesRepository.getBalances({
+      chain,
+      safeAddress: event.address,
+      fiatCode: 'USD',
+      trusted: false,
+      excludeSpam: true,
+    });
+    return balances.some(
+      (balance) =>
+        balance.tokenAddress !== null &&
+        isAddressEqual(balance.tokenAddress, event.tokenAddress),
+    );
   }
 
   /**

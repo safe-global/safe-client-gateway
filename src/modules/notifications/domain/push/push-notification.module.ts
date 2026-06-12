@@ -12,13 +12,17 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { BalancesModule } from '@/modules/balances/balances.module';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
 import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
 import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
+import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
   imports: [
@@ -44,6 +48,10 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
     MessagesModule,
     SafeRepositoryModule,
     NotificationsRepositoryV2Module,
+    BalancesModule,
+    ChainsModule,
+    PortfolioModule,
+    ZerionModule,
   ],
   providers: [
     {

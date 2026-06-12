@@ -19,6 +19,7 @@ import { PushNotificationsApiModule } from '@/datasources/push-notifications-api
 import { PUSH_NOTIFICATION_QUEUE } from '@/domain/common/jobs.constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
@@ -91,6 +92,7 @@ describe('Push notification queue integration', () => {
   let configurationService: IConfigurationService;
   let cacheService: FakeCacheService;
   let safeConfigUrl: string;
+  let pricesBaseUri: string;
   let queue: Queue;
   let consumer: PushNotificationConsumer;
   let transactionApiManager: ITransactionApiManager;
@@ -127,6 +129,9 @@ describe('Push notification queue integration', () => {
     configurationService = moduleFixture.get(IConfigurationService);
     cacheService = moduleFixture.get(CacheService);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    pricesBaseUri = configurationService.getOrThrow<string>(
+      'balances.providers.safe.prices.baseUri',
+    );
     queue = moduleFixture.get(getQueueToken(PUSH_NOTIFICATION_QUEUE));
     consumer = moduleFixture.get(PushNotificationConsumer);
     transactionApiManager = moduleFixture.get(ITransactionApiManager);
@@ -280,6 +285,25 @@ describe('Push notification queue integration', () => {
             status: 200,
           });
         }
+        // INCOMING_TOKEN triggers an asset-list lookup. The test chainId isn't a
+        // Zerion-covered network, so the gate falls back to the balances list;
+        // return a list containing the event token so it counts as non-spam.
+        if (
+          'tokenAddress' in event &&
+          url ===
+            `${chain.transactionService}/api/v1/safes/${event.address}/balances/`
+        ) {
+          const balance = balanceBuilder()
+            .with('tokenAddress', event.tokenAddress)
+            .build();
+          return Promise.resolve({ data: rawify([balance]), status: 200 });
+        }
+        if (
+          url ===
+          `${pricesBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`
+        ) {
+          return Promise.resolve({ data: rawify({}), status: 200 });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
 
@@ -350,6 +374,22 @@ describe('Push notification queue integration', () => {
             status: 200,
           });
         }
+        if (
+          'tokenAddress' in event &&
+          url ===
+            `${chain.transactionService}/api/v1/safes/${event.address}/balances/`
+        ) {
+          const balance = balanceBuilder()
+            .with('tokenAddress', event.tokenAddress)
+            .build();
+          return Promise.resolve({ data: rawify([balance]), status: 200 });
+        }
+        if (
+          url ===
+          `${pricesBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`
+        ) {
+          return Promise.resolve({ data: rawify({}), status: 200 });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
 
@@ -360,6 +400,49 @@ describe('Push notification queue integration', () => {
         expect(counts.active + counts.waiting + counts.delayed).toBe(0);
       });
 
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should suppress INCOMING_TOKEN when the token is NOT on the asset list (spam)', async () => {
+      const safeAddress = addr();
+      const event = incomingTokenEventBuilder()
+        .with('address', safeAddress)
+        .build();
+      currentChainId = event.chainId;
+      const chain = chainBuilder().with('chainId', event.chainId).build();
+      const subs = createSubscribers(1);
+
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${event.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+        // Asset list does NOT contain the incoming token → treated as spam.
+        if (
+          url ===
+          `${chain.transactionService}/api/v1/safes/${event.address}/balances/`
+        ) {
+          return Promise.resolve({ data: rawify([]), status: 200 });
+        }
+        if (
+          url ===
+          `${pricesBaseUri}/simple/token_price/${chain.pricesProvider.chainName}`
+        ) {
+          return Promise.resolve({ data: rawify({}), status: 200 });
+        }
+        return Promise.reject(`No matching rule for url: ${url}`);
+      });
+
+      await pushNotificationService.enqueueEvent(event);
+
+      await retry(async () => {
+        const counts = await queue.getJobCounts();
+        expect(counts.active + counts.waiting + counts.delayed).toBe(0);
+      });
+
+      // No incoming-transfers lookup and no delivery — gated as spam.
       expect(
         notificationsRepository.enqueueNotification,
       ).not.toHaveBeenCalled();
