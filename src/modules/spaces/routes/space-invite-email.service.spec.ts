@@ -2,6 +2,9 @@
 
 import { faker } from '@faker-js/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
@@ -16,6 +19,10 @@ import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-
 
 const BASE_URI = 'https://app.safe.global';
 const INVITE_URL = 'https://app.safe.global/welcome/spaces';
+const RECIPIENT_RATE_LIMIT_MAX = 2;
+const RECIPIENT_RATE_LIMIT_WINDOW_SECONDS = 24 * 60 * 60;
+const EMAILS_ALERT_THRESHOLD = 10;
+const EMAILS_ALERT_WINDOW_SECONDS = 60 * 60;
 
 const configurationServiceMock = {
   getOrThrow: jest.fn(),
@@ -36,6 +43,7 @@ const sesEmailQueueServiceMock = {
 describe('SpaceInviteEmailService', () => {
   let service: SpaceInviteEmailService;
   let workspaceName: string;
+  let fakeCacheService: FakeCacheService;
 
   const buildService = (
     queue?: SesEmailQueueService,
@@ -44,17 +52,29 @@ describe('SpaceInviteEmailService', () => {
       configurationServiceMock,
       spacesRepositoryMock,
       loggingServiceMock,
+      fakeCacheService,
       queue,
     );
 
   beforeEach(() => {
     jest.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'safeWebApp.baseUri') {
-        return BASE_URI;
+      switch (key) {
+        case 'safeWebApp.baseUri':
+          return BASE_URI;
+        case 'spaces.rateLimit.invitation.recipient.max':
+          return RECIPIENT_RATE_LIMIT_MAX;
+        case 'spaces.rateLimit.invitation.recipient.windowSeconds':
+          return RECIPIENT_RATE_LIMIT_WINDOW_SECONDS;
+        case 'spaces.rateLimit.invitation.emailsAlert.threshold':
+          return EMAILS_ALERT_THRESHOLD;
+        case 'spaces.rateLimit.invitation.emailsAlert.windowSeconds':
+          return EMAILS_ALERT_WINDOW_SECONDS;
+        default:
+          throw new Error(`Unexpected config key: ${key}`);
       }
-      throw new Error(`Unexpected config key: ${key}`);
     });
+    fakeCacheService = new FakeCacheService();
     workspaceName = nameBuilder();
     spacesRepositoryMock.findOneOrFail.mockResolvedValue(
       spaceBuilder().with('name', workspaceName).build(),
@@ -207,6 +227,92 @@ describe('SpaceInviteEmailService', () => {
 
       expect(loggingServiceMock.warn).toHaveBeenCalledWith(
         'Error while enqueueing space invite email: Redis connection refused',
+      );
+    });
+  });
+
+  describe('rate limiting', () => {
+    it('should suppress emails to a recipient above the per-recipient limit while sending to others', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      const limitedInvite = emailInviteUserDtoBuilder().build();
+      const otherInvite = emailInviteUserDtoBuilder().build();
+      sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
+
+      // RECIPIENT_RATE_LIMIT_MAX = 2: the first two emails to the same
+      // address exhaust its budget, the third one is suppressed.
+      await service.enqueueInviteEmails({ users: [limitedInvite], spaceId });
+      await service.enqueueInviteEmails({ users: [limitedInvite], spaceId });
+      await service.enqueueInviteEmails({
+        users: [limitedInvite, otherInvite],
+        spaceId,
+      });
+
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledTimes(3);
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenLastCalledWith(
+        expect.objectContaining({ to: otherInvite.email }),
+      );
+      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.RateLimit,
+          spaceId,
+          maxEmails: RECIPIENT_RATE_LIMIT_MAX,
+        }),
+      );
+    });
+
+    it('should count renewal emails against the recipient budget', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      const name = nameBuilder();
+      const email = fakeEmailAddress();
+      sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
+
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledTimes(
+        RECIPIENT_RATE_LIMIT_MAX,
+      );
+    });
+
+    it('should not leak the recipient address in the rate limit log', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      const name = nameBuilder();
+      const email = fakeEmailAddress();
+      sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
+
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+
+      const rateLimitLogs = loggingServiceMock.warn.mock.calls.filter(
+        ([log]) =>
+          typeof log === 'object' &&
+          (log as { type: string }).type === LogType.RateLimit,
+      );
+      expect(rateLimitLogs).toHaveLength(1);
+      expect(JSON.stringify(rateLimitLogs[0])).not.toContain(email);
+    });
+
+    it('should log a warning above the global alert threshold without blocking', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      const invite = emailInviteUserDtoBuilder().build();
+      sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
+      await fakeCacheService.setCounter(
+        CacheRouter.getRateLimitCacheKey('spaces_invitation_emails_global'),
+        EMAILS_ALERT_THRESHOLD,
+        EMAILS_ALERT_WINDOW_SECONDS,
+      );
+
+      await service.enqueueInviteEmails({ users: [invite], spaceId });
+
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledTimes(1);
+      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.RateLimit,
+          alertThreshold: EMAILS_ALERT_THRESHOLD,
+          currentCount: EMAILS_ALERT_THRESHOLD + 1,
+        }),
       );
     });
   });

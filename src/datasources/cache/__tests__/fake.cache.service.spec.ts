@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -85,6 +86,19 @@ describe('FakeCacheService', () => {
       const result = await target.increment(key, undefined);
       expect(result).toEqual(initialValue + i);
     }
+  });
+
+  it('increments the value of a key by an arbitrary amount', async () => {
+    const key = faker.string.alphanumeric();
+    const firstAmount = faker.number.int({ min: 1, max: 100 });
+    const secondAmount = faker.number.int({ min: 1, max: 100 });
+
+    await expect(
+      target.incrementBy(key, firstAmount, undefined),
+    ).resolves.toEqual(firstAmount);
+    await expect(
+      target.incrementBy(key, secondAmount, undefined),
+    ).resolves.toEqual(firstAmount + secondAmount);
   });
 
   it('sets and gets the value of a counter key', async () => {

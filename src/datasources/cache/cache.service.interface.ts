@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 
 export const CacheService = Symbol('ICacheService');
@@ -18,6 +19,13 @@ export interface ICacheService {
 
   increment(
     cacheKey: string,
+    expireTimeSeconds: number | undefined,
+    expireDeviatePercent?: number,
+  ): Promise<number>;
+
+  incrementBy(
+    cacheKey: string,
+    amount: number,
     expireTimeSeconds: number | undefined,
     expireDeviatePercent?: number,
   ): Promise<number>;

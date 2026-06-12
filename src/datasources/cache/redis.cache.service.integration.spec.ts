@@ -224,6 +224,34 @@ describe('RedisCacheService', () => {
     expect(ttl).toBeLessThanOrEqual(maxExpireTime);
   });
 
+  it('increments the value of a key by an arbitrary amount', async () => {
+    const expireTime = faker.number.int({ min: 1, max: maxTtlDeviated });
+    const maxExpireTime = offsetByPercentage(
+      expireTime,
+      defaultExpirationDeviatePercent,
+    );
+    const key = faker.string.alphanumeric();
+    const firstAmount = faker.number.int({ min: 1, max: 100 });
+    const secondAmount = faker.number.int({ min: 1, max: 100 });
+
+    const firstResult = await redisCacheService.incrementBy(
+      key,
+      firstAmount,
+      expireTime,
+    );
+    const secondResult = await redisCacheService.incrementBy(
+      key,
+      secondAmount,
+      undefined,
+    );
+
+    const ttl = await redisClient.ttl(key);
+    expect(firstResult).toEqual(firstAmount);
+    expect(secondResult).toEqual(firstAmount + secondAmount);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(maxExpireTime);
+  });
+
   it('sets and gets the value of a counter key', async () => {
     const key = faker.string.alphanumeric();
     const value = faker.number.int({ min: 100 });
