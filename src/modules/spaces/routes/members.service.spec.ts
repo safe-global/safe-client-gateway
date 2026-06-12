@@ -7,6 +7,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -28,6 +31,8 @@ import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const SPACE_RATE_LIMIT_MAX = 15;
+const SPACE_RATE_LIMIT_WINDOW_SECONDS = 600;
 
 const membersRepositoryMock = {
   findActiveAdmin: jest.fn(),
@@ -46,8 +51,13 @@ const spaceInviteEmailServiceMock = {
   enqueueRenewalEmail: jest.fn(),
 } as jest.MockedObjectDeep<SpaceInviteEmailService>;
 
+const loggingServiceMock = {
+  warn: jest.fn(),
+} as jest.MockedObjectDeep<ILoggingService>;
+
 describe('MembersService', () => {
   let service: MembersService;
+  let fakeCacheService: FakeCacheService;
 
   beforeEach(() => {
     jest.resetAllMocks();
@@ -57,14 +67,21 @@ describe('MembersService', () => {
           return MAX_INVITES;
         case 'spaces.invite.ttlMs':
           return INVITE_TTL_MS;
+        case 'spaces.rateLimit.invitation.space.max':
+          return SPACE_RATE_LIMIT_MAX;
+        case 'spaces.rateLimit.invitation.space.windowSeconds':
+          return SPACE_RATE_LIMIT_WINDOW_SECONDS;
         default:
           throw new Error(`Unexpected config key: ${key}`);
       }
     });
+    fakeCacheService = new FakeCacheService();
     service = new MembersService(
       membersRepositoryMock,
       configurationServiceMock,
       spaceInviteEmailServiceMock,
+      fakeCacheService,
+      loggingServiceMock,
     );
   });
 
@@ -288,9 +305,92 @@ describe('MembersService', () => {
         spaceInviteEmailServiceMock.enqueueInviteEmails,
       ).toHaveBeenCalledWith({ users: inviteUsersDto.users, spaceId });
     });
+
+    it('should throw 429 when the Space invitee budget is exceeded', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const users = Array.from({ length: 8 }, () =>
+        emailInviteUserDtoBuilder().build(),
+      );
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.inviteUsers.mockResolvedValue([]);
+
+      // First batch of 8 fits the budget of 15, the second one exceeds it.
+      await expect(
+        service.inviteUser({ authPayload, spaceId, inviteUsersDto: { users } }),
+      ).resolves.toEqual([]);
+      await expect(
+        service.inviteUser({ authPayload, spaceId, inviteUsersDto: { users } }),
+      ).rejects.toThrow('Rate limit reached');
+
+      expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledTimes(1);
+      expect(
+        spaceInviteEmailServiceMock.enqueueInviteEmails,
+      ).toHaveBeenCalledTimes(1);
+    });
+
+    it('should keep separate invitee budgets per Space', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const users = Array.from({ length: 8 }, () =>
+        emailInviteUserDtoBuilder().build(),
+      );
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.inviteUsers.mockResolvedValue([]);
+
+      await expect(
+        service.inviteUser({
+          authPayload,
+          spaceId: 1,
+          inviteUsersDto: { users },
+        }),
+      ).resolves.toEqual([]);
+      await expect(
+        service.inviteUser({
+          authPayload,
+          spaceId: 2,
+          inviteUsersDto: { users },
+        }),
+      ).resolves.toEqual([]);
+
+      expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledTimes(2);
+    });
   });
 
   describe('renewInvite', () => {
+    it('should throw 429 when the Space invitee budget is exhausted', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      await fakeCacheService.setCounter(
+        CacheRouter.getRateLimitCacheKey(`spaces_invitation_${spaceId}`),
+        SPACE_RATE_LIMIT_MAX,
+        SPACE_RATE_LIMIT_WINDOW_SECONDS,
+      );
+
+      await expect(
+        service.renewInvite({ authPayload, spaceId, userId }),
+      ).rejects.toThrow('Rate limit reached');
+
+      expect(membersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).not.toHaveBeenCalled();
+    });
+
     it('should throw ForbiddenException when the caller is not an active admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
