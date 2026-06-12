@@ -9,6 +9,7 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -112,6 +113,57 @@ describe('ConfigApi', () => {
       expireTimeSeconds: expirationTimeInSeconds,
     });
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return the gas tokens retrieved by chainId', async () => {
+    const chainId = faker.string.numeric();
+    const data = [gasTokenBuilder().build(), gasTokenBuilder().build()];
+    mockDataSource.get.mockResolvedValue(rawify(data));
+
+    const actual = await service.getGasTokens(chainId, {});
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(`${chainId}_gas_tokens`, 'undefined_undefined'),
+      url: `${baseUri}/api/v1/chains/${chainId}/gas-tokens/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { limit: undefined, offset: undefined } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return the gas tokens retrieved by chainId with pagination', async () => {
+    const chainId = faker.string.numeric();
+    const limit = faker.number.int({ min: 1, max: 100 });
+    const offset = faker.number.int({ min: 0, max: 100 });
+    const data = [gasTokenBuilder().build()];
+    mockDataSource.get.mockResolvedValue(rawify(data));
+
+    const actual = await service.getGasTokens(chainId, { limit, offset });
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(`${chainId}_gas_tokens`, `${limit}_${offset}`),
+      url: `${baseUri}/api/v1/chains/${chainId}/gas-tokens/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { limit, offset } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should forward errors from the data source when retrieving gas tokens', async () => {
+    const chainId = faker.string.numeric();
+    const expected = new DataSourceError('some error');
+    mockHttpErrorFactory.from.mockReturnValue(expected);
+    mockDataSource.get.mockRejectedValueOnce(new Error());
+
+    await expect(service.getGasTokens(chainId, {})).rejects.toThrow(expected);
+
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 
   it('should return the safe apps retrieved by chainId', async () => {
