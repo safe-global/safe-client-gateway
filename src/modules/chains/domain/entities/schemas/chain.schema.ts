@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import {
   NullableAddressSchema,
   NullableStringSchema,
@@ -70,6 +71,13 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
+export const RelayerSchema = z.object({
+  type: z.enum(RelayerType).nullable().catch(null),
+  safeCreationSponsored: z.boolean().catch(false).default(false),
+  safeTransactionSponsored: z.boolean().catch(false).default(false),
+  enableTenderlySimulationBeforeRelay: z.boolean().catch(false).default(false),
+});
+
 function removeTrailingSlash(url: string): string {
   return url.replace(/\/$/, '');
 }
@@ -104,6 +112,7 @@ export const ChainSchema = z.object({
   features: z.array(z.string()),
   // TODO: Extract and use RelayDtoSchema['version'] when fully migrated to zod
   recommendedMasterCopyVersion: z.string(),
+  relayer: RelayerSchema.nullable().catch(null),
 });
 
 // TODO: Merge schema definitions with ChainEntity.

@@ -135,6 +135,8 @@ describe('Chains V2 Controller', () => {
         .expect((res) => {
           expect(res.body).toHaveProperty('chainId');
           expect(res.body.chainId).toBe(chainResponse.chainId);
+          expect(res.body).toHaveProperty('relayer');
+          expect(res.body.relayer).toStrictEqual(chainResponse.relayer);
         });
 
       expect(networkService.get).toHaveBeenCalledWith(

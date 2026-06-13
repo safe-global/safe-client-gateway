@@ -26,6 +26,7 @@ import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exceptio
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
 import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
+import { RelayerNotAvailableExceptionFilter } from '@/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
 import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
 import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
 import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
@@ -129,6 +130,7 @@ export class RelayController {
     RelayLimitReachedExceptionFilter,
     RelayDeniedExceptionFilter,
     SafeTxHashMismatchExceptionFilter,
+    RelayerNotAvailableExceptionFilter,
     InvalidMultiSendExceptionFilter,
     InvalidTransferExceptionFilter,
     UnofficialMasterCopyExceptionFilter,
@@ -207,6 +209,7 @@ export class RelayController {
     description: 'Remaining relay quota retrieved successfully',
   })
   @Get(':safeAddress')
+  @UseFilters(RelayerNotAvailableExceptionFilter)
   async getRelaysRemaining(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))

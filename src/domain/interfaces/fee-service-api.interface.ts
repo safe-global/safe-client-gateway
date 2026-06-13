@@ -34,12 +34,4 @@ export interface IFeeServiceApi {
     safeAddress: Address;
     request: TxFeesRequest;
   }): Promise<TxFeesResponse>;
-
-  /**
-   * Checks if 'Pay with Safe' is enabled for the given chain.
-   *
-   * @param chainId - Chain ID to check
-   * @returns `true` if Pay with Safe is enabled for the chain, `false` otherwise
-   */
-  isPayWithSafeEnabled(chainId: string): boolean;
 }
