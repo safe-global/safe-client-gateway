@@ -50,7 +50,7 @@ export class SpacesService {
   }
 
   public async getActiveOrInvitedSpace(
-    id: number,
+    id: Space['id'],
     authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     const [space] = await this.findSpaces(authPayload, id);
@@ -62,7 +62,7 @@ export class SpacesService {
 
   private async findSpaces(
     authPayload: AuthPayload,
-    spaceId?: number,
+    spaceId?: Space['id'],
   ): Promise<Array<GetSpaceResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
@@ -77,10 +77,14 @@ export class SpacesService {
     if (members.length === 0) {
       return [];
     }
+    const callerStatusBySpace = new Map(
+      members.map((member) => [member.space.id, member.status]),
+    );
     const spaces = await this.spacesRepository.find({
       where: { id: In(members.map((member) => member.space.id)) },
       select: {
         id: true,
+        uuid: true,
         name: true,
         members: {
           role: true,
@@ -102,10 +106,17 @@ export class SpacesService {
         space.members.map((member) => member.user.id),
       );
 
+      // Pending invitees only see their own invitation row and no safe count.
+      const callerIsActive = callerStatusBySpace.get(space.id) === 'ACTIVE';
+      const visibleMembers = callerIsActive
+        ? space.members
+        : space.members.filter((member) => member.user.id === userId);
+
       return {
         id: space.id,
+        uuid: space.uuid,
         name: space.name,
-        members: space.members.map((member) => ({
+        members: visibleMembers.map((member) => ({
           ...member,
           ...(member.status === 'INVITED' &&
             member.invitedBy != null &&
@@ -114,7 +125,7 @@ export class SpacesService {
               invitedByName: invitedByNames.get(member.invitedBy),
             }),
         })),
-        safeCount: space.safes?.length ?? 0,
+        safeCount: callerIsActive ? (space.safes?.length ?? 0) : 0,
       };
     });
   }
@@ -127,7 +138,11 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
-    return await this.spacesRepository.update(args);
+    return await this.spacesRepository.update({
+      id: args.id,
+      updatePayload: args.updatePayload,
+      actorUserId: userId,
+    });
   }
 
   /**
@@ -192,6 +207,9 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
-    return await this.spacesRepository.delete(args.id);
+    return await this.spacesRepository.delete({
+      id: args.id,
+      actorUserId: userId,
+    });
   }
 }

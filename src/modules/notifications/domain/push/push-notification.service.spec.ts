@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import type { Address, Hash } from 'viem';
@@ -38,6 +37,7 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const mockJobQueueService = jest.mocked({
   addJob: jest.fn(),
@@ -716,7 +716,7 @@ describe('PushNotificationService (Unit)', () => {
       const event = pendingTransactionEventBuilder().build();
       const nullSub = {
         subscriber: null as Address | null,
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         cloudMessagingToken: faker.string.alphanumeric(32),
       };
       const ownerSub = { ...createSubscriber(), subscriber: ownerAddress };

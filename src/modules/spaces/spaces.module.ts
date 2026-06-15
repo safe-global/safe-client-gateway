@@ -10,13 +10,11 @@ import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-b
 import { AddressBookRequest } from '@/modules/spaces/datasources/entities/address-book-request.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { UserAddressBookItem } from '@/modules/spaces/datasources/entities/user-address-book-item.entity.db';
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { AddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository';
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
-import { UserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository';
-import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
+import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -27,13 +25,17 @@ import { AddressBooksController } from '@/modules/spaces/routes/address-books.co
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import {
+  LegacySpaceIdPipe,
+  SpaceIdPipe,
+} from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceAuditController } from '@/modules/spaces/routes/space-audit.controller';
+import { SpaceAuditService } from '@/modules/spaces/routes/space-audit.service';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import { UserAddressBookController } from '@/modules/spaces/routes/user-address-book.controller';
-import { UserAddressBookService } from '@/modules/spaces/routes/user-address-book.service';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
@@ -49,28 +51,28 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
       SpaceSafe,
       Member,
       AddressBookItem,
-      UserAddressBookItem,
       AddressBookRequest,
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
+    SpaceAuditModule,
     UserIdentityResolverModule,
     WalletsModule,
   ],
   controllers: [
     AddressBooksController,
-    UserAddressBookController,
     AddressBookRequestsController,
     SpacesController,
+    SpaceAuditController,
     SpaceSafesController,
     MembersController,
   ],
   providers: [
     AddressBooksService,
-    UserAddressBookService,
     AddressBookRequestsService,
     SpacesService,
+    SpaceAuditService,
     SpaceSafesService,
     MembersService,
     SpaceInviteEmailService,
@@ -87,20 +89,21 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
       useClass: AddressBookItemsRepository,
     },
     {
-      provide: IUserAddressBookItemsRepository,
-      useClass: UserAddressBookItemsRepository,
-    },
-    {
       provide: IAddressBookRequestsRepository,
       useClass: AddressBookRequestsRepository,
     },
+    // SpaceIdPipe (UUID-only) is wired but unused for now; controllers switch
+    // to it once the FE drops the numeric Space id. Do not delete as unused.
+    SpaceIdPipe,
+    LegacySpaceIdPipe,
   ],
   exports: [
     ISpacesRepository,
     ISpaceSafesRepository,
     IAddressBookItemsRepository,
-    IUserAddressBookItemsRepository,
     IAddressBookRequestsRepository,
+    SpaceIdPipe,
+    LegacySpaceIdPipe,
   ],
 })
 export class SpacesModule {}

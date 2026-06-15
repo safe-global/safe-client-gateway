@@ -7,7 +7,6 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
@@ -21,7 +20,11 @@ import {
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 @Entity('address_book_requests')
-@Unique('UQ_ABR_space_requester_address', ['space', 'requestedBy', 'address'])
+@Index(
+  'UQ_ABR_space_requester_address_pending',
+  ['space', 'requestedBy', 'address'],
+  { unique: true, where: 'status = 0' },
+)
 @Index('IDX_ABR_space_status', ['space', 'status'])
 export class AddressBookRequest implements DomainAddressBookRequest {
   @PrimaryGeneratedColumn({

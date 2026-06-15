@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { UUID } from 'node:crypto';
 import type {
   FindManyOptions,
   FindOptionsRelations,
@@ -58,6 +59,10 @@ export interface IMembersRepository {
   renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    spaceId: Space['id'];
+    spaceUuid: UUID;
+    targetUserId: User['id'];
+    actorUserId: User['id'];
   }): Promise<void>;
 
   /**

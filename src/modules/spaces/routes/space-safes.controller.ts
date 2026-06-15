@@ -7,7 +7,6 @@ import {
   HttpCode,
   Inject,
   Param,
-  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -23,7 +22,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -31,6 +29,7 @@ import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-spa
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -53,9 +52,9 @@ export class SpaceSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to add Safes to',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to add Safes to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: CreateSpaceSafesDto,
@@ -80,8 +79,7 @@ export class SpaceSafesController {
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spaceSafesService.create({
@@ -98,9 +96,10 @@ export class SpaceSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to get Safes for',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID to get Safes for (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space Safes retrieved successfully',
@@ -118,8 +117,7 @@ export class SpaceSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
     return await this.spaceSafesService.get(spaceId, authPayload);
@@ -132,9 +130,9 @@ export class SpaceSafesController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to remove Safes from',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to remove Safes from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: DeleteSpaceSafesDto,
@@ -161,8 +159,7 @@ export class SpaceSafesController {
   public async delete(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: DeleteSpaceSafesDto,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spaceSafesService.delete({

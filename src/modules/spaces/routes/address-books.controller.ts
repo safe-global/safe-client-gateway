@@ -6,7 +6,6 @@ import {
   Get,
   Inject,
   Param,
-  ParseIntPipe,
   Put,
   UseGuards,
 } from '@nestjs/common';
@@ -23,7 +22,6 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
@@ -34,6 +32,7 @@ import {
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-rate-limit.guard';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -52,9 +51,10 @@ export class AddressBooksController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to get address book for',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID to get address book for (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Address book items retrieved successfully',
@@ -71,12 +71,11 @@ export class AddressBooksController {
   })
   @Get('/:spaceId/address-book')
   @UseGuards(AuthGuard)
-  public getAddressBookItems(
+  public async getAddressBookItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<SpaceAddressBookDto> {
-    return this.service.findAllBySpaceId(authPayload, spaceId);
+    return await this.service.findAllBySpaceId(authPayload, spaceId);
   }
 
   @ApiOperation({
@@ -86,9 +85,9 @@ export class AddressBooksController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID to update address book for',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to update address book for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: UpsertAddressBookItemsDto,
@@ -115,14 +114,17 @@ export class AddressBooksController {
   @Put('/:spaceId/address-book')
   @UseGuards(SpacesAddressBookRateLimitGuard)
   @UseGuards(AuthGuard)
-  public upsertAddressBookItems(
+  public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
-    return this.service.upsertMany(authPayload, spaceId, addressBookItems);
+    return await this.service.upsertMany(
+      authPayload,
+      spaceId,
+      addressBookItems,
+    );
   }
 
   @ApiOperation({
@@ -132,9 +134,9 @@ export class AddressBooksController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID containing the address book',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID containing the address book',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'address',
@@ -154,13 +156,16 @@ export class AddressBooksController {
   })
   @Delete('/:spaceId/address-book/:address')
   @UseGuards(AuthGuard)
-  public deleteByAddress(
+  public async deleteByAddress(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    return this.service.deleteByAddress({ authPayload, spaceId, address });
+    return await this.service.deleteByAddress({
+      authPayload,
+      spaceId,
+      address,
+    });
   }
 }
