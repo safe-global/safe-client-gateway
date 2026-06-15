@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import { ZodError, z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -15,6 +15,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { getNumberString } from '@/domain/common/utils/utils';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
@@ -235,9 +236,9 @@ export class ZerionPositionsApi implements IPositionsApi {
       ));
 
     if (!chainName) {
-      throw Error(
-        `Chain ${chain.chainId} balances retrieval via Zerion is not configured`,
-      );
+      const message = `Chain ${chain.chainId} balances retrieval via Zerion is not configured`;
+      this.loggingService.warn(message);
+      throw new HttpExceptionNoLog(message, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 
     return chainName;
