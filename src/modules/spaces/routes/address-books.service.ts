@@ -76,7 +76,6 @@ export class AddressBooksService {
   ): Promise<SpaceAddressBookDto> {
     const spaceUuid = await this.spacesRepository.findUuidById(spaceId);
     return {
-      spaceId: spaceId.toString(),
       spaceUuid,
       data: items.map((item) => ({
         name: item.name,

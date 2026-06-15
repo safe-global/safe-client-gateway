@@ -40,7 +40,7 @@ import {
   UpdateSpaceSchema,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -133,7 +133,7 @@ export class SpacesController {
   })
   @Get('/:id')
   public async getOne(
-    @Param('id', LegacySpaceIdPipe) id: number,
+    @Param('id', SpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     return await this.spacesService.getActiveOrInvitedSpace(id, authPayload);
@@ -173,7 +173,7 @@ export class SpacesController {
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
-    @Param('id', LegacySpaceIdPipe) id: number,
+    @Param('id', SpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<UpdateSpaceResponse> {
     return await this.spacesService.update({
@@ -211,7 +211,7 @@ export class SpacesController {
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
-    @Param('id', LegacySpaceIdPipe) id: number,
+    @Param('id', SpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spacesService.delete({ id, authPayload });

@@ -22,7 +22,7 @@ import {
   SpaceAuditSortDirectionQuerySchema,
 } from '@/modules/spaces/routes/entities/space-audit-log.dto.entity';
 import { SpaceAuditRouteGuard } from '@/modules/spaces/routes/guards/space-audit-route.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceAuditService } from '@/modules/spaces/routes/space-audit.service';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -96,7 +96,7 @@ export class SpaceAuditController {
   })
   @Get(':spaceId/audit-log')
   public async getAuditLog(
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
@@ -158,7 +158,7 @@ export class SpaceAuditController {
   })
   @Get(':spaceId/audit-log/actors')
   public async getAuditLogActors(
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<SpaceAuditLogActorDto>> {
     return await this.spaceAuditService.getAuditLogActors({

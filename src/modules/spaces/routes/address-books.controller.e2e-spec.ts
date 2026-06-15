@@ -90,7 +90,7 @@ describe('AddressBooksController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({
-          spaceId: spaceId.toString(),
+          spaceUuid: spaceId,
           data: [],
         });
     });
@@ -107,7 +107,7 @@ describe('AddressBooksController', () => {
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(200)
         .expect({
-          spaceId: spaceId.toString(),
+          spaceUuid: spaceId,
           data: [],
         });
     });
@@ -127,7 +127,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: [
               {
                 chainIds: mockChainIds,
@@ -163,7 +163,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: [
               {
                 chainIds: mockChainIds,
@@ -294,7 +294,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: [
               {
                 chainIds: mockChainIds,
@@ -326,7 +326,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: [
               {
                 chainIds: mockChainIds,
@@ -363,7 +363,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: [
               {
                 chainIds: mockChainIds,
@@ -420,7 +420,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: expect.arrayContaining([
               {
                 ...updatedFirstItem,
@@ -634,7 +634,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId.toString(),
+            spaceUuid: spaceId,
             data: [],
           }),
         );
@@ -667,7 +667,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            spaceId: spaceId2.toString(),
+            spaceUuid: spaceId2,
             data: [
               {
                 address: mockAddress,
@@ -787,7 +787,7 @@ describe('AddressBooksController', () => {
       .set('Cookie', [`access_token=${accessToken}`])
       .send({ name: spaceName })
       .expect(201);
-    const spaceId = createSpaceResponse.body.id;
+    const spaceId = createSpaceResponse.body.uuid;
     return {
       spaceId,
       accessToken,

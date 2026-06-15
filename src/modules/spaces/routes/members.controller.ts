@@ -49,7 +49,7 @@ import {
   UpdateRoleDtoSchema,
 } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members.service';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -94,7 +94,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(InviteUsersDtoSchema))
     inviteUsersDto: InviteUsersDto,
   ): Promise<Array<Invitation>> {
@@ -139,7 +139,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(AcceptInviteDtoSchema))
     acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
@@ -178,7 +178,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<void> {
     return await this.membersService.declineInvite({
       authPayload,
@@ -223,7 +223,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async renewInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<Invitation> {
@@ -262,7 +262,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<MembersDto> {
     return await this.membersService.get({
       authPayload,
@@ -296,7 +296,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async getMembership(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<MemberDto> {
     return await this.membersService.getSelfMembership({
       authPayload,
@@ -345,7 +345,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
@@ -380,7 +380,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async updateAlias(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
     updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
@@ -427,7 +427,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<void> {
@@ -461,7 +461,7 @@ export class MembersController {
   @UseGuards(AuthGuard)
   public async selfRemove(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<void> {
     return await this.membersService.selfRemove({
       authPayload,

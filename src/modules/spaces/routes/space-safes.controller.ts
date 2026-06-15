@@ -29,7 +29,7 @@ import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-spa
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -79,7 +79,7 @@ export class SpaceSafesController {
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spaceSafesService.create({
@@ -117,7 +117,7 @@ export class SpaceSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
     return await this.spaceSafesService.get(spaceId, authPayload);
@@ -159,7 +159,7 @@ export class SpaceSafesController {
   public async delete(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: DeleteSpaceSafesDto,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spaceSafesService.delete({

@@ -16,7 +16,7 @@ export interface ISpacesRepository {
     userId: User['id'];
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>>;
+  }): Promise<Pick<Space, 'uuid' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<SpacesRepository['findOne']>[0],
@@ -62,15 +62,12 @@ export interface ISpacesRepository {
     id: Space['id'];
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
     actorUserId: number;
-  }): Promise<Pick<Space, 'id' | 'uuid'>>;
+  }): Promise<Pick<Space, 'uuid'>>;
 
   findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
 
-  // TODO: remove after FE removes numeric Space ID fallback.
+  // Resolves the internal numeric id to the client-facing UUID for response mapping.
   findUuidById(id: Space['id']): Promise<Space['uuid']>;
-
-  // TODO: remove after FE removes numeric Space ID fallback.
-  findIdByIdOrUuid(value: string): Promise<Space['id']>;
 
   delete(args: { id: number; actorUserId: number }): Promise<void>;
 }

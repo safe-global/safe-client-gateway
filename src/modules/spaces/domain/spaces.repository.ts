@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
-  BadRequestException,
   ForbiddenException,
   Inject,
   Injectable,
@@ -16,7 +15,6 @@ import {
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { NUMERIC_REGEX, UUID_REGEX } from '@/domain/common/constants';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import {
@@ -55,7 +53,7 @@ export class SpacesRepository implements ISpacesRepository {
     userId: number;
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>> {
+  }): Promise<Pick<Space, 'uuid' | 'name'>> {
     const isLimited = await this.isLimited(args.userId);
     if (isLimited) {
       throw new ForbiddenException(
@@ -93,7 +91,6 @@ export class SpacesRepository implements ISpacesRepository {
         });
 
         return {
-          id: insertResult.id,
           uuid: insertResult.uuid,
           name: insertResult.name,
         };
@@ -219,7 +216,7 @@ export class SpacesRepository implements ISpacesRepository {
     id: Space['id'];
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
     actorUserId: number;
-  }): Promise<Pick<Space, 'id' | 'uuid'>> {
+  }): Promise<Pick<Space, 'uuid'>> {
     return await this.postgresDatabaseService.transaction(
       async (entityManager) => {
         // Old values are read inside the transaction to keep the diff exact.
@@ -249,7 +246,7 @@ export class SpacesRepository implements ISpacesRepository {
           });
         }
 
-        return { id: current.id, uuid: current.uuid };
+        return { uuid: current.uuid };
       },
     );
   }
@@ -285,31 +282,14 @@ export class SpacesRepository implements ISpacesRepository {
     return space.id;
   }
 
-  // TODO: remove after FE removes numeric Space ID fallback. Used to echo the
-  // Space UUID alongside the deprecated numeric id in responses.
+  // Resolves the internal numeric id to the client-facing UUID. Mappers hold a
+  // numeric spaceId internally and use this to emit the UUID in responses.
   public async findUuidById(id: Space['id']): Promise<Space['uuid']> {
     const space = await this.findOneOrFail({
       where: { id },
       select: { uuid: true },
     });
     return space.uuid;
-  }
-
-  // TODO: remove after FE removes numeric Space ID fallback.
-  // UUID is re-validated here (defence in depth) so a malformed string can't
-  // reach Postgres as a UUID and surface as a raw 500 instead of a 400.
-  public async findIdByIdOrUuid(value: string): Promise<Space['id']> {
-    if (NUMERIC_REGEX.test(value)) {
-      const space = await this.findOneOrFail({
-        where: { id: Number(value) },
-        select: { id: true },
-      });
-      return space.id;
-    }
-    if (!UUID_REGEX.test(value)) {
-      throw new BadRequestException('Invalid space identifier');
-    }
-    return await this.findIdByUuid(value as Space['uuid']);
   }
 
   // @todo Add a soft delete method

@@ -188,8 +188,9 @@ describe('SpaceAuditRepository', () => {
       name: nameBuilder(),
       status: 'ACTIVE',
     });
+    const spaceId = await spacesRepository.findIdByUuid(space.uuid);
     return {
-      spaceId: space.id,
+      spaceId,
       spaceUuid: space.uuid,
       adminUserId: userId,
       adminAuthPayload: authPayload,

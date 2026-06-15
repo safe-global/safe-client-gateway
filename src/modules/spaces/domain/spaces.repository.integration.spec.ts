@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { BadRequestException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -220,7 +219,6 @@ describe('SpacesRepository', () => {
       });
 
       expect(space).toEqual({
-        id: expect.any(Number),
         uuid: expect.any(String),
         name,
       });
@@ -289,7 +287,6 @@ describe('SpacesRepository', () => {
           status: spaceStatus,
         }),
       ).resolves.toEqual({
-        id: expect.any(Number),
         uuid: expect.any(String),
         name,
       });
@@ -346,7 +343,6 @@ describe('SpacesRepository', () => {
           status: 'ACTIVE',
         }),
       ).resolves.toEqual({
-        id: expect.any(Number),
         uuid: expect.any(String),
         name: expect.any(String),
       });
@@ -368,7 +364,6 @@ describe('SpacesRepository', () => {
       });
 
       expect(space).toEqual({
-        id: expect.any(Number),
         uuid: expect.any(String),
         name: spaceName,
       });
@@ -463,11 +458,12 @@ describe('SpacesRepository', () => {
         name: name,
         status: spaceStatus,
       });
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
 
       await expect(
-        spacesRepository.findOneOrFail({ where: { id: space.id } }),
+        spacesRepository.findOneOrFail({ where: { id: spaceId } }),
       ).resolves.toEqual({
-        id: space.id,
+        id: spaceId,
         uuid: space.uuid,
         name,
         status: spaceStatus,
@@ -500,76 +496,14 @@ describe('SpacesRepository', () => {
         status: faker.helpers.arrayElement(SpaceStatusKeys),
       });
 
-      await expect(spacesRepository.findIdByUuid(space.uuid)).resolves.toBe(
-        space.id,
+      await expect(spacesRepository.findIdByUuid(space.uuid)).resolves.toEqual(
+        expect.any(Number),
       );
     });
 
     it('should throw if no space has the UUID', async () => {
       await expect(spacesRepository.findIdByUuid(fakeUuid())).rejects.toThrow(
         'Workspace not found.',
-      );
-    });
-  });
-
-  describe('findIdByIdOrUuid', () => {
-    it('should resolve a UUID to its numeric id', async () => {
-      const user = await dbUserRepo.insert({
-        status: faker.helpers.arrayElement(UserStatusKeys),
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      const space = await spacesRepository.create({
-        userId,
-        name: faker.word.noun(),
-        status: faker.helpers.arrayElement(SpaceStatusKeys),
-      });
-
-      await expect(spacesRepository.findIdByIdOrUuid(space.uuid)).resolves.toBe(
-        space.id,
-      );
-    });
-
-    it('should resolve a legacy numeric id to itself', async () => {
-      const user = await dbUserRepo.insert({
-        status: faker.helpers.arrayElement(UserStatusKeys),
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      const space = await spacesRepository.create({
-        userId,
-        name: faker.word.noun(),
-        status: faker.helpers.arrayElement(SpaceStatusKeys),
-      });
-
-      await expect(
-        spacesRepository.findIdByIdOrUuid(String(space.id)),
-      ).resolves.toBe(space.id);
-    });
-
-    it('should throw if no space has the UUID', async () => {
-      await expect(
-        spacesRepository.findIdByIdOrUuid(faker.string.uuid()),
-      ).rejects.toThrow('Workspace not found.');
-    });
-
-    it('should throw if no space has the numeric id', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await expect(
-        spacesRepository.findIdByIdOrUuid(String(spaceId)),
-      ).rejects.toThrow('Workspace not found.');
-    });
-
-    it.each([
-      ['empty string', ''],
-      ['non-UUID text', faker.lorem.word()],
-      ['UUID missing a segment', faker.string.uuid().slice(0, -13)],
-      ['UUID with a non-hex character', `${faker.string.uuid().slice(0, -1)}g`],
-    ])('should throw BadRequestException for a malformed identifier (%s)', async (_label, value) => {
-      await expect(spacesRepository.findIdByIdOrUuid(value)).rejects.toThrow(
-        new BadRequestException('Invalid space identifier'),
       );
     });
   });
@@ -588,11 +522,12 @@ describe('SpacesRepository', () => {
         name: name,
         status: spaceStatus,
       });
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
 
       await expect(
-        spacesRepository.findOne({ where: { id: space.id } }),
+        spacesRepository.findOne({ where: { id: spaceId } }),
       ).resolves.toEqual({
-        id: space.id,
+        id: spaceId,
         uuid: space.uuid,
         name,
         status: spaceStatus,
@@ -636,14 +571,16 @@ describe('SpacesRepository', () => {
         name: spaceName2,
         status: spaceStatus2,
       });
+      const space1Id = await spacesRepository.findIdByUuid(space1.uuid);
+      const space2Id = await spacesRepository.findIdByUuid(space2.uuid);
 
       await expect(
         spacesRepository.findOrFail({
-          where: { id: In([space1.id, space2.id]) },
+          where: { id: In([space1Id, space2Id]) },
         }),
       ).resolves.toEqual([
         {
-          id: space1.id,
+          id: space1Id,
           uuid: space1.uuid,
           name: spaceName1,
           status: spaceStatus1,
@@ -653,7 +590,7 @@ describe('SpacesRepository', () => {
           safes: undefined,
         },
         {
-          id: space2.id,
+          id: space2Id,
           uuid: space2.uuid,
           name: spaceName2,
           status: spaceStatus2,
@@ -698,16 +635,18 @@ describe('SpacesRepository', () => {
         name: spaceName2,
         status: spaceStatus2,
       });
+      const space1Id = await spacesRepository.findIdByUuid(space1.uuid);
+      const space2Id = await spacesRepository.findIdByUuid(space2.uuid);
 
       await expect(
         spacesRepository.find({
           where: {
-            id: In([space1.id, space2.id]),
+            id: In([space1Id, space2Id]),
           },
         }),
       ).resolves.toEqual([
         {
-          id: space1.id,
+          id: space1Id,
           uuid: space1.uuid,
           name: spaceName1,
           status: spaceStatus1,
@@ -717,7 +656,7 @@ describe('SpacesRepository', () => {
           safes: undefined,
         },
         {
-          id: space2.id,
+          id: space2Id,
           uuid: space2.uuid,
           name: spaceName2,
           status: spaceStatus2,
@@ -756,12 +695,14 @@ describe('SpacesRepository', () => {
         status: spaceStatus,
       });
 
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
+
       await expect(
         spacesRepository.findOneByUserIdOrFail({
           userId,
         }),
       ).resolves.toEqual({
-        id: space.id,
+        id: spaceId,
         uuid: space.uuid,
         name: spaceName,
         status: spaceStatus,
@@ -799,12 +740,14 @@ describe('SpacesRepository', () => {
         status: spaceStatus,
       });
 
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
+
       await expect(
         spacesRepository.findOneByUserId({
           userId,
         }),
       ).resolves.toEqual({
-        id: space.id,
+        id: spaceId,
         uuid: space.uuid,
         name: spaceName,
         status: spaceStatus,
@@ -842,21 +785,23 @@ describe('SpacesRepository', () => {
         status: spaceStatus,
       });
 
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
+
       const newName = faker.word.noun();
       const newStatus = faker.helpers.arrayElement(SpaceStatusKeys);
 
       await spacesRepository.update({
-        id: space.id,
+        id: spaceId,
         updatePayload: { name: newName, status: newStatus },
         actorUserId: userId,
       });
 
       const dbSpace = await dbSpacesRepository.findOneOrFail({
-        where: { id: space.id },
+        where: { id: spaceId },
       });
 
       expect(dbSpace).toEqual({
-        id: space.id,
+        id: spaceId,
         uuid: space.uuid,
         name: newName,
         status: newStatus,
@@ -883,10 +828,12 @@ describe('SpacesRepository', () => {
         status: spaceStatus,
       });
 
-      await spacesRepository.delete({ id: space.id, actorUserId: userId });
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
+
+      await spacesRepository.delete({ id: spaceId, actorUserId: userId });
 
       await expect(
-        dbSpacesRepository.findOneOrFail({ where: { id: space.id } }),
+        dbSpacesRepository.findOneOrFail({ where: { id: spaceId } }),
       ).rejects.toBeInstanceOf(EntityNotFoundError);
     });
   });
