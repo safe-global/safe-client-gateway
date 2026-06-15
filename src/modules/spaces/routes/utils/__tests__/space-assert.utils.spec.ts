@@ -63,29 +63,37 @@ describe('space-assert.utils', () => {
   });
 
   describe('assertMember', () => {
-    it('should resolve when user is member', async () => {
+    it('should return the membership row when user is an active member', async () => {
       const spaceId = faker.number.int();
       const userId = faker.number.int();
+      const member = memberBuilder().build();
 
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(member);
 
       await expect(
         assertMember(membersRepositoryMock, spaceId, userId),
-      ).resolves.toBeUndefined();
+      ).resolves.toBe(member);
 
-      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith([
-        expect.objectContaining({
-          user: { id: userId },
-          space: { id: spaceId },
-          status: 'ACTIVE',
-        }),
-        expect.objectContaining({
-          user: { id: userId },
-          space: { id: spaceId },
-          status: 'INVITED',
-          inviteExpiresAt: expect.anything(),
-        }),
-      ]);
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: userId },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+      });
+    });
+
+    it('should throw ForbiddenException for a pending member', async () => {
+      // findOne is queried with status ACTIVE only, so a pending invite yields null
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        assertMember(
+          membersRepositoryMock,
+          faker.number.int(),
+          faker.number.int(),
+        ),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
     });
 
     it('should throw ForbiddenException when user is not member', async () => {

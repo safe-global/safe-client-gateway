@@ -7,7 +7,6 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
 export async function isAdmin(
   spacesRepository: ISpacesRepository,
@@ -37,30 +36,14 @@ export async function assertAdmin(
   }
 }
 
-export async function assertMember(
-  membersRepository: IMembersRepository,
-  spaceId: Space['id'],
-  userId: number,
-): Promise<void> {
-  const member = await membersRepository.findOne(
-    activeOrPendingMemberWhere<Member>(() => ({
-      user: { id: userId },
-      space: { id: spaceId },
-    })),
-  );
-
-  if (!member) {
-    throw new ForbiddenException('User is not a member of this workspace');
-  }
-}
-
 /**
- * Unlike {@link assertMember}, INVITED members are rejected.
+ * Asserts the caller is an ACTIVE member of the space. INVITED (pending)
+ * members are rejected, so they cannot access space contents before accepting.
  *
- * @returns the membership row, so callers can derive permissions without a
- * second query.
+ * @returns the membership row, so callers can derive permissions (e.g. role)
+ * without a second query.
  */
-export async function assertActiveMember(
+export async function assertMember(
   membersRepository: IMembersRepository,
   spaceId: Space['id'],
   userId: number,
@@ -72,9 +55,7 @@ export async function assertActiveMember(
   });
 
   if (!member) {
-    throw new ForbiddenException(
-      'User is not an active member of this workspace',
-    );
+    throw new ForbiddenException('User is not a member of this workspace');
   }
 
   return member;

@@ -84,9 +84,7 @@ describe('SpaceAuditService', () => {
           filters: {},
         }),
       ).rejects.toThrow(
-        new ForbiddenException(
-          'User is not an active member of this workspace',
-        ),
+        new ForbiddenException('User is not a member of this workspace'),
       );
 
       expect(membersRepository.findOne).toHaveBeenCalledWith({

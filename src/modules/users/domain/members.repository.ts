@@ -395,7 +395,15 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Array<Member>> {
-    await this.findActiveOrInvitedMemberOrFail(args);
+    // A pending caller gets only their own invitation row, never the roster
+    // (the wallet derives its invite banner from this endpoint).
+    const own = await this.findActiveOrInvitedMemberOrFail(args, {
+      user: true,
+    });
+    if (own.status !== 'ACTIVE') {
+      return [own];
+    }
+
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
       relations: { members: { user: true } },
@@ -480,6 +488,11 @@ export class MembersRepository implements IMembersRepository {
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
+      }
+      if (member.status !== 'ACTIVE') {
+        throw new ForbiddenException(
+          'The user is not an active member of the workspace.',
+        );
       }
 
       await entityManager.update(DbMember, member.id, { alias: args.alias });
@@ -608,12 +621,6 @@ export class MembersRepository implements IMembersRepository {
    * Returns the authenticated user's `ACTIVE` or non-expired `INVITED`
    * membership row for the given space, or throws `ForbiddenException` if none
    * exists.
-   *
-   * Shared by {@link findAuthorizedMembersOrFail} (which uses it as an
-   * authorization gate and discards the row, so it omits `relations`) and
-   * by {@link findSelfMembershipOrFail} (which returns the row to the
-   * caller and passes `{ user: true }` so the response includes
-   * `user.status`).
    */
   private async findActiveOrInvitedMemberOrFail(
     args: {
