@@ -52,14 +52,14 @@ export class AddressBooksController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get address book for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get address book for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Address book items retrieved successfully',
     type: SpaceAddressBookDto,
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
     description: 'User, member, or space not found',
   })
@@ -147,6 +147,7 @@ export class AddressBooksController {
   @ApiNoContentResponse({
     description: 'Address book entry deleted successfully',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
     description: 'User, member, space, or address book entry not found',
   })

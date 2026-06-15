@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -114,13 +115,15 @@ export class SpacesController {
   @ApiParam({
     name: 'id',
     type: 'string',
-    description:
-      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space information retrieved successfully',
     type: GetSpaceResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiNotFoundResponse({
     description: 'Space not found',
@@ -157,6 +160,9 @@ export class SpacesController {
   @ApiOkResponse({
     description: 'Space updated successfully',
     type: UpdateSpaceResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user is not an admin of this space',
@@ -197,6 +203,9 @@ export class SpacesController {
   @ApiResponse({
     description: 'Space deleted successfully',
     status: HttpStatus.NO_CONTENT,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user is not an admin of this space',

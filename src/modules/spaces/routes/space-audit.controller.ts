@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -45,7 +46,7 @@ export class SpaceAuditController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space identifier (UUID, or legacy numeric id)',
+    description: 'Space UUID',
   })
   @ApiQuery({
     name: 'event_type',
@@ -94,6 +95,7 @@ export class SpaceAuditController {
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get(':spaceId/audit-log')
   public async getAuditLog(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -142,7 +144,7 @@ export class SpaceAuditController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space identifier (UUID, or legacy numeric id)',
+    description: 'Space UUID',
   })
   @ApiOkResponse({
     type: SpaceAuditLogActorDto,
@@ -156,6 +158,7 @@ export class SpaceAuditController {
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get(':spaceId/audit-log/actors')
   public async getAuditLogActors(
     @Param('spaceId', SpaceIdPipe) spaceId: number,

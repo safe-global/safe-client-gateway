@@ -2,6 +2,7 @@
 
 import { Controller, Get, Inject, Param, UseGuards } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -36,14 +37,14 @@ export class SpaceCounterfactualSafesController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Counterfactual Safes retrieved successfully',
     type: GetCounterfactualSafesResponse,
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({
     description:
       'Authentication required or user is not a member of this space',

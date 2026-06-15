@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -64,6 +65,9 @@ export class SpaceSafesController {
   @ApiCreatedResponse({
     description: 'Safes added to space successfully',
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
+  })
   @ApiUnauthorizedResponse({
     description:
       'Authentication required or user unauthorized to modify this space',
@@ -97,13 +101,15 @@ export class SpaceSafesController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get Safes for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get Safes for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space Safes retrieved successfully',
     type: GetSpaceSafeResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiUnauthorizedResponse({
     description:
@@ -141,6 +147,9 @@ export class SpaceSafesController {
   })
   @ApiNoContentResponse({
     description: 'Safes removed from space successfully',
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiUnauthorizedResponse({
     description:

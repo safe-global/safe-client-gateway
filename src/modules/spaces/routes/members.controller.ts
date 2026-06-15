@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiForbiddenResponse,
@@ -90,6 +91,7 @@ export class MembersController {
     description:
       'Authentication required or user not admin or member not active',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/invite')
   @UseGuards(AuthGuard)
   public async inviteUser(
@@ -135,6 +137,7 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'User invitation is not in pending state or already processed',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/accept')
   @UseGuards(AuthGuard)
   public async acceptInvite(
@@ -174,6 +177,7 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'User invitation is not in pending state or already processed',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/decline')
   @UseGuards(AuthGuard)
   public async declineInvite(
@@ -196,8 +200,7 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID containing the invitation (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID containing the invitation',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
@@ -219,6 +222,7 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'Invitation is not in a pending state',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/:userId/invite/renew')
   @UseGuards(AuthGuard)
   public async renewInvite(
@@ -243,8 +247,7 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get members for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get members for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -258,6 +261,7 @@ export class MembersController {
   @ApiNotFoundResponse({
     description: 'User or space not found',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async getUsers(
@@ -279,8 +283,7 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      "Space UUID to fetch the caller's membership for (numeric ID accepted for legacy clients, deprecated)",
+    description: "Space UUID to fetch the caller's membership for",
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -292,6 +295,7 @@ export class MembersController {
       'Access forbidden - user not authenticated, or has no ACTIVE/INVITED membership in this space',
   })
   @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get('/:spaceId/membership')
   @UseGuards(AuthGuard)
   public async getMembership(
@@ -341,6 +345,7 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'Cannot remove the last admin from the space',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Patch('/:spaceId/members/:userId/role')
   @UseGuards(AuthGuard)
   public async updateRole(
@@ -376,6 +381,7 @@ export class MembersController {
     description: 'Space UUID to update own member alias in',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
   public async updateAlias(
@@ -423,6 +429,7 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'Cannot remove the last admin from the space',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Delete('/:spaceId/members/:userId')
   @UseGuards(AuthGuard)
   public async removeUser(
@@ -457,6 +464,7 @@ export class MembersController {
     description: 'Space UUID to remove own membership from',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Delete('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async selfRemove(

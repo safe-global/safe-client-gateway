@@ -56,14 +56,14 @@ export class AddressBookRequestsController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Pending requests retrieved successfully',
     type: AddressBookRequestsDto,
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
     description: 'User is not a member of this space',

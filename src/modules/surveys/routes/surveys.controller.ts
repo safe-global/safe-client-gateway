@@ -50,12 +50,12 @@ export class SurveysController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get survey state for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get survey state for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({ name: 'slug', type: 'string', example: 'onboarding' })
   @ApiOkResponse({ type: SurveyStateDto })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   @ApiForbiddenResponse({
     description: 'User is not an active admin of this space',
