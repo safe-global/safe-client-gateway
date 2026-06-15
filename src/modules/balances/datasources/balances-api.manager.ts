@@ -28,7 +28,6 @@ import { type Raw, rawify } from '@/validation/entities/raw.entity';
 export class BalancesApiManager implements IBalancesApiManager {
   private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
   private readonly isCounterFactualBalancesEnabled: boolean;
-  private readonly zerionBalancesEnabled: boolean;
   private readonly zerionBalancesApi: IBalancesApi;
   private readonly useVpcUrl: boolean;
 
@@ -49,9 +48,6 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.configurationService.getOrThrow<boolean>(
         'features.counterfactualBalances',
       );
-    this.zerionBalancesEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.zerionBalancesEnabled',
-    );
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
@@ -65,22 +61,13 @@ export class BalancesApiManager implements IBalancesApiManager {
       return this._getSafeBalancesApi(chainId);
     }
 
-    // Deployed Safe → native API. Counterfactual Safe → Zerion, but only when it's
-    // enabled for the chain in the config service (and not globally killed); else native.
+    // SafeBalancesApi will be returned only if TransactionApi returns the Safe data.
+    // Otherwise ZerionBalancesApi will be returned as the Safe is considered counterfactual/not deployed.
     const isSafe = await transactionApi.isSafe(safeAddress);
     if (isSafe) {
       return this._getSafeBalancesApi(chainId);
     }
-
-    if (this.zerionBalancesEnabled) {
-      const chain = await this.configApi
-        .getChain(chainId)
-        .then(ChainSchema.parse);
-      if (chain.balancesProvider.enabled) {
-        return this.zerionBalancesApi;
-      }
-    }
-    return this._getSafeBalancesApi(chainId);
+    return this.zerionBalancesApi;
   }
 
   async getFiatCodes(): Promise<Raw<Array<string>>> {

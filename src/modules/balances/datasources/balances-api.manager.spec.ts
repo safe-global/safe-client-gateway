@@ -12,8 +12,6 @@ import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interf
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
 import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
-import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
-import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -87,18 +85,7 @@ beforeEach(() => {
 
 describe('Balances API Manager Tests', () => {
   describe('getApi checks', () => {
-    it('should return the Zerion API for a counterfactual Safe when Zerion is enabled for the chain', async () => {
-      configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'features.zerionBalancesEnabled') return true;
-        if (key === 'features.counterfactualBalances') return true;
-        if (key === 'application.isProduction') return true;
-      });
-      const chain = chainBuilder()
-        .with(
-          'balancesProvider',
-          balancesProviderBuilder().with('enabled', true).build(),
-        )
-        .build();
+    it('should return the Zerion API if the Safe address is not known by the Safe Transaction Service', async () => {
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -111,51 +98,13 @@ describe('Balances API Manager Tests', () => {
         networkServiceMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
       transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
       transactionApiMock.isSafe.mockResolvedValue(false);
-      configApiMock.getChain.mockResolvedValue(rawify(chain));
 
-      const result = await manager.getApi(chain.chainId, safeAddress);
+      const result = await manager.getApi(chainId, safeAddress);
 
       expect(result).toEqual(zerionBalancesApi);
-    });
-
-    it.each([
-      ['Zerion is disabled for the chain', true, false],
-      ['the global Zerion kill-switch is off', false, true],
-    ])('should return the Safe Balances API for a counterfactual Safe when %s', async (_, zerionBalancesEnabled, chainEnabled) => {
-      configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'features.zerionBalancesEnabled')
-          return zerionBalancesEnabled;
-        if (key === 'features.counterfactualBalances') return true;
-        if (key === 'application.isProduction') return true;
-      });
-      const chain = chainBuilder()
-        .with(
-          'balancesProvider',
-          balancesProviderBuilder().with('enabled', chainEnabled).build(),
-        )
-        .build();
-      const manager = new BalancesApiManager(
-        configurationService,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        zerionBalancesApiMock,
-        coingeckoApiMock,
-        transactionApiManagerMock,
-        networkServiceMock,
-      );
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
-      transactionApiMock.isSafe.mockResolvedValue(false);
-      configApiMock.getChain.mockResolvedValue(rawify(chain));
-
-      const result = await manager.getApi(chain.chainId, safeAddress);
-
-      expect(result).toBeInstanceOf(SafeBalancesApi);
-      expect(result).not.toEqual(zerionBalancesApi);
     });
 
     const txServiceUrl = faker.internet.url({ appendSlash: false });
