@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import type { FindOptionsWhere, InsertResult } from 'typeorm';
+import type { EntityManager, FindOptionsWhere, InsertResult } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -77,6 +77,20 @@ export class AddressBookRequestsRepository
     return request;
   }
 
+  public async countPending(args: {
+    spaceId: Space['id'];
+    requestedById: User['id'];
+  }): Promise<number> {
+    const repository = await this.db.getRepository(DbAddressBookRequest);
+    return repository.count({
+      where: {
+        space: { id: args.spaceId },
+        requestedBy: { id: args.requestedById },
+        status: 'PENDING',
+      },
+    });
+  }
+
   public async create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
@@ -96,7 +110,7 @@ export class AddressBookRequestsRepository
     } catch (err) {
       if (isUniqueConstraintError(err)) {
         throw new UniqueConstraintError(
-          'A request for this address already exists.',
+          'A pending request for this address already exists.',
         );
       }
       throw err;
@@ -110,23 +124,15 @@ export class AddressBookRequestsRepository
     spaceId: Space['id'];
     toStatus: 'APPROVED' | 'REJECTED';
     reviewedBy: User['id'];
+    entityManager?: EntityManager;
   }): Promise<boolean> {
-    const repository = await this.db.getRepository(DbAddressBookRequest);
+    const repository = args.entityManager
+      ? args.entityManager.getRepository(DbAddressBookRequest)
+      : await this.db.getRepository(DbAddressBookRequest);
     const result = await repository.update(
       { id: args.id, space: { id: args.spaceId }, status: 'PENDING' },
       { status: args.toStatus, reviewedBy: args.reviewedBy },
     );
     return (result.affected ?? 0) > 0;
-  }
-
-  public async revertToPending(args: {
-    id: AddressBookRequest['id'];
-    spaceId: Space['id'];
-  }): Promise<void> {
-    const repository = await this.db.getRepository(DbAddressBookRequest);
-    await repository.update(
-      { id: args.id, space: { id: args.spaceId } },
-      { status: 'PENDING', reviewedBy: null },
-    );
   }
 }

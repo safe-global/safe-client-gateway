@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { EntityManager } from 'typeorm';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type {
   AddressBookRequest,
@@ -29,6 +30,11 @@ export interface IAddressBookRequestsRepository {
     spaceId: Space['id'];
   }): Promise<AddressBookRequest>;
 
+  countPending(args: {
+    spaceId: Space['id'];
+    requestedById: User['id'];
+  }): Promise<number>;
+
   create(args: {
     spaceId: Space['id'];
     requestedById: User['id'];
@@ -40,10 +46,6 @@ export interface IAddressBookRequestsRepository {
     spaceId: Space['id'];
     toStatus: 'APPROVED' | 'REJECTED';
     reviewedBy: User['id'];
+    entityManager?: EntityManager;
   }): Promise<boolean>;
-
-  revertToPending(args: {
-    id: AddressBookRequest['id'];
-    spaceId: Space['id'];
-  }): Promise<void>;
 }

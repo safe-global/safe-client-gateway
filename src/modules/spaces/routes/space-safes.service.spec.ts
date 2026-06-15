@@ -61,6 +61,7 @@ describe('SpaceSafesService', () => {
       expect(spacesRepositoryMock.findOne).toHaveBeenCalled();
       expect(spaceSafesRepositoryMock.create).toHaveBeenCalledWith({
         spaceId,
+        actorUserId: Number(authPayload.sub),
         payload,
       });
     });
@@ -165,6 +166,7 @@ describe('SpaceSafesService', () => {
       expect(spacesRepositoryMock.findOne).toHaveBeenCalled();
       expect(spaceSafesRepositoryMock.delete).toHaveBeenCalledWith({
         spaceId,
+        actorUserId: Number(authPayload.sub),
         payload,
       });
     });

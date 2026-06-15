@@ -25,6 +25,7 @@ import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.ent
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -122,8 +123,13 @@ describe('AddressBookItemsRepository', () => {
 
     addressBookItemsRepository = new AddressBookItemsRepository(
       dbService,
-      new SpacesRepository(dbService, mockConfigurationService),
+      new SpacesRepository(
+        dbService,
+        mockConfigurationService,
+        createMockSpaceAuditRepository(),
+      ),
       mockConfigService,
+      createMockSpaceAuditRepository(),
     );
   });
 

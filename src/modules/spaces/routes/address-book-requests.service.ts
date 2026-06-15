@@ -1,25 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import type { Address } from 'viem';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
+import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
-import { IUserAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/user-address-book-items.repository.interface';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   AddressBookRequestItemDto,
   AddressBookRequestsDto,
 } from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
 import {
+  assertActiveMember,
   assertAdmin,
   assertMember,
   isAdmin,
@@ -29,11 +26,11 @@ import { UserIdentityResolverService } from '@/modules/users/domain/user-identit
 
 @Injectable()
 export class AddressBookRequestsService {
+  private readonly maxPendingRequests: number;
+
   constructor(
     @Inject(IAddressBookRequestsRepository)
     private readonly requestsRepository: IAddressBookRequestsRepository,
-    @Inject(IUserAddressBookItemsRepository)
-    private readonly privateRepository: IUserAddressBookItemsRepository,
     @Inject(IAddressBookItemsRepository)
     private readonly spaceAddressBookRepository: IAddressBookItemsRepository,
     @Inject(IMembersRepository)
@@ -42,7 +39,15 @@ export class AddressBookRequestsService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(UserIdentityResolverService)
     private readonly identityResolver: UserIdentityResolverService,
-  ) {}
+    @Inject(PostgresDatabaseService)
+    private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
+  ) {
+    this.maxPendingRequests = configurationService.getOrThrow<number>(
+      'spaces.addressBookRequests.maxPending',
+    );
+  }
 
   public async findPending(
     authPayload: AuthPayload,
@@ -70,32 +75,25 @@ export class AddressBookRequestsService {
   public async createRequest(
     authPayload: AuthPayload,
     spaceId: Space['id'],
-    address: Address,
+    item: AddressBookItem,
   ): Promise<AddressBookRequestItemDto> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertMember(this.membersRepository, spaceId, userId);
+    await assertActiveMember(this.membersRepository, spaceId, userId);
 
-    const privateContact =
-      await this.privateRepository.findOneBySpaceCreatorAndAddress({
-        spaceId,
-        creatorId: userId,
-        address,
-      });
-
-    if (!privateContact) {
-      throw new NotFoundException(
-        'Private contact not found. Create a private contact first.',
+    const pendingCount = await this.requestsRepository.countPending({
+      spaceId,
+      requestedById: userId,
+    });
+    if (pendingCount >= this.maxPendingRequests) {
+      throw new BadRequestException(
+        `You can have at most ${this.maxPendingRequests} pending requests in this workspace.`,
       );
     }
 
     const request = await this.requestsRepository.create({
       spaceId,
       requestedById: userId,
-      item: {
-        name: privateContact.name,
-        address: privateContact.address,
-        chainIds: privateContact.chainIds,
-      },
+      item,
     });
 
     const { data } = await this.mapRequests(spaceId, [request]);
@@ -115,17 +113,18 @@ export class AddressBookRequestsService {
       spaceId,
     });
 
-    const claimed = await this.requestsRepository.transitionFromPending({
-      id: requestId,
-      spaceId,
-      toStatus: 'APPROVED',
-      reviewedBy: userId,
-    });
-    if (!claimed) {
-      throw new BadRequestException('Only pending requests can be approved.');
-    }
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const claimed = await this.requestsRepository.transitionFromPending({
+        id: requestId,
+        spaceId,
+        toStatus: 'APPROVED',
+        reviewedBy: userId,
+        entityManager,
+      });
+      if (!claimed) {
+        throw new BadRequestException('Only pending requests can be approved.');
+      }
 
-    try {
       await this.spaceAddressBookRepository.upsertMany({
         authPayload,
         spaceId,
@@ -137,14 +136,9 @@ export class AddressBookRequestsService {
           },
         ],
         createdByOverride: request.requestedBy.id,
+        entityManager,
       });
-    } catch (err) {
-      await this.requestsRepository.revertToPending({
-        id: requestId,
-        spaceId,
-      });
-      throw err;
-    }
+    });
   }
 
   public async reject(

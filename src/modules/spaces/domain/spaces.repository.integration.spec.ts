@@ -14,6 +14,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -110,6 +111,7 @@ describe('SpacesRepository', () => {
     spacesRepository = new SpacesRepository(
       postgresDatabaseService,
       mockConfigurationService,
+      createMockSpaceAuditRepository(),
     );
   });
 
@@ -267,7 +269,11 @@ describe('SpacesRepository', () => {
       config.getOrThrow.mockImplementation((key) => {
         if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
       });
-      const target = new SpacesRepository(postgresDatabaseService, config);
+      const target = new SpacesRepository(
+        postgresDatabaseService,
+        config,
+        createMockSpaceAuditRepository(),
+      );
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
       const spaceStatus = faker.helpers.arrayElement(SpaceStatusKeys);
@@ -305,7 +311,11 @@ describe('SpacesRepository', () => {
       config.getOrThrow.mockImplementation((key) => {
         if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
       });
-      const target = new SpacesRepository(postgresDatabaseService, config);
+      const target = new SpacesRepository(
+        postgresDatabaseService,
+        config,
+        createMockSpaceAuditRepository(),
+      );
 
       const invitee = await dbUserRepo.insert({ status: 'ACTIVE' });
       const inviteeId = invitee.identifiers[0].id as User['id'];
@@ -838,6 +848,7 @@ describe('SpacesRepository', () => {
       await spacesRepository.update({
         id: space.id,
         updatePayload: { name: newName, status: newStatus },
+        actorUserId: userId,
       });
 
       const dbSpace = await dbSpacesRepository.findOneOrFail({
@@ -872,7 +883,7 @@ describe('SpacesRepository', () => {
         status: spaceStatus,
       });
 
-      await spacesRepository.delete(space.id);
+      await spacesRepository.delete({ id: space.id, actorUserId: userId });
 
       await expect(
         dbSpacesRepository.findOneOrFail({ where: { id: space.id } }),

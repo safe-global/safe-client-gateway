@@ -93,6 +93,10 @@ export class MembersService {
     await this.membersRepository.renewInvite({
       memberId: id,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      spaceId: args.spaceId,
+      spaceUuid: space.uuid,
+      targetUserId: args.userId,
+      actorUserId: getAuthenticatedUserIdOrFail(args.authPayload),
     });
 
     if (user.email) {

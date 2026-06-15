@@ -824,7 +824,10 @@ describe('SpacesService', () => {
 
       await service.delete({ id: spaceId, authPayload });
 
-      expect(spacesRepositoryMock.delete).toHaveBeenCalledWith(spaceId);
+      expect(spacesRepositoryMock.delete).toHaveBeenCalledWith({
+        id: spaceId,
+        actorUserId: Number(authPayload.sub),
+      });
     });
 
     it.each([

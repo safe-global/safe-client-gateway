@@ -223,6 +223,7 @@ export default (): ReturnType<typeof configuration> => ({
     vaultTransactionsMapping: false,
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
+    spaceAuditLog: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -437,6 +438,9 @@ export default (): ReturnType<typeof configuration> => ({
     addressBooks: {
       maxItems: faker.number.int({ min: 10, max: 20 }),
     },
+    addressBookRequests: {
+      maxPending: faker.number.int({ min: 10, max: 20 }),
+    },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
@@ -449,6 +453,10 @@ export default (): ReturnType<typeof configuration> => ({
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
       addressBookUpsertion: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+      addressBookRequestCreation: {
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },

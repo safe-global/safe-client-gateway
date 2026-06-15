@@ -61,6 +61,7 @@ export interface ISpacesRepository {
   update(args: {
     id: Space['id'];
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    actorUserId: number;
   }): Promise<Pick<Space, 'id' | 'uuid'>>;
 
   findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
@@ -71,5 +72,5 @@ export interface ISpacesRepository {
   // TODO: remove after FE removes numeric Space ID fallback.
   findIdByIdOrUuid(value: string): Promise<Space['id']>;
 
-  delete(id: number): Promise<void>;
+  delete(args: { id: number; actorUserId: number }): Promise<void>;
 }

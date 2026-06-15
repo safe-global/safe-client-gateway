@@ -21,6 +21,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import {
@@ -131,8 +132,17 @@ describe('MembersRepository', () => {
     const walletsRepo = new WalletsRepository(postgresDatabaseService);
     membersRepository = new MembersRepository(
       postgresDatabaseService,
-      new UsersRepository(postgresDatabaseService, walletsRepo),
-      new SpacesRepository(postgresDatabaseService, mockConfigurationService),
+      new UsersRepository(
+        postgresDatabaseService,
+        walletsRepo,
+        createMockSpaceAuditRepository(),
+      ),
+      new SpacesRepository(
+        postgresDatabaseService,
+        mockConfigurationService,
+        createMockSpaceAuditRepository(),
+      ),
+      createMockSpaceAuditRepository(),
     );
   });
 
@@ -1151,11 +1161,18 @@ describe('MembersRepository', () => {
         inviteExpiresAt: expiredAt,
       });
       const memberId = memberInsert.identifiers[0].id as Member['id'];
+      const inviteeId = invitee.identifiers[0].id as User['id'];
+      const spaceId = space.generatedMaps[0].id as Space['id'];
+      const spaceUuid = space.generatedMaps[0].uuid as Space['uuid'];
 
       await expect(
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
+          spaceId,
+          spaceUuid,
+          targetUserId: inviteeId,
+          actorUserId: invitedBy,
         }),
       ).resolves.toBeUndefined();
 

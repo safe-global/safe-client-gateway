@@ -138,7 +138,11 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
-    return await this.spacesRepository.update(args);
+    return await this.spacesRepository.update({
+      id: args.id,
+      updatePayload: args.updatePayload,
+      actorUserId: userId,
+    });
   }
 
   /**
@@ -203,6 +207,9 @@ export class SpacesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.id, userId);
 
-    return await this.spacesRepository.delete(args.id);
+    return await this.spacesRepository.delete({
+      id: args.id,
+      actorUserId: userId,
+    });
   }
 }
