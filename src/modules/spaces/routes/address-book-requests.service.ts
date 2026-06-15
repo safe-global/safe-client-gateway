@@ -16,7 +16,6 @@ import {
   AddressBookRequestsDto,
 } from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
 import {
-  assertActiveMember,
   assertAdmin,
   assertMember,
   isAdmin,
@@ -78,7 +77,7 @@ export class AddressBookRequestsService {
     item: AddressBookItem,
   ): Promise<AddressBookRequestItemDto> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertActiveMember(this.membersRepository, spaceId, userId);
+    await assertMember(this.membersRepository, spaceId, userId);
 
     const pendingCount = await this.requestsRepository.countPending({
       spaceId,

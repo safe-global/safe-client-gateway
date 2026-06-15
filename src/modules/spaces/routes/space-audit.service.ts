@@ -14,7 +14,7 @@ import type {
   SpaceAuditLogEntryDto,
   SpaceAuditLogPage,
 } from '@/modules/spaces/routes/entities/space-audit-log.dto.entity';
-import { assertActiveMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
 import {
@@ -117,7 +117,7 @@ export class SpaceAuditService {
     spaceId: Space['id'];
   }): Promise<boolean> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const viewer = await assertActiveMember(
+    const viewer = await assertMember(
       this.membersRepository,
       args.spaceId,
       userId,
