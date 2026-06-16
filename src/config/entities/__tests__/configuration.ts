@@ -156,6 +156,7 @@ export default (): ReturnType<typeof configuration> => ({
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),
+      configurationSet: faker.lorem.slug(),
       aws: {
         accessKeyId: 'dummy',
         secretAccessKey: 'dummy',

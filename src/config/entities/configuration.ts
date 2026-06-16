@@ -268,6 +268,11 @@ export default () => ({
       fromEmail: process.env.AWS_SES_FROM_EMAIL,
       // Display name shown in the "From" field. Defaults to 'Safe'.
       fromName: process.env.AWS_SES_FROM_NAME || 'Safe',
+      // SES configuration set applied to sent emails. Isolates invite email
+      // reputation from the domain identity's default set. Defaults to
+      // 'noreply-invites'; override per env via AWS_SES_CONFIGURATION_SET.
+      configurationSet:
+        process.env.AWS_SES_CONFIGURATION_SET || 'noreply-invites',
       aws: {
         accessKeyId: process.env.SES_AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.SES_AWS_SECRET_ACCESS_KEY,
