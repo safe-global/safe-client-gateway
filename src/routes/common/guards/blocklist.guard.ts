@@ -16,7 +16,6 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { getClientIp } from '@/routes/common/utils/request.utils';
 
 @Injectable()
 export class BlocklistGuard implements CanActivate {
@@ -57,7 +56,7 @@ export class BlocklistGuard implements CanActivate {
           address: normalizedAddress,
           route: request.route?.path || request.path,
           method: request.method,
-          clientIp: getClientIp(request),
+          clientIp: request.ip,
         });
 
         throw new ForbiddenException('Access to this Safe is restricted');
