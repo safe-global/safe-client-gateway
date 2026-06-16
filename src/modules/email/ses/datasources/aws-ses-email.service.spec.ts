@@ -30,6 +30,7 @@ describe('SesEmailService', () => {
 
   const sesFromEmail = faker.internet.email();
   const sesFromName = 'Safe';
+  const sesConfigurationSet = faker.lorem.slug();
   const accessKeyId = faker.string.uuid();
   const secretAccessKey = faker.string.uuid();
 
@@ -45,6 +46,10 @@ describe('SesEmailService', () => {
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('email.ses.fromEmail', sesFromEmail);
     fakeConfigurationService.set('email.ses.fromName', sesFromName);
+    fakeConfigurationService.set(
+      'email.ses.configurationSet',
+      sesConfigurationSet,
+    );
     fakeConfigurationService.set('email.ses.aws.accessKeyId', accessKeyId);
     fakeConfigurationService.set(
       'email.ses.aws.secretAccessKey',
@@ -106,6 +111,7 @@ describe('SesEmailService', () => {
             },
           },
           FromEmailAddress: `"${sesFromName}" <${sesFromEmail}>`,
+          ConfigurationSetName: sesConfigurationSet,
         }),
       );
     });

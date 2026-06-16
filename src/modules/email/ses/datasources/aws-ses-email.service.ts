@@ -16,6 +16,7 @@ export class AwsSesEmailService implements IEmailService {
   private static readonly SES_CHARSET = 'UTF-8';
   private readonly client: SESv2Client;
   private readonly fromAddress: string;
+  private readonly configurationSet: string;
   private readonly credentials: SESv2ClientConfig['credentials'];
 
   constructor(
@@ -27,6 +28,9 @@ export class AwsSesEmailService implements IEmailService {
     );
     const fromName =
       this.configurationService.getOrThrow<string>('email.ses.fromName');
+    this.configurationSet = this.configurationService.getOrThrow<string>(
+      'email.ses.configurationSet',
+    );
     const webIdentityTokenFile = this.configurationService.get<string>(
       'email.ses.aws.webIdentityTokenFile',
     );
@@ -82,6 +86,7 @@ export class AwsSesEmailService implements IEmailService {
         },
       },
       FromEmailAddress: this.fromAddress,
+      ConfigurationSetName: this.configurationSet,
     });
 
     try {
