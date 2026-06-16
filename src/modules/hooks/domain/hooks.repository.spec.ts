@@ -8,6 +8,8 @@ import type { BlockchainRepository } from '@/modules/blockchain/domain/blockchai
 import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { CollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository';
+import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
 import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
@@ -119,6 +121,8 @@ describe('HooksRepository (Unit)', () => {
       mockTransactionsRepository,
       mockLoggingService,
       fakeCacheService,
+      new SafeDecoder(),
+      new MultiSendDecoder(mockLoggingService),
     );
     mockPushNotificationService.enqueueEvent.mockResolvedValue();
     hooksRepository = new HooksRepository(

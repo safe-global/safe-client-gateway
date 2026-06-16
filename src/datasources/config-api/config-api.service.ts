@@ -15,6 +15,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { GasToken } from '@/modules/fees/domain/entities/gas-token.entity';
 import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 
@@ -78,6 +79,29 @@ export class ConfigApi implements IConfigApi {
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: undefined,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  async getGasTokens(
+    chainId: string,
+    args: {
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<Raw<Page<GasToken>>> {
+    try {
+      const url = `${this.baseUri}/api/v1/chains/${chainId}/gas-tokens/`;
+      const params = { limit: args.limit, offset: args.offset };
+      const cacheDir = CacheRouter.getGasTokensCacheDir(chainId, args);
+      return await this.dataSource.get<GasToken>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: { params },
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {

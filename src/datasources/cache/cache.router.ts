@@ -23,6 +23,7 @@ export class CacheRouter {
   private static readonly DECODED_DATA_KEY = 'decoded_data';
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
+  private static readonly GAS_TOKENS_KEY = 'gas_tokens';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly INDEXING_KEY = 'indexing';
   private static readonly MESSAGE_KEY = 'message';
@@ -571,6 +572,23 @@ export class CacheRouter {
 
   static getChainCacheDir(chainId: string): CacheDir {
     return new CacheDir(CacheRouter.getChainCacheKey(chainId), '');
+  }
+
+  static getGasTokensCacheKey(chainId: string): string {
+    return `${chainId}_${CacheRouter.GAS_TOKENS_KEY}`;
+  }
+
+  static getGasTokensCacheDir(
+    chainId: string,
+    args: {
+      limit?: number;
+      offset?: number;
+    },
+  ): CacheDir {
+    return new CacheDir(
+      CacheRouter.getGasTokensCacheKey(chainId),
+      `${args.limit}_${args.offset}`,
+    );
   }
 
   static getChainsCacheKeyV2(serviceKey: string): string {

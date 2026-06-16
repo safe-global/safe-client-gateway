@@ -77,6 +77,9 @@ export class SpacesService {
     if (members.length === 0) {
       return [];
     }
+    const callerStatusBySpace = new Map(
+      members.map((member) => [member.space.id, member.status]),
+    );
     const spaces = await this.spacesRepository.find({
       where: { id: In(members.map((member) => member.space.id)) },
       select: {
@@ -103,11 +106,17 @@ export class SpacesService {
         space.members.map((member) => member.user.id),
       );
 
+      // Pending invitees only see their own invitation row and no safe count.
+      const callerIsActive = callerStatusBySpace.get(space.id) === 'ACTIVE';
+      const visibleMembers = callerIsActive
+        ? space.members
+        : space.members.filter((member) => member.user.id === userId);
+
       return {
         id: space.id,
         uuid: space.uuid,
         name: space.name,
-        members: space.members.map((member) => ({
+        members: visibleMembers.map((member) => ({
           ...member,
           ...(member.status === 'INVITED' &&
             member.invitedBy != null &&
@@ -116,7 +125,7 @@ export class SpacesService {
               invitedByName: invitedByNames.get(member.invitedBy),
             }),
         })),
-        safeCount: space.safes?.length ?? 0,
+        safeCount: callerIsActive ? (space.safes?.length ?? 0) : 0,
       };
     });
   }
