@@ -1,0 +1,12 @@
+{
+  "$schema": "./remote-config.schema.json",
+  "service": "CGW",
+  "features": [
+    {
+      "key": "PORTFOLIO_ENDPOINT",
+      "description": "Use the Zerion-backed portfolio endpoint for Safe balances.",
+      "scope": "PER_CHAIN",
+      "defaultChains": []
+    }
+  ]
+}

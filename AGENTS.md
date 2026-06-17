@@ -83,6 +83,12 @@ This is enforced by a `pre-commit` hook (`insert-license` from `Lucas-C/pre-comm
 
 Every file you create or modify in a PR **MUST** have the correct license header. Add it yourself — do not rely on the pre-commit hook to do it for you. If the pre-commit hook adds it automatically, include that change in your commit.
 
+## Remote-config flag declaration
+
+`remote-config.json` (repo root) declares the runtime feature flags CGW evaluates via `FeatureFlagService.isFeatureEnabled(chainId, featureKey)`, scoped to the `CGW` service in the Safe Config Service. It is validated against `remote-config.schema.json` and does **not** change evaluation — it is the self-documenting record the Config Service diffs against when seeding/verifying `Feature` rows for a release.
+
+To add a flag: pass its key to `isFeatureEnabled(chainId, 'YOUR_KEY')` somewhere in `src/`, then add a matching entry (`key`, `description`, `scope`, `defaultChains`) to `remote-config.json`. The sync test `src/modules/chains/feature-flags/remote-config.spec.ts` walks the source with the TypeScript compiler and fails if any string-literal `featureKey` passed to `isFeatureEnabled(...)` is undeclared (or the file is schema-invalid). On release, an operator reconciles flags via the Config Service admin "Reconcile flags" view.
+
 ## Important Notes
 
 - **Never skip these steps** - even for "minor" changes
