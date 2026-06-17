@@ -4,7 +4,7 @@
   "features": [
     {
       "key": "PORTFOLIO_ENDPOINT",
-      "description": "Use the Zerion-backed portfolio endpoint for Safe balances.",
+      "description": "Use the Zerion-backed CGW portfolio endpoint for Safe balances.",
       "scope": "PER_CHAIN",
       "defaultChains": []
     }
