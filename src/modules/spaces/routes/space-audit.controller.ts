@@ -47,6 +47,7 @@ export class SpaceAuditController {
     name: 'spaceId',
     type: 'string',
     description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiQuery({
     name: 'event_type',
@@ -145,6 +146,7 @@ export class SpaceAuditController {
     name: 'spaceId',
     type: 'string',
     description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     type: SpaceAuditLogActorDto,

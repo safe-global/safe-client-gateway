@@ -69,4 +69,28 @@ describe('SpaceIdPipe', () => {
       new NotFoundException('Workspace not found.'),
     );
   });
+
+  it.each([
+    ['missing a hyphen', '123e4567e89b-12d3-a456-426614174000'],
+    ['too short', '123e4567-e89b-12d3-a456-42661417400'],
+    ['too long', '123e4567-e89b-12d3-a456-4266141740000'],
+    ['a non-hex character', '123e4567-e89b-12d3-a456-42661417400g'],
+    ['surrounding whitespace', ' 123e4567-e89b-12d3-a456-426614174000 '],
+  ])('should reject a malformed UUID (%s)', async (_label, value) => {
+    await expect(pipe.transform(value)).rejects.toThrow(
+      new BadRequestException(INVALID_SPACE_IDENTIFIER_MESSAGE),
+    );
+    expect(spacesRepositoryMock.findIdByUuid).not.toHaveBeenCalled();
+  });
+
+  it('should treat the nil UUID as structurally valid and delegate to the repository', async () => {
+    // UUID_REGEX validates shape only, so the nil UUID passes the pipe and the
+    // repository decides whether such a row exists.
+    const nilUuid = '00000000-0000-0000-0000-000000000000';
+    const id = faker.number.int({ min: 1 });
+    spacesRepositoryMock.findIdByUuid.mockResolvedValue(id);
+
+    await expect(pipe.transform(nilUuid)).resolves.toBe(id);
+    expect(spacesRepositoryMock.findIdByUuid).toHaveBeenCalledWith(nilUuid);
+  });
 });
