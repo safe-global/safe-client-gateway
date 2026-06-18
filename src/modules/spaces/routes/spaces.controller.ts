@@ -108,7 +108,7 @@ export class SpacesController {
   }
 
   @ApiOperation({
-    summary: 'Get space by ID',
+    summary: 'Get space by UUID',
     description:
       'Retrieves detailed information about a specific space. The user must be a member of or invited to the space.',
   })
