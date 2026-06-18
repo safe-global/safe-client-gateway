@@ -6,6 +6,7 @@ import configuration from '@/config/entities/configuration';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
+import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
 import { AddressBookRequest } from '@/modules/spaces/datasources/entities/address-book-request.entity.db';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
@@ -25,6 +26,8 @@ import { AddressBooksController } from '@/modules/spaces/routes/address-books.co
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members.service';
+import { NestedSafesGraphController } from '@/modules/spaces/routes/nested-safes-graph.controller';
+import { NestedSafesGraphService } from '@/modules/spaces/routes/nested-safes-graph.service';
 import {
   LegacySpaceIdPipe,
   SpaceIdPipe,
@@ -59,6 +62,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     SpaceAuditModule,
     UserIdentityResolverModule,
     WalletsModule,
+    SafeRepositoryModule,
   ],
   controllers: [
     AddressBooksController,
@@ -67,6 +71,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     SpaceAuditController,
     SpaceSafesController,
     MembersController,
+    NestedSafesGraphController,
   ],
   providers: [
     AddressBooksService,
@@ -75,6 +80,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     SpaceAuditService,
     SpaceSafesService,
     MembersService,
+    NestedSafesGraphService,
     SpaceInviteEmailService,
     {
       provide: ISpacesRepository,
