@@ -106,7 +106,8 @@ export class SpacesService {
         space.members.map((member) => member.user.id),
       );
 
-      // Pending invitees only see their own invitation row and no safe count.
+      // A pending invitee sees the member and safe counts, but only their own
+      // membership row — not the other members' data.
       const callerIsActive = callerStatusBySpace.get(space.id) === 'ACTIVE';
       const visibleMembers = callerIsActive
         ? space.members
@@ -125,7 +126,10 @@ export class SpacesService {
               invitedByName: invitedByNames.get(member.invitedBy),
             }),
         })),
-        safeCount: callerIsActive ? (space.safes?.length ?? 0) : 0,
+        memberCount: space.members.filter(
+          (member) => member.status === 'ACTIVE',
+        ).length,
+        safeCount: space.safes?.length ?? 0,
       };
     });
   }
