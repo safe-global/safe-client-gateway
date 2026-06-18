@@ -84,40 +84,6 @@ export class SpacesController {
   }
 
   @ApiOperation({
-    deprecated: true,
-    summary: 'Create space with user (deprecated)',
-    description:
-      'Creates a new space for the authenticated user. This endpoint is deprecated, please use POST /v1/spaces instead.',
-  })
-  @ApiBody({
-    type: CreateSpaceDto,
-    description: 'Space creation data including the name of the space',
-  })
-  @ApiOkResponse({
-    description: 'Space created successfully',
-    type: CreateSpaceResponse,
-  })
-  @ApiForbiddenResponse({
-    description: 'Forbidden resource - user lacks permission to create spaces',
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Authentication required - valid JWT token must be provided',
-  })
-  @Post('/create-with-user')
-  @UseGuards(SpacesCreationRateLimitGuard)
-  public async createWithUser(
-    @Body(new ValidationPipe(CreateSpaceSchema))
-    body: CreateSpaceDto,
-    @Auth() authPayload: AuthPayload,
-  ): Promise<CreateSpaceResponse> {
-    return await this.spacesService.create({
-      authPayload,
-      name: body.name,
-      status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
-    });
-  }
-
-  @ApiOperation({
     summary: 'Get user spaces',
     description:
       'Retrieves all spaces that the authenticated user is a member of or has been invited to, including the count of Safes in each space.',
