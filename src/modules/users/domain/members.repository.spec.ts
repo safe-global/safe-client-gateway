@@ -8,6 +8,7 @@ import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-er
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { InviteType } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
@@ -59,6 +60,7 @@ describe('MembersRepository', () => {
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
+      createMockSpaceAuditRepository(),
     );
   });
 
@@ -85,6 +87,7 @@ describe('MembersRepository', () => {
         {
           userId: wallet.user.id,
           spaceId: space.id,
+          spaceUuid: space.uuid,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
@@ -191,6 +194,37 @@ describe('MembersRepository', () => {
       expect(entityManager.update).not.toHaveBeenCalled();
     });
 
+    it('should throw without attempting an insert when the existing member declined', async () => {
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'DECLINED')
+        .build();
+      const wallet = walletBuilder().with('user', existingMember.user).build();
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'ADMIN' as const,
+        name: nameBuilder(),
+      };
+      entityManager.find.mockResolvedValue([wallet]);
+      entityManager.findOne.mockResolvedValue(existingMember);
+
+      await expect(
+        target.inviteUsers({
+          authPayload,
+          spaceId: space.id,
+          users: [userToInvite],
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(
+        new UniqueConstraintError(
+          `${wallet.address} is already in this workspace or has a pending invite.`,
+        ),
+      );
+      expect(entityManager.insert).not.toHaveBeenCalled();
+      expect(entityManager.update).not.toHaveBeenCalled();
+    });
+
     it('should translate insert unique constraint races to a domain error', async () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
@@ -222,6 +256,26 @@ describe('MembersRepository', () => {
         ),
       );
       expect(entityManager.insert).toHaveBeenCalled();
+    });
+  });
+
+  describe('renewInvite', () => {
+    it("should update the member's inviteExpiresAt by id", async () => {
+      const memberId = faker.number.int();
+      const targetUserId = faker.number.int();
+
+      await target.renewInvite({
+        memberId,
+        inviteExpiresAt,
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        targetUserId,
+        actorUserId: authenticatedUserId,
+      });
+
+      expect(entityManager.update).toHaveBeenCalledWith(DbMember, memberId, {
+        inviteExpiresAt,
+      });
     });
   });
 });

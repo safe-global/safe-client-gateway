@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import { type INestApplication, NotFoundException } from '@nestjs/common';
@@ -23,6 +22,7 @@ import { NotificationsModuleV2 } from '@/modules/notifications/routes/v2/notific
 import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
 import { TestNotificationsModuleV2 } from '@/modules/notifications/routes/v2/test.notifications.module';
 import { rawify } from '@/validation/entities/raw.entity';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('Notifications Controller', () => {
   let app: INestApplication<Server>;
@@ -68,8 +68,8 @@ describe('Notifications Controller', () => {
   const buildInputDto = async (
     safeRegistrationsLength = 4,
   ): Promise<RegisterDeviceDto> => {
-    const uuid = faker.string.uuid() as UUID;
-    const cloudMessagingToken = faker.string.uuid() as UUID;
+    const uuid = fakeUuid();
+    const cloudMessagingToken = fakeUuid();
     const currentTimestampInSeconds = Math.floor(Date.now() / 1000);
 
     const safeRegistrations = await Promise.all(

@@ -8,6 +8,7 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type {
   Survey,
   SurveyPage,
@@ -35,6 +36,8 @@ export class SurveysService {
     private readonly surveysRepository: ISurveysRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
   ) {}
 
   public async getState(args: {
@@ -81,16 +84,20 @@ export class SurveysService {
       submitted: args.body.selections,
     });
 
-    const upserted = await this.surveysRepository.upsertResponse({
-      spaceId: args.spaceId,
-      surveyId: survey.id,
-      answeredByUserId: userId,
-      selections: validatedSelections,
-    });
+    const [upserted, spaceUuid] = await Promise.all([
+      this.surveysRepository.upsertResponse({
+        spaceId: args.spaceId,
+        surveyId: survey.id,
+        answeredByUserId: userId,
+        selections: validatedSelections,
+      }),
+      this.spacesRepository.findUuidById(args.spaceId),
+    ]);
 
     return {
       id: upserted.id,
       spaceId: args.spaceId,
+      spaceUuid,
       surveySlug: survey.slug,
       surveyVersion: survey.version,
       selections: validatedSelections,

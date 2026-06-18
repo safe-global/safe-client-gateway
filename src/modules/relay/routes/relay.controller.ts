@@ -33,6 +33,7 @@ import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/ex
 import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-signer-factory.exception-filter';
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
+import { RelayErrorResponse } from '@/modules/relay/routes/entities/relay-error-response.entity';
 import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
 import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
@@ -55,7 +56,10 @@ export class RelayController {
     description:
       'Relays a Safe transaction or Safe creation transaction using the relay service, which pays for gas fees. ' +
       'Supports execTransaction (Safe tx) and createProxyWithNonce (Safe creation) calldata. ' +
-      'On relay-fee chains, safeTxHash is required and must match the hash derived on-chain from the submitted calldata.',
+      'On relay-fee chains, safeTxHash is required and must match the hash derived on-chain from the submitted calldata. ' +
+      'On chains where pre-relay Tenderly simulation is enabled, an execTransaction is simulated before being submitted: ' +
+      'a confirmed revert returns SIMULATION_FAILED, and an unreachable simulator returns INDETERMINATE_SIMULATION ' +
+      '(retry with acceptUnverifiedSimulation=true to proceed anyway when the simulator is unreachable).',
   })
   @ApiParam({
     name: 'chainId',
@@ -66,7 +70,8 @@ export class RelayController {
   @ApiBody({
     type: RelayDto,
     description:
-      'Transaction data to relay. safeTxHash is required on relay-fee chains and must correspond to the to + data fields.',
+      'Transaction data to relay. safeTxHash is required on relay-fee chains and must correspond to the to + data fields. ' +
+      'Set acceptUnverifiedSimulation=true to retry a relay skipping the simulation which previously returned INDETERMINATE_SIMULATION.',
   })
   @ApiOkResponse({
     type: Relay,
@@ -80,8 +85,41 @@ export class RelayController {
       'Relay denied: safeTxHash missing, fee service rejected, or unofficial proxy factory',
   })
   @ApiUnprocessableEntityResponse({
+    type: RelayErrorResponse,
     description:
-      'safeTxHash does not match the transaction data, or unrecognised transaction type',
+      'Relay rejected. The consumers MUST branch on the `code` field; `message` is informational. ' +
+      'Possible cases: safeTxHash does not match the transaction data, unrecognised transaction type, ' +
+      'SIMULATION_FAILED (Tenderly confirmed revert), or INDETERMINATE_SIMULATION (simulator unreachable; ' +
+      'retry with `acceptUnverifiedSimulation=true` to proceed anyway).',
+    schema: {
+      examples: {
+        simulationFailed: {
+          summary: 'SIMULATION_FAILED',
+          value: {
+            code: 'SIMULATION_FAILED',
+            message:
+              "Relay denied: transaction simulation failed: Reverted with reason string: 'GS013'",
+            statusCode: 422,
+          },
+        },
+        indeterminateSimulation: {
+          summary: 'INDETERMINATE_SIMULATION',
+          value: {
+            code: 'INDETERMINATE_SIMULATION',
+            message: 'Relay simulation could not be completed.',
+            statusCode: 422,
+          },
+        },
+        safeTxHashMismatch: {
+          summary: 'safeTxHash mismatch (no `code`)',
+          value: {
+            message:
+              'Safe transaction hash mismatch: provided hash 0x... does not match the transaction data',
+            statusCode: 422,
+          },
+        },
+      },
+    },
   })
   @ApiTooManyRequestsResponse({
     description: 'Relay limit reached for this Safe',

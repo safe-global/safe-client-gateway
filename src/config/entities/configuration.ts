@@ -268,6 +268,21 @@ export default () => ({
       fromEmail: process.env.AWS_SES_FROM_EMAIL,
       // Display name shown in the "From" field. Defaults to 'Safe'.
       fromName: process.env.AWS_SES_FROM_NAME || 'Safe',
+      // SES configuration set applied to sent emails. Isolates invite email
+      // reputation from the domain identity's default set. Defaults to
+      // 'noreply-invites'; override per env via AWS_SES_CONFIGURATION_SET.
+      configurationSet:
+        process.env.AWS_SES_CONFIGURATION_SET || 'noreply-invites',
+      aws: {
+        accessKeyId: process.env.SES_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.SES_AWS_SECRET_ACCESS_KEY,
+        // EKS service-account token path. SES uses this for IRSA in deployed environments.
+        // Never set manually: the EKS Pod Identity Webhook injects this env var (and
+        // AWS_ROLE_ARN) into pods whose ServiceAccount is annotated with
+        // eks.amazonaws.com/role-arn — the annotation is the only thing set in ArgoCD.
+        // See https://docs.aws.amazon.com/eks/latest/userguide/pod-configuration.html
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
       // BullMQ queue configuration for email sending.
       queue: {
         removeOnComplete: {
@@ -366,6 +381,13 @@ export default () => ({
     // bytes library for parsing. Defaults to '100kb'.
     // https://expressjs.com/en/resources/middleware/body-parser.html
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
+    // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
+    // header set by upstream proxies instead of the direct socket address.
+    // A comma-separated list of trusted subnets/presets, or an integer hop
+    // count ("0" disables it). `||` (not `??`) so an empty value falls back to
+    // the default rather than disabling it.
+    // https://expressjs.com/en/guide/behind-proxies.html
+    trustProxy: process.env.EXPRESS_TRUST_PROXY || 'loopback, uniquelocal',
   },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
@@ -417,6 +439,7 @@ export default () => ({
     cacheInFlightRequests:
       process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
       'true',
+    spaceAuditLog: process.env.FF_SPACE_AUDIT_LOG?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -703,6 +726,11 @@ export default () => ({
         10,
       ),
     },
+    simulation: {
+      enabledChainIds:
+        process.env.RELAY_SIMULATION_CHAIN_IDS?.split(',').filter(Boolean) ??
+        [],
+    },
   },
   safeConfig: {
     baseUri:
@@ -746,6 +774,13 @@ export default () => ({
         10,
       ),
     },
+    addressBookRequests: {
+      maxPending: Number.parseInt(
+        process.env.SPACES_MAX_PENDING_ADDRESS_BOOK_REQUESTS_PER_USER ??
+          `${100}`,
+        10,
+      ),
+    },
     maxSafesPerSpace: Number.parseInt(
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
       10,
@@ -779,6 +814,17 @@ export default () => ({
           10,
         ),
       },
+      addressBookRequestCreation: {
+        max: Number.parseInt(
+          process.env.SPACES_ADDRESS_BOOK_REQUESTS_RATE_LIMIT_MAX ?? `${100}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.SPACES_ADDRESS_BOOK_REQUESTS_RATE_LIMIT_WINDOW_SECONDS ??
+            `${600}`,
+          10,
+        ),
+      },
     },
   },
   staking: {
@@ -808,6 +854,7 @@ export default () => ({
       11155111: 'https://api.cow.fi/sepolia',
       59144: 'https://api.cow.fi/linea',
       9745: 'https://api.cow.fi/plasma',
+      57073: 'https://api.cow.fi/ink',
     },
     explorerBaseUri:
       process.env.SWAPS_EXPLORER_URI || 'https://explorer.cow.fi/',

@@ -13,6 +13,7 @@ import type {
 } from '@/modules/spaces/routes/entities/members.dto.entity';
 import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
+import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
 
@@ -25,6 +26,7 @@ export class MembersService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly spaceInviteEmailService: SpaceInviteEmailService,
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('spaces.maxInvites');
@@ -33,6 +35,13 @@ export class MembersService {
     );
   }
 
+  /**
+   * Invites users and queues invite emails for email invites.
+   *
+   * @param args.authPayload - Authenticated caller.
+   * @param args.spaceId - Target space ID.
+   * @param args.inviteUsersDto - Users to invite.
+   */
   public async inviteUser(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
@@ -45,12 +54,68 @@ export class MembersService {
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
-    return await this.membersRepository.inviteUsers({
+    const invitations = await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
     });
+
+    // Only queue emails after invite creation succeeds.
+    await this.spaceInviteEmailService.enqueueInviteEmails({
+      users: args.inviteUsersDto.users,
+      spaceId: args.spaceId,
+    });
+
+    return invitations;
+  }
+
+  public async renewInvite(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    userId: User['id'];
+  }): Promise<Invitation> {
+    await this.assertActiveAdmin({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+    const { id, user, name, status, role, invitedBy, space } =
+      await this.membersRepository.findOneOrFail(
+        {
+          user: { id: args.userId },
+          space: { id: args.spaceId },
+        },
+        { user: true, space: true },
+      );
+    if (status !== 'INVITED') {
+      throw new ConflictException('Only a pending invitation can be renewed.');
+    }
+    await this.membersRepository.renewInvite({
+      memberId: id,
+      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      spaceId: args.spaceId,
+      spaceUuid: space.uuid,
+      targetUserId: args.userId,
+      actorUserId: getAuthenticatedUserIdOrFail(args.authPayload),
+    });
+
+    if (user.email) {
+      await this.spaceInviteEmailService.enqueueRenewalEmail({
+        name: name,
+        email: user.email,
+        spaceId: args.spaceId,
+      });
+    }
+
+    return {
+      userId: args.userId,
+      spaceId: args.spaceId,
+      spaceUuid: space.uuid,
+      name,
+      role,
+      status,
+      invitedBy,
+    };
   }
 
   public async acceptInvite(args: {

@@ -156,6 +156,12 @@ export default (): ReturnType<typeof configuration> => ({
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),
+      configurationSet: faker.lorem.slug(),
+      aws: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy',
+        webIdentityTokenFile: faker.system.filePath(),
+      },
       queue: {
         removeOnComplete: {
           age: faker.number.int({ min: 0, max: 3600 }),
@@ -188,7 +194,7 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: '1mb' },
+  express: { jsonLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
   features: {
     email: false,
     sesEmail: false,
@@ -218,6 +224,7 @@ export default (): ReturnType<typeof configuration> => ({
     vaultTransactionsMapping: false,
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
+    spaceAuditLog: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -398,6 +405,9 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       feePreviewTtlSeconds: 60,
     },
+    simulation: {
+      enabledChainIds: [],
+    },
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -429,6 +439,9 @@ export default (): ReturnType<typeof configuration> => ({
     addressBooks: {
       maxItems: faker.number.int({ min: 10, max: 20 }),
     },
+    addressBookRequests: {
+      maxPending: faker.number.int({ min: 10, max: 20 }),
+    },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
@@ -441,6 +454,10 @@ export default (): ReturnType<typeof configuration> => ({
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
       addressBookUpsertion: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+      addressBookRequestCreation: {
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
@@ -469,6 +486,7 @@ export default (): ReturnType<typeof configuration> => ({
       11155111: faker.internet.url({ appendSlash: false }),
       59144: faker.internet.url({ appendSlash: false }),
       9745: faker.internet.url({ appendSlash: false }),
+      57073: faker.internet.url({ appendSlash: false }),
     },
     explorerBaseUri: faker.internet.url({ appendSlash: true }),
     restrictApps: false,

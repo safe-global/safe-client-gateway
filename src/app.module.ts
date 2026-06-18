@@ -44,7 +44,6 @@ import { CounterfactualSafesModule } from '@/modules/counterfactual-safes/counte
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { DelegateModule } from '@/modules/delegate/delegate.module';
-import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
 import { EstimationsModule } from '@/modules/estimations/estimations.module';
 import { FeesModule } from '@/modules/fees/fees.module';
 import { HealthModule } from '@/modules/health/health.module';
@@ -80,7 +79,6 @@ export class AppModule implements NestModule {
       oidc_auth: isOidcAuthFeatureEnabled,
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
-      sesEmail: isSesEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
     } = configFactory().features;
 
@@ -105,7 +103,6 @@ export class AppModule implements NestModule {
         DelegateModule,
         // Note: this feature will not work as expected until we reintegrate the email service
         ...(isEmailFeatureEnabled ? [AlertsModule, RecoveryModule] : []),
-        ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
         EstimationsModule,
         FeesModule,
         HealthModule,

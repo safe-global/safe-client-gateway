@@ -38,6 +38,7 @@ export interface IRelayer {
     data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: Hex;
+    acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay>;
 
   /**

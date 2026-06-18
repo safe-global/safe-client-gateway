@@ -108,6 +108,8 @@ describe('BlockchainApiManager', () => {
       const client = target._createCachedRpcClient(chain);
       const fetchSpy = jest.spyOn(global, 'fetch');
       const chainId = toHex(chain.chainId);
+      const rpcUrl = new URL(chain.rpcUri.value).toString();
+
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
           headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -138,14 +140,14 @@ describe('BlockchainApiManager', () => {
       await client.getChainId();
 
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(fetch).toHaveBeenNthCalledWith(1, chain.rpcUri.value, {
+      expect(fetch).toHaveBeenNthCalledWith(1, rpcUrl, {
         body: JSON.stringify(body),
         headers: {
           'Content-Type': 'application/json',
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
-        url: chain.rpcUri.value,
+        url: rpcUrl,
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
@@ -166,6 +168,9 @@ describe('BlockchainApiManager', () => {
         number: null,
         totalDifficulty: null,
       };
+
+      const rpcUrl = new URL(chain.rpcUri.value).toString();
+
       fetchSpy.mockImplementation((_: unknown) => {
         return Promise.resolve({
           headers: new Headers({ 'Content-Type': 'application/json' }),
@@ -200,14 +205,14 @@ describe('BlockchainApiManager', () => {
       await client.getBlock();
 
       expect(fetch).toHaveBeenCalledTimes(1);
-      expect(fetch).toHaveBeenNthCalledWith(1, chain.rpcUri.value, {
+      expect(fetch).toHaveBeenNthCalledWith(1, rpcUrl, {
         body: JSON.stringify(body),
         headers: {
           'Content-Type': 'application/json',
         },
         method: 'POST',
         signal: expect.any(AbortSignal),
-        url: chain.rpcUri.value,
+        url: rpcUrl,
       });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);

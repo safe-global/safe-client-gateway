@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import {
   Column,
   Entity,
@@ -19,6 +20,15 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 export class Space implements DomainSpace {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_spaces_id' })
   id!: number;
+
+  @Column({
+    type: 'uuid',
+    default: () => 'gen_random_uuid()',
+    unique: true,
+    nullable: false,
+    update: false,
+  })
+  uuid!: UUID;
 
   @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
   name!: string;

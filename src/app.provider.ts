@@ -2,6 +2,7 @@
 import type { DynamicModule, INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import type { TestingModule } from '@nestjs/testing';
@@ -13,6 +14,23 @@ function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
     type: VersioningType.URI,
   });
+}
+
+/**
+ * Configures Express `trust proxy` so `req.ip` reflects the originating client
+ * (from `X-Forwarded-For`) rather than the nearest upstream hop. The value is a
+ * comma-separated list of trusted subnets/presets, or an integer hop count.
+ * @see https://expressjs.com/en/guide/behind-proxies.html
+ */
+export function configureTrustProxy(app: INestApplication): void {
+  const configurationService = app.get<IConfigurationService>(
+    IConfigurationService,
+  );
+  const value = configurationService.getOrThrow<string>('express.trustProxy');
+  // A purely numeric value is a hop count; anything else is a comma-separated
+  // list of trusted subnets/presets passed straight to Express.
+  const trustProxy = /^\d+$/.test(value) ? Number.parseInt(value, 10) : value;
+  (app as NestExpressApplication).set('trust proxy', trustProxy);
 }
 
 export function configureShutdownHooks(app: INestApplication): void {
@@ -87,6 +105,7 @@ export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
   configureSwagger,
   configureRequestBodyLimit,
   configureCookies,
+  configureTrustProxy,
 ];
 
 /**
