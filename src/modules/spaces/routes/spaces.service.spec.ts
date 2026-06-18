@@ -99,6 +99,7 @@ describe('SpacesService', () => {
           uuid: mockSpace.uuid,
           name: space.name,
           members: [member],
+          memberCount: 1,
           safeCount: 3,
         },
       ]);
@@ -263,7 +264,7 @@ describe('SpacesService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].safeCount).toBe(2);
-      expect(result[1].safeCount).toBe(0);
+      expect(result[1].safeCount).toBe(1);
     });
 
     it('should populate invitedByName with wallet address for INVITED member', async () => {
@@ -314,7 +315,7 @@ describe('SpacesService', () => {
       );
     });
 
-    it('should hide the roster and safe count from a pending member', async () => {
+    it('should hide the member roster but expose counts to a pending member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const callerUserId = Number(authPayload.sub);
       const caller = userBuilder().with('id', callerUserId).build();
@@ -343,9 +344,13 @@ describe('SpacesService', () => {
 
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
+      // Only the caller's own row is exposed, not the other members' data.
       expect(result[0].members).toHaveLength(1);
       expect(result[0].members[0].user.id).toBe(callerUserId);
-      expect(result[0].safeCount).toBe(0);
+      // ...but the counts reflect the full space (memberCount is ACTIVE only,
+      // so the pending caller themselves is not counted).
+      expect(result[0].memberCount).toBe(1);
+      expect(result[0].safeCount).toBe(2);
     });
 
     it('should populate invitedByName with email for OIDC inviter (no wallet)', async () => {
