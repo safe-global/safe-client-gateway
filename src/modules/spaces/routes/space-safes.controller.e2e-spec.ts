@@ -182,10 +182,17 @@ describe('SpaceSafesController', () => {
           safes: [spaceSafe1, spaceSafe2, duplicatedSpaceSafe],
         })
         .expect(409)
-        .expect({
-          message: `A SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, ${spaceId}) already exists.`,
-          error: 'Conflict',
-          statusCode: 409,
+        .expect((res) => {
+          expect(res.body).toMatchObject({
+            error: 'Conflict',
+            statusCode: 409,
+            // space_id in the PG error is the internal numeric id, not the uuid.
+            message: expect.stringMatching(
+              new RegExp(
+                `^A SpaceSafe with the same chainId and address already exists: Key \\(chain_id, address, space_id\\)=\\(${duplicatedSpaceSafe.chainId}, ${duplicatedSpaceSafe.address}, \\d+\\) already exists\\.$`,
+              ),
+            ),
+          });
         });
     });
 
@@ -273,17 +280,15 @@ describe('SpaceSafesController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          error: 'Unauthorized',
-          message:
-            'User is unauthorized. signer_address= ' +
-            userAuthPayloadDto.signer_address,
-          statusCode: 401,
+          error: 'Forbidden',
+          message: 'User is not an admin of this space',
+          statusCode: 403,
         });
     });
 
-    it('Should return a 401 for an inactive admin', async () => {
+    it('Should return a 403 for an inactive admin', async () => {
       const activeAdminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inactiveAdminAuthPayload = siweAuthPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
@@ -327,17 +332,15 @@ describe('SpaceSafesController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          error: 'Unauthorized',
-          message:
-            'User is unauthorized. signer_address= ' +
-            inactiveAdminAuthPayload.signer_address,
-          statusCode: 401,
+          error: 'Forbidden',
+          message: 'User is not an admin of this space',
+          statusCode: 403,
         });
     });
 
-    it('Should return a 401 for a MEMBER of a space', async () => {
+    it('Should return a 403 for a MEMBER of a space', async () => {
       const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
@@ -385,18 +388,16 @@ describe('SpaceSafesController', () => {
             },
           ],
         })
-        .expect(401)
+        .expect(403)
         .expect({
-          error: 'Unauthorized',
-          message:
-            'User is unauthorized. signer_address= ' +
-            memberAuthPayloadDto.signer_address,
-          statusCode: 401,
+          error: 'Forbidden',
+          message: 'User is not an admin of this space',
+          statusCode: 403,
         });
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .expect(403)
@@ -412,7 +413,7 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -425,11 +426,11 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 404 if user is not found', async () => {
+    it('Should return a 404 if space is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -445,7 +446,7 @@ describe('SpaceSafesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'User not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -453,22 +454,22 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if body is an empty array', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ safes: [] })
         .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'too_small',
-          minimum: 1,
-          type: 'array',
-          inclusive: true,
-          exact: false,
-          message: 'Array must contain at least 1 element(s)',
-          path: ['safes'],
+        .expect((res) => {
+          expect(res.body).toMatchObject({
+            statusCode: 422,
+            code: 'too_small',
+            minimum: 1,
+            origin: 'array',
+            path: ['safes'],
+            message: 'Too small: expected array to have >=1 items',
+          });
         });
     });
 
@@ -476,7 +477,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -494,13 +495,14 @@ describe('SpaceSafesController', () => {
           ],
         })
         .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'number',
-          path: ['safes', 0, 'chainId'],
-          message: 'Expected string, received number',
+        .expect((res) => {
+          expect(res.body).toMatchObject({
+            statusCode: 422,
+            code: 'invalid_type',
+            expected: 'string',
+            path: ['safes', 0, 'chainId'],
+            message: 'Invalid input: expected string, received number',
+          });
         });
     });
 
@@ -509,7 +511,7 @@ describe('SpaceSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -595,7 +597,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(400)
         .expect({
-          message: 'Validation failed (numeric string is expected)',
+          message: 'Invalid space identifier',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -780,17 +782,15 @@ describe('SpaceSafesController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${userAccessToken}`])
-        .expect(401)
+        .expect(403)
         .expect({
-          error: 'Unauthorized',
-          message:
-            'User is unauthorized. signer_address= ' +
-            userAuthPayloadDto.signer_address,
-          statusCode: 401,
+          error: 'Forbidden',
+          message: 'User is not a member of this space',
+          statusCode: 403,
         });
     });
 
-    it('Should return a 401 if user is not an active or invited member', async () => {
+    it('Should return a 403 if user is not an active or invited member', async () => {
       const adminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const adminAccessToken = jwtService.sign(adminAuthPayloadDto);
       const nonMemberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
@@ -814,18 +814,16 @@ describe('SpaceSafesController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${nonMemberAccessToken}`])
-        .expect(401)
+        .expect(403)
         .expect({
-          error: 'Unauthorized',
-          message:
-            'User is unauthorized. signer_address= ' +
-            nonMemberAuthPayloadDto.signer_address,
-          statusCode: 401,
+          error: 'Forbidden',
+          message: 'User is not a member of this space',
+          statusCode: 403,
         });
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .expect(403)
@@ -841,7 +839,7 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
@@ -854,10 +852,10 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 404 if user is not found', async () => {
+    it('Should return a 404 if space is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
@@ -865,7 +863,7 @@ describe('SpaceSafesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'User not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -880,7 +878,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(400)
         .expect({
-          message: 'Validation failed (numeric string is expected)',
+          message: 'Invalid space identifier',
           error: 'Bad Request',
           statusCode: 400,
         });
@@ -1019,13 +1017,11 @@ describe('SpaceSafesController', () => {
         .delete(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${userAccessToken}`])
         .send(spaceSafes)
-        .expect(401)
+        .expect(403)
         .expect({
-          error: 'Unauthorized',
-          message:
-            'User is unauthorized. signer_address= ' +
-            userAuthPayloadDto.signer_address,
-          statusCode: 401,
+          error: 'Forbidden',
+          message: 'User is not an admin of this space',
+          statusCode: 403,
         });
     });
 
@@ -1087,15 +1083,15 @@ describe('SpaceSafesController', () => {
         .delete(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send(spaceSafes)
-        .expect(401)
+        .expect(403)
         .expect({
-          message: `User is unauthorized. signer_address= ${memberAuthPayloadDto.signer_address}`,
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an admin of this space',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
-    it('Should return a 401 for an inactive admin', async () => {
+    it('Should return a 403 for an inactive admin', async () => {
       const activeAdminAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const inactiveAdminAuthPayload = siweAuthPayloadDtoBuilder().build();
       const activeAdminAccessToken = jwtService.sign(activeAdminAuthPayloadDto);
@@ -1148,16 +1144,16 @@ describe('SpaceSafesController', () => {
         .delete(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${inactiveAdminAccessToken}`])
         .send(spaceSafes)
-        .expect(401)
+        .expect(403)
         .expect({
-          message: `User is unauthorized. signer_address= ${inactiveAdminAuthPayload.signer_address}`,
-          error: 'Unauthorized',
-          statusCode: 401,
+          message: 'User is not an admin of this space',
+          error: 'Forbidden',
+          statusCode: 403,
         });
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
         .expect(403)
@@ -1173,7 +1169,7 @@ describe('SpaceSafesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1186,11 +1182,11 @@ describe('SpaceSafesController', () => {
         });
     });
 
-    it('Should return a 404 if user is not found', async () => {
+    it('Should return a 404 if space is not found', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1206,7 +1202,7 @@ describe('SpaceSafesController', () => {
         .expect(404)
         .expect({
           statusCode: 404,
-          message: 'User not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
         });
     });
@@ -1214,22 +1210,22 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if body is an empty array', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ safes: [] })
         .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'too_small',
-          minimum: 1,
-          type: 'array',
-          inclusive: true,
-          exact: false,
-          message: 'Array must contain at least 1 element(s)',
-          path: ['safes'],
+        .expect((res) => {
+          expect(res.body).toMatchObject({
+            statusCode: 422,
+            code: 'too_small',
+            minimum: 1,
+            origin: 'array',
+            path: ['safes'],
+            message: 'Too small: expected array to have >=1 items',
+          });
         });
     });
 
@@ -1237,7 +1233,7 @@ describe('SpaceSafesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1255,13 +1251,14 @@ describe('SpaceSafesController', () => {
           ],
         })
         .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'string',
-          received: 'number',
-          path: ['safes', 0, 'chainId'],
-          message: 'Expected string, received number',
+        .expect((res) => {
+          expect(res.body).toMatchObject({
+            statusCode: 422,
+            code: 'invalid_type',
+            expected: 'string',
+            path: ['safes', 0, 'chainId'],
+            message: 'Invalid input: expected string, received number',
+          });
         });
     });
 
@@ -1270,7 +1267,7 @@ describe('SpaceSafesController', () => {
       const accessToken = jwtService.sign(authPayloadDto);
       const chain1 = chainBuilder().build();
       const chain2 = chainBuilder().build();
-      const spaceId = faker.number.int();
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1356,7 +1353,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(400)
         .expect({
-          message: 'Validation failed (numeric string is expected)',
+          message: 'Invalid space identifier',
           error: 'Bad Request',
           statusCode: 400,
         });

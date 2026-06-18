@@ -4,6 +4,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
@@ -58,7 +59,11 @@ describe('UsersRepository', () => {
       transaction: jest.fn(),
     } as jest.MockedObjectDeep<PostgresDatabaseService>;
 
-    target = new UsersRepository(postgresDatabaseService, walletsRepository);
+    target = new UsersRepository(
+      postgresDatabaseService,
+      walletsRepository,
+      createMockSpaceAuditRepository(),
+    );
   });
 
   describe('findOrCreateByWalletAddress', () => {

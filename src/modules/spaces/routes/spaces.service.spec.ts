@@ -23,11 +23,13 @@ import type { IMembersRepository } from '@/modules/users/domain/members.reposito
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
   create: jest.fn(),
   find: jest.fn(),
   findOne: jest.fn(),
+  findOneOrFail: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
 } as jest.MockedObjectDeep<ISpacesRepository>;
@@ -62,8 +64,8 @@ describe('SpacesService', () => {
 
   describe('getActiveOrInvitedSpaces', () => {
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should return spaces for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
@@ -93,7 +95,8 @@ describe('SpacesService', () => {
 
       expect(result).toEqual([
         {
-          id: space.id,
+          id: mockSpace.id,
+          uuid: mockSpace.uuid,
           name: space.name,
           members: [member],
           safeCount: 3,
@@ -111,8 +114,8 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should only include non-expired invited spaces for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
@@ -134,9 +137,33 @@ describe('SpacesService', () => {
       });
     });
 
+    // The query must find ALL of the user's spaces, so every `where` clause
+    // filters by user + status only. If a clause also filtered by `space`, the
+    // user's other spaces would be silently excluded.
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
+    ])('should query memberships by user without filtering by space for %s user', async (_label, builder) => {
+      const authPayload = new AuthPayload(builder().build());
+      const userId = Number(authPayload.sub);
+
+      membersRepositoryMock.find.mockResolvedValue([]);
+
+      await service.getActiveOrInvitedSpaces(authPayload);
+
+      const where = membersRepositoryMock.find.mock.calls[0][0]?.where;
+      const clauses = Array.isArray(where) ? where : [where];
+
+      expect(clauses.length).toBeGreaterThan(0);
+      for (const clause of clauses) {
+        expect(clause).toMatchObject({ user: { id: userId } });
+        expect(clause).not.toHaveProperty('space');
+      }
+    });
+
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should return safeCount 0 when %s space has no safes', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
@@ -162,8 +189,8 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should return safeCount 0 when %s space.safes is undefined', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
@@ -185,8 +212,8 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should return empty array when %s user has no memberships', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
 
@@ -199,8 +226,8 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should return multiple spaces with correct safeCount for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
@@ -236,7 +263,7 @@ describe('SpacesService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].safeCount).toBe(2);
-      expect(result[1].safeCount).toBe(1);
+      expect(result[1].safeCount).toBe(0);
     });
 
     it('should populate invitedByName with wallet address for INVITED member', async () => {
@@ -285,6 +312,40 @@ describe('SpacesService', () => {
           invitedByName: walletAddress,
         }),
       );
+    });
+
+    it('should hide the roster and safe count from a pending member', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const caller = userBuilder().with('id', callerUserId).build();
+      const otherUser = userBuilder().with('id', faker.number.int()).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .build();
+      const otherMember = memberBuilder()
+        .with('user', otherUser)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('members', [callerMember, otherMember])
+          .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
+          .build(),
+      ]);
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].members).toHaveLength(1);
+      expect(result[0].members[0].user.id).toBe(callerUserId);
+      expect(result[0].safeCount).toBe(0);
     });
 
     it('should populate invitedByName with email for OIDC inviter (no wallet)', async () => {
@@ -411,12 +472,14 @@ describe('SpacesService', () => {
       spacesRepositoryMock.find.mockResolvedValue([
         spaceBuilder()
           .with('id', spaceA.id)
+          .with('uuid', spaceA.uuid)
           .with('name', spaceA.name)
           .with('members', [inviterMemberA, callerMemberA])
           .with('safes', [])
           .build(),
         spaceBuilder()
           .with('id', spaceB.id)
+          .with('uuid', spaceB.uuid)
           .with('name', spaceB.name)
           .with('members', [callerMemberB]) // inviter is NOT a member here
           .with('safes', [])
@@ -501,8 +564,8 @@ describe('SpacesService', () => {
 
   describe('getActiveOrInvitedSpace', () => {
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should return a space by ID for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
@@ -524,40 +587,47 @@ describe('SpacesService', () => {
       );
 
       expect(result.id).toBe(space.id);
+      expect(result.uuid).toBe(space.uuid);
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw NotFoundException when space ID not found for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
 
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
-        service.getActiveOrInvitedSpace(999999, authPayload),
+        service.getActiveOrInvitedSpace(
+          faker.number.int({ min: 1 }),
+          authPayload,
+        ),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw NotFoundException when %s user has no spaces', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
 
       membersRepositoryMock.find.mockResolvedValue([]);
 
       await expect(
-        service.getActiveOrInvitedSpace(1, authPayload),
+        service.getActiveOrInvitedSpace(
+          faker.number.int({ min: 1 }),
+          authPayload,
+        ),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw NotFoundException when %s user is not a member of the space', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      const spaceId = faker.number.int();
+      const spaceId = faker.number.int({ min: 1 });
 
       // The space exists and has members, but none belong to this user, so
       // the user-scoped query returns no rows.
@@ -570,12 +640,12 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should scope every membership clause to the user and the requested space for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
-      const spaceId = faker.number.int();
+      const spaceId = faker.number.int({ min: 1 });
 
       membersRepositoryMock.find.mockResolvedValue([]);
 
@@ -586,7 +656,11 @@ describe('SpacesService', () => {
       expect(membersRepositoryMock.find).toHaveBeenCalledWith(
         expect.objectContaining({
           where: [
-            { user: { id: userId }, status: 'ACTIVE', space: { id: spaceId } },
+            {
+              user: { id: userId },
+              status: 'ACTIVE',
+              space: { id: spaceId },
+            },
             {
               user: { id: userId },
               status: 'INVITED',
@@ -601,15 +675,19 @@ describe('SpacesService', () => {
 
   describe('create', () => {
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should create space for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
       const name = faker.word.noun();
-      const expectedResponse = { id: faker.number.int(), name };
+      const repositoryResponse = {
+        id: faker.number.int(),
+        uuid: fakeUuid(),
+        name,
+      };
 
-      spacesRepositoryMock.create.mockResolvedValue(expectedResponse);
+      spacesRepositoryMock.create.mockResolvedValue(repositoryResponse);
 
       const result = await service.create({
         name,
@@ -617,7 +695,11 @@ describe('SpacesService', () => {
         authPayload,
       });
 
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual({
+        id: repositoryResponse.id,
+        uuid: repositoryResponse.uuid,
+        name,
+      });
       expect(usersRepositoryMock.activateIfPending).toHaveBeenCalledWith(
         userId,
       );
@@ -627,13 +709,14 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should activate a PENDING %s user when creating space', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
       const expectedResponse = {
         id: faker.number.int(),
+        uuid: fakeUuid(),
         name: faker.word.noun(),
       };
 
@@ -651,8 +734,8 @@ describe('SpacesService', () => {
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw NotFoundException when %s user no longer exists', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       usersRepositoryMock.findOneOrFail.mockRejectedValue(
@@ -685,18 +768,21 @@ describe('SpacesService', () => {
 
   describe('update', () => {
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should update space for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
-      const expectedResponse = { id: spaceId, name: updatePayload.name };
 
       spacesRepositoryMock.findOne.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).build(),
+        spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
       );
-      spacesRepositoryMock.update.mockResolvedValue(expectedResponse);
+      spacesRepositoryMock.update.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+      });
 
       const result = await service.update({
         id: spaceId,
@@ -704,12 +790,12 @@ describe('SpacesService', () => {
         authPayload,
       });
 
-      expect(result).toEqual(expectedResponse);
+      expect(result).toEqual({ id: spaceId, uuid: spaceUuid });
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw when %s user is not admin', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       spacesRepositoryMock.findOne.mockResolvedValue(null);
@@ -726,8 +812,8 @@ describe('SpacesService', () => {
 
   describe('delete', () => {
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should delete space for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(builder().build());
@@ -738,12 +824,15 @@ describe('SpacesService', () => {
 
       await service.delete({ id: spaceId, authPayload });
 
-      expect(spacesRepositoryMock.delete).toHaveBeenCalledWith(spaceId);
+      expect(spacesRepositoryMock.delete).toHaveBeenCalledWith({
+        id: spaceId,
+        actorUserId: Number(authPayload.sub),
+      });
     });
 
     it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder] as const,
-      ['OIDC', oidcAuthPayloadDtoBuilder] as const,
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw when %s user is not admin', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       spacesRepositoryMock.findOne.mockResolvedValue(null);

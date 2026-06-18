@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import {
   ConflictException,
   ForbiddenException,
@@ -20,6 +21,9 @@ import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { Space as DbSpace } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
@@ -43,7 +47,23 @@ export class MembersRepository implements IMembersRepository {
     private readonly usersRepository: IUsersRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(ISpaceAuditRepository)
+    private readonly spaceAuditRepository: ISpaceAuditRepository,
   ) {}
+
+  private async findSpaceForAuditOrFail(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+  ): Promise<Pick<DbSpace, 'id' | 'uuid'>> {
+    const space = await entityManager.findOne(DbSpace, {
+      where: { id: spaceId },
+      select: { id: true, uuid: true },
+    });
+    if (!space) {
+      throw new NotFoundException('Workspace not found.');
+    }
+    return space;
+  }
 
   public async findOneOrFail(
     where: Array<FindOptionsWhere<Member>> | FindOptionsWhere<Member>,
@@ -163,7 +183,7 @@ export class MembersRepository implements IMembersRepository {
           }
         }
 
-        await this.insertOrUpdateInvite({
+        const { reinvite } = await this.insertOrUpdateInvite({
           entityManager,
           space,
           userId: userIdToInvite,
@@ -172,9 +192,22 @@ export class MembersRepository implements IMembersRepository {
           inviteExpiresAt: args.inviteExpiresAt,
         });
 
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: space.id,
+          spaceUuid: space.uuid,
+          eventType: SpaceAuditEventType.MEMBER_INVITED,
+          actorUserId: userId,
+          payload: {
+            targetUserId: userIdToInvite,
+            role: userToInvite.role,
+            ...(reinvite && { reinvite }),
+          },
+        });
+
         invitations.push({
           userId: userIdToInvite,
           spaceId: space.id,
+          spaceUuid: space.uuid,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
@@ -186,6 +219,7 @@ export class MembersRepository implements IMembersRepository {
     return invitations;
   }
 
+  /** @returns `reinvite: true` when an existing `INVITED` member was updated. */
   private async insertOrUpdateInvite(args: {
     entityManager: EntityManager;
     space: Space;
@@ -193,7 +227,7 @@ export class MembersRepository implements IMembersRepository {
     userToInvite: InviteUserInput;
     invitedBy: number | null;
     inviteExpiresAt: Date;
-  }): Promise<void> {
+  }): Promise<{ reinvite: boolean }> {
     const {
       entityManager,
       space,
@@ -235,7 +269,7 @@ export class MembersRepository implements IMembersRepository {
         }
         throw err;
       }
-      return;
+      return { reinvite: false };
     }
 
     if (existingMember.status === 'INVITED') {
@@ -245,7 +279,7 @@ export class MembersRepository implements IMembersRepository {
         invitedBy,
         inviteExpiresAt,
       });
-      return;
+      return { reinvite: true };
     }
 
     throw duplicateInviteError();
@@ -254,11 +288,23 @@ export class MembersRepository implements IMembersRepository {
   public async renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    spaceId: Space['id'];
+    spaceUuid: UUID;
+    targetUserId: User['id'];
+    actorUserId: User['id'];
   }): Promise<void> {
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    await membersRepository.update(args.memberId, {
-      inviteExpiresAt: args.inviteExpiresAt,
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await entityManager.update(DbMember, args.memberId, {
+        inviteExpiresAt: args.inviteExpiresAt,
+      });
+
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: args.spaceId,
+        spaceUuid: args.spaceUuid,
+        eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
+        actorUserId: args.actorUserId,
+        payload: { targetUserId: args.targetUserId },
+      });
     });
   }
 
@@ -291,6 +337,14 @@ export class MembersRepository implements IMembersRepository {
         status: 'ACTIVE',
         entityManager,
       });
+
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.MEMBER_INVITE_ACCEPTED,
+        actorUserId: userId,
+        payload: { targetUserId: userId },
+      });
     });
   }
 
@@ -315,6 +369,14 @@ export class MembersRepository implements IMembersRepository {
         status: 'DECLINED',
         inviteExpiresAt: null,
       });
+
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.MEMBER_INVITE_DECLINED,
+        actorUserId: userId,
+        payload: { targetUserId: userId },
+      });
     });
   }
 
@@ -333,7 +395,15 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Array<Member>> {
-    await this.findActiveOrInvitedMemberOrFail(args);
+    // A pending caller gets only their own invitation row, never the roster
+    // (the wallet derives its invite banner from this endpoint).
+    const own = await this.findActiveOrInvitedMemberOrFail(args, {
+      user: true,
+    });
+    if (own.status !== 'ACTIVE') {
+      return [own];
+    }
+
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
       relations: { members: { user: true } },
@@ -377,16 +447,32 @@ export class MembersRepository implements IMembersRepository {
       });
     }
 
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    const updateResult = await membersRepository.update(
-      { user: { id: args.userId }, space: { id: args.spaceId } },
-      { role: args.role },
-    );
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const member = await entityManager.findOne(DbMember, {
+        where: { user: { id: args.userId }, space: { id: args.spaceId } },
+      });
+      if (!member) {
+        throw new NotFoundException('Member not found.');
+      }
 
-    if (updateResult.affected === 0) {
-      throw new NotFoundException('Member not found.');
-    }
+      await entityManager.update(DbMember, member.id, { role: args.role });
+
+      const space = await this.findSpaceForAuditOrFail(
+        entityManager,
+        args.spaceId,
+      );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.MEMBER_ROLE_UPDATED,
+        actorUserId: actingUserId,
+        payload: {
+          targetUserId: args.userId,
+          oldRole: member.role,
+          newRole: args.role,
+        },
+      });
+    });
   }
 
   public async updateAlias(args: {
@@ -396,16 +482,33 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    const updateResult = await membersRepository.update(
-      { user: { id: userId }, space: { id: args.spaceId } },
-      { alias: args.alias },
-    );
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const member = await entityManager.findOne(DbMember, {
+        where: { user: { id: userId }, space: { id: args.spaceId } },
+      });
+      if (!member) {
+        throw new NotFoundException('Member not found.');
+      }
+      if (member.status !== 'ACTIVE') {
+        throw new ForbiddenException(
+          'The user is not an active member of the workspace.',
+        );
+      }
 
-    if (updateResult.affected === 0) {
-      throw new NotFoundException('Member not found.');
-    }
+      await entityManager.update(DbMember, member.id, { alias: args.alias });
+
+      const space = await this.findSpaceForAuditOrFail(
+        entityManager,
+        args.spaceId,
+      );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.MEMBER_ALIAS_UPDATED,
+        actorUserId: userId,
+        payload: { targetUserId: userId },
+      });
+    });
   }
 
   public async removeUser(args: {
@@ -426,16 +529,28 @@ export class MembersRepository implements IMembersRepository {
       });
     }
 
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-    const deleteResult = await membersRepository.delete({
-      user: { id: args.userId },
-      space: { id: args.spaceId },
-    });
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const member = await entityManager.findOne(DbMember, {
+        where: { user: { id: args.userId }, space: { id: args.spaceId } },
+      });
+      if (!member) {
+        throw new NotFoundException('Member not found.');
+      }
 
-    if (deleteResult.affected === 0) {
-      throw new NotFoundException('Member not found.');
-    }
+      await entityManager.delete(DbMember, member.id);
+
+      const space = await this.findSpaceForAuditOrFail(
+        entityManager,
+        args.spaceId,
+      );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.MEMBER_REMOVED,
+        actorUserId: actingUserId,
+        payload: { targetUserId: args.userId },
+      });
+    });
   }
 
   public async removeSelf(args: {
@@ -448,17 +563,28 @@ export class MembersRepository implements IMembersRepository {
 
     this.assertIsNotLastAdmin({ members: activeAdmins, userId });
 
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const member = await entityManager.findOne(DbMember, {
+        where: { user: { id: userId }, space: { id: args.spaceId } },
+      });
+      if (!member) {
+        throw new NotFoundException('Member not found.');
+      }
 
-    const deleteResult = await membersRepository.delete({
-      user: { id: userId },
-      space: { id: args.spaceId },
+      await entityManager.delete(DbMember, member.id);
+
+      const space = await this.findSpaceForAuditOrFail(
+        entityManager,
+        args.spaceId,
+      );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.MEMBER_LEFT,
+        actorUserId: userId,
+        payload: { targetUserId: userId },
+      });
     });
-
-    if (deleteResult.affected === 0) {
-      throw new NotFoundException('Member not found.');
-    }
   }
 
   private assertIsActiveAdmin(args: {
@@ -495,12 +621,6 @@ export class MembersRepository implements IMembersRepository {
    * Returns the authenticated user's `ACTIVE` or non-expired `INVITED`
    * membership row for the given space, or throws `ForbiddenException` if none
    * exists.
-   *
-   * Shared by {@link findAuthorizedMembersOrFail} (which uses it as an
-   * authorization gate and discards the row, so it omits `relations`) and
-   * by {@link findSelfMembershipOrFail} (which returns the row to the
-   * caller and passes `{ user: true }` so the response includes
-   * `user.status`).
    */
   private async findActiveOrInvitedMemberOrFail(
     args: {

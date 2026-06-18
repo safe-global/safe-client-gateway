@@ -136,7 +136,7 @@ export function cursorUrlFromLimitAndOffset(
  * @param url
  * @param paginationData
  */
-function setCursor(
+export function setCursor(
   url: Readonly<URL | string>,
   paginationData: PaginationData,
 ): URL {

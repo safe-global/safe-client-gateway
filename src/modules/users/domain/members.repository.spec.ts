@@ -8,6 +8,7 @@ import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-er
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { InviteType } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
@@ -59,6 +60,7 @@ describe('MembersRepository', () => {
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
+      createMockSpaceAuditRepository(),
     );
   });
 
@@ -85,6 +87,7 @@ describe('MembersRepository', () => {
         {
           userId: wallet.user.id,
           spaceId: space.id,
+          spaceUuid: space.uuid,
           name: userToInvite.name,
           role: userToInvite.role,
           status: 'INVITED',
@@ -257,21 +260,20 @@ describe('MembersRepository', () => {
   });
 
   describe('renewInvite', () => {
-    let dbMembersRepository: { update: jest.Mock };
-
-    beforeEach(() => {
-      dbMembersRepository = { update: jest.fn() };
-      postgresDatabaseService.getRepository = jest
-        .fn()
-        .mockResolvedValue(dbMembersRepository);
-    });
-
     it("should update the member's inviteExpiresAt by id", async () => {
       const memberId = faker.number.int();
+      const targetUserId = faker.number.int();
 
-      await target.renewInvite({ memberId, inviteExpiresAt });
+      await target.renewInvite({
+        memberId,
+        inviteExpiresAt,
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        targetUserId,
+        actorUserId: authenticatedUserId,
+      });
 
-      expect(dbMembersRepository.update).toHaveBeenCalledWith(memberId, {
+      expect(entityManager.update).toHaveBeenCalledWith(DbMember, memberId, {
         inviteExpiresAt,
       });
     });

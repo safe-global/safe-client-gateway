@@ -8,7 +8,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  ParseIntPipe,
   Patch,
   Post,
   UseGuards,
@@ -24,7 +23,6 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import { getEnumKey } from '@/domain/common/utils/enum';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
@@ -42,6 +40,7 @@ import {
   UpdateSpaceSchema,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -148,9 +147,10 @@ export class SpacesController {
   })
   @ApiParam({
     name: 'id',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space information retrieved successfully',
@@ -167,8 +167,7 @@ export class SpacesController {
   })
   @Get('/:id')
   public async getOne(
-    @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    id: number,
+    @Param('id', LegacySpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     return await this.spacesService.getActiveOrInvitedSpace(id, authPayload);
@@ -181,9 +180,9 @@ export class SpacesController {
   })
   @ApiParam({
     name: 'id',
-    type: 'number',
-    description: 'Space ID to update',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to update',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: UpdateSpaceDto,
@@ -208,8 +207,7 @@ export class SpacesController {
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
-    @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    id: number,
+    @Param('id', LegacySpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<UpdateSpaceResponse> {
     return await this.spacesService.update({
@@ -226,9 +224,9 @@ export class SpacesController {
   })
   @ApiParam({
     name: 'id',
-    type: 'number',
-    description: 'Space ID to delete',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID to delete',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiResponse({
     description: 'Space deleted successfully',
@@ -247,8 +245,7 @@ export class SpacesController {
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
-    @Param('id', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    id: number,
+    @Param('id', LegacySpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spacesService.delete({ id, authPayload });

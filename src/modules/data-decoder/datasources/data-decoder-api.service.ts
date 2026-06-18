@@ -4,6 +4,7 @@ import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { Page } from '@/domain/entities/page.entity';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
@@ -61,6 +62,11 @@ export class DataDecoderApi implements IDataDecoderApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         url,
         data: args,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
+        },
       });
     } catch (error) {
       throw this.httpErrorFactory.from(error);
@@ -91,6 +97,9 @@ export class DataDecoderApi implements IDataDecoderApi {
             limit: args.limit,
             offset: args.offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
         },
       });
     } catch (error) {
@@ -118,6 +127,9 @@ export class DataDecoderApi implements IDataDecoderApi {
             trusted_for_delegate_call: true,
             limit: args.limit,
             offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });
