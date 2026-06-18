@@ -38,6 +38,7 @@ export class SpaceSafesService {
 
     return await this.spaceSafesRepository.create({
       spaceId: args.spaceId,
+      actorUserId: userId,
       payload: args.payload,
     });
   }
@@ -66,6 +67,7 @@ export class SpaceSafesService {
 
     await this.spaceSafesRepository.delete({
       spaceId: args.spaceId,
+      actorUserId: userId,
       payload: args.payload,
     });
   }

@@ -16,8 +16,16 @@ export class Invitation {
   @ApiProperty({ type: String })
   name!: Member['name'];
 
-  @ApiProperty({ type: Number })
+  @ApiProperty({
+    type: Number,
+    deprecated: true,
+    description:
+      'Numeric Space id (deprecated, use spaceUuid). Kept for FE fallback',
+  })
   spaceId!: Space['id'];
+
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  spaceUuid!: Space['uuid'];
 
   @ApiProperty({ enum: getStringEnumKeys(MemberRole) })
   role!: keyof typeof MemberRole;

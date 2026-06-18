@@ -16,7 +16,7 @@ export interface ISpacesRepository {
     userId: User['id'];
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'name'>>;
+  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<SpacesRepository['findOne']>[0],
@@ -61,7 +61,16 @@ export interface ISpacesRepository {
   update(args: {
     id: Space['id'];
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
-  }): Promise<Pick<Space, 'id'>>;
+    actorUserId: number;
+  }): Promise<Pick<Space, 'id' | 'uuid'>>;
 
-  delete(id: number): Promise<void>;
+  findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
+
+  // TODO: remove after FE removes numeric Space ID fallback.
+  findUuidById(id: Space['id']): Promise<Space['uuid']>;
+
+  // TODO: remove after FE removes numeric Space ID fallback.
+  findIdByIdOrUuid(value: string): Promise<Space['id']>;
+
+  delete(args: { id: number; actorUserId: number }): Promise<void>;
 }

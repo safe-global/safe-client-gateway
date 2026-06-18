@@ -12,6 +12,7 @@ import {
   walletInviteUserDtoBuilder,
 } from '@/modules/spaces/routes/entities/__tests__/invite-user.dto.builder';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
+import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const BASE_URI = 'https://app.safe.global';
 const INVITE_URL = 'https://app.safe.global/welcome/spaces';
@@ -146,5 +147,67 @@ describe('SpaceInviteEmailService', () => {
     expect(loggingServiceMock.warn).toHaveBeenCalledWith(
       'Error while enqueueing space invite email: Redis connection refused',
     );
+  });
+
+  describe('enqueueRenewalEmail', () => {
+    it('should enqueue an email job for the renewed invitation', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      const name = nameBuilder();
+      const email = fakeEmailAddress();
+      sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
+
+      await service.enqueueRenewalEmail({ name, email, spaceId });
+
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledTimes(1);
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledWith({
+        to: email,
+        subject: 'You have been invited to a Safe workspace',
+        htmlBody: expect.stringContaining(INVITE_URL),
+        textBody: expect.stringContaining(INVITE_URL),
+        metadata: {
+          spaceId,
+        },
+      });
+      expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          htmlBody: expect.stringContaining(workspaceName),
+        }),
+      );
+    });
+
+    it('should be a no-op when the SES email queue is not available', async () => {
+      const noQueueService = buildService(undefined);
+      const spaceId = faker.number.int({ min: 1 });
+
+      await expect(
+        noQueueService.enqueueRenewalEmail({
+          name: nameBuilder(),
+          email: fakeEmailAddress(),
+          spaceId,
+        }),
+      ).resolves.toBeUndefined();
+
+      expect(spacesRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
+      expect(sesEmailQueueServiceMock.enqueue).not.toHaveBeenCalled();
+    });
+
+    it('should swallow and log errors raised while enqueueing', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      sesEmailQueueServiceMock.enqueue.mockRejectedValueOnce(
+        new Error('Redis connection refused'),
+      );
+
+      await expect(
+        service.enqueueRenewalEmail({
+          name: nameBuilder(),
+          email: fakeEmailAddress(),
+          spaceId,
+        }),
+      ).resolves.toBeUndefined();
+
+      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+        'Error while enqueueing space invite email: Redis connection refused',
+      );
+    });
   });
 });

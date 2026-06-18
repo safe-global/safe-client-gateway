@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { SiweModule } from '@/modules/siwe/siwe.module';
+import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -24,6 +25,7 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     forwardRef(() => AuthModule),
     SiweModule,
     forwardRef(() => SpacesModule),
+    SpaceAuditModule,
   ],
   providers: [
     {

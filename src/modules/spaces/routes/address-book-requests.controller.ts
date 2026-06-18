@@ -14,6 +14,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -21,6 +22,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
@@ -34,6 +36,8 @@ import {
   CreateAddressBookRequestDto,
   CreateAddressBookRequestSchema,
 } from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
+import { SpacesAddressBookRequestsRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-requests-rate-limit.guard';
+import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -51,9 +55,10 @@ export class AddressBookRequestsController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description:
+      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Pending requests retrieved successfully',
@@ -67,47 +72,49 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async getPendingRequests(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
   ): Promise<AddressBookRequestsDto> {
     return await this.service.findPending(authPayload, spaceId);
   }
 
   @ApiOperation({
-    summary: 'Request to add a private contact to the space address book',
+    summary: 'Request to add a contact to the space address book',
     description:
-      'Creates a request to add a private contact to the shared space address book. Requires the contact to exist in the private address book first.',
+      'Creates a request to add a contact to the shared space address book. The proposed contact (name, address, chain ids) is stored on the request and added to the address book once an admin approves it.',
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({
     type: CreateAddressBookRequestDto,
-    description: 'Address of the private contact to request adding',
+    description: 'The contact to propose for the space address book',
   })
   @ApiCreatedResponse({
     description: 'Request created successfully',
     type: AddressBookRequestItemDto,
   })
-  @ApiNotFoundResponse({
-    description: 'Private contact not found',
+  @ApiConflictResponse({
+    description: 'A pending request for this address already exists',
+  })
+  @ApiBadRequestResponse({
+    description: 'Maximum number of pending requests reached',
   })
   @ApiForbiddenResponse({
-    description: 'User is not a member of this space',
+    description: 'User is not an active member of this space',
   })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @Post('/:spaceId/address-book/requests')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, SpacesAddressBookRequestsRateLimitGuard)
   public async createRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(CreateAddressBookRequestSchema))
     dto: CreateAddressBookRequestDto,
   ): Promise<AddressBookRequestItemDto> {
-    return await this.service.createRequest(authPayload, spaceId, dto.address);
+    return await this.service.createRequest(authPayload, spaceId, dto);
   }
 
   @ApiOperation({
@@ -117,9 +124,9 @@ export class AddressBookRequestsController {
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'requestId',
@@ -138,8 +145,7 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async approveRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
@@ -149,13 +155,13 @@ export class AddressBookRequestsController {
   @ApiOperation({
     summary: 'Reject a pending address book request',
     description:
-      'Admin rejects a pending request. The contact stays in the private address book.',
+      'Admin rejects a pending request. The requester can submit a new request for the same address afterwards.',
   })
   @ApiParam({
     name: 'spaceId',
-    type: 'number',
-    description: 'Space ID',
-    example: 1,
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
     name: 'requestId',
@@ -174,8 +180,7 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async rejectRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
-    spaceId: number,
+    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {

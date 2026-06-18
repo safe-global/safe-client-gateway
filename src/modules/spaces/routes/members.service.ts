@@ -79,25 +79,42 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
-    const member = await this.membersRepository.findOneOrFail({
-      user: { id: args.userId },
-      space: { id: args.spaceId },
-    });
-    if (member.status !== 'INVITED') {
+    const { id, user, name, status, role, invitedBy, space } =
+      await this.membersRepository.findOneOrFail(
+        {
+          user: { id: args.userId },
+          space: { id: args.spaceId },
+        },
+        { user: true, space: true },
+      );
+    if (status !== 'INVITED') {
       throw new ConflictException('Only a pending invitation can be renewed.');
     }
     await this.membersRepository.renewInvite({
-      memberId: member.id,
+      memberId: id,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      spaceId: args.spaceId,
+      spaceUuid: space.uuid,
+      targetUserId: args.userId,
+      actorUserId: getAuthenticatedUserIdOrFail(args.authPayload),
     });
+
+    if (user.email) {
+      await this.spaceInviteEmailService.enqueueRenewalEmail({
+        name: name,
+        email: user.email,
+        spaceId: args.spaceId,
+      });
+    }
 
     return {
       userId: args.userId,
       spaceId: args.spaceId,
-      name: member.name,
-      role: member.role,
-      status: member.status,
-      invitedBy: member.invitedBy,
+      spaceUuid: space.uuid,
+      name,
+      role,
+      status,
+      invitedBy,
     };
   }
 

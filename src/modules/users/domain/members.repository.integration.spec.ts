@@ -21,6 +21,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import {
@@ -131,8 +132,17 @@ describe('MembersRepository', () => {
     const walletsRepo = new WalletsRepository(postgresDatabaseService);
     membersRepository = new MembersRepository(
       postgresDatabaseService,
-      new UsersRepository(postgresDatabaseService, walletsRepo),
-      new SpacesRepository(postgresDatabaseService, mockConfigurationService),
+      new UsersRepository(
+        postgresDatabaseService,
+        walletsRepo,
+        createMockSpaceAuditRepository(),
+      ),
+      new SpacesRepository(
+        postgresDatabaseService,
+        mockConfigurationService,
+        createMockSpaceAuditRepository(),
+      ),
+      createMockSpaceAuditRepository(),
     );
   });
 
@@ -666,6 +676,7 @@ describe('MembersRepository', () => {
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
+      const spaceUuid = space.generatedMaps[0].uuid;
       await dbMembersRepository.insert({
         user: owner,
         space: space.generatedMaps[0],
@@ -698,6 +709,7 @@ describe('MembersRepository', () => {
           return {
             userId: expect.any(Number),
             spaceId,
+            spaceUuid,
             name: user.name,
             role: user.role,
             status: 'INVITED',
@@ -721,6 +733,7 @@ describe('MembersRepository', () => {
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
+      const spaceUuid = space.generatedMaps[0].uuid;
       await dbMembersRepository.insert({
         user: owner,
         space: space.generatedMaps[0],
@@ -753,6 +766,7 @@ describe('MembersRepository', () => {
           return {
             userId: expect.any(Number),
             spaceId,
+            spaceUuid,
             name: user.name,
             role: user.role,
             status: 'INVITED',
@@ -855,6 +869,7 @@ describe('MembersRepository', () => {
         status: 'ACTIVE',
       });
       const spaceId = space.generatedMaps[0].id;
+      const spaceUuid = space.generatedMaps[0].uuid;
       await dbMembersRepository.insert({
         user: owner,
         space: space.generatedMaps[0],
@@ -892,6 +907,7 @@ describe('MembersRepository', () => {
         {
           userId: invitee.generatedMaps[0].id,
           spaceId,
+          spaceUuid,
           name: updatedInviteeName,
           role: 'ADMIN',
           status: 'INVITED',
@@ -1145,11 +1161,18 @@ describe('MembersRepository', () => {
         inviteExpiresAt: expiredAt,
       });
       const memberId = memberInsert.identifiers[0].id as Member['id'];
+      const inviteeId = invitee.identifiers[0].id as User['id'];
+      const spaceId = space.generatedMaps[0].id as Space['id'];
+      const spaceUuid = space.generatedMaps[0].uuid as Space['uuid'];
 
       await expect(
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
+          spaceId,
+          spaceUuid,
+          targetUserId: inviteeId,
+          actorUserId: invitedBy,
         }),
       ).resolves.toBeUndefined();
 
@@ -2198,6 +2221,45 @@ describe('MembersRepository', () => {
         new ForbiddenException(
           'The user is not an active member of the workspace.',
         ),
+      );
+    });
+
+    it('should return only their own membership state to a pending member (non-expired invite)', async () => {
+      const { user, userId, authPayload } = await createSiweUser();
+      const { user: admin, userId: adminUserId } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: faker.person.firstName(),
+        role: faker.helpers.arrayElement(MemberRoleKeys),
+        status: 'INVITED',
+        invitedBy: adminUserId,
+        inviteExpiresAt: faker.date.future(),
+      });
+
+      const members = await membersRepository.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId,
+      });
+
+      expect(members).toHaveLength(1);
+      expect(members[0]).toEqual(
+        expect.objectContaining({
+          status: 'INVITED',
+          user: expect.objectContaining({ id: userId }),
+        }),
       );
     });
 
@@ -3419,6 +3481,44 @@ describe('MembersRepository', () => {
         where: { id: member.identifiers[0].id },
       });
       expect(updatedMember.alias).toBe(newAlias);
+    });
+
+    it.each([
+      ['INVITED'],
+      ['DECLINED'],
+    ] as const)('should throw ForbiddenException for a %s membership', async (status) => {
+      const { user, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      const member = await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status,
+        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        inviteExpiresAt: status === 'INVITED' ? faker.date.future() : null,
+      });
+
+      await expect(
+        membersRepository.updateAlias({
+          authPayload,
+          spaceId,
+          alias: nameBuilder(),
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          'The user is not an active member of the workspace.',
+        ),
+      );
+
+      const unchangedMember = await dbMembersRepository.findOneOrFail({
+        where: { id: member.identifiers[0].id },
+      });
+      expect(unchangedMember.alias).toBeNull();
     });
 
     it('should add an alias for OIDC user', async () => {
