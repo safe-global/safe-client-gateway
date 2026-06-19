@@ -77,17 +77,12 @@ jobs:
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
-      # Cache the linked node_modules so jobs skip the install/link step on a
-      # warm cache. Keyed on the lockfile + Node major; any dependency change
-      # busts it and the conditional install below repopulates it.
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
-      - if: steps.node-modules.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+      # Install unconditionally rather than caching the linked node_modules:
+      # `enableHardenedMode` (.yarnrc.yml) verifies the supply chain only during
+      # `yarn install`, so skipping install on a warm cache would bypass that
+      # check. The `cache: 'yarn'` download cache above keeps this fast — tarballs
+      # are already fetched, so install only re-links and re-verifies.
+      - run: yarn install --immutable
       - run: yarn run env:validate:silent
 
   biome:
@@ -98,16 +93,16 @@ jobs:
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
-      - if: steps.node-modules.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+      - run: yarn install --immutable
       - run: yarn run format-check
       - run: yarn run lint-check
+      # `nest build` (a full tsc compile) was dropped from the test jobs, which
+      # removed whole-program type-checking on PRs — ts-jest only type-checks
+      # files a test imports. Run an explicit no-emit type-check here so type
+      # errors fail the PR instead of only surfacing on the main-only Docker
+      # build. Needs the generated ABIs that the `@/abis` alias resolves to.
+      - run: yarn generate-abis
+      - run: yarn tsc --noEmit -p tsconfig.build.json
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -154,14 +149,7 @@ jobs:
         with:
           node-version: '22.11.0' # jod
           cache: 'yarn'
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node22-${{ hashFiles('yarn.lock') }}
-      - if: steps.node-modules.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+      - run: yarn install --immutable
       # Tests are transformed straight from `src` by the test runner, so the
       # full `nest build` (compile to dist) isn't needed here — only the
       # generated ABIs that the `@/abis` import alias resolves to.
@@ -227,14 +215,7 @@ jobs:
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
-      - name: Cache node_modules
-        id: node-modules
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: node_modules
-          key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
-      - if: steps.node-modules.outputs.cache-hit != 'true'
-        run: yarn install --immutable
+      - run: yarn install --immutable
       # See unit-tests: only the generated ABIs are needed here, not a full build.
       - run: yarn generate-abis
       - run: yarn run test:integration:cov
@@ -273,7 +254,10 @@ jobs:
   # Production runs on amd64 only, so we build a single-arch image. ubuntu-latest
   # is amd64, so the build is native — no QEMU emulation needed.
   docker-publish-staging:
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # `on.push.branches` already scopes push events to main, so the ref check is
+    # redundant today — but it keeps this job self-guarding (it deploys to
+    # staging) if the push trigger is ever broadened.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [biome, tests-finish]
     runs-on: ubuntu-latest
     steps:
