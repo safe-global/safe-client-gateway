@@ -404,7 +404,8 @@ describe('AuthController', () => {
       );
       const nonce: string = nonceResponse.body.nonce;
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
-      const expirationTime = new Date();
+      // Expired beyond the allowed clock-skew tolerance
+      const expirationTime = new Date(Date.now() - 60_000);
       const message = createSiweMessage(
         siweMessageBuilder()
           .with('address', signer.address)
