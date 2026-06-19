@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -40,7 +41,7 @@ import {
   UpdateSpaceSchema,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -107,20 +108,22 @@ export class SpacesController {
   }
 
   @ApiOperation({
-    summary: 'Get space by ID',
+    summary: 'Get space by UUID',
     description:
       'Retrieves detailed information about a specific space. The user must be a member of or invited to the space.',
   })
   @ApiParam({
     name: 'id',
     type: 'string',
-    description:
-      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space information retrieved successfully',
     type: GetSpaceResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiNotFoundResponse({
     description: 'Space not found',
@@ -133,7 +136,7 @@ export class SpacesController {
   })
   @Get('/:id')
   public async getOne(
-    @Param('id', LegacySpaceIdPipe) id: number,
+    @Param('id', SpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceResponse> {
     return await this.spacesService.getActiveOrInvitedSpace(id, authPayload);
@@ -158,6 +161,9 @@ export class SpacesController {
     description: 'Space updated successfully',
     type: UpdateSpaceResponse,
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
+  })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user is not an admin of this space',
   })
@@ -173,7 +179,7 @@ export class SpacesController {
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
-    @Param('id', LegacySpaceIdPipe) id: number,
+    @Param('id', SpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<UpdateSpaceResponse> {
     return await this.spacesService.update({
@@ -198,6 +204,9 @@ export class SpacesController {
     description: 'Space deleted successfully',
     status: HttpStatus.NO_CONTENT,
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
+  })
   @ApiForbiddenResponse({
     description: 'Forbidden resource - user is not an admin of this space',
   })
@@ -211,7 +220,7 @@ export class SpacesController {
   @Delete('/:id')
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
-    @Param('id', LegacySpaceIdPipe) id: number,
+    @Param('id', SpaceIdPipe) id: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spacesService.delete({ id, authPayload });

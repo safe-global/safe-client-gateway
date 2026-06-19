@@ -90,7 +90,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -122,7 +122,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -161,7 +161,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
       const spaceSafe1 = {
         chainId: chain1.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
@@ -216,8 +216,8 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: space2Name });
-      const spaceId = createSpaceResponse.body.id;
-      const space2Id = createSpace2Response.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
+      const space2Id = createSpace2Response.body.uuid;
       const spaceSafe1 = {
         chainId: chain1.chainId,
         address: getAddress(faker.finance.ethereumAddress()),
@@ -267,7 +267,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -306,7 +306,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -357,7 +357,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -640,7 +640,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -701,7 +701,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       // Create the member user and the wallet
       await request(app.getHttpServer())
@@ -777,7 +777,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
@@ -809,7 +809,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/safes`)
@@ -908,7 +908,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -954,7 +954,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
@@ -1006,7 +1006,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/safes`)
@@ -1049,7 +1049,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       // Invite the member user
       await request(app.getHttpServer())
@@ -1117,7 +1117,7 @@ describe('SpaceSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)

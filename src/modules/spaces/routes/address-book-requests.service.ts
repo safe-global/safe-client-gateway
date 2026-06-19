@@ -175,7 +175,6 @@ export class AddressBookRequestsService {
     ]);
 
     return {
-      spaceId: spaceId.toString(),
       spaceUuid,
       data: requests.map((request) => this.toDto(request, identityMap)),
     };

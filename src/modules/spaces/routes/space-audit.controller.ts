@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -22,7 +23,7 @@ import {
   SpaceAuditSortDirectionQuerySchema,
 } from '@/modules/spaces/routes/entities/space-audit-log.dto.entity';
 import { SpaceAuditRouteGuard } from '@/modules/spaces/routes/guards/space-audit-route.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceAuditService } from '@/modules/spaces/routes/space-audit.service';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -45,7 +46,8 @@ export class SpaceAuditController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space identifier (UUID, or legacy numeric id)',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiQuery({
     name: 'event_type',
@@ -94,9 +96,10 @@ export class SpaceAuditController {
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get(':spaceId/audit-log')
   public async getAuditLog(
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
@@ -142,7 +145,8 @@ export class SpaceAuditController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description: 'Space identifier (UUID, or legacy numeric id)',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     type: SpaceAuditLogActorDto,
@@ -156,9 +160,10 @@ export class SpaceAuditController {
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get(':spaceId/audit-log/actors')
   public async getAuditLogActors(
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<SpaceAuditLogActorDto>> {
     return await this.spaceAuditService.getAuditLogActors({

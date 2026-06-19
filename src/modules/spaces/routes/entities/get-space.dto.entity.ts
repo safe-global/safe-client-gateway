@@ -42,14 +42,6 @@ class SpaceMemberDto {
 }
 
 export class GetSpaceResponse {
-  @ApiProperty({
-    type: Number,
-    deprecated: true,
-    description:
-      'Numeric Space id (deprecated, use uuid). Kept for FE fallback',
-  })
-  public id!: Space['id'];
-
   @ApiProperty({ type: String, description: 'Space UUID' })
   public uuid!: Space['uuid'];
 

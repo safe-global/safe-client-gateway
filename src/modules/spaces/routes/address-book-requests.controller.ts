@@ -37,7 +37,7 @@ import {
   CreateAddressBookRequestSchema,
 } from '@/modules/spaces/routes/entities/address-book-request.dto.entity';
 import { SpacesAddressBookRequestsRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-requests-rate-limit.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -56,14 +56,14 @@ export class AddressBookRequestsController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Pending requests retrieved successfully',
     type: AddressBookRequestsDto,
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
     description: 'User is not a member of this space',
@@ -72,7 +72,7 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async getPendingRequests(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<AddressBookRequestsDto> {
     return await this.service.findPending(authPayload, spaceId);
   }
@@ -110,7 +110,7 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard, SpacesAddressBookRequestsRateLimitGuard)
   public async createRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(CreateAddressBookRequestSchema))
     dto: CreateAddressBookRequestDto,
   ): Promise<AddressBookRequestItemDto> {
@@ -145,7 +145,7 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async approveRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {
@@ -180,7 +180,7 @@ export class AddressBookRequestsController {
   @UseGuards(AuthGuard)
   public async rejectRequest(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('requestId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     requestId: number,
   ): Promise<void> {

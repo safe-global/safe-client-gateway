@@ -96,7 +96,6 @@ export class SurveysService {
 
     return {
       id: upserted.id,
-      spaceId: args.spaceId,
       spaceUuid,
       surveySlug: survey.slug,
       surveyVersion: survey.version,

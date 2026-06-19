@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
@@ -29,7 +30,7 @@ import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-spa
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -64,6 +65,9 @@ export class SpaceSafesController {
   @ApiCreatedResponse({
     description: 'Safes added to space successfully',
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
+  })
   @ApiUnauthorizedResponse({
     description:
       'Authentication required or user unauthorized to modify this space',
@@ -79,7 +83,7 @@ export class SpaceSafesController {
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spaceSafesService.create({
@@ -97,13 +101,15 @@ export class SpaceSafesController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get Safes for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get Safes for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Space Safes retrieved successfully',
     type: GetSpaceSafeResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
   })
   @ApiUnauthorizedResponse({
     description:
@@ -117,7 +123,7 @@ export class SpaceSafesController {
   })
   @Get()
   public async get(
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<GetSpaceSafeResponse> {
     return await this.spaceSafesService.get(spaceId, authPayload);
@@ -142,6 +148,9 @@ export class SpaceSafesController {
   @ApiNoContentResponse({
     description: 'Safes removed from space successfully',
   })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier',
+  })
   @ApiUnauthorizedResponse({
     description:
       'Authentication required or user unauthorized to modify this space',
@@ -159,7 +168,7 @@ export class SpaceSafesController {
   public async delete(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: DeleteSpaceSafesDto,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     return await this.spaceSafesService.delete({

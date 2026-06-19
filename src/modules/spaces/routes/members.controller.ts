@@ -13,6 +13,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
   ApiConflictResponse,
   ApiForbiddenResponse,
@@ -49,7 +50,7 @@ import {
   UpdateRoleDtoSchema,
 } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members.service';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -90,11 +91,12 @@ export class MembersController {
     description:
       'Authentication required or user not admin or member not active',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/invite')
   @UseGuards(AuthGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(InviteUsersDtoSchema))
     inviteUsersDto: InviteUsersDto,
   ): Promise<Array<Invitation>> {
@@ -135,11 +137,12 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'User invitation is not in pending state or already processed',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/accept')
   @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(AcceptInviteDtoSchema))
     acceptInviteDto: AcceptInviteDto,
   ): Promise<void> {
@@ -174,11 +177,12 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'User invitation is not in pending state or already processed',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/decline')
   @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<void> {
     return await this.membersService.declineInvite({
       authPayload,
@@ -196,8 +200,7 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID containing the invitation (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID containing the invitation',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
@@ -219,11 +222,12 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'Invitation is not in a pending state',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/:userId/invite/renew')
   @UseGuards(AuthGuard)
   public async renewInvite(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<Invitation> {
@@ -243,8 +247,7 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get members for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get members for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -258,11 +261,12 @@ export class MembersController {
   @ApiNotFoundResponse({
     description: 'User or space not found',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async getUsers(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<MembersDto> {
     return await this.membersService.get({
       authPayload,
@@ -279,8 +283,7 @@ export class MembersController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      "Space UUID to fetch the caller's membership for (numeric ID accepted for legacy clients, deprecated)",
+    description: "Space UUID to fetch the caller's membership for",
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
@@ -292,11 +295,12 @@ export class MembersController {
       'Access forbidden - user not authenticated, or has no ACTIVE/INVITED membership in this space',
   })
   @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Get('/:spaceId/membership')
   @UseGuards(AuthGuard)
   public async getMembership(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<MemberDto> {
     return await this.membersService.getSelfMembership({
       authPayload,
@@ -341,11 +345,12 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'Cannot remove the last admin from the space',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Patch('/:spaceId/members/:userId/role')
   @UseGuards(AuthGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
     @Body(new ValidationPipe(UpdateRoleDtoSchema))
@@ -376,11 +381,12 @@ export class MembersController {
     description: 'Space UUID to update own member alias in',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Patch('/:spaceId/members/alias')
   @UseGuards(AuthGuard)
   public async updateAlias(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
     updateMemberAliasDto: UpdateMemberAliasDto,
   ): Promise<void> {
@@ -423,11 +429,12 @@ export class MembersController {
   @ApiConflictResponse({
     description: 'Cannot remove the last admin from the space',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Delete('/:spaceId/members/:userId')
   @UseGuards(AuthGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
     userId: number,
   ): Promise<void> {
@@ -457,11 +464,12 @@ export class MembersController {
     description: 'Space UUID to remove own membership from',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Delete('/:spaceId/members')
   @UseGuards(AuthGuard)
   public async selfRemove(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<void> {
     return await this.membersService.selfRemove({
       authPayload,

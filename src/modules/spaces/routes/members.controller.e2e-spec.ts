@@ -90,7 +90,7 @@ describe('MembersController', () => {
     spaceName: string,
   ): Promise<{
     accessToken: string;
-    spaceId: number;
+    spaceId: string;
     spaceUuid: string;
     userId: number;
   }> => {
@@ -109,7 +109,7 @@ describe('MembersController', () => {
       .expect(201);
     return {
       accessToken,
-      spaceId: createSpaceResponse.body.id,
+      spaceId: createSpaceResponse.body.uuid,
       spaceUuid: createSpaceResponse.body.uuid,
       userId,
     };
@@ -158,7 +158,6 @@ describe('MembersController', () => {
           expect(body).toEqual([
             {
               userId: expect.any(Number),
-              spaceId,
               spaceUuid,
               name: user1Name,
               role: 'ADMIN',
@@ -167,7 +166,6 @@ describe('MembersController', () => {
             },
             {
               userId: expect.any(Number),
-              spaceId,
               spaceUuid,
               name: user2Name,
               role: 'MEMBER',
@@ -355,7 +353,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${targetSpaceOwnerAccessToken}`])
         .send({ name: nameBuilder() })
         .expect(201);
-      const targetSpaceId = targetSpaceResponse.body.id;
+      const targetSpaceId = targetSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${targetSpaceId}/members/invite`)
@@ -548,7 +546,6 @@ describe('MembersController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             userId: inviteeUserId,
-            spaceId,
             spaceUuid,
             name: inviteeName,
             role: 'MEMBER',
@@ -1175,7 +1172,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
@@ -1948,7 +1945,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}/members/alias`)

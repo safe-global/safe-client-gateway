@@ -114,7 +114,6 @@ export class SpacesService {
         : space.members.filter((member) => member.user.id === userId);
 
       return {
-        id: space.id,
         uuid: space.uuid,
         name: space.name,
         members: visibleMembers.map((member) => ({

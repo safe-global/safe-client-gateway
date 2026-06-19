@@ -114,7 +114,7 @@ describe('SpaceCounterfactualSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: nameBuilder() });
-      const spaceId = spaceRes.body.id as number;
+      const spaceId = spaceRes.body.uuid as string;
 
       // Create counterfactual safe
       await request(app.getHttpServer())
@@ -162,7 +162,7 @@ describe('SpaceCounterfactualSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: nameBuilder() });
-      const spaceId = spaceRes.body.id as number;
+      const spaceId = spaceRes.body.uuid as string;
 
       const getResponse = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/counterfactual-safes`)
@@ -187,7 +187,7 @@ describe('SpaceCounterfactualSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken1}`])
         .send({ name: nameBuilder() });
-      const spaceId = spaceRes.body.id as number;
+      const spaceId = spaceRes.body.uuid as string;
 
       // User 2 tries to access
       await request(app.getHttpServer())
@@ -221,7 +221,7 @@ describe('SpaceCounterfactualSafesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: nameBuilder() });
-      const spaceId = spaceRes.body.id as number;
+      const spaceId = spaceRes.body.uuid as string;
 
       // Create counterfactual safe
       await request(app.getHttpServer())
