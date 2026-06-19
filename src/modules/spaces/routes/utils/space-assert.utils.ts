@@ -2,7 +2,7 @@
 
 import { ForbiddenException } from '@nestjs/common';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';

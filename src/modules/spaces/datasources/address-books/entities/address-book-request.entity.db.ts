@@ -1,0 +1,115 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import {
+  Column,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import type { Address } from 'viem';
+import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { databaseEnumTransformer } from '@/domain/common/utils/enum';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import {
+  AddressBookRequestStatus,
+  AddressBookRequest as DomainAddressBookRequest,
+} from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+
+@Entity('address_book_requests')
+@Index(
+  'UQ_ABR_space_requester_address_pending',
+  ['space', 'requestedBy', 'address'],
+  { unique: true, where: 'status = 0' },
+)
+@Index('IDX_ABR_space_status', ['space', 'status'])
+export class AddressBookRequest implements DomainAddressBookRequest {
+  @PrimaryGeneratedColumn({
+    primaryKeyConstraintName: 'PK_ABR_id',
+  })
+  id!: number;
+
+  @ManyToOne(
+    () => Space,
+    (space: Space) => space.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
+  @JoinColumn({
+    name: 'space_id',
+    foreignKeyConstraintName: 'FK_ABR_space_id',
+  })
+  public readonly space!: Space;
+
+  @ManyToOne(
+    () => User,
+    (user: User) => user.id,
+    {
+      onDelete: 'CASCADE',
+      nullable: false,
+    },
+  )
+  @JoinColumn({
+    name: 'requested_by',
+    foreignKeyConstraintName: 'FK_ABR_requested_by',
+  })
+  public readonly requestedBy!: User;
+
+  @Column({
+    name: 'chain_ids',
+    type: 'varchar',
+    length: 32,
+    nullable: false,
+    array: true,
+  })
+  public readonly chainIds!: Array<string>;
+
+  @Column({
+    name: 'address',
+    type: 'varchar',
+    length: 42,
+    nullable: false,
+    transformer: databaseAddressTransformer,
+  })
+  address!: Address;
+
+  @Column({
+    type: 'varchar',
+    length: ADDRESS_BOOK_NAME_MAX_LENGTH,
+  })
+  name!: string;
+
+  @Column({
+    type: 'integer',
+    transformer: databaseEnumTransformer(AddressBookRequestStatus),
+  })
+  status!: keyof typeof AddressBookRequestStatus;
+
+  @Column({
+    name: 'reviewed_by',
+    type: 'integer',
+    nullable: true,
+  })
+  reviewedBy!: number | null;
+
+  @Column({
+    name: 'created_at',
+    type: 'timestamp with time zone',
+    default: () => 'CURRENT_TIMESTAMP',
+    update: false,
+  })
+  createdAt!: Date;
+
+  @Column({
+    name: 'updated_at',
+    type: 'timestamp with time zone',
+    default: () => 'CURRENT_TIMESTAMP',
+    update: false,
+  })
+  updatedAt!: Date;
+}

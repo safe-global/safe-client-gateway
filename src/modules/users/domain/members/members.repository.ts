@@ -21,7 +21,7 @@ import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { Space as DbSpace } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';

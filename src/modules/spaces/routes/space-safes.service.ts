@@ -4,13 +4,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { CreateSpaceSafeDto } from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
-import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
-import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
+import type { CreateSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
+import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
 import {
   assertAdmin,
   assertMember,

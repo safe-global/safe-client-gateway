@@ -20,8 +20,8 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';

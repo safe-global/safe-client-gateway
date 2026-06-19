@@ -26,11 +26,11 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { CreateSpaceSafesDto } from '@/modules/spaces/routes/entities/create-space-safe.dto.entity';
-import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/entities/delete-space-safe.dto.entity';
-import { GetSpaceSafeResponse } from '@/modules/spaces/routes/entities/get-space-safe.dto.entity';
-import { SpaceSafesSchema } from '@/modules/spaces/routes/entities/space-safe.dto.entity';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
+import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import { SpaceSafesSchema } from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 

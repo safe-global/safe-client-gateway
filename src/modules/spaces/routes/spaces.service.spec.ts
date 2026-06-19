@@ -14,7 +14,7 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';

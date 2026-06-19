@@ -20,9 +20,9 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { AddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';

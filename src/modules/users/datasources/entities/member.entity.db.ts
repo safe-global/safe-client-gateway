@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
   type Member as DomainMember,
