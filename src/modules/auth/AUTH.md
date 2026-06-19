@@ -250,16 +250,16 @@ Post-login redirects are validated against `AUTH_POST_LOGIN_REDIRECT_URI`:
 
 ## Other Auth Config
 
-| Env var                          | Default  | Description                                        |
-| -------------------------------- | -------- | -------------------------------------------------- |
-| `AUTH_NONCE_TTL_SECONDS`         | `300`    | How long a SiWe nonce is valid                     |
-| `AUTH_VALIDITY_PERIOD_SECONDS`   | `86400`  | Max token lifetime                                 |
+| Env var                          | Default  | Description                                             |
+| -------------------------------- | -------- | ------------------------------------------------------- |
+| `AUTH_NONCE_TTL_SECONDS`         | `300`    | How long a SiWe nonce is valid                          |
+| `AUTH_VALIDITY_PERIOD_SECONDS`   | `86400`  | Max token lifetime                                      |
 | `AUTH_CLOCK_SKEW_SECONDS`        | `30`     | Tolerated client/server clock skew for SiWe time bounds |
-| `AUTH_STATE_TTL_MILLISECONDS`    | `300000` | OIDC state cookie TTL                              |
-| `AUTH_POST_LOGIN_REDIRECT_URI`   | —        | Required. Default redirect after login             |
-| `AUTH_ALLOWED_REDIRECT_DOMAIN`   | —        | Optional. Extra allowed redirect domain (non-prod) |
-| `AUTH_RATE_LIMIT_MAX`            | `5`      | OIDC requests per window                           |
-| `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `60`     | Rate limit window                                  |
+| `AUTH_STATE_TTL_MILLISECONDS`    | `300000` | OIDC state cookie TTL                                   |
+| `AUTH_POST_LOGIN_REDIRECT_URI`   | —        | Required. Default redirect after login                  |
+| `AUTH_ALLOWED_REDIRECT_DOMAIN`   | —        | Optional. Extra allowed redirect domain (non-prod)      |
+| `AUTH_RATE_LIMIT_MAX`            | `5`      | OIDC requests per window                                |
+| `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `60`     | Rate limit window                                       |
 
 ---
 
