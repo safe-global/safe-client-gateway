@@ -25,10 +25,7 @@ import { AddressBooksController } from '@/modules/spaces/routes/address-books.co
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { MembersController } from '@/modules/spaces/routes/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members.service';
-import {
-  LegacySpaceIdPipe,
-  SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceAuditController } from '@/modules/spaces/routes/space-audit.controller';
 import { SpaceAuditService } from '@/modules/spaces/routes/space-audit.service';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
@@ -92,10 +89,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
       provide: IAddressBookRequestsRepository,
       useClass: AddressBookRequestsRepository,
     },
-    // SpaceIdPipe (UUID-only) is wired but unused for now; controllers switch
-    // to it once the FE drops the numeric Space id. Do not delete as unused.
     SpaceIdPipe,
-    LegacySpaceIdPipe,
   ],
   exports: [
     ISpacesRepository,
@@ -103,7 +97,6 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     IAddressBookItemsRepository,
     IAddressBookRequestsRepository,
     SpaceIdPipe,
-    LegacySpaceIdPipe,
   ],
 })
 export class SpacesModule {}

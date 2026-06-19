@@ -892,9 +892,84 @@ describe('Messages controller', () => {
             .with('signature', message.confirmations[0].signature)
             .build(),
         )
-        .expect(200)
+        .expect(202)
         .expect(({ body }) => {
           expect(body).toEqual(messageToJson(message));
+        });
+    });
+
+    it('should respond 202 Accepted when the Transaction Service returns an empty body on creation', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            // The Transaction Service does not echo the created message back
+            return Promise.resolve({ data: rawify(null), status: 201 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          // The message is indexed asynchronously and not yet readable
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(url),
+                { status: 404 } as Response,
+                { detail: 'Not found' },
+              ),
+            );
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: rawify(
+                pageBuilder().with('results', []).with('count', 0).build(),
+              ),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      const createResponse = await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(
+          createMessageDtoBuilder()
+            .with('message', message.message)
+            .with('signature', message.confirmations[0].signature)
+            .build(),
+        );
+
+      // 202 Accepted signals the message was accepted but is not necessarily
+      // retrievable yet
+      expect(createResponse.status).toBe(202);
+      expect(createResponse.body).toEqual({});
+
+      // The message is not retrievable until the Transaction Service has indexed it
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
+        .expect(404);
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.results).toHaveLength(0);
         });
     });
 

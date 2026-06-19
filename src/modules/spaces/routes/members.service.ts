@@ -109,7 +109,6 @@ export class MembersService {
 
     return {
       userId: args.userId,
-      spaceId: args.spaceId,
       spaceUuid: space.uuid,
       name,
       role,

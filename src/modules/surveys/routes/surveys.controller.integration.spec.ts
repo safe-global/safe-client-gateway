@@ -247,19 +247,19 @@ describe('SurveysController', () => {
         .expect(404);
     });
 
-    it('accepts the legacy numeric space id (FE fallback)', async () => {
+    it('rejects a numeric space id with 400', async () => {
       const { accessToken, spaceId } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/state`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(200);
+        .expect(400);
     });
   });
 
   describe('POST /v1/spaces/:spaceId/surveys/:slug/responses', () => {
     it('admin submits then re-submits, upserting selections and bumping updated_at', async () => {
-      const { accessToken, spaceId, spaceUuid } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       const first = await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
@@ -269,7 +269,7 @@ describe('SurveysController', () => {
 
       expect(first.body).toEqual(
         expect.objectContaining({
-          spaceId,
+          spaceUuid,
           surveySlug: ONBOARDING_SLUG,
           surveyVersion: 1,
           selections: { [USE_CASES_PAGE]: ['hold_assets'] },

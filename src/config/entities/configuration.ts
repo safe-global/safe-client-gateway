@@ -381,6 +381,13 @@ export default () => ({
     // bytes library for parsing. Defaults to '100kb'.
     // https://expressjs.com/en/resources/middleware/body-parser.html
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
+    // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
+    // header set by upstream proxies instead of the direct socket address.
+    // A comma-separated list of trusted subnets/presets, or an integer hop
+    // count ("0" disables it). `||` (not `??`) so an empty value falls back to
+    // the default rather than disabling it.
+    // https://expressjs.com/en/guide/behind-proxies.html
+    trustProxy: process.env.EXPRESS_TRUST_PROXY || 'loopback, uniquelocal',
   },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',

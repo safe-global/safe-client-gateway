@@ -42,22 +42,27 @@ class SpaceMemberDto {
 }
 
 export class GetSpaceResponse {
-  @ApiProperty({
-    type: Number,
-    deprecated: true,
-    description:
-      'Numeric Space id (deprecated, use uuid). Kept for FE fallback',
-  })
-  public id!: Space['id'];
-
   @ApiProperty({ type: String, description: 'Space UUID' })
   public uuid!: Space['uuid'];
 
   @ApiProperty({ type: String })
   public name!: Space['name'];
 
-  @ApiProperty({ type: SpaceMemberDto, isArray: true })
+  @ApiProperty({
+    type: SpaceMemberDto,
+    isArray: true,
+    description:
+      'Members of the space. A pending (INVITED) member only sees their own ' +
+      'membership row here, not the other members.',
+  })
   public members!: Array<SpaceMemberDto>;
+
+  @ApiProperty({
+    type: Number,
+    description: 'Total count of ACTIVE members in the space',
+    example: 5,
+  })
+  public memberCount!: number;
 
   @ApiProperty({
     type: Number,

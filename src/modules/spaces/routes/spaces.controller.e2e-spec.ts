@@ -108,7 +108,6 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
             uuid: expect.any(String),
             name: spaceName,
           }),
@@ -181,7 +180,6 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
             uuid: expect.any(String),
             name: expect.any(String),
           }),
@@ -236,97 +234,6 @@ describe('SpacesController', () => {
     });
   });
 
-  describe('POST /v1/spaces/create-with-user', () => {
-    it('Should create a space when user exists', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = nameBuilder();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`]);
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201)
-        .expect(({ body }) =>
-          expect(body).toEqual({
-            id: expect.any(Number),
-            uuid: expect.any(String),
-            name: spaceName,
-          }),
-        );
-    });
-
-    it('Should create a space with user does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = nameBuilder();
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201)
-        .expect(({ body }) =>
-          expect(body).toEqual({
-            id: expect.any(Number),
-            uuid: expect.any(String),
-            name: spaceName,
-          }),
-        );
-    });
-
-    it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
-    });
-
-    it('Should return a 403 if the AuthPayload is empty', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
-      const accessToken = jwtService.sign(authPayloadDto);
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
-    });
-
-    it('Should return a 422 if no name is provided', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send()
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'object',
-          received: 'undefined',
-          path: [],
-          message: 'Required',
-        });
-    });
-  });
-
   describe('GET /spaces', () => {
     it('Should return a list of spaces', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
@@ -357,7 +264,6 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual([
             {
-              id: expect.any(Number),
               uuid: expect.any(String),
               name: firstSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
@@ -384,7 +290,6 @@ describe('SpacesController', () => {
               ],
             },
             {
-              id: expect.any(Number),
               uuid: expect.any(String),
               name: secondSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
@@ -472,7 +377,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}`)
@@ -480,8 +385,7 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body).toEqual({
-            id: spaceId,
-            uuid: expect.any(String),
+            uuid: spaceId,
             name: spaceName,
             status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
             createdAt: expect.any(String),
@@ -527,7 +431,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -550,7 +454,7 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual(
             expect.objectContaining({
-              id: spaceId,
+              uuid: spaceId,
               name: spaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               members: expect.arrayContaining([
@@ -595,7 +499,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -707,7 +611,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: previousSpaceName });
 
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -719,7 +623,7 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: spaceId,
+            uuid: spaceId,
           }),
         );
     });
@@ -839,7 +743,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: previousSpaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -890,7 +794,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({ name: previousSpaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -942,7 +846,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: previousSpaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -977,7 +881,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
 
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
@@ -1030,7 +934,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1077,7 +981,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1124,7 +1028,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)

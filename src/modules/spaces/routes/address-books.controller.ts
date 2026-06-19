@@ -32,7 +32,7 @@ import {
   UpsertAddressBookItemsSchema,
 } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
 import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-address-book-rate-limit.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -52,14 +52,14 @@ export class AddressBooksController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get address book for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get address book for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiOkResponse({
     description: 'Address book items retrieved successfully',
     type: SpaceAddressBookDto,
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
     description: 'User, member, or space not found',
   })
@@ -73,7 +73,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   public async getAddressBookItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
   ): Promise<SpaceAddressBookDto> {
     return await this.service.findAllBySpaceId(authPayload, spaceId);
   }
@@ -116,7 +116,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Body(new ValidationPipe(UpsertAddressBookItemsSchema))
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
@@ -147,6 +147,7 @@ export class AddressBooksController {
   @ApiNoContentResponse({
     description: 'Address book entry deleted successfully',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
     description: 'User, member, space, or address book entry not found',
   })
@@ -158,7 +159,7 @@ export class AddressBooksController {
   @UseGuards(AuthGuard)
   public async deleteByAddress(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {

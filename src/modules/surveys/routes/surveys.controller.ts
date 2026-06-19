@@ -23,7 +23,7 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { LegacySpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SurveySlugSchema } from '@/modules/surveys/domain/entities/survey.entity';
 import {
   SubmitSurveyResponseDto,
@@ -50,12 +50,12 @@ export class SurveysController {
   @ApiParam({
     name: 'spaceId',
     type: 'string',
-    description:
-      'Space UUID to get survey state for (numeric ID accepted for legacy clients, deprecated)',
+    description: 'Space UUID to get survey state for',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({ name: 'slug', type: 'string', example: 'onboarding' })
   @ApiOkResponse({ type: SurveyStateDto })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Not authenticated' })
   @ApiForbiddenResponse({
     description: 'User is not an active admin of this space',
@@ -65,7 +65,7 @@ export class SurveysController {
   @UseGuards(AuthGuard)
   public async getState(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
   ): Promise<SurveyStateDto> {
     return await this.surveysService.getState({
@@ -101,7 +101,7 @@ export class SurveysController {
   @UseGuards(AuthGuard)
   public async submitResponse(
     @Auth() authPayload: AuthPayload,
-    @Param('spaceId', LegacySpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
     @Body(new ValidationPipe(SubmitSurveyResponseDtoSchema))
     body: SubmitSurveyResponseDto,

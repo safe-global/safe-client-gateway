@@ -194,7 +194,7 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: '1mb' },
+  express: { jsonLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
   features: {
     email: false,
     sesEmail: false,

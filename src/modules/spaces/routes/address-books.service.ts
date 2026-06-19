@@ -39,10 +39,7 @@ export class AddressBooksService {
       authPayload,
       spaceId,
     });
-    const identityMap = await this.identityResolver.resolveMany(
-      items.flatMap((item) => [item.createdBy, item.lastUpdatedBy]),
-    );
-    return this.mapAddressBookItems(spaceId, items, identityMap);
+    return this.mapAddressBookItems(spaceId, items);
   }
 
   public async upsertMany(
@@ -55,10 +52,7 @@ export class AddressBooksService {
       spaceId,
       addressBookItems: addressBookItems.items,
     });
-    const identityMap = await this.identityResolver.resolveMany(
-      updated.flatMap((item) => [item.createdBy, item.lastUpdatedBy]),
-    );
-    return this.mapAddressBookItems(spaceId, updated, identityMap);
+    return this.mapAddressBookItems(spaceId, updated);
   }
 
   public async deleteByAddress(args: {
@@ -72,11 +66,14 @@ export class AddressBooksService {
   private async mapAddressBookItems(
     spaceId: Space['id'],
     items: Array<AddressBookDbItem>,
-    identityMap: Map<number, string>,
   ): Promise<SpaceAddressBookDto> {
-    const spaceUuid = await this.spacesRepository.findUuidById(spaceId);
+    const [identityMap, spaceUuid] = await Promise.all([
+      this.identityResolver.resolveMany(
+        items.flatMap((item) => [item.createdBy, item.lastUpdatedBy]),
+      ),
+      this.spacesRepository.findUuidById(spaceId),
+    ]);
     return {
-      spaceId: spaceId.toString(),
       spaceUuid,
       data: items.map((item) => ({
         name: item.name,

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
+  ApiAcceptedResponse,
   ApiBadRequestResponse,
   ApiBody,
   ApiNotFoundResponse,
@@ -131,13 +132,14 @@ export class MessagesController {
     type: CreateMessageDto,
     description: 'Message data including content and signature',
   })
-  @ApiOkResponse({
-    description: 'Message created successfully',
+  @ApiAcceptedResponse({
+    description:
+      'Message accepted. The Transaction Service indexes messages asynchronously, so the message may not be immediately retrievable — poll GET /v1/chains/{chainId}/messages/{messageHash}.',
   })
   @ApiBadRequestResponse({
     description: 'Invalid message format or signature',
   })
-  @HttpCode(200)
+  @HttpCode(202)
   @Post('chains/:chainId/safes/:safeAddress/messages')
   createMessage(
     @Param('chainId') chainId: string,

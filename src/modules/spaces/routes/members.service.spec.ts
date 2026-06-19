@@ -374,7 +374,6 @@ describe('MembersService', () => {
           service.renewInvite({ authPayload, spaceId, userId }),
         ).resolves.toEqual({
           userId,
-          spaceId,
           spaceUuid,
           name: targetMember.name,
           role: targetMember.role,

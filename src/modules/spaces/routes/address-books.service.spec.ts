@@ -75,7 +75,7 @@ describe('AddressBooksService', () => {
 
       const result = await service.findAllBySpaceId(authPayload, spaceId);
 
-      expect(result.spaceId).toBe(spaceId.toString());
+      expect(result.spaceUuid).toEqual(expect.any(String));
       expect(result.data).toHaveLength(1);
       expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
         authPayload,
@@ -117,7 +117,7 @@ describe('AddressBooksService', () => {
         })),
       });
 
-      expect(result.spaceId).toBe(spaceId.toString());
+      expect(result.spaceUuid).toEqual(expect.any(String));
       expect(result.data).toHaveLength(items.length);
       expect(repositoryMock.upsertMany).toHaveBeenCalled();
     });

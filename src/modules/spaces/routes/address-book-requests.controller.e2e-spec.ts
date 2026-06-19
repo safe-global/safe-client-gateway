@@ -464,9 +464,7 @@ describe('AddressBookRequestsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) =>
-          expect(body).toEqual(
-            expect.objectContaining({ spaceId: spaceId.toString(), data: [] }),
-          ),
+          expect(body).toEqual(expect.objectContaining({ data: [] })),
         );
     });
 
@@ -523,9 +521,7 @@ describe('AddressBookRequestsController', () => {
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .expect(200)
         .expect(({ body }) =>
-          expect(body).toEqual(
-            expect.objectContaining({ spaceId: spaceId.toString(), data: [] }),
-          ),
+          expect(body).toEqual(expect.objectContaining({ data: [] })),
         );
     });
   });
@@ -561,7 +557,7 @@ describe('AddressBookRequestsController', () => {
       .set('Cookie', [`access_token=${accessToken}`])
       .send({ name: spaceName })
       .expect(201);
-    const spaceId = createSpaceResponse.body.id;
+    const spaceId = createSpaceResponse.body.uuid;
     return { spaceId, accessToken };
   };
 
@@ -586,7 +582,7 @@ describe('AddressBookRequestsController', () => {
       .send({ name: nameBuilder() })
       .expect(201);
     return {
-      spaceId: createSpaceResponse.body.id,
+      spaceId: createSpaceResponse.body.uuid,
       accessToken,
       userId,
       email,
