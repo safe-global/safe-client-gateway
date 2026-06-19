@@ -73,9 +73,9 @@ export const BalancesProviderSchema = z.object({
 
 export const RelayerSchema = z.object({
   type: z.enum(RelayerType).nullable().catch(null),
-  safeCreationSponsored: z.boolean().catch(false).default(false),
-  safeTransactionSponsored: z.boolean().catch(false).default(false),
-  enableTenderlySimulationBeforeRelay: z.boolean().catch(false).default(false),
+  safeCreationSponsored: z.boolean().catch(false),
+  safeTransactionSponsored: z.boolean().catch(false),
+  enableTenderlySimulationBeforeRelay: z.boolean().catch(false),
 });
 
 function removeTrailingSlash(url: string): string {
