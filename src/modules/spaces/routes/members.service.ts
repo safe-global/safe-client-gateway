@@ -15,7 +15,7 @@ import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/upda
 import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 export class MembersService {
   private readonly maxInvites: number;

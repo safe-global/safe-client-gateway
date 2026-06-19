@@ -8,8 +8,8 @@ import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.modu
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { MembersRepository } from '@/modules/users/domain/members.repository';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { MembersRepository } from '@/modules/users/domain/members/members.repository';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { UsersController } from '@/modules/users/routes/users.controller';

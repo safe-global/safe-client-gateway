@@ -14,7 +14,7 @@ import type { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 

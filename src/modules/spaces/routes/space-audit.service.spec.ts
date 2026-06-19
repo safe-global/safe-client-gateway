@@ -12,8 +12,8 @@ import {
 } from '@/modules/spaces/routes/space-audit.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import type { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import type { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 const spaceAuditRepository = createMockSpaceAuditRepository();

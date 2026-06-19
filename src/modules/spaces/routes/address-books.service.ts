@@ -8,7 +8,7 @@ import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/en
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { SpaceAddressBookDto } from '@/modules/spaces/routes/entities/space-address-book.dto.entity';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
-import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 
 @Injectable()
 export class AddressBooksService {

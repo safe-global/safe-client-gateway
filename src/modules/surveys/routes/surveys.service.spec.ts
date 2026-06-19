@@ -20,7 +20,7 @@ import type {
 } from '@/modules/surveys/domain/surveys.repository.interface';
 import { SurveysService } from '@/modules/surveys/routes/surveys.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const surveysRepositoryMock = {

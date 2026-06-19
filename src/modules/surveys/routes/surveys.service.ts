@@ -27,7 +27,7 @@ import type {
   SurveyDto,
   SurveyStateDto,
 } from '@/modules/surveys/routes/entities/survey-state.dto.entity';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SurveysService {

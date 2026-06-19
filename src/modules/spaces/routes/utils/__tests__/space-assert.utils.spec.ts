@@ -9,7 +9,7 @@ import {
   assertMember,
 } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 const spacesRepositoryMock = {
   findOne: jest.fn(),

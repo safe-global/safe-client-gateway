@@ -34,9 +34,9 @@ import { Member as DbMember } from '@/modules/users/datasources/entities/member.
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 @Injectable()
