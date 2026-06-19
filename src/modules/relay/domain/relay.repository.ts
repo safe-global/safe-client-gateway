@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
@@ -11,9 +12,11 @@ export class RelayRepository {
   constructor(
     @Inject(IRelayManager) private readonly relayManager: IRelayManager,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
   ) {}
 
-  relay(args: {
+  async relay(args: {
     version: string;
     chainId: string;
     to: Address;
@@ -22,7 +25,14 @@ export class RelayRepository {
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
-    return this.relayManager.getRelayer(args.chainId, args.data).relay(args);
+    const { relayer } = await this.chainsRepository.getChain(args.chainId);
+    return this.relayManager
+      .getRelayer(relayer?.type ?? null, args.data)
+      .relay({
+        ...args,
+        simulationEnabled:
+          relayer?.enableTenderlySimulationBeforeRelay ?? false,
+      });
   }
 
   getTaskStatus(args: {
@@ -32,11 +42,14 @@ export class RelayRepository {
     return this.relayApi.getTaskStatus(args);
   }
 
-  getRelaysRemaining(args: {
+  async getRelaysRemaining(args: {
     chainId: string;
     address: Address;
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
-    return this.relayManager.getRelayer(args.chainId).getRelaysRemaining(args);
+    const { relayer } = await this.chainsRepository.getChain(args.chainId);
+    return this.relayManager
+      .getRelayer(relayer?.type ?? null)
+      .getRelaysRemaining(args);
   }
 }

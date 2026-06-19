@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
@@ -10,10 +9,6 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type {
-  RelayFeeConfiguration,
-  RelaySimulationConfiguration,
-} from '@/modules/relay/domain/entities/relay.configuration';
 import {
   type Relay,
   RelaySchema,
@@ -39,22 +34,14 @@ const SIMULATION_SENDER_SENTINEL: Address =
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
-  private readonly relayFeeConfiguration: RelayFeeConfiguration;
-  private readonly relaySimulationConfiguration: RelaySimulationConfiguration;
-
   constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
     @Inject(ITenderlySimulationApi)
     private readonly tenderlySimulationApi: ITenderlySimulationApi,
     private readonly relayTransactionHelper: RelayTransactionHelper,
-  ) {
-    this.relayFeeConfiguration = configurationService.getOrThrow('relay.fee');
-    this.relaySimulationConfiguration =
-      configurationService.getOrThrow('relay.simulation');
-  }
+  ) {}
 
   /**
    * Checks whether the fee service permits relaying for the given Safe.
@@ -71,12 +58,7 @@ export class RelayFeeRelayer implements IRelayer {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<RelayEligibility> {
-    if (
-      !(
-        this.relayFeeConfiguration.enabledChainIds.includes(args.chainId) &&
-        args.safeTxHash
-      )
-    ) {
+    if (!args.safeTxHash) {
       return { result: false, currentCount: 0, limit: 0 };
     }
 
@@ -122,6 +104,7 @@ export class RelayFeeRelayer implements IRelayer {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
+    simulationEnabled?: boolean;
   }): Promise<Relay> {
     const {
       version,
@@ -130,6 +113,7 @@ export class RelayFeeRelayer implements IRelayer {
       data,
       safeTxHash,
       acceptUnverifiedSimulation,
+      simulationEnabled,
     } = args;
     const decoded = this.relayTransactionHelper.decodeExecTransaction(data);
 
@@ -149,6 +133,7 @@ export class RelayFeeRelayer implements IRelayer {
         decoded,
         safeTxHash: safeTxHash,
         acceptUnverifiedSimulation: acceptUnverifiedSimulation,
+        simulationEnabled: simulationEnabled ?? false,
       });
     } else if (decoded !== null) {
       // Branch 2: the data decoded as execTransaction but failed validity rules.
@@ -196,6 +181,7 @@ export class RelayFeeRelayer implements IRelayer {
     decoded: SafeTransaction;
     safeTxHash: Hex | undefined;
     acceptUnverifiedSimulation: boolean | undefined;
+    simulationEnabled: boolean;
   }): Promise<void> {
     const {
       chainId,
@@ -204,6 +190,7 @@ export class RelayFeeRelayer implements IRelayer {
       decoded,
       safeTxHash,
       acceptUnverifiedSimulation,
+      simulationEnabled,
     } = args;
 
     if (!safeTxHash) {
@@ -222,9 +209,9 @@ export class RelayFeeRelayer implements IRelayer {
     }
 
     // Fee-service eligibility and Tenderly simulation are independent — fire
-    // them in parallel to avoid serializing two RTTs per relay.
-    const simulationEnabled =
-      this.relaySimulationConfiguration.enabledChainIds.includes(chainId);
+    // them in parallel to avoid serializing two RTTs per relay. Simulation is
+    // gated per-chain by the chain's
+    // `relayer.enableTenderlySimulationBeforeRelay` flag.
     const [feeServiceResult, simulation] = await Promise.all([
       this.feeServiceApi.canRelay({ chainId, safeTxHash }),
       simulationEnabled
@@ -342,14 +329,10 @@ export class RelayFeeRelayer implements IRelayer {
     address: Address;
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
-    if (!this.relayFeeConfiguration.enabledChainIds.includes(args.chainId)) {
-      return { remaining: 0, limit: 0 };
-    }
-
     // Without a safeTxHash we cannot query the fee service; report optimistically
     // since per-transaction eligibility is enforced in relay().
     if (!args.safeTxHash) {
-      return { remaining: 1, limit: 1 };
+      return { remaining: 0, limit: 0 };
     }
 
     // For relay-fee, the FeeService API is the authority on relay eligibility.
