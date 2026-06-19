@@ -7,7 +7,7 @@ import { nameBuilder } from '@/domain/common/entities/name.builder';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
 type WalletInviteUserInput = Extract<

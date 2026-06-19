@@ -17,7 +17,7 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
+import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
 
 describe('SpaceSafesController', () => {
   let app: INestApplication<Server>;

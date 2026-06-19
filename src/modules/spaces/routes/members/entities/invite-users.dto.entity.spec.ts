@@ -4,8 +4,8 @@ import { getAddress } from 'viem';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/entities/__tests__/invite-user.dto.builder';
-import { InviteUsersDtoSchema } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import { InviteUsersDtoSchema } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 
 describe('InviteUsersDtoSchema', () => {
   it('should validate a wallet invite with explicit type', () => {

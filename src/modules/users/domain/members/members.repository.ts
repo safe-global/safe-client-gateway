@@ -29,7 +29,7 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';

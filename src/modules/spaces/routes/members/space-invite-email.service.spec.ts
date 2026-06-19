@@ -11,8 +11,8 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/entities/__tests__/invite-user.dto.builder';
-import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
+} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 const BASE_URI = 'https://app.safe.global';

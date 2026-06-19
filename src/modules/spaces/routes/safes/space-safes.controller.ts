@@ -31,7 +31,7 @@ import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/crea
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
-import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
+import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')

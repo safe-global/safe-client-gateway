@@ -25,12 +25,12 @@ import { AddressBooksController } from '@/modules/spaces/routes/address-books/ad
 import { AddressBooksService } from '@/modules/spaces/routes/address-books/address-books.service';
 import { SpaceAuditController } from '@/modules/spaces/routes/audit/space-audit.controller';
 import { SpaceAuditService } from '@/modules/spaces/routes/audit/space-audit.service';
-import { MembersController } from '@/modules/spaces/routes/members.controller';
-import { MembersService } from '@/modules/spaces/routes/members.service';
+import { MembersController } from '@/modules/spaces/routes/members/members.controller';
+import { MembersService } from '@/modules/spaces/routes/members/members.service';
+import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
-import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
-import { SpaceSafesController } from '@/modules/spaces/routes/space-safes.controller';
-import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
+import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
+import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';

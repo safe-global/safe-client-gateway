@@ -13,7 +13,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
+import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 

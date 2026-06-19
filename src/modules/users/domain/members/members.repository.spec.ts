@@ -12,7 +12,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { InviteType } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+import { InviteType } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';

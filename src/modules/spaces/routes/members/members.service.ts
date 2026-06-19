@@ -4,16 +4,16 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { AcceptInviteDto } from '@/modules/spaces/routes/entities/accept-invite.dto.entity';
-import type { Invitation } from '@/modules/spaces/routes/entities/invitation.entity';
-import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+import type { AcceptInviteDto } from '@/modules/spaces/routes/members/entities/accept-invite.dto.entity';
+import type { Invitation } from '@/modules/spaces/routes/members/entities/invitation.entity';
+import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import type {
   MemberDto,
   MembersDto,
-} from '@/modules/spaces/routes/entities/members.dto.entity';
-import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/entities/update-member-name.dto.entity';
-import type { UpdateRoleDto } from '@/modules/spaces/routes/entities/update-role.dto.entity';
-import { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
+} from '@/modules/spaces/routes/members/entities/members.dto.entity';
+import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/members/entities/update-member-name.dto.entity';
+import type { UpdateRoleDto } from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
+import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 

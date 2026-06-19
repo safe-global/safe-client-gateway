@@ -17,10 +17,10 @@ import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.e
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/entities/__tests__/invite-user.dto.builder';
-import type { InviteUsersDto } from '@/modules/spaces/routes/entities/invite-users.dto.entity';
-import { MembersService } from '@/modules/spaces/routes/members.service';
-import type { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
+} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { MembersService } from '@/modules/spaces/routes/members/members.service';
+import type { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';

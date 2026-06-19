@@ -22,7 +22,7 @@ import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';

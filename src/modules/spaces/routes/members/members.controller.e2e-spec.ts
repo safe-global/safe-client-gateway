@@ -20,7 +20,7 @@ import {
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { MembersController } from '@/modules/spaces/routes/members.controller';
+import { MembersController } from '@/modules/spaces/routes/members/members.controller';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
