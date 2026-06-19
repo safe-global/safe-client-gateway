@@ -49,6 +49,10 @@ export default () => ({
       process.env.AUTH_VALIDITY_PERIOD_SECONDS ?? `${24 * 60 * 60}`,
       10, // 24 hours
     ),
+    clockSkewSeconds: Number.parseInt(
+      process.env.AUTH_CLOCK_SKEW_SECONDS ?? `${30}`,
+      10, // 30 seconds
+    ),
     stateTtlMs: Number.parseInt(
       process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`,
       10, // 5 minutes

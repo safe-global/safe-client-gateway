@@ -27,6 +27,7 @@ export default (): ReturnType<typeof configuration> => ({
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
+    clockSkewSeconds: faker.number.int({ min: 1, max: 30 }),
     stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,

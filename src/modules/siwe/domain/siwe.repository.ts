@@ -3,16 +3,26 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { Hex } from 'viem';
 import { verifyMessage } from 'viem';
 import { generateSiweNonce, type SiweMessage } from 'viem/siwe';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
-import { SiweMessageSchema } from '@/modules/siwe/domain/entities/siwe-message.entity';
+import { buildSiweMessageSchema } from '@/modules/siwe/domain/entities/siwe-message.entity';
 import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
 
 @Injectable()
 export class SiweRepository implements ISiweRepository {
+  private readonly siweMessageSchema: ReturnType<typeof buildSiweMessageSchema>;
+
   constructor(
     @Inject(ISiweApi)
     private readonly siweApi: ISiweApi,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    const clockSkewSeconds = this.configurationService.getOrThrow<number>(
+      'auth.clockSkewSeconds',
+    );
+    this.siweMessageSchema = buildSiweMessageSchema(clockSkewSeconds);
+  }
 
   /**
    * Generates a unique nonce and stores it in cache for later verification.
@@ -33,7 +43,7 @@ export class SiweRepository implements ISiweRepository {
     message: string;
     signature: Hex;
   }): Promise<SiweMessage> {
-    const result = SiweMessageSchema.safeParse(args.message);
+    const result = this.siweMessageSchema.safeParse(args.message);
     if (!result.success) {
       throw new UnauthorizedException('Invalid message');
     }
