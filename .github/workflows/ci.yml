@@ -216,8 +216,13 @@ jobs:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
       - run: yarn install --immutable
-      # See unit-tests: only the generated ABIs are needed here, not a full build.
-      - run: yarn generate-abis
+      # Unlike unit-tests, the integration suite runs DB migrations, and the
+      # TypeORM datasource loads them from the compiled `dist/migrations/*.js`
+      # glob (see postgres.config.ts). A full `nest build` (which `yarn build`
+      # wraps, ABIs included) is therefore required — `generate-abis` alone
+      # leaves `dist/migrations` empty, so no migrations run and the schema is
+      # never created.
+      - run: yarn run build
       - run: yarn run test:integration:cov
         env:
           REDIS_HOST: localhost
