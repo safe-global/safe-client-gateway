@@ -232,6 +232,7 @@ Use `assertAuthenticated(payload)` from `utils/assert-authenticated.utils.ts` to
 - Default max lifetime: **24 hours** (`AUTH_VALIDITY_PERIOD_SECONDS`, default `86400`)
 - SiWe messages may include `expirationTime`; gateway enforces whichever is shorter
 - SiWe messages may include `notBefore`; if present, the JWT `nbf` claim is set and the token is not valid before that time
+- SiWe message time bounds (`issuedAt`, `expirationTime`, `notBefore`) are validated with a tolerated clock skew between client and server (`AUTH_CLOCK_SKEW_SECONDS`, default `30`) to avoid rejecting valid messages when clocks are slightly out of sync
 - Auth0 tokens inherit their `exp` from Auth0; the cookie `maxAge` is derived from the JWT `exp` claim
 - Logout redirect checks `auth_method` from the current token (without re-verifying it) to decide whether to route through Auth0's logout endpoint
 
@@ -249,15 +250,16 @@ Post-login redirects are validated against `AUTH_POST_LOGIN_REDIRECT_URI`:
 
 ## Other Auth Config
 
-| Env var                          | Default  | Description                                        |
-| -------------------------------- | -------- | -------------------------------------------------- |
-| `AUTH_NONCE_TTL_SECONDS`         | `300`    | How long a SiWe nonce is valid                     |
-| `AUTH_VALIDITY_PERIOD_SECONDS`   | `86400`  | Max token lifetime                                 |
-| `AUTH_STATE_TTL_MILLISECONDS`    | `300000` | OIDC state cookie TTL                              |
-| `AUTH_POST_LOGIN_REDIRECT_URI`   | —        | Required. Default redirect after login             |
-| `AUTH_ALLOWED_REDIRECT_DOMAIN`   | —        | Optional. Extra allowed redirect domain (non-prod) |
-| `AUTH_RATE_LIMIT_MAX`            | `5`      | OIDC requests per window                           |
-| `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `60`     | Rate limit window                                  |
+| Env var                          | Default  | Description                                             |
+| -------------------------------- | -------- | ------------------------------------------------------- |
+| `AUTH_NONCE_TTL_SECONDS`         | `300`    | How long a SiWe nonce is valid                          |
+| `AUTH_VALIDITY_PERIOD_SECONDS`   | `86400`  | Max token lifetime                                      |
+| `AUTH_CLOCK_SKEW_SECONDS`        | `30`     | Tolerated client/server clock skew for SiWe time bounds |
+| `AUTH_STATE_TTL_MILLISECONDS`    | `300000` | OIDC state cookie TTL                                   |
+| `AUTH_POST_LOGIN_REDIRECT_URI`   | —        | Required. Default redirect after login                  |
+| `AUTH_ALLOWED_REDIRECT_DOMAIN`   | —        | Optional. Extra allowed redirect domain (non-prod)      |
+| `AUTH_RATE_LIMIT_MAX`            | `5`      | OIDC requests per window                                |
+| `AUTH_RATE_LIMIT_WINDOW_SECONDS` | `60`     | Rate limit window                                       |
 
 ---
 
