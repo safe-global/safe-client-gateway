@@ -98,7 +98,7 @@ export class Chain {
   theme: ApiTheme;
   @ApiPropertyOptional({ type: String, nullable: true })
   recommendedMasterCopyVersion: string | null;
-  @ApiPropertyOptional({ type: Relayer, nullable: true })
+  @ApiProperty({ type: Relayer, nullable: true })
   relayer: Relayer | null;
 
   constructor(args: {
