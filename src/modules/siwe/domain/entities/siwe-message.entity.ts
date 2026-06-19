@@ -61,7 +61,7 @@ export function buildSiweMessageSchema(clockSkewSeconds?: number) {
       if (!message.issuedAt || message.issuedAt.getTime() > now + skewMs) {
         ctx.addIssue({
           code: 'custom',
-          message: 'Message yet issued',
+          message: 'Message not yet issued',
         });
       }
 
@@ -78,7 +78,7 @@ export function buildSiweMessageSchema(clockSkewSeconds?: number) {
       if (message.notBefore && message.notBefore.getTime() > now + skewMs) {
         ctx.addIssue({
           code: 'custom',
-          message: 'Message yet valid',
+          message: 'Message not yet valid',
         });
       }
 

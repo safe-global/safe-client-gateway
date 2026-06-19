@@ -26,7 +26,7 @@ describe('buildSiweMessageSchema', () => {
         .with('issuedAt', new Date(Date.now() + (SKEW_SECONDS - 5) * 1_000))
         .build();
 
-      expect(issues(schema, message)).not.toContain('Message yet issued');
+      expect(issues(schema, message)).not.toContain('Message not yet issued');
     });
 
     it('rejects an issuedAt beyond the tolerated skew in the future', () => {
@@ -34,7 +34,7 @@ describe('buildSiweMessageSchema', () => {
         .with('issuedAt', new Date(Date.now() + (SKEW_SECONDS + 30) * 1_000))
         .build();
 
-      expect(issues(schema, message)).toContain('Message yet issued');
+      expect(issues(schema, message)).toContain('Message not yet issued');
     });
 
     it('accepts an expirationTime that lapsed within the tolerated skew', () => {
@@ -64,7 +64,7 @@ describe('buildSiweMessageSchema', () => {
         .with('notBefore', new Date(Date.now() + (SKEW_SECONDS - 5) * 1_000))
         .build();
 
-      expect(issues(schema, message)).not.toContain('Message yet valid');
+      expect(issues(schema, message)).not.toContain('Message not yet valid');
     });
 
     it('rejects a notBefore beyond the tolerated skew in the future', () => {
@@ -72,7 +72,7 @@ describe('buildSiweMessageSchema', () => {
         .with('notBefore', new Date(Date.now() + (SKEW_SECONDS + 30) * 1_000))
         .build();
 
-      expect(issues(schema, message)).toContain('Message yet valid');
+      expect(issues(schema, message)).toContain('Message not yet valid');
     });
 
     it('honors the configured skew value', () => {
@@ -82,10 +82,10 @@ describe('buildSiweMessageSchema', () => {
         .build();
 
       expect(issues(buildSiweMessageSchema(30), message)).not.toContain(
-        'Message yet issued',
+        'Message not yet issued',
       );
       expect(issues(buildSiweMessageSchema(5), message)).toContain(
-        'Message yet issued',
+        'Message not yet issued',
       );
     });
   });

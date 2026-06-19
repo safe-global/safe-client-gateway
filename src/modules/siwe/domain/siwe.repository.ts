@@ -10,7 +10,7 @@ import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.inte
 
 @Injectable()
 export class SiweRepository implements ISiweRepository {
-  private readonly clockSkewSeconds: number;
+  private readonly siweMessageSchema: ReturnType<typeof buildSiweMessageSchema>;
 
   constructor(
     @Inject(ISiweApi)
@@ -18,9 +18,10 @@ export class SiweRepository implements ISiweRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.clockSkewSeconds = this.configurationService.getOrThrow<number>(
+    const clockSkewSeconds = this.configurationService.getOrThrow<number>(
       'auth.clockSkewSeconds',
     );
+    this.siweMessageSchema = buildSiweMessageSchema(clockSkewSeconds);
   }
 
   /**
@@ -42,8 +43,7 @@ export class SiweRepository implements ISiweRepository {
     message: string;
     signature: Hex;
   }): Promise<SiweMessage> {
-    const siweMessageSchema = buildSiweMessageSchema(this.clockSkewSeconds);
-    const result = siweMessageSchema.safeParse(args.message);
+    const result = this.siweMessageSchema.safeParse(args.message);
     if (!result.success) {
       throw new UnauthorizedException('Invalid message');
     }
