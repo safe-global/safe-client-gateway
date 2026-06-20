@@ -1,6 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, ForbiddenException, Inject } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+} from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -20,6 +36,7 @@ import { IMembersRepository } from '@/modules/users/domain/members.repository.in
 export class MembersService {
   private readonly maxInvites: number;
   private readonly inviteTtlMs: number;
+  private readonly spaceRateLimit: { max: number; windowSeconds: number };
 
   public constructor(
     @Inject(IMembersRepository)
@@ -27,12 +44,24 @@ export class MembersService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly spaceInviteEmailService: SpaceInviteEmailService,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('spaces.maxInvites');
     this.inviteTtlMs = this.configurationService.getOrThrow<number>(
       'spaces.invite.ttlMs',
     );
+    this.spaceRateLimit = {
+      max: this.configurationService.getOrThrow<number>(
+        'spaces.rateLimit.invitation.space.max',
+      ),
+      windowSeconds: this.configurationService.getOrThrow<number>(
+        'spaces.rateLimit.invitation.space.windowSeconds',
+      ),
+    };
   }
 
   /**
@@ -54,6 +83,10 @@ export class MembersService {
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
+    await this.assertSpaceInviteBudget({
+      spaceId: args.spaceId,
+      inviteeCount: args.inviteUsersDto.users.length,
+    });
     const invitations = await this.membersRepository.inviteUsers({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
@@ -78,6 +111,10 @@ export class MembersService {
     await this.assertActiveAdmin({
       authPayload: args.authPayload,
       spaceId: args.spaceId,
+    });
+    await this.assertSpaceInviteBudget({
+      spaceId: args.spaceId,
+      inviteeCount: 1,
     });
     const { id, user, name, status, role, invitedBy, space } =
       await this.membersRepository.findOneOrFail(
@@ -241,6 +278,39 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
+  }
+
+  /**
+   * Caps how many users can be invited (initial invites and renewals
+   * combined) per Space within a time window. Counting invitees instead of
+   * requests bounds the actual invitation volume, and keying on the Space
+   * makes the budget shared across all of its admins.
+   *
+   * @param args.spaceId - Space the invitations belong to.
+   * @param args.inviteeCount - Number of users this request invites.
+   */
+  private async assertSpaceInviteBudget(args: {
+    spaceId: Space['id'];
+    inviteeCount: number;
+  }): Promise<void> {
+    const count = await this.cacheService.incrementBy(
+      CacheRouter.getRateLimitCacheKey(`spaces_invitation_${args.spaceId}`),
+      args.inviteeCount,
+      this.spaceRateLimit.windowSeconds,
+    );
+    if (count > this.spaceRateLimit.max) {
+      this.loggingService.warn({
+        type: LogType.RateLimit,
+        spaceId: args.spaceId,
+        maxInvitees: this.spaceRateLimit.max,
+        windowSeconds: this.spaceRateLimit.windowSeconds,
+        currentCount: count,
+      });
+      throw new HttpException(
+        'Rate limit reached',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
   }
 
   private async assertActiveAdmin(args: {

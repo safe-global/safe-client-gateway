@@ -457,6 +457,20 @@ export default (): ReturnType<typeof configuration> => ({
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
+      invitation: {
+        space: {
+          max: faker.number.int({ min: 100, max: 200 }),
+          windowSeconds: faker.number.int({ min: 100, max: 200 }),
+        },
+        recipient: {
+          max: faker.number.int({ min: 100, max: 200 }),
+          windowSeconds: faker.number.int({ min: 100, max: 200 }),
+        },
+        emailsAlert: {
+          threshold: faker.number.int({ min: 1000, max: 2000 }),
+          windowSeconds: faker.number.int({ min: 100, max: 200 }),
+        },
+      },
     },
   },
   staking: {
