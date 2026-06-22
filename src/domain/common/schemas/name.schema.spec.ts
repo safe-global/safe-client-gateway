@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import {
   makeNameSchema,
   NameSchema,
+  sanitizeName,
 } from '@/domain/common/schemas/name.schema';
 
 describe('NameSchema', () => {
@@ -15,7 +16,7 @@ describe('NameSchema', () => {
     expect(result.success && result.data).toBe(accountName);
   });
 
-  it('should not validate an non-string name', () => {
+  it('should not validate a non-string name', () => {
     const name = 123;
 
     const result = NameSchema.safeParse(name);
@@ -43,57 +44,85 @@ describe('NameSchema', () => {
     ]);
   });
 
-  it('should not validate an name shorter than 3 characters', () => {
-    const accountName = faker.string.alphanumeric(2);
-
-    const result = NameSchema.safeParse(accountName);
+  it('should not validate a name shorter than 1 character', () => {
+    const result = NameSchema.safeParse('');
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'too_small',
-        minimum: 3,
-        inclusive: true,
-        message: 'Names must be at least 3 characters long',
+        code: 'custom',
+        message: 'Names must be at least 1 character(s) long',
         path: [],
-        origin: 'string',
       },
     ]);
   });
 
-  it('should not validate an name larger than 30 characters', () => {
+  it('should not validate a name larger than 30 characters', () => {
     const accountName = faker.string.alphanumeric(31);
 
     const result = NameSchema.safeParse(accountName);
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'too_big',
-        maximum: 30,
-        inclusive: true,
+        code: 'custom',
         message: 'Names must be at most 30 characters long',
         path: [],
-        origin: 'string',
       },
     ]);
   });
+});
 
-  it('should not validate an name containing not allowed characters', () => {
-    const forbiddenCharsString = '!@#$%^&*()';
-    const accountName = `${faker.string.alphanumeric(2)}${faker.string.fromCharacters(forbiddenCharsString)}${faker.string.alphanumeric(2)}`;
+describe('name.schema — UTF-8 acceptance', () => {
+  describe('accepts UTF-8 names', () => {
+    it.each([
+      'José',
+      '山田太郎',
+      'Müller 👍',
+      'Анна',
+      '李',
+      'Jo',
+    ])('accepts %s', (name) => {
+      expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
+    });
+  });
 
-    const result = NameSchema.safeParse(accountName);
+  it('normalizes decomposed input to NFC', () => {
+    // 'e' + U+0301 combining acute accent → 'é'
+    const decomposed = 'é';
+    expect(NameSchema.parse(decomposed)).toBe('é');
+  });
 
-    expect(!result.success && result.error.issues).toStrictEqual([
-      {
-        code: 'invalid_format',
-        format: 'regex',
-        origin: 'string',
-        pattern: '/^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$/',
-        message:
-          'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
-        path: [],
-      },
-    ]);
+  it('strips a bidi override (U+202E) and keeps the visible remainder', () => {
+    expect(NameSchema.parse('ab‮cd')).toBe('abcd');
+  });
+
+  it('strips a zero-width space (U+200B)', () => {
+    expect(NameSchema.parse('a​b')).toBe('ab');
+  });
+
+  it('preserves a ZWJ emoji sequence', () => {
+    // family emoji via ZWJ joiners: 👨‍👩‍👧
+    const family = '👨‍👩‍👧';
+    expect(NameSchema.parse(family)).toBe(family.normalize('NFC'));
+  });
+
+  it('rejects a name that is empty after stripping', () => {
+    // only a zero-width space and a bidi override
+    const invisibles = '​‮';
+    const result = NameSchema.safeParse(invisibles);
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a name over max length (by code point)', () => {
+    expect(() => makeNameSchema({ maxLength: 3 }).parse('abcd')).toThrow();
+  });
+
+  it('counts length by code point, not UTF-16 units', () => {
+    // 👍 is one code point but two UTF-16 units; must count as 1.
+    expect(makeNameSchema({ maxLength: 1 }).parse('👍')).toBe('👍');
+  });
+
+  it('accepts a single character (min length 1)', () => {
+    expect(makeNameSchema({ minLength: 1 }).parse('李')).toBe('李');
   });
 });
 
@@ -131,12 +160,9 @@ describe('makeNameSchema', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'too_small',
-          minimum: 5,
-          inclusive: true,
-          message: 'Names must be at least 5 characters long',
+          code: 'custom',
+          message: 'Names must be at least 5 character(s) long',
           path: [],
-          origin: 'string',
         },
       ]);
     });
@@ -169,12 +195,9 @@ describe('makeNameSchema', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'too_big',
-          maximum: 10,
-          inclusive: true,
+          code: 'custom',
           message: 'Names must be at most 10 characters long',
           path: [],
-          origin: 'string',
         },
       ]);
     });
@@ -233,40 +256,21 @@ describe('makeNameSchema', () => {
     });
   });
 
-  describe('regex validation with custom lengths', () => {
-    it('should still enforce regex rules with custom lengths', () => {
-      const schema = makeNameSchema({ minLength: 5, maxLength: 50 });
-      const invalidName = 'Valid@Name'; // contains invalid character
-
-      const result = schema.safeParse(invalidName);
-
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_format',
-          format: 'regex',
-          origin: 'string',
-          pattern: '/^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$/',
-          message:
-            'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
-          path: [],
-        },
-      ]);
-    });
-
-    it('should accept valid characters with custom lengths', () => {
-      const schema = makeNameSchema({ minLength: 3, maxLength: 50 });
+  describe('UTF-8 names with custom lengths', () => {
+    it('should accept valid UTF-8 characters with custom lengths', () => {
+      const schema = makeNameSchema({ minLength: 1, maxLength: 50 });
       const validNames = [
         'Simple123',
-        'With Spaces',
-        'With.Periods',
-        'With_Underscores',
-        'With-Hyphens',
-        'Mixed_Types.And-Spaces 123',
+        'José',
+        '山田太郎',
+        'Müller 👍',
+        'Анна',
+        '李',
       ];
 
       for (const name of validNames) {
         const result = schema.safeParse(name);
-        expect(result.success && result.data).toBe(name);
+        expect(result.success).toBe(true);
       }
     });
   });
@@ -290,12 +294,9 @@ describe('makeNameSchema', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'too_small',
-          minimum: 5,
-          inclusive: true,
-          message: 'Names must be at least 5 characters long',
+          code: 'custom',
+          message: 'Names must be at least 5 character(s) long',
           path: [],
-          origin: 'string',
         },
       ]);
     });
@@ -308,8 +309,9 @@ describe('makeNameSchema', () => {
 
       const result = schemaZeroMin.safeParse(emptyString);
 
-      // Should still fail on regex (empty string doesn't match the pattern)
-      expect(result.success).toBe(false);
+      // Empty string after trimming — min 0 so length check passes, but
+      // the schema should still succeed (empty is valid when min is 0)
+      expect(result.success).toBe(true);
     });
 
     it('should handle non-string input with custom lengths', () => {
@@ -327,5 +329,33 @@ describe('makeNameSchema', () => {
         },
       ]);
     });
+  });
+});
+
+describe('sanitizeName', () => {
+  it('applies NFC normalization', () => {
+    expect(sanitizeName('é')).toBe('é');
+  });
+
+  it('strips control characters (Cc)', () => {
+    expect(sanitizeName('a\x00b')).toBe('ab');
+  });
+
+  it('strips format characters (Cf) like bidi override', () => {
+    expect(sanitizeName('a‮b')).toBe('ab');
+  });
+
+  it('preserves ZWJ (U+200D)', () => {
+    const withZwj = 'a‍b';
+    expect(sanitizeName(withZwj)).toBe('a‍b');
+  });
+
+  it('preserves ZWNJ (U+200C)', () => {
+    const withZwnj = 'a‌b';
+    expect(sanitizeName(withZwnj)).toBe('a‌b');
+  });
+
+  it('trims leading and trailing whitespace', () => {
+    expect(sanitizeName('  hello  ')).toBe('hello');
   });
 });
