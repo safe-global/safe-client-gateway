@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import {
   DISALLOWED_CHARACTER_MESSAGE,
+  EMPTY_NAME_MESSAGE,
   makeNameSchema,
   NameSchema,
   sanitizeName,
@@ -112,6 +113,18 @@ describe('name.schema — UTF-8 acceptance', () => {
     expect(NameSchema.parse(decomposed)).toBe('José');
   });
 
+  describe('folds smart punctuation to ASCII', () => {
+    it.each([
+      ['curly right apostrophe (U+2019)', 'O’Brien', "O'Brien"],
+      ['curly left quote (U+2018)', '‘Mac’', "'Mac'"],
+      ['prime (U+2032)', '5′ tall', "5' tall"],
+      ['en dash (U+2013)', 'Jean–Luc', 'Jean-Luc'],
+      ['em dash (U+2014)', 'Jean—Luc', 'Jean-Luc'],
+    ])('folds %s', (_label, input, expected) => {
+      expect(NameSchema.parse(input)).toBe(expected);
+    });
+  });
+
   it('strips a bidi override (U+202E) and keeps the visible remainder', () => {
     expect(NameSchema.parse(`ab${BIDI_OVERRIDE}cd`)).toBe('abcd');
   });
@@ -151,11 +164,28 @@ describe('name.schema — UTF-8 acceptance', () => {
     });
   });
 
-  it('rejects a name that is empty after stripping', () => {
+  it('rejects a name that is empty after stripping with a dedicated message', () => {
     // only a zero-width space and a bidi override
     const invisibles = `${ZERO_WIDTH_SPACE}${BIDI_OVERRIDE}`;
     const result = NameSchema.safeParse(invisibles);
-    expect(result.success).toBe(false);
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: EMPTY_NAME_MESSAGE,
+        path: [],
+      },
+    ]);
+  });
+
+  it('reports empty-name (not min-length) when only whitespace is given', () => {
+    const result = NameSchema.safeParse('   ');
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: EMPTY_NAME_MESSAGE,
+        path: [],
+      },
+    ]);
   });
 
   it('rejects an emoji even when it satisfies length bounds', () => {
