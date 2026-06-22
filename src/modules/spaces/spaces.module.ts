@@ -34,7 +34,7 @@ import { SpaceSafesService } from '@/modules/spaces/routes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver.module';
+import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 

@@ -20,8 +20,8 @@ import {
   assertMember,
   isAdmin,
 } from '@/modules/spaces/routes/utils/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
-import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 
 @Injectable()
 export class AddressBookRequestsService {

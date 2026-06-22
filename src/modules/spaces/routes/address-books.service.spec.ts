@@ -14,7 +14,7 @@ import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/en
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books.service';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';

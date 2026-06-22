@@ -6,7 +6,7 @@ import type { Space } from '@/modules/spaces/datasources/entities/space.entity.d
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 export async function isAdmin(
   spacesRepository: ISpacesRepository,

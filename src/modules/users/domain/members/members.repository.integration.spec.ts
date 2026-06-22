@@ -35,7 +35,7 @@ import {
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { MembersRepository } from '@/modules/users/domain/members.repository';
+import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';

@@ -19,7 +19,7 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';

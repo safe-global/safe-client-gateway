@@ -15,7 +15,7 @@ import {
   assertAdmin,
   assertMember,
 } from '@/modules/spaces/routes/utils/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SpaceSafesService {

@@ -22,7 +22,7 @@ import { MembersService } from '@/modules/spaces/routes/members.service';
 import type { SpaceInviteEmailService } from '@/modules/spaces/routes/space-invite-email.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 

@@ -3,7 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver.service';
+import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet as DbWallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
