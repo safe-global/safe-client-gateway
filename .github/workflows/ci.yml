@@ -256,15 +256,15 @@ jobs:
           parallel-finished: true
           fail-on-error: false
 
-  # Production runs on amd64 only, so we build a single-arch image. ubuntu-latest
-  # is amd64, so the build is native — no QEMU emulation needed.
+  # Production runs on arm64 only, so we build a single-arch image. We run on an
+  # arm64 runner so the build is native — no QEMU emulation needed.
   docker-publish-staging:
     # `on.push.branches` already scopes push events to main, so the ref check is
     # redundant today — but it keeps this job self-guarding (it deploys to
     # staging) if the push trigger is ever broadened.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [biome, tests-finish]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - run: |
@@ -277,7 +277,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          platforms: linux/amd64
+          platforms: linux/arm64
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
@@ -290,7 +290,7 @@ jobs:
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
     needs: [biome, tests-finish]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - run: |
@@ -303,7 +303,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          platforms: linux/amd64
+          platforms: linux/arm64
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
