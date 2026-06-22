@@ -389,6 +389,23 @@ describe('CsvExportService', () => {
       expect(csv).toContain('Just a note');
       expect(csv).not.toContain("'Just a note");
     });
+
+    it('does not escape a negative amount (numeric column exemption)', async () => {
+      const rows = [{ amount: '-5', payment: '-0.001', nonce: '4' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain('-5');
+      expect(csv).not.toContain("'-5");
+      expect(csv).toContain('-0.001');
+      expect(csv).not.toContain("'-0.001");
+    });
+
+    it('still escapes a free-text column even when a numeric column is exempt', async () => {
+      const rows = [{ amount: '-5', note: '=cmd', nonce: '5' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain('-5');
+      expect(csv).not.toContain("'-5");
+      expect(csv).toContain("'=cmd");
+    });
   });
 
   describe('CSV Readable stream', () => {

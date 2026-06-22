@@ -2,6 +2,13 @@
 import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
 import { escapeCsvFormula } from '@/modules/csv-export/csv-utils/escape-csv-formula';
 
+// Formatted numeric columns: never user-controlled and may start with '-',
+// so they're exempt from CSV formula escaping.
+const NUMERIC_COLUMNS: ReadonlySet<string | number> = new Set([
+  'amount',
+  'payment',
+]);
+
 export const CSV_OPTIONS: CsvOptions = {
   header: true,
   columns: [
@@ -24,6 +31,11 @@ export const CSV_OPTIONS: CsvOptions = {
   ],
   cast: {
     date: (value: Date): string => value.toISOString(),
-    string: (value: string): string => escapeCsvFormula(value),
+    string: (value: string, context): string => {
+      if (context.column != null && NUMERIC_COLUMNS.has(context.column)) {
+        return value;
+      }
+      return escapeCsvFormula(value);
+    },
   },
 };
