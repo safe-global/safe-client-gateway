@@ -312,6 +312,78 @@ describe('AddressBooksController', () => {
         );
     });
 
+    it('should accept and round-trip UTF-8 names', async () => {
+      const { spaceId, accessToken, signerAddress, userId } =
+        await createSpace();
+
+      // Item 1: multi-script + emoji name — already NFC, returned unchanged
+      const utf8Name = 'José 山田 👍';
+      const utf8Address = getAddress(faker.finance.ethereumAddress());
+      const utf8ChainIds = faker.helpers.multiple(
+        () => faker.string.numeric(),
+        { count: { min: 1, max: 5 } },
+      );
+
+      // Item 2: name with embedded bidi override (U+202E) — stripped by schema
+      const rawName = 'ab‮cd';
+      const strippedName = 'abcd';
+      const bidiAddress = getAddress(faker.finance.ethereumAddress());
+      const bidiChainIds = faker.helpers.multiple(
+        () => faker.string.numeric(),
+        { count: { min: 1, max: 5 } },
+      );
+
+      const { body: utf8Body } = await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: utf8Name,
+              address: utf8Address,
+              chainIds: utf8ChainIds,
+            },
+            {
+              name: rawName,
+              address: bidiAddress,
+              chainIds: bidiChainIds,
+            },
+          ],
+        })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceUuid: spaceId,
+            data: expect.arrayContaining([
+              {
+                chainIds: utf8ChainIds,
+                address: utf8Address,
+                name: utf8Name.normalize('NFC'),
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+              },
+              {
+                chainIds: bidiChainIds,
+                address: bidiAddress,
+                name: strippedName,
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+              },
+            ]),
+          }),
+        );
+
+      expect(utf8Body.data.length).toBe(2);
+    });
+
     it('should update Space Address Book Items', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { mockName, mockAddress, mockChainIds } =

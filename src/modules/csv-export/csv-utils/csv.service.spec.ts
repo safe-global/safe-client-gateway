@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Readable, Writable } from 'node:stream';
 import { faker } from '@faker-js/faker';
+import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
 import type { CsvOptions } from './csv.service';
 import { CsvService } from './csv.service';
 
@@ -366,6 +367,27 @@ describe('CsvExportService', () => {
       const lines = csv.trim().split(/\r?\n/);
       expect(lines[0]).toBe('Name,Age,Email');
       expect(lines[1]).toBe(`${name},,`);
+    });
+  });
+
+  describe('formula injection hardening', () => {
+    it('escapes a note starting with = (formula trigger)', async () => {
+      const rows = [{ note: '=cmd|calc', nonce: '1' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain("'=cmd|calc");
+    });
+
+    it('escapes a note starting with + (formula trigger)', async () => {
+      const rows = [{ note: '+1+1', nonce: '2' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain("'+1+1");
+    });
+
+    it('leaves a benign note untouched', async () => {
+      const rows = [{ note: 'Just a note', nonce: '3' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain('Just a note');
+      expect(csv).not.toContain("'Just a note");
     });
   });
 

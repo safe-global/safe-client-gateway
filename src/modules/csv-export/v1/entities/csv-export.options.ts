@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
+import { escapeCsvFormula } from '@/modules/csv-export/csv-utils/escape-csv-formula';
 
 export const CSV_OPTIONS: CsvOptions = {
   header: true,
@@ -23,5 +24,6 @@ export const CSV_OPTIONS: CsvOptions = {
   ],
   cast: {
     date: (value: Date): string => value.toISOString(),
+    string: (value: string): string => escapeCsvFormula(value),
   },
 };
