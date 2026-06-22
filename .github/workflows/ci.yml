@@ -291,11 +291,19 @@ jobs:
     if: (github.event_name == 'release' && github.event.action == 'released')
     needs: [biome, tests-finish]
     runs-on: ubuntu-24.04-arm
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
+      - name: Validate release tag
+        run: |
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Release tag is empty; refusing to publish an untagged release image."
+            exit 1
+          fi
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -307,9 +315,9 @@ jobs:
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ env.RELEASE_TAG }}
           tags: |
-            ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.RELEASE_TAG }}
             ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           # Use Registry cache backend https://docs.docker.com/build/cache/backends/registry/
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_BUILD_IMAGE_TAG }}
