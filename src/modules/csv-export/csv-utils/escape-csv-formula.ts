@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-// CSV formula-injection triggers (OWASP): ASCII = + - @, plus TAB and CR which
-// some spreadsheet apps treat as leading whitespace before a formula, plus the
-// full-width variants ＝ ＋ － ＠ that normalize to the ASCII forms.
+// CSV formula-injection triggers (OWASP): ASCII = + - @, plus leading whitespace
+// (space, TAB, CR, LF) which some spreadsheet importers strip before evaluating
+// a formula, plus the full-width variants ＝ ＋ － ＠ that normalize to the ASCII forms.
 const FORMULA_TRIGGERS = [
   '=',
   '+',
   '-',
   '@',
+  ' ',
   '\t',
   '\r',
+  '\n',
   '＝',
   '＋',
   '－',

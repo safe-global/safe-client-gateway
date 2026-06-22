@@ -19,6 +19,14 @@ describe('escapeCsvFormula', () => {
     expect(escapeCsvFormula('\r=1')).toBe("'\r=1");
   });
 
+  it('prefixes a value starting with LF (0x0A)', () => {
+    expect(escapeCsvFormula('\n=1')).toBe("'\n=1");
+  });
+
+  it('prefixes a value starting with a regular space', () => {
+    expect(escapeCsvFormula(' =1')).toBe("' =1");
+  });
+
   it('prefixes full-width formula triggers', () => {
     expect(escapeCsvFormula('＝1')).toBe("'＝1");
     expect(escapeCsvFormula('＋1')).toBe("'＋1");
