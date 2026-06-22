@@ -4,19 +4,25 @@ import { z } from 'zod';
 export const NAME_MIN_LENGTH = 3;
 export const NAME_MAX_LENGTH = 30;
 
-// Unicode control (Cc) + format (Cf): C0/C1 controls, bidirectional overrides
-// (Trojan Source / CVE-2021-42574), and zero-width characters. ZWJ (U+200D) and
-// ZWNJ (U+200C) are re-allowed for emoji sequences and Indic/Arabic joiners.
-const ZWJ = '‍';
-const ZWNJ = '‌';
-const isDisallowed = (ch: string): boolean =>
-  /[\p{Cc}\p{Cf}]/u.test(ch) && ch !== ZWJ && ch !== ZWNJ;
+// Invisible control (Cc) + format (Cf) chars (e.g. bidi overrides, zero-width
+// spaces, joiners). Stripped silently so copy-pasted names still succeed.
+const INVISIBLE_CHARACTERS = /[\p{Cc}\p{Cf}]/gu;
+
+// Punctuation allowed alongside letters/marks/numbers/spaces. Covers real-world
+// names ("Contact #1", "maria@web.com", "O'Brien") while excluding chars that
+// are dangerous downstream (formulas = + * /, markup < > ", templating $ { }).
+const ALLOWED_PUNCTUATION = " ._\\-#@&',()";
+
+const ALLOWED_NAME_REGEX = new RegExp(
+  `^[\\p{L}\\p{M}\\p{N}${ALLOWED_PUNCTUATION}]*$`,
+  'u',
+);
+
+export const DISALLOWED_CHARACTER_MESSAGE =
+  "Names can only contain letters, numbers, spaces and the characters . _ - # @ & ' , ( )";
 
 export const sanitizeName = (value: string): string =>
-  [...value.normalize('NFC')]
-    .filter((ch) => !isDisallowed(ch))
-    .join('')
-    .trim();
+  value.normalize('NFC').replace(INVISIBLE_CHARACTERS, '').trim();
 
 export const makeNameSchema = (args?: {
   minLength?: number;
@@ -27,6 +33,9 @@ export const makeNameSchema = (args?: {
   return z
     .string()
     .transform(sanitizeName)
+    .refine((s) => ALLOWED_NAME_REGEX.test(s), {
+      message: DISALLOWED_CHARACTER_MESSAGE,
+    })
     .refine((s) => [...s].length >= min, {
       message: `Names must be at least ${min} character(s) long`,
     })

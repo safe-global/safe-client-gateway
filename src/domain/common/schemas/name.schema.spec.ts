@@ -2,10 +2,18 @@
 
 import { faker } from '@faker-js/faker';
 import {
+  DISALLOWED_CHARACTER_MESSAGE,
   makeNameSchema,
   NameSchema,
   sanitizeName,
 } from '@/domain/common/schemas/name.schema';
+
+// Invisible characters referenced by tests (defined by code point to avoid
+// editor/encoding ambiguity).
+const ZERO_WIDTH_SPACE = '​';
+const BIDI_OVERRIDE = '‮';
+const ZWJ = '‍';
+const ZWNJ = '‌';
 
 describe('NameSchema', () => {
   it('should validate a valid name', () => {
@@ -72,8 +80,25 @@ describe('NameSchema', () => {
 });
 
 describe('name.schema — UTF-8 acceptance', () => {
-  describe('accepts UTF-8 names', () => {
-    it.each(['José', '山田太郎', 'Müller 👍', 'Анна'])('accepts %s', (name) => {
+  describe('accepts UTF-8 letter names from any script', () => {
+    it.each(['José', '山田太郎', 'Müller', 'Анна', 'محمد علي'])(
+      'accepts %s',
+      (name) => {
+        expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
+      },
+    );
+  });
+
+  describe('accepts real-world contact names with allowed punctuation', () => {
+    it.each([
+      'Contact #1',
+      'maria@web.com',
+      'Smith & Co.',
+      "O'Brien",
+      'Acme, Inc.',
+      'Doe (work)',
+      'a-valid_Account.name',
+    ])('accepts %s', (name) => {
       expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
     });
   });
@@ -85,23 +110,56 @@ describe('name.schema — UTF-8 acceptance', () => {
   });
 
   it('strips a bidi override (U+202E) and keeps the visible remainder', () => {
-    expect(NameSchema.parse('ab‮cd')).toBe('abcd');
+    expect(NameSchema.parse(`ab${BIDI_OVERRIDE}cd`)).toBe('abcd');
   });
 
   it('strips a zero-width space (U+200B)', () => {
-    expect(NameSchema.parse('a​bc')).toBe('abc');
+    expect(NameSchema.parse(`a${ZERO_WIDTH_SPACE}bc`)).toBe('abc');
   });
 
-  it('preserves a ZWJ emoji sequence', () => {
-    // family emoji via ZWJ joiners: 👨‍👩‍👧
-    const family = '👨‍👩‍👧';
-    expect(NameSchema.parse(family)).toBe(family.normalize('NFC'));
+  describe('rejects disallowed characters', () => {
+    it.each([
+      ['equals (formula trigger)', 'ab=cd'],
+      ['plus', 'ab+cd'],
+      ['asterisk', 'ab*cd'],
+      ['slash', 'ab/cd'],
+      ['backslash', 'ab\\cd'],
+      ['less-than', 'ab<cd'],
+      ['greater-than', 'ab>cd'],
+      ['double quote', 'ab"cd'],
+      ['percent', 'ab%cd'],
+      ['dollar', 'ab$cd'],
+      ['colon', 'ab:cd'],
+      ['semicolon', 'ab;cd'],
+      ['pipe', 'ab|cd'],
+      ['curly brace', 'ab{cd'],
+      ['square bracket', 'ab[cd'],
+      ['emoji', 'abc\u{1F44D}'],
+      ['symbol', 'abc★'],
+    ])('rejects a name containing %s', (_label, name) => {
+      const result = NameSchema.safeParse(name);
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: DISALLOWED_CHARACTER_MESSAGE,
+          path: [],
+        },
+      ]);
+    });
   });
 
   it('rejects a name that is empty after stripping', () => {
     // only a zero-width space and a bidi override
-    const invisibles = '​‮';
+    const invisibles = `${ZERO_WIDTH_SPACE}${BIDI_OVERRIDE}`;
     const result = NameSchema.safeParse(invisibles);
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects an emoji even when it satisfies length bounds', () => {
+    // 👍 is one valid-length code point but is not a letter/number/allowed punctuation
+    const result = makeNameSchema({ minLength: 1, maxLength: 1 }).safeParse(
+      '\u{1F44D}',
+    );
     expect(result.success).toBe(false);
   });
 
@@ -110,9 +168,9 @@ describe('name.schema — UTF-8 acceptance', () => {
   });
 
   it('counts length by code point, not UTF-16 units', () => {
-    // 👍 is one code point but two UTF-16 units; must count as 1.
-    expect(makeNameSchema({ minLength: 1, maxLength: 1 }).parse('👍')).toBe(
-      '👍',
+    // 𝐀 (U+1D400) is one code point but two UTF-16 units; it is also a letter.
+    expect(makeNameSchema({ minLength: 1, maxLength: 1 }).parse('\u{1D400}')).toBe(
+      '\u{1D400}',
     );
   });
 
@@ -258,7 +316,7 @@ describe('makeNameSchema', () => {
         'Simple123',
         'José',
         '山田太郎',
-        'Müller 👍',
+        'Müller',
         'Анна',
         '李',
       ];
@@ -304,8 +362,8 @@ describe('makeNameSchema', () => {
 
       const result = schemaZeroMin.safeParse(emptyString);
 
-      // Empty string after trimming — min 0 so length check passes, but
-      // the schema should still succeed (empty is valid when min is 0)
+      // Empty string after trimming — min 0 so length check passes, and an
+      // empty string contains no disallowed characters, so it succeeds.
       expect(result.success).toBe(true);
     });
 
@@ -337,17 +395,15 @@ describe('sanitizeName', () => {
   });
 
   it('strips format characters (Cf) like bidi override', () => {
-    expect(sanitizeName('a‮b')).toBe('ab');
+    expect(sanitizeName(`a${BIDI_OVERRIDE}b`)).toBe('ab');
   });
 
-  it('preserves ZWJ (U+200D)', () => {
-    const withZwj = 'a‍b';
-    expect(sanitizeName(withZwj)).toBe('a‍b');
+  it('strips ZWJ (U+200D)', () => {
+    expect(sanitizeName(`a${ZWJ}b`)).toBe('ab');
   });
 
-  it('preserves ZWNJ (U+200C)', () => {
-    const withZwnj = 'a‌b';
-    expect(sanitizeName(withZwnj)).toBe('a‌b');
+  it('strips ZWNJ (U+200C)', () => {
+    expect(sanitizeName(`a${ZWNJ}b`)).toBe('ab');
   });
 
   it('trims leading and trailing whitespace', () => {
