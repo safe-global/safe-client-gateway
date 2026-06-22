@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 
-// Note: regular expression is simplified because faker has limited support for regex.
-// https://fakerjs.dev/api/helpers#fromregexp
-export const nameSimpleRegex = /[a-zA-Z0-9]{12,30}/i;
+// UTF-8 sample names: Latin, accented, CJK, and Cyrillic — all NFC-normalised,
+// no control/format chars, no leading/trailing whitespace.
+// Capped to 30 code points to respect NAME_MAX_LENGTH.
+const SAMPLE_NAMES: Array<() => string> = [
+  () => faker.person.firstName(),
+  () => 'José',
+  () => 'Müller',
+  () => '山田太郎',
+  () => 'Анна',
+  () => '李',
+];
 
 export function nameBuilder(): string {
-  return faker.helpers.fromRegExp(nameSimpleRegex);
+  const pick = faker.helpers.arrayElement(SAMPLE_NAMES)();
+  // Trim to 30 code points to respect the default max.
+  return [...pick].slice(0, 30).join('');
 }
