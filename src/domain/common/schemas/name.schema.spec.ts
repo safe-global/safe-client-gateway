@@ -81,12 +81,15 @@ describe('NameSchema', () => {
 
 describe('name.schema — UTF-8 acceptance', () => {
   describe('accepts UTF-8 letter names from any script', () => {
-    it.each(['José', '山田太郎', 'Müller', 'Анна', 'محمد علي'])(
-      'accepts %s',
-      (name) => {
-        expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
-      },
-    );
+    it.each([
+      'José',
+      '山田太郎',
+      'Müller',
+      'Анна',
+      'محمد علي',
+    ])('accepts %s', (name) => {
+      expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
+    });
   });
 
   describe('accepts real-world contact names with allowed punctuation', () => {
@@ -169,9 +172,9 @@ describe('name.schema — UTF-8 acceptance', () => {
 
   it('counts length by code point, not UTF-16 units', () => {
     // 𝐀 (U+1D400) is one code point but two UTF-16 units; it is also a letter.
-    expect(makeNameSchema({ minLength: 1, maxLength: 1 }).parse('\u{1D400}')).toBe(
-      '\u{1D400}',
-    );
+    expect(
+      makeNameSchema({ minLength: 1, maxLength: 1 }).parse('\u{1D400}'),
+    ).toBe('\u{1D400}');
   });
 
   it('accepts a single character (min length 1)', () => {
