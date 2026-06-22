@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
-export const NAME_MIN_LENGTH = 1; // was 3 — short/CJK names are legitimate
+export const NAME_MIN_LENGTH = 3;
 export const NAME_MAX_LENGTH = 30;
 
 // Unicode control (Cc) + format (Cf): C0/C1 controls, bidirectional overrides

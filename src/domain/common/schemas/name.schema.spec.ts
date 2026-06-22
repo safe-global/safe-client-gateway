@@ -44,13 +44,13 @@ describe('NameSchema', () => {
     ]);
   });
 
-  it('should not validate a name shorter than 1 character', () => {
-    const result = NameSchema.safeParse('');
+  it('should not validate a name shorter than 3 characters', () => {
+    const result = NameSchema.safeParse('Jo');
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
         code: 'custom',
-        message: 'Names must be at least 1 character(s) long',
+        message: 'Names must be at least 3 character(s) long',
         path: [],
       },
     ]);
@@ -73,22 +73,15 @@ describe('NameSchema', () => {
 
 describe('name.schema — UTF-8 acceptance', () => {
   describe('accepts UTF-8 names', () => {
-    it.each([
-      'José',
-      '山田太郎',
-      'Müller 👍',
-      'Анна',
-      '李',
-      'Jo',
-    ])('accepts %s', (name) => {
+    it.each(['José', '山田太郎', 'Müller 👍', 'Анна'])('accepts %s', (name) => {
       expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
     });
   });
 
   it('normalizes decomposed input to NFC', () => {
-    // 'e' + U+0301 combining acute accent → 'é'
-    const decomposed = 'é';
-    expect(NameSchema.parse(decomposed)).toBe('é');
+    // 'Jos' + 'e' + U+0301 combining acute accent → 'José' (4 code points, ≥ min)
+    const decomposed = 'Jos' + 'é';
+    expect(NameSchema.parse(decomposed)).toBe('José');
   });
 
   it('strips a bidi override (U+202E) and keeps the visible remainder', () => {
@@ -96,7 +89,7 @@ describe('name.schema — UTF-8 acceptance', () => {
   });
 
   it('strips a zero-width space (U+200B)', () => {
-    expect(NameSchema.parse('a​b')).toBe('ab');
+    expect(NameSchema.parse('a​bc')).toBe('abc');
   });
 
   it('preserves a ZWJ emoji sequence', () => {
@@ -118,7 +111,9 @@ describe('name.schema — UTF-8 acceptance', () => {
 
   it('counts length by code point, not UTF-16 units', () => {
     // 👍 is one code point but two UTF-16 units; must count as 1.
-    expect(makeNameSchema({ maxLength: 1 }).parse('👍')).toBe('👍');
+    expect(makeNameSchema({ minLength: 1, maxLength: 1 }).parse('👍')).toBe(
+      '👍',
+    );
   });
 
   it('accepts a single character (min length 1)', () => {
