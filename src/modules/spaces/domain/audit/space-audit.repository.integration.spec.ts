@@ -13,16 +13,16 @@ import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpaceAuditLog } from '@/modules/spaces/datasources/entities/space-audit-log.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { SpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';

@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { SpaceAuditLog } from '@/modules/spaces/datasources/entities/space-audit-log.entity.db';
+import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import { SpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 

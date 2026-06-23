@@ -21,7 +21,7 @@ import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { Space as DbSpace } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -29,7 +29,7 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/entities/invite-users.dto.entity';
+} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
