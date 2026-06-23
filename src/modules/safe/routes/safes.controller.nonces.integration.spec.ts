@@ -4,7 +4,10 @@ import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -34,7 +37,7 @@ describe('Safes Controller Nonces', () => {
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {

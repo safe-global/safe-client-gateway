@@ -15,7 +15,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { type CookieOptions, Request, Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -27,8 +27,10 @@ import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-a
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
+  type CookieOptions,
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
+import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -91,7 +93,7 @@ export class OidcAuthController {
   @Get('oidc/authorize')
   authorize(
     @Res({ passthrough: true })
-    res: Response,
+    res: FastifyReply,
     @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
     redirectUrl?: string,
     @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
@@ -103,9 +105,9 @@ export class OidcAuthController {
         connection,
       );
 
-    res.cookie(OidcAuthController.OIDC_STATE_COOKIE_NAME, state, {
+    res.setCookie(OidcAuthController.OIDC_STATE_COOKIE_NAME, state, {
       ...this.getCookieOptions(),
-      maxAge: stateMaxAge,
+      maxAge: Math.floor(stateMaxAge / 1_000),
     });
     res.redirect(authorizationUrl);
   }
@@ -150,9 +152,9 @@ export class OidcAuthController {
   })
   @Get('oidc/callback')
   async callback(
-    @Req() req: Request,
+    @Req() req: HttpRequest,
     @Res({ passthrough: true })
-    res: Response,
+    res: FastifyReply,
     @Query('code') code?: string,
     @Query('state') state?: string,
     @Query('error') error?: string,
@@ -194,7 +196,7 @@ export class OidcAuthController {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
 
-      res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+      res.setCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),
         maxAge,
       });

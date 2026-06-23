@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -16,12 +21,12 @@ describe('HooksController', () => {
     beforeAll(async () => {
       const moduleFixture = await createTestModule();
 
-      app = moduleFixture.createNestApplication();
+      app = createTestApplication(moduleFixture);
 
       configurationService = moduleFixture.get(IConfigurationService);
       authToken = configurationService.getOrThrow('auth.token');
 
-      await app.init();
+      await initTestApplication(app);
     });
 
     afterAll(async () => {
@@ -76,12 +81,12 @@ describe('HooksController', () => {
         config: testConfiguration,
       });
 
-      app = moduleFixture.createNestApplication();
+      app = createTestApplication(moduleFixture);
 
       configurationService = moduleFixture.get(IConfigurationService);
       authToken = configurationService.getOrThrow('auth.token');
 
-      await app.init();
+      await initTestApplication(app);
     });
 
     afterAll(async () => {

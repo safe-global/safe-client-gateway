@@ -9,7 +9,10 @@ import request from 'supertest';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -73,7 +76,7 @@ describe('Messages controller', () => {
     vi.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   }
 
   beforeEach(async () => {
