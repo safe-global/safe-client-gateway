@@ -7,7 +7,7 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { QueueModule } from '@/modules/queue/queue.module';
+import { QueueServiceModule } from '@/modules/queue/queue.module';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -232,7 +232,7 @@ export interface ISafeRepository {
     TransactionApiManagerModule,
     DelegatesV2RepositoryModule,
     ContractsModule,
-    QueueModule,
+    QueueServiceModule,
   ],
   providers: [
     {

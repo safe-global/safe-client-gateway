@@ -325,7 +325,7 @@ describe('QueueService', () => {
     const withCircuitBreakerKey = expect.objectContaining({
       networkRequest: expect.objectContaining({
         circuitBreaker: {
-          key: CircuitBreakerKeys.getQueueServiceKey(chainId),
+          key: CircuitBreakerKeys.getQueueServiceKey(),
         },
       }),
     });

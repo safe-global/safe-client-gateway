@@ -8,9 +8,9 @@ import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/mu
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 
-export const IQueue = Symbol('IQueue');
+export const IQueueService = Symbol('IQueueService');
 
-export interface IQueue {
+export interface IQueueService {
   proposeTransaction(args: {
     chainId: string;
     safeAddress: Address;

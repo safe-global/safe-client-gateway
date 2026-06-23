@@ -24,13 +24,13 @@ import {
   QueueMultisigTransactionSchema,
 } from '@/modules/queue/entities/multisig-transaction.entity';
 import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
-import type { IQueue } from '@/modules/queue/queue.interface';
+import type { IQueueService } from '@/modules/queue/queue.interface';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
-export class QueueService implements IQueue {
+export class QueueService implements IQueueService {
   // Chunk size for multisig batch fetches. Each `safe_tx_hash=0x<64 hex>&`
   // pair is ~81 bytes; nginx's default `large_client_header_buffers 4 8k`
   // and many WAFs reject request lines beyond 8KB, so we cap each call at
@@ -96,7 +96,7 @@ export class QueueService implements IQueue {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -123,7 +123,7 @@ export class QueueService implements IQueue {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -161,7 +161,7 @@ export class QueueService implements IQueue {
             url,
             networkRequest: {
               circuitBreaker: {
-                key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+                key: CircuitBreakerKeys.getQueueServiceKey(),
               },
             },
           });
@@ -202,7 +202,7 @@ export class QueueService implements IQueue {
             offset: args.offset,
           },
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -223,7 +223,7 @@ export class QueueService implements IQueue {
         data: { signatures: [args.signature] },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -245,7 +245,7 @@ export class QueueService implements IQueue {
         data: { signature: args.signature },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -281,7 +281,7 @@ export class QueueService implements IQueue {
             offset: args.offset,
           },
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -313,7 +313,7 @@ export class QueueService implements IQueue {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -344,7 +344,7 @@ export class QueueService implements IQueue {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -373,7 +373,7 @@ export class QueueService implements IQueue {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -399,7 +399,7 @@ export class QueueService implements IQueue {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -435,7 +435,7 @@ export class QueueService implements IQueue {
             offset: args.offset,
           },
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -466,7 +466,7 @@ export class QueueService implements IQueue {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });
@@ -488,7 +488,7 @@ export class QueueService implements IQueue {
         data: { signatures: [args.signature] },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(args.chainId),
+            key: CircuitBreakerKeys.getQueueServiceKey(),
           },
         },
       });

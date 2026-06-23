@@ -7,7 +7,7 @@ import { IMessagesRepository } from '@/modules/messages/domain/messages.reposito
 import { MessageMapper } from '@/modules/messages/routes/mappers/message-mapper';
 import { MessagesController } from '@/modules/messages/routes/messages.controller';
 import { MessagesService } from '@/modules/messages/routes/messages.service';
-import { QueueModule } from '@/modules/queue/queue.module';
+import { QueueServiceModule } from '@/modules/queue/queue.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
@@ -18,7 +18,7 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     TransactionApiManagerModule,
     SafeRepositoryModule,
     SafeAppsModule,
-    QueueModule,
+    QueueServiceModule,
   ],
   providers: [
     {

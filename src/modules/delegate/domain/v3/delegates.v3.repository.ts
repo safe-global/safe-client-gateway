@@ -10,7 +10,7 @@ import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { QueueDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
-import { IQueue } from '@/modules/queue/queue.interface';
+import { IQueueService } from '@/modules/queue/queue.interface';
 
 @Injectable()
 export class DelegatesV3Repository implements IDelegatesV3Repository {
@@ -19,8 +19,8 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    @Inject(IQueue)
-    private readonly queueService: IQueue,
+    @Inject(IQueueService)
+    private readonly queueService: IQueueService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
@@ -40,48 +40,48 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    if (!this.queueServiceEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      const page = await transactionService.getDelegatesV2({
-        safeAddress: args.safeAddress,
-        delegate: args.delegate,
-        delegator: args.delegator,
-        label: args.label,
-        limit: args.limit,
-        offset: args.offset,
-      });
-      return DelegatePageSchema.parse(page);
+    if (this.queueServiceEnabled) {
+      const page = await this.queueService.getDelegates(args);
+      const parsed = QueueDelegatePageSchema.parse(page);
+      return {
+        ...parsed,
+        results: parsed.results.map((d) => ({
+          safe: d.safe,
+          delegate: d.delegate,
+          delegator: d.delegator,
+          // The queue allows a null label; the domain Delegate (and the
+          // tx-service v2 path) require a string. Coerce to '' so both backends
+          // represent "no label" identically for downstream consumers.
+          label: d.label ?? '',
+        })),
+      };
     }
-    const page = await this.queueService.getDelegates(args);
-    const parsed = QueueDelegatePageSchema.parse(page);
-    return {
-      ...parsed,
-      results: parsed.results.map((d) => ({
-        safe: d.safe,
-        delegate: d.delegate,
-        delegator: d.delegator,
-        // The queue allows a null label; the domain Delegate (and the
-        // tx-service v2 path) require a string. Coerce to '' so both backends
-        // represent "no label" identically for downstream consumers.
-        label: d.label ?? '',
-      })),
-    };
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    const page = await transactionService.getDelegatesV2({
+      safeAddress: args.safeAddress,
+      delegate: args.delegate,
+      delegator: args.delegator,
+      label: args.label,
+      limit: args.limit,
+      offset: args.offset,
+    });
+    return DelegatePageSchema.parse(page);
   }
 
   async clearDelegates(args: {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    if (!this.queueServiceEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      await transactionService.clearDelegates(args.safeAddress);
+    if (this.queueServiceEnabled) {
+      await this.queueService.clearDelegates(args);
       return;
     }
-    await this.queueService.clearDelegates(args);
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    await transactionService.clearDelegates(args.safeAddress);
   }
 
   async postDelegate(args: {
@@ -92,20 +92,21 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    if (!this.queueServiceEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      await transactionService.postDelegateV2({
-        safeAddress: args.safeAddress,
-        delegate: args.delegate,
-        delegator: args.delegator,
-        signature: args.signature,
-        label: args.label,
-      });
-    } else {
+    if (this.queueServiceEnabled) {
       await this.queueService.postDelegate(args);
+      this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+      return;
     }
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    await transactionService.postDelegateV2({
+      safeAddress: args.safeAddress,
+      delegate: args.delegate,
+      delegator: args.delegator,
+      signature: args.signature,
+      label: args.label,
+    });
     this._invalidateDelegatesCache(args.chainId, args.safeAddress);
   }
 
@@ -117,20 +118,21 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    if (!this.queueServiceEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      await transactionService.updateDelegateV2({
-        safeAddress: args.safeAddress,
-        delegate: args.delegate,
-        delegator: args.delegator,
-        signature: args.signature,
-        label: args.label,
-      });
-    } else {
+    if (this.queueServiceEnabled) {
       await this.queueService.updateDelegate(args);
+      this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+      return;
     }
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    await transactionService.updateDelegateV2({
+      safeAddress: args.safeAddress,
+      delegate: args.delegate,
+      delegator: args.delegator,
+      signature: args.signature,
+      label: args.label,
+    });
     this._invalidateDelegatesCache(args.chainId, args.safeAddress);
   }
 
@@ -141,20 +143,20 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     safeAddress: Address | null;
     signature: string;
   }): Promise<unknown> {
-    let result: unknown;
-    if (!this.queueServiceEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      result = await transactionService.deleteDelegateV2({
-        delegate: args.delegate,
-        delegator: args.delegator,
-        safeAddress: args.safeAddress,
-        signature: args.signature,
-      });
-    } else {
-      result = await this.queueService.deleteDelegate(args);
+    if (this.queueServiceEnabled) {
+      const result = await this.queueService.deleteDelegate(args);
+      this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+      return result;
     }
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    const result = await transactionService.deleteDelegateV2({
+      delegate: args.delegate,
+      delegator: args.delegator,
+      safeAddress: args.safeAddress,
+      signature: args.signature,
+    });
     this._invalidateDelegatesCache(args.chainId, args.safeAddress);
     return result;
   }

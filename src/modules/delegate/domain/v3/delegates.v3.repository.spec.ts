@@ -13,7 +13,7 @@ import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/de
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
 import type { QueueDelegate } from '@/modules/queue/entities/delegate.entity';
-import type { IQueue } from '@/modules/queue/queue.interface';
+import type { IQueueService } from '@/modules/queue/queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
@@ -34,7 +34,7 @@ const mockQueueService = {
   updateDelegate: vi.fn(),
   deleteDelegate: vi.fn(),
   clearDelegates: vi.fn(),
-} as MockedObject<IQueue>;
+} as MockedObject<IQueueService>;
 
 const mockConfigurationService = {
   getOrThrow: vi.fn(),

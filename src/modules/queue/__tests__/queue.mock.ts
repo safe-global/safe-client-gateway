@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { MockedObject } from 'vitest';
-import type { IQueue } from '@/modules/queue/queue.interface';
+import type { IQueueService } from '@/modules/queue/queue.interface';
 
-export function createMockQueueService(): MockedObject<IQueue> {
+export function createMockQueueService(): MockedObject<IQueueService> {
   return {
     getMultisigTransaction: vi.fn(),
     getMultisigTransactionsBatch: vi.fn(),
@@ -23,5 +23,5 @@ export function createMockQueueService(): MockedObject<IQueue> {
     clearMessagesBySafe: vi.fn(),
     clearMessagesByHash: vi.fn(),
     clearDelegates: vi.fn(),
-  } as MockedObject<IQueue>;
+  } as MockedObject<IQueueService>;
 }

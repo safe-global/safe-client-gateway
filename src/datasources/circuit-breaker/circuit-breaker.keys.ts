@@ -36,12 +36,15 @@ export class CircuitBreakerKeys {
   }
 
   /**
-   * Generates a circuit breaker key for the queue service
+   * Generates the circuit breaker key for the Queue Service
    *
-   * @param chainId - The chain ID to scope the circuit breaker to
-   * @returns Circuit breaker key in the format: `queue-service-{chainId}`
+   * The Queue Service is a single deployment serving all chains (the chain is
+   * passed as a request parameter, not the host), so the key is not
+   * chain-scoped.
+   *
+   * @returns Circuit breaker key: `queue-service`
    */
-  static getQueueServiceKey(chainId: string): string {
-    return `${CircuitBreakerKeys.SERVICE_PREFIX.QUEUE_SERVICE}-${chainId}`;
+  static getQueueServiceKey(): string {
+    return CircuitBreakerKeys.SERVICE_PREFIX.QUEUE_SERVICE;
   }
 }

@@ -9,7 +9,7 @@ import type { FetchClient } from '@/datasources/network/network.module';
 import { FetchClientToken } from '@/datasources/network/network.module';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IQueue } from '@/modules/queue/queue.interface';
+import { IQueueService } from '@/modules/queue/queue.interface';
 import { QueueService } from '@/modules/queue/queue.service';
 
 /**
@@ -33,8 +33,8 @@ import { QueueService } from '@/modules/queue/queue.service';
     },
     CacheFirstDataSource,
     HttpErrorFactory,
-    { provide: IQueue, useClass: QueueService },
+    { provide: IQueueService, useClass: QueueService },
   ],
-  exports: [IQueue],
+  exports: [IQueueService],
 })
-export class QueueModule {}
+export class QueueServiceModule {}

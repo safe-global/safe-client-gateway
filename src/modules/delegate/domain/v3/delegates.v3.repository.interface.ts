@@ -6,7 +6,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
-import { QueueModule } from '@/modules/queue/queue.module';
+import { QueueServiceModule } from '@/modules/queue/queue.module';
 
 export const IDelegatesV3Repository = Symbol('IDelegatesV3Repository');
 
@@ -54,7 +54,7 @@ export interface IDelegatesV3Repository {
 }
 
 @Module({
-  imports: [TransactionApiManagerModule, QueueModule],
+  imports: [TransactionApiManagerModule, QueueServiceModule],
   providers: [
     {
       provide: IDelegatesV3Repository,

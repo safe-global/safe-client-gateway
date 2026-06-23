@@ -19,7 +19,7 @@ import {
   QueueMessageSchema,
 } from '@/modules/queue/entities/message.entity';
 import { mapQueueToMessage } from '@/modules/queue/mappers/message.mapper';
-import { IQueue } from '@/modules/queue/queue.interface';
+import { IQueueService } from '@/modules/queue/queue.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
@@ -31,8 +31,8 @@ export class MessagesRepository implements IMessagesRepository {
     private readonly transactionApiManager: ITransactionApiManager,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    @Inject(IQueue)
-    private readonly queueService: IQueue,
+    @Inject(IQueueService)
+    private readonly queueService: IQueueService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)

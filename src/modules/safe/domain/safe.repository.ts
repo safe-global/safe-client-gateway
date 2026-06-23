@@ -18,7 +18,7 @@ import {
 } from '@/modules/queue/entities/multisig-transaction.entity';
 import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
 import { mapQueueToMultisigTransaction } from '@/modules/queue/mappers/transaction.mapper';
-import { IQueue } from '@/modules/queue/queue.interface';
+import { IQueueService } from '@/modules/queue/queue.interface';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import {
   ModuleTransaction,
@@ -68,8 +68,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly transactionVerifier: TransactionVerifierHelper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IQueue)
-    private readonly queueService: IQueue,
+    @Inject(IQueueService)
+    private readonly queueService: IQueueService,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
