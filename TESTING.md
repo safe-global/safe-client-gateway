@@ -11,7 +11,6 @@ This document describes the testing strategy and organization for the Safe Clien
 ### Unit Tests (`.spec.ts`)
 
 - **Purpose**: Test individual components and business logic in isolation
-- **Count**: ~309 tests
 - **Characteristics**:
   - All external dependencies are mocked using `vi.fn()` or `MockedObject`
   - No real database, Redis, or external service connections
@@ -21,7 +20,6 @@ This document describes the testing strategy and organization for the Safe Clien
 ### Integration Tests (`.integration.spec.ts`)
 
 - **Purpose**: Test components with real infrastructure and cross-module interactions
-- **Count**: ~27 tests
 - **Characteristics**:
   - Use real database connections (Postgres + TypeORM)
   - Use real Redis/BullMQ queues
@@ -63,8 +61,8 @@ yarn test:watch
 
 Tests run in parallel on GitHub Actions:
 
-- **`unit-tests` job**: Runs ~309 unit tests without external services (~2 min)
-- **`integration-tests` job**: Runs ~27 integration tests with Postgres, Redis, and RabbitMQ services (~5-10 min)
+- **`unit-tests` job**: Runs the unit test suite without external services (~2 min)
+- **`integration-tests` job**: Runs the integration test suite with Postgres, Redis, and RabbitMQ services (~5-10 min)
 - **`tests` job**: Aggregates results from both test jobs for branch protection
 
 Both jobs run in parallel and report coverage to Coveralls.

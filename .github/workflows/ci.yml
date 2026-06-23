@@ -97,10 +97,11 @@ jobs:
       - run: yarn run format-check
       - run: yarn run lint-check
       # `nest build` (a full tsc compile) was dropped from the test jobs, which
-      # removed whole-program type-checking on PRs — ts-jest only type-checks
-      # files a test imports. Run an explicit no-emit type-check here so type
-      # errors fail the PR instead of only surfacing on the main-only Docker
-      # build. Needs the generated ABIs that the `@/abis` alias resolves to.
+      # removed whole-program type-checking on PRs — Vitest transpiles via SWC,
+      # which strips types without type-checking them at all. Run an explicit
+      # no-emit type-check here so type errors fail the PR instead of only
+      # surfacing on the main-only Docker build. Needs the generated ABIs that
+      # the `@/abis` alias resolves to.
       - run: yarn generate-abis
       - run: yarn tsc --noEmit -p tsconfig.build.json
 

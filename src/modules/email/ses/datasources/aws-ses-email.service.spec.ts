@@ -10,7 +10,7 @@ import {
   TransientEmailError,
 } from '@/modules/email/ses/domain/errors/email.errors';
 
-const mockSend = vi.fn();
+const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
 
 vi.mock('@aws-sdk/client-sesv2', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@aws-sdk/client-sesv2')>()),

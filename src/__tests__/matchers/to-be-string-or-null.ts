@@ -17,7 +17,7 @@ expect.extend({
 
 declare module 'vitest' {
   interface Assertion<T = any> {
-    anyStringOrNull(): T;
+    anyStringOrNull(): void;
   }
 
   interface AsymmetricMatchersContaining {

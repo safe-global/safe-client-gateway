@@ -36,10 +36,11 @@
       "skipFiles": ["<node_internals>/**"],
       "runtimeArgs": [
         "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/jest",
-        "--runInBand",
-        "--coverage",
-        "false"
+        "${workspaceRoot}/node_modules/.bin/vitest",
+        "run",
+        "--project",
+        "unit",
+        "--no-file-parallelism"
       ],
       "console": "integratedTerminal"
     },
@@ -50,10 +51,11 @@
       "skipFiles": ["<node_internals>/**"],
       "runtimeArgs": [
         "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/jest",
-        "--runInBand",
-        "--coverage",
-        "false",
+        "${workspaceRoot}/node_modules/.bin/vitest",
+        "run",
+        "--project",
+        "unit",
+        "--no-file-parallelism",
         "${relativeFile}"
       ],
       "console": "integratedTerminal"
@@ -65,10 +67,11 @@
       "skipFiles": ["<node_internals>/**"],
       "runtimeArgs": [
         "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/jest",
-        "--runInBand",
-        "--config=test/jest-e2e.json",
-        "false",
+        "${workspaceRoot}/node_modules/.bin/vitest",
+        "run",
+        "--project",
+        "e2e",
+        "--no-file-parallelism",
         "${relativeFile}"
       ],
       "console": "integratedTerminal"
