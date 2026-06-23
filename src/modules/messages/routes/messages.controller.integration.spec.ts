@@ -1246,9 +1246,9 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        vi
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
+        vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+          signer.address,
+        ]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -1812,9 +1812,9 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        vi
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
+        vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+          signer.address,
+        ]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { IQueue } from '@/modules/queue/queue.interface';
+
 import type { MockedObject } from 'vitest';
+import type { IQueue } from '@/modules/queue/queue.interface';
 
 export function createMockQueueService(): MockedObject<IQueue> {
   return {
