@@ -1049,7 +1049,7 @@ describe('Messages controller', () => {
             .with('signature', message.confirmations[0].signature)
             .build(),
         )
-        .expect(200)
+        .expect(202)
         .expect(({ body }) => {
           expect(body).toEqual(messageToJson(message));
         });
