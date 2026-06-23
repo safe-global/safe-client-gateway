@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { networkService } from '@/datasources/network/__tests__/test.network.module';
@@ -21,8 +22,8 @@ import { QueueService } from '@/modules/queue/queue.service';
   providers: [
     {
       provide: NetworkService,
-      useFactory: (): jest.MockedObjectDeep<INetworkService> => {
-        return jest.mocked(networkService);
+      useFactory: (): MockedObject<INetworkService> => {
+        return vi.mocked(networkService);
       },
     },
     CacheFirstDataSource,

@@ -1246,7 +1246,7 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        jest
+        vi
           .spyOn(blocklistService, 'getBlocklist')
           .mockReturnValue([signer.address]);
         networkService.get.mockImplementation(({ url }) => {
@@ -1812,7 +1812,7 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        jest
+        vi
           .spyOn(blocklistService, 'getBlocklist')
           .mockReturnValue([signer.address]);
         networkService.get.mockImplementation(({ url }) => {

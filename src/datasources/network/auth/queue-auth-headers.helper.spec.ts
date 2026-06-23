@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Mocked } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { getQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
 
 describe('getQueueAuthHeaders', () => {
-  let mockConfigService: jest.Mocked<IConfigurationService>;
+  let mockConfigService: Mocked<IConfigurationService>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockConfigService = {
-      getOrThrow: jest.fn(),
-      get: jest.fn(),
-    } as jest.Mocked<IConfigurationService>;
+      getOrThrow: vi.fn(),
+      get: vi.fn(),
+    } as Mocked<IConfigurationService>;
   });
 
   it('should return Authorization header when Queue auth is enabled', () => {

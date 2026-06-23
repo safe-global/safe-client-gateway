@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -16,35 +17,35 @@ import type { IQueue } from '@/modules/queue/queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
-  getApi: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApiManager>;
+  getApi: vi.fn(),
+} as MockedObject<ITransactionApiManager>;
 
 const mockTransactionApi = {
-  getDelegatesV2: jest.fn(),
-  postDelegateV2: jest.fn(),
-  updateDelegateV2: jest.fn(),
-  deleteDelegateV2: jest.fn(),
-  clearDelegates: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApi>;
+  getDelegatesV2: vi.fn(),
+  postDelegateV2: vi.fn(),
+  updateDelegateV2: vi.fn(),
+  deleteDelegateV2: vi.fn(),
+  clearDelegates: vi.fn(),
+} as MockedObject<ITransactionApi>;
 
 const mockQueueService = {
-  getDelegates: jest.fn(),
-  postDelegate: jest.fn(),
-  updateDelegate: jest.fn(),
-  deleteDelegate: jest.fn(),
-  clearDelegates: jest.fn(),
-} as jest.MockedObjectDeep<IQueue>;
+  getDelegates: vi.fn(),
+  postDelegate: vi.fn(),
+  updateDelegate: vi.fn(),
+  deleteDelegate: vi.fn(),
+  clearDelegates: vi.fn(),
+} as MockedObject<IQueue>;
 
 const mockConfigurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
-  error: jest.fn(),
-  warn: jest.fn(),
-  info: jest.fn(),
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  error: vi.fn(),
+  warn: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('DelegatesV3Repository', () => {
   let repository: DelegatesV3Repository;
@@ -67,7 +68,7 @@ describe('DelegatesV3Repository', () => {
   }
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
   });
 
