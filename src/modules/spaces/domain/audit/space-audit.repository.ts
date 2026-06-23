@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { SpaceAuditLog } from '@/modules/spaces/datasources/entities/space-audit-log.entity.db';
+import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import { SpaceAuditEventSchema } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import type {
   ISpaceAuditRepository,

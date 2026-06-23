@@ -4,7 +4,7 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import type { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import type { User } from '@/modules/users/domain/entities/user.entity';

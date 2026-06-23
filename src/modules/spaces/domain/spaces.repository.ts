@@ -16,7 +16,7 @@ import {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   SpaceAuditEventType,
   type SpaceUpdatedPayload,

@@ -1,0 +1,479 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConflictResponse,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import {
+  AcceptInviteDto,
+  AcceptInviteDtoSchema,
+} from '@/modules/spaces/routes/members/entities/accept-invite.dto.entity';
+import { Invitation } from '@/modules/spaces/routes/members/entities/invitation.entity';
+import {
+  InviteUsersDto,
+  InviteUsersDtoSchema,
+} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import {
+  MemberDto,
+  MembersDto,
+} from '@/modules/spaces/routes/members/entities/members.dto.entity';
+import {
+  UpdateMemberAliasDto,
+  UpdateMemberAliasDtoSchema,
+} from '@/modules/spaces/routes/members/entities/update-member-name.dto.entity';
+import {
+  UpdateRoleDto,
+  UpdateRoleDtoSchema,
+} from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
+import { MembersService } from '@/modules/spaces/routes/members/members.service';
+import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+
+@ApiTags('spaces')
+@Controller({ path: 'spaces', version: '1' })
+export class MembersController {
+  constructor(
+    @Inject(MembersService)
+    private readonly membersService: MembersService,
+  ) {}
+
+  @ApiOperation({
+    summary: 'Invite users to space',
+    description:
+      'Invites one or more users to join a space. Only space admins can send invitations.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to invite users to',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: InviteUsersDto,
+    description: 'List of wallet addresses to invite to the space',
+  })
+  @ApiOkResponse({
+    description: 'Users invited successfully',
+    type: Invitation,
+    isArray: true,
+  })
+  @ApiConflictResponse({
+    description: 'Too many invites or some users already invited',
+  })
+  @ApiForbiddenResponse({
+    description: 'User not authorized - must be a space admin to invite users',
+  })
+  @ApiUnauthorizedResponse({
+    description:
+      'Authentication required or user not admin or member not active',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Post('/:spaceId/members/invite')
+  @UseGuards(AuthGuard)
+  public async inviteUser(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Body(new ValidationPipe(InviteUsersDtoSchema))
+    inviteUsersDto: InviteUsersDto,
+  ): Promise<Array<Invitation>> {
+    return await this.membersService.inviteUser({
+      authPayload,
+      spaceId,
+      inviteUsersDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Accept space invitation',
+    description:
+      'Accepts an invitation to join a space. The user must have a pending invitation to the space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to accept invitation for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({
+    type: AcceptInviteDto,
+    description:
+      'Invitation acceptance data including any required confirmation',
+  })
+  @ApiOkResponse({
+    description:
+      'Invitation accepted successfully - user is now a member of the space',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to accept this invitation',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or membership invitation not found',
+  })
+  @ApiConflictResponse({
+    description: 'User invitation is not in pending state or already processed',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Post('/:spaceId/members/accept')
+  @UseGuards(AuthGuard)
+  public async acceptInvite(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Body(new ValidationPipe(AcceptInviteDtoSchema))
+    acceptInviteDto: AcceptInviteDto,
+  ): Promise<void> {
+    return await this.membersService.acceptInvite({
+      authPayload,
+      spaceId,
+      acceptInviteDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Decline space invitation',
+    description:
+      'Declines an invitation to join a space. The user must have a pending invitation to the space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to decline invitation for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiOkResponse({
+    description: 'Invitation declined successfully',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to decline this invitation',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or membership invitation not found',
+  })
+  @ApiConflictResponse({
+    description: 'User invitation is not in pending state or already processed',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Post('/:spaceId/members/decline')
+  @UseGuards(AuthGuard)
+  public async declineInvite(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+  ): Promise<void> {
+    return await this.membersService.declineInvite({
+      authPayload,
+      spaceId,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Renew space invitation',
+    description:
+      'Renews a pending invitation to a space, refreshing its expiry. ' +
+      'Only space admins can renew, and only pending invitations can be renewed.' +
+      'Note: renewal for email invites also resends the invitation email.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID containing the invitation',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the invited member',
+    example: 123,
+  })
+  @ApiOkResponse({
+    description: 'Invitation renewed successfully',
+    type: Invitation,
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not an active admin of this space',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or member not found',
+  })
+  @ApiConflictResponse({
+    description: 'Invitation is not in a pending state',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Post('/:spaceId/members/:userId/invite/renew')
+  @UseGuards(AuthGuard)
+  public async renewInvite(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: number,
+  ): Promise<Invitation> {
+    return await this.membersService.renewInvite({
+      authPayload,
+      spaceId,
+      userId,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Get space members',
+    description:
+      'Retrieves all members of a space including their roles, status, and membership information. ' +
+      'A pending (INVITED) member only sees their own membership state, not the other members.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to get members for',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiOkResponse({
+    description: 'Space members retrieved successfully',
+    type: MembersDto,
+  })
+  @ApiForbiddenResponse({
+    description:
+      "Access forbidden - user is not authorized to view this space's members",
+  })
+  @ApiNotFoundResponse({
+    description: 'User or space not found',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Get('/:spaceId/members')
+  @UseGuards(AuthGuard)
+  public async getUsers(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+  ): Promise<MembersDto> {
+    return await this.membersService.get({
+      authPayload,
+      spaceId,
+    });
+  }
+
+  @ApiOperation({
+    summary: "Get the authenticated user's membership in a space",
+    description:
+      'Returns the membership record of the authenticated user for the given space. ' +
+      'Returns 403 if the caller has no ACTIVE or INVITED membership in the space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: "Space UUID to fetch the caller's membership for",
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiOkResponse({
+    description: 'Membership retrieved successfully',
+    type: MemberDto,
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user not authenticated, or has no ACTIVE/INVITED membership in this space',
+  })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Get('/:spaceId/membership')
+  @UseGuards(AuthGuard)
+  public async getMembership(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+  ): Promise<MemberDto> {
+    return await this.membersService.getSelfMembership({
+      authPayload,
+      spaceId,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Update member role',
+    description:
+      'Updates the role of a space member. Only space admins can change member roles. Cannot remove the last admin from a space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID containing the member',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the member to update',
+    example: 123,
+  })
+  @ApiBody({
+    type: UpdateRoleDto,
+    description: 'New role information for the member',
+  })
+  @ApiOkResponse({
+    description: 'Member role updated successfully',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not authorized to update member roles',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or member not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User is not active or not an admin of this space',
+  })
+  @ApiConflictResponse({
+    description: 'Cannot remove the last admin from the space',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Patch('/:spaceId/members/:userId/role')
+  @UseGuards(AuthGuard)
+  public async updateRole(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: number,
+    @Body(new ValidationPipe(UpdateRoleDtoSchema))
+    updateRoleDto: UpdateRoleDto,
+  ): Promise<void> {
+    return await this.membersService.updateRole({
+      authPayload,
+      spaceId,
+      userId,
+      updateRoleDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Update member alias',
+    description:
+      'Update the alias of the authenticated member in a space. Users can only update their own alias.',
+  })
+  @ApiOkResponse({ description: 'Alias updated' })
+  @ApiForbiddenResponse({ description: 'User not authorized' })
+  @ApiNotFoundResponse({
+    description: 'Space or member not found',
+  })
+  @ApiBody({ type: UpdateMemberAliasDto })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to update own member alias in',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Patch('/:spaceId/members/alias')
+  @UseGuards(AuthGuard)
+  public async updateAlias(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Body(new ValidationPipe(UpdateMemberAliasDtoSchema))
+    updateMemberAliasDto: UpdateMemberAliasDto,
+  ): Promise<void> {
+    await this.membersService.updateAlias({
+      authPayload,
+      spaceId,
+      updateMemberAliasDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Remove member from space',
+    description:
+      'Removes a member from a space. Only space admins can remove other members. Cannot remove the last admin from a space.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to remove member from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: 'number',
+    description: 'User ID of the member to remove',
+    example: 123,
+  })
+  @ApiOkResponse({
+    description: 'Member removed from space successfully',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - user is not authorized to remove members',
+  })
+  @ApiNotFoundResponse({
+    description: 'User, space, or member not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'User is not active or not an admin of this space',
+  })
+  @ApiConflictResponse({
+    description: 'Cannot remove the last admin from the space',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Delete('/:spaceId/members/:userId')
+  @UseGuards(AuthGuard)
+  public async removeUser(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('userId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    userId: number,
+  ): Promise<void> {
+    return await this.membersService.removeUser({
+      authPayload,
+      spaceId,
+      userId,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Leave a space',
+    description: 'Remove own membership from a space.',
+  })
+  @ApiOkResponse({ description: 'Membership deleted' })
+  @ApiForbiddenResponse({ description: 'User not authorized' })
+  @ApiNotFoundResponse({
+    description: 'Space not found',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Not authenticated',
+  })
+  @ApiConflictResponse({ description: 'Cannot remove last admin' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID to remove own membership from',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @Delete('/:spaceId/members')
+  @UseGuards(AuthGuard)
+  public async selfRemove(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+  ): Promise<void> {
+    return await this.membersService.selfRemove({
+      authPayload,
+      spaceId,
+    });
+  }
+}

@@ -4,7 +4,7 @@ import type { EntityManager } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
+import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 
 export const IAddressBookItemsRepository = Symbol(
   'IAddressBookItemsRepository',

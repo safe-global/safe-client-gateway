@@ -6,7 +6,7 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
+import type { AddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 
 export function addressBookItemBuilder(): IBuilder<AddressBookItem> {

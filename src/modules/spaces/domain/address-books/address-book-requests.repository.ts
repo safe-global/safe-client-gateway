@@ -5,7 +5,7 @@ import type { EntityManager, FindOptionsWhere, InsertResult } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/entities/address-book-request.entity.db';
+import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type {
