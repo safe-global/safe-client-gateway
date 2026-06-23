@@ -2,6 +2,7 @@
 
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -40,8 +41,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Hook Events for Notifications', () => {
   let app: INestApplication<Server>;
   let hooksRepository: IHooksRepositoryType;
-  let pushNotificationService: jest.MockedObjectDeep<IPushNotificationService>;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let pushNotificationService: MockedObject<IPushNotificationService>;
+  let networkService: MockedObject<INetworkService>;
   let configurationService: IConfigurationService;
   let safeConfigUrl: string;
 
@@ -68,7 +69,7 @@ describe('Hook Events for Notifications', () => {
   }
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     await initApp();
   });
 

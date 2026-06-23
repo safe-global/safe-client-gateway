@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -30,7 +31,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Preview transaction - CoW Swap - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let dataDecoderUrl: string;
   let swapsChainId: string;
   let swapsApiUrl: string;
@@ -38,7 +39,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
   const swapsVerifiedApp = faker.company.buzzNoun();
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const baseConfig = configuration();
     const testConfiguration: typeof configuration = () => ({
@@ -667,9 +668,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       .build();
 
     it('should preview a transaction', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const dataDecoded = dataDecodedBuilder().build();
@@ -790,13 +791,13 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             tokenInfoIndex: null,
           },
         });
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should preview a batched transaction', async () => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
       const now = new Date();
-      jest.setSystemTime(now);
+      vi.setSystemTime(now);
 
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const twapTransaction = {
@@ -935,7 +936,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             tokenInfoIndex: null,
           },
         });
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('should return a "standard" transaction preview if buy token is not available', async () => {

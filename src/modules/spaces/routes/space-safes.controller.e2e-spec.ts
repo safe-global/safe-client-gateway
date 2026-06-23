@@ -24,7 +24,7 @@ describe('SpaceSafesController', () => {
   let jwtService: IJwtService;
 
   beforeAll(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({

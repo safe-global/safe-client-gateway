@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -125,15 +126,15 @@ const getScaledBalance = (tokens: bigint | number, decimals = 18): bigint =>
 
 describe('Relay controller', () => {
   let app: INestApplication<Server>;
-  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let balancesService: jest.MockedObjectDeep<BalancesService>;
+  let configurationService: MockedObject<IConfigurationService>;
+  let networkService: MockedObject<INetworkService>;
+  let balancesService: MockedObject<BalancesService>;
   let safeConfigUrl: string;
   let relayUrl: string;
   let relayLimit: number;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -183,7 +184,7 @@ describe('Relay controller', () => {
             name: 'Safe Token',
           },
         };
-        balancesService.getTokenBalance = jest
+        balancesService.getTokenBalance = vi
           .fn()
           .mockResolvedValue(tokenBalance);
       }
@@ -3084,7 +3085,7 @@ describe('Relay controller', () => {
           noFeeConfig[Number.parseInt(chainId, 10)]?.startsAtTimeStamp;
 
         const beforeStartTime = startsAtTimeStamp - 100_000;
-        jest.spyOn(Date, 'now').mockReturnValue(beforeStartTime);
+        vi.spyOn(Date, 'now').mockReturnValue(beforeStartTime);
 
         // Mock BalancesService to return sufficient token balance
         const tokenBalance = {
@@ -3094,7 +3095,7 @@ describe('Relay controller', () => {
           fiatBalance: '100',
           fiatConversion: '1',
         };
-        balancesService.getTokenBalance = jest
+        balancesService.getTokenBalance = vi
           .fn()
           .mockResolvedValue(tokenBalance);
 
@@ -3126,7 +3127,7 @@ describe('Relay controller', () => {
         expect(balancesService.getTokenBalance).toHaveBeenCalledTimes(0);
 
         // Restore Date.now mock
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
 
       it('should not relay when current time is greater than no-fee campaign end', async () => {
@@ -3147,7 +3148,7 @@ describe('Relay controller', () => {
           noFeeConfig[Number.parseInt(chainId, 10)]?.endsAtTimeStamp;
 
         const afterEndTime = endsAtTimeStamp + 100_000;
-        jest.spyOn(Date, 'now').mockReturnValue(afterEndTime);
+        vi.spyOn(Date, 'now').mockReturnValue(afterEndTime);
 
         // Mock BalancesService to return sufficient token balance
         const tokenBalance = {
@@ -3157,7 +3158,7 @@ describe('Relay controller', () => {
           fiatBalance: '100',
           fiatConversion: '1',
         };
-        balancesService.getTokenBalance = jest
+        balancesService.getTokenBalance = vi
           .fn()
           .mockResolvedValue(tokenBalance);
 
@@ -3194,7 +3195,7 @@ describe('Relay controller', () => {
           .expect({ remaining: 0, limit: 0 });
 
         // Restore Date.now mock
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
 
       it('should not relay transaction when token balance is zero', async () => {
@@ -3209,7 +3210,7 @@ describe('Relay controller', () => {
           .encode();
 
         // Mock BalancesService to return null balance (zero)
-        balancesService.getTokenBalance = jest.fn().mockResolvedValue(null);
+        balancesService.getTokenBalance = vi.fn().mockResolvedValue(null);
 
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -3363,7 +3364,7 @@ describe('Relay controller', () => {
                   }
                 : null;
 
-            balancesService.getTokenBalance = jest
+            balancesService.getTokenBalance = vi
               .fn()
               .mockResolvedValue(tokenBalance);
 
@@ -3465,7 +3466,7 @@ describe('Relay controller', () => {
               },
             };
 
-            balancesService.getTokenBalance = jest
+            balancesService.getTokenBalance = vi
               .fn()
               .mockResolvedValue(tokenBalance);
 
@@ -3531,7 +3532,7 @@ describe('Relay controller', () => {
               });
 
             // Restore mocks
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
           });
         });
       });
@@ -3585,7 +3586,7 @@ describe('Relay controller', () => {
               },
             };
 
-            balancesService.getTokenBalance = jest
+            balancesService.getTokenBalance = vi
               .fn()
               .mockResolvedValue(tokenBalance);
 
@@ -3681,7 +3682,7 @@ describe('Relay controller', () => {
             },
           };
 
-          balancesService.getTokenBalance = jest
+          balancesService.getTokenBalance = vi
             .fn()
             .mockResolvedValue(tokenBalance);
 

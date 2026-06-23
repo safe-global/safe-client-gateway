@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -9,8 +10,8 @@ import { Auth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.servic
 import { rawify } from '@/validation/entities/raw.entity';
 
 const networkService = {
-  postForm: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
+  postForm: vi.fn(),
+} as MockedObject<INetworkService>;
 
 describe('Auth0Api', () => {
   let target: Auth0Api;
@@ -22,7 +23,7 @@ describe('Auth0Api', () => {
   let scope: string;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const domain = faker.internet.domainName();
     baseUri = `https://${domain}`;

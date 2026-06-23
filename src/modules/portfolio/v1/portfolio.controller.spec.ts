@@ -1,21 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
 import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
 import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 
 const service = {
-  getPortfolio: jest.fn(),
-  clearPortfolio: jest.fn(),
-} as jest.MockedObjectDeep<PortfolioApiService>;
+  getPortfolio: vi.fn(),
+  clearPortfolio: vi.fn(),
+} as MockedObject<PortfolioApiService>;
 
 describe('PortfolioController', () => {
   let controller: PortfolioController;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     controller = new PortfolioController(service);
   });
 

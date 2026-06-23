@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { Global, Module } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import {
   type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 
 export const networkService: INetworkService = {
-  get: jest.fn(),
-  post: jest.fn(),
-  postForm: jest.fn(),
-  delete: jest.fn(),
+  get: vi.fn(),
+  post: vi.fn(),
+  postForm: vi.fn(),
+  delete: vi.fn(),
 };
 
 /**
@@ -27,8 +29,8 @@ export const networkService: INetworkService = {
   providers: [
     {
       provide: NetworkService,
-      useFactory: (): jest.MockedObjectDeep<INetworkService> => {
-        return jest.mocked(networkService);
+      useFactory: (): MockedObject<INetworkService> => {
+        return vi.mocked(networkService);
       },
     },
   ],

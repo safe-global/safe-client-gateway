@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
 import { OidcAuthRateLimitGuard } from './oidc-auth-rate-limit.guard';
 
-const mockCacheService = jest.mocked({
-  increment: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>);
+const mockCacheService = vi.mocked({
+  increment: vi.fn(),
+} as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('OidcAuthRateLimitGuard', () => {
   it('should extend RateLimitGuard with auth rate limit config', () => {
@@ -21,8 +22,8 @@ describe('OidcAuthRateLimitGuard', () => {
     const windowSeconds = faker.number.int({ min: 10, max: 120 });
 
     const mockConfigurationService = {
-      get: jest.fn(),
-      getOrThrow: jest.fn((key: string) => {
+      get: vi.fn(),
+      getOrThrow: vi.fn((key: string) => {
         switch (key) {
           case 'auth.rateLimit.max':
             return max;
@@ -32,7 +33,7 @@ describe('OidcAuthRateLimitGuard', () => {
             throw new Error(`Unexpected key: ${key}`);
         }
       }),
-    } as unknown as jest.MockedObjectDeep<IConfigurationService>;
+    } as unknown as MockedObject<IConfigurationService>;
 
     const guard = new OidcAuthRateLimitGuard(
       mockConfigurationService,

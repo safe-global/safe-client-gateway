@@ -4,27 +4,28 @@ import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { BlocklistGuard } from './blocklist.guard';
 
 const mockLoggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const mockConfigurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 const mockBlocklistService = {
-  getBlocklist: jest.fn(),
-  clearCache: jest.fn(),
-} as jest.MockedObjectDeep<IBlocklistService>;
+  getBlocklist: vi.fn(),
+  clearCache: vi.fn(),
+} as MockedObject<IBlocklistService>;
 
 describe('BlocklistGuard', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockConfigurationService.getOrThrow.mockReturnValue(true);
   });
 
@@ -35,15 +36,15 @@ describe('BlocklistGuard', () => {
       mockBlocklistService.getBlocklist.mockReturnValue([blockedAddress]);
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { safeAddress },
             route: { path: '/chains/1/safes/:safeAddress' },
             method: 'GET',
             ip: faker.internet.ipv4(),
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,
@@ -64,15 +65,15 @@ describe('BlocklistGuard', () => {
       const route = '/chains/1/safes/:safeAddress';
       const ip = faker.internet.ipv4();
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { safeAddress: blockedAddress },
             route: { path: route },
             method: 'GET',
             ip,
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,
@@ -102,15 +103,15 @@ describe('BlocklistGuard', () => {
 
       // Test with lowercase version
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { safeAddress: address.toLowerCase() },
             route: { path: '/chains/1/safes/:safeAddress' },
             method: 'GET',
             ip: faker.internet.ipv4(),
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,
@@ -129,14 +130,14 @@ describe('BlocklistGuard', () => {
       ]);
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { chainId: '1' },
             route: { path: '/chains/:chainId' },
             method: 'GET',
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,
@@ -156,14 +157,14 @@ describe('BlocklistGuard', () => {
       ]);
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { safeAddress: 'invalid-address' },
             route: { path: '/chains/1/safes/:safeAddress' },
             method: 'GET',
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,
@@ -190,14 +191,14 @@ describe('BlocklistGuard', () => {
       ]);
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { safeAddress: allowedAddress },
             route: { path: '/chains/1/safes/:safeAddress' },
             method: 'GET',
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,
@@ -222,15 +223,15 @@ describe('BlocklistGuard', () => {
       }
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: { accountAddress: blockedAddress },
             route: { path: '/accounts/:accountAddress' },
             method: 'GET',
             ip: faker.internet.ipv4(),
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new CustomBlocklistGuard(
         mockLoggingService,
@@ -254,8 +255,8 @@ describe('BlocklistGuard', () => {
       }
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: {
               safeAddress: blockedAddress, // This should be ignored
               accountAddress: allowedAddress, // This should be checked
@@ -264,7 +265,7 @@ describe('BlocklistGuard', () => {
             method: 'GET',
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new CustomBlocklistGuard(
         mockLoggingService,
@@ -285,8 +286,8 @@ describe('BlocklistGuard', () => {
       });
 
       const mockExecutionContext = {
-        switchToHttp: jest.fn().mockReturnValue({
-          getRequest: jest.fn().mockReturnValue({
+        switchToHttp: vi.fn().mockReturnValue({
+          getRequest: vi.fn().mockReturnValue({
             params: {
               safeAddress: getAddress(faker.finance.ethereumAddress()),
             },
@@ -294,7 +295,7 @@ describe('BlocklistGuard', () => {
             method: 'GET',
           }),
         }),
-      } as jest.MockedObjectDeep<ExecutionContext>;
+      } as MockedObject<ExecutionContext>;
 
       const guard = new BlocklistGuard(
         mockLoggingService,

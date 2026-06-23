@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -26,34 +27,34 @@ import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.reposi
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
-  create: jest.fn(),
-  find: jest.fn(),
-  findOne: jest.fn(),
-  findOneOrFail: jest.fn(),
-  update: jest.fn(),
-  delete: jest.fn(),
-} as jest.MockedObjectDeep<ISpacesRepository>;
+  create: vi.fn(),
+  find: vi.fn(),
+  findOne: vi.fn(),
+  findOneOrFail: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+} as MockedObject<ISpacesRepository>;
 
 const membersRepositoryMock = {
-  find: jest.fn(),
-  findOne: jest.fn(),
-} as jest.MockedObjectDeep<IMembersRepository>;
+  find: vi.fn(),
+  findOne: vi.fn(),
+} as MockedObject<IMembersRepository>;
 
 const usersRepositoryMock = {
-  findOneOrFail: jest.fn(),
-  activateIfPending: jest.fn(),
-  findEmailsByIds: jest.fn(),
-} as jest.MockedObjectDeep<IUsersRepository>;
+  findOneOrFail: vi.fn(),
+  activateIfPending: vi.fn(),
+  findEmailsByIds: vi.fn(),
+} as MockedObject<IUsersRepository>;
 
 const walletsRepositoryMock = {
-  find: jest.fn(),
-} as jest.MockedObjectDeep<IWalletsRepository>;
+  find: vi.fn(),
+} as MockedObject<IWalletsRepository>;
 
 describe('SpacesService', () => {
   let service: SpacesService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new SpacesService(
       usersRepositoryMock,
       spacesRepositoryMock,

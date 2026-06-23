@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type Blockaid from '@blockaid/client';
 // import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
@@ -14,11 +16,11 @@ const createMockWithResponse = (
   requestId: string | null,
 ): ReturnType<typeof mockBlockaidClient.evm.jsonRpc.scan> =>
   ({
-    withResponse: jest.fn().mockResolvedValue({
+    withResponse: vi.fn().mockResolvedValue({
       data,
       response: {
         headers: {
-          get: jest.fn().mockImplementation((header: string) => {
+          get: vi.fn().mockImplementation((header: string) => {
             if (header.toLowerCase() === 'x-request-id') {
               return requestId;
             }
@@ -32,23 +34,23 @@ const createMockWithResponse = (
 const mockBlockaidClient = {
   evm: {
     jsonRpc: {
-      scan: jest.fn(),
+      scan: vi.fn(),
     },
     transaction: {
-      report: jest.fn(),
+      report: vi.fn(),
     },
   },
-} as jest.MockedObjectDeep<Blockaid>;
+} as MockedObject<Blockaid>;
 
 const mockLoggingService = {
-  info: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  info: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('BlockaidApi', () => {
   let service: BlockaidApi;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     service = new BlockaidApi(mockLoggingService);
     (service as any).blockaidClient = mockBlockaidClient;
@@ -237,7 +239,7 @@ describe('BlockaidApi', () => {
     it('should forward errors from blockaid client', async () => {
       const error = new Error('Blockaid API error');
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue({
-        withResponse: jest.fn().mockRejectedValue(error),
+        withResponse: vi.fn().mockRejectedValue(error),
       } as unknown as ReturnType<typeof mockBlockaidClient.evm.jsonRpc.scan>);
 
       await expect(

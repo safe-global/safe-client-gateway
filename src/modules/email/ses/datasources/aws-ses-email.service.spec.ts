@@ -10,18 +10,20 @@ import {
   TransientEmailError,
 } from '@/modules/email/ses/domain/errors/email.errors';
 
-const mockSend = jest.fn();
+const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
 
-jest.mock('@aws-sdk/client-sesv2', () => ({
-  ...jest.requireActual('@aws-sdk/client-sesv2'),
-  SESv2Client: jest.fn().mockImplementation(() => ({
-    send: mockSend,
-  })),
-  SendEmailCommand: jest.fn().mockImplementation((input) => input),
+vi.mock('@aws-sdk/client-sesv2', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@aws-sdk/client-sesv2')>()),
+  SESv2Client: vi.fn().mockImplementation(function () {
+    return { send: mockSend };
+  }),
+  SendEmailCommand: vi.fn().mockImplementation(function (input) {
+    return input;
+  }),
 }));
 
-jest.mock('@aws-sdk/credential-provider-web-identity', () => ({
-  fromTokenFile: jest.fn().mockReturnValue('mockCredentials'),
+vi.mock('@aws-sdk/credential-provider-web-identity', () => ({
+  fromTokenFile: vi.fn().mockReturnValue('mockCredentials'),
 }));
 
 describe('SesEmailService', () => {
@@ -41,7 +43,7 @@ describe('SesEmailService', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('email.ses.fromEmail', sesFromEmail);
@@ -72,7 +74,7 @@ describe('SesEmailService', () => {
     });
 
     it('should use web identity credentials when web identity token file is set', () => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       fakeConfigurationService.set(
         'email.ses.aws.webIdentityTokenFile',
         '/var/run/secrets/eks.amazonaws.com/serviceaccount/token',

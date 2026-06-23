@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { MockedObject } from 'vitest';
 import type { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 
-export function createMockSpaceAuditRepository(): jest.MockedObjectDeep<ISpaceAuditRepository> {
+export function createMockSpaceAuditRepository(): MockedObject<ISpaceAuditRepository> {
   return {
-    record: jest.fn(),
-    findBySpaceId: jest.fn(),
-    findDistinctActorIds: jest.fn(),
-  } as jest.MockedObjectDeep<ISpaceAuditRepository>;
+    record: vi.fn(),
+    findBySpaceId: vi.fn(),
+    findDistinctActorIds: vi.fn(),
+  } as MockedObject<ISpaceAuditRepository>;
 }

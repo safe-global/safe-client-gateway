@@ -38,7 +38,7 @@ describe('AuthGuard', () => {
   let jwtService: IJwtService;
 
   beforeEach(async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -70,7 +70,7 @@ describe('AuthGuard', () => {
   });
 
   afterEach(async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     await app.close();
   });
 
@@ -124,7 +124,7 @@ describe('AuthGuard', () => {
       ...authPayloadDto,
       exp: new Date(), // Now
     });
-    jest.advanceTimersByTime(1_000);
+    vi.advanceTimersByTime(1_000);
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
 

@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceAuditLogBuilder } from '@/modules/spaces/datasources/entities/__tests__/space-audit-log.entity.db.builder';
@@ -19,13 +20,13 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
 const spaceAuditRepository = createMockSpaceAuditRepository();
 
 const membersRepository = {
-  findOne: jest.fn(),
-  find: jest.fn(),
-} as jest.MockedObjectDeep<IMembersRepository>;
+  findOne: vi.fn(),
+  find: vi.fn(),
+} as MockedObject<IMembersRepository>;
 
 const identityResolver = {
-  resolveMany: jest.fn(),
-} as jest.MockedObjectDeep<UserIdentityResolverService>;
+  resolveMany: vi.fn(),
+} as MockedObject<UserIdentityResolverService>;
 
 describe('SpaceAuditService', () => {
   let service: SpaceAuditService;
@@ -59,7 +60,7 @@ describe('SpaceAuditService', () => {
   }
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new SpaceAuditService(
       spaceAuditRepository,
       membersRepository,

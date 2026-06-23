@@ -7,7 +7,19 @@
     "defaultBranch": "main"
   },
   "javascript": {
-    "globals": ["jest"],
+    "globals": [
+      "vi",
+      "vitest",
+      "describe",
+      "it",
+      "test",
+      "expect",
+      "suite",
+      "beforeAll",
+      "afterAll",
+      "beforeEach",
+      "afterEach"
+    ],
     "parser": {
       "unsafeParameterDecoratorsEnabled": true
     },
@@ -163,7 +175,8 @@
             "noNonNullAssertion": "off"
           },
           "complexity": {
-            "noExcessiveCognitiveComplexity": "off"
+            "noExcessiveCognitiveComplexity": "off",
+            "useArrowFunction": "off"
           },
           "performance": {
             "noBarrelFile": "off"

@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -30,27 +31,27 @@ const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const membersRepositoryMock = {
-  findActiveAdmin: jest.fn(),
-  findAuthorizedMembersOrFail: jest.fn(),
-  findOneOrFail: jest.fn(),
-  inviteUsers: jest.fn(),
-  renewInvite: jest.fn(),
-} as jest.MockedObjectDeep<IMembersRepository>;
+  findActiveAdmin: vi.fn(),
+  findAuthorizedMembersOrFail: vi.fn(),
+  findOneOrFail: vi.fn(),
+  inviteUsers: vi.fn(),
+  renewInvite: vi.fn(),
+} as MockedObject<IMembersRepository>;
 
 const configurationServiceMock = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 const spaceInviteEmailServiceMock = {
-  enqueueInviteEmails: jest.fn(),
-  enqueueRenewalEmail: jest.fn(),
-} as jest.MockedObjectDeep<SpaceInviteEmailService>;
+  enqueueInviteEmails: vi.fn(),
+  enqueueRenewalEmail: vi.fn(),
+} as MockedObject<SpaceInviteEmailService>;
 
 describe('MembersService', () => {
   let service: MembersService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
       switch (key) {
         case 'spaces.maxInvites':
@@ -218,7 +219,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
       const now = new Date('2026-01-15T00:00:00Z');
-      jest.useFakeTimers().setSystemTime(now);
+      vi.useFakeTimers().setSystemTime(now);
 
       membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
       membersRepositoryMock.inviteUsers.mockResolvedValue([]);
@@ -238,7 +239,7 @@ describe('MembersService', () => {
           spaceInviteEmailServiceMock.enqueueInviteEmails,
         ).toHaveBeenCalledWith({ users: [], spaceId });
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
 
@@ -364,7 +365,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
       const now = new Date('2026-01-15T00:00:00Z');
-      jest.useFakeTimers().setSystemTime(now);
+      vi.useFakeTimers().setSystemTime(now);
 
       membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
@@ -389,7 +390,7 @@ describe('MembersService', () => {
           actorUserId: Number(authPayload.sub),
         });
       } finally {
-        jest.useRealTimers();
+        vi.useRealTimers();
       }
     });
 

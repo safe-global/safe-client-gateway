@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 import { encodeFunctionData, getAddress, type Hash, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import { createTestModule } from '@/__tests__/testing-module';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -32,7 +34,7 @@ import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-de
 import { rawify } from '@/validation/entities/raw.entity';
 
 function getSubscriptionCallback(
-  queuesApiService: jest.MockedObjectDeep<IQueuesApiService>,
+  queuesApiService: MockedObject<IQueuesApiService>,
 ): (msg: ConsumeMessage) => Promise<void> {
   // First call, second argument
   return queuesApiService.subscribe.mock.calls[0][1];
@@ -43,13 +45,13 @@ describe('Hook Events for Cache', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let fakeCacheService: FakeCacheService;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let configurationService: IConfigurationService;
   let stakingApiManager: IStakingApiManager;
   let blockchainApiManager: IBlockchainApiManager;
   let transactionApiManager: ITransactionApiManager;
   let balancesApiManager: IBalancesApiManager;
-  let queuesApiService: jest.MockedObjectDeep<IQueuesApiService>;
+  let queuesApiService: MockedObject<IQueuesApiService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -75,7 +77,7 @@ describe('Hook Events for Cache', () => {
   }
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     await initApp(configuration);
   });
 

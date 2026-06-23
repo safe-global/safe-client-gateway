@@ -49,7 +49,7 @@ describe('Auth decorator', () => {
   }
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({

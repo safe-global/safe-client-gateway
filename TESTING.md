@@ -11,9 +11,8 @@ This document describes the testing strategy and organization for the Safe Clien
 ### Unit Tests (`.spec.ts`)
 
 - **Purpose**: Test individual components and business logic in isolation
-- **Count**: ~309 tests
 - **Characteristics**:
-  - All external dependencies are mocked using `jest.fn()` or `MockedObjectDeep`
+  - All external dependencies are mocked using `vi.fn()` or `MockedObject`
   - No real database, Redis, or external service connections
   - Fast execution (< 2 minutes)
   - Tests services, controllers, schemas, entities, validators with mocked dependencies
@@ -21,7 +20,6 @@ This document describes the testing strategy and organization for the Safe Clien
 ### Integration Tests (`.integration.spec.ts`)
 
 - **Purpose**: Test components with real infrastructure and cross-module interactions
-- **Count**: ~27 tests
 - **Characteristics**:
   - Use real database connections (Postgres + TypeORM)
   - Use real Redis/BullMQ queues
@@ -38,13 +36,13 @@ This document describes the testing strategy and organization for the Safe Clien
 # Run all unit tests (default config from package.json)
 yarn test
 
-# Run unit tests explicitly (uses test/jest-unit.json config)
+# Run unit tests explicitly (the `unit` project in vitest.config.ts)
 yarn test:unit
 
 # Run unit tests with coverage
 yarn test:unit:cov
 
-# Run integration tests (uses test/jest-integration.json config)
+# Run integration tests (the `integration` project in vitest.config.ts)
 yarn test:integration
 
 # Run integration tests with coverage
@@ -57,14 +55,14 @@ yarn test:all
 yarn test:watch
 ```
 
-**Note**: Both `yarn test` and `yarn test:unit` run the same unit tests, but `yarn test` uses the default Jest configuration from `package.json` while `yarn test:unit` explicitly uses `test/jest-unit.json`.
+**Note**: `yarn test` and `yarn test:unit` are equivalent — both run the `unit` project defined in `vitest.config.ts`.
 
 ### CI/CD
 
 Tests run in parallel on GitHub Actions:
 
-- **`unit-tests` job**: Runs ~309 unit tests without external services (~2 min)
-- **`integration-tests` job**: Runs ~27 integration tests with Postgres, Redis, and RabbitMQ services (~5-10 min)
+- **`unit-tests` job**: Runs the unit test suite without external services (~2 min)
+- **`integration-tests` job**: Runs the integration test suite with Postgres, Redis, and RabbitMQ services (~5-10 min)
 - **`tests` job**: Aggregates results from both test jobs for branch protection
 
 Both jobs run in parallel and report coverage to Coveralls.
@@ -75,9 +73,11 @@ Both jobs run in parallel and report coverage to Coveralls.
 
 ```typescript
 // file.service.spec.ts
+import type { MockedObject } from 'vitest';
+
 const mockRepository = {
-  findOne: jest.fn(),
-} as jest.MockedObjectDeep<Repository>;
+  findOne: vi.fn(),
+} as MockedObject<Repository>;
 
 it('should return data', async () => {
   mockRepository.findOne.mockResolvedValue(data);
@@ -166,13 +166,21 @@ Keep integration tests co-located with the code they test to maintain feature or
 
 ## Test Configuration
 
-### Jest Configurations
+### Vitest Configuration
 
-- **`package.json`** (default): Runs unit tests only
-- **`test/jest-unit.json`**: Explicitly runs unit tests, excludes `.integration.spec.ts` and `.e2e-spec.ts`
-- **`test/jest-integration.json`**: Runs only `.integration.spec.ts` files
-- **`test/jest-e2e.json`**: Legacy config for e2e tests only
-- **`test/jest-all.json`**: Runs all tests
+All test configuration lives in a single `vitest.config.ts` at the repo root, which
+defines three [projects](https://vitest.dev/guide/projects):
+
+- **`unit`** (default): runs `src/**/*.spec.ts` and `scripts/**/*.spec.ts`, excluding
+  `.integration.spec.ts` and `.e2e-spec.ts`. Selected via `--project unit`.
+- **`integration`**: runs `src/**/*.integration.spec.ts` (60s timeout, `test/e2e-setup.ts`).
+- **`e2e`**: runs `src/**/*.e2e-spec.ts` (40s timeout, `test/e2e-setup.ts`).
+
+NestJS dependency injection relies on `emitDecoratorMetadata`, so all projects are
+transformed with SWC via `unplugin-swc`. Coverage uses `@vitest/coverage-v8` and is
+written to `./coverage` (lcov + text). Globals (`describe`/`it`/`expect`/`vi`) are
+enabled, so they don't need importing; the `vitest` type helpers (e.g. `MockedObject`,
+`MockInstance`) are imported from `vitest`.
 
 ## Debugging Tests
 
@@ -184,7 +192,7 @@ yarn test:debug
 yarn test:debug path/to/file.spec.ts
 
 # Run tests with verbose output
-yarn test --verbose
+yarn test --reporter=verbose
 ```
 
 ## Coverage
@@ -197,7 +205,7 @@ yarn test:unit:cov
 yarn test:integration:cov
 
 # View coverage report
-open coverage/lcov-report/index.html
+open coverage/index.html
 ```
 
 ## Best Practices

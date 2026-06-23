@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Mocked } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { getTxAuthHeaders } from '@/datasources/network/auth/tx-auth-headers.helper';
 
 describe('getTxAuthHeaders', () => {
-  let mockConfigService: jest.Mocked<IConfigurationService>;
+  let mockConfigService: Mocked<IConfigurationService>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mockConfigService = {
-      getOrThrow: jest.fn(),
-      get: jest.fn(),
-    } as jest.Mocked<IConfigurationService>;
+      getOrThrow: vi.fn(),
+      get: vi.fn(),
+    } as Mocked<IConfigurationService>;
   });
 
   it('should return Authorization header when TX auth is enabled', () => {

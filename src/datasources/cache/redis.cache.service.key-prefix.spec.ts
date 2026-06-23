@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { RedisClientType } from '@/datasources/cache/cache.module';
@@ -7,30 +9,30 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 
-import clearAllMocks = jest.clearAllMocks;
+import clearAllMocks = vi.clearAllMocks;
 
 const redisClientTypeMock = {
   isReady: true,
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-  hDel: jest.fn(),
-  expire: jest.fn(),
-  unlink: jest.fn(),
-  quit: jest.fn(),
-  scanIterator: jest.fn(),
-} as unknown as jest.MockedObjectDeep<RedisClientType>;
+  hGet: vi.fn(),
+  hSet: vi.fn(),
+  hDel: vi.fn(),
+  expire: vi.fn(),
+  unlink: vi.fn(),
+  quit: vi.fn(),
+  scanIterator: vi.fn(),
+} as unknown as MockedObject<RedisClientType>;
 
-const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
+const mockLoggingService: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
 };
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
-const mockConfigurationService = jest.mocked(configurationService);
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
+const mockConfigurationService = vi.mocked(configurationService);
 
 describe('RedisCacheService with a Key Prefix', () => {
   let redisCacheService: RedisCacheService;
@@ -96,8 +98,8 @@ describe('RedisCacheService with a Key Prefix', () => {
   });
 
   it('deleting a key should unlink with prefix', async () => {
-    jest.useFakeTimers();
-    const now = jest.now();
+    vi.useFakeTimers();
+    const now = Date.now();
     const key = faker.string.alphanumeric();
 
     await redisCacheService.deleteByKey(key);
@@ -112,6 +114,6 @@ describe('RedisCacheService with a Key Prefix', () => {
       defaultExpirationTimeInSeconds,
       'NX',
     );
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 });

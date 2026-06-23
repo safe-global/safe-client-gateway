@@ -79,7 +79,7 @@ describe('PostgresDatabaseService', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('getDataSource()', () => {
@@ -146,7 +146,7 @@ describe('PostgresDatabaseService', () => {
     class MockEntity {}
 
     it('Should fetch the database connection before returning the repository', async () => {
-      const fetchConnectionSpy = jest.spyOn(
+      const fetchConnectionSpy = vi.spyOn(
         postgresqlService,
         'initializeDatabaseConnection',
       );

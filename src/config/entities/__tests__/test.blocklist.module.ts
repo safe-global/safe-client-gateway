@@ -5,8 +5,8 @@ import { IBlocklistService } from '@/config/entities/blocklist.interface';
 
 /**
  * Uses a real class instead of a mock object (like TestNetworkModule does) due to:
- * - The default behavior (returning empty array) needs to survive jest.resetAllMocks()
- * - Tests only need jest.spyOn() when they want to override the default behavior
+ * - The default behavior (returning empty array) needs to survive vi.resetAllMocks()
+ * - Tests only need vi.spyOn() when they want to override the default behavior
  */
 class TestBlocklistService implements IBlocklistService {
   getBlocklist(): Array<Address> {

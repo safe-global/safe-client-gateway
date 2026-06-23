@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -17,26 +19,26 @@ import type { AddressInfoHelper } from '@/routes/common/address-info/address-inf
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;
 
-  const addressInfoHelper = jest.mocked({
-    getOrDefault: jest.fn(),
-  } as jest.MockedObjectDeep<AddressInfoHelper>);
+  const addressInfoHelper = vi.mocked({
+    getOrDefault: vi.fn(),
+  } as MockedObject<AddressInfoHelper>);
 
-  const statusMapper = jest.mocked({
-    mapTransactionStatus: jest.fn(),
-  } as jest.MockedObjectDeep<ModuleTransactionStatusMapper>);
+  const statusMapper = vi.mocked({
+    mapTransactionStatus: vi.fn(),
+  } as MockedObject<ModuleTransactionStatusMapper>);
 
-  const transactionInfoMapper = jest.mocked({
-    mapTransactionInfo: jest.fn(),
-  } as jest.MockedObjectDeep<MultisigTransactionInfoMapper>);
+  const transactionInfoMapper = vi.mocked({
+    mapTransactionInfo: vi.fn(),
+  } as MockedObject<MultisigTransactionInfoMapper>);
 
-  const transactionDataMapper = jest.mocked({
-    isTrustedDelegateCall: jest.fn(),
-    buildAddressInfoIndex: jest.fn(),
-    buildTokenInfoIndex: jest.fn(),
-  } as jest.MockedObjectDeep<TransactionDataMapper>);
+  const transactionDataMapper = vi.mocked({
+    isTrustedDelegateCall: vi.fn(),
+    buildAddressInfoIndex: vi.fn(),
+    buildTokenInfoIndex: vi.fn(),
+  } as MockedObject<TransactionDataMapper>);
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     mapper = new ModuleTransactionDetailsMapper(
       addressInfoHelper,
       statusMapper,

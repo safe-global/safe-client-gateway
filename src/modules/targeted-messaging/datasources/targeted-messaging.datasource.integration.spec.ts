@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '@/__tests__/db.factory';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -21,15 +22,15 @@ import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/err
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 const buildDistinctChainIds = (): [string, string] => {
   const chainId1 = faker.number.int({ min: 1, max: 10000 }).toString();
@@ -70,7 +71,7 @@ describe('TargetedMessagingDataSource tests', () => {
     await sql`TRUNCATE TABLE submissions RESTART IDENTITY CASCADE`;
     await sql`TRUNCATE TABLE targeted_safes RESTART IDENTITY CASCADE`;
     await sql`TRUNCATE TABLE outreaches RESTART IDENTITY CASCADE`;
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterAll(async () => {

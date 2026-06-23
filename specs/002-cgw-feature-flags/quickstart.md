@@ -1,4 +1,6 @@
-# SPDX-License-Identifier: FSL-1.1-MIT
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
 
 # Quickstart: CGW Feature Flag System
 
@@ -184,7 +186,7 @@ Feature flag checks use cached chain configurations. Cache invalidation follows 
 // feature-flag.service.spec.ts
 describe('FeatureFlagService', () => {
   let service: FeatureFlagService;
-  let chainsRepository: jest.Mocked<IChainsRepository>;
+  let chainsRepository: MockedObject<IChainsRepository>;
 
   beforeEach(() => {
     // Setup mocks

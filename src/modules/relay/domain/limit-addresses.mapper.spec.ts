@@ -7,6 +7,7 @@ import {
   keccak256,
   parseAbiParameters,
 } from 'viem';
+import type { MockedObject } from 'vitest';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import configuration from '@/config/entities/configuration';
 import {
@@ -80,19 +81,19 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
 );
 
 const mockLoggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockSafeRepository = jest.mocked({
-  getSafe: jest.fn(),
-  getSafesByModule: jest.fn(),
-} as jest.MockedObjectDeep<ISafeRepository>);
+const mockSafeRepository = vi.mocked({
+  getSafe: vi.fn(),
+  getSafesByModule: vi.fn(),
+} as MockedObject<ISafeRepository>);
 
 describe('LimitAddressesMapper', () => {
   let target: LimitAddressesMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const relayTransactionHelper = new RelayTransactionHelper(
       mockSafeRepository,

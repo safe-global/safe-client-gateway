@@ -6,6 +6,7 @@ import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import type { Address, Hash } from 'viem';
+import type { MockedObject } from 'vitest';
 import { createTestModule } from '@/__tests__/testing-module';
 import { retry } from '@/__tests__/util/retry';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -85,9 +86,9 @@ function integrationConfiguration(): ReturnType<typeof configuration> {
 
 describe('Push notification queue integration', () => {
   let app: INestApplication<Server>;
-  let pushNotificationService: jest.MockedObjectDeep<IPushNotificationService>;
-  let notificationsRepository: jest.MockedObjectDeep<INotificationsRepositoryV2>;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let pushNotificationService: MockedObject<IPushNotificationService>;
+  let notificationsRepository: MockedObject<INotificationsRepositoryV2>;
+  let networkService: MockedObject<INetworkService>;
   let configurationService: IConfigurationService;
   let cacheService: FakeCacheService;
   let safeConfigUrl: string;
@@ -147,7 +148,7 @@ describe('Push notification queue integration', () => {
   beforeEach(async () => {
     // Queue is paused (or not yet started for the first test) — safe to drain.
     await queue.drain(true);
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     cacheService.clear();
     // Resume worker, then queue (worker must be ready before jobs arrive).
     consumer.worker.resume();

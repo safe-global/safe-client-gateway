@@ -32,7 +32,7 @@ describe('UsersController', () => {
   let maxValidityPeriodInMs: number;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({

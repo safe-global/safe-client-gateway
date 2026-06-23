@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -23,21 +25,21 @@ import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-de
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>;
-const mockDataSource = jest.mocked(dataSource);
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>;
+const mockDataSource = vi.mocked(dataSource);
 
 const configurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
-const mockConfigurationService = jest.mocked(configurationService);
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
+const mockConfigurationService = vi.mocked(configurationService);
 
 const cacheService = {
-  deleteByKey: jest.fn(),
-  hSet: jest.fn(),
-  hGet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>;
-const mockCacheService = jest.mocked(cacheService);
+  deleteByKey: vi.fn(),
+  hSet: vi.fn(),
+  hGet: vi.fn(),
+} as MockedObject<ICacheService>;
+const mockCacheService = vi.mocked(cacheService);
 
 describe('KilnApi', () => {
   let target: KilnApi;
@@ -81,7 +83,7 @@ describe('KilnApi', () => {
   }
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     createTarget();
   });
