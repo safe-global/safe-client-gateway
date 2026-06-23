@@ -5,7 +5,7 @@ import {
   type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 
 /**
@@ -21,10 +21,10 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 export class DataSourceErrorFilter implements ExceptionFilter {
   catch(exception: DataSourceError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
+    const response = ctx.getResponse<FastifyReply>();
     const code = exception.code ?? HttpStatus.SERVICE_UNAVAILABLE;
 
-    response.status(code).json({
+    response.status(code).send({
       code: code,
       message: exception.message,
     });

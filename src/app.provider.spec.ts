@@ -1,37 +1,52 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, type INestApplication, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  type INestApplication,
+  Post,
+  Req,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { Request } from 'express';
+import type { FastifyRequest } from 'fastify';
 import request from 'supertest';
-import { configureTrustProxy } from '@/app.provider';
+import { createFastifyAdapter } from '@/app.provider';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Controller()
-class IpProbeController {
+class ProbeController {
   @Get('ip')
-  getIp(@Req() req: Request): { ip: string | undefined } {
+  getIp(@Req() req: FastifyRequest): { ip: string } {
     return { ip: req.ip };
+  }
+
+  @Post('body')
+  postBody(@Body() body: unknown): unknown {
+    return body;
   }
 }
 
-describe('configureTrustProxy', () => {
+describe('createFastifyAdapter', () => {
   let app: INestApplication;
 
-  const createApp = async (trustProxy: string): Promise<INestApplication> => {
+  const createApp = async (trustProxy: string, jsonLimit = '1mb') => {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('express.trustProxy', trustProxy);
+    fakeConfigurationService.set('express.jsonLimit', jsonLimit);
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [IpProbeController],
+      controllers: [ProbeController],
       providers: [
         { provide: IConfigurationService, useValue: fakeConfigurationService },
       ],
     }).compile();
 
-    const testApp = moduleRef.createNestApplication();
-    configureTrustProxy(testApp);
+    const testApp = moduleRef.createNestApplication(
+      createFastifyAdapter(fakeConfigurationService),
+    );
     await testApp.init();
+    await testApp.getHttpAdapter().getInstance().ready();
     return testApp;
   };
 
@@ -56,9 +71,6 @@ describe('configureTrustProxy', () => {
       .get('/ip')
       .set('X-Forwarded-For', '1.2.3.4, 203.0.113.7');
 
-    // Walking right-to-left, the trusted (loopback) socket is skipped and the
-    // first public address wins; the client-supplied leftmost value (1.2.3.4)
-    // is never reached.
     expect(body.ip).toBe('203.0.113.7');
   });
 
@@ -79,8 +91,15 @@ describe('configureTrustProxy', () => {
       .get('/ip')
       .set('X-Forwarded-For', '203.0.113.7');
 
-    // Trust disabled: X-Forwarded-For is ignored and the loopback socket peer
-    // is returned (127.0.0.1, ::ffff:127.0.0.1 or ::1).
     expect(body.ip).toMatch(/127\.0\.0\.1$|::1$/);
+  });
+
+  it('enforces the configured JSON body size limit', async () => {
+    app = await createApp('0', '8');
+
+    await request(app.getHttpServer())
+      .post('/body')
+      .send({ value: 'too-large' })
+      .expect(413);
   });
 });

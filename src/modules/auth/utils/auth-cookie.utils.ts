@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CookieOptions } from 'express';
+
+export type CookieOptions = {
+  httpOnly: boolean;
+  maxAge?: number;
+  path: string;
+  sameSite: 'lax' | 'none';
+  secure: boolean;
+};
 
 export const ACCESS_TOKEN_COOKIE_NAME = 'access_token';
 export const ACCESS_TOKEN_COOKIE_SAME_SITE_LAX = 'lax';

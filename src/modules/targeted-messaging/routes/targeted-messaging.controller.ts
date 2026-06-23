@@ -17,7 +17,7 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import type { Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import type { Address } from 'viem';
 import { TargetedSafeSchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
@@ -62,7 +62,7 @@ export class TargetedMessagingController {
     ':outreachId/chains/:chainId/safes/:safeAddress/signers/:signerAddress/submissions',
   )
   async getSubmission(
-    @Res() res: Response,
+    @Res() res: FastifyReply,
     @Param('outreachId', ParseIntPipe)
     outreachId: number,
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
@@ -70,7 +70,7 @@ export class TargetedMessagingController {
     safeAddress: Address,
     @Param('signerAddress', new ValidationPipe(AddressSchema))
     signerAddress: Address,
-  ): Promise<Response> {
+  ): Promise<FastifyReply> {
     try {
       const submission = await this.service.getSubmission({
         outreachId,
@@ -81,13 +81,13 @@ export class TargetedMessagingController {
       return res
         .status(HttpStatus.OK)
         .header('Cache-Control', 'no-cache')
-        .json(submission);
+        .send(submission);
     } catch (err) {
       if (err instanceof TargetedSafeNotFoundError) {
         return res
           .status(HttpStatus.NO_CONTENT)
           .header('Cache-Control', 'no-cache')
-          .json({});
+          .send({});
       }
       throw err;
     }

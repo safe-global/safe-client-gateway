@@ -1,36 +1,64 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { INestApplication } from '@nestjs/common';
+import {
+  FastifyAdapter,
+  type NestFastifyApplication,
+} from '@nestjs/platform-fastify';
 import { TestingModule } from '@nestjs/testing';
 import {
-  AppProvider,
   configureShutdownHooks,
+  createFastifyAdapter,
   DEFAULT_CONFIGURATION,
 } from '@/app.provider';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+
+export type TestApplication = NestFastifyApplication;
+
+export function createTestApplication(module: TestingModule): TestApplication {
+  return module.createNestApplication(
+    new FastifyAdapter(),
+  ) as NestFastifyApplication;
+}
+
+export async function initTestApplication(
+  app: INestApplication,
+): Promise<void> {
+  await app.init();
+  await app.getHttpAdapter().getInstance().ready();
+}
 
 /**
- * A test {@link AppProvider}
+ * Provides a configured test {@link INestApplication} from a
+ * {@link TestingModule}.
  *
- * This provider provides an application given a {@link TestingModule}
+ * The same configuration steps as production are applied, except shutdown
+ * hooks: they are not required in tests and enabling them might result in a
+ * MaxListenersExceededWarning as the number of listeners exceeds the default.
  *
- * If the module provided is not a {@link TestingModule}, an error is thrown
+ * Throws if used outside of a testing environment.
  */
-export class TestAppProvider<T extends TestingModule> extends AppProvider<T> {
-  // Disables shutdown hooks for tests (they are not required)
-  // Enabling this in the tests might result in a MaxListenersExceededWarning
-  // as the number of listeners that this adds exceed the default
-  protected readonly configuration: Array<(app: INestApplication) => void> =
-    DEFAULT_CONFIGURATION.filter((config) => config !== configureShutdownHooks);
+export class TestAppProvider {
+  private readonly configuration = DEFAULT_CONFIGURATION.filter(
+    (config) => config !== configureShutdownHooks,
+  );
 
   constructor() {
-    super();
     if (process.env.NODE_ENV !== 'test') {
       throw Error('TestAppProvider used outside of a testing environment');
     }
   }
 
-  protected getApp(module: T): Promise<INestApplication> {
-    if (!(module instanceof TestingModule))
-      return Promise.reject('Provided module is not a TestingModule');
-    return Promise.resolve(module.createNestApplication());
+  public async provide(module: TestingModule): Promise<INestApplication> {
+    const configurationService = module.get<IConfigurationService>(
+      IConfigurationService,
+      { strict: false },
+    );
+    const app = module.createNestApplication<NestFastifyApplication>(
+      createFastifyAdapter(configurationService),
+    );
+    for (const configure of this.configuration) {
+      await configure(app);
+    }
+    return app;
   }
 }

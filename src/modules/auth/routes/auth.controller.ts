@@ -22,9 +22,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { CookieOptions, Request, Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getMillisecondsUntil } from '@/domain/common/utils/time';
+import { getSecondsUntil } from '@/domain/common/utils/time';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthService } from '@/modules/auth/routes/auth.service';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
@@ -41,8 +41,10 @@ import { UserSession } from '@/modules/auth/routes/entities/user-session.entity'
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
+  type CookieOptions,
   getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
+import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 /**
@@ -124,14 +126,14 @@ export class AuthController {
   @Post('verify')
   async verify(
     @Res({ passthrough: true })
-    res: Response,
+    res: FastifyReply,
     @Body(new ValidationPipe(SiweDtoSchema))
     siweDto: SiweDto,
   ): Promise<void> {
     const { accessToken } =
       await this.authService.authenticateWithSiwe(siweDto);
 
-    res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+    res.setCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
       ...this.getCookieOptions(),
       // Extract maxAge from token as it may slightly differ to SiWe message
       maxAge: this.getMaxAge(accessToken),
@@ -149,7 +151,7 @@ export class AuthController {
   })
   @HttpCode(200)
   @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response): void {
+  logout(@Res({ passthrough: true }) res: FastifyReply): void {
     res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
   }
 
@@ -173,8 +175,8 @@ export class AuthController {
   @HttpCode(303)
   @Post('logout/redirect')
   logoutWithRedirect(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
+    @Req() req: HttpRequest,
+    @Res({ passthrough: true }) res: FastifyReply,
     @Body(new ValidationPipe(LogoutDtoSchema))
     body: LogoutDto,
   ): void {
@@ -185,7 +187,7 @@ export class AuthController {
       accessToken,
       body.redirect_url,
     );
-    res.redirect(303, location);
+    res.redirect(location, 303);
   }
 
   private getCookieOptions(): CookieOptions {
@@ -195,14 +197,11 @@ export class AuthController {
   /**
    * Extract the expiration time from the token and return the maximum age.
    * @param accessToken - JWT token
-   * @returns maximum age of the token in milliseconds or undefined if none set
+   * @returns maximum age of the token in seconds or undefined if none set
    *
-   * Note: the `Max-Age` of a cookie is in seconds, but express' requires it in
-   * milliseconds when setting it with `res.cookie()`.
-   * @see http://expressjs.com/en/api.html
    */
   private getMaxAge(accessToken: string): number | undefined {
     const { exp } = this.authService.getTokenPayloadWithClaims(accessToken);
-    return exp ? getMillisecondsUntil(exp) : undefined;
+    return exp ? getSecondsUntil(exp) : undefined;
   }
 }
