@@ -58,6 +58,12 @@ export default defineConfig({
           name: 'unit',
           globals: true,
           environment: 'node',
+          // Unit tests mock all I/O, so they need no per-file process isolation.
+          // `worker_threads` start far cheaper than the default `forks` pool's
+          // child processes, which slashes the dominant cost of this suite
+          // (module import/transform paid once per worker). Integration/e2e keep
+          // the default `forks` pool since they touch real DB/Redis/AMQP.
+          pool: 'threads',
           env: { TZ: 'UTC' },
           include: ['src/**/*.spec.ts', 'scripts/**/*.spec.ts'],
           exclude: [
