@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
+  sanitizeName,
 } from '@/domain/common/schemas/name.schema';
 
 // UTF-8 sample names: Latin, accented, and Cyrillic — all NFC-normalised,
@@ -17,7 +18,8 @@ const SAMPLE_NAMES: Array<() => string> = [
 ];
 
 export function nameBuilder(): string {
-  const pick = faker.helpers.arrayElement(SAMPLE_NAMES)();
+  // Sanitize so output is invariant under sanitizeName, independent of Faker.
+  const pick = sanitizeName(faker.helpers.arrayElement(SAMPLE_NAMES)());
   // Pad to the min and trim to the max to respect the default bounds.
   const padded =
     pick.length < NAME_MIN_LENGTH ? pick.padEnd(NAME_MIN_LENGTH, 'x') : pick;

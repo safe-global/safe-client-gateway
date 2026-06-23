@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { CastingContext } from 'csv-stringify';
 import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
 import { escapeCsvFormula } from '@/modules/csv-export/csv-utils/escape-csv-formula';
 
-// Formatted numeric columns: never user-controlled and may start with '-',
-// so they're exempt from CSV formula escaping.
+// Numeric columns: not user-controlled, may start with '-', so not escaped.
 const NUMERIC_COLUMNS: ReadonlySet<string | number> = new Set([
   'amount',
   'payment',
 ]);
+
+// Escape non-numeric columns for any cell type (casts dispatch by type).
+const castCell = (value: unknown, context: CastingContext): string => {
+  if (context.column != null && NUMERIC_COLUMNS.has(context.column)) {
+    return String(value);
+  }
+  return escapeCsvFormula(value);
+};
 
 export const CSV_OPTIONS: CsvOptions = {
   header: true,
@@ -31,11 +39,9 @@ export const CSV_OPTIONS: CsvOptions = {
   ],
   cast: {
     date: (value: Date): string => value.toISOString(),
-    string: (value: string, context): string => {
-      if (context.column != null && NUMERIC_COLUMNS.has(context.column)) {
-        return value;
-      }
-      return escapeCsvFormula(value);
-    },
+    string: castCell,
+    number: castCell,
+    boolean: castCell,
+    bigint: castCell,
   },
 };
