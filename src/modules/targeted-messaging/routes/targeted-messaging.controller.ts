@@ -84,10 +84,12 @@ export class TargetedMessagingController {
         .send(submission);
     } catch (err) {
       if (err instanceof TargetedSafeNotFoundError) {
+        // 204 responses carry no body; Fastify strips any payload, so send
+        // none rather than a misleading empty object.
         return res
           .status(HttpStatus.NO_CONTENT)
           .header('Cache-Control', 'no-cache')
-          .send({});
+          .send();
       }
       throw err;
     }
