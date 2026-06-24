@@ -36,30 +36,58 @@ export const sanitizeName = (value: string): string => {
   return result.trim();
 };
 
+// Codepoint length, so multi-byte characters (e.g. emoji, CJK) count as one.
+const getNameLength = (name: string): number => [...name].length;
+
 export const makeNameSchema = (args?: {
   minLength?: number;
   maxLength?: number;
 }): z.ZodType<string> => {
   const min = args?.minLength ?? NAME_MIN_LENGTH;
   const max = args?.maxLength ?? NAME_MAX_LENGTH;
-  return (
-    z
-      .string()
-      .transform(sanitizeName)
-      .refine((s) => s.length > 0 || min === 0, {
-        message: EMPTY_NAME_MESSAGE,
-      })
-      .refine((s) => ALLOWED_NAME_REGEX.test(s), {
-        message: DISALLOWED_CHARACTER_MESSAGE,
-      })
-      // Skip empty (already reported above) so a blank name yields one message.
-      .refine((s) => s.length === 0 || [...s].length >= min, {
-        message: `Names must be at least ${min} character(s) long`,
-      })
-      .refine((s) => [...s].length <= max, {
-        message: `Names must be at most ${max} characters long`,
-      })
-  );
+
+  // Single superRefine so all rules live in one place and the codepoint length
+  // is computed once. Each branch returns after adding an issue, preserving the
+  // prior refine-chain behavior of reporting only the first failure.
+  return z
+    .string()
+    .transform(sanitizeName)
+    .superRefine((name, ctx) => {
+      if (name.length === 0) {
+        if (min > 0) {
+          ctx.addIssue({
+            code: 'custom',
+            message: EMPTY_NAME_MESSAGE,
+          });
+        }
+        return;
+      }
+
+      if (!ALLOWED_NAME_REGEX.test(name)) {
+        ctx.addIssue({
+          code: 'custom',
+          message: DISALLOWED_CHARACTER_MESSAGE,
+        });
+        return;
+      }
+
+      const length = getNameLength(name);
+
+      if (length < min) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Names must be at least ${min} character(s) long`,
+        });
+        return;
+      }
+
+      if (length > max) {
+        ctx.addIssue({
+          code: 'custom',
+          message: `Names must be at most ${max} characters long`,
+        });
+      }
+    });
 };
 
 export const NameSchema = makeNameSchema();
