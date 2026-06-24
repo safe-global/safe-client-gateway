@@ -5,9 +5,12 @@ import { EntityManager, In } from 'typeorm';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { FieldEncryptionAad } from '@/datasources/encryption/field-encryption.constants';
+import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
@@ -30,10 +33,77 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    private readonly fieldCrypto: PerEntityFieldCrypto,
   ) {
     this.maxItems = this.configurationService.getOrThrow<number>(
       'spaces.addressBooks.maxItems',
     );
+  }
+
+  /**
+   * Encrypts item names under the owning space's data key, minting and
+   * persisting the space key if absent. Returns values unchanged when disabled.
+   */
+  private async encryptItemNames(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+    fields: Array<{ value: string; aad: string }>,
+  ): Promise<Array<string>> {
+    if (fields.length === 0) {
+      return [];
+    }
+    const space = await entityManager.findOne(DbSpace, {
+      where: { id: spaceId },
+      select: { id: true, encryptedDataKey: true },
+    });
+    const existingKey = space?.encryptedDataKey ?? null;
+    const { encryptedDataKey, values } = await this.fieldCrypto.encryptFields(
+      { spaceId: String(spaceId) },
+      existingKey,
+      fields,
+    );
+    if (encryptedDataKey !== null && encryptedDataKey !== existingKey) {
+      await entityManager.update(DbSpace, spaceId, { encryptedDataKey });
+    }
+    return values;
+  }
+
+  /**
+   * Decrypts loaded items' `name` under the space key (one unwrap per call).
+   * `manager` must be supplied when the space key may have just been minted in
+   * an open transaction. Skipped when no name is ciphertext.
+   */
+  private async decryptItems(
+    spaceId: Space['id'],
+    items: Array<DbAddressBookItem>,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const targets = items.filter((item) =>
+      this.fieldCrypto.isEncrypted(item.name),
+    );
+    if (targets.length === 0) {
+      return;
+    }
+    const space = manager
+      ? await manager.findOne(DbSpace, {
+          where: { id: spaceId },
+          select: { id: true, encryptedDataKey: true },
+        })
+      : await (await this.db.getRepository(DbSpace)).findOne({
+          where: { id: spaceId },
+          select: { id: true, encryptedDataKey: true },
+        });
+    const decrypted = await this.fieldCrypto.decryptFields(
+      { spaceId: String(spaceId) },
+      space?.encryptedDataKey ?? null,
+      targets.map((item) => ({
+        value: item.name,
+        aad: FieldEncryptionAad.ADDRESS_BOOK_ITEM_NAME,
+      })),
+    );
+    decrypted.forEach((value, index) => {
+      targets[index].name = value;
+    });
   }
 
   public async findAllBySpaceId(args: {
@@ -45,7 +115,9 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       memberRoleIn: ['ADMIN', 'MEMBER'],
     });
     const repository = await this.db.getRepository(DbAddressBookItem);
-    return repository.findBy({ space: { id: space.id } });
+    const items = await repository.findBy({ space: { id: space.id } });
+    await this.decryptItems(space.id, items);
+    return items;
   }
 
   public async upsertMany(args: {
@@ -105,9 +177,11 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         });
       }
 
-      return entityManager.findBy(DbAddressBookItem, {
+      const items = await entityManager.findBy(DbAddressBookItem, {
         space: { id: space.id },
       });
+      await this.decryptItems(space.id, items, entityManager);
+      return items;
     };
 
     return args.entityManager
@@ -135,6 +209,10 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       }
 
       await entityManager.delete(DbAddressBookItem, item.id);
+
+      // Decrypt the stored name so the audit payload carries plaintext (the
+      // audit repository re-encrypts it under the space key).
+      await this.decryptItems(space.id, [item], entityManager);
 
       await this.spaceAuditRepository.record(entityManager, {
         spaceId: space.id,
@@ -177,19 +255,37 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       space: { id: args.space.id },
       address: In(args.addressBookItems.map((item) => item.address)),
     });
-    const updated: Array<Pick<DbAddressBookItem, 'address' | 'name'>> = [];
+    const matches: Array<{
+      item: DbAddressBookItem;
+      patch: AddressBookItem;
+    }> = [];
     for (const item of existingAddressBookItems) {
       const patch = args.addressBookItems.find((addressBookItem) =>
         isAddressEqual(addressBookItem.address, item.address),
       );
-      if (!patch) {
-        continue;
+      if (patch) {
+        matches.push({ item, patch });
       }
+    }
+
+    // Encrypt all new names under the space key in a single batch.
+    const encryptedNames = await this.encryptItemNames(
+      args.entityManager,
+      args.space.id,
+      matches.map((match) => ({
+        value: match.patch.name,
+        aad: FieldEncryptionAad.ADDRESS_BOOK_ITEM_NAME,
+      })),
+    );
+
+    const updated: Array<Pick<DbAddressBookItem, 'address' | 'name'>> = [];
+    for (const [index, { item, patch }] of matches.entries()) {
       await repository.update(item.id, {
-        name: patch.name,
+        name: encryptedNames[index],
         chainIds: patch.chainIds,
         lastUpdatedBy: args.userId,
       });
+      // Plaintext name in the returned diff; the audit repository encrypts it.
       updated.push({ address: item.address, name: patch.name });
     }
     return updated;
@@ -204,11 +300,19 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }): Promise<Array<DbAddressBookItem['id']>> {
     await this.checkItemsLimit(args);
     const repository = args.entityManager.getRepository(DbAddressBookItem);
-    const insertedIds = await repository.insert(
+    const encryptedNames = await this.encryptItemNames(
+      args.entityManager,
+      args.space.id,
       args.addressBookItems.map((addressBookItem) => ({
+        value: addressBookItem.name,
+        aad: FieldEncryptionAad.ADDRESS_BOOK_ITEM_NAME,
+      })),
+    );
+    const insertedIds = await repository.insert(
+      args.addressBookItems.map((addressBookItem, index) => ({
         space: args.space,
         address: addressBookItem.address,
-        name: addressBookItem.name,
+        name: encryptedNames[index],
         chainIds: addressBookItem.chainIds,
         createdBy: args.createdByOverride ?? args.userId,
         lastUpdatedBy: args.userId,

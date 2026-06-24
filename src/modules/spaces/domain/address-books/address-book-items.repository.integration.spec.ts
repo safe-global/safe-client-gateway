@@ -133,6 +133,7 @@ describe('AddressBookItemsRepository', () => {
       ),
       mockConfigService,
       createMockSpaceAuditRepository(),
+      createMockPerEntityFieldCrypto(),
     );
   });
 
