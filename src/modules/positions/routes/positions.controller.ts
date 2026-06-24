@@ -6,11 +6,13 @@ import {
   Param,
   ParseBoolPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
 import { PositionsService } from '@/modules/positions/routes/positions.service';
+import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -40,6 +42,7 @@ export class PositionsController {
     example: false,
   })
   @Get('chains/:chainId/safes/:safeAddress/positions/:fiatCode')
+  @UseGuards(CaptchaGuard)
   getPositions(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))

@@ -11,10 +11,11 @@ import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller
 import { PortfolioRouteMapper } from '@/modules/portfolio/v1/portfolio.mapper';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { ZerionModule } from '@/modules/zerion/zerion.module';
+import { CaptchaModule } from '@/routes/captcha/captcha.module';
 import { ChainsModule } from '../chains/chains.module';
 
 @Module({
-  imports: [ChainsModule, ZerionModule],
+  imports: [ChainsModule, ZerionModule, CaptchaModule],
   controllers: [PortfolioController],
   providers: [
     HttpErrorFactory,
