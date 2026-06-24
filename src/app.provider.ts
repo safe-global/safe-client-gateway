@@ -11,7 +11,7 @@ import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
-function configureVersioning(app: INestApplication): void {
+export function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
     type: VersioningType.URI,
   });
@@ -62,6 +62,17 @@ export function createFastifyAdapterFromConfiguration(
 
   return new FastifyAdapter({
     trustProxy: parseTrustProxy(config.trustProxy),
+    routerOptions: {
+      // Express matched routes regardless of a trailing slash; Fastify does not
+      // by default. Preserve the previous behaviour so `/path/` keeps resolving
+      // to the `/path` handler instead of returning 404.
+      ignoreTrailingSlash: true,
+      // Express imposed no limit on route parameter length, but Fastify defaults
+      // to 100, which 404s composite ids such as
+      // `multisig_<address>_<safeTxHash>` (~118 chars). Raise it well above the
+      // longest identifier the API exposes.
+      maxParamLength: 1024,
+    },
     ...(bodyLimit === undefined ? {} : { bodyLimit }),
   });
 }

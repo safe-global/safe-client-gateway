@@ -7,6 +7,7 @@ import {
 import { TestingModule } from '@nestjs/testing';
 import {
   configureShutdownHooks,
+  configureVersioning,
   createFastifyAdapter,
   DEFAULT_CONFIGURATION,
 } from '@/app.provider';
@@ -15,9 +16,14 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 export type TestApplication = NestFastifyApplication;
 
 export function createTestApplication(module: TestingModule): TestApplication {
-  return module.createNestApplication(
+  const app = module.createNestApplication<NestFastifyApplication>(
     new FastifyAdapter(),
-  ) as NestFastifyApplication;
+  );
+  // The controllers are URI-versioned, so versioning must be enabled or
+  // version-paired controllers (e.g. v1/v2 `/chains`) collide on the same path
+  // under Fastify, which—unlike Express—rejects duplicate route registration.
+  configureVersioning(app);
+  return app;
 }
 
 export async function initTestApplication(
