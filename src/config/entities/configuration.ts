@@ -833,6 +833,37 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
+    // Field-level encryption of human-entered labels (space/member/address-book
+    // names and aliases). Uses envelope encryption: KMS protects the data keys,
+    // the app performs local AES-256-GCM encryption with them.
+    fieldEncryption: {
+      // When true, repositories encrypt sensitive fields before writing.
+      enabled:
+        process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
+      // When true, reads tolerate legacy plaintext values (needed during
+      // rollout/backfill). Flip to false once no plaintext remains so accidental
+      // plaintext storage is caught. Defaults to true unless explicitly disabled.
+      allowLegacyPlaintext:
+        process.env.SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT?.toLowerCase() !==
+        'false',
+      // Identifier of the data key used for new encryptions. Must be a key in
+      // `dataKeys` and must be URL-safe (no ':').
+      currentKeyId: process.env.SPACES_FIELD_ENCRYPTION_CURRENT_KEY_ID,
+      // JSON object mapping keyId -> base64 KMS-encrypted data key, e.g.
+      // {"1":"AQID...=="}. Produced by scripts/generate-field-encryption-data-key.
+      dataKeys: process.env.SPACES_FIELD_ENCRYPTION_DATA_KEYS,
+      // Id (within `dataKeys`) of the app-wide key used to compute the email
+      // blind index. Required when encryption is enabled.
+      indexKeyId: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID,
+      kms: {
+        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+        region: process.env.AWS_REGION,
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        // Set in EKS via IRSA; takes precedence over static credentials.
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
     invite: {
       ttlMs: Number.parseInt(
         process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,
