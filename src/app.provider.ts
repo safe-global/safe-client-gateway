@@ -17,14 +17,32 @@ export function configureVersioning(app: INestApplication): void {
   });
 }
 
+// Mirrors the units accepted by the `bytes` library that Express' body-parser
+// used, so a previously valid `EXPRESS_JSON_LIMIT` keeps parsing post-migration.
 const BODY_LIMIT_UNITS = {
   b: 1,
   kb: 1024,
   mb: 1024 ** 2,
   gb: 1024 ** 3,
+  tb: 1024 ** 4,
+  pb: 1024 ** 5,
 } as const;
 
 type BodyLimitUnit = keyof typeof BODY_LIMIT_UNITS;
+
+// Express route-matching defaults that Fastify does not replicate out of the
+// box. Exported so tests exercise the same routing behaviour as production.
+export const FASTIFY_ROUTER_OPTIONS = {
+  // Express matched routes regardless of a trailing slash; Fastify does not
+  // by default. Preserve the previous behaviour so `/path/` keeps resolving
+  // to the `/path` handler instead of returning 404.
+  ignoreTrailingSlash: true,
+  // Express imposed no limit on route parameter length, but Fastify defaults
+  // to 100, which 404s composite ids such as
+  // `multisig_<address>_<safeTxHash>` (~118 chars). Raise it well above the
+  // longest identifier the API exposes.
+  maxParamLength: 1024,
+};
 
 type FastifyAdapterConfiguration = {
   jsonLimit?: string;
@@ -45,7 +63,7 @@ export function parseBodyLimit(value: string | undefined): number | undefined {
     return Number.parseInt(normalized, 10);
   }
 
-  const match = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb)$/.exec(normalized);
+  const match = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb|pb)$/.exec(normalized);
   if (!match) {
     throw new Error(`Invalid JSON body size limit: ${value}`);
   }
@@ -62,17 +80,7 @@ export function createFastifyAdapterFromConfiguration(
 
   return new FastifyAdapter({
     trustProxy: parseTrustProxy(config.trustProxy),
-    routerOptions: {
-      // Express matched routes regardless of a trailing slash; Fastify does not
-      // by default. Preserve the previous behaviour so `/path/` keeps resolving
-      // to the `/path` handler instead of returning 404.
-      ignoreTrailingSlash: true,
-      // Express imposed no limit on route parameter length, but Fastify defaults
-      // to 100, which 404s composite ids such as
-      // `multisig_<address>_<safeTxHash>` (~118 chars). Raise it well above the
-      // longest identifier the API exposes.
-      maxParamLength: 1024,
-    },
+    routerOptions: FASTIFY_ROUTER_OPTIONS,
     ...(bodyLimit === undefined ? {} : { bodyLimit }),
   });
 }

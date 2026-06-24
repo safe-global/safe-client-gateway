@@ -108,7 +108,13 @@ export class OidcAuthController {
     res.setCookie(
       OidcAuthController.OIDC_STATE_COOKIE_NAME,
       state,
-      getSetCookieOptions(this.isProduction, Math.floor(stateMaxAge / 1_000)),
+      // `stateMaxAge` is in milliseconds; cookies expect seconds. Floor to at
+      // least 1s so a sub-second TTL never collapses to `Max-Age=0`, which a
+      // browser drops immediately and would break the callback state check.
+      getSetCookieOptions(
+        this.isProduction,
+        Math.max(1, Math.floor(stateMaxAge / 1_000)),
+      ),
     );
     res.redirect(authorizationUrl, 302);
   }
