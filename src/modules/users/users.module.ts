@@ -10,18 +10,16 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { UsersRepositoryModule } from '@/modules/users/domain/users-repository.module';
 import { UsersController } from '@/modules/users/routes/users.controller';
 import { UsersService } from '@/modules/users/routes/users.service';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 @Module({
   imports: [
+    UsersRepositoryModule,
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Member, Wallet]),
-    WalletsModule,
     forwardRef(() => AuthModule),
     SiweModule,
     forwardRef(() => SpacesModule),
@@ -29,16 +27,12 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
   ],
   providers: [
     {
-      provide: IUsersRepository,
-      useClass: UsersRepository,
-    },
-    {
       provide: IMembersRepository,
       useClass: MembersRepository,
     },
     UsersService,
   ],
   controllers: [UsersController],
-  exports: [IUsersRepository, IMembersRepository],
+  exports: [UsersRepositoryModule, IMembersRepository],
 })
 export class UsersModule {}
