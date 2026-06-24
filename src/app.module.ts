@@ -23,6 +23,7 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
+import { FieldEncryptionModule } from '@/datasources/encryption/field-encryption.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import {
   type ILoggingService,
@@ -86,6 +87,9 @@ export class AppModule implements NestModule {
       module: AppModule,
       imports: [
         PostgresDatabaseModule,
+        // Global: initialises field encryption and wires the TypeORM transformer
+        // bridge before any query runs.
+        FieldEncryptionModule,
         // features
         AboutModule,
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
