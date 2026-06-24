@@ -140,6 +140,7 @@ describe('SpaceAuditRepository', () => {
       postgresDatabaseService,
       walletsRepository,
       spaceAuditRepository,
+      createMockPerEntityFieldCrypto(),
     );
     membersRepository = new MembersRepository(
       postgresDatabaseService,

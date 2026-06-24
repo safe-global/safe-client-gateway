@@ -6,6 +6,7 @@ import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
@@ -23,6 +24,15 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 
 describe('UsersRepository', () => {
   const walletsRepository = {} as MockedObject<IWalletsRepository>;
+  // Passthrough crypto (disabled-like): blind index null, values unchanged, so
+  // existing plaintext assertions hold. Per-user encryption + blind-index
+  // lookups are covered by integration tests.
+  const fieldCrypto = {
+    encryptFields: vi.fn(),
+    decryptFields: vi.fn(),
+    isEncrypted: vi.fn(),
+    blindIndex: vi.fn(),
+  } as unknown as MockedObject<PerEntityFieldCrypto>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
@@ -61,10 +71,23 @@ describe('UsersRepository', () => {
       transaction: vi.fn(),
     } as MockedObject<PostgresDatabaseService>;
 
+    fieldCrypto.encryptFields.mockImplementation((_context, key, fields) =>
+      Promise.resolve({
+        encryptedDataKey: key ?? null,
+        values: fields.map((field) => field.value),
+      }),
+    );
+    fieldCrypto.decryptFields.mockImplementation((_context, _key, fields) =>
+      Promise.resolve(fields.map((field) => field.value)),
+    );
+    fieldCrypto.isEncrypted.mockReturnValue(false);
+    fieldCrypto.blindIndex.mockReturnValue(null);
+
     target = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       createMockSpaceAuditRepository(),
+      fieldCrypto,
     );
   });
 
@@ -207,7 +230,7 @@ describe('UsersRepository', () => {
       const extUserId = faker.string.uuid();
       userRepository.findOne.mockResolvedValue(null);
       postgresDatabaseService.transaction.mockRejectedValue(
-        uniqueConstraintError('idx_users_email'),
+        uniqueConstraintError('idx_users_email_index'),
       );
 
       await expect(
@@ -304,7 +327,7 @@ describe('UsersRepository', () => {
       });
       userRepository.update.mockResolvedValue({ affected: 0 });
       postgresDatabaseService.transaction.mockRejectedValue(
-        uniqueConstraintError('idx_users_email'),
+        uniqueConstraintError('idx_users_email_index'),
       );
 
       await expect(
@@ -323,7 +346,7 @@ describe('UsersRepository', () => {
       await expect(target.findEmailById(userId)).resolves.toBe(email);
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: userId },
-        select: { email: true },
+        select: { id: true, email: true, encryptedDataKey: true },
       });
     });
 
