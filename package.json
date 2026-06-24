@@ -47,7 +47,7 @@
     "@aws-sdk/s3-request-presigner": "3.1064.0",
     "@blockaid/client": "^0.65.0",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.10.0",
-    "@nestjs/bullmq": "^11.0.3",
+    "@nestjs/bullmq": "^11.0.4",
     "@nestjs/cache-manager": "3.1.2",
     "@nestjs/common": "11.1.24",
     "@nestjs/config": "4.0.4",
