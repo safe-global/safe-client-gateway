@@ -384,9 +384,9 @@ export default () => ({
     // bare number is interpreted as bytes; a string accepts an optional unit
     // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
     // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
-    // NOTE: the `express.*` namespace and `EXPRESS_*` env vars are retained for
-    // backwards compatibility after the Express->Fastify migration; rename
-    // deferred to avoid a breaking configuration change.
+    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
+    // are retained for backwards compatibility after the Express->Fastify
+    // migration; rename deferred to avoid a breaking configuration change.
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
     // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
     // header set by upstream proxies instead of the direct socket address.
