@@ -9,7 +9,6 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
@@ -55,10 +54,10 @@ export class AddressBookItem implements DomainAddressBookItem {
   })
   address!: Address;
 
-  @Column({
-    type: 'varchar',
-    length: NAME_MAX_LENGTH,
-  })
+  // Stored as `text` to hold AES-256-GCM ciphertext; plaintext length is
+  // validated by the Zod schema (NAME_MAX_LENGTH) before encryption. Encrypted in
+  // AddressBookItemsRepository under the owning space's data key.
+  @Column({ type: 'text' })
   name!: string;
 
   @Column({
