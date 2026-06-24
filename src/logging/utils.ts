@@ -40,6 +40,8 @@ export function formatRouteLogMessage(
   return {
     chain_id: chainId,
     client_ip: clientIp,
+    // method is always set on FastifyRequest and on the raw Node IncomingMessage
+    // passed by NotFoundLoggerMiddleware; 'UNKNOWN' is a type-required sentinel.
     method: request.method ?? 'UNKNOWN',
     response_time_ms: performance.now() - startTimeMs,
     route: getRoutePath(request),
