@@ -52,7 +52,10 @@ export function getRoutePath(request: RequestLike): string {
     request.routeOptions?.url ??
     request.route?.path ??
     request.path ??
-    getRequestPath(request).split('?')[0]
+    // routeOptions.url is always set on a matched Fastify route; reaching here
+    // means the request was unmatched (e.g. 404). Return a sentinel rather than
+    // the actual URL to avoid exploding log cardinality.
+    'unknown'
   );
 }
 

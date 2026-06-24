@@ -39,9 +39,9 @@ export const FASTIFY_ROUTER_OPTIONS = {
   ignoreTrailingSlash: true,
   // Express imposed no limit on route parameter length, but Fastify defaults
   // to 100, which 404s composite ids such as
-  // `multisig_<address>_<safeTxHash>` (~118 chars). Raise it well above the
-  // longest identifier the API exposes.
-  maxParamLength: 1024,
+  // `multisig_<address>_<safeTxHash>` (~118 chars). 256 is ~2× the longest
+  // legitimate id, which is sufficient without admitting kilobyte-long segments.
+  maxParamLength: 256,
 };
 
 type FastifyAdapterConfiguration = {
