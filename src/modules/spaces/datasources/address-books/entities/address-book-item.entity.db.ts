@@ -9,10 +9,10 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 
 @Entity('space_address_book_items')
 @Unique('UQ_SABI_space_id_address', ['space', 'address'])
@@ -57,7 +57,7 @@ export class AddressBookItem implements DomainAddressBookItem {
 
   @Column({
     type: 'varchar',
-    length: NAME_MAX_LENGTH,
+    length: ADDRESS_BOOK_NAME_MAX_LENGTH,
   })
   name!: string;
 

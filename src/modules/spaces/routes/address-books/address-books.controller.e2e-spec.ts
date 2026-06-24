@@ -312,6 +312,103 @@ describe('AddressBooksController', () => {
         );
     });
 
+    it('should accept and round-trip UTF-8 names', async () => {
+      const { spaceId, accessToken, signerAddress, userId } =
+        await createSpace();
+
+      // Item 1: multi-script name with allowed punctuation — already NFC,
+      // returned unchanged
+      const utf8Name = "José 山田 (O'Brien)";
+      const utf8Address = getAddress(faker.finance.ethereumAddress());
+      const utf8ChainIds = faker.helpers.multiple(
+        () => faker.string.numeric(),
+        { count: { min: 1, max: 5 } },
+      );
+
+      // Item 2: name with embedded bidi override (U+202E) — stripped by schema
+      const rawName = 'ab‮cd';
+      const strippedName = 'abcd';
+      const bidiAddress = getAddress(faker.finance.ethereumAddress());
+      const bidiChainIds = faker.helpers.multiple(
+        () => faker.string.numeric(),
+        { count: { min: 1, max: 5 } },
+      );
+
+      const { body: utf8Body } = await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [
+            {
+              name: utf8Name,
+              address: utf8Address,
+              chainIds: utf8ChainIds,
+            },
+            {
+              name: rawName,
+              address: bidiAddress,
+              chainIds: bidiChainIds,
+            },
+          ],
+        })
+        .expect(200)
+        .expect(({ body }) =>
+          expect(body).toEqual({
+            spaceUuid: spaceId,
+            data: expect.arrayContaining([
+              {
+                chainIds: utf8ChainIds,
+                address: utf8Address,
+                name: utf8Name.normalize('NFC'),
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+              },
+              {
+                chainIds: bidiChainIds,
+                address: bidiAddress,
+                name: strippedName,
+                createdBy: signerAddress,
+                createdByUserId: userId,
+                lastUpdatedBy: signerAddress,
+                lastUpdatedByUserId: userId,
+                createdAt: expect.any(String),
+                updatedAt: expect.any(String),
+              },
+            ]),
+          }),
+        );
+
+      expect(utf8Body.data.length).toBe(2);
+    });
+
+    it('should reject a name containing a disallowed character', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chainIds = faker.helpers.multiple(() => faker.string.numeric(), {
+        count: { min: 1, max: 5 },
+      });
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          items: [{ name: '=cmd|calc', address, chainIds }],
+        })
+        .expect(422)
+        .expect(({ body }) => {
+          expect(body).toMatchObject({
+            statusCode: 422,
+            code: 'custom',
+            message:
+              "Names can only contain letters, numbers, spaces and the characters . _ - # @ & ' , ( )",
+          });
+        });
+    });
+
     it('should update Space Address Book Items', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { mockName, mockAddress, mockChainIds } =

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Readable, Writable } from 'node:stream';
 import { faker } from '@faker-js/faker';
+import { CSV_OPTIONS } from '@/modules/csv-export/v1/entities/csv-export.options';
 import type { CsvOptions } from './csv.service';
 import { CsvService } from './csv.service';
 
@@ -366,6 +367,69 @@ describe('CsvExportService', () => {
       const lines = csv.trim().split(/\r?\n/);
       expect(lines[0]).toBe('Name,Age,Email');
       expect(lines[1]).toBe(`${name},,`);
+    });
+  });
+
+  describe('formula injection hardening', () => {
+    it('escapes a note starting with = (formula trigger)', async () => {
+      const rows = [{ note: '=cmd|calc', nonce: '1' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain("'=cmd|calc");
+    });
+
+    it('escapes a note starting with + (formula trigger)', async () => {
+      const rows = [{ note: '+1+1', nonce: '2' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain("'+1+1");
+    });
+
+    it('escapes a note hiding a formula behind a leading space', async () => {
+      const rows = [{ note: ' =cmd', nonce: '6' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain("' =cmd");
+    });
+
+    it('escapes a note hiding a formula behind a leading newline', async () => {
+      const rows = [{ note: '\n=cmd', nonce: '7' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain("'\n=cmd");
+    });
+
+    it('leaves a benign note untouched', async () => {
+      const rows = [{ note: 'Just a note', nonce: '3' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain('Just a note');
+      expect(csv).not.toContain("'Just a note");
+    });
+
+    // null symbol/note values bypass cast.string entirely (csv-stringify only
+    // casts string values), so they emit an empty cell rather than a raw value.
+    it('emits an empty cell for null token symbols/notes (no raw passthrough)', async () => {
+      const rows = [
+        { gasTokenSymbol: null, assetSymbol: null, note: null, nonce: '8' },
+      ];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      const lines = csv.trim().split(/\r?\n/);
+      // Nonce is first column; the symbol/note columns render as empty fields.
+      expect(lines[1].startsWith('8,')).toBe(true);
+      expect(lines[1]).not.toContain("'");
+    });
+
+    it('does not escape a negative amount (numeric column exemption)', async () => {
+      const rows = [{ amount: '-5', payment: '-0.001', nonce: '4' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain('-5');
+      expect(csv).not.toContain("'-5");
+      expect(csv).toContain('-0.001');
+      expect(csv).not.toContain("'-0.001");
+    });
+
+    it('still escapes a free-text column even when a numeric column is exempt', async () => {
+      const rows = [{ amount: '-5', note: '=cmd', nonce: '5' }];
+      const csv = await collectCsv(rows, CSV_OPTIONS);
+      expect(csv).toContain('-5');
+      expect(csv).not.toContain("'-5");
+      expect(csv).toContain("'=cmd");
     });
   });
 
