@@ -10,7 +10,7 @@ import {
 import { Test } from '@nestjs/testing';
 import type { FastifyRequest } from 'fastify';
 import request from 'supertest';
-import { createFastifyAdapter } from '@/app.provider';
+import { createFastifyAdapter, parseBodyLimit } from '@/app.provider';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
@@ -101,5 +101,42 @@ describe('createFastifyAdapter', () => {
       .post('/body')
       .send({ value: 'too-large' })
       .expect(413);
+  });
+});
+
+describe('parseBodyLimit', () => {
+  it('returns undefined when unset', () => {
+    expect(parseBodyLimit(undefined)).toBeUndefined();
+    expect(parseBodyLimit('')).toBeUndefined();
+  });
+
+  it('treats a bare number as bytes', () => {
+    expect(parseBodyLimit('1024')).toBe(1024);
+  });
+
+  it.each([
+    ['1b', 1],
+    ['1kb', 1024],
+    ['1mb', 1024 ** 2],
+    ['1gb', 1024 ** 3],
+    // tb/pb preserve parity with the `bytes` library Express used
+    ['1tb', 1024 ** 4],
+    ['2pb', 2 * 1024 ** 5],
+  ])('parses unit suffix %s', (input, expected) => {
+    expect(parseBodyLimit(input)).toBe(expected);
+  });
+
+  it('is case-insensitive and tolerates whitespace', () => {
+    expect(parseBodyLimit(' 1 MB ')).toBe(1024 ** 2);
+  });
+
+  it('floors fractional values', () => {
+    expect(parseBodyLimit('1.5kb')).toBe(1536);
+  });
+
+  it('throws on an unrecognised limit', () => {
+    expect(() => parseBodyLimit('not-a-size')).toThrow(
+      'Invalid JSON body size limit: not-a-size',
+    );
   });
 });
