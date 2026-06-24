@@ -27,8 +27,8 @@ import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-a
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
-  type CookieOptions,
-  getCookieOptions,
+  getClearCookieOptions,
+  getSetCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
@@ -105,11 +105,12 @@ export class OidcAuthController {
         connection,
       );
 
-    res.setCookie(OidcAuthController.OIDC_STATE_COOKIE_NAME, state, {
-      ...this.getCookieOptions(),
-      maxAge: Math.floor(stateMaxAge / 1_000),
-    });
-    res.redirect(authorizationUrl);
+    res.setCookie(
+      OidcAuthController.OIDC_STATE_COOKIE_NAME,
+      state,
+      getSetCookieOptions(this.isProduction, Math.floor(stateMaxAge / 1_000)),
+    );
+    res.redirect(authorizationUrl, 302);
   }
 
   @ApiOperation({
@@ -163,9 +164,10 @@ export class OidcAuthController {
     const expectedState: string | undefined =
       req.cookies?.[OidcAuthController.OIDC_STATE_COOKIE_NAME];
     // Always clear the one-time state cookie
-    res.clearCookie(
+    res.setCookie(
       OidcAuthController.OIDC_STATE_COOKIE_NAME,
-      this.getCookieOptions(),
+      '',
+      getClearCookieOptions(this.isProduction),
     );
 
     if (error) {
@@ -174,6 +176,7 @@ export class OidcAuthController {
       );
       res.redirect(
         this.buildErrorRedirectUrl(error, expectedState, errorDescription),
+        302,
       );
       return;
     }
@@ -182,13 +185,14 @@ export class OidcAuthController {
       this.loggingService.warn('Auth callback: missing code or state');
       res.redirect(
         this.buildErrorRedirectUrl('invalid_request', expectedState),
+        302,
       );
       return;
     }
 
     if (!expectedState || expectedState !== state) {
       this.loggingService.warn('Auth callback: state mismatch');
-      res.redirect(this.buildErrorRedirectUrl('invalid_request'));
+      res.redirect(this.buildErrorRedirectUrl('invalid_request'), 302);
       return;
     }
 
@@ -196,22 +200,22 @@ export class OidcAuthController {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
 
-      res.setCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
-        ...this.getCookieOptions(),
-        maxAge,
-      });
-      res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
+      res.setCookie(
+        ACCESS_TOKEN_COOKIE_NAME,
+        accessToken,
+        getSetCookieOptions(this.isProduction, maxAge),
+      );
+      res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state), 302);
     } catch (err) {
       const error = asError(err);
       this.loggingService.warn(
         `Auth callback: authentication failed: ${error.message}`,
       );
-      res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
+      res.redirect(
+        this.buildErrorRedirectUrl('authentication_failed', state),
+        302,
+      );
     }
-  }
-
-  private getCookieOptions(): CookieOptions {
-    return getCookieOptions(this.isProduction);
   }
 
   /**

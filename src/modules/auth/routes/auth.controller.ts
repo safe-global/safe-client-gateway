@@ -41,8 +41,8 @@ import { UserSession } from '@/modules/auth/routes/entities/user-session.entity'
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
-  type CookieOptions,
-  getCookieOptions,
+  getClearCookieOptions,
+  getSetCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -133,11 +133,12 @@ export class AuthController {
     const { accessToken } =
       await this.authService.authenticateWithSiwe(siweDto);
 
-    res.setCookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
-      ...this.getCookieOptions(),
+    res.setCookie(
+      ACCESS_TOKEN_COOKIE_NAME,
+      accessToken,
       // Extract maxAge from token as it may slightly differ to SiWe message
-      maxAge: this.getMaxAge(accessToken),
-    });
+      getSetCookieOptions(this.isProduction, this.getMaxAge(accessToken)),
+    );
   }
 
   @ApiOperation({
@@ -152,7 +153,11 @@ export class AuthController {
   @HttpCode(200)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: FastifyReply): void {
-    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+    res.setCookie(
+      ACCESS_TOKEN_COOKIE_NAME,
+      '',
+      getClearCookieOptions(this.isProduction),
+    );
   }
 
   @ApiOperation({
@@ -182,16 +187,16 @@ export class AuthController {
   ): void {
     const accessToken: string | undefined =
       req.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
-    res.clearCookie(ACCESS_TOKEN_COOKIE_NAME, this.getCookieOptions());
+    res.setCookie(
+      ACCESS_TOKEN_COOKIE_NAME,
+      '',
+      getClearCookieOptions(this.isProduction),
+    );
     const location = this.authService.getLogoutRedirectUrl(
       accessToken,
       body.redirect_url,
     );
     res.redirect(location, 303);
-  }
-
-  private getCookieOptions(): CookieOptions {
-    return getCookieOptions(this.isProduction);
   }
 
   /**

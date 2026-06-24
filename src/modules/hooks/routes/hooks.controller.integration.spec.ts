@@ -49,7 +49,7 @@ describe('HooksController', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(410);
@@ -57,7 +57,7 @@ describe('HooksController', () => {
 
     it('should throw an error if authorization is not sent in the request headers', async () => {
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .send({})
         .expect(403);
     });
@@ -110,7 +110,7 @@ describe('HooksController', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(202);
@@ -118,7 +118,7 @@ describe('HooksController', () => {
 
     it('should throw an error if authorization is not sent in the request headers', async () => {
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .send({})
         .expect(403);
     });
