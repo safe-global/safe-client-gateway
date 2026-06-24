@@ -138,6 +138,7 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         walletsRepo,
         createMockSpaceAuditRepository(),
+        createMockPerEntityFieldCrypto(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
