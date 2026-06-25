@@ -232,4 +232,25 @@ describe('ZerionBalancesApiService', () => {
       expect(mockLoggingService.warn).toHaveBeenCalledWith(message);
     });
   });
+
+  describe('getCollectibles', () => {
+    it('rethrows LimitReachedError (not a wrapped 5xx) when over budget', async () => {
+      const chain = chainBuilder().with('isTestnet', false).build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockZerionRateLimiter.assertWithinBudget.mockRejectedValue(
+        new LimitReachedError(),
+      );
+
+      await expect(
+        service.getCollectibles({ chain, safeAddress }),
+      ).rejects.toThrow(LimitReachedError);
+      expect(mockZerionRateLimiter.assertWithinBudget).toHaveBeenCalledWith({
+        datasource: 'collectibles',
+      });
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
+      // The error must not be re-wrapped by the HTTP error factory.
+      expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
+    });
+  });
 });

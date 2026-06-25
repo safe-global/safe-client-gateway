@@ -18,6 +18,7 @@ import { IChainsRepository } from '@/modules/chains/domain/chains.repository.int
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
@@ -31,6 +32,18 @@ import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 type PortfolioResult =
   | { status: 'ok'; portfolio: ZerionWalletPortfolio }
   | { status: 'degraded' };
+
+/**
+ * A (chainId, address) entry whose chain and Safe have been resolved up front,
+ * so the balance fetch can run without re-validating or risking a wasted
+ * external call for a non-Safe address.
+ */
+type ResolvedEntry = {
+  chainId: string;
+  address: Address;
+  chain: Chain;
+  safe: Safe;
+};
 
 @Injectable()
 export class SafesV2Service {
@@ -67,28 +80,25 @@ export class SafesV2Service {
   }): Promise<Array<SafeOverview>> {
     const limitedSafes = args.addresses.slice(0, this.maxOverviews);
 
-    // The Zerion portfolio is per-wallet and contains every chain, so fetch it
-    // once per wallet-identity instead of once per (chainId, address). The
-    // per-chain work below (chain, Safe, queue) stays per entry.
     const chainsById = await this.resolveChains(limitedSafes);
     const zerionEnabledById = await this.resolveZerionEligibility(chainsById);
+
+    // Validate each Safe before any external balance fetch, so a non-Safe or
+    // stale address never spends a Zerion call or consumes the shared budget.
+    const resolvedEntries = await this.resolveSafes(limitedSafes, chainsById);
+
+    // The Zerion portfolio is per-wallet and contains every chain, so fetch it
+    // once per wallet-identity (among validated, Zerion-enabled entries)
+    // instead of once per (chainId, address).
     const portfoliosByIdentity = await this.fetchPortfoliosOncePerIdentity({
-      limitedSafes,
-      chainsById,
+      entries: resolvedEntries,
       zerionEnabledById,
       currency: args.currency,
       trusted: args.trusted,
     });
 
     const settledOverviews = await Promise.allSettled(
-      limitedSafes.map(async ({ chainId, address }) => {
-        const chain = chainsById.get(chainId);
-        if (!chain) {
-          throw new Error(`Chain ${chainId} could not be resolved`);
-        }
-
-        const safe = await this.safeRepository.getSafe({ chainId, address });
-
+      resolvedEntries.map(async ({ chainId, address, chain, safe }) => {
         const [fiatBalance, queue] = await Promise.all([
           this.resolveFiatBalance({
             chain,
@@ -133,6 +143,39 @@ export class SafesV2Service {
     }
 
     return safeOverviews;
+  }
+
+  /**
+   * Resolves and validates the Safe for each entry up front. Entries whose
+   * chain or Safe cannot be resolved are logged and dropped here — before any
+   * Zerion call — so a non-Safe address never consumes the shared budget.
+   */
+  private async resolveSafes(
+    limitedSafes: Caip10Addresses,
+    chainsById: Map<string, Chain | null>,
+  ): Promise<Array<ResolvedEntry>> {
+    const settled = await Promise.allSettled(
+      limitedSafes.map(async ({ chainId, address }): Promise<ResolvedEntry> => {
+        const chain = chainsById.get(chainId);
+        if (!chain) {
+          throw new Error(`Chain ${chainId} could not be resolved`);
+        }
+        const safe = await this.safeRepository.getSafe({ chainId, address });
+        return { chainId, address, chain, safe };
+      }),
+    );
+
+    const resolved: Array<ResolvedEntry> = [];
+    for (const entry of settled) {
+      if (entry.status === 'rejected') {
+        this.loggingService.warn(
+          `Error while getting Safe overview: ${asError(entry.reason)} `,
+        );
+      } else {
+        resolved.push(entry.value);
+      }
+    }
+    return resolved;
   }
 
   /**
@@ -193,22 +236,19 @@ export class SafesV2Service {
    * degrades together rather than rejecting.
    */
   private async fetchPortfoliosOncePerIdentity(args: {
-    limitedSafes: Caip10Addresses;
-    chainsById: Map<string, Chain | null>;
+    entries: Array<ResolvedEntry>;
     zerionEnabledById: Map<string, boolean>;
     currency: string;
     trusted: boolean;
   }): Promise<Map<string, PortfolioResult>> {
-    const { limitedSafes, chainsById, zerionEnabledById, currency, trusted } =
-      args;
+    const { entries, zerionEnabledById, currency, trusted } = args;
 
     const identities = new Map<
       string,
       { address: Address; isTestnet: boolean }
     >();
-    for (const { chainId, address } of limitedSafes) {
-      const chain = chainsById.get(chainId);
-      if (chain && zerionEnabledById.get(chainId)) {
+    for (const { chainId, address, chain } of entries) {
+      if (zerionEnabledById.get(chainId)) {
         const key = this.getPortfolioIdentityKey({
           address,
           isTestnet: chain.isTestnet,

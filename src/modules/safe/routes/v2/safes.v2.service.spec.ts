@@ -219,6 +219,25 @@ describe('SafesV2Service', () => {
     expect(mockBalancesRepository.getBalances).toHaveBeenCalledTimes(1);
   });
 
+  it('does not fetch the portfolio for a non-Safe address and drops the entry', async () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    mockChainsRepository.getChain.mockResolvedValue(
+      buildZerionChain('1', 'ethereum'),
+    );
+    // Address is not a Safe — getSafe rejects.
+    mockSafeRepository.getSafe.mockRejectedValue(new Error('Not a Safe'));
+
+    const result = await service.getSafeOverview({
+      currency: 'USD',
+      addresses: [{ chainId: '1', address }],
+      trusted: false,
+    });
+
+    expect(result).toHaveLength(0);
+    // The Safe is validated first, so no Zerion budget is spent on a non-Safe.
+    expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
+  });
+
   it('drops the Safe (never $0) when both the portfolio and the balances repo fail', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     mockChainsRepository.getChain.mockResolvedValue(

@@ -226,7 +226,7 @@ export class ZerionBalancesApi implements IBalancesApi {
         zerionCollectibles.data,
       );
     } catch (error) {
-      if (error instanceof ZodError) {
+      if (error instanceof LimitReachedError || error instanceof ZodError) {
         throw error;
       }
       throw this.httpErrorFactory.from(error);
