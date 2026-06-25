@@ -23,6 +23,7 @@ import {
   ZerionWalletPortfolioSchema,
 } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
+import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 
@@ -59,6 +60,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    private readonly zerionRateLimiter: ZerionRateLimiter,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -90,6 +92,14 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     }
 
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
+
+    // Enforce the shared cross-pod Zerion budget before the network call. Over
+    // budget throws LimitReachedError, which the overview service degrades into
+    // a fallback (it is never surfaced as a client-facing 429).
+    await this.zerionRateLimiter.assertWithinBudget({
+      datasource: 'wallet_portfolio',
+      address: args.address,
+    });
 
     const url = `${this.baseUri}/v1/wallets/${args.address}/portfolio`;
 

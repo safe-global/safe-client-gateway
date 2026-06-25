@@ -19,7 +19,12 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
 import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import type { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 import { rawify } from '@/validation/entities/raw.entity';
+
+const mockZerionRateLimiter = vi.mocked({
+  assertWithinBudget: vi.fn(),
+} as unknown as MockedObject<ZerionRateLimiter>);
 
 const loggingService = {
   debug: vi.fn(),
@@ -121,6 +126,7 @@ describe('ZerionPositionsApi', () => {
         configurationService as IConfigurationService,
         new HttpErrorFactory(),
         zerionChainMappingService,
+        mockZerionRateLimiter,
       );
     });
 
@@ -266,6 +272,7 @@ describe('ZerionPositionsApi', () => {
         fakeConfigurationService,
         mockHttpErrorFactory,
         mockChainMappingService,
+        mockZerionRateLimiter,
       );
     });
 

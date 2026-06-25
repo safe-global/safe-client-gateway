@@ -45,6 +45,7 @@ import type {
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
 import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
+import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
@@ -52,15 +53,10 @@ export const IZerionBalancesApi = Symbol('IZerionBalancesApi');
 @Injectable()
 export class ZerionBalancesApi implements IBalancesApi {
   private static readonly COLLECTIBLES_SORTING = '-floor_price';
-  private static readonly RATE_LIMIT_CACHE_KEY_PREFIX = 'zerion';
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly fiatCodes: Array<string>;
-  // Number of seconds for each rate-limit cycle
-  private readonly limitPeriodSeconds: number;
-  // Number of allowed calls on each rate-limit cycle
-  private readonly limitCalls: number;
   // In-memory chain mappings: chainId -> zerion chain name
   private chainMappings: {
     mainnet: Record<string, string>;
@@ -81,6 +77,7 @@ export class ZerionBalancesApi implements IBalancesApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    private readonly zerionRateLimiter: ZerionRateLimiter,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -94,12 +91,6 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
-    );
-    this.limitPeriodSeconds = configurationService.getOrThrow(
-      'balances.providers.zerion.limitPeriodSeconds',
-    );
-    this.limitCalls = configurationService.getOrThrow(
-      'balances.providers.zerion.limitCalls',
     );
   }
 
@@ -142,7 +133,9 @@ export class ZerionBalancesApi implements IBalancesApi {
     }
 
     try {
-      await this._checkRateLimit();
+      await this.zerionRateLimiter.assertWithinBudget({
+        datasource: 'balances',
+      });
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheMiss, key, field });
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/positions`;
@@ -202,7 +195,9 @@ export class ZerionBalancesApi implements IBalancesApi {
       return this._buildCollectiblesPage(data.links.next, data.data);
     }
     try {
-      await this._checkRateLimit();
+      await this.zerionRateLimiter.assertWithinBudget({
+        datasource: 'collectibles',
+      });
       const chainName = await this._getChainName(args.chain);
       const url = `${this.baseUri}/v1/wallets/${args.safeAddress}/nft-positions`;
       const pageAfter = this._encodeZerionPageOffset(args.offset);
@@ -492,15 +487,5 @@ export class ZerionBalancesApi implements IBalancesApi {
       );
     }
     return zerionUrl.toString();
-  }
-
-  private async _checkRateLimit(): Promise<void> {
-    const current = await this.cacheService.increment(
-      CacheRouter.getRateLimitCacheKey(
-        ZerionBalancesApi.RATE_LIMIT_CACHE_KEY_PREFIX,
-      ),
-      this.limitPeriodSeconds,
-    );
-    if (current > this.limitCalls) throw new LimitReachedError();
   }
 }
