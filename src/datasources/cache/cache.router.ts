@@ -90,6 +90,7 @@ export class CacheRouter {
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
+  private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -1122,6 +1123,53 @@ export class CacheRouter {
     );
     return new CacheDir(
       CacheRouter.getRelayFeePreviewCacheKey(args),
+      hash.digest('hex'),
+    );
+  }
+
+  static getGtfFeePreviewCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.GTF_FEE_PREVIEW_KEY}_${args.safeAddress}`;
+  }
+
+  /**
+   * Gets cache directory for GTF fee preview.
+   * The field is a hash of request parameters to ensure uniqueness.
+   * Nonce is included because it determines the safeTxHash.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeAddress - Safe address
+   * @param args.feature - GTF feature identifier
+   * @param args.to - Transaction recipient
+   * @param args.value - Transaction value
+   * @param args.data - Transaction data
+   * @param args.operation - Operation type (0=Call, 1=DelegateCall)
+   * @param args.nonce - Safe transaction nonce
+   * @param args.gasToken - Gas token address
+   * @param args.threshold - Safe threshold (number of signatures)
+   * @returns CacheDir - Cache directory
+   */
+  static getGtfFeePreviewCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    feature: string;
+    to: Address;
+    value: string;
+    data: string;
+    operation: number;
+    nonce: string;
+    gasToken: Address;
+    threshold: number;
+    fiatCode?: string;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(
+      `${args.feature}_${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.fiatCode ?? 'USD'}`,
+    );
+    return new CacheDir(
+      CacheRouter.getGtfFeePreviewCacheKey(args),
       hash.digest('hex'),
     );
   }

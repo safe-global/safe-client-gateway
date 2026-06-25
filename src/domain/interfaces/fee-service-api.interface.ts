@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
 import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
+import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
+import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
 
@@ -34,4 +36,21 @@ export interface IFeeServiceApi {
     safeAddress: Address;
     request: TxFeesRequest;
   }): Promise<TxFeesResponse>;
+
+  /**
+   * Gets transaction GTF fees from the fee service.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeAddress - Safe address initiating the transaction
+   * @param args.feature - GTF feature identifier (e.g. 'create-transaction')
+   * @param args.request - Transaction parameters including nonce for fee calculation
+   * @returns GTF fee response with expanded txData, safeTxHash, gtfFee, and snapshot
+   * @throws {DataSourceError} If the fee service request fails
+   */
+  getGtfFees(args: {
+    chainId: string;
+    safeAddress: Address;
+    feature: string;
+    request: GtfFeesRequest;
+  }): Promise<GtfFeesResponse>;
 }
