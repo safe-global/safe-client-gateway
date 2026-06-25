@@ -80,7 +80,7 @@ export class FeeServiceApi implements IFeeServiceApi {
       threshold: args.request.numberSignatures,
       fiatCode: args.request.fiatCode,
     });
-    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay/fees`;
 
     try {
       const data = await this.dataSource.post<TxFeesResponse>({
