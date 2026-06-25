@@ -21,6 +21,7 @@ import { BalancesController } from '@/modules/balances/routes/balances.controlle
 import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
     TxAuthNetworkModule,
     ChainsModule,
     SafeRepositoryModule,
+    ZerionModule,
   ],
   controllers: [BalancesController],
   providers: [

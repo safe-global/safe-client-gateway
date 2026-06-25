@@ -79,6 +79,13 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     return Promise.resolve(currentValue);
   }
 
+  incrWithTtl(cacheKey: string, _ttlSeconds: number): Promise<number> {
+    let currentValue: number = this.cache[cacheKey] as number;
+    currentValue = currentValue ? currentValue + 1 : 1;
+    this.cache[cacheKey] = currentValue;
+    return Promise.resolve(currentValue);
+  }
+
   setCounter(
     key: string,
     value: number,

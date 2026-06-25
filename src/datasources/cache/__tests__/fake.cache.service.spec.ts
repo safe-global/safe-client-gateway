@@ -107,4 +107,19 @@ describe('FakeCacheService', () => {
 
     await expect(target.getCounter(key)).resolves.toBe(value + 3);
   });
+
+  it('creates a missing key and increments its value with incrWithTtl', async () => {
+    const key = faker.string.alphanumeric();
+    const ttl = faker.number.int({ min: 1, max: 10 });
+
+    const firstResult = await target.incrWithTtl(key, ttl);
+    expect(firstResult).toEqual(1);
+
+    const results: Array<number> = [];
+    for (let i = 0; i < 5; i++) {
+      results.push(await target.incrWithTtl(key, ttl));
+    }
+
+    expect(results).toEqual([2, 3, 4, 5, 6]);
+  });
 });

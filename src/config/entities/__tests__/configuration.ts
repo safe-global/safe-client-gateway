@@ -76,6 +76,8 @@ export default (): ReturnType<typeof configuration> => ({
         ),
         limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         limitCalls: faker.number.int({ min: 1, max: 5 }),
+        perAddressLimitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
+        perAddressLimitCalls: faker.number.int({ min: 1, max: 5 }),
       },
     },
   },
