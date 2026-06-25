@@ -50,6 +50,13 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
   private static readonly CACHE_TTL_SECONDS = 10;
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
+  // Coalesces concurrent identical fetches (per instance): while one request for
+  // a given cache key is in flight, others await the same promise instead of
+  // issuing duplicate Zerion calls. Prevents cache-miss/expiry stampedes.
+  private readonly inFlightRequests = new Map<
+    string,
+    Promise<ZerionWalletPortfolio>
+  >();
 
   constructor(
     @Inject(IConfigurationService)
@@ -91,6 +98,30 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
 
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
 
+    // Coalesce: if an identical fetch is already running, await it instead of
+    // issuing a duplicate Zerion request.
+    const inFlightKey = `${key}:${field}`;
+    const existing = this.inFlightRequests.get(inFlightKey);
+    if (existing) {
+      return existing;
+    }
+
+    const request = this.fetchAndCachePortfolio(args, cacheDir).finally(() => {
+      this.inFlightRequests.delete(inFlightKey);
+    });
+    this.inFlightRequests.set(inFlightKey, request);
+    return request;
+  }
+
+  private async fetchAndCachePortfolio(
+    args: {
+      address: Address;
+      currency: string;
+      isTestnet: boolean;
+      trusted?: boolean;
+    },
+    cacheDir: ReturnType<typeof CacheRouter.getZerionWalletPortfolioCacheDir>,
+  ): Promise<ZerionWalletPortfolio> {
     const url = `${this.baseUri}/v1/wallets/${args.address}/portfolio`;
 
     const params: Record<string, string> = {
