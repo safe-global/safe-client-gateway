@@ -226,6 +226,36 @@ describe('RedisCacheService', () => {
     expect(ttl).toBeLessThanOrEqual(maxExpireTime);
   });
 
+  it('incrWithTtl creates a missing key and sets its TTL on first increment', async () => {
+    const ttlSeconds = faker.number.int({ min: 5, max: maxTtlDeviated });
+    const key = faker.string.alphanumeric();
+
+    const firstResult = await redisCacheService.incrWithTtl(key, ttlSeconds);
+
+    const ttl = await redisClient.ttl(key);
+    expect(firstResult).toEqual(1);
+    expect(ttl).toBeGreaterThan(0);
+    expect(ttl).toBeLessThanOrEqual(ttlSeconds);
+  });
+
+  it('incrWithTtl keeps the window TTL stable across subsequent increments', async () => {
+    const ttlSeconds = faker.number.int({ min: 50, max: maxTtlDeviated });
+    const key = faker.string.alphanumeric();
+
+    await redisCacheService.incrWithTtl(key, ttlSeconds);
+    const ttlAfterFirst = await redisClient.ttl(key);
+
+    const results: Array<number> = [];
+    for (let i = 0; i < 4; i++) {
+      // A different TTL here must NOT reset the window once the key exists.
+      results.push(await redisCacheService.incrWithTtl(key, ttlSeconds * 10));
+    }
+    const ttlAfterMore = await redisClient.ttl(key);
+
+    expect(results).toEqual([2, 3, 4, 5]);
+    expect(ttlAfterMore).toBeLessThanOrEqual(ttlAfterFirst);
+  });
+
   it('sets and gets the value of a counter key', async () => {
     const key = faker.string.alphanumeric();
     const value = faker.number.int({ min: 100 });
