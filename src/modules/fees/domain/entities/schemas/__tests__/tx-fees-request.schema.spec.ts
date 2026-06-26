@@ -34,9 +34,7 @@ describe('TxFeesRequestSchema', () => {
     const result = TxFeesRequestSchema.safeParse(request);
 
     expect(!result.success && result.error.issues).toStrictEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ path: ['nonce'] }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ path: ['nonce'] })]),
     );
   });
 
