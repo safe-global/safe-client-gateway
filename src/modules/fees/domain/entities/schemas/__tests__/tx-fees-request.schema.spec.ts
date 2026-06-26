@@ -12,12 +12,32 @@ describe('TxFeesRequestSchema', () => {
       data: '0x',
       operation: 0,
       numberSignatures: 2,
+      nonce: '42',
       gasToken: getAddress(zeroAddress),
     };
 
     const result = TxFeesRequestSchema.safeParse(request);
 
     expect(result.success).toBe(true);
+  });
+
+  it('should require nonce', () => {
+    const request = {
+      to: getAddress(faker.finance.ethereumAddress()),
+      value: '0',
+      data: '0x',
+      operation: 0,
+      numberSignatures: 1,
+      gasToken: getAddress(zeroAddress),
+    };
+
+    const result = TxFeesRequestSchema.safeParse(request);
+
+    expect(!result.success && result.error.issues).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: ['nonce'] }),
+      ]),
+    );
   });
 
   it('should not allow an invalid address for to', () => {

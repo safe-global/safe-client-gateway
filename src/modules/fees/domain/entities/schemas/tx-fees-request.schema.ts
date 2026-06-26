@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
@@ -11,6 +12,8 @@ export const TxFeesRequestSchema = z.object({
   data: HexSchema,
   operation: z.enum(Operation),
   numberSignatures: z.number().int().min(1),
+  nonce: NumericStringSchema,
   gasToken: AddressSchema,
+  origin: z.enum(Origin).optional(),
   fiatCode: z.string().optional(),
 });
