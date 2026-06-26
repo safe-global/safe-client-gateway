@@ -25,15 +25,6 @@ import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entit
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 /**
- * Outcome of fetching one wallet-identity's Zerion portfolio: either the parsed
- * portfolio, or a `degraded` marker meaning the balance must come from the
- * fallback path (never a fabricated `$0`).
- */
-type PortfolioResult =
-  | { status: 'ok'; portfolio: ZerionWalletPortfolio }
-  | { status: 'degraded' };
-
-/**
  * A (chainId, address) entry whose chain and Safe have been resolved up front,
  * so the balance fetch can run without re-validating or risking a wasted
  * external call for a non-Safe address.
@@ -187,19 +178,20 @@ export class SafesV2Service {
     limitedSafes: Caip10Addresses,
   ): Promise<Map<string, Chain | null>> {
     const uniqueChainIds = [...new Set(limitedSafes.map((s) => s.chainId))];
-    const entries = await Promise.all(
-      uniqueChainIds.map(async (chainId): Promise<[string, Chain | null]> => {
-        try {
-          return [chainId, await this.chainsRepository.getChain(chainId)];
-        } catch (error) {
-          this.loggingService.warn(
-            `Error while getting chain ${chainId}: ${asError(error)} `,
-          );
-          return [chainId, null];
-        }
-      }),
+    return new Map(
+      await Promise.all(
+        uniqueChainIds.map(async (chainId): Promise<[string, Chain | null]> => {
+          try {
+            return [chainId, await this.chainsRepository.getChain(chainId)];
+          } catch (error) {
+            this.loggingService.warn(
+              `Error while getting chain ${chainId}: ${asError(error)} `,
+            );
+            return [chainId, null];
+          }
+        }),
+      ),
     );
-    return new Map(entries);
   }
 
   /**
@@ -210,37 +202,38 @@ export class SafesV2Service {
   private async resolveZerionEligibility(
     chainsById: Map<string, Chain | null>,
   ): Promise<Map<string, boolean>> {
-    const entries = await Promise.all(
-      [...chainsById.entries()].map(
-        async ([chainId, chain]): Promise<[string, boolean]> => {
-          if (
-            !(
-              this.zerionBalancesEnabled &&
-              chain &&
-              this.getZerionChainName(chain)
-            )
-          ) {
-            return [chainId, false];
-          }
-          return [chainId, await this.isPortfolioEndpointFeatureEnabled(chain)];
-        },
+    if (!this.zerionBalancesEnabled) {
+      return new Map();
+    }
+    return new Map(
+      await Promise.all(
+        [...chainsById.entries()].map(
+          async ([chainId, chain]): Promise<[string, boolean]> => {
+            if (!(chain && this.getZerionChainName(chain))) {
+              return [chainId, false];
+            }
+            return [
+              chainId,
+              await this.isPortfolioEndpointFeatureEnabled(chain),
+            ];
+          },
+        ),
       ),
     );
-    return new Map(entries);
   }
 
   /**
    * Fetches one portfolio per unique wallet-identity (address, isTestnet,
    * currency, trusted) among the Zerion-enabled entries. A failed fetch is
-   * captured as `degraded` for that identity so every Safe on that wallet
-   * degrades together rather than rejecting.
+   * omitted from the map (and logged), so every Safe on that wallet degrades
+   * together via the fallback rather than rejecting.
    */
   private async fetchPortfoliosOncePerIdentity(args: {
     entries: Array<ResolvedEntry>;
     zerionEnabledById: Map<string, boolean>;
     currency: string;
     trusted: boolean;
-  }): Promise<Map<string, PortfolioResult>> {
+  }): Promise<Map<string, ZerionWalletPortfolio>> {
     const { entries, zerionEnabledById, currency, trusted } = args;
 
     const identities = new Map<
@@ -261,7 +254,7 @@ export class SafesV2Service {
       }
     }
 
-    const results = new Map<string, PortfolioResult>();
+    const results = new Map<string, ZerionWalletPortfolio>();
     await Promise.all(
       [...identities.entries()].map(async ([key, { address, isTestnet }]) => {
         try {
@@ -271,10 +264,9 @@ export class SafesV2Service {
             isTestnet,
             trusted,
           });
-          results.set(key, { status: 'ok', portfolio });
+          results.set(key, portfolio);
         } catch (error) {
           this.logPortfolioFetchError({ address, error });
-          results.set(key, { status: 'degraded' });
         }
       }),
     );
@@ -356,7 +348,7 @@ export class SafesV2Service {
     currency: string;
     trusted: boolean;
     zerionEnabled: boolean;
-    portfoliosByIdentity: Map<string, PortfolioResult>;
+    portfoliosByIdentity: Map<string, ZerionWalletPortfolio>;
   }): Promise<number> {
     const { chain, safeAddress, currency, trusted, zerionEnabled } = args;
 
@@ -375,14 +367,13 @@ export class SafesV2Service {
       currency,
       trusted,
     });
-    const result = args.portfoliosByIdentity.get(key);
+    const portfolio = args.portfoliosByIdentity.get(key);
 
-    if (result?.status === 'ok') {
-      const value = this.extractChainFiatBalance(result.portfolio, chain);
+    if (portfolio) {
+      const value = this.extractChainFiatBalance(portfolio, chain);
       if (value !== null) {
         return value;
       }
-      // Chain has no usable Zerion mapping despite the gate — degrade honestly.
     }
 
     return await this.serveDegradedBalance({

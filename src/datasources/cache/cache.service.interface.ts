@@ -24,15 +24,11 @@ export interface ICacheService {
   ): Promise<number>;
 
   /**
-   * Atomically increments a counter and sets its TTL on first creation.
-   *
-   * Unlike {@link increment} (which relies on `EXPIRE … NX`, a Redis 7.0+
-   * feature), this uses a Lua `INCR`+`EXPIRE` script that works on Redis 6 and
-   * 7 alike. Use this for fixed-window rate limiting so the window reliably
-   * resets regardless of the deployed Redis version.
+   * Atomically increments a counter and sets its TTL on first creation, for
+   * fixed-window rate limiting.
    *
    * @param cacheKey - Counter key (not prefixed, matching {@link increment}).
-   * @param ttlSeconds - Window length in seconds, applied on first increment.
+   * @param ttlSeconds - Window length in seconds, applied on the first increment.
    * @returns The counter value after incrementing.
    */
   incrWithTtl(cacheKey: string, ttlSeconds: number): Promise<number>;
