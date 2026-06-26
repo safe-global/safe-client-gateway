@@ -38,6 +38,29 @@ describe('TxFeesRequestSchema', () => {
     );
   });
 
+  it.each([
+    ['hex', '0x12'],
+    ['negative', '-12'],
+    ['decimal', '1.5'],
+    ['non-numeric', 'abc'],
+  ])('should reject a %s nonce', (_label, nonce) => {
+    const request = {
+      to: getAddress(faker.finance.ethereumAddress()),
+      value: '0',
+      data: '0x',
+      operation: 0,
+      numberSignatures: 1,
+      nonce,
+      gasToken: getAddress(zeroAddress),
+    };
+
+    const result = TxFeesRequestSchema.safeParse(request);
+
+    expect(!result.success && result.error.issues).toStrictEqual(
+      expect.arrayContaining([expect.objectContaining({ path: ['nonce'] })]),
+    );
+  });
+
   it('should not allow an invalid address for to', () => {
     const request = {
       to: 'not-an-address',
