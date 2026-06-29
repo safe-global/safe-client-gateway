@@ -2,10 +2,14 @@
 
 import { z } from 'zod';
 import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
 
 export const FeePreviewTransactionDtoSchema = TransactionBaseSchema.extend({
   gasToken: AddressSchema,
   numberSignatures: z.number().int().min(1),
+  nonce: NonNegativeNumericStringSchema,
+  origin: z.enum(Origin).optional(),
   fiatCode: z.string().optional(),
 });

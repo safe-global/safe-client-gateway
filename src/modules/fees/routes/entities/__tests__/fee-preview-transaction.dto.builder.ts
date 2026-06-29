@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import type { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
@@ -19,5 +20,7 @@ export function feePreviewTransactionDtoBuilder(): IBuilder<FeePreviewTransactio
     )
     .with('operation', Operation.CALL)
     .with('gasToken', getAddress(zeroAddress))
-    .with('numberSignatures', faker.number.int({ min: 1, max: 10 }));
+    .with('numberSignatures', faker.number.int({ min: 1, max: 10 }))
+    .with('nonce', faker.string.numeric())
+    .with('origin', faker.helpers.enumValue(Origin));
 }
