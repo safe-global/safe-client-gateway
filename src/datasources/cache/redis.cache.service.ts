@@ -17,11 +17,6 @@ import {
 export class RedisCacheService
   implements ICacheService, ICacheReadiness, OnModuleDestroy
 {
-  // Atomic INCR that sets a TTL only on the key's creation. Uses a plain
-  // EXPIRE (not EXPIRE … NX) so it works on Redis 6 as well as 7.
-  private static readonly INCR_WITH_TTL_LUA =
-    "local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return c";
-
   private readonly quitTimeoutInSeconds: number = 2;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultExpirationDeviatePercent: number;
@@ -128,23 +123,6 @@ export class RedisCacheService
     }
     const [incrRes] = await transaction.get(cacheKey).exec();
     return Number(incrRes);
-  }
-
-  /**
-   * Atomic, Redis-version-agnostic fixed-window counter.
-   *
-   * `EXPIRE … NX` (used by {@link increment}) requires Redis 7.0+, so on Redis
-   * 6 that counter never expires and the window never resets. This Lua script
-   * sets the TTL only on the first increment using a plain `EXPIRE`, which
-   * works on both Redis 6 and 7.
-   */
-  async incrWithTtl(cacheKey: string, ttlSeconds: number): Promise<number> {
-    const ttl = this.enforceMaxRedisTTL(ttlSeconds);
-    const result = await this.client.eval(RedisCacheService.INCR_WITH_TTL_LUA, {
-      keys: [cacheKey],
-      arguments: [`${ttl}`],
-    });
-    return Number(result);
   }
 
   async setCounter(
