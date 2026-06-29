@@ -110,7 +110,7 @@ export class ZerionRateLimiter {
     periodSeconds: number,
   ): Promise<number | null> {
     try {
-      const count = await this.cacheService.incrWithTtl(key, periodSeconds);
+      const count = await this.cacheService.increment(key, periodSeconds, 0);
       return Number.isFinite(count) ? count : null;
     } catch (error) {
       this.loggingService.warn(
