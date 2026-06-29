@@ -214,6 +214,7 @@ export default (): ReturnType<typeof configuration> => ({
     users: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
+    ownersMaliciousFilter: false,
     signatureVerification: {
       api: true,
       proposal: true,
