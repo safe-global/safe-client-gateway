@@ -62,6 +62,7 @@ import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { SurveysModule } from '@/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '@/modules/targeted-messaging/targeted-messaging.module';
+import { TotpModule } from '@/modules/totp/totp.module';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { DataSourceErrorFilter } from '@/routes/common/filters/data-source-error.filter';
@@ -115,6 +116,7 @@ export class AppModule implements NestModule {
               SpacesModule,
               CounterfactualSafesModule,
               SurveysModule,
+              TotpModule,
             ]
           : []),
         OwnersModule,

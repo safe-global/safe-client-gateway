@@ -25,6 +25,7 @@ import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { TotpGuard } from '@/modules/totp/routes/guards/totp.guard';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books/address-books.service';
 import { SpaceAddressBookDto } from '@/modules/spaces/routes/address-books/entities/space-address-book.dto.entity';
 import {
@@ -113,7 +114,7 @@ export class AddressBooksController {
   })
   @Put('/:spaceId/address-book')
   @UseGuards(SpacesAddressBookRateLimitGuard)
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TotpGuard)
   public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -156,7 +157,7 @@ export class AddressBooksController {
       'Access forbidden - user is not authorized to modify this address book',
   })
   @Delete('/:spaceId/address-book/:address')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, TotpGuard)
   public async deleteByAddress(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

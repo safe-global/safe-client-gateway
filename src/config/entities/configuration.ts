@@ -57,6 +57,16 @@ export default () => ({
       process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`,
       10, // 5 minutes
     ),
+    totp: {
+      // Label shown in the authenticator app (the issuer in the otpauth:// URI).
+      issuer: process.env.AUTH_TOTP_ISSUER ?? 'Safe Wallet',
+      // How long a successful TOTP entry elevates the session for, before a
+      // sensitive action requires a fresh code again.
+      elevationWindowSeconds: Number.parseInt(
+        process.env.AUTH_TOTP_ELEVATION_WINDOW_SECONDS ?? `${5 * 60}`,
+        10, // 5 minutes
+      ),
+    },
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
     allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
     auth0: {

@@ -22,4 +22,17 @@ export interface IAuthRepository {
   decodeTokenWithoutVerification(
     accessToken: string,
   ): AuthPayloadWithClaims<AuthPayloadDto> | null;
+
+  /**
+   * Mints a short-lived, self-contained token that proves the user passed TOTP
+   * recently. It is distinct from the session token (a different `type` claim)
+   * and validating it requires no database lookup.
+   */
+  signTotpElevationToken(args: { userId: string; exp: Date }): string;
+
+  /**
+   * Verifies a TOTP elevation token and returns the user it was issued for.
+   * Throws if the signature, type, or expiry is invalid.
+   */
+  verifyTotpElevationToken(token: string): { userId: string };
 }

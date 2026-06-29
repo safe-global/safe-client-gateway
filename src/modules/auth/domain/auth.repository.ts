@@ -50,4 +50,28 @@ export class AuthRepository implements IAuthRepository {
     if (!decoded) return null;
     return AuthPayloadWithClaimsDtoSchema.parse(decoded);
   }
+
+  signTotpElevationToken(args: { userId: string; exp: Date }): string {
+    return this.jwtService.sign({
+      type: TOTP_ELEVATION_TOKEN_TYPE,
+      sub: args.userId,
+      exp: args.exp,
+    });
+  }
+
+  verifyTotpElevationToken(token: string): { userId: string } {
+    const payload = this.jwtService.verify<{ type?: string; sub?: string }>(
+      token,
+    );
+    if (payload.type !== TOTP_ELEVATION_TOKEN_TYPE || !payload.sub) {
+      throw new Error('Invalid TOTP elevation token');
+    }
+    return { userId: payload.sub };
+  }
 }
+
+/**
+ * Marks a token as a TOTP elevation token rather than a session token, so the
+ * two can never be used interchangeably even though they share a signing key.
+ */
+const TOTP_ELEVATION_TOKEN_TYPE = 'totp_elevation';
