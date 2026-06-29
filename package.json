@@ -89,7 +89,7 @@
     "@nestjs/schematics": "11.1.0",
     "@nestjs/testing": "11.1.27",
     "@smithy/util-stream": "4.5.5",
-    "@swc/core": "1.15.40",
+    "@swc/core": "1.15.43",
     "@types/amqplib": "0",
     "@types/cookie-parser": "1.4.10",
     "@types/express": "5.0.6",
