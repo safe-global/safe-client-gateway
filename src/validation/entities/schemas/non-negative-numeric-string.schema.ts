@@ -12,9 +12,8 @@ function isNonNegativeIntegerString(value: unknown): boolean {
   return typeof value === 'string' && /^\d+$/.test(value);
 }
 
-export const NonNegativeNumericStringSchema = z.string().refine(
-  isNonNegativeIntegerString,
-  {
+export const NonNegativeNumericStringSchema = z
+  .string()
+  .refine(isNonNegativeIntegerString, {
     error: 'Invalid non-negative integer string',
-  },
-);
+  });
