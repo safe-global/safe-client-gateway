@@ -5674,10 +5674,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:6.2.2":
-  version: 6.2.2
-  resolution: "jose@npm:6.2.2"
-  checksum: 10/fd66f24916d2507dbde0ca77ede86377e7d7eae42c7f94db0dfd014b0c6ce5041365dc8e757a44e54cd7606ea5e9c757aa544b51e55cb8a736e83320db1b8258
+"jose@npm:6.2.3":
+  version: 6.2.3
+  resolution: "jose@npm:6.2.3"
+  checksum: 10/876974613c5ee988d43b65a34c96ce440dbf7706a2f07f465b8874af16ee532102e224459a7068d2c6ef044affe49690667d23ca12770c279804baec95a09608
   languageName: node
   linkType: hard
 
@@ -7391,7 +7391,7 @@ __metadata:
     cookie-parser: "npm:1.4.7"
     csv-stringify: "npm:^6.7.0"
     husky: "npm:9.1.7"
-    jose: "npm:6.2.2"
+    jose: "npm:6.2.3"
     jsonwebtoken: "npm:9.0.3"
     lodash: "npm:4.18.1"
     nestjs-cls: "npm:6.2.1"
