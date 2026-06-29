@@ -215,6 +215,7 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     auth: false,
     oidc_auth: false,
+    billingWebhook: false,
     counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,
@@ -269,6 +270,12 @@ export default (): ReturnType<typeof configuration> => ({
   jwt: {
     issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
     secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
+  },
+  billing: {
+    webhook: {
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY,
+      issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+    },
   },
   log: {
     level: 'debug',

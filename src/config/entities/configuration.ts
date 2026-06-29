@@ -427,6 +427,7 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
+    billingWebhook: process.env.FF_BILLING_WEBHOOK?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
@@ -530,6 +531,16 @@ export default () => ({
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
+  },
+  billing: {
+    // ES256 service-to-service auth for incoming billing-service webhooks.
+    // The CGW verifies tokens against its own public key (no JWKS); the
+    // private key lives only in the provisioning CLI, not the running app.
+    webhook: {
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY,
+      // The CGW's own identifier — a self-issued token uses it as both `iss` and `aud`.
+      issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+    },
   },
   locking: {
     baseUri:
