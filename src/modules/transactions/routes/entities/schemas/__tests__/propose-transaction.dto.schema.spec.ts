@@ -191,4 +191,36 @@ describe('ProposeTransactionDtoSchema', () => {
       }),
     ]);
   });
+
+  describe('origin', () => {
+    it('should accept an origin within the size bound', () => {
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('origin', 'a'.repeat(2048))
+        .build();
+
+      const result = ProposeTransactionDtoSchema.safeParse(
+        proposeTransactionDto,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject an origin exceeding 2048 chars', () => {
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('origin', 'a'.repeat(2049))
+        .build();
+
+      const result = ProposeTransactionDtoSchema.safeParse(
+        proposeTransactionDto,
+      );
+
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'too_big',
+          maximum: 2048,
+          path: ['origin'],
+        }),
+      ]);
+    });
+  });
 });
