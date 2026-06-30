@@ -69,6 +69,10 @@ describe('ZerionWalletPortfolioApi', () => {
       'balances.providers.zerion.baseUri',
       zerionBaseUri,
     );
+    fakeConfigurationService.set(
+      'balances.providers.zerion.walletPortfolioCacheTtlSeconds',
+      10,
+    );
 
     service = new ZerionWalletPortfolioApi(
       fakeConfigurationService,
