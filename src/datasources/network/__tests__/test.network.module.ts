@@ -12,6 +12,7 @@ export const networkService: INetworkService = {
   post: vi.fn(),
   patch: vi.fn(),
   postForm: vi.fn(),
+  patch: vi.fn(),
   delete: vi.fn(),
 };
 
