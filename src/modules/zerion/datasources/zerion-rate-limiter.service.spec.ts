@@ -11,7 +11,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 
 const mockCacheService = vi.mocked({
-  incrWithTtl: vi.fn(),
+  increment: vi.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
@@ -66,19 +66,20 @@ describe('ZerionRateLimiter', () => {
   });
 
   it('does not throw when within the global budget', async () => {
-    mockCacheService.incrWithTtl.mockResolvedValue(limitCalls);
+    mockCacheService.increment.mockResolvedValue(limitCalls);
 
     await expect(
       limiter.assertWithinBudget({ datasource: 'balances' }),
     ).resolves.toBeUndefined();
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledWith(
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
       GLOBAL_KEY,
       limitPeriodSeconds,
+      0,
     );
   });
 
   it('throws LimitReachedError when over the global budget', async () => {
-    mockCacheService.incrWithTtl.mockResolvedValue(limitCalls + 1);
+    mockCacheService.increment.mockResolvedValue(limitCalls + 1);
 
     await expect(
       limiter.assertWithinBudget({ datasource: 'balances' }),
@@ -89,30 +90,32 @@ describe('ZerionRateLimiter', () => {
   });
 
   it('does not check the per-address budget when no address is provided', async () => {
-    mockCacheService.incrWithTtl.mockResolvedValue(1);
+    mockCacheService.increment.mockResolvedValue(1);
 
     await limiter.assertWithinBudget({ datasource: 'balances' });
 
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledTimes(1);
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledWith(
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
       GLOBAL_KEY,
       limitPeriodSeconds,
+      0,
     );
   });
 
   it('checks the per-address budget before the global budget', async () => {
     // First increment (per-address) trips the limit.
-    mockCacheService.incrWithTtl.mockResolvedValueOnce(perAddressCalls + 1);
+    mockCacheService.increment.mockResolvedValueOnce(perAddressCalls + 1);
 
     await expect(
       limiter.assertWithinBudget({ datasource: 'wallet_portfolio', address }),
     ).rejects.toThrow(LimitReachedError);
 
     // Per-address tripped => global budget must NOT be consumed.
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledTimes(1);
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledWith(
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
       CacheRouter.getRateLimitCacheKey(`zerion_${address}`),
       perAddressPeriodSeconds,
+      0,
     );
     expect(mockLoggingService.warn).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -123,34 +126,35 @@ describe('ZerionRateLimiter', () => {
   });
 
   it('checks per-address then global when per-address is within budget', async () => {
-    mockCacheService.incrWithTtl
+    mockCacheService.increment
       .mockResolvedValueOnce(perAddressCalls) // per-address ok
       .mockResolvedValueOnce(limitCalls); // global ok
 
     await expect(
       limiter.assertWithinBudget({ datasource: 'wallet_portfolio', address }),
     ).resolves.toBeUndefined();
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledTimes(2);
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(2);
   });
 
   it('skips the per-address tier when its limit is non-positive (disabled)', async () => {
     limiter = buildLimiter({ perAddressCalls: 0 });
-    mockCacheService.incrWithTtl.mockResolvedValue(1);
+    mockCacheService.increment.mockResolvedValue(1);
 
     await limiter.assertWithinBudget({
       datasource: 'wallet_portfolio',
       address,
     });
 
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledTimes(1);
-    expect(mockCacheService.incrWithTtl).toHaveBeenCalledWith(
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
       GLOBAL_KEY,
       limitPeriodSeconds,
+      0,
     );
   });
 
   it('fails open (does not throw) when the cache errors', async () => {
-    mockCacheService.incrWithTtl.mockRejectedValue(new Error('Redis down'));
+    mockCacheService.increment.mockRejectedValue(new Error('Redis down'));
 
     await expect(
       limiter.assertWithinBudget({ datasource: 'balances' }),
@@ -161,7 +165,7 @@ describe('ZerionRateLimiter', () => {
   });
 
   it('fails open when the counter is non-finite', async () => {
-    mockCacheService.incrWithTtl.mockResolvedValue(Number.NaN);
+    mockCacheService.increment.mockResolvedValue(Number.NaN);
 
     await expect(
       limiter.assertWithinBudget({ datasource: 'balances' }),

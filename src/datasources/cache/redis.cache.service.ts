@@ -17,11 +17,6 @@ import {
 export class RedisCacheService
   implements ICacheService, ICacheReadiness, OnModuleDestroy
 {
-  // Atomic INCR that sets a TTL only on the key's creation. Uses a plain
-  // EXPIRE (not EXPIRE … NX) so it works on Redis 6 as well as 7.
-  private static readonly INCR_WITH_TTL_LUA =
-    "local c = redis.call('INCR', KEYS[1]); if c == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end; return c";
-
   private readonly quitTimeoutInSeconds: number = 2;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultExpirationDeviatePercent: number;
@@ -130,23 +125,6 @@ export class RedisCacheService
     return Number(incrRes);
   }
 
-  /**
-   * Atomic, Redis-version-agnostic fixed-window counter.
-   *
-   * `EXPIRE … NX` (used by {@link increment}) requires Redis 7.0+, so on Redis
-   * 6 that counter never expires and the window never resets. This Lua script
-   * sets the TTL only on the first increment using a plain `EXPIRE`, which
-   * works on both Redis 6 and 7.
-   */
-  async incrWithTtl(cacheKey: string, ttlSeconds: number): Promise<number> {
-    const ttl = this.enforceMaxRedisTTL(ttlSeconds);
-    const result = await this.client.eval(RedisCacheService.INCR_WITH_TTL_LUA, {
-      keys: [cacheKey],
-      arguments: [`${ttl}`],
-    });
-    return Number(result);
-  }
-
   async setCounter(
     key: string,
     value: number,
@@ -199,20 +177,41 @@ export class RedisCacheService
     const forceQuitTimeout = setTimeout(() => {
       this.forceQuit();
     }, this.quitTimeoutInSeconds * 1000);
-    await this.client.quit();
-    clearTimeout(forceQuitTimeout);
+    try {
+      await this.client.quit();
+    } catch {
+      // `quit` throws `ClientClosedError` if the connection is already closed
+      // (e.g. the socket dropped). Fall back to a force close.
+      this.forceQuit();
+    } finally {
+      clearTimeout(forceQuitTimeout);
+    }
   }
 
   /**
    * Forces the closing of the Redis connection associated with this service.
    */
   private forceQuit(): void {
+    // `destroy` throws `ClientClosedError` when the socket is no longer open.
+    // As this runs in a `setTimeout` callback, an uncaught throw here would
+    // crash the process, so guard against it.
+    if (!this.client.isOpen) {
+      return;
+    }
     this.loggingService.warn({
       type: LogType.CacheEvent,
       source: 'RedisCacheService',
       event: 'Forcing Redis connection close',
     });
-    this.client.destroy();
+    try {
+      this.client.destroy();
+    } catch {
+      this.loggingService.error({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: 'Error forcing Redis connection close',
+      });
+    }
   }
 
   /**
