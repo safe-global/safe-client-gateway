@@ -7,6 +7,7 @@ import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage } from 'viem/siwe';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -32,7 +33,7 @@ describe('AuthController', () => {
   let app: INestApplication<Server>;
   let cacheService: FakeCacheService;
   let jwtService: IJwtService;
-  let usersRepository: jest.MockedObjectDeep<IUsersRepository>;
+  let usersRepository: MockedObject<IUsersRepository>;
 
   let maxValidityPeriodInMs: number;
 
@@ -68,8 +69,8 @@ describe('AuthController', () => {
   }
 
   beforeEach(async () => {
-    jest.useFakeTimers();
-    jest.resetAllMocks();
+    vi.useFakeTimers();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -88,7 +89,7 @@ describe('AuthController', () => {
   });
 
   afterEach(async () => {
-    jest.useRealTimers();
+    vi.useRealTimers();
     await app?.close();
   });
 
@@ -111,7 +112,7 @@ describe('AuthController', () => {
   describe('POST /v1/auth/verify', () => {
     it('should verify a signer', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      jest.setSystemTime(0);
+      vi.setSystemTime(0);
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
@@ -161,7 +162,7 @@ describe('AuthController', () => {
 
     it('should set SameSite=none if application.env is not production', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      jest.setSystemTime(0);
+      vi.setSystemTime(0);
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -404,7 +405,8 @@ describe('AuthController', () => {
       );
       const nonce: string = nonceResponse.body.nonce;
       const cacheDir = new CacheDir(`auth_nonce_${nonce}`, '');
-      const expirationTime = new Date();
+      // Expired beyond the allowed clock-skew tolerance
+      const expirationTime = new Date(Date.now() - 60_000);
       const message = createSiweMessage(
         siweMessageBuilder()
           .with('address', signer.address)
@@ -439,7 +441,7 @@ describe('AuthController', () => {
 
     it('should get the max expirationTime if not specified on the SiWE message', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      jest.setSystemTime(0);
+      vi.setSystemTime(0);
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);

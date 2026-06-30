@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -9,28 +11,29 @@ import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
-  get: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>;
-const mockDataSource = jest.mocked(dataSource);
+  get: vi.fn(),
+} as MockedObject<CacheFirstDataSource>;
+const mockDataSource = vi.mocked(dataSource);
 
 const cacheService = {
-  deleteByKey: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>;
-const mockCacheService = jest.mocked(cacheService);
+  deleteByKey: vi.fn(),
+  hSet: vi.fn(),
+} as MockedObject<ICacheService>;
+const mockCacheService = vi.mocked(cacheService);
 
 const httpErrorFactory = {
-  from: jest.fn(),
-} as jest.MockedObjectDeep<HttpErrorFactory>;
-const mockHttpErrorFactory = jest.mocked(httpErrorFactory);
+  from: vi.fn(),
+} as MockedObject<HttpErrorFactory>;
+const mockHttpErrorFactory = vi.mocked(httpErrorFactory);
 
 const mockLoggingService = {
-  info: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  info: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('ConfigApi', () => {
   const baseUri = faker.internet.url({ appendSlash: false });
@@ -54,7 +57,7 @@ describe('ConfigApi', () => {
   });
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new ConfigApi(
       dataSource,
       mockCacheService,
@@ -112,6 +115,57 @@ describe('ConfigApi', () => {
       expireTimeSeconds: expirationTimeInSeconds,
     });
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return the gas tokens retrieved by chainId', async () => {
+    const chainId = faker.string.numeric();
+    const data = [gasTokenBuilder().build(), gasTokenBuilder().build()];
+    mockDataSource.get.mockResolvedValue(rawify(data));
+
+    const actual = await service.getGasTokens(chainId, {});
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(`${chainId}_gas_tokens`, 'undefined_undefined'),
+      url: `${baseUri}/api/v1/chains/${chainId}/gas-tokens/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { limit: undefined, offset: undefined } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should return the gas tokens retrieved by chainId with pagination', async () => {
+    const chainId = faker.string.numeric();
+    const limit = faker.number.int({ min: 1, max: 100 });
+    const offset = faker.number.int({ min: 0, max: 100 });
+    const data = [gasTokenBuilder().build()];
+    mockDataSource.get.mockResolvedValue(rawify(data));
+
+    const actual = await service.getGasTokens(chainId, { limit, offset });
+
+    expect(actual).toBe(data);
+    expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    expect(mockDataSource.get).toHaveBeenCalledWith({
+      cacheDir: new CacheDir(`${chainId}_gas_tokens`, `${limit}_${offset}`),
+      url: `${baseUri}/api/v1/chains/${chainId}/gas-tokens/`,
+      notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
+      networkRequest: { params: { limit, offset } },
+      expireTimeSeconds: expirationTimeInSeconds,
+    });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should forward errors from the data source when retrieving gas tokens', async () => {
+    const chainId = faker.string.numeric();
+    const expected = new DataSourceError('some error');
+    mockHttpErrorFactory.from.mockReturnValue(expected);
+    mockDataSource.get.mockRejectedValueOnce(new Error());
+
+    await expect(service.getGasTokens(chainId, {})).rejects.toThrow(expected);
+
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(1);
   });
 
   it('should return the safe apps retrieved by chainId', async () => {
@@ -314,11 +368,11 @@ describe('ConfigApi', () => {
 
   describe('Cache-clearing tests', () => {
     beforeEach(() => {
-      jest.useFakeTimers();
+      vi.useFakeTimers();
     });
 
     afterAll(() => {
-      jest.useRealTimers();
+      vi.useRealTimers();
     });
 
     it('clear safe apps for a given chain should trigger delete on cache service', async () => {

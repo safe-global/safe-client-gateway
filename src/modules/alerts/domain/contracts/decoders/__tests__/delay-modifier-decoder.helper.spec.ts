@@ -8,7 +8,7 @@ describe('DelayModifierDecoder', () => {
   let target: DelayModifierDecoder;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new DelayModifierDecoder();
   });
 

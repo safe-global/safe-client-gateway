@@ -27,6 +27,7 @@ export default (): ReturnType<typeof configuration> => ({
     token: faker.string.hexadecimal({ length: 32 }),
     nonceTtlSeconds: faker.number.int(),
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
+    clockSkewSeconds: faker.number.int({ min: 1, max: 30 }),
     stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,
@@ -74,7 +75,12 @@ export default (): ReturnType<typeof configuration> => ({
           ]),
         ),
         limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
-        limitCalls: faker.number.int({ min: 1, max: 5 }),
+        // High enough that the shared budget stays inert in app-boot tests;
+        // rate-limit specs override these with their own small values.
+        limitCalls: faker.number.int({ min: 1000, max: 100000 }),
+        perAddressLimitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
+        // Disabled by default (matches the production default).
+        perAddressLimitCalls: 0,
       },
     },
   },
@@ -156,6 +162,12 @@ export default (): ReturnType<typeof configuration> => ({
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),
+      configurationSet: faker.lorem.slug(),
+      aws: {
+        accessKeyId: 'dummy',
+        secretAccessKey: 'dummy',
+        webIdentityTokenFile: faker.system.filePath(),
+      },
       queue: {
         removeOnComplete: {
           age: faker.number.int({ min: 0, max: 3600 }),
@@ -188,7 +200,7 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: '1mb' },
+  express: { jsonLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
   features: {
     email: false,
     sesEmail: false,
@@ -218,6 +230,7 @@ export default (): ReturnType<typeof configuration> => ({
     vaultTransactionsMapping: false,
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
+    spaceAuditLog: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -332,7 +345,6 @@ export default (): ReturnType<typeof configuration> => ({
       81457: faker.string.hexadecimal({ length: 32 }),
       11155111: faker.string.hexadecimal({ length: 32 }),
     },
-    dailyLimitRelayerChainsIds: [],
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: Date.now() / 1000 - 10_000,
@@ -394,12 +406,8 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
     fee: {
-      enabledChainIds: [],
       baseUri: faker.internet.url({ appendSlash: false }),
       feePreviewTtlSeconds: 60,
-    },
-    simulation: {
-      enabledChainIds: [],
     },
   },
   safeConfig: {
@@ -432,6 +440,9 @@ export default (): ReturnType<typeof configuration> => ({
     addressBooks: {
       maxItems: faker.number.int({ min: 10, max: 20 }),
     },
+    addressBookRequests: {
+      maxPending: faker.number.int({ min: 10, max: 20 }),
+    },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
@@ -444,6 +455,10 @@ export default (): ReturnType<typeof configuration> => ({
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
       addressBookUpsertion: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+      addressBookRequestCreation: {
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },

@@ -67,6 +67,10 @@ export const RootConfigurationSchema = z
     AWS_REGION: z.string().optional(),
     AWS_SES_FROM_EMAIL: z.email().optional(),
     AWS_SES_FROM_NAME: z.string().optional(),
+    AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
+    SES_AWS_ACCESS_KEY_ID: z.string().optional(),
+    SES_AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    FF_SES_EMAIL: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -130,17 +134,7 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY_BLAST: z.string(),
     RELAY_PROVIDER_API_KEY_UNICHAIN: z.string(),
     RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
-    RELAY_DAILY_LIMIT_CHAIN_IDS: z
-      .string()
-      .transform((value) => value.split(',').map((item) => item.trim()))
-      .pipe(z.array(z.string()))
-      .optional(),
     // Relay-fee configuration
-    RELAY_FEE_CHAIN_IDS: z
-      .string()
-      .transform((value) => value.split(',').map((item) => item.trim()))
-      .pipe(z.array(z.string()))
-      .optional(),
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
@@ -191,27 +185,36 @@ export const RootConfigurationSchema = z
     CAPTCHA_SECRET_KEY: z.string().optional(),
   })
   .superRefine((config, ctx) => {
-    // Check for AWS_* and Blockaid fields in production and staging environments
-    for (const field of [
-      'AWS_ACCESS_KEY_ID',
-      'AWS_KMS_ENCRYPTION_KEY_ID',
-      'AWS_SECRET_ACCESS_KEY',
-      'AWS_REGION',
-      'CSV_AWS_ACCESS_KEY_ID',
-      'CSV_AWS_SECRET_ACCESS_KEY',
-      'BLOCKAID_CLIENT_API_KEY',
+    // These fields are only required in deployed (production/staging) environments.
+    const isDeployedEnv =
+      !!config.CGW_ENV && ['production', 'staging'].includes(config.CGW_ENV);
+    if (!isDeployedEnv) {
+      return;
+    }
+    const isSesEnabled = config.FF_SES_EMAIL?.toLowerCase() === 'true';
+
+    for (const {
+      field,
+      requiredWhen = true,
+      message = 'is required in production and staging environments',
+    } of [
+      { field: 'AWS_ACCESS_KEY_ID' },
+      { field: 'AWS_KMS_ENCRYPTION_KEY_ID' },
+      { field: 'AWS_SECRET_ACCESS_KEY' },
+      { field: 'AWS_REGION' },
+      { field: 'CSV_AWS_ACCESS_KEY_ID' },
+      { field: 'CSV_AWS_SECRET_ACCESS_KEY' },
+      { field: 'BLOCKAID_CLIENT_API_KEY' },
+      // SES permissions are set via IRSA in deployed environments, not static AWS keys.
+      {
+        field: 'AWS_WEB_IDENTITY_TOKEN_FILE',
+        requiredWhen: isSesEnabled,
+        message:
+          'is required in production and staging environments when SES email is enabled',
+      },
     ]) {
-      if (
-        config.CGW_ENV &&
-        config instanceof Object &&
-        ['production', 'staging'].includes(config.CGW_ENV) &&
-        !(config as Record<string, unknown>)[field]
-      ) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `is required in production and staging environments`,
-          path: [field],
-        });
+      if (requiredWhen && !(config as Record<string, unknown>)[field]) {
+        ctx.addIssue({ code: 'custom', message, path: [field] });
       }
     }
   });

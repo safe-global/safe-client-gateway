@@ -3,6 +3,7 @@
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 export function addr(): Address {
   return getAddress(faker.finance.ethereumAddress());
@@ -15,7 +16,7 @@ export function createSubscriber(): {
 } {
   return {
     subscriber: addr(),
-    deviceUuid: faker.string.uuid() as UUID,
+    deviceUuid: fakeUuid(),
     cloudMessagingToken: faker.string.alphanumeric(32),
   };
 }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -11,14 +13,14 @@ import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tes
 import { rawify } from '@/validation/entities/raw.entity';
 import { ExportApi } from './export-api.service';
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
-const mockCacheFirstDataSource = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+const mockCacheFirstDataSource = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<CacheFirstDataSource>);
 
 describe('ExportApi', () => {
   const chainId = faker.string.numeric();
@@ -28,7 +30,7 @@ describe('ExportApi', () => {
   let service: ExportApi;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'expirationTimeInSeconds.default') return defaultExpiration;

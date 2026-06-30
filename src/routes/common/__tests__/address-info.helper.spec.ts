@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
@@ -11,18 +13,18 @@ import { AddressInfoHelper } from '@/routes/common/address-info/address-info.hel
 describe('AddressInfoHelper', () => {
   let target: AddressInfoHelper;
 
-  const contractsRepository = jest.mocked({
-    getContract: jest.fn(),
-  } as jest.MockedObjectDeep<ContractsRepository>);
-  const tokenRepository = jest.mocked({
-    getToken: jest.fn(),
-  } as jest.MockedObjectDeep<TokenRepository>);
-  const loggingService = jest.mocked({
-    debug: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>);
+  const contractsRepository = vi.mocked({
+    getContract: vi.fn(),
+  } as MockedObject<ContractsRepository>);
+  const tokenRepository = vi.mocked({
+    getToken: vi.fn(),
+  } as MockedObject<TokenRepository>);
+  const loggingService = vi.mocked({
+    debug: vi.fn(),
+  } as MockedObject<ILoggingService>);
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new AddressInfoHelper(
       contractsRepository,
       tokenRepository,

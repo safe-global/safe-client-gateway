@@ -1,22 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { InternalServerErrorException } from '@nestjs/common';
 import type postgres from 'postgres';
 import type { MaybeRow } from 'postgres';
+import type { MockedObject } from 'vitest';
 import { fakeJson } from '@/__tests__/faker';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 
-const mockLoggingService = jest.mocked({
-  debug: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  debug: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>);
 
-const mockQuery = jest.mocked({
-  execute: jest.fn(),
-} as jest.MockedObjectDeep<postgres.PendingQuery<Array<MaybeRow>>>);
+const mockQuery = vi.mocked({
+  execute: vi.fn(),
+} as MockedObject<postgres.PendingQuery<Array<MaybeRow>>>);
 
 describe('CachedQueryResolver', () => {
   let fakeCacheService: FakeCacheService;
@@ -28,7 +30,7 @@ describe('CachedQueryResolver', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     fakeCacheService.clear();
   });
 
@@ -87,9 +89,7 @@ describe('CachedQueryResolver', () => {
           query: mockQuery,
           ttl,
         }),
-      ).rejects.toThrow(
-        new InternalServerErrorException('Internal Server Error'),
-      );
+      ).rejects.toThrow(InternalServerErrorException);
 
       expect(mockLoggingService.error).toHaveBeenCalledWith('error');
     });

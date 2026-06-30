@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -12,14 +15,14 @@ import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tes
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
-const mockCacheFirstDataSource = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+const mockCacheFirstDataSource = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<CacheFirstDataSource>);
 
 describe('DataDecoderApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
@@ -28,7 +31,7 @@ describe('DataDecoderApi', () => {
   let target: DataDecoderApi;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'safeDataDecoder.baseUri') {
@@ -82,6 +85,11 @@ describe('DataDecoderApi', () => {
         url: getDataDecodedUrl,
         notFoundExpireTimeSeconds,
         data: { chainId, to, data },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
+        },
       });
     });
 
@@ -123,6 +131,11 @@ describe('DataDecoderApi', () => {
         url: getDataDecodedUrl,
         notFoundExpireTimeSeconds,
         data: { chainId, to, data },
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
+        },
       });
     });
   });
@@ -159,6 +172,9 @@ describe('DataDecoderApi', () => {
             chain_ids: contract.chainId.toString(),
             limit: undefined,
             offset: undefined,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });
@@ -209,6 +225,9 @@ describe('DataDecoderApi', () => {
             limit: undefined,
             offset: undefined,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
         },
       });
     });
@@ -254,6 +273,9 @@ describe('DataDecoderApi', () => {
             limit,
             offset,
           },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
+          },
         },
       });
     });
@@ -292,6 +314,9 @@ describe('DataDecoderApi', () => {
             trusted_for_delegate_call: true,
             limit: undefined,
             offset: undefined,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });
@@ -340,6 +365,9 @@ describe('DataDecoderApi', () => {
             trusted_for_delegate_call: true,
             limit: undefined,
             offset: undefined,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getDataDecoderServiceKey(),
           },
         },
       });

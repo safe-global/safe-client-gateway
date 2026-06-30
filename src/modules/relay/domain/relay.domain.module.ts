@@ -2,6 +2,7 @@
 import { Module } from '@nestjs/common';
 import { FeeServiceApiModule } from '@/datasources/fee-service-api/fee-service-api.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { RelayApiModule } from '@/modules/relay/datasources/relay-api.module';
 import { TenderlySimulationApiModule } from '@/modules/relay/datasources/tenderly-simulation-api.module';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
@@ -21,6 +22,7 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
     RelayDecodersModule,
     SafeRepositoryModule,
     BalancesModule,
+    ChainsModule,
     FeeServiceApiModule,
     TenderlySimulationApiModule,
   ],

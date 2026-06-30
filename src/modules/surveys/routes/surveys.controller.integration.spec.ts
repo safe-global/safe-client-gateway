@@ -16,7 +16,7 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SurveysController } from '@/modules/surveys/routes/surveys.controller';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -31,7 +31,7 @@ describe('SurveysController', () => {
   let postgresDatabaseService: PostgresDatabaseService;
 
   beforeAll(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -77,6 +77,7 @@ describe('SurveysController', () => {
   async function seedAdminWithSpace(): Promise<{
     accessToken: string;
     spaceId: number;
+    spaceUuid: string;
     userId: number;
     signerAddress: `0x${string}`;
   }> {
@@ -99,6 +100,9 @@ describe('SurveysController', () => {
       status: 'ACTIVE',
     });
     const spaceId = spaceInsert.identifiers[0].id as number;
+    // uuid is filled by the DB default (gen_random_uuid()), so read it back.
+    const space = await spaceRepo.findOneByOrFail({ id: spaceId });
+    const spaceUuid = space.uuid;
 
     await memberRepo.insert({
       user: { id: userId } as User,
@@ -117,7 +121,7 @@ describe('SurveysController', () => {
         .build(),
     );
 
-    return { accessToken, spaceId, userId, signerAddress };
+    return { accessToken, spaceId, spaceUuid, userId, signerAddress };
   }
 
   /**
@@ -161,10 +165,10 @@ describe('SurveysController', () => {
 
   describe('GET /v1/spaces/:spaceId/surveys/:slug/state', () => {
     it('returns survey definition with null surveyResponse when admin has not submitted', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/state`)
+        .get(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/state`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
@@ -194,10 +198,10 @@ describe('SurveysController', () => {
     });
 
     it('returns surveyResponse after admin submits', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           selections: { [USE_CASES_PAGE]: ['hold_assets', 'run_payments'] },
@@ -205,7 +209,7 @@ describe('SurveysController', () => {
         .expect(201);
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/state`)
+        .get(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/state`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
@@ -225,38 +229,47 @@ describe('SurveysController', () => {
     });
 
     it('returns 403 for users who are not admins of the space', async () => {
-      const { spaceId } = await seedAdminWithSpace();
+      const { spaceUuid } = await seedAdminWithSpace();
       const { accessToken: outsiderToken } = await seedOutsider();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/state`)
+        .get(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/state`)
         .set('Cookie', [`access_token=${outsiderToken}`])
         .expect(403);
     });
 
     it('returns 404 for unknown slug', async () => {
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/surveys/no-such-survey/state`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+    });
+
+    it('rejects a numeric space id with 400', async () => {
       const { accessToken, spaceId } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}/surveys/no-such-survey/state`)
+        .get(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/state`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(404);
+        .expect(400);
     });
   });
 
   describe('POST /v1/spaces/:spaceId/surveys/:slug/responses', () => {
     it('admin submits then re-submits, upserting selections and bumping updated_at', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       const first = await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
         .expect(201);
 
       expect(first.body).toEqual(
         expect.objectContaining({
-          spaceId,
+          spaceUuid,
           surveySlug: ONBOARDING_SLUG,
           surveyVersion: 1,
           selections: { [USE_CASES_PAGE]: ['hold_assets'] },
@@ -273,7 +286,7 @@ describe('SurveysController', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       const second = await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           selections: { [USE_CASES_PAGE]: ['run_payments', 'hold_assets'] },
@@ -291,44 +304,44 @@ describe('SurveysController', () => {
     });
 
     it('returns 422 for an empty page array (mandatory)', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       // Inner `z.array(...).min(1)` fires in ValidationPipe → 422.
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: { [USE_CASES_PAGE]: [] } })
         .expect(422);
     });
 
     it('returns 422 when selections is an empty object', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       // Empty `{}` is caught by the Zod schema's `.refine` (non-empty map),
       // so it surfaces as 422 from ValidationPipe rather than reaching the
       // service-level "Missing answers for page(s)" check.
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: {} })
         .expect(422);
     });
 
     it('returns 400 for an unknown page id', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ selections: { not_a_real_page: ['hold_assets'] } })
         .expect(400);
     });
 
     it('returns 400 for unknown selection keys within a page', async () => {
-      const { accessToken, spaceId } = await seedAdminWithSpace();
+      const { accessToken, spaceUuid } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
           selections: {
@@ -339,21 +352,21 @@ describe('SurveysController', () => {
     });
 
     it('returns 403 for non-admin users', async () => {
-      const { spaceId } = await seedAdminWithSpace();
+      const { spaceUuid } = await seedAdminWithSpace();
       const { accessToken: outsiderToken } = await seedOutsider();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .set('Cookie', [`access_token=${outsiderToken}`])
         .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
         .expect(403);
     });
 
     it('rejects requests without an access token', async () => {
-      const { spaceId } = await seedAdminWithSpace();
+      const { spaceUuid } = await seedAdminWithSpace();
 
       await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/surveys/${ONBOARDING_SLUG}/responses`)
+        .post(`/v1/spaces/${spaceUuid}/surveys/${ONBOARDING_SLUG}/responses`)
         .send({ selections: { [USE_CASES_PAGE]: ['hold_assets'] } })
         .expect((res) => {
           expect([401, 403]).toContain(res.status);

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { Mocked, MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
@@ -8,15 +9,15 @@ import { CircuitBreakerException } from '@/datasources/circuit-breaker/exception
 import type { ILoggingService } from '@/logging/logging.interface';
 
 describe('CircuitBreakerService', () => {
-  let mockLoggingService: jest.MockedObjectDeep<ILoggingService>;
+  let mockLoggingService: MockedObject<ILoggingService>;
 
   beforeEach(() => {
     mockLoggingService = {
-      info: jest.fn(),
-      debug: jest.fn(),
-      error: jest.fn(),
-      warn: jest.fn(),
-    } as jest.MockedObjectDeep<ILoggingService>;
+      info: vi.fn(),
+      debug: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+    } as MockedObject<ILoggingService>;
   });
 
   function createService(overrides?: {
@@ -40,8 +41,8 @@ describe('CircuitBreakerService', () => {
         faker.number.int({ min: 10, max: 100 }),
     };
     const mockConfigService = {
-      getOrThrow: jest.fn((key: string) => config[key]),
-    } as unknown as jest.Mocked<IConfigurationService>;
+      getOrThrow: vi.fn((key: string) => config[key]),
+    } as unknown as Mocked<IConfigurationService>;
 
     return new CircuitBreakerService(mockConfigService, mockLoggingService);
   }
@@ -297,7 +298,7 @@ describe('CircuitBreakerService', () => {
 
       // Advance time past rolling window
       const original = Date.now;
-      Date.now = jest.fn(() => original() + rollingWindow + 1);
+      Date.now = vi.fn(() => original() + rollingWindow + 1);
 
       service.recordFailure(circuit.name);
       // Old failures discarded, only the new one counts
@@ -351,7 +352,7 @@ describe('CircuitBreakerService', () => {
       // Advance time past the stale window (rollingWindow * 10)
       const original = Date.now;
       const pastStaleWindow = faker.number.int({ min: 11, max: 100 });
-      Date.now = jest.fn(() => original() + rollingWindow * pastStaleWindow);
+      Date.now = vi.fn(() => original() + rollingWindow * pastStaleWindow);
 
       service.cleanupStaleCircuits();
       expect(service.get('test-circuit')).toBeUndefined();
@@ -374,7 +375,7 @@ describe('CircuitBreakerService', () => {
 
       // Advance time past rolling window but within timeout buffer
       const original = Date.now;
-      Date.now = jest.fn(() => original() + 500);
+      Date.now = vi.fn(() => original() + 500);
 
       service.cleanupStaleCircuits();
       expect(service.get('test-circuit')).toBeDefined();

@@ -6,6 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { sign } from 'jsonwebtoken';
 import request from 'supertest';
+import type { MockedObject, MockInstance } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -25,14 +26,15 @@ import {
 import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
 import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
 import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
+import { UsersRepositoryModule } from '@/modules/users/domain/users-repository.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { rawify } from '@/validation/entities/raw.entity';
 
 describe('OidcAuthController', () => {
   let app: INestApplication<Server>;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let jwtService: IJwtService;
-  let fetchMock: jest.SpiedFunction<typeof fetch>;
+  let fetchMock: MockInstance<typeof fetch>;
 
   let maxValidityPeriodInMs: number;
   let stateTtlMs: number;
@@ -48,7 +50,7 @@ describe('OidcAuthController', () => {
   let postLoginRedirectUri: string;
 
   beforeEach(() => {
-    fetchMock = jest.spyOn(global, 'fetch');
+    fetchMock = vi.spyOn(global, 'fetch');
   });
 
   afterEach(() => {
@@ -81,8 +83,15 @@ describe('OidcAuthController', () => {
           originalModule: EmailModule,
           testModule: TestEmailApiModule,
         },
+        // Both modules are overridden with the same TestUsersModule: it mocks
+        // IUsersRepository, which UsersRepositoryModule exports (consumed by
+        // OidcAuthService) and which UsersModule re-exports.
         {
           originalModule: UsersModule,
+          testModule: TestUsersModule,
+        },
+        {
+          originalModule: UsersRepositoryModule,
           testModule: TestUsersModule,
         },
       ],
@@ -123,8 +132,8 @@ describe('OidcAuthController', () => {
 
   describe('default configuration', () => {
     beforeEach(async () => {
-      jest.useFakeTimers();
-      jest.resetAllMocks();
+      vi.useFakeTimers();
+      vi.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -143,13 +152,13 @@ describe('OidcAuthController', () => {
     });
 
     afterEach(async () => {
-      jest.useRealTimers();
+      vi.useRealTimers();
       await app?.close();
     });
 
     describe('GET /v1/auth/oidc/authorize', () => {
       it('should redirect to Auth0 authorization endpoint and set the state cookie', async () => {
-        jest.setSystemTime(0);
+        vi.setSystemTime(0);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/authorize')
@@ -185,7 +194,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should set SameSite=None on the state cookie if application.env is not production', async () => {
-        jest.setSystemTime(0);
+        vi.setSystemTime(0);
 
         const defaultConfiguration = configuration();
         const testConfiguration = (): typeof defaultConfiguration => ({
@@ -335,7 +344,7 @@ describe('OidcAuthController', () => {
       }
 
       it('should exchange the authorization code, check the state, set the access token cookie and redirect', async () => {
-        jest.setSystemTime(0);
+        vi.setSystemTime(0);
 
         const expirationTime = faker.date.between({
           from: new Date(),
@@ -529,7 +538,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should redirect with authentication_failed when Auth0 token exp exceeds max validity', async () => {
-        jest.setSystemTime(0);
+        vi.setSystemTime(0);
 
         const farFutureExp =
           Math.floor(Date.now() / 1_000) + maxValidityPeriodInMs / 1_000 + 3600;
@@ -573,7 +582,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should redirect to the custom redirect_url after login', async () => {
-        jest.setSystemTime(0);
+        vi.setSystemTime(0);
 
         const customRedirectUrl = new URL(
           `/${faker.word.noun()}`,
@@ -667,7 +676,7 @@ describe('OidcAuthController', () => {
 
   describe('rate limiting', () => {
     beforeEach(async () => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -746,7 +755,7 @@ describe('OidcAuthController', () => {
       });
 
       afterEach(async () => {
-        jest.useRealTimers();
+        vi.useRealTimers();
         await app?.close();
       });
 
@@ -772,7 +781,7 @@ describe('OidcAuthController', () => {
 
     describe('production environment', () => {
       afterEach(async () => {
-        jest.useRealTimers();
+        vi.useRealTimers();
         await app?.close();
       });
 

@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
+import type { MockedObject } from 'vitest';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { CSV_EXPORT_WORKER_CONCURRENCY } from '@/domain/common/jobs.constants';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -17,23 +18,23 @@ import type {
 } from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
 
 const csvExportService = {
-  export: jest.fn(),
-} as jest.MockedObjectDeep<CsvExportService>;
-const mockCsvExportService = jest.mocked(csvExportService);
+  export: vi.fn(),
+} as MockedObject<CsvExportService>;
+const mockCsvExportService = vi.mocked(csvExportService);
 
 const loggingService = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
-const mockLoggingService = jest.mocked(loggingService);
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
+const mockLoggingService = vi.mocked(loggingService);
 
 describe('CsvExportConsumer', () => {
   let consumer: CsvExportConsumer;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     consumer = new CsvExportConsumer(mockLoggingService, mockCsvExportService);
   });
 
@@ -46,7 +47,7 @@ describe('CsvExportConsumer', () => {
         timestamp: faker.date.recent().getTime(),
         data: jobData,
         attemptsMade: 1,
-        updateProgress: jest.fn().mockResolvedValue(undefined),
+        updateProgress: vi.fn().mockResolvedValue(undefined),
       } as unknown as Job<CsvExportJobData, CsvExportJobResponse>;
 
       mockCsvExportService.export.mockResolvedValue(

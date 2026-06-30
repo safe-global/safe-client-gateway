@@ -2,7 +2,7 @@
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
@@ -42,14 +42,27 @@ class SpaceMemberDto {
 }
 
 export class GetSpaceResponse {
-  @ApiProperty({ type: Number })
-  public id!: Space['id'];
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  public uuid!: Space['uuid'];
 
   @ApiProperty({ type: String })
   public name!: Space['name'];
 
-  @ApiProperty({ type: SpaceMemberDto, isArray: true })
+  @ApiProperty({
+    type: SpaceMemberDto,
+    isArray: true,
+    description:
+      'Members of the space. A pending (INVITED) member only sees their own ' +
+      'membership row here, not the other members.',
+  })
   public members!: Array<SpaceMemberDto>;
+
+  @ApiProperty({
+    type: Number,
+    description: 'Total count of ACTIVE members in the space',
+    example: 5,
+  })
+  public memberCount!: number;
 
   @ApiProperty({
     type: Number,

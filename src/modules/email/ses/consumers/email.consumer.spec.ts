@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import { UnrecoverableError } from 'bullmq';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { EmailConsumer } from '@/modules/email/ses/consumers/email.consumer';
 import { sendEmailJobDataBuilder } from '@/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
@@ -14,21 +15,21 @@ import {
 import type { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
 
 const mockEmailService = {
-  send: jest.fn(),
-} as jest.MockedObjectDeep<IEmailService>;
+  send: vi.fn(),
+} as MockedObject<IEmailService>;
 
 const mockLoggingService = {
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('EmailConsumer', () => {
   let consumer: EmailConsumer;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     consumer = new EmailConsumer(mockLoggingService, mockEmailService);
   });
 

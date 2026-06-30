@@ -8,6 +8,7 @@ import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -40,9 +41,9 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let loggingService: jest.MockedObjectDeep<ILoggingService>;
-  let blocklistService: jest.MockedObjectDeep<IBlocklistService>;
+  let networkService: MockedObject<INetworkService>;
+  let loggingService: MockedObject<ILoggingService>;
+  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     if (app) {
@@ -69,14 +70,14 @@ describe('Messages controller', () => {
     blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
-    jest.spyOn(loggingService, 'error');
+    vi.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await app.init();
   }
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     await initApp(configuration);
   });
@@ -892,9 +893,84 @@ describe('Messages controller', () => {
             .with('signature', message.confirmations[0].signature)
             .build(),
         )
-        .expect(200)
+        .expect(202)
         .expect(({ body }) => {
           expect(body).toEqual(messageToJson(message));
+        });
+    });
+
+    it('should respond 202 Accepted when the Transaction Service returns an empty body on creation', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            // The Transaction Service does not echo the created message back
+            return Promise.resolve({ data: rawify(null), status: 201 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          // The message is indexed asynchronously and not yet readable
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            return Promise.reject(
+              new NetworkResponseError(
+                new URL(url),
+                { status: 404 } as Response,
+                { detail: 'Not found' },
+              ),
+            );
+          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+            return Promise.resolve({
+              data: rawify(
+                pageBuilder().with('results', []).with('count', 0).build(),
+              ),
+              status: 200,
+            });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      const createResponse = await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(
+          createMessageDtoBuilder()
+            .with('message', message.message)
+            .with('signature', message.confirmations[0].signature)
+            .build(),
+        );
+
+      // 202 Accepted signals the message was accepted but is not necessarily
+      // retrievable yet
+      expect(createResponse.status).toBe(202);
+      expect(createResponse.body).toEqual({});
+
+      // The message is not retrievable until the Transaction Service has indexed it
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
+        .expect(404);
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.results).toHaveLength(0);
         });
     });
 
@@ -1085,9 +1161,9 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        jest
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
+        vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+          signer.address,
+        ]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
@@ -1655,9 +1731,9 @@ describe('Messages controller', () => {
             signers: [signer],
           });
 
-        jest
-          .spyOn(blocklistService, 'getBlocklist')
-          .mockReturnValue([signer.address]);
+        vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
+          signer.address,
+        ]);
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:

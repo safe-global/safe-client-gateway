@@ -7,16 +7,16 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
+import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/entities/upsert-address-book-items.dto.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
+import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/utils/members.utils';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -28,6 +28,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISpaceAuditRepository)
+    private readonly spaceAuditRepository: ISpaceAuditRepository,
   ) {
     this.maxItems = this.configurationService.getOrThrow<number>(
       'spaces.addressBooks.maxItems',
@@ -51,15 +53,18 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
     createdByOverride?: number;
+    entityManager?: EntityManager;
   }): Promise<Array<AddressBookDbItem>> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN'],
     });
-    const repository = await this.db.getRepository(DbAddressBookItem);
-    await this.db.transaction(async (entityManager) => {
-      const existingAddresses = await this.updateExistingAddressBookItems({
+
+    const run = async (
+      entityManager: EntityManager,
+    ): Promise<Array<AddressBookDbItem>> => {
+      const updated = await this.updateExistingAddressBookItems({
         entityManager,
         addressBookItems: args.addressBookItems,
         space,
@@ -68,8 +73,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
 
       const newAddressBookItems = args.addressBookItems.filter(
         (item) =>
-          !existingAddresses.some((existingItem) =>
-            isAddressEqual(existingItem, item.address),
+          !updated.some((existingItem) =>
+            isAddressEqual(existingItem.address, item.address),
           ),
       );
 
@@ -80,8 +85,34 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         userId,
         createdByOverride: args.createdByOverride,
       });
-    });
-    return repository.findBy({ space: { id: space.id } });
+
+      if (updated.length > 0 || newAddressBookItems.length > 0) {
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: space.id,
+          spaceUuid: space.uuid,
+          eventType: SpaceAuditEventType.ADDRESS_BOOK_UPSERTED,
+          actorUserId: userId,
+          payload: {
+            created: newAddressBookItems.map((item) => ({
+              address: item.address,
+              name: item.name,
+            })),
+            updated,
+            ...(args.createdByOverride !== undefined && {
+              onBehalfOfUserId: args.createdByOverride,
+            }),
+          },
+        });
+      }
+
+      return entityManager.findBy(DbAddressBookItem, {
+        space: { id: space.id },
+      });
+    };
+
+    return args.entityManager
+      ? await run(args.entityManager)
+      : await this.db.transaction(run);
   }
 
   public async deleteByAddress(args: {
@@ -89,15 +120,29 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     spaceId: Space['id'];
     address: AddressBookDbItem['address'];
   }): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     const space = await this.getSpaceAs({
       ...args,
       memberRoleIn: ['ADMIN'],
     });
-    const repository = await this.db.getRepository(DbAddressBookItem);
 
-    await repository.delete({
-      address: args.address,
-      space: { id: space.id },
+    await this.db.transaction(async (entityManager) => {
+      const item = await entityManager.findOne(DbAddressBookItem, {
+        where: { address: args.address, space: { id: space.id } },
+      });
+      if (!item) {
+        return;
+      }
+
+      await entityManager.delete(DbAddressBookItem, item.id);
+
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_DELETED,
+        actorUserId: userId,
+        payload: { address: item.address, name: item.name },
+      });
     });
   }
 
@@ -109,27 +154,30 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
     return await this.spacesRepository.findOneOrFail({
-      where: activeOrPendingMemberWhere<Member>(() => ({
-        role: In(args.memberRoleIn),
-        user: { id: userId },
-      })).map((members) => ({
+      where: {
         id: args.spaceId,
-        members,
-      })),
+        members: {
+          role: In(args.memberRoleIn),
+          user: { id: userId },
+          status: 'ACTIVE',
+        },
+      },
     });
   }
 
+  /** @returns the updated items as `{ address, name }` pairs (new name). */
   private async updateExistingAddressBookItems(args: {
     userId: number;
     addressBookItems: Array<AddressBookItem>;
     space: Space;
     entityManager: EntityManager;
-  }): Promise<Array<DbAddressBookItem['address']>> {
+  }): Promise<Array<Pick<DbAddressBookItem, 'address' | 'name'>>> {
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     const existingAddressBookItems = await repository.findBy({
       space: { id: args.space.id },
       address: In(args.addressBookItems.map((item) => item.address)),
     });
+    const updated: Array<Pick<DbAddressBookItem, 'address' | 'name'>> = [];
     for (const item of existingAddressBookItems) {
       const patch = args.addressBookItems.find((addressBookItem) =>
         isAddressEqual(addressBookItem.address, item.address),
@@ -142,8 +190,9 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         chainIds: patch.chainIds,
         lastUpdatedBy: args.userId,
       });
+      updated.push({ address: item.address, name: patch.name });
     }
-    return existingAddressBookItems.map((item) => item.address);
+    return updated;
   }
 
   private async createNewAddressBookItems(args: {

@@ -1,34 +1,44 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { ZerionBalancesApi } from '@/modules/balances/datasources/zerion-balances-api.service';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import type { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockCacheService = jest.mocked({
-  increment: jest.fn(),
-  hGet: jest.fn(),
-  hSet: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>);
+const mockCacheService = vi.mocked({
+  increment: vi.fn(),
+  hGet: vi.fn(),
+  hSet: vi.fn(),
+} as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockNetworkService = jest.mocked({
-  get: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockHttpErrorFactory = jest.mocked({
-  from: jest.fn(),
-} as jest.MockedObjectDeep<HttpErrorFactory>);
+const mockHttpErrorFactory = vi.mocked({
+  from: vi.fn(),
+} as MockedObject<HttpErrorFactory>);
+
+const mockZerionRateLimiter = vi.mocked({
+  assertWithinBudget: vi.fn(),
+} as unknown as MockedObject<ZerionRateLimiter>);
 
 describe('ZerionBalancesApiService', () => {
   let service: ZerionBalancesApi;
@@ -46,7 +56,7 @@ describe('ZerionBalancesApiService', () => {
   );
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.apiKey',
@@ -83,6 +93,7 @@ describe('ZerionBalancesApiService', () => {
       mockNetworkService,
       fakeConfigurationService,
       mockHttpErrorFactory,
+      mockZerionRateLimiter,
     );
   });
 
@@ -101,6 +112,24 @@ describe('ZerionBalancesApiService', () => {
           fiatCode,
         }),
       ).rejects.toThrow(`Unsupported currency code: ${fiatCode}`);
+    });
+
+    it('should not hit the network and rethrow when over the Zerion budget', async () => {
+      const chain = chainBuilder().with('isTestnet', false).build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockZerionRateLimiter.assertWithinBudget.mockRejectedValue(
+        new LimitReachedError(),
+      );
+
+      await expect(
+        service.getBalances({ chain, safeAddress, fiatCode }),
+      ).rejects.toThrow(LimitReachedError);
+      expect(mockZerionRateLimiter.assertWithinBudget).toHaveBeenCalledWith({
+        datasource: 'balances',
+      });
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
     });
 
     it('should get the chainName from the chain parameter', async () => {
@@ -188,6 +217,7 @@ describe('ZerionBalancesApiService', () => {
           status: 200,
         });
 
+      const message = `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`;
       await expect(
         service.getBalances({
           chain,
@@ -195,8 +225,32 @@ describe('ZerionBalancesApiService', () => {
           fiatCode,
         }),
       ).rejects.toThrow(
-        `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`,
+        new HttpExceptionNoLog(message, HttpStatus.UNPROCESSABLE_ENTITY),
       );
+      // Logged as warning so it does not trigger error alerts for
+      // networks that Zerion does not support.
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(message);
+    });
+  });
+
+  describe('getCollectibles', () => {
+    it('rethrows LimitReachedError (not a wrapped 5xx) when over budget', async () => {
+      const chain = chainBuilder().with('isTestnet', false).build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockZerionRateLimiter.assertWithinBudget.mockRejectedValue(
+        new LimitReachedError(),
+      );
+
+      await expect(
+        service.getCollectibles({ chain, safeAddress }),
+      ).rejects.toThrow(LimitReachedError);
+      expect(mockZerionRateLimiter.assertWithinBudget).toHaveBeenCalledWith({
+        datasource: 'collectibles',
+      });
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
+      // The error must not be re-wrapped by the HTTP error factory.
+      expect(mockHttpErrorFactory.from).not.toHaveBeenCalled();
     });
   });
 });

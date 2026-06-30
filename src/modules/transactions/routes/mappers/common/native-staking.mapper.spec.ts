@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { type Address, concat, getAddress, type Hash } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -34,23 +36,23 @@ import { TransactionFinder } from '@/modules/transactions/routes/helpers/transac
 import { NativeStakingMapper } from '@/modules/transactions/routes/mappers/common/native-staking.mapper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
-const mockStakingRepository = jest.mocked({
-  getDeployment: jest.fn(),
-  getRewardsFee: jest.fn(),
-  getDedicatedStakingStats: jest.fn(),
-  getNetworkStats: jest.fn(),
-  getStakes: jest.fn(),
-  getTransactionStatus: jest.fn(),
-} as jest.MockedObjectDeep<StakingRepository>);
+const mockStakingRepository = vi.mocked({
+  getDeployment: vi.fn(),
+  getRewardsFee: vi.fn(),
+  getDedicatedStakingStats: vi.fn(),
+  getNetworkStats: vi.fn(),
+  getStakes: vi.fn(),
+  getTransactionStatus: vi.fn(),
+} as MockedObject<StakingRepository>);
 
-const mockChainsRepository = jest.mocked({
-  getChain: jest.fn(),
-} as jest.MockedObjectDeep<ChainsRepository>);
+const mockChainsRepository = vi.mocked({
+  getChain: vi.fn(),
+} as MockedObject<ChainsRepository>);
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 // This matches NativeStakingMapper['_getStatus'] but is localized
 // to ensure any later changes accordingly break tests
@@ -74,8 +76,8 @@ describe('NativeStakingMapper', () => {
   let target: NativeStakingMapper;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    jest.useFakeTimers();
+    vi.resetAllMocks();
+    vi.useFakeTimers();
 
     const multiSendDecoder = new MultiSendDecoder(mockLoggingService);
     const transactionFinder = new TransactionFinder(multiSendDecoder);
@@ -93,7 +95,7 @@ describe('NativeStakingMapper', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe('mapDepositInfo', () => {

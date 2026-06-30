@@ -6,6 +6,7 @@ import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type EntityManager, In } from 'typeorm';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -25,19 +26,20 @@ import { NotificationType as NotificationTypeEnum } from '@/modules/notification
 import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
-    debug: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>;
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  } as MockedObject<ILoggingService>;
   const mockPushNotificationsApi: IPushNotificationsApi = {
-    enqueueNotification: jest.fn(),
+    enqueueNotification: vi.fn(),
   };
   const mockConfigService = {
-    getOrThrow: jest.fn().mockImplementation((key: string) => {
+    getOrThrow: vi.fn().mockImplementation((key: string) => {
       if (key === 'db.migrator.numberOfRetries') {
         return config.db.migrator.numberOfRetries;
       }
@@ -57,7 +59,7 @@ describe('NotificationsRepositoryV2', () => {
         });
       }
     }),
-  } as jest.MockedObjectDeep<ConfigService>;
+  } as MockedObject<ConfigService>;
   const config = configuration();
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
   const QUERY_CACHE_DURATION = mockConfigService.getOrThrow(
@@ -228,15 +230,15 @@ describe('NotificationsRepositoryV2', () => {
   });
 
   beforeEach(async () => {
-    jest.clearAllMocks();
-    jest.restoreAllMocks();
+    vi.clearAllMocks();
+    vi.restoreAllMocks();
 
     await truncateTables();
   });
 
   describe('upsertSubscription()', () => {
     it('Should insert a new device when upserting a subscription', async () => {
-      jest.spyOn(dataSource, 'transaction');
+      vi.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -257,7 +259,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should remove subscriptions cache when upserting a subscription', async () => {
-      jest.spyOn(dataSource, 'transaction');
+      vi.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -310,7 +312,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should not remove other devices subscriptions cache when upserting a new subscription', async () => {
-      jest.spyOn(dataSource, 'transaction');
+      vi.spyOn(dataSource, 'transaction');
       const authPayloadDto_1 = siweAuthPayloadDtoBuilder().build();
       const authPayloadDto_2 = siweAuthPayloadDtoBuilder().build();
       const authPayload_1 = new AuthPayload(authPayloadDto_1);
@@ -441,7 +443,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should upsert a new subscription object when upserting subscriptions', async () => {
-      jest.spyOn(dataSource, 'transaction');
+      vi.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -469,7 +471,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should upsert subscription notification types object when upserting subscriptions', async () => {
-      jest.spyOn(dataSource, 'transaction');
+      vi.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -533,21 +535,17 @@ describe('NotificationsRepositoryV2', () => {
         async (entityManager: EntityManager): Promise<unknown> => {
           const databaseTransaction = entityManager;
 
-          jest
-            .spyOn(postgresDatabaseService, 'transaction')
-            .mockImplementation(
-              <T>(
-                runInTransaction: (entityManager: EntityManager) => Promise<T>,
-              ): Promise<T> => {
-                return runInTransaction(databaseTransaction);
-              },
-            );
+          vi.spyOn(postgresDatabaseService, 'transaction').mockImplementation(
+            <T>(
+              runInTransaction: (entityManager: EntityManager) => Promise<T>,
+            ): Promise<T> => {
+              return runInTransaction(databaseTransaction);
+            },
+          );
 
-          jest
-            .spyOn(databaseTransaction, 'upsert')
-            .mockImplementationOnce(() => {
-              throw new Error('Error');
-            });
+          vi.spyOn(databaseTransaction, 'upsert').mockImplementationOnce(() => {
+            throw new Error('Error');
+          });
 
           const authPayloadDto = siweAuthPayloadDtoBuilder().build();
           const authPayload = new AuthPayload(authPayloadDto);
@@ -817,7 +815,7 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionRepository = dataSource.getRepository(
         NotificationSubscription,
       );
-      jest.spyOn(notificationSubscriptionRepository, 'remove');
+      vi.spyOn(notificationSubscriptionRepository, 'remove');
 
       const subscription = await notificationSubscriptionRepository.findBy({
         safe_address: upsertSubscriptionsDto.safes[0].address,
@@ -845,7 +843,7 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionRepository = dataSource.getRepository(
         NotificationSubscription,
       );
-      jest.spyOn(notificationSubscriptionRepository, 'remove');
+      vi.spyOn(notificationSubscriptionRepository, 'remove');
 
       const subscription = await notificationSubscriptionRepository.findBy({
         safe_address: upsertSubscriptionsDto.safes[0].address,
@@ -1059,7 +1057,7 @@ describe('NotificationsRepositoryV2', () => {
       const deleteAllSubscriptionsDto = [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ];

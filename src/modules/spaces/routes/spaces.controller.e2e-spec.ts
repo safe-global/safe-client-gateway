@@ -73,7 +73,7 @@ describe('SpacesController', () => {
   }
 
   beforeAll(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     app = await initApp();
   });
 
@@ -108,7 +108,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            uuid: expect.any(String),
             name: spaceName,
           }),
         );
@@ -180,7 +180,7 @@ describe('SpacesController', () => {
         .expect(201)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: expect.any(Number),
+            uuid: expect.any(String),
             name: expect.any(String),
           }),
         );
@@ -234,95 +234,6 @@ describe('SpacesController', () => {
     });
   });
 
-  describe('POST /v1/spaces/create-with-user', () => {
-    it('Should create a space when user exists', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = nameBuilder();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`]);
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201)
-        .expect(({ body }) =>
-          expect(body).toEqual({
-            id: expect.any(Number),
-            name: spaceName,
-          }),
-        );
-    });
-
-    it('Should create a space with user does not exist', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = nameBuilder();
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName })
-        .expect(201)
-        .expect(({ body }) =>
-          expect(body).toEqual({
-            id: expect.any(Number),
-            name: spaceName,
-          }),
-        );
-    });
-
-    it('should return a 403 if not authenticated', async () => {
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
-    });
-
-    it('Should return a 403 if the AuthPayload is empty', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder()
-        .with('signer_address', undefined as unknown as Address)
-        .build();
-      const accessToken = jwtService.sign(authPayloadDto);
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(403)
-        .expect({
-          statusCode: 403,
-          message: 'Forbidden resource',
-          error: 'Forbidden',
-        });
-    });
-
-    it('Should return a 422 if no name is provided', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-
-      await request(app.getHttpServer())
-        .post('/v1/spaces/create-with-user')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send()
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'invalid_type',
-          expected: 'object',
-          received: 'undefined',
-          path: [],
-          message: 'Required',
-        });
-    });
-  });
-
   describe('GET /spaces', () => {
     it('Should return a list of spaces', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
@@ -353,7 +264,7 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual([
             {
-              id: expect.any(Number),
+              uuid: expect.any(String),
               name: firstSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               createdAt: expect.any(String),
@@ -379,7 +290,7 @@ describe('SpacesController', () => {
               ],
             },
             {
-              id: expect.any(Number),
+              uuid: expect.any(String),
               name: secondSpaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               createdAt: expect.any(String),
@@ -466,7 +377,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}`)
@@ -474,7 +385,7 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body).toEqual({
-            id: spaceId,
+            uuid: spaceId,
             name: spaceName,
             status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
             createdAt: expect.any(String),
@@ -520,7 +431,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -543,7 +454,7 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body).toEqual(
             expect.objectContaining({
-              id: spaceId,
+              uuid: spaceId,
               name: spaceName,
               status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
               members: expect.arrayContaining([
@@ -588,7 +499,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName })
         .expect(201);
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -624,7 +535,7 @@ describe('SpacesController', () => {
     it('Should return a 404 if a space id does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -645,7 +556,7 @@ describe('SpacesController', () => {
     it('Should return a 404 if the user does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 10000, max: 20000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}`)
@@ -700,7 +611,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: previousSpaceName });
 
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -712,13 +623,51 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) =>
           expect(body).toEqual({
-            id: spaceId,
+            uuid: spaceId,
           }),
         );
     });
 
+    it('Should return a 400 if the space id is numeric (UUID required on writes)', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${faker.number.int({ min: 1 })}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          name: nameBuilder(),
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+        })
+        .expect(400)
+        .expect({
+          message: 'Invalid space identifier',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+    });
+
+    it('Should return a 400 if the space id is malformed', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${faker.string.alpha()}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          name: nameBuilder(),
+          status: getEnumKey(SpaceStatus, SpaceStatus.ACTIVE),
+        })
+        .expect(400)
+        .expect({
+          message: 'Invalid space identifier',
+          error: 'Bad Request',
+          statusCode: 400,
+        });
+    });
+
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -735,7 +684,7 @@ describe('SpacesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 1 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -752,7 +701,7 @@ describe('SpacesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -794,7 +743,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: previousSpaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -845,7 +794,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({ name: previousSpaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -897,7 +846,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: previousSpaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
@@ -932,7 +881,7 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ name: spaceName });
 
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
@@ -944,7 +893,7 @@ describe('SpacesController', () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
@@ -985,7 +934,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1032,7 +981,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${activeAdminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
@@ -1079,7 +1028,7 @@ describe('SpacesController', () => {
         .post('/v1/spaces')
         .set('Cookie', [`access_token=${adminAccessToken}`])
         .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.id;
+      const spaceId = createSpaceResponse.body.uuid;
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
@@ -1099,7 +1048,7 @@ describe('SpacesController', () => {
         .with('signer_address', undefined as unknown as Address)
         .build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const spaceId = faker.number.int({ min: 1 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)
@@ -1113,7 +1062,7 @@ describe('SpacesController', () => {
     });
 
     it('should return a 403 if not authenticated', async () => {
-      const spaceId = faker.number.int({ min: 900000, max: 990000 });
+      const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}`)

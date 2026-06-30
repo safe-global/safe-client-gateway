@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -34,7 +35,7 @@ describe('Chains Controller', () => {
   let version: string;
   let buildNumber: string;
   let etherscanBaseUri: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
 
   const chainsResponse: Page<Chain> = {
     count: 2,
@@ -47,7 +48,7 @@ describe('Chains Controller', () => {
   const backboneResponse: Backbone = backboneBuilder().build();
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const moduleFixture = await createTestModule({
       modules: [
@@ -119,6 +120,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[0].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[0].relayer,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -148,6 +150,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[1].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[1].relayer,
             },
           ],
         });
@@ -236,6 +239,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[0].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[0].relayer,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -265,6 +269,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[1].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
+              relayer: chainsResponse.results[1].relayer,
             },
           ],
         });
@@ -338,6 +343,7 @@ describe('Chains Controller', () => {
           : chainDomain.ensRegistryAddress,
         balancesProvider: chainDomain.balancesProvider,
         recommendedMasterCopyVersion: chainDomain.recommendedMasterCopyVersion,
+        relayer: chainDomain.relayer,
       };
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainDomain),

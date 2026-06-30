@@ -50,6 +50,12 @@ const migrations: Array<{
 type TestRow = { a: string; b: number };
 type ExtendedTestRow = { a: string; b: number; c: Date };
 
+// postgres returns rows in a `Result` (an `Array` subclass). Vitest's
+// `toStrictEqual` checks constructors, so a `Result` is not strictly equal to a
+// plain array (unlike Jest). Convert to a plain array before asserting.
+const toRows = <T>(rows: ReadonlyArray<T> | undefined): Array<T> | undefined =>
+  rows === undefined ? undefined : [...rows];
+
 describe('PostgresDatabaseMigrator tests', () => {
   let sql: postgres.Sql;
   let target: PostgresDatabaseMigrator;
@@ -86,7 +92,7 @@ describe('PostgresDatabaseMigrator tests', () => {
       // Test migration and expect migrations to be recorded
       const executed = await target.migrate(folder);
       expect(executed).toHaveLength(3);
-      await expect(sql`SELECT * FROM migrations`).resolves.toStrictEqual([
+      expect(toRows(await sql`SELECT * FROM migrations`)).toStrictEqual([
         {
           id: 1,
           name: 'initial',
@@ -120,7 +126,7 @@ describe('PostgresDatabaseMigrator tests', () => {
       const executed = await target.migrate(folder);
       expect(executed).toHaveLength(1);
       const recordedMigrations = await sql`SELECT * FROM migrations`;
-      expect(recordedMigrations).toStrictEqual([
+      expect(toRows(recordedMigrations)).toStrictEqual([
         {
           id: 1,
           name: 'initial',
@@ -139,7 +145,7 @@ describe('PostgresDatabaseMigrator tests', () => {
       // Migrate from last run migration
       const remaining = await target.migrate(folder);
       expect(remaining).toHaveLength(2);
-      await expect(sql`SELECT * FROM migrations`).resolves.toStrictEqual([
+      expect(toRows(await sql`SELECT * FROM migrations`)).toStrictEqual([
         {
           id: 1,
           name: 'initial',
@@ -208,7 +214,7 @@ describe('PostgresDatabaseMigrator tests', () => {
 
       // Verify first migration was recorded
       const recordedAfterFirst = await sql`SELECT * FROM migrations`;
-      expect(recordedAfterFirst).toStrictEqual([
+      expect(toRows(recordedAfterFirst)).toStrictEqual([
         {
           id: 1,
           name: 'first',
@@ -229,9 +235,9 @@ describe('PostgresDatabaseMigrator tests', () => {
       expect(remaining).toHaveLength(2);
 
       // Verify all migrations were recorded correctly
-      await expect(
-        sql`SELECT * FROM migrations ORDER BY id`,
-      ).resolves.toStrictEqual([
+      expect(
+        toRows(await sql`SELECT * FROM migrations ORDER BY id`),
+      ).toStrictEqual([
         {
           id: 1,
           name: 'first',
@@ -251,7 +257,7 @@ describe('PostgresDatabaseMigrator tests', () => {
 
       // Verify all data was inserted correctly
       const testData = await sql`SELECT * FROM test ORDER BY a`;
-      expect(testData).toStrictEqual([
+      expect(toRows(testData)).toStrictEqual([
         { a: 'first' },
         { a: 'second' },
         { a: 'third' },
@@ -275,15 +281,17 @@ describe('PostgresDatabaseMigrator tests', () => {
       );
 
       // Test first migration
-      await expect(
-        target.test({
-          migration: migration1.name,
-          before: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
-          after: (sql): Promise<Array<TestRow>> =>
-            sql<Array<TestRow>>`SELECT * FROM test`,
-          folder,
-        }),
-      ).resolves.toStrictEqual({
+      const firstResult = await target.test({
+        migration: migration1.name,
+        before: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
+        after: (sql): Promise<Array<TestRow>> =>
+          sql<Array<TestRow>>`SELECT * FROM test`,
+        folder,
+      });
+      expect({
+        before: toRows(firstResult.before),
+        after: toRows(firstResult.after),
+      }).toStrictEqual({
         before: undefined,
         after: [
           {
@@ -307,16 +315,18 @@ describe('PostgresDatabaseMigrator tests', () => {
       );
 
       // Test up to second migration
-      await expect(
-        target.test({
-          migration: migration2.name,
-          before: (sql): Promise<Array<TestRow>> =>
-            sql<Array<TestRow>>`SELECT * FROM test`,
-          after: (sql): Promise<Array<ExtendedTestRow>> =>
-            sql<Array<ExtendedTestRow>>`SELECT * FROM test`,
-          folder,
-        }),
-      ).resolves.toStrictEqual({
+      const secondResult = await target.test({
+        migration: migration2.name,
+        before: (sql): Promise<Array<TestRow>> =>
+          sql<Array<TestRow>>`SELECT * FROM test`,
+        after: (sql): Promise<Array<ExtendedTestRow>> =>
+          sql<Array<ExtendedTestRow>>`SELECT * FROM test`,
+        folder,
+      });
+      expect({
+        before: toRows(secondResult.before),
+        after: toRows(secondResult.after),
+      }).toStrictEqual({
         before: [
           {
             a: 'hello',
@@ -346,14 +356,16 @@ describe('PostgresDatabaseMigrator tests', () => {
       );
 
       // Test all migrations
-      await expect(
-        target.test({
-          migration: migration3.name,
-          before: (sql) => sql`SELECT * FROM test`,
-          after: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
-          folder,
-        }),
-      ).resolves.toStrictEqual({
+      const thirdResult = await target.test({
+        migration: migration3.name,
+        before: (sql) => sql`SELECT * FROM test`,
+        after: (sql) => sql`SELECT * FROM test`.catch(() => undefined),
+        folder,
+      });
+      expect({
+        before: toRows(thirdResult.before),
+        after: toRows(thirdResult.after),
+      }).toStrictEqual({
         before: [
           {
             a: 'hello',

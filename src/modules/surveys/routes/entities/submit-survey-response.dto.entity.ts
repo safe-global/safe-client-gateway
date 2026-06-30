@@ -27,8 +27,8 @@ export class SurveyResponseResultDto {
   @ApiProperty({ type: Number })
   id!: number;
 
-  @ApiProperty({ type: Number })
-  spaceId!: Space['id'];
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  spaceUuid!: Space['uuid'];
 
   @ApiProperty({ type: String })
   surveySlug!: Survey['slug'];

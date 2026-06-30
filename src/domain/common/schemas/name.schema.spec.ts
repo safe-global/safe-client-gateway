@@ -2,9 +2,19 @@
 
 import { faker } from '@faker-js/faker';
 import {
+  DISALLOWED_CHARACTER_MESSAGE,
+  EMPTY_NAME_MESSAGE,
   makeNameSchema,
   NameSchema,
+  sanitizeName,
 } from '@/domain/common/schemas/name.schema';
+
+// Invisible characters referenced by tests (defined by code point to avoid
+// editor/encoding ambiguity).
+const ZERO_WIDTH_SPACE = '​';
+const BIDI_OVERRIDE = '‮';
+const ZWJ = '‍';
+const ZWNJ = '‌';
 
 describe('NameSchema', () => {
   it('should validate a valid name', () => {
@@ -15,7 +25,7 @@ describe('NameSchema', () => {
     expect(result.success && result.data).toBe(accountName);
   });
 
-  it('should not validate an non-string name', () => {
+  it('should not validate a non-string name', () => {
     const name = 123;
 
     const result = NameSchema.safeParse(name);
@@ -43,57 +53,162 @@ describe('NameSchema', () => {
     ]);
   });
 
-  it('should not validate an name shorter than 3 characters', () => {
-    const accountName = faker.string.alphanumeric(2);
-
-    const result = NameSchema.safeParse(accountName);
+  it('should not validate a name shorter than 3 characters', () => {
+    const result = NameSchema.safeParse('Jo');
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'too_small',
-        minimum: 3,
-        inclusive: true,
-        message: 'Names must be at least 3 characters long',
+        code: 'custom',
+        message: 'Names must be at least 3 character(s) long',
         path: [],
-        origin: 'string',
       },
     ]);
   });
 
-  it('should not validate an name larger than 30 characters', () => {
+  it('should not validate a name larger than 30 characters', () => {
     const accountName = faker.string.alphanumeric(31);
 
     const result = NameSchema.safeParse(accountName);
 
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'too_big',
-        maximum: 30,
-        inclusive: true,
+        code: 'custom',
         message: 'Names must be at most 30 characters long',
         path: [],
-        origin: 'string',
+      },
+    ]);
+  });
+});
+
+describe('name.schema — UTF-8 acceptance', () => {
+  describe('accepts UTF-8 letter names from any script', () => {
+    it.each([
+      'José',
+      '山田太郎',
+      'Müller',
+      'Анна',
+      'محمد علي',
+    ])('accepts %s', (name) => {
+      expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
+    });
+  });
+
+  describe('accepts real-world contact names with allowed punctuation', () => {
+    it.each([
+      'Contact #1',
+      'maria@web.com',
+      'Smith & Co.',
+      "O'Brien",
+      'Acme, Inc.',
+      'Doe (work)',
+      'a-valid_Account.name',
+    ])('accepts %s', (name) => {
+      expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
+    });
+  });
+
+  it('normalizes decomposed input to NFC', () => {
+    // 'Jos' + 'e' + U+0301 combining acute accent → 'José' (4 code points, ≥ min)
+    const decomposed = 'Jos' + 'é';
+    expect(NameSchema.parse(decomposed)).toBe('José');
+  });
+
+  describe('folds smart punctuation to ASCII', () => {
+    it.each([
+      ['curly right apostrophe (U+2019)', 'O’Brien', "O'Brien"],
+      ['curly left quote (U+2018)', '‘Mac’', "'Mac'"],
+      ['prime (U+2032)', '5′ tall', "5' tall"],
+      ['en dash (U+2013)', 'Jean–Luc', 'Jean-Luc'],
+      ['em dash (U+2014)', 'Jean—Luc', 'Jean-Luc'],
+    ])('folds %s', (_label, input, expected) => {
+      expect(NameSchema.parse(input)).toBe(expected);
+    });
+  });
+
+  it('strips a bidi override (U+202E) and keeps the visible remainder', () => {
+    expect(NameSchema.parse(`ab${BIDI_OVERRIDE}cd`)).toBe('abcd');
+  });
+
+  it('strips a zero-width space (U+200B)', () => {
+    expect(NameSchema.parse(`a${ZERO_WIDTH_SPACE}bc`)).toBe('abc');
+  });
+
+  describe('rejects disallowed characters', () => {
+    it.each([
+      ['equals (formula trigger)', 'ab=cd'],
+      ['plus', 'ab+cd'],
+      ['asterisk', 'ab*cd'],
+      ['slash', 'ab/cd'],
+      ['backslash', 'ab\\cd'],
+      ['less-than', 'ab<cd'],
+      ['greater-than', 'ab>cd'],
+      ['double quote', 'ab"cd'],
+      ['percent', 'ab%cd'],
+      ['dollar', 'ab$cd'],
+      ['colon', 'ab:cd'],
+      ['semicolon', 'ab;cd'],
+      ['pipe', 'ab|cd'],
+      ['curly brace', 'ab{cd'],
+      ['square bracket', 'ab[cd'],
+      ['emoji', 'abc\u{1F44D}'],
+      ['symbol', 'abc★'],
+    ])('rejects a name containing %s', (_label, name) => {
+      const result = NameSchema.safeParse(name);
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: DISALLOWED_CHARACTER_MESSAGE,
+          path: [],
+        },
+      ]);
+    });
+  });
+
+  it('rejects a name that is empty after stripping with a dedicated message', () => {
+    // only a zero-width space and a bidi override
+    const invisibles = `${ZERO_WIDTH_SPACE}${BIDI_OVERRIDE}`;
+    const result = NameSchema.safeParse(invisibles);
+    expect(!result.success && result.error.issues).toStrictEqual([
+      {
+        code: 'custom',
+        message: EMPTY_NAME_MESSAGE,
+        path: [],
       },
     ]);
   });
 
-  it('should not validate an name containing not allowed characters', () => {
-    const forbiddenCharsString = '!@#$%^&*()';
-    const accountName = `${faker.string.alphanumeric(2)}${faker.string.fromCharacters(forbiddenCharsString)}${faker.string.alphanumeric(2)}`;
-
-    const result = NameSchema.safeParse(accountName);
-
+  it('reports empty-name (not min-length) when only whitespace is given', () => {
+    const result = NameSchema.safeParse('   ');
     expect(!result.success && result.error.issues).toStrictEqual([
       {
-        code: 'invalid_format',
-        format: 'regex',
-        origin: 'string',
-        pattern: '/^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$/',
-        message:
-          'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
+        code: 'custom',
+        message: EMPTY_NAME_MESSAGE,
         path: [],
       },
     ]);
+  });
+
+  it('rejects an emoji even when it satisfies length bounds', () => {
+    // 👍 is one valid-length code point but is not a letter/number/allowed punctuation
+    const result = makeNameSchema({ minLength: 1, maxLength: 1 }).safeParse(
+      '\u{1F44D}',
+    );
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects a name over max length (by code point)', () => {
+    expect(() => makeNameSchema({ maxLength: 3 }).parse('abcd')).toThrow();
+  });
+
+  it('counts length by code point, not UTF-16 units', () => {
+    // 𝐀 (U+1D400) is one code point but two UTF-16 units; it is also a letter.
+    expect(
+      makeNameSchema({ minLength: 1, maxLength: 1 }).parse('\u{1D400}'),
+    ).toBe('\u{1D400}');
+  });
+
+  it('accepts a single character (min length 1)', () => {
+    expect(makeNameSchema({ minLength: 1 }).parse('李')).toBe('李');
   });
 });
 
@@ -131,12 +246,9 @@ describe('makeNameSchema', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'too_small',
-          minimum: 5,
-          inclusive: true,
-          message: 'Names must be at least 5 characters long',
+          code: 'custom',
+          message: 'Names must be at least 5 character(s) long',
           path: [],
-          origin: 'string',
         },
       ]);
     });
@@ -169,12 +281,9 @@ describe('makeNameSchema', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'too_big',
-          maximum: 10,
-          inclusive: true,
+          code: 'custom',
           message: 'Names must be at most 10 characters long',
           path: [],
-          origin: 'string',
         },
       ]);
     });
@@ -233,40 +342,21 @@ describe('makeNameSchema', () => {
     });
   });
 
-  describe('regex validation with custom lengths', () => {
-    it('should still enforce regex rules with custom lengths', () => {
-      const schema = makeNameSchema({ minLength: 5, maxLength: 50 });
-      const invalidName = 'Valid@Name'; // contains invalid character
-
-      const result = schema.safeParse(invalidName);
-
-      expect(!result.success && result.error.issues).toStrictEqual([
-        {
-          code: 'invalid_format',
-          format: 'regex',
-          origin: 'string',
-          pattern: '/^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$/',
-          message:
-            'Names must start with a letter or number and can contain alphanumeric characters, spaces, periods, underscores, or hyphens',
-          path: [],
-        },
-      ]);
-    });
-
-    it('should accept valid characters with custom lengths', () => {
-      const schema = makeNameSchema({ minLength: 3, maxLength: 50 });
+  describe('UTF-8 names with custom lengths', () => {
+    it('should accept valid UTF-8 characters with custom lengths', () => {
+      const schema = makeNameSchema({ minLength: 1, maxLength: 50 });
       const validNames = [
         'Simple123',
-        'With Spaces',
-        'With.Periods',
-        'With_Underscores',
-        'With-Hyphens',
-        'Mixed_Types.And-Spaces 123',
+        'José',
+        '山田太郎',
+        'Müller',
+        'Анна',
+        '李',
       ];
 
       for (const name of validNames) {
         const result = schema.safeParse(name);
-        expect(result.success && result.data).toBe(name);
+        expect(result.success).toBe(true);
       }
     });
   });
@@ -290,12 +380,9 @@ describe('makeNameSchema', () => {
 
       expect(!result.success && result.error.issues).toStrictEqual([
         {
-          code: 'too_small',
-          minimum: 5,
-          inclusive: true,
-          message: 'Names must be at least 5 characters long',
+          code: 'custom',
+          message: 'Names must be at least 5 character(s) long',
           path: [],
-          origin: 'string',
         },
       ]);
     });
@@ -308,8 +395,9 @@ describe('makeNameSchema', () => {
 
       const result = schemaZeroMin.safeParse(emptyString);
 
-      // Should still fail on regex (empty string doesn't match the pattern)
-      expect(result.success).toBe(false);
+      // Empty string after trimming — min 0 so length check passes, and an
+      // empty string contains no disallowed characters, so it succeeds.
+      expect(result.success).toBe(true);
     });
 
     it('should handle non-string input with custom lengths', () => {
@@ -327,5 +415,31 @@ describe('makeNameSchema', () => {
         },
       ]);
     });
+  });
+});
+
+describe('sanitizeName', () => {
+  it('applies NFC normalization', () => {
+    expect(sanitizeName('é')).toBe('é');
+  });
+
+  it('strips control characters (Cc)', () => {
+    expect(sanitizeName('a\x00b')).toBe('ab');
+  });
+
+  it('strips format characters (Cf) like bidi override', () => {
+    expect(sanitizeName(`a${BIDI_OVERRIDE}b`)).toBe('ab');
+  });
+
+  it('strips ZWJ (U+200D)', () => {
+    expect(sanitizeName(`a${ZWJ}b`)).toBe('ab');
+  });
+
+  it('strips ZWNJ (U+200C)', () => {
+    expect(sanitizeName(`a${ZWNJ}b`)).toBe('ab');
+  });
+
+  it('trims leading and trailing whitespace', () => {
+    expect(sanitizeName('  hello  ')).toBe('hello');
   });
 });

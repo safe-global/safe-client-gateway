@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import type { MockedFunction, MockedObject } from 'vitest';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
@@ -7,23 +9,22 @@ import type { FetchClient } from '@/datasources/network/network.module';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const fetchClient = jest.fn();
+const fetchClient = vi.fn();
 
-const fetchClientMock: jest.MockedFunction<FetchClient> =
-  jest.mocked(fetchClient);
+const fetchClientMock: MockedFunction<FetchClient> = vi.mocked(fetchClient);
 
 const loggingService = {
-  debug: jest.fn(),
-  info: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  info: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const loggingServiceMock = jest.mocked(loggingService);
+const loggingServiceMock = vi.mocked(loggingService);
 
 describe('FetchNetworkService', () => {
   let target: FetchNetworkService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     target = new FetchNetworkService(fetchClientMock, loggingServiceMock);
   });
 

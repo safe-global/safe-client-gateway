@@ -6,8 +6,10 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { surveyBuilder } from '@/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
 import type {
   Survey,
@@ -19,18 +21,23 @@ import type {
 } from '@/modules/surveys/domain/surveys.repository.interface';
 import { SurveysService } from '@/modules/surveys/routes/surveys.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const surveysRepositoryMock = {
-  findActiveBySlug: jest.fn(),
-  findActiveBySlugOrFail: jest.fn(),
-  findResponse: jest.fn(),
-  upsertResponse: jest.fn(),
-} as jest.MockedObjectDeep<ISurveysRepository>;
+  findActiveBySlug: vi.fn(),
+  findActiveBySlugOrFail: vi.fn(),
+  findResponse: vi.fn(),
+  upsertResponse: vi.fn(),
+} as MockedObject<ISurveysRepository>;
 
 const membersRepositoryMock = {
-  findOne: jest.fn(),
-} as unknown as jest.MockedObjectDeep<IMembersRepository>;
+  findOne: vi.fn(),
+} as unknown as MockedObject<IMembersRepository>;
+
+const spacesRepositoryMock = {
+  findUuidById: vi.fn(),
+} as MockedObject<ISpacesRepository>;
 
 function buildSurvey(pages: Array<SurveyPage>): Survey {
   return surveyBuilder()
@@ -54,10 +61,15 @@ describe('SurveysService', () => {
   let userId: number;
 
   beforeEach(() => {
-    jest.resetAllMocks();
-    service = new SurveysService(surveysRepositoryMock, membersRepositoryMock);
+    vi.resetAllMocks();
+    service = new SurveysService(
+      surveysRepositoryMock,
+      membersRepositoryMock,
+      spacesRepositoryMock,
+    );
     userId = faker.number.int({ min: 1, max: 1_000_000 });
     spaceId = faker.number.int({ min: 1, max: 1_000_000 });
+    spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
     authPayload = new AuthPayload(
       oidcAuthPayloadDtoBuilder().with('sub', String(userId)).build(),
     );

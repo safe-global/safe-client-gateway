@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -26,12 +28,12 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Safes Controller Overview', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let pricesProviderUrl: string;
   let pricesApiKey: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),

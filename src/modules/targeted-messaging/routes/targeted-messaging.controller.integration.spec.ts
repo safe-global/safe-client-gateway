@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -23,8 +24,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('TargetedMessagingController', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let targetedMessagingDatasource: jest.MockedObjectDeep<ITargetedMessagingDatasource>;
+  let networkService: MockedObject<INetworkService>;
+  let targetedMessagingDatasource: MockedObject<ITargetedMessagingDatasource>;
 
   beforeEach(async () => {
     const moduleFixture = await createTestModule();
@@ -43,7 +44,7 @@ describe('TargetedMessagingController', () => {
   });
 
   afterEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     await app.close();
   });
 

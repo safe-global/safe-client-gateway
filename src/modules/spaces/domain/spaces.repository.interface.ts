@@ -4,7 +4,7 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import type { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import type { User } from '@/modules/users/domain/entities/user.entity';
@@ -16,7 +16,7 @@ export interface ISpacesRepository {
     userId: User['id'];
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'name'>>;
+  }): Promise<Pick<Space, 'uuid' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<SpacesRepository['findOne']>[0],
@@ -61,7 +61,13 @@ export interface ISpacesRepository {
   update(args: {
     id: Space['id'];
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
-  }): Promise<Pick<Space, 'id'>>;
+    actorUserId: number;
+  }): Promise<Pick<Space, 'uuid'>>;
 
-  delete(id: number): Promise<void>;
+  findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
+
+  // Resolves the internal numeric id to the client-facing UUID for response mapping.
+  findUuidById(id: Space['id']): Promise<Space['uuid']>;
+
+  delete(args: { id: number; actorUserId: number }): Promise<void>;
 }

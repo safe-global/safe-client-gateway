@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -29,38 +31,38 @@ import {
   TWAP_FALLBACK_HANDLER,
 } from './contract-analysis.constants';
 
-jest.mock('@/modules/safe-shield/utils/extraction.utils', () => ({
-  extractContracts: jest.fn(),
+vi.mock('@/modules/safe-shield/utils/extraction.utils', () => ({
+  extractContracts: vi.fn(),
 }));
-const mockExtractContracts = jest.mocked(extractContracts);
+const mockExtractContracts = vi.mocked(extractContracts);
 
 const mockDataDecoderApi = {
-  getContracts: jest.fn(),
-} as jest.MockedObjectDeep<IDataDecoderApi>;
+  getContracts: vi.fn(),
+} as MockedObject<IDataDecoderApi>;
 
 const mockTransactionApi = {
-  getMultisigTransactions: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApi>;
+  getMultisigTransactions: vi.fn(),
+} as MockedObject<ITransactionApi>;
 
 const mockTransactionApiManager = {
-  getApi: jest.fn(),
-} as jest.MockedObjectDeep<ITransactionApiManager>;
+  getApi: vi.fn(),
+} as MockedObject<ITransactionApiManager>;
 
 const mockConfigurationService = {
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>;
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const mockErc20Decoder = {
   helpers: {
-    isTransfer: jest.fn(),
-    isTransferFrom: jest.fn(),
+    isTransfer: vi.fn(),
+    isTransferFrom: vi.fn(),
   },
-} as jest.MockedObjectDeep<Erc20Decoder>;
+} as MockedObject<Erc20Decoder>;
 
 describe('ContractAnalysisService', () => {
   let service: ContractAnalysisService;
@@ -83,8 +85,8 @@ describe('ContractAnalysisService', () => {
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
-    jest.resetAllMocks();
+    vi.clearAllMocks();
+    vi.resetAllMocks();
     fakeCacheService.clear();
   });
 
@@ -116,7 +118,7 @@ describe('ContractAnalysisService', () => {
       const cacheContent = await fakeCacheService.hGet(cacheDir);
       expect(cacheContent).toBeNull();
 
-      const analyzeContractSpy = jest.spyOn(service, 'analyzeContract');
+      const analyzeContractSpy = vi.spyOn(service, 'analyzeContract');
       expect(analyzeContractSpy).not.toHaveBeenCalled();
     });
 
@@ -150,7 +152,7 @@ describe('ContractAnalysisService', () => {
       );
 
       mockExtractContracts.mockReturnValue(contracts);
-      const analyzeContractSpy = jest.spyOn(service, 'analyzeContract');
+      const analyzeContractSpy = vi.spyOn(service, 'analyzeContract');
 
       const result = await service.analyze({
         chainId,
@@ -195,9 +197,9 @@ describe('ContractAnalysisService', () => {
         FALLBACK_HANDLER: [],
       } as Record<ContractStatusGroup, Array<ContractAnalysisResult>>;
 
-      jest
-        .spyOn(service, 'analyzeContract')
-        .mockResolvedValue(mockAnalysisResult);
+      vi.spyOn(service, 'analyzeContract').mockResolvedValue(
+        mockAnalysisResult,
+      );
 
       const result = await service.analyze({
         chainId,
@@ -299,11 +301,11 @@ describe('ContractAnalysisService', () => {
         [contracts[1].address]: result2,
       };
 
-      const analyzeContractSpy = jest
+      const analyzeContractSpy = vi
         .spyOn(service, 'analyzeContract')
         .mockResolvedValueOnce(result1)
         .mockResolvedValueOnce(result2);
-      const cacheSetSpy = jest.spyOn(fakeCacheService, 'hSet');
+      const cacheSetSpy = vi.spyOn(fakeCacheService, 'hSet');
 
       const result = await service.analyze({
         chainId,
@@ -358,7 +360,7 @@ describe('ContractAnalysisService', () => {
       ];
       mockExtractContracts.mockReturnValue(contracts);
 
-      const analyzeContractSpy = jest
+      const analyzeContractSpy = vi
         .spyOn(service, 'analyzeContract')
         .mockResolvedValue({
           CONTRACT_VERIFICATION: [],

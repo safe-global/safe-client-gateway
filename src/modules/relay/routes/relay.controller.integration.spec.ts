@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -26,6 +27,8 @@ import {
 } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
 import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -50,6 +53,7 @@ import {
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -75,6 +79,26 @@ const supportedChainIds = [
   ...dailyLimitChainIds,
   ...noFeeCampaignSupportedChainIds,
 ];
+
+function relayerTypeForChainId(chainId: string): RelayerType | null {
+  if (noFeeCampaignSupportedChainIds.includes(chainId)) {
+    return RelayerType.NO_FEE_CAMPAIGN;
+  }
+  if (dailyLimitChainIds.includes(chainId)) {
+    return RelayerType.DAILY_LIMIT;
+  }
+  return null;
+}
+
+// Builds the chain's nested `relayer` object for the given chain, routing on
+// the same logic as relayerTypeForChainId. Tenderly simulation is left disabled
+// since these tests do not exercise the simulation gate.
+function relayerForChainId(chainId: string): NonNullable<Chain['relayer']> {
+  return relayerBuilder()
+    .with('type', relayerTypeForChainId(chainId))
+    .with('enableTenderlySimulationBeforeRelay', false)
+    .build();
+}
 
 const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
   'Safe',
@@ -102,15 +126,15 @@ const getScaledBalance = (tokens: bigint | number, decimals = 18): bigint =>
 
 describe('Relay controller', () => {
   let app: INestApplication<Server>;
-  let configurationService: jest.MockedObjectDeep<IConfigurationService>;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
-  let balancesService: jest.MockedObjectDeep<BalancesService>;
+  let configurationService: MockedObject<IConfigurationService>;
+  let networkService: MockedObject<INetworkService>;
+  let balancesService: MockedObject<BalancesService>;
   let safeConfigUrl: string;
   let relayUrl: string;
   let relayLimit: number;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -160,7 +184,7 @@ describe('Relay controller', () => {
             name: 'Safe Token',
           },
         };
-        balancesService.getTokenBalance = jest
+        balancesService.getTokenBalance = vi
           .fn()
           .mockResolvedValue(tokenBalance);
       }
@@ -177,7 +201,10 @@ describe('Relay controller', () => {
             ['executeNextTx (Execution)', executeNextTxEncoder],
           ])('%s', (_, encoder) => {
             it('should return 201 when executing a singular transaction', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
                 { count: { min: 1, max: 4 } },
@@ -237,7 +264,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 201 when executing a batch of transactions', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safes = faker.helpers.multiple(
                 () => getAddress(faker.finance.ethereumAddress()),
                 { count: { min: 2, max: 4 } },
@@ -331,7 +361,10 @@ describe('Relay controller', () => {
             SAFE_VERSIONS[chainId],
           )('v%s execTransaction', (version) => {
             it('should return 201 when sending native currency to another party', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const data = execTransactionEncoder()
@@ -381,7 +414,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 201 with gasLimit provided but not forwarded to Gelato', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const gasLimit = faker.string.numeric({ exclude: '0' });
@@ -470,7 +506,10 @@ describe('Relay controller', () => {
               ['making a setGuard call', setGuardEncoder().encode()],
               ['making a swapOwner call', swapOwnerEncoder().encode()],
             ])(`should return 201 when %s`, async (_, execTransactionData) => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const data = execTransactionEncoder()
                 .with('data', execTransactionData)
@@ -523,7 +562,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 201 calling execTransaction on a nested Safe', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const data = execTransactionEncoder()
@@ -580,7 +622,10 @@ describe('Relay controller', () => {
             MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
           )('v%s multiSend', (version) => {
             it('should return 201 when entire batch is valid', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const transactions = [
@@ -658,7 +703,10 @@ describe('Relay controller', () => {
             MULTI_SEND_VERSIONS[chainId],
           )('v%s multiSend', (version) => {
             it('should return 201 when entire batch is valid', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const transactions = [
@@ -737,7 +785,10 @@ describe('Relay controller', () => {
           )('v%s createProxyWithNonce', (version) => {
             if (SAFE_VERSIONS[chainId].includes(version)) {
               it('should return the limit addresses when creating an official Safe', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const owners = [
                   getAddress(faker.finance.ethereumAddress()),
                   getAddress(faker.finance.ethereumAddress()),
@@ -803,7 +854,10 @@ describe('Relay controller', () => {
               });
 
               it('should throw when using an unofficial ProxyFactory to create an official Safe', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const owners = [
                   getAddress(faker.finance.ethereumAddress()),
                   getAddress(faker.finance.ethereumAddress()),
@@ -868,7 +922,10 @@ describe('Relay controller', () => {
 
             if (SAFE_L2_VERSIONS[chainId].includes(version)) {
               it('should return the limit addresses when creating an official L2 Safe', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const owners = [
                   getAddress(faker.finance.ethereumAddress()),
                   getAddress(faker.finance.ethereumAddress()),
@@ -934,7 +991,10 @@ describe('Relay controller', () => {
               });
 
               it('should throw when using an unofficial ProxyFactory to create an official L2 Safe', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const owners = [
                   getAddress(faker.finance.ethereumAddress()),
                   getAddress(faker.finance.ethereumAddress()),
@@ -1011,7 +1071,10 @@ describe('Relay controller', () => {
           ])('%s', (_, encoder) => {
             describe('Singular', () => {
               it('should return 422 when executing a non-owner management transaction', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
                   { count: { min: 1, max: 4 } },
@@ -1075,7 +1138,10 @@ describe('Relay controller', () => {
               });
 
               it('should return 422 when the module is not enabled on the Safe', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
                   { count: { min: 1, max: 4 } },
@@ -1141,7 +1207,10 @@ describe('Relay controller', () => {
 
             describe('Batch', () => {
               it('should return 422 when a non-owner management transaction is in a batch', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
                   { count: { min: 2, max: 4 } },
@@ -1234,7 +1303,10 @@ describe('Relay controller', () => {
               });
 
               it('should return 422 when the module is not enabled on a Safe in a batch', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
                   { count: 2 },
@@ -1326,7 +1398,10 @@ describe('Relay controller', () => {
               });
 
               it('should return 422 when the module is recovering more than one Safe in a batch', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
                   { count: { min: 2, max: 4 } },
@@ -1418,7 +1493,10 @@ describe('Relay controller', () => {
               });
 
               it('should return 422 when not an official MultiSend', async () => {
-                const chain = chainBuilder().with('chainId', chainId).build();
+                const chain = chainBuilder()
+                  .with('chainId', chainId)
+                  .with('relayer', relayerForChainId(chainId))
+                  .build();
                 const version = faker.system.semver();
                 const safes = faker.helpers.multiple(
                   () => getAddress(faker.finance.ethereumAddress()),
@@ -1510,7 +1588,10 @@ describe('Relay controller', () => {
           )('v%s execTransaction', (version) => {
             // execTransaction
             it('should return 422 when sending native currency to self', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const data = execTransactionEncoder()
@@ -1552,7 +1633,10 @@ describe('Relay controller', () => {
 
             // transfer (execTransaction)
             it('should return 422 `transfer`ing ERC-20 tokens to self', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const data = execTransactionEncoder()
@@ -1596,7 +1680,10 @@ describe('Relay controller', () => {
 
             // transferFrom (execTransaction)
             it('should return 422 `transferFrom`ing ERC-20 tokens to self', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const data = execTransactionEncoder()
@@ -1641,7 +1728,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 422 `transferFrom`ing ERC-20 tokens from sender to sender as recipient', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const recipient = getAddress(faker.finance.ethereumAddress());
@@ -1689,7 +1779,10 @@ describe('Relay controller', () => {
 
             // approve (execTransaction)
             it('should return 422 when trying to call an ERC-20 method on the Safe', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const data = execTransactionEncoder()
@@ -1731,7 +1824,10 @@ describe('Relay controller', () => {
 
             // Unofficial mastercopy
             it('should return 422 when the mastercopy is not official', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safeAddress = faker.finance.ethereumAddress();
               const data = execTransactionEncoder()
                 .with('value', faker.number.bigInt())
@@ -1772,7 +1868,10 @@ describe('Relay controller', () => {
             MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
           )('v%s multiSend', (version) => {
             it('should return 422 when the batch has an invalid transaction', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const transactions = [
                 execTransactionEncoder().encode(),
@@ -1842,7 +1941,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 422 when the mastercopy is not official', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const transactions = [
@@ -1900,7 +2002,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 422 when the batch is to varying parties', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const otherParty = getAddress(faker.finance.ethereumAddress());
@@ -1957,7 +2062,10 @@ describe('Relay controller', () => {
             });
 
             it('should return 422 for unofficial MultiSend deployments', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const safe = safeBuilder().build();
               const safeAddress = getAddress(safe.address);
               const transactions = [
@@ -2020,7 +2128,10 @@ describe('Relay controller', () => {
             PROXY_FACTORY_VERSIONS[chainId],
           )('v%s createProxyWithNonce', (version) => {
             it('should return 422 creating an unofficial Safe', async () => {
-              const chain = chainBuilder().with('chainId', chainId).build();
+              const chain = chainBuilder()
+                .with('chainId', chainId)
+                .with('relayer', relayerForChainId(chainId))
+                .build();
               const owners = [
                 getAddress(faker.finance.ethereumAddress()),
                 getAddress(faker.finance.ethereumAddress()),
@@ -2066,7 +2177,10 @@ describe('Relay controller', () => {
         it('should return 422 if the gasLimit is invalid', async () => {
           // Version supported by all contracts
           const version = '1.3.0';
-          const chain = chainBuilder().with('chainId', chainId).build();
+          const chain = chainBuilder()
+            .with('chainId', chainId)
+            .with('relayer', relayerForChainId(chainId))
+            .build();
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const data = execTransactionEncoder()
@@ -2094,7 +2208,10 @@ describe('Relay controller', () => {
         it('should otherwise return 422', async () => {
           // Version supported by all contracts
           const version = '1.3.0';
-          const chain = chainBuilder().with('chainId', chainId).build();
+          const chain = chainBuilder()
+            .with('chainId', chainId)
+            .with('relayer', relayerForChainId(chainId))
+            .build();
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const data = erc20TransferEncoder().encode();
@@ -2129,7 +2246,10 @@ describe('Relay controller', () => {
       it('should return 503 if the relayer throws', async () => {
         // Version supported by all contracts
         const version = '1.3.0';
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const data = execTransactionEncoder().encode();
         networkService.get.mockImplementation(({ url }) => {
@@ -2174,7 +2294,10 @@ describe('Relay controller', () => {
           ],
         ])('%s', (_, encoder) => {
           it('should increment the rate limit counter with singular recovery calls', async () => {
-            const chain = chainBuilder().with('chainId', chainId).build();
+            const chain = chainBuilder()
+              .with('chainId', chainId)
+              .with('relayer', relayerForChainId(chainId))
+              .build();
             const safes = faker.helpers.multiple(
               () => getAddress(faker.finance.ethereumAddress()),
               { count: { min: 1, max: 4 } },
@@ -2242,7 +2365,10 @@ describe('Relay controller', () => {
           });
 
           it('should increment the rate limit counter with batch recovery calls', async () => {
-            const chain = chainBuilder().with('chainId', chainId).build();
+            const chain = chainBuilder()
+              .with('chainId', chainId)
+              .with('relayer', relayerForChainId(chainId))
+              .build();
             const safes = faker.helpers.multiple(
               () => getAddress(faker.finance.ethereumAddress()),
               { count: { min: 2, max: 4 } },
@@ -2340,7 +2466,10 @@ describe('Relay controller', () => {
         it.each(
           SAFE_VERSIONS[chainId],
         )('should increment the rate limit counter of v%s execTransaction calls', async (version) => {
-          const chain = chainBuilder().with('chainId', chainId).build();
+          const chain = chainBuilder()
+            .with('chainId', chainId)
+            .with('relayer', relayerForChainId(chainId))
+            .build();
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const data = execTransactionEncoder()
@@ -2398,7 +2527,10 @@ describe('Relay controller', () => {
         it.each(
           MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
         )('should increment the rate limit counter of v%s multiSend calls', async (version) => {
-          const chain = chainBuilder().with('chainId', chainId).build();
+          const chain = chainBuilder()
+            .with('chainId', chainId)
+            .with('relayer', relayerForChainId(chainId))
+            .build();
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const transactions = [
@@ -2475,7 +2607,10 @@ describe('Relay controller', () => {
         it.each(
           PROXY_FACTORY_VERSIONS[chainId],
         )('should increment the rate limit counter of the owners of a v%s createProxyWithNonce call', async (version) => {
-          const chain = chainBuilder().with('chainId', chainId).build();
+          const chain = chainBuilder()
+            .with('chainId', chainId)
+            .with('relayer', relayerForChainId(chainId))
+            .build();
 
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
@@ -2544,7 +2679,10 @@ describe('Relay controller', () => {
       it('should handle both checksummed and non-checksummed addresses', async () => {
         // Version supported by all contracts
         const version = '1.3.0';
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const nonChecksummedAddress = safe.address.toLowerCase();
         const checksummedSafeAddress = getAddress(safe.address);
@@ -2603,12 +2741,23 @@ describe('Relay controller', () => {
       });
 
       it('should not rate limit the same address on different chains', async () => {
-        // Use a different chain from non-no-fee-campaign chains to ensure DailyLimitRelayer is used
+        // Pick any other chainId and configure it as DAILY_LIMIT so the GET
+        // endpoint also routes through the DailyLimitRelayer.
         const otherChains = nonnoFeeCampaignChainIds.filter(
           (id) => id !== chainId,
         );
         const differentChainId = faker.helpers.arrayElement(otherChains);
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
+        const differentChain = chainBuilder()
+          .with('chainId', differentChainId)
+          .with(
+            'relayer',
+            relayerBuilder().with('type', RelayerType.DAILY_LIMIT).build(),
+          )
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -2619,6 +2768,11 @@ describe('Relay controller', () => {
           switch (url) {
             case `${safeConfigUrl}/api/v1/chains/${chainId}`:
               return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${safeConfigUrl}/api/v1/chains/${differentChainId}`:
+              return Promise.resolve({
+                data: rawify(differentChain),
+                status: 200,
+              });
             case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
               // Official mastercopy
               return Promise.resolve({ data: rawify(safe), status: 200 });
@@ -2657,7 +2811,10 @@ describe('Relay controller', () => {
       it('should return 429 if the rate limit is reached', async () => {
         // Version supported by all contracts
         const version = '1.3.0';
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -2802,7 +2959,17 @@ describe('Relay controller', () => {
 
     describe('GET /v1/chains/:chainId/relay/:safeAddress', () => {
       it('should return the limit and remaining relay attempts', async () => {
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safeAddress = faker.finance.ethereumAddress();
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          return Promise.reject(`No matching rule for url: ${url}`);
+        });
         await request(app.getHttpServer())
           .get(`/v1/chains/${chainId}/relay/${safeAddress}`)
           .expect(200)
@@ -2810,11 +2977,21 @@ describe('Relay controller', () => {
       });
 
       it('should accept safeTxHash query parameter and return relay limits', async () => {
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safeAddress = faker.finance.ethereumAddress();
         const safeTxHash = faker.string.hexadecimal({
           length: 64,
           casing: 'lower',
         }) as Hex;
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          return Promise.reject(`No matching rule for url: ${url}`);
+        });
         await request(app.getHttpServer())
           .get(
             `/v1/chains/${chainId}/relay/${safeAddress}?safeTxHash=${safeTxHash}`,
@@ -2826,7 +3003,10 @@ describe('Relay controller', () => {
       it('should not return negative limits if more requests were made than the limit', async () => {
         // Version supported by all contracts
         const version = '1.3.0';
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -2885,7 +3065,10 @@ describe('Relay controller', () => {
       const version = '1.3.0';
 
       it('should not relay when current time is less than no-fee campaign start', async () => {
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -2902,7 +3085,7 @@ describe('Relay controller', () => {
           noFeeConfig[Number.parseInt(chainId, 10)]?.startsAtTimeStamp;
 
         const beforeStartTime = startsAtTimeStamp - 100_000;
-        jest.spyOn(Date, 'now').mockReturnValue(beforeStartTime);
+        vi.spyOn(Date, 'now').mockReturnValue(beforeStartTime);
 
         // Mock BalancesService to return sufficient token balance
         const tokenBalance = {
@@ -2912,7 +3095,7 @@ describe('Relay controller', () => {
           fiatBalance: '100',
           fiatConversion: '1',
         };
-        balancesService.getTokenBalance = jest
+        balancesService.getTokenBalance = vi
           .fn()
           .mockResolvedValue(tokenBalance);
 
@@ -2944,11 +3127,14 @@ describe('Relay controller', () => {
         expect(balancesService.getTokenBalance).toHaveBeenCalledTimes(0);
 
         // Restore Date.now mock
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
 
       it('should not relay when current time is greater than no-fee campaign end', async () => {
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -2962,7 +3148,7 @@ describe('Relay controller', () => {
           noFeeConfig[Number.parseInt(chainId, 10)]?.endsAtTimeStamp;
 
         const afterEndTime = endsAtTimeStamp + 100_000;
-        jest.spyOn(Date, 'now').mockReturnValue(afterEndTime);
+        vi.spyOn(Date, 'now').mockReturnValue(afterEndTime);
 
         // Mock BalancesService to return sufficient token balance
         const tokenBalance = {
@@ -2972,7 +3158,7 @@ describe('Relay controller', () => {
           fiatBalance: '100',
           fiatConversion: '1',
         };
-        balancesService.getTokenBalance = jest
+        balancesService.getTokenBalance = vi
           .fn()
           .mockResolvedValue(tokenBalance);
 
@@ -3009,11 +3195,14 @@ describe('Relay controller', () => {
           .expect({ remaining: 0, limit: 0 });
 
         // Restore Date.now mock
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
       });
 
       it('should not relay transaction when token balance is zero', async () => {
-        const chain = chainBuilder().with('chainId', chainId).build();
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerForChainId(chainId))
+          .build();
         const safe = safeBuilder().build();
         const safeAddress = getAddress(safe.address);
         const data = execTransactionEncoder()
@@ -3021,7 +3210,7 @@ describe('Relay controller', () => {
           .encode();
 
         // Mock BalancesService to return null balance (zero)
-        balancesService.getTokenBalance = jest.fn().mockResolvedValue(null);
+        balancesService.getTokenBalance = vi.fn().mockResolvedValue(null);
 
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -3146,7 +3335,10 @@ describe('Relay controller', () => {
           expectedLimit,
         }) => {
           it(`should set relay limit to ${expectedLimit} for ${tokens} tokens`, async () => {
-            const chain = chainBuilder().with('chainId', chainId).build();
+            const chain = chainBuilder()
+              .with('chainId', chainId)
+              .with('relayer', relayerForChainId(chainId))
+              .build();
             const safe = safeBuilder().build();
             const safeAddress = getAddress(safe.address);
 
@@ -3172,7 +3364,7 @@ describe('Relay controller', () => {
                   }
                 : null;
 
-            balancesService.getTokenBalance = jest
+            balancesService.getTokenBalance = vi
               .fn()
               .mockResolvedValue(tokenBalance);
 
@@ -3244,7 +3436,10 @@ describe('Relay controller', () => {
           expectedRemaining,
         }) => {
           it(`should relay a transaction when token between [${balanceMin}] and [${balanceMax}]`, async () => {
-            const chain = chainBuilder().with('chainId', chainId).build();
+            const chain = chainBuilder()
+              .with('chainId', chainId)
+              .with('relayer', relayerForChainId(chainId))
+              .build();
             const safe = safeBuilder().build();
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
@@ -3271,7 +3466,7 @@ describe('Relay controller', () => {
               },
             };
 
-            balancesService.getTokenBalance = jest
+            balancesService.getTokenBalance = vi
               .fn()
               .mockResolvedValue(tokenBalance);
 
@@ -3337,7 +3532,7 @@ describe('Relay controller', () => {
               });
 
             // Restore mocks
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
           });
         });
       });
@@ -3358,7 +3553,10 @@ describe('Relay controller', () => {
 
         describe.each(gasLimitScenarios)('$description', ({ gasLimit }) => {
           it('should handle gas limit correctly', async () => {
-            const chain = chainBuilder().with('chainId', chainId).build();
+            const chain = chainBuilder()
+              .with('chainId', chainId)
+              .with('relayer', relayerForChainId(chainId))
+              .build();
             const safe = safeBuilder().build();
             const safeAddress = getAddress(safe.address);
             const data = execTransactionEncoder()
@@ -3388,7 +3586,7 @@ describe('Relay controller', () => {
               },
             };
 
-            balancesService.getTokenBalance = jest
+            balancesService.getTokenBalance = vi
               .fn()
               .mockResolvedValue(tokenBalance);
 
@@ -3456,7 +3654,10 @@ describe('Relay controller', () => {
         });
 
         it('reject tx exceeding maxGasLimit', async () => {
-          const chain = chainBuilder().with('chainId', chainId).build();
+          const chain = chainBuilder()
+            .with('chainId', chainId)
+            .with('relayer', relayerForChainId(chainId))
+            .build();
           const safe = safeBuilder().build();
           const safeAddress = getAddress(safe.address);
           const data = execTransactionEncoder()
@@ -3481,7 +3682,7 @@ describe('Relay controller', () => {
             },
           };
 
-          balancesService.getTokenBalance = jest
+          balancesService.getTokenBalance = vi
             .fn()
             .mockResolvedValue(tokenBalance);
 
@@ -3543,7 +3744,10 @@ describe('Relay controller', () => {
     });
 
     it('should relay createSigner on an official SafeWebAuthnSignerFactory', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
       // The createSigner branch doesn't consult the Safe version, so any
       // string suffices. Avoid SAFE_VERSIONS[chainId] which is keyed off the
       // suite's randomly-sampled supportedChainIds and may not contain our
@@ -3580,7 +3784,10 @@ describe('Relay controller', () => {
     });
 
     it('should return 422 for createSigner on an unofficial SafeWebAuthnSignerFactory', async () => {
-      const chain = chainBuilder().with('chainId', chainId).build();
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
       // The createSigner branch doesn't consult the Safe version, so any
       // string suffices. Avoid SAFE_VERSIONS[chainId] which is keyed off the
       // suite's randomly-sampled supportedChainIds and may not contain our

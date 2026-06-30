@@ -3,17 +3,18 @@
 import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { RateLimitGuard } from './rate-limit.guard';
 
-const mockCacheService = jest.mocked({
-  increment: jest.fn(),
-} as jest.MockedObjectDeep<ICacheService>);
+const mockCacheService = vi.mocked({
+  increment: vi.fn(),
+} as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('RateLimitGuard', () => {
   it('should allow the request if under the rate limit', async () => {
@@ -21,14 +22,14 @@ describe('RateLimitGuard', () => {
     const path = new URL(faker.internet.url()).pathname;
     const windowSeconds = faker.number.int({ min: 10, max: 20 });
     const mockExecutionContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({
+      switchToHttp: vi.fn().mockReturnValue({
+        getRequest: vi.fn().mockReturnValue({
           ip,
           route: { path },
           method: 'POST',
         }),
       }),
-    } as jest.MockedObjectDeep<ExecutionContext>;
+    } as MockedObject<ExecutionContext>;
     mockCacheService.increment.mockResolvedValue(1); // under or equal to the limit
     const guard = new RateLimitGuard(mockCacheService, mockLoggingService, {
       max: faker.number.int({ min: 1, max: 10 }),
@@ -50,14 +51,14 @@ describe('RateLimitGuard', () => {
     const windowSeconds = faker.number.int({ min: 10, max: 20 });
     const maxRequests = faker.number.int({ min: 2, max: 10 });
     const mockExecutionContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({
+      switchToHttp: vi.fn().mockReturnValue({
+        getRequest: vi.fn().mockReturnValue({
           ip,
           route: { path },
           method: 'PATCH',
         }),
       }),
-    } as jest.MockedObjectDeep<ExecutionContext>;
+    } as MockedObject<ExecutionContext>;
     mockCacheService.increment.mockResolvedValue(maxRequests + 1); // over the limit
     const guard = new RateLimitGuard(mockCacheService, mockLoggingService, {
       max: maxRequests,
@@ -92,14 +93,14 @@ describe('RateLimitGuard', () => {
     const invalidIp = 'invalid-ip-address';
     const path = new URL(faker.internet.url()).pathname;
     const mockExecutionContext = {
-      switchToHttp: jest.fn().mockReturnValue({
-        getRequest: jest.fn().mockReturnValue({
+      switchToHttp: vi.fn().mockReturnValue({
+        getRequest: vi.fn().mockReturnValue({
           ip: invalidIp,
           route: { path },
           method: 'PATCH',
         }),
       }),
-    } as jest.MockedObjectDeep<ExecutionContext>;
+    } as MockedObject<ExecutionContext>;
     mockCacheService.increment.mockResolvedValue(1);
     const guard = new RateLimitGuard(mockCacheService, mockLoggingService, {
       max: faker.number.int({ min: 1, max: 10 }),

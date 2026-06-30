@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import {
@@ -12,6 +13,7 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { Address } from 'viem';
+import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -26,11 +28,11 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 // (see expects below)
 const expectedDatasourceErrorCode = 500;
 
-const mockLoggingService: jest.MockedObjectDeep<ILoggingService> = {
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
+const mockLoggingService: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
 };
 
 class ErrorWithCode extends Error {
@@ -102,7 +104,7 @@ describe('RouteLoggerInterceptor tests', () => {
   let app: INestApplication<Server>;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [TestController],

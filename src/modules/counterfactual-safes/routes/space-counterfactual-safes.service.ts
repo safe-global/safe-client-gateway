@@ -6,10 +6,10 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import { transformCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/counterfactual-safes.utils';
 import type { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/space-safes.repository.interface';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members.repository.interface';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SpaceCounterfactualSafesService {

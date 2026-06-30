@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -14,19 +15,20 @@ import {
   txDataResponseBuilder,
   txFeesResponseBuilder,
 } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const mockNetworkService = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>);
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<INetworkService>);
 
-const mockDataSource = jest.mocked({
-  get: jest.fn(),
-  post: jest.fn(),
-} as jest.MockedObjectDeep<CacheFirstDataSource>);
+const mockDataSource = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<CacheFirstDataSource>);
 
 describe('FeeServiceApi', () => {
   let target: FeeServiceApi;
@@ -35,7 +37,7 @@ describe('FeeServiceApi', () => {
   let baseUri: string;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();
@@ -44,7 +46,6 @@ describe('FeeServiceApi', () => {
     // Configure relay-fee settings
     fakeConfigurationService.set('relay.fee', {
       baseUri,
-      enabledChainIds: ['1', '137', '8453'],
       feePreviewTtlSeconds: 60,
     });
     fakeConfigurationService.set(
@@ -151,7 +152,7 @@ describe('FeeServiceApi', () => {
       .with(
         'txData',
         txDataResponseBuilder()
-          .with('chainId', 1)
+          .with('chainId', '1')
           .with('safeAddress', safeAddress)
           .with('gasToken', request.gasToken)
           .with('numberSignatures', request.numberSignatures)
@@ -180,10 +181,29 @@ describe('FeeServiceApi', () => {
           key: expect.stringContaining('relay_fee_preview'),
         }),
         url: `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay-fees`,
-        data: request,
+        data: { ...request, origin: request.origin ?? Origin.NATIVE },
         notFoundExpireTimeSeconds: 30,
         expireTimeSeconds: 60,
       });
+    });
+
+    it('should default origin to NATIVE when omitted', async () => {
+      const requestWithoutOrigin = feePreviewTransactionDtoBuilder()
+        .with('origin', undefined)
+        .build();
+      mockDataSource.post.mockResolvedValueOnce(rawify(mockFeeResponse));
+
+      await target.getRelayFees({
+        chainId,
+        safeAddress,
+        request: requestWithoutOrigin,
+      });
+
+      expect(mockDataSource.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { ...requestWithoutOrigin, origin: Origin.NATIVE },
+        }),
+      );
     });
 
     it('should forward errors from dataSource', async () => {
@@ -204,20 +224,6 @@ describe('FeeServiceApi', () => {
           request,
         }),
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
-    });
-  });
-
-  describe('isPayWithSafeEnabled', () => {
-    it('should return true for enabled chain IDs', () => {
-      expect(target.isPayWithSafeEnabled('1')).toBe(true);
-      expect(target.isPayWithSafeEnabled('137')).toBe(true);
-      expect(target.isPayWithSafeEnabled('8453')).toBe(true);
-    });
-
-    it('should return false for disabled chain IDs', () => {
-      expect(target.isPayWithSafeEnabled('42161')).toBe(false);
-      expect(target.isPayWithSafeEnabled('10')).toBe(false);
-      expect(target.isPayWithSafeEnabled('999999')).toBe(false);
     });
   });
 });

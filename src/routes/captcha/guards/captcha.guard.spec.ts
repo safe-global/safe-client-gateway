@@ -3,13 +3,14 @@
 import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CaptchaService } from '@/routes/captcha/captcha.service';
 import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
 
-const mockCaptchaService = jest.mocked({
-  verifyToken: jest.fn(),
-} as jest.MockedObjectDeep<CaptchaService>);
+const mockCaptchaService = vi.mocked({
+  verifyToken: vi.fn(),
+} as MockedObject<CaptchaService>);
 
 function buildExecutionContext(
   overrides: Partial<{
@@ -18,7 +19,7 @@ function buildExecutionContext(
     forwardedFor: string;
     socketAddress: string;
   }> = {},
-): jest.MockedObjectDeep<ExecutionContext> {
+): MockedObject<ExecutionContext> {
   const headers: Record<string, string | undefined> = {};
   if (overrides.token !== undefined) {
     headers['x-captcha-token'] = overrides.token;
@@ -28,14 +29,14 @@ function buildExecutionContext(
   }
 
   return {
-    switchToHttp: jest.fn().mockReturnValue({
-      getRequest: jest.fn().mockReturnValue({
+    switchToHttp: vi.fn().mockReturnValue({
+      getRequest: vi.fn().mockReturnValue({
         headers,
         ip: overrides.ip ?? faker.internet.ipv4(),
         socket: { remoteAddress: overrides.socketAddress },
       }),
     }),
-  } as jest.MockedObjectDeep<ExecutionContext>;
+  } as MockedObject<ExecutionContext>;
 }
 
 describe('CaptchaGuard', () => {
@@ -43,7 +44,7 @@ describe('CaptchaGuard', () => {
   let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('when CAPTCHA is disabled', () => {
@@ -94,7 +95,7 @@ describe('CaptchaGuard', () => {
       expect(result).toBe(true);
     });
 
-    it('should pass request.ip as remoteip when x-forwarded-for is absent', async () => {
+    it('should pass request.ip as remoteip', async () => {
       const token = faker.string.alphanumeric();
       const ip = faker.internet.ipv4();
       mockCaptchaService.verifyToken.mockResolvedValueOnce(true);
@@ -104,24 +105,22 @@ describe('CaptchaGuard', () => {
       expect(mockCaptchaService.verifyToken).toHaveBeenCalledWith(token, ip);
     });
 
-    it('should prefer x-forwarded-for over request.ip', async () => {
+    it('should use request.ip and ignore a raw x-forwarded-for header', async () => {
+      // req.ip is resolved by Express `trust proxy`; the guard must not parse
+      // X-Forwarded-For itself, which would be client-spoofable.
       const token = faker.string.alphanumeric();
-      const clientIp = faker.internet.ipv4();
-      const proxyIp = faker.internet.ipv4();
+      const ip = faker.internet.ipv4();
       mockCaptchaService.verifyToken.mockResolvedValueOnce(true);
 
       await guard.canActivate(
         buildExecutionContext({
           token,
-          ip: proxyIp,
-          forwardedFor: `${clientIp}, ${proxyIp}`,
+          ip,
+          forwardedFor: `${faker.internet.ipv4()}, ${faker.internet.ipv4()}`,
         }),
       );
 
-      expect(mockCaptchaService.verifyToken).toHaveBeenCalledWith(
-        token,
-        clientIp,
-      );
+      expect(mockCaptchaService.verifyToken).toHaveBeenCalledWith(token, ip);
     });
   });
 });

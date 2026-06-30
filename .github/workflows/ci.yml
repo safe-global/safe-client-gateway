@@ -4,9 +4,22 @@ name: CI
 
 on:
   push:
+    # Only build on pushes to main. PRs are validated via the `pull_request`
+    # event below, so leaving `push:` unscoped made every PR commit run the
+    # whole pipeline twice. `main` pushes still run docker-publish-staging +
+    # autodeploy; releases use the `release` event.
+    branches:
+      - main
   pull_request:
   release:
     types: [released]
+
+# Cancel superseded runs for the same ref (e.g. rapid PR pushes) so stale
+# builds stop hogging runners. `main` is exempt so an in-flight staging deploy
+# is never cancelled by a follow-up merge.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
@@ -21,7 +34,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
@@ -59,18 +72,23 @@ jobs:
   env-validation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
+      # Install unconditionally rather than caching the linked node_modules:
+      # `enableHardenedMode` (.yarnrc.yml) verifies the supply chain only during
+      # `yarn install`, so skipping install on a warm cache would bypass that
+      # check. The `cache: 'yarn'` download cache above keeps this fast — tarballs
+      # are already fetched, so install only re-links and re-verifies.
       - run: yarn install --immutable
       - run: yarn run env:validate:silent
 
   biome:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24.11.0' # Krypton
@@ -78,6 +96,14 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run format-check
       - run: yarn run lint-check
+      # `nest build` (a full tsc compile) was dropped from the test jobs, which
+      # removed whole-program type-checking on PRs — Vitest transpiles via SWC,
+      # which strips types without type-checking them at all. Run an explicit
+      # no-emit type-check here so type errors fail the PR instead of only
+      # surfacing on the main-only Docker build. Needs the generated ABIs that
+      # the `@/abis` alias resolves to.
+      - run: yarn generate-abis
+      - run: yarn tsc --noEmit -p tsconfig.build.json
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -119,13 +145,16 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: '22.11.0' # jod
+          node-version: '24.11.0' # Krypton
           cache: 'yarn'
       - run: yarn install --immutable
-      - run: yarn run build
+      # Tests are transformed straight from `src` by the test runner, so the
+      # full `nest build` (compile to dist) isn't needed here — only the
+      # generated ABIs that the `@/abis` import alias resolves to.
+      - run: yarn generate-abis
       - run: yarn run test:unit:cov
         env:
           REDIS_HOST: localhost
@@ -182,12 +211,18 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: '24.11.0' # Krypton
           cache: 'yarn'
       - run: yarn install --immutable
+      # Unlike unit-tests, the integration suite runs DB migrations, and the
+      # TypeORM datasource loads them from the compiled `dist/migrations/*.js`
+      # glob (see postgres.config.ts). A full `nest build` (which `yarn build`
+      # wraps, ABIs included) is therefore required — `generate-abis` alone
+      # leaves `dist/migrations` empty, so no migrations run and the schema is
+      # never created.
       - run: yarn run build
       - run: yarn run test:integration:cov
         env:
@@ -222,18 +257,20 @@ jobs:
           parallel-finished: true
           fail-on-error: false
 
+  # Production runs on arm64 only, so we build a single-arch image. We run on an
+  # arm64 runner so the build is native — no QEMU emulation needed.
   docker-publish-staging:
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    # `on.push.branches` already scopes push events to main, so the ref check is
+    # redundant today — but it keeps this job self-guarding (it deploys to
+    # staging) if the push trigger is ever broadened.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [biome, tests-finish]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
-      - uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
-        with:
-          platforms: arm64
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -241,7 +278,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
@@ -254,15 +291,20 @@ jobs:
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
     needs: [biome, tests-finish]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - run: |
           BUILD_NUMBER=${{ github.sha }}
           echo "BUILD_NUMBER=${BUILD_NUMBER::7}" >> "$GITHUB_ENV"
-      - uses: docker/setup-qemu-action@06116385d9baf250c9f4dcb4858b16962ea869c3 # v4.1.0
-        with:
-          platforms: arm64
+      - name: Validate release tag
+        run: |
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Release tag is empty; refusing to publish an untagged release image."
+            exit 1
+          fi
       - uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
       - uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -270,13 +312,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
       - uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/arm64
           push: true
           build-args: |
             BUILD_NUMBER=${{ env.BUILD_NUMBER }}
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ env.RELEASE_TAG }}
           tags: |
-            ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ github.ref_name }}
+            ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.RELEASE_TAG }}
             ${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:latest
           # Use Registry cache backend https://docs.docker.com/build/cache/backends/registry/
           cache-from: type=registry,ref=${{ env.DOCKER_IMAGE_REGISTRY }}/${{ env.DOCKER_IMAGE_NAME }}:${{ env.DOCKER_BUILD_IMAGE_TAG }}
@@ -286,7 +328,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [docker-publish-staging]
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - name: Deploy Staging
         run: bash scripts/autodeploy.sh
         env:

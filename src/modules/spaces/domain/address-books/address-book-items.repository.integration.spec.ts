@@ -6,6 +6,7 @@ import type { ConfigService } from '@nestjs/config';
 import { range } from 'lodash';
 import { DataSource } from 'typeorm';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -19,12 +20,13 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AddressBookItem } from '@/modules/spaces/datasources/entities/address-book-item.entity.db';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/entities/space-safes.entity.db';
+import { AddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -32,15 +34,15 @@ import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
-  debug: jest.fn(),
-  error: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  error: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
 describe('AddressBookItemsRepository', () => {
   let dbService: PostgresDatabaseService;
@@ -95,7 +97,7 @@ describe('AddressBookItemsRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: jest.fn().mockImplementation((key: string) => {
+      getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -106,7 +108,7 @@ describe('AddressBookItemsRepository', () => {
           return testConfiguration.spaces.addressBooks.maxItems;
         }
       }),
-    } as jest.MockedObjectDeep<ConfigService>;
+    } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
       mockLoggingService,
       dbService,
@@ -122,13 +124,18 @@ describe('AddressBookItemsRepository', () => {
 
     addressBookItemsRepository = new AddressBookItemsRepository(
       dbService,
-      new SpacesRepository(dbService, mockConfigurationService),
+      new SpacesRepository(
+        dbService,
+        mockConfigurationService,
+        createMockSpaceAuditRepository(),
+      ),
       mockConfigService,
+      createMockSpaceAuditRepository(),
     );
   });
 
   afterEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   afterAll(async () => {
@@ -258,6 +265,21 @@ describe('AddressBookItemsRepository', () => {
         spaceId,
         'INVITED',
         faker.date.past(),
+      );
+      await expect(
+        addressBookItemsRepository.findAllBySpaceId({
+          authPayload,
+          spaceId,
+        }),
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
+    });
+
+    it('should throw a NotFoundException for a pending member', async () => {
+      const { spaceId } = await createSpaceAsAdmin();
+      const authPayload = await addMemberToSpaceWithStatus(
+        spaceId,
+        'INVITED',
+        faker.date.future(),
       );
       await expect(
         addressBookItemsRepository.findAllBySpaceId({

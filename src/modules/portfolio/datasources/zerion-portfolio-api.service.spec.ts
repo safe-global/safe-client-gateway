@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
@@ -13,6 +14,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { ZerionPortfolioApi } from '@/modules/portfolio/datasources/zerion-portfolio-api.service';
 import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import type { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 
 describe('ZerionPortfolioApi', () => {
   let service: ZerionPortfolioApi;
@@ -22,37 +24,41 @@ describe('ZerionPortfolioApi', () => {
   const zerionBaseUri = faker.internet.url({ appendSlash: false });
   const supportedFiatCodes = ['USD', 'EUR'];
 
-  const mockNetworkService = jest.mocked({
-    get: jest.fn(),
-    post: jest.fn(),
-    postForm: jest.fn(),
-    delete: jest.fn(),
-  } as jest.MockedObjectDeep<INetworkService>);
+  const mockNetworkService = vi.mocked({
+    get: vi.fn(),
+    post: vi.fn(),
+    postForm: vi.fn(),
+    delete: vi.fn(),
+  } as MockedObject<INetworkService>);
 
-  const mockHttpErrorFactory = jest.mocked({
-    from: jest.fn(),
-  } as jest.MockedObjectDeep<HttpErrorFactory>);
+  const mockHttpErrorFactory = vi.mocked({
+    from: vi.fn(),
+  } as MockedObject<HttpErrorFactory>);
 
-  const mockLoggingService = jest.mocked({
-    debug: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>);
+  const mockLoggingService = vi.mocked({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  } as MockedObject<ILoggingService>);
 
-  const mockCacheService = jest.mocked({
-    hGet: jest.fn(),
-    hSet: jest.fn(),
-    deleteByKey: jest.fn(),
-  } as jest.MockedObjectDeep<ICacheService>);
+  const mockCacheService = vi.mocked({
+    hGet: vi.fn(),
+    hSet: vi.fn(),
+    deleteByKey: vi.fn(),
+  } as MockedObject<ICacheService>);
 
-  const mockChainMappingService = jest.mocked({
-    getNetworkFromChainId: jest.fn(),
-    getChainIdFromNetwork: jest.fn(),
-  } as jest.MockedObjectDeep<ZerionChainMappingService>);
+  const mockChainMappingService = vi.mocked({
+    getNetworkFromChainId: vi.fn(),
+    getChainIdFromNetwork: vi.fn(),
+  } as MockedObject<ZerionChainMappingService>);
+
+  const mockZerionRateLimiter = vi.mocked({
+    assertWithinBudget: vi.fn(),
+  } as unknown as MockedObject<ZerionRateLimiter>);
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.apiKey',
@@ -74,6 +80,7 @@ describe('ZerionPortfolioApi', () => {
       mockLoggingService,
       mockCacheService,
       mockChainMappingService,
+      mockZerionRateLimiter,
     );
   });
 

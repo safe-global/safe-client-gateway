@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, concat, getAddress, type Hex } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { IBlocklistService } from '@/config/entities/blocklist.interface';
@@ -23,26 +25,26 @@ import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
-const mockDelegatesRepository = jest.mocked({
-  getDelegates: jest.fn(),
-} as jest.MockedObjectDeep<DelegatesV2Repository>);
+const mockDelegatesRepository = vi.mocked({
+  getDelegates: vi.fn(),
+} as MockedObject<DelegatesV2Repository>);
 
-const mockLoggingRepository = jest.mocked({
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingRepository = vi.mocked({
+  error: vi.fn(),
+} as MockedObject<ILoggingService>);
 
-const mockContractsRepository = jest.mocked({
-  isTrustedForDelegateCall: jest.fn(),
-} as jest.MockedObjectDeep<IContractsRepository>);
+const mockContractsRepository = vi.mocked({
+  isTrustedForDelegateCall: vi.fn(),
+} as MockedObject<IContractsRepository>);
 
-const mockBlocklistService = jest.mocked({
-  getBlocklist: jest.fn(),
-  clearCache: jest.fn(),
-} as jest.MockedObjectDeep<IBlocklistService>);
+const mockBlocklistService = vi.mocked({
+  getBlocklist: vi.fn(),
+  clearCache: vi.fn(),
+} as MockedObject<IBlocklistService>);
 
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
@@ -62,7 +64,7 @@ describe('TransactionVerifierHelper', () => {
   }
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     mockBlocklistService.getBlocklist.mockReturnValue([]);
     initTarget(configuration);
@@ -1930,7 +1932,7 @@ describe('TransactionVerifierHelper', () => {
             }),
           ),
         });
-      }).toThrow(new HttpExceptionNoLog('Could not calculate safeTxHash', 422));
+      }).toThrow('Could not calculate safeTxHash');
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -1997,7 +1999,7 @@ describe('TransactionVerifierHelper', () => {
             }),
           ),
         });
-      }).toThrow(new HttpExceptionNoLog('Invalid safeTxHash', 422));
+      }).toThrow('Invalid safeTxHash');
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
@@ -2308,7 +2310,7 @@ describe('TransactionVerifierHelper', () => {
             }),
           ),
         });
-      }).toThrow(new HttpExceptionNoLog('Invalid signature', 422));
+      }).toThrow('Invalid signature');
 
       expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
       expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {

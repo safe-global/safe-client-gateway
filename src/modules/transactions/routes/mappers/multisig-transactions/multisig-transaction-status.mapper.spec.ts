@@ -11,10 +11,10 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   let mapper: MultisigTransactionStatusMapper;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     const configurationService = {
-      get: jest.fn(),
-      getOrThrow: jest.fn(<T>(key: string): T => {
+      get: vi.fn(),
+      getOrThrow: vi.fn(<T>(key: string): T => {
         if (key === 'transactions.statusIndexingGracePeriodMs') {
           return INDEXING_GRACE_PERIOD_MS as T;
         }
@@ -25,7 +25,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should return a SUCCESS status', () => {
@@ -65,7 +65,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return CANCELLED when nonce passed and not enough confirmations even if recently modified', () => {
-    jest.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
+    vi.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 2)
@@ -81,7 +81,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return CANCELLED when nonce passed and enough confirmations but modified long ago', () => {
-    jest.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
+    vi.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 2)
@@ -97,7 +97,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return AWAITING_EXECUTION instead of CANCELLED during indexing grace period', () => {
-    jest.setSystemTime(new Date('2026-02-19T14:22:10.000Z'));
+    vi.setSystemTime(new Date('2026-02-19T14:22:10.000Z'));
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 46)

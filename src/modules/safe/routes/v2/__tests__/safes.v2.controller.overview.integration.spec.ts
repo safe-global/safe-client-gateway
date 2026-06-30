@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -26,7 +27,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 describe('Safes V2 Controller Overview', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
-  let networkService: jest.MockedObjectDeep<INetworkService>;
+  let networkService: MockedObject<INetworkService>;
   let pricesProviderUrl: string;
   let zerionBaseUri: string;
 
@@ -34,7 +35,7 @@ describe('Safes V2 Controller Overview', () => {
   const nonZerionChainId = '10'; // Optimism - not enabled for Zerion
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),
@@ -308,6 +309,97 @@ describe('Safes V2 Controller Overview', () => {
       );
     });
 
+    it('fetches the wallet portfolio once for a Safe on multiple Zerion chains', async () => {
+      const polygonChain = chainBuilder()
+        .with('chainId', '137')
+        .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'polygon', enabled: true })
+        .with('features', ['PORTFOLIO_ENDPOINT'])
+        .build();
+      const ethereumChain = chainBuilder()
+        .with('chainId', '1')
+        .with('isTestnet', false)
+        .with('balancesProvider', { chainName: 'ethereum', enabled: true })
+        .with('features', ['PORTFOLIO_ENDPOINT'])
+        .build();
+      const safeInfo = safeBuilder().build();
+
+      const zerionPortfolioResponse = {
+        data: {
+          type: 'portfolio',
+          id: safeInfo.address,
+          attributes: {
+            total: { positions: 7500.0 },
+            positions_distribution_by_chain: {
+              ethereum: 5000.0,
+              polygon: 2500.0,
+            },
+          },
+        },
+      };
+      const queuedTransactions = pageBuilder()
+        .with('results', [])
+        .with('count', 0)
+        .build();
+
+      let portfolioCallCount = 0;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${polygonChain.chainId}`:
+          case `${safeConfigUrl}/api/v2/chains/CGW/${polygonChain.chainId}`: {
+            return Promise.resolve({ data: rawify(polygonChain), status: 200 });
+          }
+          case `${safeConfigUrl}/api/v1/chains/${ethereumChain.chainId}`:
+          case `${safeConfigUrl}/api/v2/chains/CGW/${ethereumChain.chainId}`: {
+            return Promise.resolve({
+              data: rawify(ethereumChain),
+              status: 200,
+            });
+          }
+          case `${polygonChain.transactionService}/api/v1/safes/${safeInfo.address}`:
+          case `${ethereumChain.transactionService}/api/v1/safes/${safeInfo.address}`: {
+            return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+          }
+          case `${zerionBaseUri}/v1/wallets/${safeInfo.address}/portfolio`: {
+            portfolioCallCount += 1;
+            return Promise.resolve({
+              data: rawify(zerionPortfolioResponse),
+              status: 200,
+            });
+          }
+          case `${polygonChain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`:
+          case `${ethereumChain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
+            return Promise.resolve({
+              data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          default: {
+            return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v2/safes?currency=USD&safes=137:${safeInfo.address},1:${safeInfo.address}`,
+        )
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toHaveLength(2);
+          expect(
+            body.find((o: { chainId: string }) => o.chainId === '137')
+              ?.fiatTotal,
+          ).toBe('2500');
+          expect(
+            body.find((o: { chainId: string }) => o.chainId === '1')?.fiatTotal,
+          ).toBe('5000');
+        });
+
+      // The portfolio is per-wallet: one identity ⇒ exactly one network fetch.
+      expect(portfolioCallCount).toBe(1);
+    });
+
     it('should use Safe balances API when zerionBalancesEnabled is false, even for chains with Zerion chain name', async () => {
       const moduleFixture = await createTestModule({
         config: () => ({
@@ -330,7 +422,7 @@ describe('Safes V2 Controller Overview', () => {
       const testPricesProviderUrl = moduleFixture
         .get<IConfigurationService>(IConfigurationService)
         .getOrThrow('balances.providers.safe.prices.baseUri');
-      const testNetworkService: jest.MockedObjectDeep<INetworkService> =
+      const testNetworkService: MockedObject<INetworkService> =
         moduleFixture.get(NetworkService);
 
       const chain = chainBuilder()

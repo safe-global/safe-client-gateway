@@ -289,6 +289,47 @@ describe('Configuration validator', () => {
         `Configuration is invalid: ${key} is required in production and staging environments`,
       );
     });
+
+    it(`should require AWS_WEB_IDENTITY_TOKEN_FILE when SES email is enabled in ${env} environment`, () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...omit(validConfiguration, 'AWS_WEB_IDENTITY_TOKEN_FILE'),
+        CGW_ENV: env,
+        FF_SES_EMAIL: 'true',
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        `Configuration is invalid: AWS_WEB_IDENTITY_TOKEN_FILE is required in production and staging environments when SES email is enabled`,
+      );
+    });
+
+    it(`should not require AWS_WEB_IDENTITY_TOKEN_FILE when SES email is disabled in ${env} environment`, () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...omit(validConfiguration, 'AWS_WEB_IDENTITY_TOKEN_FILE'),
+        CGW_ENV: env,
+        FF_SES_EMAIL: 'false',
+      };
+
+      expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+        config,
+      );
+    });
+  });
+
+  it('should not require AWS_WEB_IDENTITY_TOKEN_FILE when SES email is enabled outside staging and production', () => {
+    process.env.NODE_ENV = 'production';
+    const config = {
+      ...omit(validConfiguration, 'AWS_WEB_IDENTITY_TOKEN_FILE'),
+      CGW_ENV: 'development',
+      FF_SES_EMAIL: 'true',
+    };
+
+    expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+      config,
+    );
   });
 
   describe('RELAY_NO_FEE_CAMPAIGN relay rules validation', () => {

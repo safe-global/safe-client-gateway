@@ -2,7 +2,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { z } from 'zod';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   SpaceSchema,
   SpaceStatus,
@@ -24,6 +24,6 @@ export class UpdateSpaceDto implements z.infer<typeof UpdateSpaceSchema> {
 }
 
 export class UpdateSpaceResponse {
-  @ApiProperty({ type: Number })
-  public readonly id!: Space['id'];
+  @ApiProperty({ type: String, description: 'Space UUID' })
+  public readonly uuid!: Space['uuid'];
 }

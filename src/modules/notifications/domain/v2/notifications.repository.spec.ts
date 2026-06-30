@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { IsNull } from 'typeorm';
 import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { mockEntityManager } from '@/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
@@ -22,6 +22,7 @@ import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain
 import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
 import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
 import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('NotificationsRepositoryV2', () => {
   let notificationsRepository: INotificationsRepositoryV2;
@@ -30,20 +31,20 @@ describe('NotificationsRepositoryV2', () => {
   const notificationSubscriptionRepository = { ...mockRepository };
   const notificationSubscriptionsRepository = { ...mockRepository };
   const mockLoggingService = {
-    debug: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    warn: jest.fn(),
-  } as jest.MockedObjectDeep<ILoggingService>;
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  } as MockedObject<ILoggingService>;
   const mockPushNotificationsApi: IPushNotificationsApi = {
-    enqueueNotification: jest.fn(),
+    enqueueNotification: vi.fn(),
   };
   const mockConfigService = {
-    getOrThrow: jest.fn(),
-  } as jest.MockedObjectDeep<ConfigService>;
+    getOrThrow: vi.fn(),
+  } as MockedObject<ConfigService>;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     notificationsRepository = new NotificationsRepositoryV2(
       mockPushNotificationsApi,
       mockLoggingService,
@@ -66,7 +67,7 @@ describe('NotificationsRepositoryV2', () => {
             id: deviceId,
           },
         ],
-        raw: jest.fn(),
+        raw: vi.fn(),
       });
       mockEntityManager.findOneOrFail.mockResolvedValue({
         id: deviceId,
@@ -240,7 +241,7 @@ describe('NotificationsRepositoryV2', () => {
 
       const args = {
         authPayload: authPayload,
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       };
@@ -271,7 +272,7 @@ describe('NotificationsRepositoryV2', () => {
 
       const args = {
         authPayload,
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({
           length: 32,
@@ -294,7 +295,7 @@ describe('NotificationsRepositoryV2', () => {
 
       const args = {
         authPayload: authPayload,
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         chainId: authPayload.chain_id as string,
         safeAddress: faker.string.hexadecimal({
           length: 32,
@@ -381,7 +382,7 @@ describe('NotificationsRepositoryV2', () => {
       );
 
       const args = {
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         chainId: faker.number.int({ min: 0 }).toString(),
         safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       };
@@ -415,7 +416,7 @@ describe('NotificationsRepositoryV2', () => {
       );
 
       const args = {
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         chainId: faker.number.int({ min: 0 }).toString(),
         safeAddress: faker.string.hexadecimal({ length: 32 }) as Address,
       };
@@ -445,7 +446,7 @@ describe('NotificationsRepositoryV2', () => {
       );
 
       const args = {
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         chainId: faker.number.int({ min: 0 }).toString(),
         safeAddress: getAddress(faker.finance.ethereumAddress()),
       };
@@ -480,7 +481,7 @@ describe('NotificationsRepositoryV2', () => {
         notificationDeviceRepository,
       );
 
-      const deviceUuid = faker.string.uuid() as UUID;
+      const deviceUuid = fakeUuid();
 
       await notificationsRepository.deleteDevice(deviceUuid);
 
@@ -499,7 +500,7 @@ describe('NotificationsRepositoryV2', () => {
         notificationDeviceRepository,
       );
 
-      const deviceUuid = faker.string.uuid() as UUID;
+      const deviceUuid = fakeUuid();
 
       const result = notificationsRepository.deleteDevice(deviceUuid);
 
@@ -521,17 +522,17 @@ describe('NotificationsRepositoryV2', () => {
       const deleteAllSubscriptionsDto = [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ];
@@ -571,7 +572,7 @@ describe('NotificationsRepositoryV2', () => {
       const deleteAllSubscriptionsDto = [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ];
@@ -601,12 +602,12 @@ describe('NotificationsRepositoryV2', () => {
       const deleteAllSubscriptionsDto = [
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
         {
           chainId: faker.string.numeric(),
-          deviceUuid: faker.string.uuid() as UUID,
+          deviceUuid: fakeUuid(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
         },
       ];
@@ -656,7 +657,7 @@ describe('NotificationsRepositoryV2', () => {
         .with('subscriptions', [
           {
             chainId: faker.string.numeric(),
-            deviceUuid: faker.string.uuid() as UUID,
+            deviceUuid: fakeUuid(),
             safeAddress: getAddress(faker.finance.ethereumAddress()),
             signerAddress,
           },
@@ -696,7 +697,7 @@ describe('NotificationsRepositoryV2', () => {
         .with('subscriptions', [
           {
             chainId: faker.string.numeric(),
-            deviceUuid: faker.string.uuid() as UUID,
+            deviceUuid: fakeUuid(),
             safeAddress: getAddress(faker.finance.ethereumAddress()),
           },
         ])
@@ -734,7 +735,7 @@ describe('NotificationsRepositoryV2', () => {
         .with('subscriptions', [
           {
             chainId: faker.string.numeric(),
-            deviceUuid: faker.string.uuid() as UUID,
+            deviceUuid: fakeUuid(),
             safeAddress: getAddress(faker.finance.ethereumAddress()),
             signerAddress: null,
           },
@@ -775,19 +776,19 @@ describe('NotificationsRepositoryV2', () => {
         .with('subscriptions', [
           {
             chainId: faker.string.numeric(),
-            deviceUuid: faker.string.uuid() as UUID,
+            deviceUuid: fakeUuid(),
             safeAddress: getAddress(faker.finance.ethereumAddress()),
             // signerAddress omitted (undefined)
           },
           {
             chainId: faker.string.numeric(),
-            deviceUuid: faker.string.uuid() as UUID,
+            deviceUuid: fakeUuid(),
             safeAddress: getAddress(faker.finance.ethereumAddress()),
             signerAddress: null,
           },
           {
             chainId: faker.string.numeric(),
-            deviceUuid: faker.string.uuid() as UUID,
+            deviceUuid: fakeUuid(),
             safeAddress: getAddress(faker.finance.ethereumAddress()),
             signerAddress,
           },

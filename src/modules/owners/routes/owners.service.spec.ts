@@ -1,30 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
+import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { OwnersService } from '@/modules/owners/routes/owners.service';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 
-const safeRepositoryMock: jest.MockedObjectDeep<SafeRepository> = {
-  getSafesByOwner: jest.fn(),
-  getSafesByOwnerV2: jest.fn(),
-  getAllSafesByOwner: jest.fn(),
-  getAllSafesByOwnerV2: jest.fn(),
-  getCreationTransaction: jest.fn(),
-} as jest.MockedObjectDeep<SafeRepository>;
+const safeRepositoryMock: MockedObject<SafeRepository> = {
+  getSafesByOwner: vi.fn(),
+  getSafesByOwnerV2: vi.fn(),
+  getAllSafesByOwner: vi.fn(),
+  getAllSafesByOwnerV2: vi.fn(),
+  getCreationTransaction: vi.fn(),
+} as MockedObject<SafeRepository>;
 
-const loggingServiceMock: jest.MockedObjectDeep<ILoggingService> = {
-  info: jest.fn(),
-  debug: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
+const loggingServiceMock: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
 };
 
 describe('OwnersService', () => {
   let service: OwnersService;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
     service = new OwnersService(safeRepositoryMock, loggingServiceMock);
   });
 

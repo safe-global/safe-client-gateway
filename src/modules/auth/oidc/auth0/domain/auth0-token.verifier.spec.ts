@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
+import type { MockedObject, MockInstance } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -16,17 +17,17 @@ import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token
 import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 const loggingServiceMock = {
-  debug: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 describe('Auth0TokenVerifier', () => {
   let target: Auth0TokenVerifier;
   let issuer: string;
   let clientId: string;
-  let fetchMock: jest.SpiedFunction<typeof fetch>;
+  let fetchMock: MockInstance<typeof fetch>;
 
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
 
     const domain = faker.internet.domainName();
     issuer = `https://${domain}/`;
@@ -37,7 +38,7 @@ describe('Auth0TokenVerifier', () => {
     fakeConfigurationService.set('auth.auth0.clientId', clientId);
     fakeConfigurationService.set('auth.auth0.jwksCacheMaxAgeMs', 60 * 60_000);
     fakeConfigurationService.set('auth.auth0.jwksCooldownMs', 30_000);
-    fetchMock = jest.spyOn(global, 'fetch');
+    fetchMock = vi.spyOn(global, 'fetch');
 
     target = new Auth0TokenVerifier(
       fakeConfigurationService,
@@ -312,7 +313,7 @@ describe('Auth0TokenVerifier', () => {
         payload: { sub: faker.string.uuid() },
       });
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
-      const parseSpy = jest
+      const parseSpy = vi
         .spyOn(Auth0TokenSchema, 'parse')
         .mockImplementationOnce(() => {
           throw error;

@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -8,6 +11,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
 import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
@@ -15,20 +19,25 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
 import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import type { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 import { rawify } from '@/validation/entities/raw.entity';
 
+const mockZerionRateLimiter = vi.mocked({
+  assertWithinBudget: vi.fn(),
+} as unknown as MockedObject<ZerionRateLimiter>);
+
 const loggingService = {
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>;
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 const networkService = {
-  get: jest.fn(),
-  post: jest.fn(),
-  delete: jest.fn(),
-} as jest.MockedObjectDeep<INetworkService>;
+  get: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+} as MockedObject<INetworkService>;
 
 function buildZerionLoanBalance(args: {
   chainName: string;
@@ -77,7 +86,7 @@ describe('ZerionPositionsApi', () => {
   describe('Normalization caching tests', () => {
     let cacheService: FakeCacheService;
     let configurationService: FakeConfigurationService;
-    let zerionChainMappingService: jest.MockedObjectDeep<ZerionChainMappingService>;
+    let zerionChainMappingService: MockedObject<ZerionChainMappingService>;
     let target: ZerionPositionsApi;
 
     const chainName = 'ethereum';
@@ -88,7 +97,7 @@ describe('ZerionPositionsApi', () => {
     } as Chain;
 
     beforeEach(() => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       cacheService = new FakeCacheService();
       configurationService = new FakeConfigurationService();
       configurationService.set(
@@ -106,9 +115,9 @@ describe('ZerionPositionsApi', () => {
       });
 
       zerionChainMappingService = {
-        getChainIdFromNetwork: jest.fn(),
-        getNetworkFromChainId: jest.fn().mockResolvedValue(chainName),
-      } as unknown as jest.MockedObjectDeep<ZerionChainMappingService>;
+        getChainIdFromNetwork: vi.fn(),
+        getNetworkFromChainId: vi.fn().mockResolvedValue(chainName),
+      } as unknown as MockedObject<ZerionChainMappingService>;
 
       target = new ZerionPositionsApi(
         cacheService,
@@ -117,6 +126,7 @@ describe('ZerionPositionsApi', () => {
         configurationService as IConfigurationService,
         new HttpErrorFactory(),
         zerionChainMappingService,
+        mockZerionRateLimiter,
       );
     });
 
@@ -211,32 +221,32 @@ describe('ZerionPositionsApi', () => {
       ]),
     );
 
-    const mockCacheService = jest.mocked({
-      hGet: jest.fn(),
-      hSet: jest.fn(),
-      deleteByKey: jest.fn(),
-    } as jest.MockedObjectDeep<ICacheService>);
+    const mockCacheService = vi.mocked({
+      hGet: vi.fn(),
+      hSet: vi.fn(),
+      deleteByKey: vi.fn(),
+    } as MockedObject<ICacheService>);
 
     const mockLoggingService = {
-      debug: jest.fn(),
-      warn: jest.fn(),
-    } as jest.MockedObjectDeep<ILoggingService>;
+      debug: vi.fn(),
+      warn: vi.fn(),
+    } as MockedObject<ILoggingService>;
 
-    const mockNetworkService = jest.mocked({
-      get: jest.fn(),
-    } as jest.MockedObjectDeep<INetworkService>);
+    const mockNetworkService = vi.mocked({
+      get: vi.fn(),
+    } as MockedObject<INetworkService>);
 
-    const mockHttpErrorFactory = jest.mocked({
-      from: jest.fn(),
-    } as jest.MockedObjectDeep<HttpErrorFactory>);
+    const mockHttpErrorFactory = vi.mocked({
+      from: vi.fn(),
+    } as MockedObject<HttpErrorFactory>);
 
-    const mockChainMappingService = jest.mocked({
-      getNetworkFromChainId: jest.fn(),
-      getChainIdFromNetwork: jest.fn(),
-    } as jest.MockedObjectDeep<ZerionChainMappingService>);
+    const mockChainMappingService = vi.mocked({
+      getNetworkFromChainId: vi.fn(),
+      getChainIdFromNetwork: vi.fn(),
+    } as MockedObject<ZerionChainMappingService>);
 
     beforeEach(() => {
-      jest.resetAllMocks();
+      vi.resetAllMocks();
       fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set(
         'balances.providers.zerion.apiKey',
@@ -262,6 +272,7 @@ describe('ZerionPositionsApi', () => {
         fakeConfigurationService,
         mockHttpErrorFactory,
         mockChainMappingService,
+        mockZerionRateLimiter,
       );
     });
 
@@ -364,6 +375,7 @@ describe('ZerionPositionsApi', () => {
           undefined,
         );
 
+        const message = `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`;
         await expect(
           service.getPositions({
             chain,
@@ -371,8 +383,11 @@ describe('ZerionPositionsApi', () => {
             fiatCode,
           }),
         ).rejects.toThrow(
-          `Chain ${unsupportedChainId} balances retrieval via Zerion is not configured`,
+          new HttpExceptionNoLog(message, HttpStatus.UNPROCESSABLE_ENTITY),
         );
+        // Logged as warning so it does not trigger error alerts for
+        // networks that Zerion does not support.
+        expect(mockLoggingService.warn).toHaveBeenCalledWith(message);
       });
 
       it('should use chain mapping service when chainName is not configured', async () => {

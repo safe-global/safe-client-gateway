@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import type { Address, Hash } from 'viem';
+import type { MockedObject } from 'vitest';
 import { JobType } from '@/datasources/job-queue/types/job-types';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -38,36 +38,37 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
-const mockJobQueueService = jest.mocked({
-  addJob: jest.fn(),
-  getJob: jest.fn(),
-} as jest.MockedObjectDeep<IJobQueueService>);
+const mockJobQueueService = vi.mocked({
+  addJob: vi.fn(),
+  getJob: vi.fn(),
+} as MockedObject<IJobQueueService>);
 
-const mockLoggingService = jest.mocked({
-  info: jest.fn(),
-  error: jest.fn(),
-  warn: jest.fn(),
-} as jest.MockedObjectDeep<ILoggingService>);
+const mockLoggingService = vi.mocked({
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>);
 
-const mockSafeRepository = jest.mocked({
-  getSafe: jest.fn(),
-  getIncomingTransfers: jest.fn(),
-  getMultiSigTransaction: jest.fn(),
-} as jest.MockedObjectDeep<ISafeRepository>);
+const mockSafeRepository = vi.mocked({
+  getSafe: vi.fn(),
+  getIncomingTransfers: vi.fn(),
+  getMultiSigTransaction: vi.fn(),
+} as MockedObject<ISafeRepository>);
 
-const mockDelegatesRepository = jest.mocked({
-  getDelegates: jest.fn(),
-} as jest.MockedObjectDeep<IDelegatesV2Repository>);
+const mockDelegatesRepository = vi.mocked({
+  getDelegates: vi.fn(),
+} as MockedObject<IDelegatesV2Repository>);
 
-const mockMessagesRepository = jest.mocked({
-  getMessageByHash: jest.fn(),
-} as jest.MockedObjectDeep<IMessagesRepository>);
+const mockMessagesRepository = vi.mocked({
+  getMessageByHash: vi.fn(),
+} as MockedObject<IMessagesRepository>);
 
-const mockNotificationsRepository = jest.mocked({
-  enqueueNotification: jest.fn(),
-  getSubscribersBySafe: jest.fn(),
-} as jest.MockedObjectDeep<INotificationsRepositoryV2>);
+const mockNotificationsRepository = vi.mocked({
+  enqueueNotification: vi.fn(),
+  getSubscribersBySafe: vi.fn(),
+} as MockedObject<INotificationsRepositoryV2>);
 
 function createSafe(
   overrides?: Partial<{ owners: Array<Address>; threshold: number }>,
@@ -86,7 +87,7 @@ describe('PushNotificationService (Unit)', () => {
   let service: PushNotificationService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     service = new PushNotificationService(
       mockJobQueueService,
@@ -716,7 +717,7 @@ describe('PushNotificationService (Unit)', () => {
       const event = pendingTransactionEventBuilder().build();
       const nullSub = {
         subscriber: null as Address | null,
-        deviceUuid: faker.string.uuid() as UUID,
+        deviceUuid: fakeUuid(),
         cloudMessagingToken: faker.string.alphanumeric(32),
       };
       const ownerSub = { ...createSubscriber(), subscriber: ownerAddress };

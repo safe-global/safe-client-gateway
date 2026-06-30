@@ -4,7 +4,7 @@ import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.m
 
 @Injectable()
 export class FakeBlockchainApiManager implements IBlockchainApiManager {
-  getApi = jest.fn();
+  getApi = vi.fn();
 
-  destroyApi = jest.fn();
+  destroyApi = vi.fn();
 }

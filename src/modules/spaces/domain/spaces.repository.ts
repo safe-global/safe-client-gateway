@@ -13,11 +13,15 @@ import {
   In,
   IsNull,
 } from 'typeorm';
-import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { getEnumKey } from '@/domain/common/utils/enum';
-import { Space } from '@/modules/spaces/datasources/entities/space.entity.db';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import {
+  SpaceAuditEventType,
+  type SpaceUpdatedPayload,
+} from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -27,7 +31,6 @@ import {
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 
-// TODO: Add tests
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
   private readonly maxSpaceCreationsPerUser: number;
@@ -37,6 +40,8 @@ export class SpacesRepository implements ISpacesRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISpaceAuditRepository)
+    private readonly spaceAuditRepository: ISpaceAuditRepository,
   ) {
     this.maxSpaceCreationsPerUser =
       this.configurationService.getOrThrow<number>(
@@ -48,10 +53,7 @@ export class SpacesRepository implements ISpacesRepository {
     userId: number;
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'id' | 'name'>> {
-    const spaceRepository =
-      await this.postgresDatabaseService.getRepository(Space);
-
+  }): Promise<Pick<Space, 'uuid' | 'name'>> {
     const isLimited = await this.isLimited(args.userId);
     if (isLimited) {
       throw new ForbiddenException(
@@ -76,12 +78,24 @@ export class SpacesRepository implements ISpacesRepository {
 
     space.members = [member];
 
-    const insertResult = await spaceRepository.save(space);
+    return await this.postgresDatabaseService.transaction(
+      async (entityManager) => {
+        const insertResult = await entityManager.save(space);
 
-    return {
-      id: insertResult.id,
-      name: insertResult.name,
-    };
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: insertResult.id,
+          spaceUuid: insertResult.uuid,
+          eventType: SpaceAuditEventType.SPACE_CREATED,
+          actorUserId: args.userId,
+          payload: { name: insertResult.name },
+        });
+
+        return {
+          uuid: insertResult.uuid,
+          name: insertResult.name,
+        };
+      },
+    );
   }
 
   public async findOneOrFail(
@@ -200,26 +214,108 @@ export class SpacesRepository implements ISpacesRepository {
 
   public async update(args: {
     id: Space['id'];
-    updatePayload: QueryDeepPartialEntity<Space>;
-  }): Promise<Pick<Space, 'id'>> {
-    const spaceRepository =
-      await this.postgresDatabaseService.getRepository(Space);
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    actorUserId: number;
+  }): Promise<Pick<Space, 'uuid'>> {
+    return await this.postgresDatabaseService.transaction(
+      async (entityManager) => {
+        // Old values are read inside the transaction to keep the diff exact.
+        const current = await entityManager.findOne(Space, {
+          where: { id: args.id },
+          select: { id: true, uuid: true, name: true, status: true },
+        });
+        if (!current) {
+          throw new NotFoundException('Workspace not found.');
+        }
 
-    await spaceRepository.update(args.id, args.updatePayload);
+        await entityManager
+          .createQueryBuilder()
+          .update(Space)
+          .set(args.updatePayload)
+          .where({ id: args.id })
+          .execute();
 
-    return { id: args.id };
+        const diff = this.diffSpaceUpdate(current, args.updatePayload);
+        if (diff) {
+          await this.spaceAuditRepository.record(entityManager, {
+            spaceId: current.id,
+            spaceUuid: current.uuid,
+            eventType: SpaceAuditEventType.SPACE_UPDATED,
+            actorUserId: args.actorUserId,
+            payload: diff,
+          });
+        }
+
+        return { uuid: current.uuid };
+      },
+    );
+  }
+
+  /** Changed `name`/`status` fields of a space update, or `null` for a no-op. */
+  private diffSpaceUpdate(
+    current: Pick<Space, 'name' | 'status'>,
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>,
+  ): SpaceUpdatedPayload | null {
+    const { name, status } = updatePayload;
+    const oldFields: SpaceUpdatedPayload['old'] = {};
+    const newFields: SpaceUpdatedPayload['new'] = {};
+
+    if (name !== undefined && name !== current.name) {
+      oldFields.name = current.name;
+      newFields.name = name;
+    }
+    if (status !== undefined && status !== current.status) {
+      oldFields.status = current.status;
+      newFields.status = status;
+    }
+
+    return Object.keys(newFields).length > 0
+      ? { old: oldFields, new: newFields }
+      : null;
+  }
+
+  public async findIdByUuid(uuid: Space['uuid']): Promise<Space['id']> {
+    const space = await this.findOneOrFail({
+      where: { uuid },
+      select: { id: true },
+    });
+    return space.id;
+  }
+
+  // Resolves the internal numeric id to the client-facing UUID. Mappers hold a
+  // numeric spaceId internally and use this to emit the UUID in responses.
+  public async findUuidById(id: Space['id']): Promise<Space['uuid']> {
+    const space = await this.findOneOrFail({
+      where: { id },
+      select: { uuid: true },
+    });
+    return space.uuid;
   }
 
   // @todo Add a soft delete method
-  public async delete(id: number): Promise<void> {
-    const spaceRepository =
-      await this.postgresDatabaseService.getRepository(Space);
+  public async delete(args: {
+    id: number;
+    actorUserId: number;
+  }): Promise<void> {
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const space = await entityManager.findOne(Space, {
+        where: { id: args.id },
+        select: { id: true, uuid: true, name: true },
+      });
+      if (!space) {
+        throw new NotFoundException('Workspace not found.');
+      }
 
-    const space = await this.findOneOrFail({
-      where: { id },
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+        eventType: SpaceAuditEventType.SPACE_DELETED,
+        actorUserId: args.actorUserId,
+        payload: { name: space.name },
+      });
+
+      await entityManager.delete(Space, space.id);
     });
-
-    await spaceRepository.delete(space.id);
   }
 
   /**
