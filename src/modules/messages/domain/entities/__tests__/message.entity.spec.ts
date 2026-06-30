@@ -95,7 +95,6 @@ describe('MessageSchema', () => {
   });
 
   it.each([
-    'safeAppId' as const,
     'preparedSignature' as const,
     'origin' as const,
   ])('should default %s to null', (key) => {
