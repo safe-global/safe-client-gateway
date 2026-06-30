@@ -7,6 +7,10 @@ import type { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import type { Address, Hash } from 'viem';
 import type { MockedObject } from 'vitest';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { retry } from '@/__tests__/util/retry';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -120,7 +124,7 @@ describe('Push notification queue integration', () => {
       ],
     });
 
-    app = moduleFixture.createNestApplication();
+    app = createTestApplication(moduleFixture);
 
     pushNotificationService = moduleFixture.get(IPushNotificationService);
     notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
@@ -132,7 +136,7 @@ describe('Push notification queue integration', () => {
     consumer = moduleFixture.get(PushNotificationConsumer);
     transactionApiManager = moduleFixture.get(ITransactionApiManager);
 
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {

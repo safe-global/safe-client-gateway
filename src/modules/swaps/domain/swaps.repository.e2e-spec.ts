@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import '@/__tests__/matchers/to-be-string-or-null';
 import type { Server } from 'node:net';
 import type { Address } from 'viem';
@@ -124,9 +129,9 @@ describe('CowSwap E2E tests', () => {
       .useValue(cacheKeyPrefix)
       .compile();
 
-    app = moduleRef.createNestApplication();
+    app = createTestApplication(moduleRef);
     repository = app.get(ISwapsRepository);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterAll(async () => {

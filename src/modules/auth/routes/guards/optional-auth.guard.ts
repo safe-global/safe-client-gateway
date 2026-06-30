@@ -5,18 +5,18 @@ import {
   type ExecutionContext,
   Injectable,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
+import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {
   constructor(private readonly authGuard: AuthGuard) {}
   canActivate(context: ExecutionContext): boolean {
-    const request: Request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<HttpRequest>();
 
     const accessToken: string | undefined =
-      request.cookies[ACCESS_TOKEN_COOKIE_NAME];
+      request.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
 
     /**
      * If there is no access token, we allow the request to proceed as

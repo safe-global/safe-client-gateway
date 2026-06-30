@@ -9,8 +9,12 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import request from 'supertest';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 
 @Controller()
@@ -22,8 +26,8 @@ class TestController {
   }
 
   @Get('headers-sent')
-  withHeader(@Res() res: Response): void {
-    res.setHeader('Cache-Control', 'public');
+  withHeader(@Res() res: FastifyReply): void {
+    res.header('Cache-Control', 'public');
     res.send();
     return;
   }
@@ -37,8 +41,8 @@ describe('CacheControlInterceptor tests', () => {
       controllers: [TestController],
     }).compile();
 
-    app = module.createNestApplication();
-    await app.init();
+    app = createTestApplication(module);
+    await initTestApplication(app);
   });
 
   afterEach(async () => {

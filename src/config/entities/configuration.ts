@@ -390,10 +390,13 @@ export default () => ({
     },
   },
   express: {
-    // Controls the maximum request body size. If this is a number, then the value
-    // specifies the number of bytes; if it is a string, the value is passed to the
-    // bytes library for parsing. Defaults to '100kb'.
-    // https://expressjs.com/en/resources/middleware/body-parser.html
+    // Controls the maximum request body size for the Fastify JSON parser. A
+    // bare number is interpreted as bytes; a string accepts an optional unit
+    // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
+    // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
+    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
+    // are retained for backwards compatibility after the Express->Fastify
+    // migration; rename deferred to avoid a breaking configuration change.
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
     // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
     // header set by upstream proxies instead of the direct socket address.
