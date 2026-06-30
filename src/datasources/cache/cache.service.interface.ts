@@ -23,16 +23,6 @@ export interface ICacheService {
     expireDeviatePercent?: number,
   ): Promise<number>;
 
-  /**
-   * Atomically increments a counter and sets its TTL on first creation, for
-   * fixed-window rate limiting.
-   *
-   * @param cacheKey - Counter key (not prefixed, matching {@link increment}).
-   * @param ttlSeconds - Window length in seconds, applied on the first increment.
-   * @returns The counter value after incrementing.
-   */
-  incrWithTtl(cacheKey: string, ttlSeconds: number): Promise<number>;
-
   setCounter(
     key: string,
     value: number,
