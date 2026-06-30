@@ -2,7 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
-import { getAddress } from 'viem';
+import { getAddress, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
@@ -337,7 +337,14 @@ export class TransactionDataMapper {
     chainId: string,
     value: unknown,
   ): Promise<AddressInfo | null> {
-    if (typeof value === 'string' && value !== NULL_ADDRESS) {
+    // getAddress throws synchronously on a malformed string, before the
+    // promise (and its .catch) exists; guard with isAddress so a decoded
+    // "address" parameter carrying a non-address value cannot surface as a 500.
+    if (
+      typeof value === 'string' &&
+      value !== NULL_ADDRESS &&
+      isAddress(value, { strict: false })
+    ) {
       const addressInfo = await this.addressInfoHelper
         .get(chainId, getAddress(value), ['TOKEN', 'CONTRACT'])
         .catch(() => null);
