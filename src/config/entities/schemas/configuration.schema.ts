@@ -201,6 +201,9 @@ export const RootConfigurationSchema = z
       .max(3599)
       .optional(),
     RELAY_PROVIDER_API_KEY: z.string(),
+    QUEUE_SERVICE_BASE_URI: z.url().optional(),
+    QUEUE_SERVICE_API_KEY: z.string().trim().min(1).optional(),
+    USE_QUEUE_SERVICE_VPC_URL: z.coerce.boolean().optional(),
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
