@@ -80,7 +80,7 @@ describe('SafesV2Service', () => {
     vi.resetAllMocks();
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('mappings.safe.maxOverviews', 10);
-    fakeConfigurationService.set('features.zerionBalancesEnabled', true);
+    fakeConfigurationService.set('features.zerionEnabled', true);
 
     service = new SafesV2Service(
       mockSafeRepository,

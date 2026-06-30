@@ -54,7 +54,7 @@ describe('Balances Controller', () => {
       features: {
         ...defaultConfiguration.features,
         counterfactualBalances: true,
-        zerionBalancesEnabled: true,
+        zerionEnabled: true,
       },
     });
 
