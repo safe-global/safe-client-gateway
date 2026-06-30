@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+ 
 # Billing Webhook Authentication
 
 The CGW receives webhooks from the **billing service** at `POST /v1/billing/webhooks` and authenticates their origin with a **service-to-service JWT bearer token**.
