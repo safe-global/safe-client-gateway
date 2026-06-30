@@ -231,6 +231,7 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
     spaceAuditLog: true,
+    queueService: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -409,6 +410,11 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       feePreviewTtlSeconds: 60,
     },
+  },
+  queueService: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
