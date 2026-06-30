@@ -18,6 +18,7 @@ export class CreateMessageDto
     oneOf: [{ type: 'string' }, { $ref: getSchemaPath(TypedData) }],
   })
   message!: string | TypedData;
+  /** @deprecated Send the SafeApp identity inside `origin` ({ name, url }). The server resolves it by URL; this value is accepted for backwards compatibility but ignored. */
   @ApiPropertyOptional({ type: Number, nullable: true, deprecated: true })
   safeAppId!: number | null;
   @ApiProperty()
