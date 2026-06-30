@@ -24,6 +24,7 @@
  *
  * See src/modules/billing/README.md for the full usage and provisioning guide.
  */
+import { parseArgs } from 'node:util';
 import configuration from '@/config/entities/configuration';
 import {
   BillingAuthService,
@@ -32,20 +33,31 @@ import {
 
 const DEFAULT_EXPIRES_IN_DAYS = 5 * 365; // ~5 years, long-lived service credential
 
-/**
- * Reads a `--flag value` style argument from process.argv.
- */
-function getArg(name: string): string | undefined {
-  const index = process.argv.indexOf(`--${name}`);
-  if (index === -1 || index === process.argv.length - 1) {
-    return undefined;
-  }
-  return process.argv[index + 1];
-}
+// Service identifiers only — keeps the `sub`/`service_name` claims clean and
+// avoids control/escape characters reaching the terminal or the token.
+const SUBJECT_PATTERN = /^[a-zA-Z0-9._-]{1,128}$/;
 
 function fail(message: string): never {
   console.error(`ERROR: ${message}`);
   process.exit(1);
+}
+
+/**
+ * Parses `--sub <value>` and `--expires-in <days>` (also accepts `--flag=value`).
+ * Strict: an unknown flag fails, so a typo'd argument can't quietly mint a token with the wrong values.
+ */
+function parseCliArgs(): { sub?: string; expiresIn?: string } {
+  try {
+    const { values } = parseArgs({
+      options: {
+        sub: { type: 'string' },
+        'expires-in': { type: 'string' },
+      },
+    });
+    return { sub: values.sub, expiresIn: values['expires-in'] };
+  } catch (error) {
+    fail(error instanceof Error ? error.message : 'Invalid arguments');
+  }
 }
 
 function main(): void {
@@ -58,19 +70,23 @@ function main(): void {
       'BILLING_WEBHOOK_JWT_PRIVATE_KEY environment variable is not defined (ES256 EC P-256 private key, PEM).',
     );
   }
+  const { sub, expiresIn } = parseCliArgs();
 
-  // Resolve the issuer the same way the verifying app does (env or default),
-  // so a minted token always matches what the guard verifies.
   const { issuer } = configuration().billing.webhook;
-  const subject = getArg('sub') ?? DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT;
+  const subject = sub ?? DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT;
 
-  const expiresInArg = getArg('expires-in');
-  const expiresInDays = expiresInArg
-    ? Number.parseInt(expiresInArg, 10)
+  if (!SUBJECT_PATTERN.test(subject)) {
+    fail(
+      `Invalid --sub value: ${JSON.stringify(subject)}. Allowed: letters, digits, '.', '_', '-' (max 128 chars).`,
+    );
+  }
+
+  const expiresInDays = expiresIn
+    ? Number.parseInt(expiresIn, 10)
     : DEFAULT_EXPIRES_IN_DAYS;
   if (!Number.isFinite(expiresInDays) || expiresInDays <= 0) {
     fail(
-      `Invalid --expires-in value: ${expiresInArg}. Must be a positive number of days.`,
+      `Invalid --expires-in value: ${JSON.stringify(expiresIn)}. Must be a positive number of days.`,
     );
   }
 
@@ -88,12 +104,15 @@ function main(): void {
     );
   }
 
-  console.log('\n✓ Generated billing-service webhook token:');
-  console.log(`\n${token}`);
-  console.log(`\n• Subject (sub): ${subject}`);
-  console.log(`• Issuer & Audience (iss/aud): ${issuer}`);
-  console.log(`• Algorithm: ES256`);
-  console.log(`• Expires in: ${expiresInDays} days`);
+  console.log(`
+✓ Generated billing-service webhook token:
+
+${token}
+
+• Subject (sub): ${subject}
+• Issuer & Audience (iss/aud): ${issuer}
+• Algorithm: ES256
+• Expires in: ${expiresInDays} days`);
 }
 
 main();

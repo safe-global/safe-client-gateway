@@ -30,6 +30,8 @@ Then configure the **running CGW** with the matching public key (see [Deploying]
 | `--sub` | Subject (`sub`) claim — also used as `data.service_name` | No | `billing-service` |
 | `--expires-in` | Token lifetime in **days** | No | `1825` (~5 years) |
 
+Both `--flag value` and `--flag=value` forms are accepted. Unknown flags are rejected (the script exits with an error) rather than ignored, so a typo can't silently mint a token with default values.
+
 ## Environment
 
 The script reads the **private key** directly from the environment (it is never stored in the running app's config). The **issuer** is resolved from the app config the same way the verifier resolves it, so a minted token always matches what the guard expects.
