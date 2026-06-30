@@ -33,7 +33,6 @@ import { Erc721TransferMapper } from '@/modules/transactions/routes/mappers/comm
 import { HumanDescriptionMapper } from '@/modules/transactions/routes/mappers/common/human-description.mapper';
 import { NativeCoinTransferMapper } from '@/modules/transactions/routes/mappers/common/native-coin-transfer.mapper';
 import { NativeStakingMapper } from '@/modules/transactions/routes/mappers/common/native-staking.mapper';
-import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/common/settings-change.mapper';
 import { SwapOrderMapperModule } from '@/modules/transactions/routes/mappers/common/swap-order.mapper';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
@@ -112,7 +111,6 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     NativeCoinTransferMapper,
     NativeStakingMapper,
     QueuedItemsMapper,
-    SafeAppInfoMapper,
     SettingsChangeMapper,
     SwapTransferInfoMapper,
     TransactionDataMapper,

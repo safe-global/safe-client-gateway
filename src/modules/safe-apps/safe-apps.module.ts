@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common';
 import { ConfigApiModule } from '@/datasources/config-api/config-api.module';
 import { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import { SafeAppsController } from '@/modules/safe-apps/routes/safe-apps.controller';
 import { SafeAppsService } from '@/modules/safe-apps/routes/safe-apps.service';
 
@@ -13,9 +14,10 @@ import { SafeAppsService } from '@/modules/safe-apps/routes/safe-apps.service';
       provide: ISafeAppsRepository,
       useClass: SafeAppsRepository,
     },
+    SafeAppInfoMapper,
     SafeAppsService,
   ],
   controllers: [SafeAppsController],
-  exports: [ISafeAppsRepository],
+  exports: [ISafeAppsRepository, SafeAppInfoMapper],
 })
 export class SafeAppsModule {}

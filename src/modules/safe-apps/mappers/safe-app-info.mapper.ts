@@ -4,7 +4,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
@@ -23,9 +23,10 @@ export class SafeAppInfoMapper {
 
   async mapSafeAppInfo(
     chainId: string,
-    transaction: MultisigTransaction,
+    origin: string | null,
+    safeTxHash: string,
   ): Promise<SafeAppInfo | null> {
-    const originUrl = this.getOriginUrl(transaction);
+    const originUrl = this.getOriginUrl(origin, safeTxHash);
     if (!originUrl) return null;
 
     const [safeApp] = await this.safeAppsRepository.getSafeApps({
@@ -35,12 +36,13 @@ export class SafeAppInfoMapper {
     });
     if (!safeApp) {
       this.loggingService.info(
-        `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${transaction.safeTxHash})`,
+        `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${safeTxHash})`,
       );
       return null;
     }
 
     return new SafeAppInfo(
+      safeApp.id,
       safeApp.name,
       safeApp.url.replace(
         SafeAppInfoMapper.IPFS_URL,
@@ -50,14 +52,18 @@ export class SafeAppInfoMapper {
     );
   }
 
-  private getOriginUrl(transaction: MultisigTransaction): string | null {
-    try {
-      return transaction.origin ? JSON.parse(transaction.origin).url : null;
-    } catch {
+  private getOriginUrl(
+    origin: string | null,
+    safeTxHash: string,
+  ): string | null {
+    if (!origin) return null;
+    const { originUrl } = parseOrigin(origin);
+    if (!originUrl) {
       this.loggingService.debug(
-        `Safe TX Hash ${transaction.safeTxHash} origin is not valid JSON. origin=${transaction.origin}`,
+        `Safe TX Hash ${safeTxHash} origin produced no URL. origin=${origin}`,
       );
       return null;
     }
+    return originUrl;
   }
 }
