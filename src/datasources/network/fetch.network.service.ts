@@ -109,6 +109,41 @@ export class FetchNetworkService implements INetworkService {
     });
   }
 
+  async patch<T>(args: {
+    url: string;
+    data?: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    const url = this.buildUrl(args.url, args.networkRequest?.params);
+    this.logRequest(url, 'PATCH');
+    const startTimeMs = performance.now();
+
+    const contentTypeHeader = args.data
+      ? { 'Content-Type': 'application/json' }
+      : undefined;
+
+    try {
+      return await this.client<T>(
+        url,
+        {
+          method: 'PATCH',
+          ...(args.data && {
+            body: JSON.stringify(args.data),
+          }),
+          headers: this.mergeHeaders(
+            args.networkRequest?.headers,
+            contentTypeHeader,
+          ),
+        },
+        args.networkRequest?.timeout,
+        args.networkRequest?.circuitBreaker,
+      );
+    } catch (error) {
+      this.logErrorResponse(error, performance.now() - startTimeMs);
+      throw error;
+    }
+  }
+
   async delete<T>(args: {
     url: string;
     data?: object;
