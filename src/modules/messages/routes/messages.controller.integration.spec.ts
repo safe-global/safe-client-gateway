@@ -32,18 +32,45 @@ import {
   toJson as messageToJson,
 } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
 import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
 import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
 import { MessageStatus } from '@/modules/messages/routes/entities/message.entity';
+import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { rawify } from '@/validation/entities/raw.entity';
 
+function toQueueMessageJson(
+  message: DomainMessage,
+  chainId: string,
+): Record<string, unknown> {
+  const { originName, originUrl } = parseOrigin(message.origin);
+  return {
+    chainId: Number(chainId),
+    messageHash: message.messageHash,
+    safe: message.safe,
+    message: message.message,
+    proposedBy: message.proposedBy,
+    preparedSignature: message.preparedSignature,
+    originName: typeof originName === 'string' ? originName : null,
+    originUrl: typeof originUrl === 'string' ? originUrl : null,
+    created: message.created.toISOString(),
+    modified: message.modified.toISOString(),
+    confirmations: message.confirmations.map((c) => ({
+      ...c,
+      created: c.created.toISOString(),
+      modified: c.modified.toISOString(),
+    })),
+  };
+}
+
 describe('Messages controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
   let blocklistService: MockedObject<IBlocklistService>;
@@ -66,6 +93,7 @@ describe('Messages controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('queueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
     blocklistService = moduleFixture.get(IBlocklistService);
@@ -80,7 +108,14 @@ describe('Messages controller', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    await initApp(configuration);
+    // This spec exercises the queue-service read path; the rest of the
+    // integration suite still defaults to features.queueService=false until
+    // each suite is migrated alongside its own queue-URL mocks.
+    const queueEnabledConfig: typeof configuration = () => {
+      const cfg = configuration();
+      return { ...cfg, features: { ...cfg.features, queueService: true } };
+    };
+    await initApp(queueEnabledConfig);
   });
 
   afterEach(async () => {
@@ -108,9 +143,9 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           case `${chain.transactionService}/api/v1/safes/${message.safe}`:
@@ -150,6 +185,8 @@ describe('Messages controller', () => {
           })),
           preparedSignature: message.preparedSignature,
           origin: message.origin,
+          safeAppInfo: null,
+          safeAppId: null,
         });
     });
 
@@ -162,8 +199,12 @@ describe('Messages controller', () => {
         () => messageConfirmationBuilder().build(),
         { count: { min: 2, max: 5 } },
       );
+      const safeApp = safeApps[1];
       const message = messageBuilder()
-        .with('safeAppId', safeApps[1].id)
+        .with(
+          'origin',
+          JSON.stringify({ name: safeApp.name, url: safeApp.url }),
+        )
         .with('confirmations', messageConfirmations)
         .build();
       const safe = safeBuilder()
@@ -176,15 +217,15 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           case `${chain.transactionService}/api/v1/safes/${message.safe}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case `${safeConfigUrl}/api/v1/safe-apps/`:
-            return Promise.resolve({ data: rawify(safeApps), status: 200 });
+            return Promise.resolve({ data: rawify([safeApp]), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -196,8 +237,8 @@ describe('Messages controller', () => {
         .expect({
           messageHash: message.messageHash,
           status: MessageStatus.Confirmed,
-          logoUri: safeApps[1].iconUrl,
-          name: safeApps[1].name,
+          logoUri: safeApp.iconUrl,
+          name: safeApp.name,
           message: message.message,
           creationTimestamp: message.created.getTime(),
           modifiedTimestamp: message.modified.getTime(),
@@ -218,6 +259,13 @@ describe('Messages controller', () => {
           })),
           preparedSignature: message.preparedSignature,
           origin: message.origin,
+          safeAppInfo: {
+            id: safeApp.id,
+            name: safeApp.name,
+            url: safeApp.url,
+            logoUri: safeApp.iconUrl,
+          },
+          safeAppId: safeApp.id,
         });
     });
 
@@ -241,9 +289,9 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           case `${chain.transactionService}/api/v1/safes/${message.safe}`:
@@ -283,6 +331,8 @@ describe('Messages controller', () => {
           })),
           preparedSignature: null,
           origin: message.origin,
+          safeAppInfo: null,
+          safeAppId: null,
         });
     });
 
@@ -295,8 +345,12 @@ describe('Messages controller', () => {
         () => messageConfirmationBuilder().build(),
         { count: { min: 2, max: 5 } },
       );
+      const safeApp = safeApps[2];
       const message = messageBuilder()
-        .with('safeAppId', safeApps[2].id)
+        .with(
+          'origin',
+          JSON.stringify({ name: safeApp.name, url: safeApp.url }),
+        )
         .with('confirmations', messageConfirmations)
         .build();
       const safe = safeBuilder()
@@ -309,15 +363,15 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           case `${chain.transactionService}/api/v1/safes/${message.safe}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case `${safeConfigUrl}/api/v1/safe-apps/`:
-            return Promise.resolve({ data: rawify(safeApps), status: 200 });
+            return Promise.resolve({ data: rawify([safeApp]), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -329,8 +383,8 @@ describe('Messages controller', () => {
         .expect({
           messageHash: message.messageHash,
           status: MessageStatus.NeedsConfirmation,
-          logoUri: safeApps[2].iconUrl,
-          name: safeApps[2].name,
+          logoUri: safeApp.iconUrl,
+          name: safeApp.name,
           message: message.message,
           creationTimestamp: message.created.getTime(),
           modifiedTimestamp: message.modified.getTime(),
@@ -351,6 +405,13 @@ describe('Messages controller', () => {
           })),
           preparedSignature: null,
           origin: message.origin,
+          safeAppInfo: {
+            id: safeApp.id,
+            name: safeApp.name,
+            url: safeApp.url,
+            logoUri: safeApp.iconUrl,
+          },
+          safeAppId: safeApp.id,
         });
     });
 
@@ -361,7 +422,13 @@ describe('Messages controller', () => {
         { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
-        .with('safeAppId', faker.number.int())
+        .with(
+          'origin',
+          JSON.stringify({
+            name: faker.word.noun(),
+            url: faker.internet.url({ appendSlash: false }),
+          }),
+        )
         .with('confirmations', messageConfirmations)
         .build();
       const safe = safeBuilder()
@@ -374,9 +441,9 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           case `${chain.transactionService}/api/v1/safes/${message.safe}`:
@@ -416,17 +483,19 @@ describe('Messages controller', () => {
           })),
           preparedSignature: null,
           origin: message.origin,
+          safeAppInfo: null,
+          safeAppId: null,
         });
     });
 
-    it('should return null name and logo if no safeAppId in the message', async () => {
+    it('should return null name and logo if origin is null', async () => {
       const chain = chainBuilder().build();
       const messageConfirmations = faker.helpers.multiple(
         () => messageConfirmationBuilder().build(),
         { count: { min: 2, max: 5 } },
       );
       const message = messageBuilder()
-        .with('safeAppId', null)
+        .with('origin', null)
         .with('confirmations', messageConfirmations)
         .build();
       const safe = safeBuilder()
@@ -439,9 +508,9 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           case `${chain.transactionService}/api/v1/safes/${message.safe}`:
@@ -479,7 +548,43 @@ describe('Messages controller', () => {
           })),
           preparedSignature: null,
           origin: message.origin,
+          safeAppInfo: null,
+          safeAppId: null,
         });
+    });
+
+    it('should return 404 when the queue returns a message for a different chainId', async () => {
+      const chain = chainBuilder().build();
+      const otherChainId = `${Number(chain.chainId) + 1}`;
+      const message = messageBuilder()
+        .with(
+          'confirmations',
+          faker.helpers.multiple(() => messageConfirmationBuilder().build(), {
+            count: { min: 2, max: 5 },
+          }),
+        )
+        .build();
+      const safe = safeBuilder().build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
+            return Promise.resolve({
+              data: rawify(toQueueMessageJson(message, otherChainId)),
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${message.safe}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
+        .expect(404)
+        .expect({ statusCode: 404, message: 'Message not found' });
     });
   });
 
@@ -494,7 +599,7 @@ describe('Messages controller', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
             return Promise.resolve({
               data: rawify({ ...page, previous: faker.number.int() }),
               status: 200,
@@ -523,7 +628,6 @@ describe('Messages controller', () => {
         )
         .build();
       const message = messageBuilder()
-        .with('safeAppId', null)
         .with('created', faker.date.recent())
         .with('confirmations', messageConfirmations)
         .build();
@@ -531,7 +635,7 @@ describe('Messages controller', () => {
         .with('previous', null)
         .with('next', null)
         .with('count', 1)
-        .with('results', [messageToJson(message)])
+        .with('results', [toQueueMessageJson(message, chain.chainId)])
         .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -539,8 +643,10 @@ describe('Messages controller', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
             return Promise.resolve({ data: rawify(page), status: 200 });
+          case `${safeConfigUrl}/api/v1/safe-apps/`:
+            return Promise.resolve({ data: rawify([]), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -592,6 +698,8 @@ describe('Messages controller', () => {
                   })),
                   preparedSignature: null,
                   origin: message.origin,
+                  safeAppInfo: null,
+                  safeAppId: null,
                 },
               ])
               .build(),
@@ -604,11 +712,7 @@ describe('Messages controller', () => {
       const safe = safeBuilder().build();
       const messageCreationDate = faker.date.recent();
       const messages = faker.helpers.multiple(
-        () =>
-          messageBuilder()
-            .with('safeAppId', null)
-            .with('created', messageCreationDate)
-            .build(),
+        () => messageBuilder().with('created', messageCreationDate).build(),
         { count: { min: 1, max: 4 } },
       );
       const page = pageBuilder()
@@ -617,7 +721,7 @@ describe('Messages controller', () => {
         .with('count', messages.length)
         .with(
           'results',
-          messages.map((m) => messageToJson(m)),
+          messages.map((m) => toQueueMessageJson(m, chain.chainId)),
         )
         .build();
       networkService.get.mockImplementation(({ url }) => {
@@ -626,8 +730,10 @@ describe('Messages controller', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
             return Promise.resolve({ data: rawify(page), status: 200 });
+          case `${safeConfigUrl}/api/v1/safe-apps/`:
+            return Promise.resolve({ data: rawify([]), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -670,7 +776,6 @@ describe('Messages controller', () => {
       const safe = safeBuilder().build();
       const messages = [
         messageBuilder()
-          .with('safeAppId', null)
           .with(
             'created',
             faker.date.between({
@@ -680,7 +785,6 @@ describe('Messages controller', () => {
           )
           .build(),
         messageBuilder()
-          .with('safeAppId', null)
           .with(
             'created',
             faker.date.between({
@@ -690,7 +794,6 @@ describe('Messages controller', () => {
           )
           .build(),
         messageBuilder()
-          .with('safeAppId', null)
           .with(
             'created',
             faker.date.between({
@@ -700,7 +803,6 @@ describe('Messages controller', () => {
           )
           .build(),
         messageBuilder()
-          .with('safeAppId', null)
           .with(
             'created',
             faker.date.between({
@@ -716,7 +818,7 @@ describe('Messages controller', () => {
         .with('count', messages.length)
         .with(
           'results',
-          messages.map((m) => messageToJson(m)),
+          messages.map((m) => toQueueMessageJson(m, chain.chainId)),
         )
         .build();
       networkService.get.mockImplementation(({ url }) => {
@@ -725,8 +827,10 @@ describe('Messages controller', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
             return Promise.resolve({ data: rawify(page), status: 200 });
+          case `${safeConfigUrl}/api/v1/safe-apps/`:
+            return Promise.resolve({ data: rawify([]), status: 200 });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);
         }
@@ -775,6 +879,59 @@ describe('Messages controller', () => {
           );
         });
     });
+
+    it('should filter out messages whose chainId differs from the request', async () => {
+      const chain = chainBuilder().build();
+      const otherChainId = `${Number(chain.chainId) + 1}`;
+      const safe = safeBuilder().build();
+      const matching = messageBuilder()
+        .with('safe', safe.address)
+        .with(
+          'confirmations',
+          faker.helpers.multiple(() => messageConfirmationBuilder().build(), {
+            count: { min: 2, max: 5 },
+          }),
+        )
+        .build();
+      const wrongChainMessage = messageBuilder()
+        .with('safe', safe.address)
+        .with('confirmations', [messageConfirmationBuilder().build()])
+        .build();
+      const page = pageBuilder()
+        .with('previous', null)
+        .with('next', null)
+        .with('count', 2)
+        .with('results', [
+          toQueueMessageJson(matching, chain.chainId),
+          toQueueMessageJson(wrongChainMessage, otherChainId),
+        ])
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
+            return Promise.resolve({ data: rawify(page), status: 200 });
+          case `${safeConfigUrl}/api/v1/safe-apps/`:
+            return Promise.resolve({ data: rawify([]), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .expect(200)
+        .expect(({ body }) => {
+          const messageHashes = body.results
+            .filter((r: { type: string }) => r.type === 'MESSAGE')
+            .map((r: { messageHash: string }) => r.messageHash);
+          expect(messageHashes).toEqual([matching.messageHash]);
+          expect(messageHashes).not.toContain(wrongChainMessage.messageHash);
+        });
+    });
   });
 
   describe('Create messages', () => {
@@ -797,8 +954,7 @@ describe('Messages controller', () => {
         { message: errorMessage },
       );
       networkService.post.mockImplementation(({ url }) =>
-        url ===
-        `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`
+        url === `${queueBaseUri}/api/v1/safes/${safe.address}/messages`
           ? Promise.reject(error)
           : Promise.reject(`No matching rule for url: ${url}`),
       );
@@ -863,7 +1019,7 @@ describe('Messages controller', () => {
         });
       networkService.post.mockImplementation(({ url }) => {
         switch (url) {
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
+          case `${queueBaseUri}/api/v1/safes/${safe.address}/messages`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -897,81 +1053,6 @@ describe('Messages controller', () => {
         .expect(202)
         .expect(({ body }) => {
           expect(body).toEqual(messageToJson(message));
-        });
-    });
-
-    it('should respond 202 Accepted when the Transaction Service returns an empty body on creation', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signer],
-        });
-      networkService.post.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
-            // The Transaction Service does not echo the created message back
-            return Promise.resolve({ data: rawify(null), status: 201 });
-          default:
-            return Promise.reject(`No matching rule for url: ${url}`);
-        }
-      });
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          // The message is indexed asynchronously and not yet readable
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
-            return Promise.reject(
-              new NetworkResponseError(
-                new URL(url),
-                { status: 404 } as Response,
-                { detail: 'Not found' },
-              ),
-            );
-          case `${chain.transactionService}/api/v1/safes/${safe.address}/messages/`:
-            return Promise.resolve({
-              data: rawify(
-                pageBuilder().with('results', []).with('count', 0).build(),
-              ),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      const createResponse = await request(app.getHttpServer())
-        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .send(
-          createMessageDtoBuilder()
-            .with('message', message.message)
-            .with('signature', message.confirmations[0].signature)
-            .build(),
-        );
-
-      // 202 Accepted signals the message was accepted but is not necessarily
-      // retrievable yet
-      expect(createResponse.status).toBe(202);
-      expect(createResponse.body).toEqual({});
-
-      // The message is not retrievable until the Transaction Service has indexed it
-      await request(app.getHttpServer())
-        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
-        .expect(404);
-
-      await request(app.getHttpServer())
-        .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
-        .expect(200)
-        .expect(({ body }) => {
-          expect(body.results).toHaveLength(0);
         });
     });
 
@@ -1149,6 +1230,10 @@ describe('Messages controller', () => {
         const testConfiguration = (): ReturnType<typeof configuration> => {
           return {
             ...defaultConfiguration,
+            features: {
+              ...defaultConfiguration.features,
+              queueService: true,
+            },
           };
         };
         await initApp(testConfiguration);
@@ -1214,6 +1299,7 @@ describe('Messages controller', () => {
             features: {
               ...defaultConfiguration.features,
               ethSign: false,
+              queueService: true,
             },
           };
         };
@@ -1324,7 +1410,6 @@ describe('Messages controller', () => {
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const message = await messageBuilder()
-        .with('safeAppId', null)
         .with('safe', safe.address)
         .with('created', faker.date.recent())
         .buildWithConfirmations({
@@ -1341,9 +1426,9 @@ describe('Messages controller', () => {
               data: rawify(safe),
               status: 200,
             });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           default:
@@ -1352,7 +1437,7 @@ describe('Messages controller', () => {
       });
       networkService.post.mockImplementation(({ url }) =>
         url ===
-        `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`
+        `${queueBaseUri}/api/v1/messages/${message.messageHash}/signatures`
           ? Promise.resolve({
               data: rawify({ signature: message.confirmations[0].signature }),
               status: 200,
@@ -1379,7 +1464,6 @@ describe('Messages controller', () => {
       const signer = privateKeyToAccount(privateKey);
       const safe = safeBuilder().with('owners', [signer.address]).build();
       const message = await messageBuilder()
-        .with('safeAppId', null)
         .with('safe', safe.address)
         .with('created', faker.date.recent())
         .buildWithConfirmations({
@@ -1388,7 +1472,7 @@ describe('Messages controller', () => {
           signers: [signer],
         });
       const errorMessage = faker.word.words();
-      const transactionServiceUrl = `${chain.transactionService}/api/v1/messages/${message.messageHash}/signatures/`;
+      const transactionServiceUrl = `${queueBaseUri}/api/v1/messages/${message.messageHash}/signatures`;
       const error = new NetworkResponseError(
         new URL(transactionServiceUrl),
         {
@@ -1405,9 +1489,9 @@ describe('Messages controller', () => {
               data: rawify(safe),
               status: 200,
             });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
             return Promise.resolve({
-              data: rawify(messageToJson(message)),
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
               status: 200,
             });
           default:
@@ -1439,7 +1523,6 @@ describe('Messages controller', () => {
     it('should get a validation error', async () => {
       const chain = chainBuilder().build();
       const message = messageBuilder()
-        .with('safeAppId', null)
         .with('created', faker.date.recent())
         .build();
 
@@ -1465,7 +1548,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1483,9 +1565,9 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
               return Promise.resolve({
-                data: rawify(messageToJson(message)),
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
                 status: 200,
               });
             default:
@@ -1524,7 +1606,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1544,9 +1625,9 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
               return Promise.resolve({
-                data: rawify(messageToJson(message)),
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
                 status: 200,
               });
             default:
@@ -1587,7 +1668,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1622,7 +1702,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1659,7 +1738,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1678,9 +1756,9 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
               return Promise.resolve({
-                data: rawify(messageToJson(message)),
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
                 status: 200,
               });
             default:
@@ -1717,13 +1795,16 @@ describe('Messages controller', () => {
         const testConfiguration = (): ReturnType<typeof configuration> => {
           return {
             ...defaultConfiguration,
+            features: {
+              ...defaultConfiguration.features,
+              queueService: true,
+            },
           };
         };
         await initApp(testConfiguration);
 
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1744,9 +1825,9 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
               return Promise.resolve({
-                data: rawify(messageToJson(message)),
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
                 status: 200,
               });
             default:
@@ -1790,6 +1871,7 @@ describe('Messages controller', () => {
             features: {
               ...defaultConfiguration.features,
               ethSign: false,
+              queueService: true,
             },
           };
         };
@@ -1799,7 +1881,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1817,9 +1898,9 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
               return Promise.resolve({
-                data: rawify(messageToJson(message)),
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
                 status: 200,
               });
             default:
@@ -1851,7 +1932,6 @@ describe('Messages controller', () => {
         const signer = privateKeyToAccount(privateKey);
         const safe = safeBuilder().with('owners', [signer.address]).build();
         const message = await messageBuilder()
-          .with('safeAppId', null)
           .with('safe', safe.address)
           .with('created', faker.date.recent())
           .buildWithConfirmations({
@@ -1869,9 +1949,9 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
               return Promise.resolve({
-                data: rawify(messageToJson(message)),
+                data: rawify(toQueueMessageJson(message, chain.chainId)),
                 status: 200,
               });
             default:
