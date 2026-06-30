@@ -139,7 +139,6 @@ export class MessagesService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       message: args.createMessageDto.message,
-      safeAppId: args.createMessageDto.safeAppId,
       origin: args.createMessageDto.origin,
       signature: args.createMessageDto.signature,
     });
