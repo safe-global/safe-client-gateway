@@ -15,6 +15,7 @@ import {
   txDataResponseBuilder,
   txFeesResponseBuilder,
 } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -180,10 +181,29 @@ describe('FeeServiceApi', () => {
           key: expect.stringContaining('relay_fee_preview'),
         }),
         url: `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay/fees`,
-        data: request,
+        data: { ...request, origin: request.origin ?? Origin.NATIVE },
         notFoundExpireTimeSeconds: 30,
         expireTimeSeconds: 60,
       });
+    });
+
+    it('should default origin to NATIVE when omitted', async () => {
+      const requestWithoutOrigin = feePreviewTransactionDtoBuilder()
+        .with('origin', undefined)
+        .build();
+      mockDataSource.post.mockResolvedValueOnce(rawify(mockFeeResponse));
+
+      await target.getRelayFees({
+        chainId,
+        safeAddress,
+        request: requestWithoutOrigin,
+      });
+
+      expect(mockDataSource.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { ...requestWithoutOrigin, origin: Origin.NATIVE },
+        }),
+      );
     });
 
     it('should forward errors from dataSource', async () => {

@@ -13,6 +13,7 @@ import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interfa
 import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
 import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
 import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
 import { GtfFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-response.schema';
 import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
@@ -81,6 +82,8 @@ export class FeeServiceApi implements IFeeServiceApi {
       operation: args.request.operation,
       gasToken: args.request.gasToken,
       threshold: args.request.numberSignatures,
+      nonce: args.request.nonce,
+      origin: args.request.origin,
       fiatCode: args.request.fiatCode,
     });
     const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay/fees`;
@@ -89,7 +92,13 @@ export class FeeServiceApi implements IFeeServiceApi {
       const data = await this.dataSource.post<TxFeesResponse>({
         cacheDir,
         url,
-        data: args.request,
+        // The fee service persists a quote keyed by `nonce` (required) and
+        // `origin` (defaults to NATIVE when omitted). This persisted quote is
+        // what `/can-relay` later checks against, so both must be sent here.
+        data: {
+          ...args.request,
+          origin: args.request.origin ?? Origin.NATIVE,
+        },
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });

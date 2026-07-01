@@ -1115,11 +1115,13 @@ export class CacheRouter {
     operation: number;
     gasToken: Address;
     threshold: number;
+    nonce: string;
+    origin?: string;
     fiatCode?: string;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.fiatCode ?? 'USD'}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.nonce}_${args.origin ?? 'NATIVE'}_${args.fiatCode ?? 'USD'}`,
     );
     return new CacheDir(
       CacheRouter.getRelayFeePreviewCacheKey(args),

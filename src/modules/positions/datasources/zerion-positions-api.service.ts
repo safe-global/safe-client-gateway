@@ -41,6 +41,7 @@ import type {
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Position } from '@/modules/positions/domain/entities/position.entity';
 import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
@@ -58,6 +59,7 @@ export class ZerionPositionsApi implements IPositionsApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
     private readonly zerionChainMappingService: ZerionChainMappingService,
+    private readonly zerionRateLimiter: ZerionRateLimiter,
   ) {
     this.apiKey = this.configurationService.get<string>(
       'balances.providers.zerion.apiKey',
@@ -104,6 +106,9 @@ export class ZerionPositionsApi implements IPositionsApi {
     }
 
     try {
+      await this.zerionRateLimiter.assertWithinBudget({
+        datasource: 'positions',
+      });
       const { key, field } = cacheDir;
       this.loggingService.debug({
         type: LogType.CacheMiss,

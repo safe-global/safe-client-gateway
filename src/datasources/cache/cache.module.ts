@@ -40,6 +40,11 @@ async function redisClientFactory(
     username: redisUser,
     password: redisPass,
     disableOfflineQueue: redisDisableOfflineQueue,
+    // As of redis v6 the default RESP protocol is 3, which flips `maintNotifications`
+    // to 'auto' and makes the client send `CLIENT MAINT_NOTIFICATIONS ON` on
+    // connect. Our standard (non-Enterprise) Redis does not support that
+    // subcommand and replies with `ERR unknown subcommand 'MAINT_NOTIFICATIONS'`.
+    maintNotifications: 'disabled',
   });
   client.on('error', (err) =>
     loggingService.error({

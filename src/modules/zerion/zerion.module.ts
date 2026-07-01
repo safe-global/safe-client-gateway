@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 
 @Module({
-  providers: [ZerionChainMappingService],
-  exports: [ZerionChainMappingService],
+  providers: [ZerionChainMappingService, ZerionRateLimiter],
+  exports: [ZerionChainMappingService, ZerionRateLimiter],
 })
 export class ZerionModule {}

@@ -141,6 +141,16 @@ export default () => ({
           process.env.ZERION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${2}`,
           10,
         ),
+        // Per-address sub-budget (DoS isolation): one hot wallet cannot starve
+        // the shared account budget. Disabled by default (0); opt in per env.
+        perAddressLimitPeriodSeconds: Number.parseInt(
+          process.env.ZERION_RATE_LIMIT_PER_ADDRESS_PERIOD_SECONDS ?? `${10}`,
+          10,
+        ),
+        perAddressLimitCalls: Number.parseInt(
+          process.env.ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD ?? `${0}`,
+          10,
+        ),
       },
     },
   },
