@@ -23,7 +23,6 @@ export interface IMessagesRepository {
     chainId: string;
     safeAddress: Address;
     message: string | TypedData;
-    safeAppId: number;
     signature: Hex;
     origin: string | null;
   }): Promise<unknown>;
