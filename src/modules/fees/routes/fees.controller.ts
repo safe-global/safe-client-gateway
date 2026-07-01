@@ -65,7 +65,7 @@ export class FeesController {
   @ApiOperation({
     summary: 'Get transaction fee preview',
     description:
-      'Calculates the estimated fees for executing a transaction via Pay with Safe, including gas costs, relay fees, and total costs in USD.',
+      'Calculates the estimated fees for executing a transaction via Pay with Safe. The fee model applied is selected internally per-chain and is transparent to the caller.',
   })
   @ApiParam({
     name: 'chainId',
@@ -81,11 +81,12 @@ export class FeesController {
   @ApiBody({
     type: FeePreviewTransactionDto,
     description:
-      'Transaction data for fee calculation including recipient, value, data, operation type, gas token, and number of signatures',
+      'Transaction data for fee calculation including recipient, value, data, operation type, nonce, gas token, and number of signatures',
   })
   @ApiOkResponse({
     type: FeePreviewResponse,
-    description: 'Fee preview with transaction data and relay cost',
+    description:
+      'Fee preview with transaction data plus, depending on the fee model applied for the chain, either a relay cost or a fee breakdown',
   })
   @ApiBadRequestResponse({
     description:
