@@ -141,7 +141,7 @@ describe('Fees Controller', () => {
     networkService.post.mockImplementation(({ url }) => {
       if (
         url ===
-        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/relay-fees`
+        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/relay/fees`
       ) {
         return Promise.resolve({ data: rawify(mockFeeResponse), status: 200 });
       }
@@ -158,7 +158,6 @@ describe('Fees Controller', () => {
           fiatValue: '0.0025',
         });
         expect(body.txData).toBeDefined();
-        expect(body.pricingContextSnapshot).toBeDefined();
       });
   });
 

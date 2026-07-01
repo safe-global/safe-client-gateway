@@ -3,9 +3,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import type {
-  PricingContextSnapshot,
   RelayCost,
   TxDataResponse,
   TxFeesResponse,
@@ -23,14 +21,6 @@ export function txDataResponseBuilder(): IBuilder<TxDataResponse> {
     .with('numberSignatures', faker.number.int({ min: 1, max: 10 }));
 }
 
-export function pricingContextSnapshotBuilder(): IBuilder<PricingContextSnapshot> {
-  return new Builder<PricingContextSnapshot>()
-    .with('phase', faker.number.int({ min: 1, max: 3 }))
-    .with('priceSource', PriceSource.COINGECKO)
-    .with('priceTimestamp', faker.number.int())
-    .with('gasPriceVolatilityBuffer', faker.number.float({ min: 1, max: 2 }));
-}
-
 export function relayCostBuilder(): IBuilder<RelayCost> {
   return new Builder<RelayCost>()
     .with('fiatCode', faker.finance.currencyCode())
@@ -40,6 +30,5 @@ export function relayCostBuilder(): IBuilder<RelayCost> {
 export function txFeesResponseBuilder(): IBuilder<TxFeesResponse> {
   return new Builder<TxFeesResponse>()
     .with('txData', txDataResponseBuilder().build())
-    .with('relayCost', relayCostBuilder().build())
-    .with('pricingContextSnapshot', pricingContextSnapshotBuilder().build());
+    .with('relayCost', relayCostBuilder().build());
 }

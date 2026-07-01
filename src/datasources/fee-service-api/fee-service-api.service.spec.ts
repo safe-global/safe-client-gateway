@@ -17,7 +17,6 @@ import {
   gtfTxDataBuilder,
 } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import {
-  pricingContextSnapshotBuilder,
   txDataResponseBuilder,
   txFeesResponseBuilder,
 } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
@@ -162,12 +161,6 @@ describe('FeeServiceApi', () => {
           .with('safeAddress', safeAddress)
           .with('gasToken', request.gasToken)
           .with('numberSignatures', request.numberSignatures)
-          .build(),
-      )
-      .with(
-        'pricingContextSnapshot',
-        pricingContextSnapshotBuilder()
-          .with('priceSource', PriceSource.COINGECKO)
           .build(),
       )
       .build();

@@ -28,7 +28,7 @@ export interface IFeeServiceApi {
    * @param args.chainId - Chain ID
    * @param args.safeAddress - Safe address initiating the relay
    * @param args.request - Transaction parameters for fee calculation
-   * @returns Fee response with txData, relayCostUsd, and pricingContextSnapshot
+   * @returns Fee response with txData and relayCost
    * @throws {DataSourceError} If the fee service request fails
    */
   getRelayFees(args: {

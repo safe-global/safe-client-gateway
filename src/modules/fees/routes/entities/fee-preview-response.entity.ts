@@ -2,7 +2,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { zeroAddress } from 'viem';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import type {
   RelayCost,
   TxFeesResponse,
@@ -52,38 +51,6 @@ export class FeePreviewTxData {
   }
 }
 
-export class FeePreviewPricingContext {
-  @ApiProperty({ description: 'Pricing phase' })
-  phase: number;
-
-  @ApiProperty({
-    enum: PriceSource,
-    enumName: 'PriceSource',
-    description: 'Price data source',
-    example: PriceSource.COINGECKO,
-  })
-  priceSource: PriceSource;
-
-  @ApiProperty({
-    description: 'Price snapshot Unix timestamp',
-    example: 1700000000,
-  })
-  priceTimestamp: number;
-
-  @ApiProperty({
-    description: 'Gas price volatility buffer multiplier',
-    example: 1.3,
-  })
-  gasPriceVolatilityBuffer: number;
-
-  constructor(pricingContext: TxFeesResponse['pricingContextSnapshot']) {
-    this.phase = pricingContext.phase;
-    this.priceSource = pricingContext.priceSource;
-    this.priceTimestamp = pricingContext.priceTimestamp;
-    this.gasPriceVolatilityBuffer = pricingContext.gasPriceVolatilityBuffer;
-  }
-}
-
 export class FeePreviewRelayCost {
   @ApiProperty({ description: 'Fiat currency code', example: 'USD' })
   fiatCode: string;
@@ -104,14 +71,8 @@ export class FeePreviewResponse {
   @ApiProperty({ type: FeePreviewRelayCost })
   relayCost: FeePreviewRelayCost;
 
-  @ApiProperty({ type: FeePreviewPricingContext })
-  pricingContextSnapshot: FeePreviewPricingContext;
-
   constructor(txFeesResponse: TxFeesResponse) {
     this.txData = new FeePreviewTxData(txFeesResponse.txData);
     this.relayCost = new FeePreviewRelayCost(txFeesResponse.relayCost);
-    this.pricingContextSnapshot = new FeePreviewPricingContext(
-      txFeesResponse.pricingContextSnapshot,
-    );
   }
 }

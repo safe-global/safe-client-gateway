@@ -85,8 +85,7 @@ export class FeesController {
   })
   @ApiOkResponse({
     type: FeePreviewResponse,
-    description:
-      'Fee preview with transaction data, relay cost, and pricing context',
+    description: 'Fee preview with transaction data and relay cost',
   })
   @ApiBadRequestResponse({
     description:
