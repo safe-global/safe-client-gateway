@@ -30,6 +30,7 @@ import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -963,34 +964,50 @@ describe('UsersRepository', () => {
   });
 
   describe('findOrCreateByExtUserIdAndEmail', () => {
-    it('should enforce unique non-null user emails', async () => {
+    it('should enforce unique non-null email blind indexes', async () => {
+      // Email uniqueness is now enforced by the partial unique index on the
+      // blind index column (idx_users_email_index), which replaced idx_users_email
+      // once the stored email became non-deterministic ciphertext.
       const dbUserRepository = dataSource.getRepository(User);
-      const email = fakeEmailAddress();
+      const emailIndex = faker.string.alphanumeric(64);
 
-      await dbUserRepository.insert({
-        status: 'ACTIVE',
-        email,
-      });
+      await dbUserRepository.insert({ status: 'ACTIVE', emailIndex });
 
       await expect(
-        dbUserRepository.insert({
-          status: 'ACTIVE',
-          email,
-        }),
-      ).rejects.toThrow(/duplicate key|idx_users_email/);
+        dbUserRepository.insert({ status: 'ACTIVE', emailIndex }),
+      ).rejects.toThrow(/duplicate key|idx_users_email_index/);
     });
 
-    it('should enforce lowercase user emails', async () => {
+    it('should allow multiple users with a null email blind index', async () => {
+      // The unique index is partial (WHERE email_index IS NOT NULL), so users
+      // without an email — every user while field encryption is disabled — can
+      // coexist.
       const dbUserRepository = dataSource.getRepository(User);
 
-      await expect(
-        dbUserRepository.insert({
-          status: 'ACTIVE',
-          email: faker.internet.email().toUpperCase(),
-        }),
-      ).rejects.toThrow(
-        /violates check constraint|users_email_lowercase_check/,
-      );
+      await dbUserRepository.insert({ status: 'ACTIVE', emailIndex: null });
+      await dbUserRepository.insert({ status: 'ACTIVE', emailIndex: null });
+
+      await expect(dbUserRepository.count()).resolves.toBe(2);
+    });
+
+    it('should store non-lowercase email values verbatim', async () => {
+      // The users_email_lowercase_check constraint was dropped so the column can
+      // hold ciphertext, which is not lowercase. The lowercase invariant now
+      // lives in EmailAddressSchema, applied before values reach the database.
+      const dbUserRepository = dataSource.getRepository(User);
+      const mixedCaseEmail = faker.internet
+        .email()
+        .toUpperCase() as EmailAddress;
+
+      const insertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: mixedCaseEmail,
+      });
+
+      const stored = await dbUserRepository.findOneOrFail({
+        where: { id: insertResult.identifiers[0].id as number },
+      });
+      expect(stored.email).toBe(mixedCaseEmail);
     });
 
     it('should persist a normalized email when the user has none yet', async () => {
