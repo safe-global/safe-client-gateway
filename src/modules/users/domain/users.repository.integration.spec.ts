@@ -227,6 +227,8 @@ describe('UsersRepository', () => {
         user: {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
+          encryptedDataKey: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -316,6 +318,8 @@ describe('UsersRepository', () => {
         {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
+          encryptedDataKey: null,
           extUserId: null,
           id: users[0].id,
           status,
@@ -498,6 +502,8 @@ describe('UsersRepository', () => {
         user: {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
+          encryptedDataKey: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -714,6 +720,8 @@ describe('UsersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             email: null,
+            emailIndex: null,
+            encryptedDataKey: null,
             extUserId: null,
             id: wallets[0].user.id,
             status,
@@ -770,6 +778,8 @@ describe('UsersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -807,6 +817,8 @@ describe('UsersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -857,6 +869,8 @@ describe('UsersRepository', () => {
       expect(user).toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -875,6 +889,8 @@ describe('UsersRepository', () => {
         user: {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
+          encryptedDataKey: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
@@ -1116,6 +1132,8 @@ describe('UsersRepository', () => {
       expect(user).toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE',
@@ -1148,6 +1166,8 @@ describe('UsersRepository', () => {
       expect(user).toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status,
