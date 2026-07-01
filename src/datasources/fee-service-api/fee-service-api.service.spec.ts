@@ -179,7 +179,7 @@ describe('FeeServiceApi', () => {
         cacheDir: expect.objectContaining({
           key: expect.stringContaining('relay_fee_preview'),
         }),
-        url: `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay-fees`,
+        url: `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay/fees`,
         data: request,
         notFoundExpireTimeSeconds: 30,
         expireTimeSeconds: 60,
@@ -190,7 +190,7 @@ describe('FeeServiceApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(
-          `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay-fees`,
+          `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/relay/fees`,
         ),
         { status } as Response,
         { message: 'Unexpected error' },
