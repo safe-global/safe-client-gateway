@@ -122,6 +122,9 @@ export const RootConfigurationSchema = z
       .min(1)
       .max(3599)
       .optional(),
+    QUEUE_SERVICE_BASE_URI: z.url().optional(),
+    QUEUE_SERVICE_API_KEY: z.string().trim().min(1).optional(),
+    USE_QUEUE_SERVICE_VPC_URL: z.coerce.boolean().optional(),
     RELAY_PROVIDER_API_KEY_OPTIMISM: z.string(),
     RELAY_PROVIDER_API_KEY_BSC: z.string(),
     RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: z.string(),
