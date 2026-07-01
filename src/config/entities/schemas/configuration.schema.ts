@@ -51,6 +51,8 @@ export const RootConfigurationSchema = z
     AUTH0_API_AUDIENCE: z.string().optional(),
     AUTH0_DOMAIN: DomainSchema.optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
+    BILLING_WEBHOOK_JWT_PUBLIC_KEY: z.string().optional(),
+    BILLING_WEBHOOK_JWT_ISSUER: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),
     AUTH0_SCOPE: z.string().optional(),
