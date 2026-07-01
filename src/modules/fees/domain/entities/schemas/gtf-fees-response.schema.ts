@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
@@ -17,14 +18,26 @@ export const GtfTxDataSchema = z.object({
   gasPrice: z.string(),
   gasToken: AddressSchema,
   refundReceiver: AddressSchema,
-  numberSignatures: z.number(),
   nonce: z.string(),
 });
 
-export const GtfFeeSchema = z.object({
-  fiatCode: z.string(),
-  fiatValue: z.string(),
-  tier: z.string(),
+export const GtfValuationDetailSchema = z.object({
+  tokenAddress: AddressSchema.optional(),
+  symbol: z.string(),
+  amount: z.string(),
+  priceUsd: z.number().optional(),
+  valueUsd: z.number().optional(),
+});
+
+export const GtfFeeBreakdownSchema = z.object({
+  txValueUsd: z.number(),
+  trailingVolumeUsd: z.number(),
+  tierBps: z.number(),
+  gtfFeeUsd: z.number(),
+  relayCostUsd: z.number(),
+  totalUsd: z.number(),
+  numberSignatures: z.number(),
+  valuationDetails: z.array(GtfValuationDetailSchema),
 });
 
 // phase is intentionally omitted — removed from fee-service responses per PLA-1675
@@ -32,11 +45,14 @@ export const GtfPricingContextSnapshotSchema = z.object({
   priceSource: z.enum(PriceSource),
   priceTimestamp: z.number(),
   gasPriceVolatilityBuffer: z.number(),
+  tierBps: z.number(),
+  origin: z.enum(Origin),
+  maxFeeCapUsd: z.number(),
 });
 
 export const GtfFeesResponseSchema = z.object({
-  txData: GtfTxDataSchema,
   safeTxHash: HexSchema,
-  gtfFee: GtfFeeSchema,
+  txData: GtfTxDataSchema,
+  feeBreakdown: GtfFeeBreakdownSchema,
   pricingContextSnapshot: GtfPricingContextSnapshotSchema,
 });

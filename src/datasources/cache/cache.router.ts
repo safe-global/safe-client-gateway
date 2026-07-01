@@ -1143,7 +1143,6 @@ export class CacheRouter {
    *
    * @param args.chainId - Chain ID
    * @param args.safeAddress - Safe address
-   * @param args.feature - GTF feature identifier
    * @param args.to - Transaction recipient
    * @param args.value - Transaction value
    * @param args.data - Transaction data
@@ -1151,12 +1150,12 @@ export class CacheRouter {
    * @param args.nonce - Safe transaction nonce
    * @param args.gasToken - Gas token address
    * @param args.threshold - Safe threshold (number of signatures)
+   * @param args.origin - Transaction origin
    * @returns CacheDir - Cache directory
    */
   static getGtfFeePreviewCacheDir(args: {
     chainId: string;
     safeAddress: Address;
-    feature: string;
     to: Address;
     value: string;
     data: string;
@@ -1164,11 +1163,11 @@ export class CacheRouter {
     nonce: string;
     gasToken: Address;
     threshold: number;
-    fiatCode?: string;
+    origin?: string;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.feature}_${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.fiatCode ?? 'USD'}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.origin ?? 'NATIVE'}`,
     );
     return new CacheDir(
       CacheRouter.getGtfFeePreviewCacheKey(args),

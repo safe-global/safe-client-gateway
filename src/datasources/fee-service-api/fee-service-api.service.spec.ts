@@ -10,6 +10,12 @@ import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.ser
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import { gtfFeesRequestBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-request.builder';
+import {
+  gtfFeesResponseBuilder,
+  gtfPricingContextSnapshotBuilder,
+  gtfTxDataBuilder,
+} from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import {
   pricingContextSnapshotBuilder,
   txDataResponseBuilder,
@@ -219,6 +225,90 @@ describe('FeeServiceApi', () => {
 
       await expect(
         target.getRelayFees({
+          chainId,
+          safeAddress,
+          request,
+        }),
+      ).rejects.toThrow(new DataSourceError('Unexpected error', status));
+    });
+  });
+
+  describe('getGtfFees', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const request = gtfFeesRequestBuilder().build();
+
+    const mockGtfFeeResponse = gtfFeesResponseBuilder()
+      .with(
+        'txData',
+        gtfTxDataBuilder()
+          .with('chainId', '1')
+          .with('safeAddress', safeAddress)
+          .with('gasToken', request.gasToken)
+          .with('nonce', request.nonce)
+          .build(),
+      )
+      .with(
+        'pricingContextSnapshot',
+        gtfPricingContextSnapshotBuilder()
+          .with('priceSource', PriceSource.COINGECKO)
+          .build(),
+      )
+      .build();
+
+    it('should call dataSource.post with correct arguments', async () => {
+      mockDataSource.post.mockResolvedValueOnce(rawify(mockGtfFeeResponse));
+
+      const result = await target.getGtfFees({
+        chainId,
+        safeAddress,
+        request,
+      });
+
+      expect(result).toEqual(mockGtfFeeResponse);
+      expect(mockDataSource.post).toHaveBeenCalledWith({
+        cacheDir: expect.objectContaining({
+          key: expect.stringContaining('gtf_fee_preview'),
+        }),
+        url: `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/gtf/fees`,
+        data: { ...request, origin: request.origin ?? Origin.NATIVE },
+        notFoundExpireTimeSeconds: 30,
+        expireTimeSeconds: 60,
+      });
+    });
+
+    it('should default origin to NATIVE when omitted', async () => {
+      const requestWithoutOrigin = gtfFeesRequestBuilder()
+        .with('origin', undefined)
+        .build();
+      mockDataSource.post.mockResolvedValueOnce(rawify(mockGtfFeeResponse));
+
+      await target.getGtfFees({
+        chainId,
+        safeAddress,
+        request: requestWithoutOrigin,
+      });
+
+      expect(mockDataSource.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { ...requestWithoutOrigin, origin: Origin.NATIVE },
+        }),
+      );
+    });
+
+    it('should forward errors from dataSource', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(
+          `${baseUri}/v1/chains/${chainId}/safes/${safeAddress}/transactions/gtf/fees`,
+        ),
+        { status } as Response,
+        { message: 'Unexpected error' },
+      );
+      mockDataSource.post.mockRejectedValueOnce(error);
+
+      await expect(
+        target.getGtfFees({
           chainId,
           safeAddress,
           request,

@@ -42,15 +42,13 @@ export interface IFeeServiceApi {
    *
    * @param args.chainId - Chain ID
    * @param args.safeAddress - Safe address initiating the transaction
-   * @param args.feature - GTF feature identifier (e.g. 'create-transaction')
    * @param args.request - Transaction parameters including nonce for fee calculation
-   * @returns GTF fee response with expanded txData, safeTxHash, gtfFee, and snapshot
+   * @returns GTF fee response with safeTxHash, txData, feeBreakdown, and pricing snapshot
    * @throws {DataSourceError} If the fee service request fails
    */
   getGtfFees(args: {
     chainId: string;
     safeAddress: Address;
-    feature: string;
     request: GtfFeesRequest;
   }): Promise<GtfFeesResponse>;
 }

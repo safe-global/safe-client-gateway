@@ -111,19 +111,17 @@ export class FeeServiceApi implements IFeeServiceApi {
   /**
    * {@inheritdoc IFeeServiceApi.getGtfFees}
    *
-   * Uses {@link CacheFirstDataSource} keyed on chain, safe address, feature,
-   * and transaction parameters — serves from cache on hit, writes through on miss.
+   * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
+   * transaction parameters — serves from cache on hit, writes through on miss.
    */
   async getGtfFees(args: {
     chainId: string;
     safeAddress: Address;
-    feature: string;
     request: GtfFeesRequest;
   }): Promise<GtfFeesResponse> {
     const cacheDir = CacheRouter.getGtfFeePreviewCacheDir({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
-      feature: args.feature,
       to: args.request.to,
       value: args.request.value,
       data: args.request.data,
@@ -131,15 +129,20 @@ export class FeeServiceApi implements IFeeServiceApi {
       nonce: args.request.nonce,
       gasToken: args.request.gasToken,
       threshold: args.request.numberSignatures,
-      fiatCode: args.request.fiatCode,
+      origin: args.request.origin,
     });
-    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/${args.feature}`;
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/fees`;
 
     try {
       const data = await this.dataSource.post<GtfFeesResponse>({
         cacheDir,
         url,
-        data: args.request,
+        // The fee service requires `origin` on this endpoint (no server-side
+        // default, unlike relay fees), so it must always be populated here.
+        data: {
+          ...args.request,
+          origin: args.request.origin ?? Origin.NATIVE,
+        },
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });

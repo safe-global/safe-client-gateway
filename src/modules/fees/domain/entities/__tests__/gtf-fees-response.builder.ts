@@ -3,14 +3,16 @@ import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import type {
-  GtfFee,
+  GtfFeeBreakdown,
   GtfFeesResponse,
   GtfPricingContextSnapshot,
   GtfTxData,
+  GtfValuationDetail,
 } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
+import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 export function gtfTxDataBuilder(): IBuilder<GtfTxData> {
   return new Builder<GtfTxData>()
@@ -31,27 +33,42 @@ export function gtfTxDataBuilder(): IBuilder<GtfTxData> {
     .with('gasPrice', faker.string.numeric({ length: 15 }))
     .with('gasToken', getAddress(zeroAddress))
     .with('refundReceiver', getAddress(zeroAddress))
-    .with('numberSignatures', faker.number.int({ min: 1, max: 10 }))
     .with('nonce', faker.number.int({ min: 0, max: 999 }).toString());
 }
 
-export function gtfFeeBuilder(): IBuilder<GtfFee> {
-  return new Builder<GtfFee>()
-    .with('fiatCode', faker.finance.currencyCode())
-    .with('fiatValue', faker.number.float({ min: 0, max: 100 }).toString())
-    .with('tier', 'STANDARD');
+export function gtfValuationDetailBuilder(): IBuilder<GtfValuationDetail> {
+  return new Builder<GtfValuationDetail>()
+    .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
+    .with('symbol', faker.finance.currencySymbol())
+    .with('amount', faker.string.numeric({ length: 6 }))
+    .with('priceUsd', faker.number.float({ min: 0, max: 100 }))
+    .with('valueUsd', faker.number.float({ min: 0, max: 1000 }));
+}
+
+export function gtfFeeBreakdownBuilder(): IBuilder<GtfFeeBreakdown> {
+  return new Builder<GtfFeeBreakdown>()
+    .with('txValueUsd', faker.number.float({ min: 0, max: 1000 }))
+    .with('trailingVolumeUsd', faker.number.float({ min: 0, max: 1000 }))
+    .with('tierBps', faker.number.int({ min: 0, max: 100 }))
+    .with('gtfFeeUsd', faker.number.float({ min: 0, max: 100 }))
+    .with('relayCostUsd', faker.number.float({ min: 0, max: 100 }))
+    .with('totalUsd', faker.number.float({ min: 0, max: 1000 }))
+    .with('numberSignatures', faker.number.int({ min: 1, max: 10 }))
+    .with('valuationDetails', [gtfValuationDetailBuilder().build()]);
 }
 
 export function gtfPricingContextSnapshotBuilder(): IBuilder<GtfPricingContextSnapshot> {
   return new Builder<GtfPricingContextSnapshot>()
     .with('priceSource', PriceSource.COINGECKO)
     .with('priceTimestamp', faker.number.int())
-    .with('gasPriceVolatilityBuffer', faker.number.float({ min: 1, max: 2 }));
+    .with('gasPriceVolatilityBuffer', faker.number.float({ min: 1, max: 2 }))
+    .with('tierBps', faker.number.int({ min: 0, max: 100 }))
+    .with('origin', faker.helpers.enumValue(Origin))
+    .with('maxFeeCapUsd', faker.number.float({ min: 0, max: 1000 }));
 }
 
 export function gtfFeesResponseBuilder(): IBuilder<GtfFeesResponse> {
   return new Builder<GtfFeesResponse>()
-    .with('txData', gtfTxDataBuilder().build())
     .with(
       'safeTxHash',
       faker.string.hexadecimal({
@@ -60,6 +77,7 @@ export function gtfFeesResponseBuilder(): IBuilder<GtfFeesResponse> {
         length: 64,
       }) as `0x${string}`,
     )
-    .with('gtfFee', gtfFeeBuilder().build())
+    .with('txData', gtfTxDataBuilder().build())
+    .with('feeBreakdown', gtfFeeBreakdownBuilder().build())
     .with('pricingContextSnapshot', gtfPricingContextSnapshotBuilder().build());
 }
