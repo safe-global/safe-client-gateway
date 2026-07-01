@@ -110,6 +110,7 @@ describe('ZerionWalletPortfolioApi', () => {
 
     expect(mockZerionRateLimiter.assertWithinBudget).toHaveBeenCalledWith({
       datasource: 'wallet_portfolio',
+      priority: 'bulk',
       address,
     });
     expect(mockNetworkService.get).toHaveBeenCalledWith({

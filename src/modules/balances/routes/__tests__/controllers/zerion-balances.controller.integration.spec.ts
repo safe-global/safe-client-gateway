@@ -47,6 +47,10 @@ describe('Balances Controller', () => {
           zerion: {
             ...defaultConfiguration.balances.providers.zerion,
             limitCalls: 5,
+            // Must stay below limitCalls (limiter validates this). Balances is
+            // an `interactive` consumer so this sub-cap does not affect the
+            // rate-limit assertions below.
+            overviewLimitCalls: 3,
             limitPeriodSeconds: 2,
           },
         },

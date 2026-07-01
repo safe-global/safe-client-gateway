@@ -133,18 +133,35 @@ export default () => ({
           'TRY',
           'ZAR',
         ],
+        // Zerion enforces ~10 req/s on the account key, in discrete 1-second
+        // windows (10 used in a wall-clock second => the rest 429 until it
+        // resets). Match that shape with a 1-second window. Our shared counter
+        // is a floating window whose boundaries don't align with Zerion's, so
+        // across a boundary up to 2x the cap can land in one of their seconds;
+        // keep the global cap <= 5 so the worst case stays <= 10. Do NOT raise
+        // this to tens/hundreds again — that is what caused the 429 storm.
         limitPeriodSeconds: Number.parseInt(
-          process.env.ZERION_RATE_LIMIT_PERIOD_SECONDS ?? `${10}`,
+          process.env.ZERION_RATE_LIMIT_PERIOD_SECONDS ?? `${1}`,
           10,
         ),
         limitCalls: Number.parseInt(
-          process.env.ZERION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${2}`,
+          process.env.ZERION_RATE_LIMIT_CALLS_BY_PERIOD ?? `${5}`,
+          10,
+        ),
+        // Sub-budget for the high-volume "bulk" consumer (Safe overview /
+        // wallet portfolio), which degrades gracefully to the balances repo.
+        // Capping it below limitCalls reserves (limitCalls - overviewLimitCalls)
+        // for the low-volume "interactive" endpoints (positions, collectibles,
+        // balances, portfolio) so overview can never starve them. Shares
+        // limitPeriodSeconds. Must be < limitCalls.
+        overviewLimitCalls: Number.parseInt(
+          process.env.ZERION_OVERVIEW_RATE_LIMIT_CALLS_BY_PERIOD ?? `${3}`,
           10,
         ),
         // Per-address sub-budget (DoS isolation): one hot wallet cannot starve
         // the shared account budget. Disabled by default (0); opt in per env.
         perAddressLimitPeriodSeconds: Number.parseInt(
-          process.env.ZERION_RATE_LIMIT_PER_ADDRESS_PERIOD_SECONDS ?? `${10}`,
+          process.env.ZERION_RATE_LIMIT_PER_ADDRESS_PERIOD_SECONDS ?? `${1}`,
           10,
         ),
         perAddressLimitCalls: Number.parseInt(
