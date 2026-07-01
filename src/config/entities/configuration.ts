@@ -424,6 +424,8 @@ export default () => ({
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    ownersMaliciousFilter:
+      process.env.FF_OWNERS_MALICIOUS_FILTER?.toLowerCase() === 'true',
     hashVerification: {
       api: process.env.FF_HASH_VERIFICATION_API?.toLowerCase() === 'true',
       proposal:
