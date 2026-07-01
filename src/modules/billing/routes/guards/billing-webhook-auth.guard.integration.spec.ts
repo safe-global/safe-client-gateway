@@ -103,6 +103,13 @@ describe('BillingWebhookAuthGuard', () => {
       .expect(401);
   });
 
+  it('rejects a Bearer header with an empty token', async () => {
+    await request(app.getHttpServer())
+      .post(PATH)
+      .set('Authorization', 'Bearer   ')
+      .expect(401);
+  });
+
   it('rejects a malformed token', async () => {
     await request(app.getHttpServer())
       .post(PATH)
