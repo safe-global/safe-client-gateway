@@ -190,24 +190,21 @@ describe('Balances Controller', () => {
         });
 
       // 4 Network calls are expected
-      // (1. Chain data, 2. Safe data, 3. Balances, 4. Coingecko native coin, 5. Coingecko tokens)
-      expect(networkService.get.mock.calls.length).toBe(5);
+      // (1. Chain data, 2. Balances, 3. Coingecko tokens, 4. Coingecko native coin)
+      expect(networkService.get.mock.calls.length).toBe(4);
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeAddress}`,
-      );
-      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
-      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[3][0].url).toBe(
+      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -218,10 +215,10 @@ describe('Balances Controller', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': apiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -282,7 +279,7 @@ describe('Balances Controller', () => {
         .expect(200);
 
       // trusted and exclude_spam params are passed
-      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: {
           trusted,
           exclude_spam: excludeSpam,
@@ -580,21 +577,18 @@ describe('Balances Controller', () => {
         });
 
       // 3 Network calls are expected
-      // (1. Chain data, 2. Safe data, 3. Balances, 4. Coingecko token)
-      expect(networkService.get.mock.calls.length).toBe(4);
+      // (1. Chain data, 2. Balances, 3. Coingecko token)
+      expect(networkService.get.mock.calls.length).toBe(3);
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
       );
       expect(networkService.get.mock.calls[1][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeAddress}`,
-      );
-      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
       );
-      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[1][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[3][0].url).toBe(
+      expect(networkService.get.mock.calls[2][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
     });
@@ -687,7 +681,7 @@ describe('Balances Controller', () => {
             ],
           });
 
-        expect(networkService.get.mock.calls.length).toBe(4);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
 
       it(`should return a 0-balance when a validation error happens`, async () => {
@@ -755,7 +749,7 @@ describe('Balances Controller', () => {
             ],
           });
 
-        expect(networkService.get.mock.calls.length).toBe(4);
+        expect(networkService.get.mock.calls.length).toBe(3);
       });
     });
 
@@ -801,7 +795,7 @@ describe('Balances Controller', () => {
             code: 500,
           });
 
-        expect(networkService.get.mock.calls.length).toBe(3);
+        expect(networkService.get.mock.calls.length).toBe(2);
       });
     });
 
@@ -842,14 +836,13 @@ describe('Balances Controller', () => {
           message: 'Bad gateway',
         });
 
-      expect(networkService.get.mock.calls.length).toBe(3);
+      expect(networkService.get.mock.calls.length).toBe(2);
     });
   });
 
   describe('GET /balances/supported-fiat-codes', () => {
-    it("should return the ordered list of supported fiat codes (assuming provider's response contains uppercase codes)", async () => {
+    it("should return supported fiat codes from the prices provider (assuming provider's response contains lowercase codes)", async () => {
       const chain = chainBuilder().build();
-      // So BalancesApiManager available currencies should include ['btc', 'eth', 'eur', 'usd']
       const pricesProviderFiatCodes = ['usd', 'eth', 'eur'];
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -868,12 +861,11 @@ describe('Balances Controller', () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['ETH', 'EUR', 'USD']);
+        .expect(['USD', 'ETH', 'EUR']);
     });
 
-    it("should return the ordered list of supported fiat codes (assuming provider's response contains uppercase codes)", async () => {
+    it("should return supported fiat codes from the prices provider (assuming provider's response contains uppercase codes)", async () => {
       const chain = chainBuilder().build();
-      // So BalancesApiManager available currencies should include ['btc', 'eth', 'eur', 'usd']
       const pricesProviderFiatCodes = ['USD', 'ETH'];
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -892,7 +884,7 @@ describe('Balances Controller', () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['ETH', 'USD']);
+        .expect(['USD', 'ETH']);
     });
 
     it('should get an empty array of fiat currencies on failure', async () => {
