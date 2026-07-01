@@ -840,6 +840,8 @@ describe('MembersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             email: null,
+            emailIndex: null,
+            encryptedDataKey: null,
             extUserId: null,
             id: member.generatedMaps[0].id,
             status: 'ACTIVE',
@@ -1269,6 +1271,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1414,6 +1418,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1732,6 +1738,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'PENDING', // Remains PENDING
@@ -2063,6 +2071,8 @@ describe('MembersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             email: null,
+            emailIndex: null,
+            encryptedDataKey: null,
             extUserId: null,
             id: userId,
             status: userStatus,
