@@ -93,11 +93,14 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
 
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
 
-    // Enforce the shared cross-pod Zerion budget before the network call. Over
-    // budget throws LimitReachedError, which the overview service degrades into
-    // a fallback (it is never surfaced as a client-facing 429).
+    // Enforce the shared cross-pod Zerion budget before the network call. This
+    // is the high-volume `bulk` consumer: it is capped by the lower overview
+    // sub-budget so it cannot starve the interactive endpoints. Over budget
+    // throws LimitReachedError, which the overview service degrades into a
+    // fallback (it is never surfaced as a client-facing 429).
     await this.zerionRateLimiter.assertWithinBudget({
       datasource: 'wallet_portfolio',
+      priority: 'bulk',
       address: args.address,
     });
 

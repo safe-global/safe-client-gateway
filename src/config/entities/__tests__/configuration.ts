@@ -77,7 +77,9 @@ export default (): ReturnType<typeof configuration> => ({
         limitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         // High enough that the shared budget stays inert in app-boot tests;
         // rate-limit specs override these with their own small values.
-        limitCalls: faker.number.int({ min: 1000, max: 100000 }),
+        // overviewLimitCalls must stay < limitCalls (limiter validates this).
+        limitCalls: faker.number.int({ min: 10000, max: 100000 }),
+        overviewLimitCalls: faker.number.int({ min: 1000, max: 9999 }),
         perAddressLimitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         // Disabled by default (matches the production default).
         perAddressLimitCalls: 0,

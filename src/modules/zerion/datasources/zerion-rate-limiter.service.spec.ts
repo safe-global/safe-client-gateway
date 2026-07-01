@@ -22,11 +22,13 @@ const mockLoggingService = {
 } as MockedObject<ILoggingService>;
 
 const GLOBAL_KEY = CacheRouter.getRateLimitCacheKey('zerion');
+const OVERVIEW_KEY = CacheRouter.getRateLimitCacheKey('zerion_overview');
 
 describe('ZerionRateLimiter', () => {
   let limiter: ZerionRateLimiter;
   let fakeConfigurationService: FakeConfigurationService;
   const limitCalls = 9;
+  const overviewLimitCalls = 5;
   const limitPeriodSeconds = 1;
   const perAddressCalls = 3;
   const perAddressPeriodSeconds = 10;
@@ -34,6 +36,7 @@ describe('ZerionRateLimiter', () => {
 
   const buildLimiter = (overrides?: {
     limitCalls?: number;
+    overviewLimitCalls?: number;
     perAddressCalls?: number;
   }): ZerionRateLimiter => {
     fakeConfigurationService = new FakeConfigurationService();
@@ -44,6 +47,10 @@ describe('ZerionRateLimiter', () => {
     fakeConfigurationService.set(
       'balances.providers.zerion.limitPeriodSeconds',
       limitPeriodSeconds,
+    );
+    fakeConfigurationService.set(
+      'balances.providers.zerion.overviewLimitCalls',
+      overrides?.overviewLimitCalls ?? overviewLimitCalls,
     );
     fakeConfigurationService.set(
       'balances.providers.zerion.perAddressLimitCalls',
@@ -151,6 +158,92 @@ describe('ZerionRateLimiter', () => {
       limitPeriodSeconds,
       0,
     );
+  });
+
+  it('checks the overview sub-budget then the global budget for bulk consumers', async () => {
+    mockCacheService.increment
+      .mockResolvedValueOnce(overviewLimitCalls) // overview ok
+      .mockResolvedValueOnce(limitCalls); // global ok
+
+    await expect(
+      limiter.assertWithinBudget({
+        datasource: 'wallet_portfolio',
+        priority: 'bulk',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(2);
+    expect(mockCacheService.increment).toHaveBeenNthCalledWith(
+      1,
+      OVERVIEW_KEY,
+      limitPeriodSeconds,
+      0,
+    );
+    expect(mockCacheService.increment).toHaveBeenNthCalledWith(
+      2,
+      GLOBAL_KEY,
+      limitPeriodSeconds,
+      0,
+    );
+  });
+
+  it('throws (overview scope) and does not consume the global budget when a bulk consumer trips its sub-budget', async () => {
+    mockCacheService.increment.mockResolvedValueOnce(overviewLimitCalls + 1);
+
+    await expect(
+      limiter.assertWithinBudget({
+        datasource: 'wallet_portfolio',
+        priority: 'bulk',
+      }),
+    ).rejects.toThrow(LimitReachedError);
+
+    // Overview sub-budget tripped => global budget must NOT be consumed,
+    // preserving headroom for interactive consumers.
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
+      OVERVIEW_KEY,
+      limitPeriodSeconds,
+      0,
+    );
+    expect(mockLoggingService.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ type: LogType.RateLimit, scope: 'overview' }),
+    );
+  });
+
+  it('does not check the overview sub-budget for interactive consumers', async () => {
+    mockCacheService.increment.mockResolvedValue(limitCalls);
+
+    await limiter.assertWithinBudget({ datasource: 'positions' });
+
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
+      GLOBAL_KEY,
+      limitPeriodSeconds,
+      0,
+    );
+  });
+
+  it('skips the overview tier when its limit is non-positive (disabled)', async () => {
+    limiter = buildLimiter({ overviewLimitCalls: 0 });
+    mockCacheService.increment.mockResolvedValue(1);
+
+    await limiter.assertWithinBudget({
+      datasource: 'wallet_portfolio',
+      priority: 'bulk',
+    });
+
+    expect(mockCacheService.increment).toHaveBeenCalledTimes(1);
+    expect(mockCacheService.increment).toHaveBeenCalledWith(
+      GLOBAL_KEY,
+      limitPeriodSeconds,
+      0,
+    );
+  });
+
+  it('throws at construction when overviewLimitCalls is not below limitCalls', () => {
+    expect(() =>
+      buildLimiter({ limitCalls: 5, overviewLimitCalls: 5 }),
+    ).toThrow(/overviewLimitCalls .* must be less than limitCalls/);
   });
 
   it('fails open (does not throw) when the cache errors', async () => {
