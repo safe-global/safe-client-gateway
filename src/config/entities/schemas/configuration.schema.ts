@@ -174,6 +174,11 @@ export const RootConfigurationSchema = z
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
+    SPACES_FIELD_ENCRYPTION_ENABLED: z.string().optional(),
+    SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT: z.string().optional(),
+    SPACES_FIELD_ENCRYPTION_CURRENT_KEY_ID: z.string().optional(),
+    SPACES_FIELD_ENCRYPTION_DATA_KEYS: z.string().optional(),
+    SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
@@ -215,6 +220,27 @@ export const RootConfigurationSchema = z
     ]) {
       if (requiredWhen && !(config as Record<string, unknown>)[field]) {
         ctx.addIssue({ code: 'custom', message, path: [field] });
+      }
+    }
+  })
+  .superRefine((config, ctx) => {
+    // Spaces field encryption, when enabled, needs a current key and a data-key
+    // map regardless of environment — enabling it without keys is always broken.
+    if (config.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() !== 'true') {
+      return;
+    }
+    for (const field of [
+      'SPACES_FIELD_ENCRYPTION_CURRENT_KEY_ID',
+      'SPACES_FIELD_ENCRYPTION_DATA_KEYS',
+      'SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID',
+      'AWS_KMS_ENCRYPTION_KEY_ID',
+    ] as const) {
+      if (!config[field]) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'is required when SPACES_FIELD_ENCRYPTION_ENABLED is true',
+          path: [field],
+        });
       }
     }
   });

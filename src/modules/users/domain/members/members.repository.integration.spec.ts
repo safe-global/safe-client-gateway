@@ -11,6 +11,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { createMockPerEntityFieldCrypto } from '@/datasources/encryption/__tests__/per-entity-field-crypto.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
@@ -137,13 +138,16 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         walletsRepo,
         createMockSpaceAuditRepository(),
+        createMockPerEntityFieldCrypto(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
         mockConfigurationService,
         createMockSpaceAuditRepository(),
+        createMockPerEntityFieldCrypto(),
       ),
       createMockSpaceAuditRepository(),
+      createMockPerEntityFieldCrypto(),
     );
   });
 
@@ -836,6 +840,8 @@ describe('MembersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             email: null,
+            emailIndex: null,
+            encryptedDataKey: null,
             extUserId: null,
             id: member.generatedMaps[0].id,
             status: 'ACTIVE',
@@ -1265,6 +1271,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1410,6 +1418,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1728,6 +1738,8 @@ describe('MembersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
+        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'PENDING', // Remains PENDING
@@ -2059,6 +2071,8 @@ describe('MembersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             email: null,
+            emailIndex: null,
+            encryptedDataKey: null,
             extUserId: null,
             id: userId,
             status: userStatus,

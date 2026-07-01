@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  Check,
   Column,
   Entity,
   Index,
@@ -17,10 +16,8 @@ import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db
 import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 @Entity('users')
-@Check(
-  'users_email_lowercase_check',
-  '"email" IS NULL OR "email" = lower("email")',
-)
+// The lowercase CHECK constraint cannot apply to ciphertext; lowercasing is
+// enforced by EmailAddressSchema before the value reaches the database.
 export class User implements DomainUser {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_id' })
   id!: number;
@@ -45,17 +42,38 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
-  @Index('idx_users_email', {
-    unique: true,
-    where: '"email" IS NOT NULL',
-  })
+  // Encrypted under the per-user data key (non-deterministic, authenticated).
+  // Lookups and uniqueness use `emailIndex` (a blind index) instead, since the
+  // ciphertext is no longer stable. Encryption is performed in UsersRepository.
   @Column({
     name: 'email',
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     nullable: true,
   })
   email!: EmailAddress | null;
+
+  // App-wide HMAC blind index over the normalised email. Deterministic, so it
+  // backs the unique constraint and equality lookups while the value above stays
+  // non-deterministic.
+  @Index('idx_users_email_index', {
+    unique: true,
+    where: '"email_index" IS NOT NULL',
+  })
+  @Column({
+    name: 'email_index',
+    type: 'text',
+    nullable: true,
+  })
+  emailIndex?: string | null;
+
+  // KMS-wrapped per-user data key (`kdk:v1:<base64>`) that encrypts this user's
+  // email. Populated by the repository when an email is set.
+  @Column({
+    name: 'encrypted_data_key',
+    type: 'text',
+    nullable: true,
+  })
+  encryptedDataKey?: string | null;
 
   @OneToMany(
     () => Wallet,

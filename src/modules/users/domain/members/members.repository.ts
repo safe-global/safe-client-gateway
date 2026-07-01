@@ -17,6 +17,8 @@ import type {
 import { In } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { FieldEncryptionAad } from '@/datasources/encryption/field-encryption.constants';
+import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -49,7 +51,117 @@ export class MembersRepository implements IMembersRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    private readonly fieldCrypto: PerEntityFieldCrypto,
   ) {}
+
+  /**
+   * Encrypts member fields under the owning space's data key, minting the
+   * space's key (and persisting it onto the space row) if it does not exist yet
+   * — e.g. a space created while encryption was disabled. Returns the values
+   * unchanged when encryption is disabled.
+   */
+  private async encryptMemberFields(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+    fields: Array<{ value: string; aad: string }>,
+  ): Promise<Array<string>> {
+    const space = await entityManager.findOne(DbSpace, {
+      where: { id: spaceId },
+      select: { id: true, encryptedDataKey: true },
+    });
+    const existingKey = space?.encryptedDataKey ?? null;
+    const { encryptedDataKey, values } = await this.fieldCrypto.encryptFields(
+      { spaceId: String(spaceId) },
+      existingKey,
+      fields,
+    );
+    if (encryptedDataKey !== null && encryptedDataKey !== existingKey) {
+      await entityManager.update(DbSpace, spaceId, { encryptedDataKey });
+    }
+    return values;
+  }
+
+  /**
+   * Decrypts loaded members' `name`/`alias` under their owning space's key.
+   * Members carry only `space_id`, so the parent spaces' keys are batch-loaded
+   * and members grouped per space (one KMS unwrap per space). Skipped entirely
+   * when no field is ciphertext (disabled / fully-plaintext rows).
+   */
+  private async decryptMembers(members: Array<DbMember>): Promise<void> {
+    const targets = members.filter(
+      (member) =>
+        this.fieldCrypto.isEncrypted(member.name) ||
+        (typeof member.alias === 'string' &&
+          this.fieldCrypto.isEncrypted(member.alias)),
+    );
+    if (targets.length === 0) {
+      return;
+    }
+
+    const membersRepository =
+      await this.postgresDatabaseService.getRepository(DbMember);
+    const withSpace = await membersRepository.find({
+      where: { id: In(targets.map((member) => member.id)) },
+      select: { id: true, space: { id: true, encryptedDataKey: true } },
+      relations: { space: true },
+    });
+    const spaceByMemberId = new Map<
+      number,
+      Pick<DbSpace, 'id' | 'encryptedDataKey'>
+    >();
+    for (const row of withSpace) {
+      if (row.space) {
+        spaceByMemberId.set(row.id, row.space);
+      }
+    }
+
+    type Entry = {
+      field: { value: string; aad: string };
+      assign: (v: string) => void;
+    };
+    const groups = new Map<
+      number,
+      { space: Pick<DbSpace, 'id' | 'encryptedDataKey'>; entries: Array<Entry> }
+    >();
+    for (const member of targets) {
+      const space = spaceByMemberId.get(member.id);
+      if (!space) {
+        continue;
+      }
+      let group = groups.get(space.id);
+      if (!group) {
+        group = { space, entries: [] };
+        groups.set(space.id, group);
+      }
+      if (typeof member.name === 'string') {
+        group.entries.push({
+          field: { value: member.name, aad: FieldEncryptionAad.MEMBER_NAME },
+          assign: (value) => {
+            member.name = value;
+          },
+        });
+      }
+      if (typeof member.alias === 'string') {
+        group.entries.push({
+          field: { value: member.alias, aad: FieldEncryptionAad.MEMBER_ALIAS },
+          assign: (value) => {
+            member.alias = value;
+          },
+        });
+      }
+    }
+
+    for (const group of groups.values()) {
+      const decrypted = await this.fieldCrypto.decryptFields(
+        { spaceId: String(group.space.id) },
+        group.space.encryptedDataKey,
+        group.entries.map((entry) => entry.field),
+      );
+      decrypted.forEach((value, index) => {
+        group.entries[index].assign(value);
+      });
+    }
+  }
 
   private async findSpaceForAuditOrFail(
     entityManager: EntityManager,
@@ -85,10 +197,14 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
-    return await membersRepository.findOne({
+    const member = await membersRepository.findOne({
       where,
       relations,
     });
+    if (member) {
+      await this.decryptMembers([member]);
+    }
+    return member;
   }
 
   public async findOrFail(
@@ -109,7 +225,9 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
-    return await membersRepository.find(args);
+    const members = await membersRepository.find(args);
+    await this.decryptMembers(members);
+    return members;
   }
 
   public async findActiveAdmin(args: {
@@ -119,7 +237,7 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
-    return await membersRepository.findOne({
+    const member = await membersRepository.findOne({
       where: {
         user: { id: args.userId },
         space: { id: args.spaceId },
@@ -127,6 +245,10 @@ export class MembersRepository implements IMembersRepository {
         role: 'ADMIN',
       },
     });
+    if (member) {
+      await this.decryptMembers([member]);
+    }
+    return member;
   }
 
   public async inviteUsers(args: {
@@ -252,12 +374,18 @@ export class MembersRepository implements IMembersRepository {
       },
     });
 
+    const [encryptedName] = await this.encryptMemberFields(
+      entityManager,
+      space.id,
+      [{ value: name, aad: FieldEncryptionAad.MEMBER_NAME }],
+    );
+
     if (!existingMember) {
       try {
         await entityManager.insert(DbMember, {
           user: { id: userId },
           space,
-          name,
+          name: encryptedName,
           role,
           status: 'INVITED',
           invitedBy,
@@ -274,7 +402,7 @@ export class MembersRepository implements IMembersRepository {
 
     if (existingMember.status === 'INVITED') {
       await entityManager.update(DbMember, existingMember.id, {
-        name,
+        name: encryptedName,
         role,
         invitedBy,
         inviteExpiresAt,
@@ -326,9 +454,14 @@ export class MembersRepository implements IMembersRepository {
     this.assertInviteNotExpired(member);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const [encryptedName] = await this.encryptMemberFields(
+        entityManager,
+        space.id,
+        [{ value: args.payload.name, aad: FieldEncryptionAad.MEMBER_NAME }],
+      );
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
-        name: args.payload.name,
+        name: encryptedName,
         inviteExpiresAt: null,
       });
 
@@ -495,7 +628,13 @@ export class MembersRepository implements IMembersRepository {
         );
       }
 
-      await entityManager.update(DbMember, member.id, { alias: args.alias });
+      let alias = args.alias;
+      if (typeof alias === 'string') {
+        [alias] = await this.encryptMemberFields(entityManager, args.spaceId, [
+          { value: alias, aad: FieldEncryptionAad.MEMBER_ALIAS },
+        ]);
+      }
+      await entityManager.update(DbMember, member.id, { alias });
 
       const space = await this.findSpaceForAuditOrFail(
         entityManager,
@@ -645,6 +784,7 @@ export class MembersRepository implements IMembersRepository {
         'The user is not an active member of the workspace.',
       );
     }
+    await this.decryptMembers([member]);
     return member;
   }
 }

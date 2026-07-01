@@ -9,6 +9,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { createMockPerEntityFieldCrypto } from '@/datasources/encryption/__tests__/per-entity-field-crypto.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
@@ -113,6 +114,7 @@ describe('SpacesRepository', () => {
       postgresDatabaseService,
       mockConfigurationService,
       createMockSpaceAuditRepository(),
+      createMockPerEntityFieldCrypto(),
     );
   });
 
@@ -246,6 +248,8 @@ describe('SpacesRepository', () => {
         user: {
           id: userId,
           email: null,
+          emailIndex: null,
+          encryptedDataKey: null,
           extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
@@ -255,6 +259,7 @@ describe('SpacesRepository', () => {
           id: expect.any(Number),
           uuid: expect.any(String),
           name,
+          encryptedDataKey: null,
           status: spaceStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -273,6 +278,7 @@ describe('SpacesRepository', () => {
         postgresDatabaseService,
         config,
         createMockSpaceAuditRepository(),
+        createMockPerEntityFieldCrypto(),
       );
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
@@ -314,6 +320,7 @@ describe('SpacesRepository', () => {
         postgresDatabaseService,
         config,
         createMockSpaceAuditRepository(),
+        createMockPerEntityFieldCrypto(),
       );
 
       const invitee = await dbUserRepo.insert({ status: 'ACTIVE' });
@@ -391,6 +398,8 @@ describe('SpacesRepository', () => {
         user: {
           id: userId,
           email: null,
+          emailIndex: null,
+          encryptedDataKey: null,
           extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
@@ -400,6 +409,7 @@ describe('SpacesRepository', () => {
           id: expect.any(Number),
           uuid: expect.any(String),
           name: spaceName,
+          encryptedDataKey: null,
           status: spaceStatus,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -468,6 +478,7 @@ describe('SpacesRepository', () => {
         id: spaceId,
         uuid: space.uuid,
         name,
+        encryptedDataKey: null,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -532,6 +543,7 @@ describe('SpacesRepository', () => {
         id: spaceId,
         uuid: space.uuid,
         name,
+        encryptedDataKey: null,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -585,6 +597,7 @@ describe('SpacesRepository', () => {
           id: space1Id,
           uuid: space1.uuid,
           name: spaceName1,
+          encryptedDataKey: null,
           status: spaceStatus1,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -595,6 +608,7 @@ describe('SpacesRepository', () => {
           id: space2Id,
           uuid: space2.uuid,
           name: spaceName2,
+          encryptedDataKey: null,
           status: spaceStatus2,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -651,6 +665,7 @@ describe('SpacesRepository', () => {
           id: space1Id,
           uuid: space1.uuid,
           name: spaceName1,
+          encryptedDataKey: null,
           status: spaceStatus1,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -661,6 +676,7 @@ describe('SpacesRepository', () => {
           id: space2Id,
           uuid: space2.uuid,
           name: spaceName2,
+          encryptedDataKey: null,
           status: spaceStatus2,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
@@ -707,6 +723,7 @@ describe('SpacesRepository', () => {
         id: spaceId,
         uuid: space.uuid,
         name: spaceName,
+        encryptedDataKey: null,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -752,6 +769,7 @@ describe('SpacesRepository', () => {
         id: spaceId,
         uuid: space.uuid,
         name: spaceName,
+        encryptedDataKey: null,
         status: spaceStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
@@ -806,6 +824,7 @@ describe('SpacesRepository', () => {
         id: spaceId,
         uuid: space.uuid,
         name: newName,
+        encryptedDataKey: null,
         status: newStatus,
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
