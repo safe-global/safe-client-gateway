@@ -11,8 +11,11 @@ import {
 } from '@/datasources/network/network.service.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
+import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
+import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
+import { GtfFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-response.schema';
 import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
@@ -83,7 +86,7 @@ export class FeeServiceApi implements IFeeServiceApi {
       origin: args.request.origin,
       fiatCode: args.request.fiatCode,
     });
-    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay/fees`;
 
     try {
       const data = await this.dataSource.post<TxFeesResponse>({
@@ -100,6 +103,50 @@ export class FeeServiceApi implements IFeeServiceApi {
         expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });
       return TxFeesResponseSchema.parse(data);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * {@inheritdoc IFeeServiceApi.getGtfFees}
+   *
+   * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
+   * transaction parameters — serves from cache on hit, writes through on miss.
+   */
+  async getGtfFees(args: {
+    chainId: string;
+    safeAddress: Address;
+    request: GtfFeesRequest;
+  }): Promise<GtfFeesResponse> {
+    const cacheDir = CacheRouter.getGtfFeePreviewCacheDir({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      to: args.request.to,
+      value: args.request.value,
+      data: args.request.data,
+      operation: args.request.operation,
+      nonce: args.request.nonce,
+      gasToken: args.request.gasToken,
+      threshold: args.request.numberSignatures,
+      origin: args.request.origin,
+    });
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/fees`;
+
+    try {
+      const data = await this.dataSource.post<GtfFeesResponse>({
+        cacheDir,
+        url,
+        // The fee service requires `origin` on this endpoint (no server-side
+        // default, unlike relay fees), so it must always be populated here.
+        data: {
+          ...args.request,
+          origin: args.request.origin ?? Origin.NATIVE,
+        },
+        notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
+        expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
+      });
+      return GtfFeesResponseSchema.parse(data);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

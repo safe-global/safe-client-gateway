@@ -2,17 +2,12 @@
 
 import type { z } from 'zod';
 import type {
-  PricingContextSnapshotSchema,
   RelayCostSchema,
   TxDataResponseSchema,
   TxFeesResponseSchema,
 } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 
 export type TxDataResponse = z.infer<typeof TxDataResponseSchema>;
-
-export type PricingContextSnapshot = z.infer<
-  typeof PricingContextSnapshotSchema
->;
 
 export type RelayCost = z.infer<typeof RelayCostSchema>;
 

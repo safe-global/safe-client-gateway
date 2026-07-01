@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { z } from 'zod';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export const TxDataResponseSchema = z.object({
@@ -15,20 +14,15 @@ export const TxDataResponseSchema = z.object({
   numberSignatures: z.number(),
 });
 
-export const PricingContextSnapshotSchema = z.object({
-  phase: z.number(),
-  priceSource: z.enum(PriceSource),
-  priceTimestamp: z.number(),
-  gasPriceVolatilityBuffer: z.number(),
-});
-
 export const RelayCostSchema = z.object({
   fiatCode: z.string(),
   fiatValue: z.string(),
 });
 
+// The non-legacy /relay/fees endpoint does not return a pricingContextSnapshot
+// (that field, including the historical `phase`, only exists on the
+// deprecated /relay-fees response) — see PLA-1675.
 export const TxFeesResponseSchema = z.object({
   txData: TxDataResponseSchema,
   relayCost: RelayCostSchema,
-  pricingContextSnapshot: PricingContextSnapshotSchema,
 });
