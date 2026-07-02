@@ -5,7 +5,6 @@ import type { EntityManager } from 'typeorm';
 import { QueryFailedError } from 'typeorm';
 import type { Mocked, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -29,14 +28,6 @@ describe('MembersRepository', () => {
   const spacesRepository = {
     findOneOrFail: vi.fn(),
   } as MockedObject<ISpacesRepository>;
-  // Passthrough crypto: returns plaintext unchanged so existing assertions on
-  // names hold (per-entity encryption is covered by integration tests).
-  const fieldCrypto = {
-    encryptFields: vi.fn(),
-    decryptFields: vi.fn(),
-    isEncrypted: vi.fn(),
-    blindIndex: vi.fn(),
-  } as unknown as MockedObject<PerEntityFieldCrypto>;
 
   let entityManager: Mocked<
     Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
@@ -65,24 +56,12 @@ describe('MembersRepository', () => {
         .mockImplementation((callback) => callback(entityManager)),
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
-    fieldCrypto.encryptFields.mockImplementation((_context, key, fields) =>
-      Promise.resolve({
-        encryptedDataKey: key ?? null,
-        values: fields.map((field) => field.value),
-      }),
-    );
-    fieldCrypto.decryptFields.mockImplementation((_context, _key, fields) =>
-      Promise.resolve(fields.map((field) => field.value)),
-    );
-    fieldCrypto.isEncrypted.mockReturnValue(false);
-    fieldCrypto.blindIndex.mockReturnValue(null);
 
     target = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
       createMockSpaceAuditRepository(),
-      fieldCrypto,
     );
   });
 

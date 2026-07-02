@@ -144,10 +144,8 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         mockConfigurationService,
         createMockSpaceAuditRepository(),
-        createMockPerEntityFieldCrypto(),
       ),
       createMockSpaceAuditRepository(),
-      createMockPerEntityFieldCrypto(),
     );
   });
 

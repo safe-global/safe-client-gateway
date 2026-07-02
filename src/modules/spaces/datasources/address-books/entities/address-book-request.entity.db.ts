@@ -12,6 +12,7 @@ import type { Address } from 'viem';
 import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import {
   AddressBookRequestStatus,
   AddressBookRequest as DomainAddressBookRequest,
@@ -77,10 +78,10 @@ export class AddressBookRequest implements DomainAddressBookRequest {
   })
   address!: Address;
 
-  // Stored as `text` to hold AES-256-GCM ciphertext; plaintext length is
-  // validated by the Zod schema (ADDRESS_BOOK_NAME_MAX_LENGTH) before encryption.
-  // Encrypted in AddressBookRequestsRepository under the owning space's data key.
-  @Column({ type: 'text' })
+  @Column({
+    type: 'varchar',
+    length: ADDRESS_BOOK_NAME_MAX_LENGTH,
+  })
   name!: string;
 
   @Column({

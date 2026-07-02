@@ -10,10 +10,7 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { createMockPerEntityFieldCrypto } from '@/datasources/encryption/__tests__/per-entity-field-crypto.mock';
-import { FieldEncryptionRegistry } from '@/datasources/encryption/field-encryption.registry';
-import { FieldEncryptionService } from '@/datasources/encryption/field-encryption.service';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { IKmsApi } from '@/domain/interfaces/kms-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -127,13 +124,11 @@ describe('SpaceAuditRepository', () => {
     spaceAuditRepository = new SpaceAuditRepository(
       postgresDatabaseService,
       mockConfigurationService,
-      createMockPerEntityFieldCrypto(),
     );
     spacesRepository = new SpacesRepository(
       postgresDatabaseService,
       mockConfigurationService,
       spaceAuditRepository,
-      createMockPerEntityFieldCrypto(),
     );
     const walletsRepository = new WalletsRepository(postgresDatabaseService);
     usersRepository = new UsersRepository(
@@ -147,7 +142,6 @@ describe('SpaceAuditRepository', () => {
       usersRepository,
       spacesRepository,
       spaceAuditRepository,
-      createMockPerEntityFieldCrypto(),
     );
   });
 
@@ -635,7 +629,6 @@ describe('SpaceAuditRepository', () => {
       const disabledRepository = new SpaceAuditRepository(
         postgresDatabaseService,
         disabledConfigurationService,
-        createMockPerEntityFieldCrypto(),
       );
 
       await postgresDatabaseService.transaction(async (entityManager) => {
@@ -651,91 +644,6 @@ describe('SpaceAuditRepository', () => {
       await expect(
         dbAuditRepo.countBy({ spaceId, eventType: 'MEMBER_ALIAS_UPDATED' }),
       ).resolves.toBe(0);
-    });
-  });
-
-  // TODO(per-entity-encryption): rewrite for per-space audit-name encryption.
-  // This block asserts the app-wide `enc:v1` format; audit payload names are now
-  // encrypted under the owning space's data key (`enc:v2`). Skipped until it is
-  // re-authored to mint a space key and assert per-space ciphertext; the
-  // mapping/encryption logic is unit-tested in space-audit-event.encryption.spec.
-  describe.skip('field encryption at rest', () => {
-    afterEach(() => {
-      // onModuleInit registers the service for the entity transformers; clear it
-      // so it cannot affect other tests.
-      FieldEncryptionRegistry.set(undefined);
-    });
-
-    it('stores audit payload names as ciphertext but returns them decrypted', async () => {
-      const { spaceId, spaceUuid, adminUserId } = await createSpaceWithAdmin();
-
-      const dataKey = Buffer.alloc(32, 13);
-      const kmsApi = {
-        generateDataKey: vi.fn(),
-        decrypt: vi.fn().mockResolvedValue(dataKey),
-      } as unknown as IKmsApi;
-      const enabledConfig = {
-        getOrThrow: vi.fn((key: string) => {
-          const values: Record<string, unknown> = {
-            'features.spaceAuditLog': true,
-            'spaces.fieldEncryption.enabled': true,
-            'spaces.fieldEncryption.allowLegacyPlaintext': true,
-          };
-          if (key in values) return values[key];
-          throw new Error(`Unexpected config key: ${key}`);
-        }),
-        get: vi.fn((key: string) => {
-          if (key === 'spaces.fieldEncryption.currentKeyId') return '1';
-          if (key === 'spaces.fieldEncryption.dataKeys') {
-            return JSON.stringify({
-              '1': Buffer.from('wrapped-1').toString('base64'),
-            });
-          }
-          return undefined;
-        }),
-      } as unknown as IConfigurationService;
-
-      const encryptionService = new FieldEncryptionService(
-        enabledConfig,
-        kmsApi,
-      );
-      await encryptionService.onModuleInit();
-      const encryptedRepository = new SpaceAuditRepository(
-        postgresDatabaseService,
-        enabledConfig,
-        encryptionService,
-      );
-
-      const secretName = 'Top Secret Space';
-      await postgresDatabaseService.transaction(async (entityManager) => {
-        await encryptedRepository.record(entityManager, {
-          spaceId,
-          spaceUuid,
-          eventType: SpaceAuditEventType.SPACE_DELETED,
-          actorUserId: adminUserId,
-          payload: { name: secretName },
-        });
-      });
-
-      // Raw read exposes the value at rest.
-      const [raw] = await dataSource.query<
-        Array<{ payload: { name: string } }>
-      >(
-        `SELECT payload FROM space_audit_log WHERE space_id = $1 AND event_type = 'SPACE_DELETED'`,
-        [spaceId],
-      );
-      expect(raw.payload.name).toMatch(/^enc:v1:1:/);
-      expect(raw.payload.name).not.toContain(secretName);
-
-      // Reading through the repository decrypts before returning.
-      const [events] = await encryptedRepository.findBySpaceId({
-        spaceId,
-        eventTypes: [SpaceAuditEventType.SPACE_DELETED],
-        limit: 10,
-        offset: 0,
-      });
-      expect(events).toHaveLength(1);
-      expect((events[0].payload as { name: string }).name).toBe(secretName);
     });
   });
 });

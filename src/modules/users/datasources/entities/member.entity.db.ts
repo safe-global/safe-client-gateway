@@ -8,18 +8,20 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
+import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
   type Member as DomainMember,
+  MEMBER_NAME_MAX_LENGTH,
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 
 @Entity('members')
 @Unique('UQ_members', ['user', 'space'])
-// `name` is field-encrypted; a B-tree index over randomized ciphertext is useless.
+@Index('idx_members_name', ['name'])
 @Index('idx_members_role_status', ['role', 'status'])
 export class Member implements DomainMember {
   @PrimaryGeneratedColumn({
@@ -55,19 +57,10 @@ export class Member implements DomainMember {
   })
   space!: Space;
 
-  // Stored as `text` to hold AES-256-GCM ciphertext; plaintext length is
-  // validated by the Zod schema (MEMBER_NAME_MAX_LENGTH) before encryption.
-  // Encrypted in MembersRepository under the owning space's data key.
-  @Column({ type: 'text' })
+  @Column({ type: 'varchar', length: MEMBER_NAME_MAX_LENGTH })
   name!: string;
 
-  // Stored as `text` to hold ciphertext; plaintext length is validated by the
-  // Zod schema (NAME_MAX_LENGTH) before encryption. Encrypted in MembersRepository
-  // under the owning space's data key.
-  @Column({
-    type: 'text',
-    nullable: true,
-  })
+  @Column({ type: 'varchar', length: NAME_MAX_LENGTH, nullable: true })
   alias!: string | null;
 
   // Postgres enums are string therefore we use integer

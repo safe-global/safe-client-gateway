@@ -12,7 +12,6 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockPerEntityFieldCrypto } from '@/datasources/encryption/__tests__/per-entity-field-crypto.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -129,11 +128,9 @@ describe('AddressBookItemsRepository', () => {
         dbService,
         mockConfigurationService,
         createMockSpaceAuditRepository(),
-        createMockPerEntityFieldCrypto(),
       ),
       mockConfigService,
       createMockSpaceAuditRepository(),
-      createMockPerEntityFieldCrypto(),
     );
   });
 
