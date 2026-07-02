@@ -15,6 +15,7 @@ import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-req
 import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
+import { GtfFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-request.schema';
 import { GtfFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-response.schema';
 import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
@@ -137,12 +138,11 @@ export class FeeServiceApi implements IFeeServiceApi {
       const data = await this.dataSource.post<GtfFeesResponse>({
         cacheDir,
         url,
-        // The fee service requires `origin` on this endpoint (no server-side
-        // default, unlike relay fees), so it must always be populated here.
-        data: {
+        // origin is mandatory for this fee endpoint; parsed to strip fields outside its contract.
+        data: GtfFeesRequestSchema.parse({
           ...args.request,
           origin: args.request.origin ?? Origin.NATIVE,
-        },
+        }),
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });
