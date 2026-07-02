@@ -8,8 +8,6 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * - Drops the lowercase CHECK constraint: ciphertext is not lowercase. The
  *   lowercase invariant is preserved by EmailAddressSchema (`.toLowerCase()`)
  *   before values reach the database.
- * - Adds `encrypted_data_key`: the KMS-wrapped per-user data key that encrypts
- *   the email value.
  * - Adds `email_index`: an app-wide HMAC blind index over the normalised email,
  *   so uniqueness and equality lookups keep working now that the value is
  *   encrypted non-deterministically.
@@ -27,9 +25,6 @@ export class UserEmailEncryption1781600000000 implements MigrationInterface {
       `ALTER TABLE "users" ALTER COLUMN "email" TYPE text`,
     );
     await queryRunner.query(
-      `ALTER TABLE "users" ADD COLUMN "encrypted_data_key" text`,
-    );
-    await queryRunner.query(
       `ALTER TABLE "users" ADD COLUMN "email_index" text`,
     );
     await queryRunner.query(`DROP INDEX "idx_users_email"`);
@@ -44,9 +39,6 @@ export class UserEmailEncryption1781600000000 implements MigrationInterface {
       `CREATE UNIQUE INDEX "idx_users_email" ON "users" ("email") WHERE "email" IS NOT NULL`,
     );
     await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "email_index"`);
-    await queryRunner.query(
-      `ALTER TABLE "users" DROP COLUMN "encrypted_data_key"`,
-    );
     // Narrowing back will fail if encrypted values remain (they exceed the old
     // length and are not lowercase) — encryption must be backfilled-out first.
     await queryRunner.query(

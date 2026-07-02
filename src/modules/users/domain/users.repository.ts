@@ -10,9 +10,8 @@ import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { EntityManager, In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { FieldEncryptionAad } from '@/datasources/encryption/field-encryption.constants';
-import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { KmsService } from '@/datasources/kms/kms.service';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
@@ -35,26 +34,23 @@ export class UsersRepository implements IUsersRepository {
     private readonly walletsRepository: IWalletsRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    private readonly fieldCrypto: PerEntityFieldCrypto,
+    private readonly kmsService: KmsService,
   ) {}
 
   /**
-   * Decrypts loaded users' `email` under their per-user key (one KMS unwrap per
-   * user, since each user has its own key). Skipped when the value is not
-   * ciphertext (disabled / legacy plaintext).
+   * Decrypts loaded users' `email` values (one KMS call per encrypted value).
+   * Skipped when the value is not ciphertext (disabled / legacy plaintext).
    */
   private async decryptUserEmails(users: Array<DbUser>): Promise<void> {
     for (const user of users) {
       if (
         typeof user.email === 'string' &&
-        this.fieldCrypto.isEncrypted(user.email)
+        this.kmsService.isEncrypted(user.email)
       ) {
-        const [plaintext] = await this.fieldCrypto.decryptFields(
-          { userId: String(user.id) },
-          user.encryptedDataKey,
-          [{ value: user.email, aad: FieldEncryptionAad.USER_EMAIL }],
-        );
-        user.email = plaintext as EmailAddress;
+        user.email = (await this.kmsService.decrypt(
+          user.id,
+          user.email,
+        )) as EmailAddress;
       }
     }
   }
@@ -121,7 +117,7 @@ export class UsersRepository implements IUsersRepository {
     // When enabled, the blind index enforces uniqueness at insert (the email
     // value is set once the id is known, below); when disabled, the plaintext
     // email is stored directly.
-    const emailIndex = email ? this.fieldCrypto.blindIndex(email) : null;
+    const emailIndex = email ? this.kmsService.blindIndex(email) : null;
     let emailColumns: { emailIndex?: string; email?: EmailAddress } = {};
     if (emailIndex) {
       emailColumns = { emailIndex };
@@ -137,14 +133,8 @@ export class UsersRepository implements IUsersRepository {
     const userId = userInsertResult.identifiers[0].id;
 
     if (email && emailIndex) {
-      const { encryptedDataKey, values } = await this.fieldCrypto.encryptFields(
-        { userId: String(userId) },
-        undefined,
-        [{ value: email, aad: FieldEncryptionAad.USER_EMAIL }],
-      );
       await entityManager.update(DbUser, userId, {
-        email: values[0] as EmailAddress,
-        encryptedDataKey,
+        email: (await this.kmsService.encrypt(userId, email)) as EmailAddress,
       });
     }
 
@@ -333,7 +323,7 @@ export class UsersRepository implements IUsersRepository {
     const upsertThenSelect = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
-      const emailIndex = this.fieldCrypto.blindIndex(email);
+      const emailIndex = this.kmsService.blindIndex(email);
 
       await manager
         .createQueryBuilder()
@@ -349,21 +339,17 @@ export class UsersRepository implements IUsersRepository {
       // Look up by blind index when enabled, by plaintext value when disabled.
       const user = await manager.findOneOrFail(DbUser, {
         where: emailIndex ? { emailIndex } : { email },
-        select: { id: true, email: true, encryptedDataKey: true },
+        select: { id: true, email: true },
       });
 
-      // Newly inserted under encryption: the value column is still null, so set
-      // the encrypted email and the per-user key now that the id is known.
+      // Newly inserted under encryption: the value column is still null, so
+      // set the encrypted email now that the id is known.
       if (emailIndex && !user.email) {
-        const { encryptedDataKey, values } =
-          await this.fieldCrypto.encryptFields(
-            { userId: String(user.id) },
-            undefined,
-            [{ value: email, aad: FieldEncryptionAad.USER_EMAIL }],
-          );
         await manager.update(DbUser, user.id, {
-          email: values[0] as EmailAddress,
-          encryptedDataKey,
+          email: (await this.kmsService.encrypt(
+            user.id,
+            email,
+          )) as EmailAddress,
         });
       }
       return user.id;
@@ -450,7 +436,7 @@ export class UsersRepository implements IUsersRepository {
   ): Promise<User['id'] | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const emailIndex = this.fieldCrypto.blindIndex(email);
+    const emailIndex = this.kmsService.blindIndex(email);
     const candidate = await userRepository.findOne({
       where: emailIndex ? { emailIndex } : { email },
       select: { id: true, status: true, extUserId: true },
@@ -474,13 +460,13 @@ export class UsersRepository implements IUsersRepository {
 
   private async findByExtUserId(
     extUserId: string,
-  ): Promise<Pick<DbUser, 'id' | 'email' | 'encryptedDataKey'> | null> {
+  ): Promise<Pick<DbUser, 'id' | 'email'> | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
     return userRepository.findOne({
       where: { extUserId },
-      select: { id: true, email: true, encryptedDataKey: true },
+      select: { id: true, email: true },
     });
   }
 
@@ -490,16 +476,12 @@ export class UsersRepository implements IUsersRepository {
    * conflicting one.
    */
   private async reconcileEmail(
-    user: Pick<DbUser, 'id' | 'email' | 'encryptedDataKey'>,
+    user: Pick<DbUser, 'id' | 'email'>,
     email: EmailAddress,
   ): Promise<User['id']> {
     if (user.email) {
-      // Stored email is ciphertext under the per-user key; compare plaintext.
-      const [storedEmail] = await this.fieldCrypto.decryptFields(
-        { userId: String(user.id) },
-        user.encryptedDataKey,
-        [{ value: user.email, aad: FieldEncryptionAad.USER_EMAIL }],
-      );
+      // Stored email is KMS ciphertext bound to this user; compare plaintext.
+      const storedEmail = await this.kmsService.decrypt(user.id, user.email);
       if (storedEmail !== email) {
         throw new UnauthorizedException(
           'Email does not match the registered email for this account',
@@ -520,18 +502,10 @@ export class UsersRepository implements IUsersRepository {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
-    const emailIndex = this.fieldCrypto.blindIndex(email);
-    let emailValue: string = email;
-    let encryptedDataKey: string | null = null;
-    if (emailIndex) {
-      const encrypted = await this.fieldCrypto.encryptFields(
-        { userId: String(userId) },
-        undefined,
-        [{ value: email, aad: FieldEncryptionAad.USER_EMAIL }],
-      );
-      emailValue = encrypted.values[0];
-      encryptedDataKey = encrypted.encryptedDataKey;
-    }
+    const emailIndex = this.kmsService.blindIndex(email);
+    const emailValue = emailIndex
+      ? await this.kmsService.encrypt(userId, email)
+      : email;
 
     try {
       await userRepository
@@ -540,7 +514,6 @@ export class UsersRepository implements IUsersRepository {
         .set({
           email: emailValue as EmailAddress,
           ...(emailIndex && { emailIndex }),
-          ...(encryptedDataKey && { encryptedDataKey }),
         })
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
@@ -560,7 +533,7 @@ export class UsersRepository implements IUsersRepository {
       await this.postgresDatabaseService.getRepository(DbUser);
     const user = await userRepository.findOne({
       where: { id: userId },
-      select: { id: true, email: true, encryptedDataKey: true },
+      select: { id: true, email: true },
     });
 
     if (!user?.email) {
@@ -579,7 +552,7 @@ export class UsersRepository implements IUsersRepository {
       await this.postgresDatabaseService.getRepository(DbUser);
     const users = await userRepository.find({
       where: { id: In(userIds) },
-      select: { id: true, email: true, encryptedDataKey: true },
+      select: { id: true, email: true },
     });
 
     await this.decryptUserEmails(users);

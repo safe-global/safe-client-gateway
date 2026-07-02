@@ -42,9 +42,10 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
-  // Encrypted under the per-user data key (non-deterministic, authenticated).
-  // Lookups and uniqueness use `emailIndex` (a blind index) instead, since the
-  // ciphertext is no longer stable. Encryption is performed in UsersRepository.
+  // Encrypted directly by KMS, bound to this user via the KMS encryption
+  // context (non-deterministic, authenticated). Lookups and uniqueness use
+  // `emailIndex` (a blind index) instead, since the ciphertext is not stable.
+  // Encryption is performed in UsersRepository.
   @Column({
     name: 'email',
     type: 'text',
@@ -65,15 +66,6 @@ export class User implements DomainUser {
     nullable: true,
   })
   emailIndex?: string | null;
-
-  // KMS-wrapped per-user data key (`kdk:v1:<base64>`) that encrypts this user's
-  // email. Populated by the repository when an email is set.
-  @Column({
-    name: 'encrypted_data_key',
-    type: 'text',
-    nullable: true,
-  })
-  encryptedDataKey?: string | null;
 
   @OneToMany(
     () => Wallet,

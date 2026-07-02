@@ -6,7 +6,7 @@ import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
+import { KmsService } from '@/datasources/kms/kms.service';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
@@ -25,14 +25,14 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 describe('UsersRepository', () => {
   const walletsRepository = {} as MockedObject<IWalletsRepository>;
   // Passthrough crypto (disabled-like): blind index null, values unchanged, so
-  // existing plaintext assertions hold. Per-user encryption + blind-index
-  // lookups are covered by integration tests.
-  const fieldCrypto = {
-    encryptFields: vi.fn(),
-    decryptFields: vi.fn(),
+  // existing plaintext assertions hold. Encryption + blind-index lookups are
+  // covered by integration tests.
+  const kmsService = {
+    encrypt: vi.fn(),
+    decrypt: vi.fn(),
     isEncrypted: vi.fn(),
     blindIndex: vi.fn(),
-  } as unknown as MockedObject<PerEntityFieldCrypto>;
+  } as unknown as MockedObject<KmsService>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
@@ -71,23 +71,20 @@ describe('UsersRepository', () => {
       transaction: vi.fn(),
     } as MockedObject<PostgresDatabaseService>;
 
-    fieldCrypto.encryptFields.mockImplementation((_context, key, fields) =>
-      Promise.resolve({
-        encryptedDataKey: key ?? null,
-        values: fields.map((field) => field.value),
-      }),
+    kmsService.encrypt.mockImplementation((_userId, email) =>
+      Promise.resolve(email),
     );
-    fieldCrypto.decryptFields.mockImplementation((_context, _key, fields) =>
-      Promise.resolve(fields.map((field) => field.value)),
+    kmsService.decrypt.mockImplementation((_userId, value) =>
+      Promise.resolve(value),
     );
-    fieldCrypto.isEncrypted.mockReturnValue(false);
-    fieldCrypto.blindIndex.mockReturnValue(null);
+    kmsService.isEncrypted.mockReturnValue(false);
+    kmsService.blindIndex.mockReturnValue(null);
 
     target = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       createMockSpaceAuditRepository(),
-      fieldCrypto,
+      kmsService,
     );
   });
 
@@ -346,7 +343,7 @@ describe('UsersRepository', () => {
       await expect(target.findEmailById(userId)).resolves.toBe(email);
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: userId },
-        select: { id: true, email: true, encryptedDataKey: true },
+        select: { id: true, email: true },
       });
     });
 
