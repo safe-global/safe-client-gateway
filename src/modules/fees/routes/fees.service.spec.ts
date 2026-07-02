@@ -107,9 +107,7 @@ describe('FeesService', () => {
       await expect(
         target.getFeePreview({ chainId, safeAddress, feePreviewDto }),
       ).rejects.toThrow(
-        new BadRequestException(
-          `Accessing fee preview is only available for chains with ${RelayerType.RELAY_FEE} or ${RelayerType.GTF} relayer`,
-        ),
+        new BadRequestException('Fee preview is not available for this chain'),
       );
       expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
       expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
