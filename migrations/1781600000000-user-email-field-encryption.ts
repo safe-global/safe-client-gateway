@@ -2,17 +2,17 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Prepares users.email for deterministic field-level encryption.
+ * Prepares users.email for field-level encryption.
  *
  * - Widens `email` to `text` to hold ciphertext.
  * - Drops the lowercase CHECK constraint: ciphertext is not lowercase. The
  *   lowercase invariant is preserved by EmailAddressSchema (`.toLowerCase()`)
  *   before values reach the database.
  *
- * The unique partial index `idx_users_email` is intentionally kept: deterministic
- * encryption maps identical emails to identical ciphertext, so uniqueness and
- * equality lookups continue to work. Postgres rebuilds the index automatically
- * when the column type changes.
+ * The unique partial index `idx_users_email` is kept here; the follow-up
+ * migration (1781800000000) replaces it with a unique index on the
+ * `email_index` blind-index column, which takes over uniqueness and equality
+ * lookups once emails are encrypted non-deterministically.
  */
 export class UserEmailFieldEncryption1781600000000
   implements MigrationInterface
