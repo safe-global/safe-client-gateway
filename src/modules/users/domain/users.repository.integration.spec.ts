@@ -10,7 +10,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockPerEntityFieldCrypto } from '@/datasources/encryption/__tests__/per-entity-field-crypto.mock';
+import { createMockKmsService } from '@/datasources/kms/__tests__/kms.service.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -109,7 +109,7 @@ describe('UsersRepository', () => {
       postgresDatabaseService,
       new WalletsRepository(postgresDatabaseService),
       createMockSpaceAuditRepository(),
-      createMockPerEntityFieldCrypto(),
+      createMockKmsService(),
     );
   });
 
@@ -229,7 +229,6 @@ describe('UsersRepository', () => {
           createdAt: expect.any(Date),
           email: null,
           emailIndex: null,
-          encryptedDataKey: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -320,7 +319,6 @@ describe('UsersRepository', () => {
           createdAt: expect.any(Date),
           email: null,
           emailIndex: null,
-          encryptedDataKey: null,
           extUserId: null,
           id: users[0].id,
           status,
@@ -504,7 +502,6 @@ describe('UsersRepository', () => {
           createdAt: expect.any(Date),
           email: null,
           emailIndex: null,
-          encryptedDataKey: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -722,7 +719,6 @@ describe('UsersRepository', () => {
             createdAt: expect.any(Date),
             email: null,
             emailIndex: null,
-            encryptedDataKey: null,
             extUserId: null,
             id: wallets[0].user.id,
             status,
@@ -780,7 +776,6 @@ describe('UsersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -819,7 +814,6 @@ describe('UsersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -871,7 +865,6 @@ describe('UsersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -891,7 +884,6 @@ describe('UsersRepository', () => {
           createdAt: expect.any(Date),
           email: null,
           emailIndex: null,
-          encryptedDataKey: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
@@ -1150,7 +1142,6 @@ describe('UsersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE',
@@ -1184,7 +1175,6 @@ describe('UsersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status,

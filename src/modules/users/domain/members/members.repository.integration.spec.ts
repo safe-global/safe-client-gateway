@@ -11,7 +11,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockPerEntityFieldCrypto } from '@/datasources/encryption/__tests__/per-entity-field-crypto.mock';
+import { createMockKmsService } from '@/datasources/kms/__tests__/kms.service.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
@@ -138,7 +138,7 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         walletsRepo,
         createMockSpaceAuditRepository(),
-        createMockPerEntityFieldCrypto(),
+        createMockKmsService(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
@@ -839,7 +839,6 @@ describe('MembersRepository', () => {
             createdAt: expect.any(Date),
             email: null,
             emailIndex: null,
-            encryptedDataKey: null,
             extUserId: null,
             id: member.generatedMaps[0].id,
             status: 'ACTIVE',
@@ -1270,7 +1269,6 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1417,7 +1415,6 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE', // No longer PENDING
@@ -1737,7 +1734,6 @@ describe('MembersRepository', () => {
         createdAt: expect.any(Date),
         email: null,
         emailIndex: null,
-        encryptedDataKey: null,
         extUserId: null,
         id: userId,
         status: 'PENDING', // Remains PENDING
@@ -2070,7 +2066,6 @@ describe('MembersRepository', () => {
             createdAt: expect.any(Date),
             email: null,
             emailIndex: null,
-            encryptedDataKey: null,
             extUserId: null,
             id: userId,
             status: userStatus,
