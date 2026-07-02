@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
+import type { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -69,7 +71,7 @@ export class FeeServiceApi implements IFeeServiceApi {
    * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
    * transaction parameters — serves from cache on hit, writes through on miss.
    */
-  async getRelayFees(args: {
+  getRelayFees(args: {
     chainId: string;
     safeAddress: Address;
     request: TxFeesRequest;
@@ -89,24 +91,18 @@ export class FeeServiceApi implements IFeeServiceApi {
     });
     const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay/fees`;
 
-    try {
-      const data = await this.dataSource.post<TxFeesResponse>({
-        cacheDir,
-        url,
-        // The fee service persists a quote keyed by `nonce` (required) and
-        // `origin` (defaults to NATIVE when omitted). This persisted quote is
-        // what `/can-relay` later checks against, so both must be sent here.
-        data: {
-          ...args.request,
-          origin: args.request.origin ?? Origin.NATIVE,
-        },
-        notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
-        expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
-      });
-      return TxFeesResponseSchema.parse(data);
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
+    return this.postFeeRequest({
+      cacheDir,
+      url,
+      // The fee service persists a quote keyed by `nonce` (required) and
+      // `origin` (defaults to NATIVE when omitted). This persisted quote is
+      // what `/can-relay` later checks against, so both must be sent here.
+      data: {
+        ...args.request,
+        origin: args.request.origin ?? Origin.NATIVE,
+      },
+      responseSchema: TxFeesResponseSchema,
+    });
   }
 
   /**
@@ -115,7 +111,7 @@ export class FeeServiceApi implements IFeeServiceApi {
    * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
    * transaction parameters — serves from cache on hit, writes through on miss.
    */
-  async getGtfFees(args: {
+  getGtfFees(args: {
     chainId: string;
     safeAddress: Address;
     request: GtfFeesRequest;
@@ -134,19 +130,33 @@ export class FeeServiceApi implements IFeeServiceApi {
     });
     const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/fees`;
 
+    return this.postFeeRequest({
+      cacheDir,
+      url,
+      // origin is mandatory for this fee endpoint; parsed to strip fields outside its contract.
+      data: GtfFeesRequestSchema.parse({
+        ...args.request,
+        origin: args.request.origin ?? Origin.NATIVE,
+      }),
+      responseSchema: GtfFeesResponseSchema,
+    });
+  }
+
+  private async postFeeRequest<TResponse, TRequest extends object>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    data: TRequest;
+    responseSchema: z.ZodType<TResponse>;
+  }): Promise<TResponse> {
     try {
-      const data = await this.dataSource.post<GtfFeesResponse>({
-        cacheDir,
-        url,
-        // origin is mandatory for this fee endpoint; parsed to strip fields outside its contract.
-        data: GtfFeesRequestSchema.parse({
-          ...args.request,
-          origin: args.request.origin ?? Origin.NATIVE,
-        }),
+      const data = await this.dataSource.post<TResponse>({
+        cacheDir: args.cacheDir,
+        url: args.url,
+        data: args.data,
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });
-      return GtfFeesResponseSchema.parse(data);
+      return args.responseSchema.parse(data);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
