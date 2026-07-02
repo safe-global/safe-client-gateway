@@ -35,7 +35,6 @@ import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.en
 import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
 import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 /**
@@ -70,10 +69,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly loggingService: ILoggingService,
     @Inject(CacheService) readonly _cacheService: ICacheService,
     private readonly zerionChainMappingService: ZerionChainMappingService,
-    private readonly zerionRateLimiter: ZerionRateLimiter,
   ) {
     this.apiKey = this.configurationService.get<string>(
-      'balances.providers.zerion.apiKey',
+      'balances.providers.zerion.portfolioApiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.baseUri',
@@ -116,13 +114,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Array<ZerionBalance>> {
-    // Enforce the shared Zerion budget before the network call. A
-    // LimitReachedError here propagates as a 429 (not logged as a request
-    // failure); the limiter already records the rate-limit event.
-    await this.zerionRateLimiter.assertWithinBudget({
-      datasource: 'portfolio',
-    });
-
     try {
       const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
       const params: Record<string, string> = {
