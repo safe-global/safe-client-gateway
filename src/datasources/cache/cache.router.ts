@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 
@@ -1121,7 +1122,7 @@ export class CacheRouter {
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.nonce}_${args.origin ?? 'NATIVE'}_${args.fiatCode ?? 'USD'}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.nonce}_${args.origin ?? Origin.NATIVE}_${args.fiatCode ?? 'USD'}`,
     );
     return new CacheDir(
       CacheRouter.getRelayFeePreviewCacheKey(args),
@@ -1167,7 +1168,7 @@ export class CacheRouter {
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.origin ?? 'NATIVE'}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.origin ?? Origin.NATIVE}`,
     );
     return new CacheDir(
       CacheRouter.getGtfFeePreviewCacheKey(args),
