@@ -19,9 +19,6 @@ export const RelayCostSchema = z.object({
   fiatValue: z.string(),
 });
 
-// The non-legacy /relay/fees endpoint does not return a pricingContextSnapshot
-// (that field, including the historical `phase`, only exists on the
-// deprecated /relay-fees response) — see PLA-1675.
 export const TxFeesResponseSchema = z.object({
   txData: TxDataResponseSchema,
   relayCost: RelayCostSchema,

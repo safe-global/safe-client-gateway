@@ -40,7 +40,6 @@ export const GtfFeeBreakdownSchema = z.object({
   valuationDetails: z.array(GtfValuationDetailSchema),
 });
 
-// phase is intentionally omitted — removed from fee-service responses per PLA-1675
 export const GtfPricingContextSnapshotSchema = z.object({
   priceSource: z.enum(PriceSource),
   priceTimestamp: z.number(),
