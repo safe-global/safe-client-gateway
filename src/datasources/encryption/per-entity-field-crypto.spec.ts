@@ -61,7 +61,7 @@ describe('PerEntityFieldCrypto', () => {
       [{ value: 'a@b.com', aad: 'users.email' }],
     );
 
-    expect(encryptedDataKey.startsWith('kdk:')).toBe(true);
+    expect(encryptedDataKey?.startsWith('kdk:')).toBe(true);
     expect(values[0].startsWith('enc:v2:user-3:')).toBe(true);
     expect(values[0]).not.toContain('a@b.com');
   });
