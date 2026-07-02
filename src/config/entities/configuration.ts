@@ -114,6 +114,12 @@ export default () => ({
       },
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
+        // Dedicated key for the assets-page endpoints (/portfolio and
+        // /positions) so the assets page keeps working with priority,
+        // unaffected by other endpoints exhausting the main account's
+        // rate-limit budget.
+        assetsApiKey:
+          process.env.ZERION_ASSETS_API_KEY ?? process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         currencies: [
           'USD',

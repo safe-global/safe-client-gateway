@@ -14,7 +14,6 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { ZerionPortfolioApi } from '@/modules/portfolio/datasources/zerion-portfolio-api.service';
 import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import type { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
 
 describe('ZerionPortfolioApi', () => {
   let service: ZerionPortfolioApi;
@@ -53,15 +52,11 @@ describe('ZerionPortfolioApi', () => {
     getChainIdFromNetwork: vi.fn(),
   } as MockedObject<ZerionChainMappingService>);
 
-  const mockZerionRateLimiter = vi.mocked({
-    assertWithinBudget: vi.fn(),
-  } as unknown as MockedObject<ZerionRateLimiter>);
-
   beforeEach(() => {
     vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
-      'balances.providers.zerion.apiKey',
+      'balances.providers.zerion.assetsApiKey',
       zerionApiKey,
     );
     fakeConfigurationService.set(
@@ -80,7 +75,6 @@ describe('ZerionPortfolioApi', () => {
       mockLoggingService,
       mockCacheService,
       mockChainMappingService,
-      mockZerionRateLimiter,
     );
   });
 
