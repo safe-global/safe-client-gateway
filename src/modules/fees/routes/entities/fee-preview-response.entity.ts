@@ -67,7 +67,16 @@ export class FeePreviewTxData {
     txData: GtfFeesResponse['txData'],
     numberSignatures: number,
   ): FeePreviewTxData {
-    return new FeePreviewTxData({ ...txData, numberSignatures });
+    return new FeePreviewTxData({
+      chainId: txData.chainId,
+      safeAddress: txData.safeAddress,
+      safeTxGas: txData.safeTxGas,
+      baseGas: txData.baseGas,
+      gasPrice: txData.gasPrice,
+      gasToken: txData.gasToken,
+      refundReceiver: txData.refundReceiver,
+      numberSignatures,
+    });
   }
 }
 
