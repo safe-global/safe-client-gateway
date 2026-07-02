@@ -11,13 +11,5 @@
  * ciphertext for that field undecryptable. Treat them as immutable.
  */
 export const FieldEncryptionAad = {
-  SPACE_NAME: 'spaces.name',
   USER_EMAIL: 'users.email',
-  MEMBER_NAME: 'members.name',
-  MEMBER_ALIAS: 'members.alias',
-  ADDRESS_BOOK_ITEM_NAME: 'space_address_book_items.name',
-  ADDRESS_BOOK_REQUEST_NAME: 'address_book_requests.name',
-  // Names copied into immutable audit payloads (jsonb). A single context is used
-  // for every name field within the payload.
-  SPACE_AUDIT_NAME: 'space_audit_log.payload.name',
 } as const;

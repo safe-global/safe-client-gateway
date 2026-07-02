@@ -54,59 +54,59 @@ describe('PerEntityFieldCrypto', () => {
     fieldEncryption,
   );
 
-  it('mints a key and encrypts fields with the space label', async () => {
+  it('mints a key and encrypts fields with the entity label', async () => {
     const { encryptedDataKey, values } = await target.encryptFields(
-      { spaceId: '3' },
+      { userId: '3' },
       undefined,
-      [{ value: 'My Space', aad: 'spaces.name' }],
+      [{ value: 'a@b.com', aad: 'users.email' }],
     );
 
     expect(encryptedDataKey.startsWith('kdk:')).toBe(true);
-    expect(values[0].startsWith('enc:v2:space-3:')).toBe(true);
-    expect(values[0]).not.toContain('My Space');
+    expect(values[0].startsWith('enc:v2:user-3:')).toBe(true);
+    expect(values[0]).not.toContain('a@b.com');
   });
 
   it('round-trips a batch under one DEK (reusing an existing key)', async () => {
     const { encryptedDataKey, values } = await target.encryptFields(
-      { spaceId: '3' },
+      { userId: '3' },
       undefined,
       [
-        { value: 'My Space', aad: 'spaces.name' },
-        { value: 'Alias', aad: 'members.alias' },
+        { value: 'a@b.com', aad: 'users.email' },
+        { value: 'Other Value', aad: 'other.field' },
       ],
     );
 
-    const out = await target.decryptFields({ spaceId: '3' }, encryptedDataKey, [
-      { value: values[0], aad: 'spaces.name' },
-      { value: values[1], aad: 'members.alias' },
+    const out = await target.decryptFields({ userId: '3' }, encryptedDataKey, [
+      { value: values[0], aad: 'users.email' },
+      { value: values[1], aad: 'other.field' },
     ]);
 
-    expect(out).toEqual(['My Space', 'Alias']);
+    expect(out).toEqual(['a@b.com', 'Other Value']);
   });
 
   it('encrypts subsequent fields under a provided key (no new mint)', async () => {
     const { encryptedDataKey } = await target.encryptFields(
-      { spaceId: '9' },
+      { userId: '9' },
       undefined,
-      [{ value: 'first', aad: 'spaces.name' }],
+      [{ value: 'first@example.com', aad: 'users.email' }],
     );
 
     const second = await target.encryptFields(
-      { spaceId: '9' },
+      { userId: '9' },
       encryptedDataKey,
-      [{ value: 'member', aad: 'members.name' }],
+      [{ value: 'second@example.com', aad: 'users.email' }],
     );
 
     expect(second.encryptedDataKey).toBe(encryptedDataKey);
     const [plain] = await target.decryptFields(
-      { spaceId: '9' },
+      { userId: '9' },
       encryptedDataKey,
-      [{ value: second.values[0], aad: 'members.name' }],
+      [{ value: second.values[0], aad: 'users.email' }],
     );
-    expect(plain).toBe('member');
+    expect(plain).toBe('second@example.com');
   });
 
-  it('labels users with the user- prefix', async () => {
+  it('derives the label from the context key', async () => {
     const { values } = await target.encryptFields({ userId: '42' }, undefined, [
       { value: 'a@b.com', aad: 'users.email' },
     ]);
@@ -130,30 +130,30 @@ describe('PerEntityFieldCrypto', () => {
     });
 
     it('encryptFields is a plaintext passthrough with no data key', async () => {
-      const result = await disabled.encryptFields({ spaceId: '1' }, undefined, [
-        { value: 'plain', aad: 'spaces.name' },
+      const result = await disabled.encryptFields({ userId: '1' }, undefined, [
+        { value: 'plain@example.com', aad: 'users.email' },
       ]);
 
       expect(result.encryptedDataKey).toBeNull();
-      expect(result.values).toEqual(['plain']);
+      expect(result.values).toEqual(['plain@example.com']);
     });
 
     it('decryptFields returns plaintext as-is', async () => {
-      const out = await disabled.decryptFields({ spaceId: '1' }, null, [
-        { value: 'plain', aad: 'spaces.name' },
+      const out = await disabled.decryptFields({ userId: '1' }, null, [
+        { value: 'plain@example.com', aad: 'users.email' },
       ]);
 
-      expect(out).toEqual(['plain']);
+      expect(out).toEqual(['plain@example.com']);
     });
   });
 
   describe('legacy plaintext during rollout', () => {
     it('reads not-yet-backfilled plaintext through when allowed', async () => {
-      const out = await target.decryptFields({ spaceId: '1' }, null, [
-        { value: 'Legacy Name', aad: 'spaces.name' },
+      const out = await target.decryptFields({ userId: '1' }, null, [
+        { value: 'legacy@example.com', aad: 'users.email' },
       ]);
 
-      expect(out).toEqual(['Legacy Name']);
+      expect(out).toEqual(['legacy@example.com']);
     });
 
     it('throws on legacy plaintext when not allowed', async () => {
@@ -164,29 +164,29 @@ describe('PerEntityFieldCrypto', () => {
       );
 
       await expect(
-        strict.decryptFields({ spaceId: '1' }, null, [
-          { value: 'Legacy Name', aad: 'spaces.name' },
+        strict.decryptFields({ userId: '1' }, null, [
+          { value: 'legacy@example.com', aad: 'users.email' },
         ]),
       ).rejects.toThrow(/legacy plaintext/i);
     });
 
     it('decrypts encrypted values and passes plaintext through in a mixed batch', async () => {
       const { encryptedDataKey, values } = await target.encryptFields(
-        { spaceId: '5' },
+        { userId: '5' },
         undefined,
-        [{ value: 'Encrypted', aad: 'spaces.name' }],
+        [{ value: 'encrypted@example.com', aad: 'users.email' }],
       );
 
       const out = await target.decryptFields(
-        { spaceId: '5' },
+        { userId: '5' },
         encryptedDataKey,
         [
-          { value: values[0], aad: 'spaces.name' },
-          { value: 'Still Plain', aad: 'members.name' },
+          { value: values[0], aad: 'users.email' },
+          { value: 'still-plain@example.com', aad: 'users.email' },
         ],
       );
 
-      expect(out).toEqual(['Encrypted', 'Still Plain']);
+      expect(out).toEqual(['encrypted@example.com', 'still-plain@example.com']);
     });
   });
 });

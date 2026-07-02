@@ -89,8 +89,7 @@ export class AppModule implements NestModule {
       module: AppModule,
       imports: [
         PostgresDatabaseModule,
-        // Global: initialises field encryption and wires the TypeORM transformer
-        // bridge before any query runs.
+        // Global: unwraps the field-encryption data keys before any query runs.
         FieldEncryptionModule,
         // features
         AboutModule,
