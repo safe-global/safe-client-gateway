@@ -114,6 +114,12 @@ export default () => ({
       },
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
+        // Dedicated key for the assets-page endpoints (/portfolio and
+        // /positions) so the assets page keeps working with priority,
+        // unaffected by other endpoints exhausting the main account's
+        // rate-limit budget.
+        assetsApiKey:
+          process.env.ZERION_ASSETS_API_KEY ?? process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         currencies: [
           'USD',
@@ -149,6 +155,10 @@ export default () => ({
         ),
         perAddressLimitCalls: Number.parseInt(
           process.env.ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD ?? `${0}`,
+          10,
+        ),
+        walletPortfolioTtlSeconds: Number.parseInt(
+          process.env.ZERION_WALLET_PORTFOLIO_TTL_SECONDS ?? `${10}`,
           10,
         ),
       },

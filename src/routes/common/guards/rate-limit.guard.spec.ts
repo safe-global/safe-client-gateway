@@ -87,7 +87,10 @@ describe('RateLimitGuard', () => {
   });
 
   it('should log a warning for invalid client IP', async () => {
-    const invalidIp = faker.string.sample(10);
+    // A literal, never a random string: faker.string.sample can occasionally
+    // produce a value that parses as a valid IPv4/IPv6, which made the guard
+    // accept it and the rejection assertion flake.
+    const invalidIp = 'invalid-ip-address';
     const path = new URL(faker.internet.url()).pathname;
     const mockExecutionContext = {
       switchToHttp: vi.fn().mockReturnValue({

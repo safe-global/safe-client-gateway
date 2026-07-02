@@ -61,6 +61,7 @@ export default (): ReturnType<typeof configuration> => ({
       },
       zerion: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
+        assetsApiKey: faker.string.hexadecimal({ length: 32 }),
         baseUri: faker.internet.url({ appendSlash: false }),
         currencies: Array.from(
           new Set([
@@ -81,6 +82,10 @@ export default (): ReturnType<typeof configuration> => ({
         perAddressLimitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         // Disabled by default (matches the production default).
         perAddressLimitCalls: 0,
+        walletPortfolioTtlSeconds: faker.number.int({
+          min: 60,
+          max: 3600,
+        }),
       },
     },
   },
