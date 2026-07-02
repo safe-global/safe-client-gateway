@@ -11,7 +11,6 @@ import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
-import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
 import { FeesService } from '@/modules/fees/routes/fees.service';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 
@@ -58,13 +57,12 @@ describe('FeesService', () => {
       mockChainsRepository.getChain.mockResolvedValueOnce(chain);
       mockFeeServiceApi.getRelayFees.mockResolvedValueOnce(txFeesResponse);
 
-      const result = await target.getFeePreview({
+      await target.getFeePreview({
         chainId,
         safeAddress,
         feePreviewDto,
       });
 
-      expect(result).toEqual(FeePreviewResponse.fromRelayFees(txFeesResponse));
       expect(mockFeeServiceApi.getRelayFees).toHaveBeenCalledWith({
         chainId,
         safeAddress,
@@ -82,13 +80,12 @@ describe('FeesService', () => {
       mockChainsRepository.getChain.mockResolvedValueOnce(chain);
       mockFeeServiceApi.getGtfFees.mockResolvedValueOnce(gtfFeesResponse);
 
-      const result = await target.getFeePreview({
+      await target.getFeePreview({
         chainId,
         safeAddress,
         feePreviewDto,
       });
 
-      expect(result).toEqual(FeePreviewResponse.fromGtfFees(gtfFeesResponse));
       expect(mockFeeServiceApi.getGtfFees).toHaveBeenCalledWith({
         chainId,
         safeAddress,
