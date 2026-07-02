@@ -470,7 +470,6 @@ export default (): ReturnType<typeof configuration> => ({
     fieldEncryption: {
       enabled: false,
       allowLegacyPlaintext: true,
-      currentKeyId: undefined,
       dataKeys: undefined,
       indexKeyId: undefined,
       kms: {

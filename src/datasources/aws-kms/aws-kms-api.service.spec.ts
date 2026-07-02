@@ -45,6 +45,47 @@ describe('AwsKmsApiService', () => {
     target = new AwsKmsApiService(configurationService);
   });
 
+  describe('construction', () => {
+    it('can be constructed without any KMS configuration', () => {
+      mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
+        throw new Error(`No configuration for key: ${key}`);
+      });
+      mockConfigurationService.get.mockReturnValue(undefined);
+
+      expect(() => new AwsKmsApiService(configurationService)).not.toThrow();
+      expect(mockConfigurationService.getOrThrow).not.toHaveBeenCalled();
+    });
+
+    it('resolves credentials from the web identity token file without requiring static credentials', async () => {
+      mockConfigurationService.get.mockImplementation((key: string) =>
+        key === 'spaces.fieldEncryption.kms.webIdentityTokenFile'
+          ? '/var/run/secrets/token'
+          : undefined,
+      );
+      mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
+        const values: Record<string, unknown> = {
+          'spaces.fieldEncryption.kms.keyId': keyId,
+          'spaces.fieldEncryption.kms.region': region,
+        };
+        if (key in values) return values[key];
+        throw new Error(`Unexpected config key: ${key}`);
+      });
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: new Uint8Array(randomBytes32()),
+        CiphertextBlob: new Uint8Array([1, 2, 3, 4]),
+        KeyId: keyId,
+      });
+
+      await expect(target.generateDataKey()).resolves.toBeDefined();
+      expect(mockConfigurationService.getOrThrow).not.toHaveBeenCalledWith(
+        'spaces.fieldEncryption.kms.accessKeyId',
+      );
+      expect(mockConfigurationService.getOrThrow).not.toHaveBeenCalledWith(
+        'spaces.fieldEncryption.kms.secretAccessKey',
+      );
+    });
+  });
+
   describe('generateDataKey', () => {
     it('returns the plaintext and encrypted key material from KMS', async () => {
       const plaintext = new Uint8Array(randomBytes32());

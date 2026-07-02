@@ -833,11 +833,11 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
-    // Field-level encryption of human-entered labels (space/member/address-book
-    // names and aliases). Uses envelope encryption: KMS protects the data keys,
-    // the app performs local AES-256-GCM encryption with them.
+    // Field-level encryption of user email addresses. Uses envelope
+    // encryption: KMS protects the data keys, the app performs local
+    // AES-256-GCM encryption with them.
     fieldEncryption: {
-      // When true, repositories encrypt sensitive fields before writing.
+      // When true, the users repository encrypts emails before writing.
       enabled:
         process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
       // When true, reads tolerate legacy plaintext values (needed during
@@ -846,9 +846,6 @@ export default () => ({
       allowLegacyPlaintext:
         process.env.SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT?.toLowerCase() !==
         'false',
-      // Identifier of the data key used for new encryptions. Must be a key in
-      // `dataKeys` and must be URL-safe (no ':').
-      currentKeyId: process.env.SPACES_FIELD_ENCRYPTION_CURRENT_KEY_ID,
       // JSON object mapping keyId -> base64 KMS-encrypted data key, e.g.
       // {"1":"AQID...=="}. Produced by scripts/generate-field-encryption-data-key.
       dataKeys: process.env.SPACES_FIELD_ENCRYPTION_DATA_KEYS,
@@ -856,6 +853,9 @@ export default () => ({
       // blind index. Required when encryption is enabled.
       indexKeyId: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID,
       kms: {
+        // Undefined when encryption is off; the schema validator requires real
+        // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS
+        // service only resolves them once a KMS call is actually made.
         keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
         region: process.env.AWS_REGION,
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,

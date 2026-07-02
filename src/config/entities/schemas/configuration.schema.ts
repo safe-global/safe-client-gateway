@@ -182,7 +182,6 @@ export const RootConfigurationSchema = z
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
     SPACES_FIELD_ENCRYPTION_ENABLED: z.string().optional(),
     SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT: z.string().optional(),
-    SPACES_FIELD_ENCRYPTION_CURRENT_KEY_ID: z.string().optional(),
     SPACES_FIELD_ENCRYPTION_DATA_KEYS: z.string().optional(),
     SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
@@ -242,16 +241,16 @@ export const RootConfigurationSchema = z
     }
   })
   .superRefine((config, ctx) => {
-    // Spaces field encryption, when enabled, needs a current key and a data-key
-    // map regardless of environment — enabling it without keys is always broken.
+    // Field encryption, when enabled, needs an index key and a data-key map
+    // regardless of environment — enabling it without keys is always broken.
     if (config.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() !== 'true') {
       return;
     }
     for (const field of [
-      'SPACES_FIELD_ENCRYPTION_CURRENT_KEY_ID',
       'SPACES_FIELD_ENCRYPTION_DATA_KEYS',
       'SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID',
       'AWS_KMS_ENCRYPTION_KEY_ID',
+      'AWS_REGION',
     ] as const) {
       if (!config[field]) {
         ctx.addIssue({
@@ -260,6 +259,18 @@ export const RootConfigurationSchema = z
           path: [field],
         });
       }
+    }
+    // KMS credentials come from IRSA (web identity token) or a static key pair,
+    // mirroring AwsKmsApiService's credential resolution.
+    const hasStaticCredentials =
+      !!config.AWS_ACCESS_KEY_ID && !!config.AWS_SECRET_ACCESS_KEY;
+    if (!(config.AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'AWS credentials are required when SPACES_FIELD_ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY',
+        path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
+      });
     }
   });
 
