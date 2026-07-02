@@ -69,7 +69,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       'balances.providers.zerion.baseUri',
     );
     this.cacheTtlSeconds = this.configurationService.getOrThrow<number>(
-      'balances.providers.zerion.walletPortfolioCacheTtlSeconds',
+      'balances.providers.zerion.walletPortfolioTtlSeconds',
     );
   }
 

@@ -70,7 +70,7 @@ describe('ZerionWalletPortfolioApi', () => {
       zerionBaseUri,
     );
     fakeConfigurationService.set(
-      'balances.providers.zerion.walletPortfolioCacheTtlSeconds',
+      'balances.providers.zerion.walletPortfolioTtlSeconds',
       10,
     );
 

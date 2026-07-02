@@ -81,7 +81,7 @@ export default (): ReturnType<typeof configuration> => ({
         perAddressLimitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         // Disabled by default (matches the production default).
         perAddressLimitCalls: 0,
-        walletPortfolioCacheTtlSeconds: faker.number.int({
+        walletPortfolioTtlSeconds: faker.number.int({
           min: 60,
           max: 3600,
         }),

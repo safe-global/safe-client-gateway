@@ -151,8 +151,8 @@ export default () => ({
           process.env.ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD ?? `${0}`,
           10,
         ),
-        walletPortfolioCacheTtlSeconds: Number.parseInt(
-          process.env.ZERION_WALLET_PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
+        walletPortfolioTtlSeconds: Number.parseInt(
+          process.env.ZERION_WALLET_PORTFOLIO_TTL_SECONDS ?? `${10}`,
           10,
         ),
       },
