@@ -1,19 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 /**
- * Backfills per-user email encryption over existing rows.
+ * Backfills user email encryption over existing rows.
  *
- * Each user with an email gets a per-user data key (DEK) wrapped by KMS and
- * stored in `users.encrypted_data_key` encrypting the email value, plus a blind
- * index in `users.email_index` for uniqueness and lookups. Envelope encryption
- * is performed app-side, so this cannot be a pure SQL migration.
+ * Each user's plaintext email is encrypted directly by KMS (bound to the user
+ * via the KMS encryption context) and gets a blind index in
+ * `users.email_index` for uniqueness and lookups. The blind index cannot be
+ * computed in SQL, so this cannot be a pure SQL migration.
  *
  * Run AFTER deploying the code, running the column migrations, and enabling
  * encrypted writes with legacy plaintext reads still allowed:
  *
  *   SPACES_FIELD_ENCRYPTION_ENABLED=true \
  *   SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT=true \
- *   SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID=... \
- *   SPACES_FIELD_ENCRYPTION_DATA_KEYS='{"1":"..."}' \
+ *   SPACES_FIELD_ENCRYPTION_INDEX_KEY=... \
  *   AWS_KMS_ENCRYPTION_KEY_ID=... AWS_REGION=... \
  *     ts-node scripts/backfill-user-email-encryption.ts [--verify] [--dry-run]
  *
@@ -21,8 +20,9 @@
  *   --verify   Assert no plaintext remains; exit non-zero if any does.
  *
  * Notes:
- * - Idempotent: rows already in `enc:` form are skipped (a validated email can
- *   never start with 'enc:').
+ * - Idempotent: rows already in `kms:` form are skipped (a validated email can
+ *   never start with 'kms:').
+ * - Each row costs one KMS Encrypt call — budget KMS rate limits accordingly.
  * - `updated_at` is preserved by disabling user triggers within each batch
  *   transaction. This requires the connecting role to own the table (or be
  *   superuser). Always rehearse on a staging copy before running in production.
@@ -30,24 +30,20 @@
  * Once this reports zero plaintext remaining, set
  * SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT=false.
  *
- * SEARCHABLE-FIELD CAVEAT: users.email is encrypted non-deterministically under
- * a per-user key; uniqueness and equality lookups use the `email_index` blind
- * index. Once encryption is enabled, lookups match only rows whose
- * `email_index` is populated. Run this backfill promptly after enabling (or
- * during a low-traffic window): between enabling and backfill completing, a
- * lookup for a not-yet-backfilled user's email will not match. If a zero-gap
- * transition is required, add dual-read (query plaintext `email` and the blind
- * index) to the email lookups for the duration of the backfill.
+ * SEARCHABLE-FIELD CAVEAT: users.email is encrypted non-deterministically;
+ * uniqueness and equality lookups use the `email_index` blind index. Once
+ * encryption is enabled, lookups match only rows whose `email_index` is
+ * populated. Run this backfill promptly after enabling (or during a
+ * low-traffic window): between enabling and backfill completing, a lookup for
+ * a not-yet-backfilled user's email will not match. If a zero-gap transition
+ * is required, add dual-read (query plaintext `email` and the blind index) to
+ * the email lookups for the duration of the backfill.
  */
 import { DataSource } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { AwsKmsApiService } from '@/datasources/aws-kms/aws-kms-api.service';
-import { EnvelopeKeyService } from '@/datasources/encryption/envelope-key.service';
-import { FieldEncryptionAad } from '@/datasources/encryption/field-encryption.constants';
-import { FieldEncryptionService } from '@/datasources/encryption/field-encryption.service';
-import { PerEntityFieldCrypto } from '@/datasources/encryption/per-entity-field-crypto';
+import { KmsService } from '@/datasources/kms/kms.service';
 
 const BATCH_SIZE = 500;
 
@@ -80,14 +76,14 @@ function buildConfigurationService(): IConfigurationService {
 
 async function backfillUserEmails(
   dataSource: DataSource,
-  fieldCrypto: PerEntityFieldCrypto,
+  kmsService: KmsService,
 ): Promise<number> {
   let updated = 0;
 
   for (;;) {
     const rows = await dataSource.query<Array<{ id: number; email: string }>>(
       `SELECT id, email FROM "users"
-       WHERE email IS NOT NULL AND email NOT LIKE 'enc:%'
+       WHERE email IS NOT NULL AND email NOT LIKE 'kms:%'
        LIMIT $1`,
       [BATCH_SIZE],
     );
@@ -98,17 +94,13 @@ async function backfillUserEmails(
     await dataSource.transaction(async (manager) => {
       await manager.query(`ALTER TABLE "users" DISABLE TRIGGER USER`);
       for (const row of rows) {
-        const emailIndex = fieldCrypto.blindIndex(row.email);
-        const { encryptedDataKey, values } = await fieldCrypto.encryptFields(
-          { userId: String(row.id) },
-          null,
-          [{ value: row.email, aad: FieldEncryptionAad.USER_EMAIL }],
-        );
+        const emailIndex = kmsService.blindIndex(row.email);
+        const encrypted = await kmsService.encrypt(row.id, row.email);
         await manager.query(
           `UPDATE "users"
-           SET email = $1, email_index = $2, encrypted_data_key = $3
-           WHERE id = $4`,
-          [values[0], emailIndex, encryptedDataKey, row.id],
+           SET email = $1, email_index = $2
+           WHERE id = $3`,
+          [encrypted, emailIndex, row.id],
         );
       }
       await manager.query(`ALTER TABLE "users" ENABLE TRIGGER USER`);
@@ -126,7 +118,7 @@ async function countPlaintext(dataSource: DataSource): Promise<number> {
   // A user with an email but no blind index has not been backfilled.
   const [{ count }] = await dataSource.query<Array<{ count: string }>>(
     `SELECT COUNT(*)::int AS count FROM "users"
-     WHERE email IS NOT NULL AND (email NOT LIKE 'enc:%' OR email_index IS NULL)`,
+     WHERE email IS NOT NULL AND (email NOT LIKE 'kms:%' OR email_index IS NULL)`,
   );
   const remaining = Number(count);
   if (remaining > 0) {
@@ -142,18 +134,8 @@ async function main(): Promise<void> {
   const configurationService = buildConfigurationService();
   const config = configuration();
 
-  const kmsApi = new AwsKmsApiService(configurationService);
-  const fieldEncryptionService = new FieldEncryptionService(
-    configurationService,
-    kmsApi,
-  );
-  await fieldEncryptionService.onModuleInit();
-  const envelopeKeyService = new EnvelopeKeyService(kmsApi);
-  const fieldCrypto = new PerEntityFieldCrypto(
-    envelopeKeyService,
-    configurationService,
-    fieldEncryptionService,
-  );
+  const kmsService = new KmsService(configurationService);
+  await kmsService.onModuleInit();
 
   const dataSource = new DataSource({
     ...postgresConfig({
@@ -176,7 +158,7 @@ async function main(): Promise<void> {
       return;
     }
 
-    // With encryption disabled, encryptFields passes plaintext through and the
+    // With encryption disabled, encrypt() passes plaintext through and the
     // batch loop would never terminate — refuse to run instead.
     if (
       !configurationService.getOrThrow<boolean>(
@@ -189,7 +171,7 @@ async function main(): Promise<void> {
     }
 
     console.info('Backfilling user emails...');
-    await backfillUserEmails(dataSource, fieldCrypto);
+    await backfillUserEmails(dataSource, kmsService);
 
     const remaining = await countPlaintext(dataSource);
     console.info(`Done. Plaintext remaining: ${remaining}`);
