@@ -19,6 +19,7 @@ import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
 import { GtfFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-request.schema';
 import { GtfFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-response.schema';
+import { TxFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-request.schema';
 import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
 import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
 import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
@@ -94,13 +95,11 @@ export class FeeServiceApi implements IFeeServiceApi {
     return this.postFeeRequest({
       cacheDir,
       url,
-      // The fee service persists a quote keyed by `nonce` (required) and
-      // `origin` (defaults to NATIVE when omitted). This persisted quote is
-      // what `/can-relay` later checks against, so both must be sent here.
-      data: {
+      // parsed to strip fields outside this endpoint's contract.
+      data: TxFeesRequestSchema.parse({
         ...args.request,
         origin: args.request.origin ?? Origin.NATIVE,
-      },
+      }),
       responseSchema: TxFeesResponseSchema,
     });
   }
