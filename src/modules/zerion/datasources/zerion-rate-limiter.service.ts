@@ -22,8 +22,9 @@ type RateLimitScope = 'global' | 'per_address';
  *
  * Zerion enforces an account-wide ceiling (~10 RPS), shared by every CGW pod
  * and every datasource on the main API key (balances, collectibles, wallet
- * portfolio). The portfolio and positions endpoints use their own dedicated
- * key and are not throttled here. This
+ * portfolio). The assets-page endpoints (portfolio, positions) use the
+ * dedicated assets key so they keep working even when the main budget is
+ * exhausted; they are not throttled here. This
  * limiter increments a single Redis fixed-window counter so the cluster stays
  * under that ceiling, with an optional per-address sub-budget that prevents one
  * hot wallet from starving the global budget.

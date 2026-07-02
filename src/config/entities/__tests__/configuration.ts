@@ -61,7 +61,7 @@ export default (): ReturnType<typeof configuration> => ({
       },
       zerion: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
-        portfolioApiKey: faker.string.hexadecimal({ length: 32 }),
+        assetsApiKey: faker.string.hexadecimal({ length: 32 }),
         baseUri: faker.internet.url({ appendSlash: false }),
         currencies: Array.from(
           new Set([

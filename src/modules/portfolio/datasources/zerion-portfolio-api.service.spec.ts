@@ -56,7 +56,7 @@ describe('ZerionPortfolioApi', () => {
     vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
-      'balances.providers.zerion.portfolioApiKey',
+      'balances.providers.zerion.assetsApiKey',
       zerionApiKey,
     );
     fakeConfigurationService.set(

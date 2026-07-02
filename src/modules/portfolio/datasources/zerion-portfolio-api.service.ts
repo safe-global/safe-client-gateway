@@ -71,7 +71,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {
     this.apiKey = this.configurationService.get<string>(
-      'balances.providers.zerion.portfolioApiKey',
+      'balances.providers.zerion.assetsApiKey',
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.baseUri',
