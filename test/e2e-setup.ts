@@ -14,8 +14,10 @@ process.env.BLOCKLIST_SECRET_KEY = 'fake-secret-key';
 process.env.BLOCKLIST_SECRET_SALT = 'fake-secret-salt';
 
 // For E2E tests, connect to the test database
-process.env.POSTGRES_HOST = 'localhost';
-process.env.POSTGRES_PORT = '5433';
+// `||=` so a pre-set env (e.g. from .env.test pointing at host.docker.internal)
+// wins over these local defaults.
+process.env.POSTGRES_HOST ||= 'localhost';
+process.env.POSTGRES_PORT ||= '5433';
 process.env.POSTGRES_DB = 'test-db';
 process.env.POSTGRES_USER = 'postgres';
 process.env.POSTGRES_PASSWORD = 'postgres';
@@ -23,11 +25,11 @@ process.env.POSTGRES_SSL_ENABLED = 'true';
 process.env.POSTGRES_SSL_CA_PATH = 'db_config/test/server.crt';
 
 // For E2E tests, connect to the test cache
-process.env.REDIS_HOST = '127.0.0.1';
-process.env.REDIS_PORT = '6379';
+process.env.REDIS_HOST ||= '127.0.0.1';
+process.env.REDIS_PORT ||= '6379';
 
 // For E2E tests, connect to the test AMQP server
-process.env.AMQP_URL = 'amqp://localhost:5672';
+process.env.AMQP_URL ||= 'amqp://localhost:5672';
 process.env.AMQP_EXCHANGE_NAME = 'test-exchange';
 process.env.AMQP_EXCHANGE_MODE = 'fanout';
 process.env.AMQP_QUEUE = 'test-queue';
