@@ -12,12 +12,17 @@
  *   AWS_KMS_ENCRYPTION_KEY_ID=<arn-or-id> AWS_REGION=<region> \
  *     ts-node scripts/generate-field-encryption-data-key.ts [--key-id=<id>]
  *
- * Outputs the values to set:
+ * Outputs the values to set (initial setup):
  *   SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID
  *   SPACES_FIELD_ENCRYPTION_DATA_KEYS   (JSON map of keyId -> base64 wrapped key)
  *
- * Keep old entries in the SPACES_FIELD_ENCRYPTION_DATA_KEYS map when adding a
- * key so previously-computed blind indexes stay verifiable.
+ * ROTATION CAVEAT: the blind index is an HMAC under the single key at
+ * SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID; nothing verifies against older keys.
+ * Once indexes are stored, repointing INDEX_KEY_ID at a new key silently
+ * orphans every existing users.email_index (lookups stop matching and the
+ * unique index stops colliding). Changing the index key requires recomputing
+ * every stored index — the regular backfill will NOT do this, as it skips
+ * rows whose email is already encrypted.
  */
 import { GenerateDataKeyCommand, KMSClient } from '@aws-sdk/client-kms';
 import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
@@ -81,13 +86,15 @@ async function main(): Promise<void> {
   console.info(
     [
       '',
-      'Generated a new KMS-wrapped data key. Set the following in your environment:',
+      'Generated a new KMS-wrapped data key. For initial setup, set the following in your environment:',
       '',
       `SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID=${keyId}`,
       `SPACES_FIELD_ENCRYPTION_DATA_KEYS=${JSON.stringify({ [keyId]: encrypted })}`,
       '',
-      'When adding a key, merge this entry into the existing SPACES_FIELD_ENCRYPTION_DATA_KEYS map',
-      'and keep prior entries so previously-computed blind indexes stay verifiable.',
+      'If blind indexes are already stored, do NOT repoint SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID',
+      'at this key: indexes are verified only under the configured key, so existing',
+      'users.email_index values would silently stop matching. Changing the index key',
+      'requires recomputing every stored index first.',
       '',
     ].join('\n'),
   );
