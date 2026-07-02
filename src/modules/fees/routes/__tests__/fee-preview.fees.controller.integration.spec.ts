@@ -79,7 +79,7 @@ describe('Fees Controller', () => {
       .expect(400)
       .expect(({ body }) => {
         expect(body.message).toBe(
-          `Accessing fee preview is only available for chains with ${RelayerType.RELAY_FEE} or ${RelayerType.GTF} relayer`,
+          'Fee preview is not available for this chain',
         );
       });
   });

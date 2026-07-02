@@ -73,7 +73,7 @@ export class FeesService {
       }
       default:
         throw new BadRequestException(
-          `Accessing fee preview is only available for chains with ${RelayerType.RELAY_FEE} or ${RelayerType.GTF} relayer`,
+          'Fee preview is not available for this chain',
         );
     }
   }
