@@ -47,7 +47,6 @@ import { TransactionItemPage } from '@/modules/transactions/routes/entities/tran
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
 import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
 import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
-import { TXSMultisigTransactionPage } from '@/modules/transactions/routes/entities/txs-multisig-transaction-page.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -111,106 +110,6 @@ export class TransactionsController {
     return this.transactionsService.getDomainMultisigTransactionBySafeTxHash({
       chainId,
       safeTxHash,
-    });
-  }
-
-  @ApiOkResponse({ type: TXSMultisigTransactionPage })
-  @ApiQuery({ name: 'failed', required: false, type: Boolean })
-  @ApiQuery({ name: 'modified__lt', required: false, type: String })
-  @ApiQuery({ name: 'modified__gt', required: false, type: String })
-  @ApiQuery({ name: 'modified__lte', required: false, type: String })
-  @ApiQuery({ name: 'modified__gte', required: false, type: String })
-  @ApiQuery({ name: 'nonce__lt', required: false, type: Number })
-  @ApiQuery({ name: 'nonce__gt', required: false, type: Number })
-  @ApiQuery({ name: 'nonce__lte', required: false, type: Number })
-  @ApiQuery({ name: 'nonce__gte', required: false, type: Number })
-  @ApiQuery({ name: 'nonce', required: false, type: Number })
-  @ApiQuery({ name: 'safe_tx_hash', required: false, type: String })
-  @ApiQuery({ name: 'to', required: false, type: String })
-  @ApiQuery({ name: 'value__lt', required: false, type: Number })
-  @ApiQuery({ name: 'value__gt', required: false, type: Number })
-  @ApiQuery({ name: 'value', required: false, type: Number })
-  @ApiQuery({ name: 'executed', required: false, type: Boolean })
-  @ApiQuery({ name: 'has_confirmations', required: false, type: Boolean })
-  @ApiQuery({ name: 'trusted', required: false, type: Boolean })
-  @ApiQuery({ name: 'execution_date__gte', required: false, type: String })
-  @ApiQuery({ name: 'execution_date__lte', required: false, type: String })
-  @ApiQuery({ name: 'submission_date__gte', required: false, type: String })
-  @ApiQuery({ name: 'submission_date__lte', required: false, type: String })
-  @ApiQuery({ name: 'transaction_hash', required: false, type: String })
-  @ApiQuery({ name: 'ordering', required: false, type: String })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number })
-  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
-  @Get('chains/:chainId/safes/:safeAddress/multisig-transactions/raw')
-  getDomainMultisigTransactions(
-    @Param('chainId') chainId: string,
-    @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: Address,
-    @Param('failed', new ParseBoolPipe({ optional: true })) failed?: boolean,
-    @Query('modified__lt') modified__lt?: string,
-    @Query('modified__gt') modified__gt?: string,
-    @Query('modified__lte') modified__lte?: string,
-    @Query('modified__gte') modified__gte?: string,
-    @Query('nonce__lt', new ParseIntPipe({ optional: true }))
-    nonce__lt?: number,
-    @Query('nonce__gt', new ParseIntPipe({ optional: true }))
-    nonce__gt?: number,
-    @Query('nonce__lte', new ParseIntPipe({ optional: true }))
-    nonce__lte?: number,
-    @Query('nonce__gte', new ParseIntPipe({ optional: true }))
-    nonce__gte?: number,
-    @Query('nonce', new ParseIntPipe({ optional: true })) nonce?: number,
-    @Query('safe_tx_hash') safe_tx_hash?: string,
-    @Query('to') to?: string,
-    @Query('value__lt', new ParseIntPipe({ optional: true }))
-    value__lt?: number,
-    @Query('value__gt', new ParseIntPipe({ optional: true }))
-    value__gt?: number,
-    @Query('value', new ParseIntPipe({ optional: true })) value?: number,
-    @Query('executed', new ParseBoolPipe({ optional: true }))
-    executed?: boolean,
-    @Query('has_confirmations', new ParseBoolPipe({ optional: true }))
-    has_confirmations?: boolean,
-    @Query('trusted', new ParseBoolPipe({ optional: true })) trusted?: boolean,
-    @Query('execution_date__gte') execution_date__gte?: string,
-    @Query('execution_date__lte') execution_date__lte?: string,
-    @Query('submission_date__gte') submission_date__gte?: string,
-    @Query('submission_date__lte') submission_date__lte?: string,
-    @Query('transaction_hash') transaction_hash?: string,
-    @Query('ordering') ordering?: string,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
-    @Query('offset', new ParseIntPipe({ optional: true })) offset?: number,
-  ): Promise<TXSMultisigTransactionPage> {
-    return this.transactionsService.getDomainMultisigTransactions({
-      chainId,
-      safeAddress,
-      failed,
-      modified__lt,
-      modified__gt,
-      modified__lte,
-      modified__gte,
-      nonce__lt,
-      nonce__gt,
-      nonce__lte,
-      nonce__gte,
-      nonce,
-      safe_tx_hash,
-      to,
-      value__lt,
-      value__gt,
-      value,
-      executed,
-      has_confirmations,
-      trusted,
-      execution_date__gte,
-      execution_date__lte,
-      submission_date__gte,
-      submission_date__lte,
-      transaction_hash,
-      ordering,
-      limit,
-      offset,
     });
   }
 
