@@ -833,9 +833,10 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
-    // Field-level encryption of user email addresses. Uses envelope
-    // encryption: KMS protects the data keys, the app performs local
-    // AES-256-GCM encryption with them.
+    // Field-level encryption of user email addresses. The email value is
+    // encrypted directly by AWS KMS, bound to its owning user via the KMS
+    // encryption context; a KMS-wrapped HMAC key computes the email blind
+    // index for lookups/uniqueness.
     fieldEncryption: {
       // When true, the users repository encrypts emails before writing.
       enabled:
@@ -846,12 +847,10 @@ export default () => ({
       allowLegacyPlaintext:
         process.env.SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT?.toLowerCase() !==
         'false',
-      // JSON object mapping keyId -> base64 KMS-encrypted data key, e.g.
-      // {"1":"AQID...=="}. Produced by scripts/generate-field-encryption-data-key.
-      dataKeys: process.env.SPACES_FIELD_ENCRYPTION_DATA_KEYS,
-      // Id (within `dataKeys`) of the app-wide key used to compute the email
-      // blind index. Required when encryption is enabled.
-      indexKeyId: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID,
+      // Base64 KMS-encrypted 32-byte key for the users.email blind index.
+      // Produced by scripts/generate-field-encryption-index-key. Required
+      // when field encryption is enabled.
+      indexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
       kms: {
         // Undefined when encryption is off; the schema validator requires real
         // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS

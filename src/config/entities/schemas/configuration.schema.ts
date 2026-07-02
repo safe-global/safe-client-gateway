@@ -182,8 +182,7 @@ export const RootConfigurationSchema = z
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
     SPACES_FIELD_ENCRYPTION_ENABLED: z.string().optional(),
     SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT: z.string().optional(),
-    SPACES_FIELD_ENCRYPTION_DATA_KEYS: z.string().optional(),
-    SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID: z.string().optional(),
+    SPACES_FIELD_ENCRYPTION_INDEX_KEY: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
@@ -241,14 +240,13 @@ export const RootConfigurationSchema = z
     }
   })
   .superRefine((config, ctx) => {
-    // Field encryption, when enabled, needs an index key and a data-key map
-    // regardless of environment — enabling it without keys is always broken.
+    // Field encryption, when enabled, needs the blind-index key regardless
+    // of environment — enabling it without the key is always broken.
     if (config.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() !== 'true') {
       return;
     }
     for (const field of [
-      'SPACES_FIELD_ENCRYPTION_DATA_KEYS',
-      'SPACES_FIELD_ENCRYPTION_INDEX_KEY_ID',
+      'SPACES_FIELD_ENCRYPTION_INDEX_KEY',
       'AWS_KMS_ENCRYPTION_KEY_ID',
       'AWS_REGION',
     ] as const) {
