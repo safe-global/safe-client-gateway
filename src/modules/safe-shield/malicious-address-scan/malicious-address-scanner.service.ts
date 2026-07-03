@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import Blockaid from '@blockaid/client';
 import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
 import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -12,30 +12,37 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { getBlockaidChainName } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-chain-mapping';
-import { BlockaidClient } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-client.provider';
-
-const SCAN_TIMEOUT_MS = 1500;
-const MAX_BATCH = 100;
-const CACHE_TTL_SECONDS = 300;
-const SCAN_DOMAIN = 'safe.global';
 
 type CachedVerdict = 'malicious' | 'safe';
 
 @Injectable()
 export class MaliciousAddressScanner {
+  private readonly maxBatchSize: number;
+  private readonly cacheTtlSeconds: number;
+
   constructor(
-    @Inject(BlockaidClient) private readonly client: Blockaid,
+    @Inject(IBlockaidApi) private readonly blockaidApi: IBlockaidApi,
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.maxBatchSize = this.configurationService.getOrThrow<number>(
+      'safeShield.maliciousAddressScan.maxBatchSize',
+    );
+    this.cacheTtlSeconds = this.configurationService.getOrThrow<number>(
+      'safeShield.maliciousAddressScan.cacheTtlSeconds',
+    );
+  }
 
   async getMaliciousAddresses(
     chainId: string,
     addresses: Array<string>,
   ): Promise<Set<string>> {
     const chain = getBlockaidChainName(chainId);
-    if (!chain || addresses.length === 0) return new Set();
+    if (!(chain && addresses.length)) return new Set();
 
     const unique = [...new Set(addresses.map((a) => a.toLowerCase()))];
     const malicious = new Set<string>();
@@ -49,8 +56,8 @@ export class MaliciousAddressScanner {
       }),
     );
 
-    for (let i = 0; i < toScan.length; i += MAX_BATCH) {
-      const batch = toScan.slice(i, i + MAX_BATCH);
+    for (let i = 0; i < toScan.length; i += this.maxBatchSize) {
+      const batch = toScan.slice(i, i + this.maxBatchSize);
       const verdicts = await this.scan(chain, batch);
       await Promise.all(
         batch.map(async (address) => {
@@ -74,10 +81,7 @@ export class MaliciousAddressScanner {
     addresses: Array<string>,
   ): Promise<Map<string, boolean>> {
     try {
-      const response = await this.client.evm.addressBulk.scan(
-        { addresses, chain, metadata: { domain: SCAN_DOMAIN } },
-        { timeout: SCAN_TIMEOUT_MS, maxRetries: 0 },
-      );
+      const response = await this.blockaidApi.scanAddressBulk(chain, addresses);
       return new Map(
         Object.entries(response).map(([address, verdict]) => [
           address.toLowerCase(),
@@ -116,7 +120,7 @@ export class MaliciousAddressScanner {
       await this.cacheService.hSet(
         CacheRouter.getMaliciousAddressScanCacheDir({ chainId, address }),
         verdict,
-        CACHE_TTL_SECONDS,
+        this.cacheTtlSeconds,
       );
     } catch {
       // Cache is best-effort.

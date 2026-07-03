@@ -546,6 +546,11 @@ export default (): ReturnType<typeof configuration> => ({
         apiKey: faker.string.hexadecimal({ length: 32 }),
       },
     },
+    maliciousAddressScan: {
+      timeoutMs: faker.number.int({ min: 100, max: 5000 }),
+      maxBatchSize: faker.number.int({ min: 1, max: 100 }),
+      cacheTtlSeconds: faker.number.int({ min: 1, max: 300 }),
+    },
   },
   etherscan: {
     baseUri: faker.internet.url({ appendSlash: false }),

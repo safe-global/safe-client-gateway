@@ -1,26 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type Blockaid from '@blockaid/client';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { MaliciousAddressScanner } from '@/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
+import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 
-const scan = vi.fn();
-const mockClient = {
-  evm: { addressBulk: { scan } },
-} as unknown as Blockaid;
+const scanAddressBulk = vi.fn();
+const mockBlockaidApi = { scanAddressBulk } as MockedObject<IBlockaidApi>;
 
 const hGet = vi.fn();
 const hSet = vi.fn();
-const mockCacheService = { hGet, hSet } as unknown as ICacheService;
+const mockCacheService = { hGet, hSet } as MockedObject<ICacheService>;
 
 const mockLoggingService = {
   warn: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-} as unknown as ILoggingService;
+} as MockedObject<ILoggingService>;
+
+const fakeConfigurationService = new FakeConfigurationService();
+fakeConfigurationService.set(
+  'safeShield.maliciousAddressScan.maxBatchSize',
+  100,
+);
+fakeConfigurationService.set(
+  'safeShield.maliciousAddressScan.cacheTtlSeconds',
+  300,
+);
 
 const lowerAddress = (): string =>
   faker.finance.ethereumAddress().toLowerCase();
@@ -33,9 +40,10 @@ describe('MaliciousAddressScanner', () => {
     hGet.mockResolvedValue(null);
     hSet.mockResolvedValue(undefined);
     scanner = new MaliciousAddressScanner(
-      mockClient,
+      mockBlockaidApi,
       mockCacheService,
       mockLoggingService,
+      fakeConfigurationService,
     );
   });
 
@@ -43,7 +51,7 @@ describe('MaliciousAddressScanner', () => {
     const malicious = lowerAddress();
     const benign = lowerAddress();
     const warning = lowerAddress();
-    scan.mockResolvedValue({
+    scanAddressBulk.mockResolvedValue({
       [malicious]: 'Malicious',
       [benign]: 'Benign',
       [warning]: 'Warning',
@@ -61,31 +69,24 @@ describe('MaliciousAddressScanner', () => {
   it('matches case-insensitively (checksummed input, lowercased response)', async () => {
     const address = lowerAddress();
     const checksummed = getAddress(address);
-    scan.mockResolvedValue({ [address]: 'Malicious' });
+    scanAddressBulk.mockResolvedValue({ [address]: 'Malicious' });
 
     const result = await scanner.getMaliciousAddresses('1', [checksummed]);
 
     expect(result.has(address)).toBe(true);
   });
 
-  it('passes the per-call timeout/retries override', async () => {
+  it('scans via the Blockaid API with the mapped chain name', async () => {
     const address = lowerAddress();
-    scan.mockResolvedValue({});
+    scanAddressBulk.mockResolvedValue({});
 
     await scanner.getMaliciousAddresses('1', [address]);
 
-    expect(scan).toHaveBeenCalledWith(
-      {
-        addresses: [address],
-        chain: 'ethereum',
-        metadata: { domain: 'safe.global' },
-      },
-      { timeout: 1500, maxRetries: 0 },
-    );
+    expect(scanAddressBulk).toHaveBeenCalledWith('ethereum', [address]);
   });
 
   it('fails open (no matches) when Blockaid throws', async () => {
-    scan.mockRejectedValue(new Error('blockaid down'));
+    scanAddressBulk.mockRejectedValue(new Error('blockaid down'));
 
     const result = await scanner.getMaliciousAddresses('1', [lowerAddress()]);
 
@@ -100,27 +101,24 @@ describe('MaliciousAddressScanner', () => {
     );
 
     expect(result.size).toBe(0);
-    expect(scan).not.toHaveBeenCalled();
+    expect(scanAddressBulk).not.toHaveBeenCalled();
   });
 
   it('does not call Blockaid for an empty address list', async () => {
     const result = await scanner.getMaliciousAddresses('1', []);
 
     expect(result.size).toBe(0);
-    expect(scan).not.toHaveBeenCalled();
+    expect(scanAddressBulk).not.toHaveBeenCalled();
   });
 
   it('deduplicates addresses before scanning', async () => {
     const address = lowerAddress();
-    scan.mockResolvedValue({ [address]: 'Benign' });
+    scanAddressBulk.mockResolvedValue({ [address]: 'Benign' });
 
     await scanner.getMaliciousAddresses('1', [address, address.toUpperCase()]);
 
-    expect(scan).toHaveBeenCalledOnce();
-    expect(scan).toHaveBeenCalledWith(
-      expect.objectContaining({ addresses: [address] }),
-      expect.anything(),
-    );
+    expect(scanAddressBulk).toHaveBeenCalledOnce();
+    expect(scanAddressBulk).toHaveBeenCalledWith('ethereum', [address]);
   });
 
   it('serves cached verdicts without scanning', async () => {
@@ -132,14 +130,17 @@ describe('MaliciousAddressScanner', () => {
 
     const result = await scanner.getMaliciousAddresses('1', [malicious, safe]);
 
-    expect(scan).not.toHaveBeenCalled();
+    expect(scanAddressBulk).not.toHaveBeenCalled();
     expect(result).toEqual(new Set([malicious]));
   });
 
   it('caches scanned verdicts with a TTL', async () => {
     const malicious = lowerAddress();
     const benign = lowerAddress();
-    scan.mockResolvedValue({ [malicious]: 'Malicious', [benign]: 'Benign' });
+    scanAddressBulk.mockResolvedValue({
+      [malicious]: 'Malicious',
+      [benign]: 'Benign',
+    });
 
     await scanner.getMaliciousAddresses('1', [malicious, benign]);
 
@@ -157,23 +158,31 @@ describe('MaliciousAddressScanner', () => {
 
   it('chunks batches larger than the max (bot-sized owner)', async () => {
     const many = Array.from({ length: 150 }, lowerAddress);
-    scan.mockResolvedValue({});
+    scanAddressBulk.mockResolvedValue({});
 
     await scanner.getMaliciousAddresses('1', many);
 
-    expect(scan).toHaveBeenCalledTimes(2);
-    expect(scan.mock.calls[0][0].addresses).toHaveLength(100);
-    expect(scan.mock.calls[1][0].addresses).toHaveLength(50);
+    expect(scanAddressBulk).toHaveBeenCalledTimes(2);
+    expect(scanAddressBulk).toHaveBeenNthCalledWith(
+      1,
+      'ethereum',
+      many.slice(0, 100),
+    );
+    expect(scanAddressBulk).toHaveBeenNthCalledWith(
+      2,
+      'ethereum',
+      many.slice(100),
+    );
   });
 
   it('falls through to a live scan when the cache read errors', async () => {
     const malicious = lowerAddress();
     hGet.mockRejectedValue(new Error('redis down'));
-    scan.mockResolvedValue({ [malicious]: 'Malicious' });
+    scanAddressBulk.mockResolvedValue({ [malicious]: 'Malicious' });
 
     const result = await scanner.getMaliciousAddresses('1', [malicious]);
 
-    expect(scan).toHaveBeenCalledOnce();
+    expect(scanAddressBulk).toHaveBeenCalledOnce();
     expect(result).toEqual(new Set([malicious]));
   });
 });

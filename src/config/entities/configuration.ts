@@ -978,6 +978,20 @@ export default () => ({
         apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
       },
     },
+    maliciousAddressScan: {
+      timeoutMs: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_TIMEOUT_MS ?? `${1500}`,
+        10,
+      ),
+      maxBatchSize: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_MAX_BATCH_SIZE ?? `${100}`,
+        10,
+      ),
+      cacheTtlSeconds: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_CACHE_TTL_SECONDS ?? `${300}`,
+        10,
+      ),
+    },
   },
   etherscan: {
     baseUri:

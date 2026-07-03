@@ -7,6 +7,7 @@ import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blo
 const blockaidApi = {
   scanTransaction: vi.fn(),
   reportTransaction: vi.fn(),
+  scanAddressBulk: vi.fn(),
 };
 
 @Module({

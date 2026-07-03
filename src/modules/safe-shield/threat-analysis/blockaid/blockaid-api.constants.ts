@@ -5,6 +5,7 @@ export const GUARD_STORAGE_POSITION =
   '0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8';
 export const FF_RISK_MITIGATION = 'RISK_MITIGATION';
 export const BLOCKAID_REQUEST_ID_HEADER = 'x-request-id';
+export const BLOCKAID_SCAN_DOMAIN = 'safe.global';
 
 export const BLOCKAID_SEVERITY_MAP: Record<string, keyof typeof Severity> = {
   Malicious: 'CRITICAL',
