@@ -56,10 +56,9 @@ export class BillingAuthService {
     configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
-    this.publicKey = configurationService
-      .getOrThrow<string>('billing.webhook.publicKey')
-      // PEM keys provided via env often arrive with escaped newlines.
-      .replace(/\\n/g, '\n');
+    this.publicKey = configurationService.getOrThrow<string>(
+      'billing.webhook.publicKey',
+    );
     this.issuer = configurationService.getOrThrow<string>(
       'billing.webhook.issuer',
     );

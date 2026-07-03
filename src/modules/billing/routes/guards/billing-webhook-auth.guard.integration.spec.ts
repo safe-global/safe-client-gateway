@@ -65,7 +65,11 @@ describe('BillingWebhookAuthGuard', () => {
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
       billing: {
-        webhook: { publicKey, issuer: ISSUER },
+        webhook: {
+          ...baseConfiguration.billing.webhook,
+          publicKey,
+          issuer: ISSUER,
+        },
       },
     });
 

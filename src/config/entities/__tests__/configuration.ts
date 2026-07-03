@@ -273,7 +273,11 @@ export default (): ReturnType<typeof configuration> => ({
   },
   billing: {
     webhook: {
-      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY,
+      // PEM keys provided via env often arrive with escaped newlines.
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
+        /\\n/g,
+        '\n',
+      ),
       issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
       kms: {
         keyId: process.env.BILLING_WEBHOOK_JWT_KMS_KEY_ID,

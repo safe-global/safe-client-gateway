@@ -537,7 +537,11 @@ export default () => ({
     // The CGW verifies tokens against its own public key (no JWKS); the
     // private key lives only in the provisioning CLI, not the running app.
     webhook: {
-      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY,
+      // PEM keys provided via env often arrive with escaped newlines.
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
+        /\\n/g,
+        '\n',
+      ),
       // The CGW's own identifier — a self-issued token uses it as both `iss` and `aud`.
       issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
       // Optional: sign bearer tokens via an asymmetric KMS key (ECC_NIST_P256)
