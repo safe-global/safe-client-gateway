@@ -17,8 +17,11 @@ export function createMockEmailEncryptionService(): MockedObject<EmailEncryption
     decrypt: vi.fn((_userId: number, value: string) => Promise.resolve(value)),
     isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
     blindIndex: vi.fn((_value: string) => null),
-    // Disabled-mode rows are plaintext, so batch decryption is a no-op.
-    decryptUserEmails: vi.fn(() => Promise.resolve()),
+    // Disabled-mode rows are plaintext, so batch decryption passes through.
+    decryptUserEmails: vi.fn(
+      (users: Array<{ id: number; email: string | null }>) =>
+        Promise.resolve(users),
+    ),
   } as unknown as MockedObject<EmailEncryptionService>;
 }
 
@@ -61,13 +64,14 @@ export function createEncryptingMockEmailEncryptionService(): MockedObject<Email
     isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
     blindIndex: vi.fn((value: string) => `idx:${value.trim().toLowerCase()}`),
     decryptUserEmails: vi.fn(
-      async (users: Array<{ id: number; email: string | null }>) => {
-        for (const user of users) {
-          if (user.email) {
-            user.email = await decrypt(user.id, user.email);
-          }
-        }
-      },
+      async (users: Array<{ id: number; email: string | null }>) =>
+        Promise.all(
+          users.map(async (user) =>
+            user.email
+              ? { ...user, email: await decrypt(user.id, user.email) }
+              : user,
+          ),
+        ),
     ),
   } as unknown as MockedObject<EmailEncryptionService>;
 }

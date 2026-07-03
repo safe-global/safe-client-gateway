@@ -847,7 +847,7 @@ export default () => ({
       // Base64 KMS-encrypted 32-byte key for the users.email blind index.
       // Produced by scripts/generate-field-encryption-index-key. Required
       // when field encryption is enabled.
-      indexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
+      emailIndexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
       kms: {
         // Undefined when encryption is off; the schema validator requires real
         // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS

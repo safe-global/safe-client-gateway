@@ -83,17 +83,20 @@ describe('UsersRepository', () => {
     emailEncryptionService.isEncrypted.mockReturnValue(false);
     emailEncryptionService.blindIndex.mockReturnValue(null);
     // Mirrors the real batch helper, driven by the decrypt mock.
-    emailEncryptionService.decryptUserEmails.mockImplementation(
-      async (users) => {
-        for (const user of users) {
-          if (user.email) {
-            user.email = await emailEncryptionService.decrypt(
-              user.id,
-              user.email,
-            );
-          }
-        }
-      },
+    emailEncryptionService.decryptUserEmails.mockImplementation(async (users) =>
+      Promise.all(
+        users.map(async (user) =>
+          user.email
+            ? {
+                ...user,
+                email: await emailEncryptionService.decrypt(
+                  user.id,
+                  user.email,
+                ),
+              }
+            : user,
+        ),
+      ),
     );
 
     target = new UsersRepository(

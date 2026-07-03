@@ -38,12 +38,14 @@ export class UsersRepository implements IUsersRepository {
   ) {}
 
   /**
-   * Decrypts loaded users' `email` values (one KMS call per encrypted value).
-   * With encryption enabled a plaintext value throws; when disabled,
-   * plaintext passes through.
+   * Returns copies of loaded users with their `email` values decrypted (one
+   * KMS call per encrypted value). With encryption enabled a plaintext value
+   * throws; when disabled, plaintext passes through.
    */
-  private async decryptUserEmails(users: Array<DbUser>): Promise<void> {
-    await this.emailEncryptionService.decryptUserEmails(users);
+  private async decryptUserEmails(
+    users: Array<DbUser>,
+  ): Promise<Array<DbUser>> {
+    return await this.emailEncryptionService.decryptUserEmails(users);
   }
 
   public async findOneOrFail(
@@ -58,8 +60,8 @@ export class UsersRepository implements IUsersRepository {
       throw new NotFoundException('User not found.');
     }
 
-    await this.decryptUserEmails([user]);
-    return user;
+    const [decryptedUser] = await this.decryptUserEmails([user]);
+    return decryptedUser;
   }
 
   public async find(
@@ -69,8 +71,7 @@ export class UsersRepository implements IUsersRepository {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
     const users = await userRepository.find({ where, relations });
-    await this.decryptUserEmails(users);
-    return users;
+    return await this.decryptUserEmails(users);
   }
 
   public async createWithWallet(args: {
@@ -253,10 +254,11 @@ export class UsersRepository implements IUsersRepository {
       user: true,
     });
 
-    if (wallet) {
-      await this.decryptUserEmails([wallet.user]);
+    if (!wallet) {
+      return undefined;
     }
-    return wallet?.user;
+    const [decryptedUser] = await this.decryptUserEmails([wallet.user]);
+    return decryptedUser;
   }
 
   public findOrCreateByWalletAddress(
@@ -542,8 +544,8 @@ export class UsersRepository implements IUsersRepository {
       // /me omits absent email fields, so normalize null/missing to undefined.
       return undefined;
     }
-    await this.decryptUserEmails([user]);
-    return user.email;
+    const [decryptedUser] = await this.decryptUserEmails([user]);
+    return decryptedUser.email ?? undefined;
   }
 
   public async findEmailsByIds(
@@ -557,10 +559,10 @@ export class UsersRepository implements IUsersRepository {
       select: { id: true, email: true },
     });
 
-    await this.decryptUserEmails(users);
+    const decryptedUsers = await this.decryptUserEmails(users);
 
     return new Map(
-      users.flatMap(
+      decryptedUsers.flatMap(
         (user): Array<[User['id'], string]> =>
           user.email ? [[user.id, user.email]] : [],
       ),

@@ -35,9 +35,9 @@ import {
 @Injectable()
 export class EmailEncryptionService implements OnModuleInit {
   private readonly enabled: boolean;
-  private readonly wrappedIndexKey: string | undefined;
+  private readonly wrappedEmailIndexKey: string | undefined;
   /** Unwrapped blind-index key; populated on init whenever configured. */
-  private indexKey: Buffer | undefined;
+  private emailIndexKey: Buffer | undefined;
 
   constructor(
     @Inject(IConfigurationService)
@@ -47,8 +47,8 @@ export class EmailEncryptionService implements OnModuleInit {
     this.enabled = this.configurationService.getOrThrow<boolean>(
       'spaces.fieldEncryption.enabled',
     );
-    this.wrappedIndexKey = this.configurationService.get<string>(
-      'spaces.fieldEncryption.indexKey',
+    this.wrappedEmailIndexKey = this.configurationService.get<string>(
+      'spaces.fieldEncryption.emailIndexKey',
     );
   }
 
@@ -59,20 +59,20 @@ export class EmailEncryptionService implements OnModuleInit {
    * existing blind indexes stay computable (e.g. after a rollback).
    */
   async onModuleInit(): Promise<void> {
-    if (this.wrappedIndexKey) {
+    if (this.wrappedEmailIndexKey) {
       const plaintext = await this.kmsService.decrypt({
-        ciphertext: Buffer.from(this.wrappedIndexKey, 'base64'),
+        ciphertext: Buffer.from(this.wrappedEmailIndexKey, 'base64'),
       });
       if (plaintext.length !== INDEX_KEY_LENGTH) {
         throw new Error(
           `The blind-index key must be ${INDEX_KEY_LENGTH} bytes, got ${plaintext.length}`,
         );
       }
-      this.indexKey = plaintext;
+      this.emailIndexKey = plaintext;
     }
-    if (this.enabled && !this.indexKey) {
+    if (this.enabled && !this.emailIndexKey) {
       throw new Error(
-        'spaces.fieldEncryption.indexKey is required when field encryption is enabled',
+        'spaces.fieldEncryption.emailIndexKey is required when field encryption is enabled',
       );
     }
   }
@@ -92,8 +92,8 @@ export class EmailEncryptionService implements OnModuleInit {
     if (!this.enabled) {
       return null;
     }
-    // indexKey presence is guaranteed by onModuleInit when enabled.
-    return createHmac('sha256', this.indexKey as Buffer)
+    // emailIndexKey presence is guaranteed by onModuleInit when enabled.
+    return createHmac('sha256', this.emailIndexKey as Buffer)
       .update(BLIND_INDEX_LABEL)
       .update('\0')
       .update(plaintext.trim().toLowerCase(), 'utf8')
@@ -149,20 +149,30 @@ export class EmailEncryptionService implements OnModuleInit {
   }
 
   /**
-   * Decrypts loaded users' `email` values in place (one KMS call per
-   * encrypted value) via {@link decrypt}, so with encryption enabled a
-   * plaintext row throws rather than leaking through. Null emails are
-   * skipped. Every repository that hands a user row out of the database must
-   * route it through here.
+   * Returns copies of the given users with their `email` values decrypted
+   * (one KMS call per encrypted value) via {@link decrypt}, so with
+   * encryption enabled a plaintext row throws rather than leaking through.
+   * The input is left untouched; users without an email are returned as-is.
+   * Every repository that hands a user row out of the database must route it
+   * through here.
    */
-  async decryptUserEmails(
-    users: Array<{ id: number; email: string | null }>,
-  ): Promise<void> {
+  async decryptUserEmails<T extends { id: number; email: string | null }>(
+    users: Array<T>,
+  ): Promise<Array<T>> {
+    const decrypted: Array<T> = [];
     for (const user of users) {
-      if (user.email) {
-        user.email = await this.decrypt(user.id, user.email);
-      }
+      decrypted.push(
+        user.email
+          ? {
+              ...user,
+              // The plaintext is the value originally validated as an
+              // EmailAddress before encryption.
+              email: (await this.decrypt(user.id, user.email)) as T['email'],
+            }
+          : user,
+      );
     }
+    return decrypted;
   }
 
   private encryptionContext(userId: number): Record<string, string> {

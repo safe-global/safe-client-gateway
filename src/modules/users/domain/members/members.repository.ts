@@ -54,14 +54,21 @@ export class MembersRepository implements IMembersRepository {
   ) {}
 
   /**
-   * Decrypts the `email` of users hydrated onto loaded members. A no-op for
-   * members loaded without the `user` relation.
+   * Returns copies of loaded members with the `email` of their hydrated
+   * users decrypted. Members loaded without the `user` relation are returned
+   * as-is.
    */
   private async decryptMemberUserEmails(
     members: Array<DbMember>,
-  ): Promise<void> {
-    await this.emailEncryptionService.decryptUserEmails(
+  ): Promise<Array<DbMember>> {
+    const decryptedUsers = await this.emailEncryptionService.decryptUserEmails(
       members.flatMap((member) => (member.user ? [member.user] : [])),
+    );
+    const usersById = new Map(decryptedUsers.map((user) => [user.id, user]));
+    return members.map((member) =>
+      member.user
+        ? { ...member, user: usersById.get(member.user.id) ?? member.user }
+        : member,
     );
   }
 
@@ -103,10 +110,11 @@ export class MembersRepository implements IMembersRepository {
       where,
       relations,
     });
-    if (member) {
-      await this.decryptMemberUserEmails([member]);
+    if (!member) {
+      return null;
     }
-    return member;
+    const [decryptedMember] = await this.decryptMemberUserEmails([member]);
+    return decryptedMember;
   }
 
   public async findOrFail(
@@ -128,8 +136,7 @@ export class MembersRepository implements IMembersRepository {
       await this.postgresDatabaseService.getRepository(DbMember);
 
     const members = await membersRepository.find(args);
-    await this.decryptMemberUserEmails(members);
-    return members;
+    return await this.decryptMemberUserEmails(members);
   }
 
   public async findActiveAdmin(args: {
@@ -429,8 +436,7 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
 
-    await this.decryptMemberUserEmails(space.members);
-    return space.members;
+    return await this.decryptMemberUserEmails(space.members);
   }
 
   public async findSelfMembershipOrFail(args: {
@@ -666,7 +672,7 @@ export class MembersRepository implements IMembersRepository {
         'The user is not an active member of the workspace.',
       );
     }
-    await this.decryptMemberUserEmails([member]);
-    return member;
+    const [decryptedMember] = await this.decryptMemberUserEmails([member]);
+    return decryptedMember;
   }
 }
