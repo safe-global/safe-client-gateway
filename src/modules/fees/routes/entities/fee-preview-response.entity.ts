@@ -94,9 +94,8 @@ export class FeePreviewRelayCost {
 }
 
 export class FeePreviewValuationDetail {
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'Token contract address (absent for native transfers)',
-    required: false,
   })
   tokenAddress?: Address;
 
@@ -106,10 +105,10 @@ export class FeePreviewValuationDetail {
   @ApiProperty({ description: 'Token amount', example: '1000' })
   amount: string;
 
-  @ApiProperty({ description: 'Token price in USD', required: false })
+  @ApiPropertyOptional({ description: 'Token price in USD' })
   priceUsd?: number;
 
-  @ApiProperty({ description: 'Token value in USD', required: false })
+  @ApiPropertyOptional({ description: 'Token value in USD' })
   valueUsd?: number;
 
   constructor(detail: GtfFeeBreakdown['valuationDetails'][number]) {
@@ -170,22 +169,19 @@ export class FeePreviewResponse {
   @ApiPropertyOptional({
     type: FeePreviewRelayCost,
     description: 'Relay cost. Present when the relay fee flow applies.',
-    required: false,
   })
   relayCost?: FeePreviewRelayCost;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: FeePreviewFeeBreakdown,
     description:
       'GTF fee breakdown, as returned by the fee-engine service. Present when the GTF fee flow applies.',
-    required: false,
   })
   feeBreakdown?: FeePreviewFeeBreakdown;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
       'Maximum fee cap in USD (buffered max fee). Present when the GTF fee flow applies.',
-    required: false,
   })
   maxFeeCapUsd?: number;
 
