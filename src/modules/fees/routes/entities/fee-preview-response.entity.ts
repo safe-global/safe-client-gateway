@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { zeroAddress } from 'viem';
 import type {
@@ -167,7 +167,7 @@ export class FeePreviewResponse {
   @ApiProperty({ type: FeePreviewTxData })
   txData: FeePreviewTxData;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     type: FeePreviewRelayCost,
     description: 'Relay cost. Present when the relay fee flow applies.',
     required: false,
