@@ -45,7 +45,6 @@ import { Transaction } from '@/modules/transactions/routes/entities/transaction.
 import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
-import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -710,18 +709,4 @@ export class TransactionsController {
     });
   }
 
-  @HttpCode(200)
-  @ApiOkResponse({ type: TXSCreationTransaction })
-  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
-  @Get('chains/:chainId/safes/:safeAddress/creation/raw')
-  getDomainCreationTransaction(
-    @Param('chainId') chainId: string,
-    @Param('safeAddress', new ValidationPipe(AddressSchema))
-    safeAddress: Address,
-  ): Promise<TXSCreationTransaction> {
-    return this.transactionsService.getDomainCreationTransaction({
-      chainId,
-      safeAddress,
-    });
-  }
 }

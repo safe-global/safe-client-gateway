@@ -37,7 +37,6 @@ import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-i
 import type { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
-import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
 import { ModuleTransactionMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
 import { ModuleTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-details.mapper';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
@@ -575,13 +574,6 @@ export class TransactionsService {
     };
   }
 
-  async getDomainCreationTransaction(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<TXSCreationTransaction> {
-    const tx = await this.safeRepository.getCreationTransaction(args);
-    return new TXSCreationTransaction(tx);
-  }
 
   /**
    * Adjusts the pagination data to return extra items in both "edges" of the current page:
