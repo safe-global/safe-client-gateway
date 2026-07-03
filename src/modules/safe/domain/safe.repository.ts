@@ -373,31 +373,6 @@ export class SafeRepository implements ISafeRepository {
     return MultisigTransactionSchema.parse(multiSigTransaction);
   }
 
-  async getMultiSigTransactionWithNoCache(args: {
-    chainId: string;
-    safeTransactionHash: string;
-  }): Promise<MultisigTransaction> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
-    const multisigTransaction = await transactionService
-      .getMultisigTransactionWithNoCache(args.safeTransactionHash)
-      .then(MultisigTransactionSchema.parse);
-
-    const safe = await this.getSafe({
-      chainId: args.chainId,
-      address: multisigTransaction.safe,
-    });
-
-    this.transactionVerifier.verifyApiTransaction({
-      chainId: args.chainId,
-      transaction: multisigTransaction,
-      safe: safe,
-    });
-
-    return multisigTransaction;
-  }
-
   async deleteTransaction(args: {
     chainId: string;
     safeTxHash: string;

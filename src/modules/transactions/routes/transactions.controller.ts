@@ -46,7 +46,6 @@ import { TransactionDetails } from '@/modules/transactions/routes/entities/trans
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
 import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
-import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
@@ -97,19 +96,6 @@ export class TransactionsController {
     return this.transactionsService.getById({
       chainId,
       txId: id,
-    });
-  }
-
-  @ApiOkResponse({ type: TXSMultisigTransaction })
-  @ApiOperation({ deprecated: true, summary: 'Deprecated' })
-  @Get('chains/:chainId/multisig-transactions/:safeTxHash/raw')
-  getDomainMultisigTransactionBySafeTxHash(
-    @Param('chainId') chainId: string,
-    @Param('safeTxHash') safeTxHash: string,
-  ): Promise<TXSMultisigTransaction> {
-    return this.transactionsService.getDomainMultisigTransactionBySafeTxHash({
-      chainId,
-      safeTxHash,
     });
   }
 
