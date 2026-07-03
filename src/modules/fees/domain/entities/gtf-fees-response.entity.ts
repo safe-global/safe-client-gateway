@@ -4,6 +4,7 @@ import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { ChainIdSchema } from '@/validation/entities/schemas/chain-id.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 export type GtfTxData = z.infer<typeof GtfTxDataSchema>;
@@ -15,7 +16,7 @@ export type GtfPricingContextSnapshot = z.infer<
 export type GtfFeesResponse = z.infer<typeof GtfFeesResponseSchema>;
 
 export const GtfTxDataSchema = z.object({
-  chainId: z.coerce.string().regex(/^[1-9]\d*$/),
+  chainId: ChainIdSchema,
   safeAddress: AddressSchema,
   to: AddressSchema,
   value: z.string(),
