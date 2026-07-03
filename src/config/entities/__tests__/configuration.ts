@@ -275,6 +275,10 @@ export default (): ReturnType<typeof configuration> => ({
     webhook: {
       publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY,
       issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+      kms: {
+        keyId: process.env.BILLING_WEBHOOK_JWT_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
     },
   },
   log: {

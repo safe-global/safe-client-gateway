@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { generateKeyPairSync } from 'node:crypto';
+import { sign as cryptoSign, generateKeyPairSync } from 'node:crypto';
 import { UnauthorizedException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
@@ -115,6 +115,37 @@ describe('BillingAuthService', () => {
         expiresInDays: 365,
       });
 
+      expect(service.verify(token)).toMatchObject({
+        roles: ['SERVICE_ACCESS'],
+      });
+    });
+
+    it('verifies a token minted via mintViaSigner (KMS-style DER signer)', async () => {
+      const { privateKey, publicKey } = generateKeyPair();
+      const service = createService(publicKey);
+
+      // Mimics AWS KMS Sign (RAW + ECDSA_SHA_256): hashes with SHA-256 and
+      // returns a DER-encoded ECDSA signature.
+      const sign = (input: Buffer): Promise<Buffer> =>
+        Promise.resolve(
+          cryptoSign('sha256', input, { key: privateKey, dsaEncoding: 'der' }),
+        );
+
+      const token = await BillingAuthService.mintViaSigner(
+        { issuer: ISSUER, subject: 'billing-service', expiresInDays: 365 },
+        sign,
+      );
+
+      // Same claim shape as the local-key path...
+      expect(jwtClientFactory().decodeWithoutVerification(token)).toMatchObject(
+        {
+          iss: ISSUER,
+          aud: [ISSUER],
+          roles: ['SERVICE_ACCESS'],
+          data: { service_name: 'billing-service' },
+        },
+      );
+      // ...and the ES256 signature verifies against the matching public key.
       expect(service.verify(token)).toMatchObject({
         roles: ['SERVICE_ACCESS'],
       });
