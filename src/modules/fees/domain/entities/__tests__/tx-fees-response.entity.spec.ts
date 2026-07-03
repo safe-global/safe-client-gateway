@@ -6,7 +6,7 @@ import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/
 import {
   TxDataResponseSchema,
   TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
+} from '@/modules/fees/domain/entities/tx-fees-response.entity';
 
 describe('TxDataResponseSchema', () => {
   it('should accept chainId as a string and keep it as string', () => {

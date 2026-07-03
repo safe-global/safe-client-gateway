@@ -1,14 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-
-import type { z } from 'zod';
-import type {
-  RelayCostSchema,
-  TxDataResponseSchema,
-  TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
+import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 export type TxDataResponse = z.infer<typeof TxDataResponseSchema>;
 
 export type RelayCost = z.infer<typeof RelayCostSchema>;
 
 export type TxFeesResponse = z.infer<typeof TxFeesResponseSchema>;
+
+export const TxDataResponseSchema = z.object({
+  chainId: z.coerce.string().regex(/^[1-9]\d*$/),
+  safeAddress: AddressSchema,
+  safeTxGas: z.string(),
+  baseGas: z.string(),
+  gasPrice: z.string(),
+  gasToken: AddressSchema,
+  refundReceiver: AddressSchema,
+  numberSignatures: z.number(),
+});
+
+export const RelayCostSchema = z.object({
+  fiatCode: z.string(),
+  fiatValue: z.string(),
+});
+
+export const TxFeesResponseSchema = z.object({
+  txData: TxDataResponseSchema,
+  relayCost: RelayCostSchema,
+});

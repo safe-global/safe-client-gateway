@@ -12,17 +12,27 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
-import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
-import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
+import {
+  type CanRelayResponse,
+  CanRelayResponseSchema,
+} from '@/modules/fees/domain/entities/can-relay-response.entity';
+import {
+  type GtfFeesRequest,
+  GtfFeesRequestSchema,
+} from '@/modules/fees/domain/entities/gtf-fees-request.entity';
+import {
+  type GtfFeesResponse,
+  GtfFeesResponseSchema,
+} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
-import { GtfFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-request.schema';
-import { GtfFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/gtf-fees-response.schema';
-import { TxFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-request.schema';
-import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
-import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
-import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
+import {
+  type TxFeesRequest,
+  TxFeesRequestSchema,
+} from '@/modules/fees/domain/entities/tx-fees-request.entity';
+import {
+  type TxFeesResponse,
+  TxFeesResponseSchema,
+} from '@/modules/fees/domain/entities/tx-fees-response.entity';
 import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()

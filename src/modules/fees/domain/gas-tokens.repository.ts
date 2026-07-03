@@ -8,8 +8,10 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { GasToken } from '@/modules/fees/domain/entities/gas-token.entity';
-import { GasTokenLenientPageSchema } from '@/modules/fees/domain/entities/schemas/gas-token.schema';
+import {
+  type GasToken,
+  GasTokenLenientPageSchema,
+} from '@/modules/fees/domain/entities/gas-token.entity';
 import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
 
 @Injectable()
