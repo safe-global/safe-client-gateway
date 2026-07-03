@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { sign as cryptoSign, generateKeyPairSync } from 'node:crypto';
+import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
@@ -10,7 +11,7 @@ import { JwtService } from '@/datasources/jwt/jwt.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
 
-const ISSUER = 'safe-client-gateway';
+const ISSUER = faker.lorem.slug();
 
 function generateKeyPair(): { privateKey: string; publicKey: string } {
   return generateKeyPairSync('ec', {
@@ -35,7 +36,7 @@ describe('BillingAuthService', () => {
       const token = BillingAuthService.mint({
         privateKey,
         issuer: ISSUER,
-        expiresInDays: 365,
+        expiresInDays: faker.number.int({ min: 1, max: 365 }),
       });
 
       expect(jwtClientFactory().decodeWithoutVerification(token)).toMatchObject(
@@ -55,18 +56,19 @@ describe('BillingAuthService', () => {
 
     it('honours a custom subject and reflects it in service_name', () => {
       const { privateKey } = generateKeyPair();
+      const subject = faker.lorem.slug();
 
       const token = BillingAuthService.mint({
         privateKey,
         issuer: ISSUER,
-        expiresInDays: 365,
-        subject: 'billing-service-staging',
+        expiresInDays: faker.number.int({ min: 1, max: 365 }),
+        subject,
       });
 
       expect(jwtClientFactory().decodeWithoutVerification(token)).toMatchObject(
         {
-          sub: 'billing-service-staging',
-          data: { service_name: 'billing-service-staging' },
+          sub: subject,
+          data: { service_name: subject },
         },
       );
     });
@@ -74,8 +76,10 @@ describe('BillingAuthService', () => {
     it('derives iat/exp from the issued-at time and expiresInDays', () => {
       const { privateKey } = generateKeyPair();
       // Whole seconds so the second-based NumericDate comparison is exact.
-      const now = new Date(1_700_000_000_000);
-      const expiresInDays = 365;
+      const now = faker.date.recent();
+      now.setMilliseconds(0);
+      const nowInSeconds = now.getTime() / 1_000;
+      const expiresInDays = faker.number.int({ min: 1, max: 365 });
 
       const token = BillingAuthService.mint({
         privateKey,
@@ -85,8 +89,8 @@ describe('BillingAuthService', () => {
       });
 
       const decoded = jwtClientFactory().decodeWithoutVerification(token);
-      expect(decoded?.iat).toBe(1_700_000_000);
-      expect(decoded?.exp).toBe(1_700_000_000 + expiresInDays * 24 * 60 * 60);
+      expect(decoded?.iat).toBe(nowInSeconds);
+      expect(decoded?.exp).toBe(nowInSeconds + expiresInDays * 24 * 60 * 60);
     });
   });
 
@@ -94,7 +98,8 @@ describe('BillingAuthService', () => {
     function createService(publicKey: string): BillingAuthService {
       const configurationService = new FakeConfigurationService();
       configurationService.set('jwt.issuer', ISSUER);
-      configurationService.set('jwt.secret', 'unused-for-es256');
+      // Arbitrary: the HMAC secret is unused for ES256 verification.
+      configurationService.set('jwt.secret', faker.string.alphanumeric(32));
       configurationService.set('billing.webhook.publicKey', publicKey);
       configurationService.set('billing.webhook.issuer', ISSUER);
 
@@ -112,7 +117,7 @@ describe('BillingAuthService', () => {
       const token = BillingAuthService.mint({
         privateKey,
         issuer: ISSUER,
-        expiresInDays: 365,
+        expiresInDays: faker.number.int({ min: 1, max: 365 }),
       });
 
       expect(service.verify(token)).toMatchObject({
@@ -132,7 +137,11 @@ describe('BillingAuthService', () => {
         );
 
       const token = await BillingAuthService.mintViaSigner(
-        { issuer: ISSUER, subject: 'billing-service', expiresInDays: 365 },
+        {
+          issuer: ISSUER,
+          subject: 'billing-service',
+          expiresInDays: faker.number.int({ min: 1, max: 365 }),
+        },
         sign,
       );
 
@@ -158,12 +167,18 @@ describe('BillingAuthService', () => {
       const token = BillingAuthService.mint({
         privateKey,
         issuer: ISSUER,
-        expiresInDays: 365,
+        expiresInDays: faker.number.int({ min: 1, max: 365 }),
       });
 
-      expect(() => service.verify(`${token.slice(0, -4)}AAAA`)).toThrow(
-        UnauthorizedException,
-      );
+      // Excluding the original characters guarantees the signature changes.
+      const tamperedSuffix = faker.string.alphanumeric({
+        length: 4,
+        exclude: token.slice(-4),
+      });
+
+      expect(() =>
+        service.verify(`${token.slice(0, -4)}${tamperedSuffix}`),
+      ).toThrow(UnauthorizedException);
     });
 
     it('rejects a token signed by a different key', () => {
@@ -174,7 +189,7 @@ describe('BillingAuthService', () => {
       const token = BillingAuthService.mint({
         privateKey: otherPrivateKey,
         issuer: ISSUER,
-        expiresInDays: 365,
+        expiresInDays: faker.number.int({ min: 1, max: 365 }),
       });
 
       expect(() => service.verify(token)).toThrow(UnauthorizedException);
@@ -184,15 +199,14 @@ describe('BillingAuthService', () => {
       const { privateKey, publicKey } = generateKeyPair();
       const service = createService(publicKey);
 
-      // Valid ES256 signature and iss/aud/exp, but missing the service markers
-      // (no SERVICE_ACCESS role and no data), so layer-2 authorization fails.
+      // missing the service markers (no SERVICE_ACCESS role and no data), so layer-2 authorization fails.
       const token = jwtClientFactory().sign(
         {
           iss: ISSUER,
           sub: 'billing-service',
           aud: [ISSUER],
-          exp: new Date(Date.now() + 60 * 60 * 1_000),
-          roles: ['SOME_OTHER_ROLE'],
+          exp: faker.date.future(),
+          roles: [faker.string.alpha({ length: 16, casing: 'upper' })],
         },
         { secretOrPrivateKey: privateKey, algorithm: JWT_ES_ALGORITHM },
       );
@@ -205,7 +219,8 @@ describe('BillingAuthService', () => {
     it('throws when the webhook public key is not configured', () => {
       const configurationService = new FakeConfigurationService();
       configurationService.set('jwt.issuer', ISSUER);
-      configurationService.set('jwt.secret', 'unused-for-es256');
+      // Arbitrary: the HMAC secret is unused for ES256 verification.
+      configurationService.set('jwt.secret', faker.string.alphanumeric(32));
       configurationService.set('billing.webhook.issuer', ISSUER);
       // billing.webhook.publicKey intentionally not set.
 
@@ -216,7 +231,7 @@ describe('BillingAuthService', () => {
             configurationService,
             loggingService,
           ),
-      ).toThrow();
+      ).toThrow('No value set for key billing.webhook.publicKey');
     });
   });
 });
