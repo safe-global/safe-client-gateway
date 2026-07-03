@@ -6,9 +6,9 @@ import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { KmsService } from '@/datasources/kms/kms.service';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+import type { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
@@ -23,16 +23,19 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 }
 
 describe('UsersRepository', () => {
-  const walletsRepository = {} as MockedObject<IWalletsRepository>;
+  const walletsRepository = {
+    findOneByAddress: vi.fn(),
+  } as unknown as MockedObject<IWalletsRepository>;
   // Passthrough crypto (disabled-like): blind index null, values unchanged, so
   // existing plaintext assertions hold. Encryption + blind-index lookups are
   // covered by integration tests.
-  const kmsService = {
+  const emailEncryptionService = {
     encrypt: vi.fn(),
     decrypt: vi.fn(),
     isEncrypted: vi.fn(),
     blindIndex: vi.fn(),
-  } as unknown as MockedObject<KmsService>;
+    decryptUserEmails: vi.fn(),
+  } as unknown as MockedObject<EmailEncryptionService>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
@@ -71,20 +74,33 @@ describe('UsersRepository', () => {
       transaction: vi.fn(),
     } as MockedObject<PostgresDatabaseService>;
 
-    kmsService.encrypt.mockImplementation((_userId, email) =>
+    emailEncryptionService.encrypt.mockImplementation((_userId, email) =>
       Promise.resolve(email),
     );
-    kmsService.decrypt.mockImplementation((_userId, value) =>
+    emailEncryptionService.decrypt.mockImplementation((_userId, value) =>
       Promise.resolve(value),
     );
-    kmsService.isEncrypted.mockReturnValue(false);
-    kmsService.blindIndex.mockReturnValue(null);
+    emailEncryptionService.isEncrypted.mockReturnValue(false);
+    emailEncryptionService.blindIndex.mockReturnValue(null);
+    // Mirrors the real batch helper, driven by the decrypt mock.
+    emailEncryptionService.decryptUserEmails.mockImplementation(
+      async (users) => {
+        for (const user of users) {
+          if (user.email) {
+            user.email = await emailEncryptionService.decrypt(
+              user.id,
+              user.email,
+            );
+          }
+        }
+      },
+    );
 
     target = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       createMockSpaceAuditRepository(),
-      kmsService,
+      emailEncryptionService,
     );
   });
 
@@ -396,6 +412,30 @@ describe('UsersRepository', () => {
       const result = await target.find({ id: 999 as never });
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('findByWalletAddress', () => {
+    it('should decrypt an encrypted email on the wallet owner', async () => {
+      const email = fakeEmailAddress();
+      const encrypted = `kms:v1:${Buffer.from(email, 'utf8').toString('base64url')}`;
+      const user = { id: 7, email: encrypted };
+      walletsRepository.findOneByAddress.mockResolvedValue({ user } as never);
+      emailEncryptionService.decrypt.mockResolvedValue(email);
+
+      const result = await target.findByWalletAddress(
+        getAddress(faker.finance.ethereumAddress()),
+      );
+
+      expect(result?.email).toBe(email);
+    });
+
+    it('should return undefined when no wallet matches', async () => {
+      walletsRepository.findOneByAddress.mockResolvedValue(null as never);
+
+      await expect(
+        target.findByWalletAddress(getAddress(faker.finance.ethereumAddress())),
+      ).resolves.toBeUndefined();
     });
   });
 });

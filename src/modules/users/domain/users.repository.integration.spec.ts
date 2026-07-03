@@ -10,7 +10,6 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockKmsService } from '@/datasources/kms/__tests__/kms.service.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -24,6 +23,7 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
@@ -109,7 +109,7 @@ describe('UsersRepository', () => {
       postgresDatabaseService,
       new WalletsRepository(postgresDatabaseService),
       createMockSpaceAuditRepository(),
-      createMockKmsService(),
+      createMockEmailEncryptionService(),
     );
   });
 

@@ -11,13 +11,13 @@ import { EntityManager, In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { KmsService } from '@/datasources/kms/kms.service';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
@@ -34,25 +34,16 @@ export class UsersRepository implements IUsersRepository {
     private readonly walletsRepository: IWalletsRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    private readonly kmsService: KmsService,
+    private readonly emailEncryptionService: EmailEncryptionService,
   ) {}
 
   /**
    * Decrypts loaded users' `email` values (one KMS call per encrypted value).
-   * Skipped when the value is not ciphertext (disabled / legacy plaintext).
+   * With encryption enabled a plaintext value throws; when disabled,
+   * plaintext passes through.
    */
   private async decryptUserEmails(users: Array<DbUser>): Promise<void> {
-    for (const user of users) {
-      if (
-        typeof user.email === 'string' &&
-        this.kmsService.isEncrypted(user.email)
-      ) {
-        user.email = (await this.kmsService.decrypt(
-          user.id,
-          user.email,
-        )) as EmailAddress;
-      }
-    }
+    await this.emailEncryptionService.decryptUserEmails(users);
   }
 
   public async findOneOrFail(
@@ -117,7 +108,9 @@ export class UsersRepository implements IUsersRepository {
     // When enabled, the blind index enforces uniqueness at insert (the email
     // value is set once the id is known, below); when disabled, the plaintext
     // email is stored directly.
-    const emailIndex = email ? this.kmsService.blindIndex(email) : null;
+    const emailIndex = email
+      ? this.emailEncryptionService.blindIndex(email)
+      : null;
     let emailColumns: { emailIndex?: string; email?: EmailAddress } = {};
     if (emailIndex) {
       emailColumns = { emailIndex };
@@ -134,7 +127,10 @@ export class UsersRepository implements IUsersRepository {
 
     if (email && emailIndex) {
       await entityManager.update(DbUser, userId, {
-        email: (await this.kmsService.encrypt(userId, email)) as EmailAddress,
+        email: (await this.emailEncryptionService.encrypt(
+          userId,
+          email,
+        )) as EmailAddress,
       });
     }
 
@@ -257,6 +253,9 @@ export class UsersRepository implements IUsersRepository {
       user: true,
     });
 
+    if (wallet) {
+      await this.decryptUserEmails([wallet.user]);
+    }
     return wallet?.user;
   }
 
@@ -323,7 +322,7 @@ export class UsersRepository implements IUsersRepository {
     const upsertThenSelect = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
-      const emailIndex = this.kmsService.blindIndex(email);
+      const emailIndex = this.emailEncryptionService.blindIndex(email);
 
       await manager
         .createQueryBuilder()
@@ -346,7 +345,7 @@ export class UsersRepository implements IUsersRepository {
       // set the encrypted email now that the id is known.
       if (emailIndex && !user.email) {
         await manager.update(DbUser, user.id, {
-          email: (await this.kmsService.encrypt(
+          email: (await this.emailEncryptionService.encrypt(
             user.id,
             email,
           )) as EmailAddress,
@@ -436,7 +435,7 @@ export class UsersRepository implements IUsersRepository {
   ): Promise<User['id'] | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const emailIndex = this.kmsService.blindIndex(email);
+    const emailIndex = this.emailEncryptionService.blindIndex(email);
     const candidate = await userRepository.findOne({
       where: emailIndex ? { emailIndex } : { email },
       select: { id: true, status: true, extUserId: true },
@@ -481,7 +480,10 @@ export class UsersRepository implements IUsersRepository {
   ): Promise<User['id']> {
     if (user.email) {
       // Stored email is KMS ciphertext bound to this user; compare plaintext.
-      const storedEmail = await this.kmsService.decrypt(user.id, user.email);
+      const storedEmail = await this.emailEncryptionService.decrypt(
+        user.id,
+        user.email,
+      );
       if (storedEmail !== email) {
         throw new UnauthorizedException(
           'Email does not match the registered email for this account',
@@ -502,9 +504,9 @@ export class UsersRepository implements IUsersRepository {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
-    const emailIndex = this.kmsService.blindIndex(email);
+    const emailIndex = this.emailEncryptionService.blindIndex(email);
     const emailValue = emailIndex
-      ? await this.kmsService.encrypt(userId, email)
+      ? await this.emailEncryptionService.encrypt(userId, email)
       : email;
 
     try {

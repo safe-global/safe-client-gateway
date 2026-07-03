@@ -2,9 +2,10 @@
 /**
  * Generates the KMS-wrapped key for the users.email blind index.
  *
- * KMS protects the key; the app unwraps it once at boot and performs local
- * HMAC computation with it. This script prints the *encrypted* key (safe to
- * store in config). The plaintext key material is zeroed and never printed.
+ * A random 32-byte key is generated locally and wrapped (encrypted) by KMS;
+ * the app unwraps it once at boot and performs local HMAC computation with
+ * it. This script prints the *encrypted* key (safe to store in config). The
+ * plaintext key material is zeroed and never printed.
  *
  * Usage (credentials via AWS_WEB_IDENTITY_TOKEN_FILE, or AWS_ACCESS_KEY_ID
  * and AWS_SECRET_ACCESS_KEY):
@@ -22,6 +23,7 @@
  * index — the regular backfill will NOT do this, as it skips rows whose email
  * is already encrypted.
  */
+import { randomBytes } from 'node:crypto';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { KmsService } from '@/datasources/kms/kms.service';
@@ -55,7 +57,8 @@ function buildConfigurationService(): IConfigurationService {
 
 async function main(): Promise<void> {
   const kmsService = new KmsService(buildConfigurationService());
-  const { plaintext, encrypted } = await kmsService.generateDataKey();
+  const plaintext = randomBytes(32);
+  const encrypted = await kmsService.encrypt({ plaintext });
 
   // Zero out the plaintext key material as soon as possible; we must never
   // print or persist it.

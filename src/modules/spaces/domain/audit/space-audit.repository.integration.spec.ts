@@ -9,7 +9,6 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockKmsService } from '@/datasources/kms/__tests__/kms.service.mock';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -26,6 +25,7 @@ import {
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -135,13 +135,14 @@ describe('SpaceAuditRepository', () => {
       postgresDatabaseService,
       walletsRepository,
       spaceAuditRepository,
-      createMockKmsService(),
+      createMockEmailEncryptionService(),
     );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
       spaceAuditRepository,
+      createMockEmailEncryptionService(),
     );
   });
 

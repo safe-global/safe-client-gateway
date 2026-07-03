@@ -11,7 +11,6 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockKmsService } from '@/datasources/kms/__tests__/kms.service.mock';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
@@ -32,6 +31,10 @@ import {
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import {
+  createEncryptingMockEmailEncryptionService,
+  createMockEmailEncryptionService,
+} from '@/modules/users/domain/__tests__/email-encryption.service.mock';
 import {
   MemberRole,
   MemberStatus,
@@ -138,7 +141,7 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         walletsRepo,
         createMockSpaceAuditRepository(),
-        createMockKmsService(),
+        createMockEmailEncryptionService(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
@@ -146,6 +149,7 @@ describe('MembersRepository', () => {
         createMockSpaceAuditRepository(),
       ),
       createMockSpaceAuditRepository(),
+      createMockEmailEncryptionService(),
     );
   });
 
@@ -3689,6 +3693,152 @@ describe('MembersRepository', () => {
           alias: newAlias,
         }),
       ).rejects.toThrow('Not authenticated');
+    });
+  });
+
+  describe('email decryption', () => {
+    // Repositories wired with the fake-encrypting crypto double, so invited
+    // users' emails land in the database as `kms:v1:` ciphertext and read
+    // paths must decrypt them.
+    let encryptingMembersRepository: MembersRepository;
+
+    beforeEach(() => {
+      const emailEncryptionService =
+        createEncryptingMockEmailEncryptionService();
+      encryptingMembersRepository = new MembersRepository(
+        postgresDatabaseService,
+        new UsersRepository(
+          postgresDatabaseService,
+          new WalletsRepository(postgresDatabaseService),
+          createMockSpaceAuditRepository(),
+          emailEncryptionService,
+        ),
+        new SpacesRepository(
+          postgresDatabaseService,
+          mockConfigurationService,
+          createMockSpaceAuditRepository(),
+        ),
+        createMockSpaceAuditRepository(),
+        emailEncryptionService,
+      );
+    });
+
+    /**
+     * Creates a space with an ACTIVE admin, then invites a user by email
+     * through the encrypting repository, returning both the plaintext invite
+     * email and the invited user id, with the stored row asserted to be
+     * ciphertext.
+     */
+    async function inviteMemberWithEncryptedEmail(): Promise<{
+      spaceId: Space['id'];
+      adminAuthPayload: AuthPayload;
+      inviteEmail: string;
+      invitedUserId: number;
+    }> {
+      const { user: owner, authPayload } = await createSiweUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id as Space['id'];
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const inviteEmail = EmailAddressSchema.parse(faker.internet.email());
+
+      const invitations = await encryptingMembersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: [
+          {
+            type: InviteType.Email,
+            email: inviteEmail,
+            role: 'MEMBER',
+            name: nameBuilder(),
+          },
+        ],
+        inviteExpiresAt: faker.date.future(),
+      });
+      const invitedUserId = invitations[0].userId;
+
+      // Sanity: the value at rest is ciphertext, not the plaintext email.
+      const storedUser = await dbUserRepo.findOneOrFail({
+        where: { id: invitedUserId },
+      });
+      expect(storedUser.email).toMatch(/^kms:v1:/);
+
+      return {
+        spaceId,
+        adminAuthPayload: authPayload,
+        inviteEmail,
+        invitedUserId,
+      };
+    }
+
+    it('should return decrypted member emails from findAuthorizedMembersOrFail', async () => {
+      const { spaceId, adminAuthPayload, inviteEmail, invitedUserId } =
+        await inviteMemberWithEncryptedEmail();
+
+      const members =
+        await encryptingMembersRepository.findAuthorizedMembersOrFail({
+          authPayload: adminAuthPayload,
+          spaceId,
+        });
+
+      const invited = members.find(
+        (member) => member.user.id === invitedUserId,
+      );
+      expect(invited?.user.email).toBe(inviteEmail);
+    });
+
+    it('should return the decrypted email for a pending caller own row', async () => {
+      const { spaceId, inviteEmail, invitedUserId } =
+        await inviteMemberWithEncryptedEmail();
+      const invitedAuthPayload = new AuthPayload(
+        oidcAuthPayloadDtoBuilder().with('sub', String(invitedUserId)).build(),
+      );
+
+      const [own] =
+        await encryptingMembersRepository.findAuthorizedMembersOrFail({
+          authPayload: invitedAuthPayload,
+          spaceId,
+        });
+
+      expect(own.user.email).toBe(inviteEmail);
+    });
+
+    it('should return the decrypted email from findSelfMembershipOrFail', async () => {
+      const { spaceId, inviteEmail, invitedUserId } =
+        await inviteMemberWithEncryptedEmail();
+      const invitedAuthPayload = new AuthPayload(
+        oidcAuthPayloadDtoBuilder().with('sub', String(invitedUserId)).build(),
+      );
+
+      const member = await encryptingMembersRepository.findSelfMembershipOrFail(
+        {
+          authPayload: invitedAuthPayload,
+          spaceId,
+        },
+      );
+
+      expect(member.user.email).toBe(inviteEmail);
+    });
+
+    it('should return decrypted emails from findOneOrFail with the user relation', async () => {
+      const { spaceId, inviteEmail, invitedUserId } =
+        await inviteMemberWithEncryptedEmail();
+
+      const member = await encryptingMembersRepository.findOneOrFail(
+        { user: { id: invitedUserId }, space: { id: spaceId } },
+        { user: true },
+      );
+
+      expect(member.user.email).toBe(inviteEmail);
     });
   });
 

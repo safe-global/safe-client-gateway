@@ -31,6 +31,7 @@ import {
   type InviteUserInput,
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
+import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
@@ -49,7 +50,20 @@ export class MembersRepository implements IMembersRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    private readonly emailEncryptionService: EmailEncryptionService,
   ) {}
+
+  /**
+   * Decrypts the `email` of users hydrated onto loaded members. A no-op for
+   * members loaded without the `user` relation.
+   */
+  private async decryptMemberUserEmails(
+    members: Array<DbMember>,
+  ): Promise<void> {
+    await this.emailEncryptionService.decryptUserEmails(
+      members.flatMap((member) => (member.user ? [member.user] : [])),
+    );
+  }
 
   private async findSpaceForAuditOrFail(
     entityManager: EntityManager,
@@ -85,10 +99,14 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
-    return await membersRepository.findOne({
+    const member = await membersRepository.findOne({
       where,
       relations,
     });
+    if (member) {
+      await this.decryptMemberUserEmails([member]);
+    }
+    return member;
   }
 
   public async findOrFail(
@@ -109,7 +127,9 @@ export class MembersRepository implements IMembersRepository {
     const membersRepository =
       await this.postgresDatabaseService.getRepository(DbMember);
 
-    return await membersRepository.find(args);
+    const members = await membersRepository.find(args);
+    await this.decryptMemberUserEmails(members);
+    return members;
   }
 
   public async findActiveAdmin(args: {
@@ -409,6 +429,7 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
 
+    await this.decryptMemberUserEmails(space.members);
     return space.members;
   }
 
@@ -645,6 +666,7 @@ export class MembersRepository implements IMembersRepository {
         'The user is not an active member of the workspace.',
       );
     }
+    await this.decryptMemberUserEmails([member]);
     return member;
   }
 }

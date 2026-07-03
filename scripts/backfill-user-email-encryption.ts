@@ -7,17 +7,24 @@
  * `users.email_index` for uniqueness and lookups. The blind index cannot be
  * computed in SQL, so this cannot be a pure SQL migration.
  *
- * Run AFTER deploying the code, running the column migrations, and enabling
- * encrypted writes with legacy plaintext reads still allowed:
+ * With encryption enabled, reads REQUIRE ciphertext — a plaintext row is a
+ * hard error. The backfill therefore runs BEFORE the service fleet is
+ * switched over: deploy the code and column migrations (fleet still running
+ * with SPACES_FIELD_ENCRYPTION_ENABLED=false), then run this script with the
+ * flag enabled in its own environment:
  *
  *   SPACES_FIELD_ENCRYPTION_ENABLED=true \
- *   SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT=true \
  *   SPACES_FIELD_ENCRYPTION_INDEX_KEY=... \
  *   AWS_KMS_ENCRYPTION_KEY_ID=... AWS_REGION=... \
  *     ts-node scripts/backfill-user-email-encryption.ts [--verify] [--dry-run]
  *
  *   --dry-run  Report how many rows still hold plaintext; write nothing.
  *   --verify   Assert no plaintext remains; exit non-zero if any does.
+ *
+ * Rows written by the still-disabled fleet between the backfill and the flag
+ * flip remain plaintext, so flip SPACES_FIELD_ENCRYPTION_ENABLED=true on the
+ * fleet immediately after the backfill and re-run the script until --verify
+ * passes; until then, reads of such stragglers fail.
  *
  * Notes:
  * - Idempotent: rows already in `kms:` form are skipped (a validated email can
@@ -27,23 +34,22 @@
  *   transaction. This requires the connecting role to own the table (or be
  *   superuser). Always rehearse on a staging copy before running in production.
  *
- * Once this reports zero plaintext remaining, set
- * SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT=false.
- *
  * SEARCHABLE-FIELD CAVEAT: users.email is encrypted non-deterministically;
- * uniqueness and equality lookups use the `email_index` blind index. Once
- * encryption is enabled, lookups match only rows whose `email_index` is
- * populated. Run this backfill promptly after enabling (or during a
- * low-traffic window): between enabling and backfill completing, a lookup for
- * a not-yet-backfilled user's email will not match. If a zero-gap transition
- * is required, add dual-read (query plaintext `email` and the blind index) to
- * the email lookups for the duration of the backfill.
+ * uniqueness and equality lookups use the `email_index` blind index once
+ * encryption is enabled, and the plaintext `email` column while it is
+ * disabled. During the window between this backfill and the fleet-wide flag
+ * flip, plaintext lookups on the still-disabled fleet will not match
+ * already-backfilled rows (and vice versa afterwards for straggler rows).
+ * Run the backfill and the flag flip back-to-back in a low-traffic window; if
+ * a zero-gap transition is required, add dual-read (query plaintext `email`
+ * and the blind index) to the email lookups for the duration.
  */
 import { DataSource } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { KmsService } from '@/datasources/kms/kms.service';
+import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 
 const BATCH_SIZE = 500;
 
@@ -76,7 +82,7 @@ function buildConfigurationService(): IConfigurationService {
 
 async function backfillUserEmails(
   dataSource: DataSource,
-  kmsService: KmsService,
+  emailEncryption: EmailEncryptionService,
 ): Promise<number> {
   let updated = 0;
 
@@ -94,8 +100,8 @@ async function backfillUserEmails(
     await dataSource.transaction(async (manager) => {
       await manager.query(`ALTER TABLE "users" DISABLE TRIGGER USER`);
       for (const row of rows) {
-        const emailIndex = kmsService.blindIndex(row.email);
-        const encrypted = await kmsService.encrypt(row.id, row.email);
+        const emailIndex = emailEncryption.blindIndex(row.email);
+        const encrypted = await emailEncryption.encrypt(row.id, row.email);
         await manager.query(
           `UPDATE "users"
            SET email = $1, email_index = $2
@@ -134,8 +140,11 @@ async function main(): Promise<void> {
   const configurationService = buildConfigurationService();
   const config = configuration();
 
-  const kmsService = new KmsService(configurationService);
-  await kmsService.onModuleInit();
+  const emailEncryption = new EmailEncryptionService(
+    configurationService,
+    new KmsService(configurationService),
+  );
+  await emailEncryption.onModuleInit();
 
   const dataSource = new DataSource({
     ...postgresConfig({
@@ -152,7 +161,7 @@ async function main(): Promise<void> {
       console.info(`Total plaintext remaining: ${remaining}`);
       if (verify && remaining > 0) {
         throw new Error(
-          `${remaining} plaintext values remain; not safe to disable legacy plaintext reads`,
+          `${remaining} plaintext values remain; reads will fail while field encryption is enabled`,
         );
       }
       return;
@@ -171,7 +180,7 @@ async function main(): Promise<void> {
     }
 
     console.info('Backfilling user emails...');
-    await backfillUserEmails(dataSource, kmsService);
+    await backfillUserEmails(dataSource, emailEncryption);
 
     const remaining = await countPlaintext(dataSource);
     console.info(`Done. Plaintext remaining: ${remaining}`);

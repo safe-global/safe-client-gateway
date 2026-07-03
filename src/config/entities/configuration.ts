@@ -838,15 +838,12 @@ export default () => ({
     // encryption context; a KMS-wrapped HMAC key computes the email blind
     // index for lookups/uniqueness.
     fieldEncryption: {
-      // When true, the users repository encrypts emails before writing.
+      // When true, the users repository encrypts emails before writing and
+      // requires every stored email to be ciphertext on read — enable only
+      // after the backfill has encrypted all existing rows
+      // (scripts/backfill-user-email-encryption).
       enabled:
         process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
-      // When true, reads tolerate legacy plaintext values (needed during
-      // rollout/backfill). Flip to false once no plaintext remains so accidental
-      // plaintext storage is caught. Defaults to true unless explicitly disabled.
-      allowLegacyPlaintext:
-        process.env.SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT?.toLowerCase() !==
-        'false',
       // Base64 KMS-encrypted 32-byte key for the users.email blind index.
       // Produced by scripts/generate-field-encryption-index-key. Required
       // when field encryption is enabled.

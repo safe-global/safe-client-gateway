@@ -23,7 +23,6 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { KmsModule } from '@/datasources/kms/kms.module';
 import { NetworkModule } from '@/datasources/network/network.module';
 import {
   type ILoggingService,
@@ -89,8 +88,6 @@ export class AppModule implements NestModule {
       module: AppModule,
       imports: [
         PostgresDatabaseModule,
-        // Global: unwraps the blind-index key before any query runs.
-        KmsModule,
         // features
         AboutModule,
         ...(isAuthFeatureEnabled ? [AuthModule] : []),

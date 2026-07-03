@@ -181,7 +181,6 @@ export const RootConfigurationSchema = z
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
     SPACES_FIELD_ENCRYPTION_ENABLED: z.string().optional(),
-    SPACES_FIELD_ENCRYPTION_ALLOW_LEGACY_PLAINTEXT: z.string().optional(),
     SPACES_FIELD_ENCRYPTION_INDEX_KEY: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
