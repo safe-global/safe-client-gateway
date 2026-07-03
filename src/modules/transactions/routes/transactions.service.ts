@@ -574,7 +574,6 @@ export class TransactionsService {
     };
   }
 
-
   /**
    * Adjusts the pagination data to return extra items in both "edges" of the current page:
    * - If it is the first page (offset 0), then return offset: 0, limit: limit + 1.

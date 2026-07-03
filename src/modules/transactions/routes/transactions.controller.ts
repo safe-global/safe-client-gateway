@@ -708,5 +708,4 @@ export class TransactionsController {
       safeAddress,
     });
   }
-
 }
