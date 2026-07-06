@@ -436,6 +436,12 @@ export class PushNotificationService implements IPushNotificationService {
       return null;
     }
 
+    if (event.type === TransactionEventType.INCOMING_TOKEN) {
+      // Strip the boolean `trusted` flag: FirebaseNotification['data'] only accepts strings
+      const { trusted: _trusted, ...notification } = event;
+      return notification;
+    }
+
     return event;
   }
 

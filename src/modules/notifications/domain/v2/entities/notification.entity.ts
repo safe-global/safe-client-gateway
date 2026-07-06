@@ -31,7 +31,8 @@ export type ExecutedMultisigTransactionNotification = ExecutedTransactionEvent;
 
 export type IncomingEtherNotification = IncomingEtherEvent;
 
-export type IncomingTokenNotification = IncomingTokenEvent;
+// `trusted` is only filtering metadata
+export type IncomingTokenNotification = Omit<IncomingTokenEvent, 'trusted'>;
 
 export type ModuleTransactionNotification = ModuleTransactionEvent;
 

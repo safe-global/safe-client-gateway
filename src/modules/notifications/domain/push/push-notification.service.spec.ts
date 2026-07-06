@@ -199,6 +199,36 @@ describe('PushNotificationService (Unit)', () => {
       });
     });
 
+    it('should strip the trusted flag from the delivery notification payload (FCM data must be strings)', async () => {
+      const event = incomingTokenEventBuilder().with('trusted', true).build();
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([
+        createSubscriber(),
+      ]);
+      mockSafeRepository.getIncomingTransfers.mockResolvedValue(
+        pageBuilder<Transfer>()
+          .with('results', [
+            nativeTokenTransferBuilder()
+              .with('transactionHash', event.txHash as Hash)
+              .with('from', addr())
+              .build(),
+          ])
+          .build(),
+      );
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(1);
+      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
+        JobType.PUSH_NOTIFICATION_DELIVERY,
+        expect.objectContaining({
+          notification: {
+            data: expect.not.objectContaining({ trusted: expect.anything() }),
+          },
+        }),
+      );
+    });
+
     it('should process INCOMING_TOKEN events with trusted === true', async () => {
       const event = incomingTokenEventBuilder().with('trusted', true).build();
       mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
