@@ -2,11 +2,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ZodError, z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import {
-  type INetworkService,
-  NetworkService,
-} from '@/datasources/network/network.service.interface';
+import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import type { Customer } from '@/datasources/safe-billing-service-api/entities/customer.entity';
 import { CustomerSchema } from '@/datasources/safe-billing-service-api/entities/customer.entity';
 import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.entity';
@@ -23,10 +23,11 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
   private readonly baseUri: string;
   private readonly apiToken: string;
   private readonly requestTimeout: number;
+  private readonly expireTimeSeconds: number;
+  private readonly notFoundExpireTimeSeconds: number;
 
   constructor(
-    @Inject(NetworkService)
-    private readonly networkService: INetworkService,
+    private readonly dataSource: CacheFirstDataSource,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
@@ -40,76 +41,76 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     this.requestTimeout = this.configurationService.getOrThrow<number>(
       'safeBillingService.requestTimeout',
     );
+    this.expireTimeSeconds = this.configurationService.getOrThrow<number>(
+      'expirationTimeInSeconds.default',
+    );
+    this.notFoundExpireTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.default',
+      );
   }
 
-  async listPlans(): Promise<Array<Plan>> {
-    try {
-      const url = `${this.baseUri}/api/v1/plans`;
-      const { data } = await this.networkService.get<unknown>({
-        url,
-        networkRequest: {
-          headers: this.authHeaders(),
-          timeout: this.requestTimeout,
-        },
-      });
-      return z.object({ plans: z.array(PlanSchema) }).parse(data).plans;
-    } catch (error) {
-      if (error instanceof ZodError) throw error;
-      throw this.httpErrorFactory.from(error);
-    }
+  listPlans(): Promise<Array<Plan>> {
+    return this.request({
+      cacheDir: CacheRouter.getSafeBillingPlansCacheDir(),
+      url: `${this.baseUri}/api/v1/plans`,
+      schema: z
+        .object({ plans: z.array(PlanSchema) })
+        .transform((body) => body.plans),
+    });
   }
 
-  async getPlan(args: { planId: string }): Promise<Plan> {
-    try {
-      const url = `${this.baseUri}/api/v1/plans/${args.planId}`;
-      const { data } = await this.networkService.get<unknown>({
-        url,
-        networkRequest: {
-          headers: this.authHeaders(),
-          timeout: this.requestTimeout,
-        },
-      });
-      return PlanSchema.parse(data);
-    } catch (error) {
-      if (error instanceof ZodError) throw error;
-      throw this.httpErrorFactory.from(error);
-    }
+  getPlan(args: { planId: string }): Promise<Plan> {
+    return this.request({
+      cacheDir: CacheRouter.getSafeBillingPlanCacheDir(args.planId),
+      url: `${this.baseUri}/api/v1/plans/${args.planId}`,
+      schema: PlanSchema,
+    });
   }
 
-  async getCustomer(args: { customerId: string }): Promise<Customer> {
-    try {
-      const url = `${this.baseUri}/api/v1/customers/${args.customerId}`;
-      const { data } = await this.networkService.get<unknown>({
-        url,
-        networkRequest: {
-          headers: this.authHeaders(),
-          timeout: this.requestTimeout,
-        },
-      });
-      return z.object({ customer: CustomerSchema }).parse(data).customer;
-    } catch (error) {
-      if (error instanceof ZodError) throw error;
-      throw this.httpErrorFactory.from(error);
-    }
+  getCustomer(args: { customerId: string }): Promise<Customer> {
+    return this.request({
+      cacheDir: CacheRouter.getSafeBillingCustomerCacheDir(args.customerId),
+      url: `${this.baseUri}/api/v1/customers/${args.customerId}`,
+      schema: z
+        .object({ customer: CustomerSchema })
+        .transform((body) => body.customer),
+    });
   }
 
-  async getSubscriptionsByCustomerId(args: {
+  getSubscriptionsByCustomerId(args: {
     customerId: string;
     status?: SubscriptionStatus | 'all';
   }): Promise<Array<Subscription>> {
+    return this.request({
+      cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir(args),
+      url: `${this.baseUri}/api/v1/customers/${args.customerId}/subscriptions`,
+      params: args.status ? { status: args.status } : undefined,
+      schema: z
+        .object({ subscriptions: z.array(SubscriptionSchema) })
+        .transform((body) => body.subscriptions),
+    });
+  }
+
+  private async request<T>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    params?: NetworkRequest['params'];
+    schema: z.ZodType<T>;
+  }): Promise<T> {
     try {
-      const url = `${this.baseUri}/api/v1/customers/${args.customerId}/subscriptions`;
-      const { data } = await this.networkService.get<unknown>({
-        url,
+      const data = await this.dataSource.get<unknown>({
+        cacheDir: args.cacheDir,
+        url: args.url,
+        notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         networkRequest: {
           headers: this.authHeaders(),
-          params: args.status ? { status: args.status } : undefined,
+          params: args.params,
           timeout: this.requestTimeout,
         },
+        expireTimeSeconds: this.expireTimeSeconds,
       });
-      return z
-        .object({ subscriptions: z.array(SubscriptionSchema) })
-        .parse(data).subscriptions;
+      return args.schema.parse(data);
     } catch (error) {
       if (error instanceof ZodError) throw error;
       throw this.httpErrorFactory.from(error);

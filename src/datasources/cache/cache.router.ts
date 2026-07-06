@@ -40,6 +40,11 @@ export class CacheRouter {
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_BALANCES_KEY = 'safe_balances';
+  private static readonly SAFE_BILLING_CUSTOMER_KEY = 'safe_billing_customer';
+  private static readonly SAFE_BILLING_PLAN_KEY = 'safe_billing_plan';
+  private static readonly SAFE_BILLING_PLANS_KEY = 'safe_billing_plans';
+  private static readonly SAFE_BILLING_SUBSCRIPTIONS_KEY =
+    'safe_billing_subscriptions';
   private static readonly SAFE_COLLECTIBLES_KEY = 'safe_collectibles';
   private static readonly SAFE_EXISTS_KEY = 'safe_exists';
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
@@ -1173,6 +1178,31 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getGtfFeePreviewCacheKey(args),
       hash.digest('hex'),
+    );
+  }
+
+  static getSafeBillingPlansCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.SAFE_BILLING_PLANS_KEY, '');
+  }
+
+  static getSafeBillingPlanCacheDir(planId: string): CacheDir {
+    return new CacheDir(`${planId}_${CacheRouter.SAFE_BILLING_PLAN_KEY}`, '');
+  }
+
+  static getSafeBillingCustomerCacheDir(customerId: string): CacheDir {
+    return new CacheDir(
+      `${customerId}_${CacheRouter.SAFE_BILLING_CUSTOMER_KEY}`,
+      '',
+    );
+  }
+
+  static getSafeBillingSubscriptionsCacheDir(args: {
+    customerId: string;
+    status?: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
+      args.status ?? 'all',
     );
   }
 }
