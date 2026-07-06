@@ -177,6 +177,46 @@ describe('PushNotificationService (Unit)', () => {
     });
   });
 
+  // ── processEvent: Spam Token Filtering ──
+
+  describe('processEvent - spam token filtering (trusted flag)', () => {
+    it('should drop INCOMING_TOKEN events with trusted === false before resolving subscribers', async () => {
+      const event = incomingTokenEventBuilder().with('trusted', false).build();
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(0);
+      expect(
+        mockNotificationsRepository.getSubscribersBySafe,
+      ).not.toHaveBeenCalled();
+      expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
+      expect(mockLoggingService.info).toHaveBeenCalledWith({
+        type: LogType.NotificationSpamTokenDropped,
+        eventType: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        tokenAddress: event.tokenAddress,
+      });
+    });
+
+    it('should process INCOMING_TOKEN events with trusted === true', async () => {
+      const event = incomingTokenEventBuilder().with('trusted', true).build();
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([]);
+
+      const result = await service.processEvent(event);
+
+      expect(result).toBe(0);
+      expect(
+        mockNotificationsRepository.getSubscribersBySafe,
+      ).toHaveBeenCalled();
+      expect(mockLoggingService.info).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.NotificationSpamTokenDropped,
+        }),
+      );
+    });
+  });
+
   // ── processEvent: Subscriber Resolution ──
 
   describe('processEvent - subscriber resolution', () => {

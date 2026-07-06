@@ -88,6 +88,18 @@ export class PushNotificationService implements IPushNotificationService {
       return 0;
     }
 
+    // Drop transfers the Transaction Service flagged as untrusted.
+    if (event.type === TransactionEventType.INCOMING_TOKEN && !event.trusted) {
+      this.loggingService.info({
+        type: LogType.NotificationSpamTokenDropped,
+        eventType: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        tokenAddress: event.tokenAddress,
+      });
+      return 0;
+    }
+
     // Fetch Safe once for the entire event processing (eliminates N+1 getSafe calls)
     const safe = this.isOwnerOrDelegateOnlyEventToNotify(event)
       ? await this.safeRepository.getSafe({
