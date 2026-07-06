@@ -128,7 +128,7 @@ export class EmailEncryptionService implements OnModuleInit {
     if (!this.isEncrypted(value)) {
       if (this.enabled) {
         throw new Error(
-          'Encountered an unencrypted value while field encryption is enabled',
+          `Encountered an unencrypted value for user ${userId} while field encryption is enabled`,
         );
       }
       return value;
@@ -159,9 +159,10 @@ export class EmailEncryptionService implements OnModuleInit {
   async decryptUserEmails<T extends { id: number; email: string | null }>(
     users: Array<T>,
   ): Promise<Array<T>> {
-    const decrypted: Array<T> = [];
-    for (const user of users) {
-      decrypted.push(
+    // Each decrypt is an independent KMS round-trip; run them concurrently
+    // rather than paying an O(N) sequential latency tax on list reads.
+    return await Promise.all(
+      users.map(async (user) =>
         user.email
           ? {
               ...user,
@@ -170,9 +171,8 @@ export class EmailEncryptionService implements OnModuleInit {
               email: (await this.decrypt(user.id, user.email)) as T['email'],
             }
           : user,
-      );
-    }
-    return decrypted;
+      ),
+    );
   }
 
   private encryptionContext(userId: number): Record<string, string> {

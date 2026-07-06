@@ -52,7 +52,7 @@ describe('UsersRepository', () => {
     vi.resetAllMocks();
 
     // Chainable stub for persistEmail's UPDATE ... WHERE email IS NULL query.
-    emailUpdateExecute = vi.fn().mockResolvedValue(undefined);
+    emailUpdateExecute = vi.fn().mockResolvedValue({ affected: 1 });
     const queryBuilder = {
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
@@ -225,6 +225,41 @@ describe('UsersRepository', () => {
       ).resolves.toBe(userId);
 
       expect(emailUpdateExecute).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reconcile against the row a concurrent backfill wrote when persistEmail loses the race', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      const email = fakeEmailAddress();
+      // Initial read sees no stored email, but another request backfills it
+      // first: our UPDATE ... WHERE email IS NULL affects zero rows.
+      userRepository.findOne.mockResolvedValue({ id: userId, email: null });
+      emailUpdateExecute.mockResolvedValue({ affected: 0 });
+      userRepository.findOneOrFail.mockResolvedValue({ id: userId, email });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, email),
+      ).resolves.toBe(userId);
+
+      expect(userRepository.findOneOrFail).toHaveBeenCalledWith({
+        where: { id: userId },
+        select: { id: true, email: true },
+      });
+    });
+
+    it('should reject when the row a concurrent backfill wrote has a conflicting email', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      userRepository.findOne.mockResolvedValue({ id: userId, email: null });
+      emailUpdateExecute.mockResolvedValue({ affected: 0 });
+      userRepository.findOneOrFail.mockResolvedValue({
+        id: userId,
+        email: fakeEmailAddress(),
+      });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
+      ).rejects.toThrow(UnauthorizedException);
     });
 
     it('should create a new user and store the email when none exists', async () => {

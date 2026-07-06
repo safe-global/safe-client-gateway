@@ -49,9 +49,45 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { KmsService } from '@/datasources/kms/kms.service';
+import {
+  EMAIL_ENCRYPTION_PREFIX,
+  EMAIL_ENCRYPTION_VERSION,
+} from '@/modules/users/domain/email-encryption.constants';
 import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 
 const BATCH_SIZE = 500;
+// Bounds concurrent KMS Encrypt calls per batch; KMS comfortably handles this,
+// and the DB connection is untouched until the (serial) write phase below.
+const ENCRYPT_CONCURRENCY = 20;
+// The exact on-disk prefix of an already-encrypted value. Matching only this
+// (rather than the looser 'kms:%') means a malformed 'kms:'-prefixed value
+// can't be mistaken for done: it stays visible to both the batch SELECT below
+// and countPlaintext's --verify check.
+const ENCRYPTED_PREFIX = `${EMAIL_ENCRYPTION_PREFIX}:${EMAIL_ENCRYPTION_VERSION}:`;
+
+/** Runs `fn` over `items` with at most `concurrency` calls in flight. */
+async function mapWithConcurrency<T, R>(
+  items: Array<T>,
+  concurrency: number,
+  fn: (item: T) => Promise<R>,
+): Promise<Array<R>> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      for (;;) {
+        const i = next++;
+        if (i >= items.length) {
+          return;
+        }
+        results[i] = await fn(items[i]);
+      }
+    },
+  );
+  await Promise.all(workers);
+  return results;
+}
 
 function getByPath(obj: unknown, path: string): unknown {
   return path
@@ -89,7 +125,7 @@ async function backfillUserEmails(
   for (;;) {
     const rows = await dataSource.query<Array<{ id: number; email: string }>>(
       `SELECT id, email FROM "users"
-       WHERE email IS NOT NULL AND email NOT LIKE 'kms:%'
+       WHERE email IS NOT NULL AND email NOT LIKE '${ENCRYPTED_PREFIX}%'
        LIMIT $1`,
       [BATCH_SIZE],
     );
@@ -97,16 +133,27 @@ async function backfillUserEmails(
       break;
     }
 
+    // Encrypt is a KMS network round-trip and independent per row — do it
+    // concurrently, outside the transaction, so DISABLE TRIGGER doesn't hold
+    // for the sum of every row's KMS latency.
+    const encryptedRows = await mapWithConcurrency(
+      rows,
+      ENCRYPT_CONCURRENCY,
+      async (row) => ({
+        id: row.id,
+        emailIndex: emailEncryption.blindIndex(row.email),
+        encrypted: await emailEncryption.encrypt(row.id, row.email),
+      }),
+    );
+
     await dataSource.transaction(async (manager) => {
       await manager.query(`ALTER TABLE "users" DISABLE TRIGGER USER`);
-      for (const row of rows) {
-        const emailIndex = emailEncryption.blindIndex(row.email);
-        const encrypted = await emailEncryption.encrypt(row.id, row.email);
+      for (const row of encryptedRows) {
         await manager.query(
           `UPDATE "users"
            SET email = $1, email_index = $2
            WHERE id = $3`,
-          [encrypted, emailIndex, row.id],
+          [row.encrypted, row.emailIndex, row.id],
         );
       }
       await manager.query(`ALTER TABLE "users" ENABLE TRIGGER USER`);
@@ -124,7 +171,7 @@ async function countPlaintext(dataSource: DataSource): Promise<number> {
   // A user with an email but no blind index has not been backfilled.
   const [{ count }] = await dataSource.query<Array<{ count: string }>>(
     `SELECT COUNT(*)::int AS count FROM "users"
-     WHERE email IS NOT NULL AND (email NOT LIKE 'kms:%' OR email_index IS NULL)`,
+     WHERE email IS NOT NULL AND (email NOT LIKE '${ENCRYPTED_PREFIX}%' OR email_index IS NULL)`,
   );
   const remaining = Number(count);
   if (remaining > 0) {

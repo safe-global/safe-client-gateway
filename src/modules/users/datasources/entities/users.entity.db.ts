@@ -40,6 +40,10 @@ export class User implements DomainUser {
   })
   extUserId!: string | null;
 
+  @Index('idx_users_email', {
+    unique: true,
+    where: '"email_index" IS NULL',
+  })
   @Column({
     name: 'email',
     type: 'text',

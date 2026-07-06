@@ -12,7 +12,11 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   so uniqueness and equality lookups keep working now that the value is
  *   encrypted non-deterministically.
  * - Replaces the unique index on `email` with one on `email_index` (a
- *   non-deterministic value cannot be unique).
+ *   non-deterministic value cannot be unique) for backfilled rows, plus a
+ *   partial unique index on plaintext `email` for rows not yet backfilled —
+ *   field encryption is disabled by default, so every row starts (and may
+ *   stay, in an environment that never enables it) in that state, and
+ *   uniqueness must keep holding there too.
  */
 export class UserEmailEncryption1781600000000 implements MigrationInterface {
   name = 'UserEmailEncryption1781600000000';
@@ -31,16 +35,29 @@ export class UserEmailEncryption1781600000000 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX "idx_users_email_index" ON "users" ("email_index") WHERE "email_index" IS NOT NULL`,
     );
+    await queryRunner.query(
+      `CREATE UNIQUE INDEX "idx_users_email" ON "users" ("email") WHERE "email_index" IS NULL`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    const [{ count }]: Array<{ count: number }> = await queryRunner.query(
+      `SELECT COUNT(*)::int AS count FROM "users" WHERE "email" LIKE 'kms:%'`,
+    );
+    if (count > 0) {
+      throw new Error(
+        `Cannot roll back: ${count} user(s) still hold encrypted ("kms:"-prefixed) ` +
+          'email values, which will not fit the narrowed column/CHECK constraint. ' +
+          'Decrypt them back to plaintext (reverse backfill) before reverting this migration.',
+      );
+    }
+
     await queryRunner.query(`DROP INDEX "idx_users_email_index"`);
+    await queryRunner.query(`DROP INDEX "idx_users_email"`);
     await queryRunner.query(
       `CREATE UNIQUE INDEX "idx_users_email" ON "users" ("email") WHERE "email" IS NOT NULL`,
     );
     await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "email_index"`);
-    // Narrowing back will fail if encrypted values remain (they exceed the old
-    // length and are not lowercase) — encryption must be backfilled-out first.
     await queryRunner.query(
       `ALTER TABLE "users" ALTER COLUMN "email" TYPE character varying(255)`,
     );

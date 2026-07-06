@@ -416,7 +416,10 @@ export class UsersRepository implements IUsersRepository {
         }
         return this.reconcileEmail(raced, email);
       }
-      if (this.isUniqueConstraintViolation(error, 'idx_users_email_index')) {
+      if (
+        this.isUniqueConstraintViolation(error, 'idx_users_email_index') ||
+        this.isUniqueConstraintViolation(error, 'idx_users_email')
+      ) {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
@@ -481,28 +484,52 @@ export class UsersRepository implements IUsersRepository {
     email: EmailAddress,
   ): Promise<User['id']> {
     if (user.email) {
-      // Stored email is KMS ciphertext bound to this user; compare plaintext.
-      const storedEmail = await this.emailEncryptionService.decrypt(
-        user.id,
-        user.email,
-      );
-      if (storedEmail !== email) {
-        throw new UnauthorizedException(
-          'Email does not match the registered email for this account',
-        );
-      }
+      await this.assertEmailMatches(user.id, user.email, email);
       return user.id;
     }
 
-    // No email stored yet — backfill it.
-    await this.persistEmail(user.id, email);
+    if (await this.persistEmail(user.id, email)) {
+      return user.id;
+    }
+
+    // Our write affected zero rows: another request backfilled this user's
+    // email between our read and our write. Re-read and reconcile against
+    // what actually landed instead of silently trusting our own no-op write.
+    const userRepository =
+      await this.postgresDatabaseService.getRepository(DbUser);
+    const raced = await userRepository.findOneOrFail({
+      where: { id: user.id },
+      select: { id: true, email: true },
+    });
+    if (raced.email) {
+      await this.assertEmailMatches(raced.id, raced.email, email);
+    }
     return user.id;
   }
 
+  /** Throws unless the decrypted `storedValue` matches `email`. */
+  private async assertEmailMatches(
+    userId: User['id'],
+    storedValue: string,
+    email: EmailAddress,
+  ): Promise<void> {
+    // Stored email is KMS ciphertext bound to this user; compare plaintext.
+    const storedEmail = await this.emailEncryptionService.decrypt(
+      userId,
+      storedValue,
+    );
+    if (storedEmail !== email) {
+      throw new UnauthorizedException(
+        'Email does not match the registered email for this account',
+      );
+    }
+  }
+
+  /** Returns whether the email was actually written (false on a lost race). */
   private async persistEmail(
     userId: User['id'],
     email: EmailAddress,
-  ): Promise<void> {
+  ): Promise<boolean> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
@@ -512,7 +539,7 @@ export class UsersRepository implements IUsersRepository {
       : email;
 
     try {
-      await userRepository
+      const result = await userRepository
         .createQueryBuilder()
         .update(DbUser)
         .set({
@@ -522,8 +549,12 @@ export class UsersRepository implements IUsersRepository {
         .where('id = :userId', { userId })
         .andWhere('email IS NULL')
         .execute();
+      return result.affected === 1;
     } catch (error) {
-      if (this.isUniqueConstraintViolation(error, 'idx_users_email_index')) {
+      if (
+        this.isUniqueConstraintViolation(error, 'idx_users_email_index') ||
+        this.isUniqueConstraintViolation(error, 'idx_users_email')
+      ) {
         throw new UserEmailAlreadyInUseError();
       }
       throw error;
