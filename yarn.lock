@@ -2153,14 +2153,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/core@npm:^3.26.0":
-  version: 3.26.0
-  resolution: "@smithy/core@npm:3.26.0"
+"@smithy/core@npm:^3.28.0":
+  version: 3.28.0
+  resolution: "@smithy/core@npm:3.28.0"
   dependencies:
-    "@aws-crypto/crc32": "npm:5.2.0"
     "@smithy/types": "npm:^4.15.0"
     tslib: "npm:^2.6.2"
-  checksum: 10/7bc3b5e647329994cc40eb759ea110a78d6aaa4c844aed8a73b38b4a4d340e2dbe23ac2f42c43b69ae634304538acf1a429f48a83b45c6c0eebf18d16553a799
+  checksum: 10/b8fe9db961112b8dd36b48c9d692d0cbe83be3a5962b51874f52079a22595674a9bc30c01bb3868da74e0c9ab328cac1f71405982432434be3e5d9d57777b5d7
   languageName: node
   linkType: hard
 
@@ -2245,13 +2244,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/util-stream@npm:4.7.2":
-  version: 4.7.2
-  resolution: "@smithy/util-stream@npm:4.7.2"
+"@smithy/util-stream@npm:4.7.4":
+  version: 4.7.4
+  resolution: "@smithy/util-stream@npm:4.7.4"
   dependencies:
-    "@smithy/core": "npm:^3.26.0"
+    "@smithy/core": "npm:^3.28.0"
     tslib: "npm:^2.6.2"
-  checksum: 10/73d9bcb8da7ea22cf3bf3a5a460807808a2d56785adf74c784eb3db02a6a2a4543ba4dca968d53fea763cc8c263c6a127d571e05cafa3bfdf0123a8e6d76b498
+  checksum: 10/d04e5e84c270e6436f639a08de16769cce9c0001a415648deefc7deb91fa5fab88e4f5b9278e4390ee1815c0cec8a46ba132d5dbedbf6f25cf58ba5b27483a2f
   languageName: node
   linkType: hard
 
@@ -7191,7 +7190,7 @@ __metadata:
     "@nestjs/typeorm": "npm:11.0.1"
     "@safe-global/safe-deployments": "npm:1.37.56"
     "@safe-global/safe-modules-deployments": "npm:3.0.3"
-    "@smithy/util-stream": "npm:4.7.2"
+    "@smithy/util-stream": "npm:4.7.4"
     "@swc/core": "npm:1.15.43"
     "@types/amqplib": "npm:0"
     "@types/cookie-parser": "npm:1.4.10"
