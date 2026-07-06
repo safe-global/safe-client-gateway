@@ -748,6 +748,15 @@ export default () => ({
       ),
     },
   },
+  safeBillingService: {
+    baseUri: process.env.SAFE_BILLING_SERVICE_BASE_URI,
+    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
+    requestTimeout: Number.parseInt(
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ??
+        `${5_000}`,
+      10,
+    ),
+  },
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
