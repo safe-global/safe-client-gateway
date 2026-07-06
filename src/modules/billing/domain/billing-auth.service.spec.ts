@@ -9,7 +9,15 @@ import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import {
+  BillingAuthService,
+  DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT,
+} from '@/modules/billing/domain/billing-auth.service';
+import {
+  SERVICE_ACCESS_PERMISSION_TYPE,
+  SERVICE_ACCESS_ROLE,
+  SERVICE_USER_TYPE,
+} from '@/modules/billing/domain/entities/billing-service-token.entity';
 
 const ISSUER = faker.lorem.slug();
 
@@ -42,13 +50,13 @@ describe('BillingAuthService', () => {
       expect(jwtClientFactory().decodeWithoutVerification(token)).toMatchObject(
         {
           iss: ISSUER,
-          sub: 'billing-service',
+          sub: DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT,
           aud: [ISSUER],
-          roles: ['SERVICE_ACCESS'],
+          roles: [SERVICE_ACCESS_ROLE],
           data: {
-            service_name: 'billing-service',
-            permission_type: 'SERVICE_ACCESS',
-            user_type: 'SERVICE_USER',
+            service_name: DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT,
+            permission_type: SERVICE_ACCESS_PERMISSION_TYPE,
+            user_type: SERVICE_USER_TYPE,
           },
         },
       );
@@ -121,7 +129,7 @@ describe('BillingAuthService', () => {
       });
 
       expect(service.verify(token)).toMatchObject({
-        roles: ['SERVICE_ACCESS'],
+        roles: [SERVICE_ACCESS_ROLE],
       });
     });
 
@@ -139,7 +147,7 @@ describe('BillingAuthService', () => {
       const token = await BillingAuthService.mintViaSigner(
         {
           issuer: ISSUER,
-          subject: 'billing-service',
+          subject: DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT,
           expiresInDays: faker.number.int({ min: 1, max: 365 }),
         },
         sign,
@@ -150,13 +158,13 @@ describe('BillingAuthService', () => {
         {
           iss: ISSUER,
           aud: [ISSUER],
-          roles: ['SERVICE_ACCESS'],
-          data: { service_name: 'billing-service' },
+          roles: [SERVICE_ACCESS_ROLE],
+          data: { service_name: DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT },
         },
       );
       // ...and the ES256 signature verifies against the matching public key.
       expect(service.verify(token)).toMatchObject({
-        roles: ['SERVICE_ACCESS'],
+        roles: [SERVICE_ACCESS_ROLE],
       });
     });
 
