@@ -215,6 +215,7 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     auth: false,
     oidc_auth: false,
+    billingWebhook: false,
     counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,
@@ -269,6 +270,20 @@ export default (): ReturnType<typeof configuration> => ({
   jwt: {
     issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
     secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
+  },
+  billing: {
+    webhook: {
+      // PEM keys provided via env often arrive with escaped newlines.
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
+        /\\n/g,
+        '\n',
+      ),
+      issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+      kms: {
+        keyId: process.env.BILLING_WEBHOOK_JWT_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
   },
   log: {
     level: 'debug',

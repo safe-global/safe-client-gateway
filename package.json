@@ -36,7 +36,8 @@
     "env:validate:silent": "ts-node scripts/validate-env-json.ts --silent",
     "env:generate": "ts-node scripts/generate-env.ts",
     "env:generate:force": "ts-node scripts/generate-env.ts --force",
-    "env:generate:update": "ts-node scripts/generate-env.ts --update"
+    "env:generate:update": "ts-node scripts/generate-env.ts --update",
+    "generate-token": "ts-node -r tsconfig-paths/register scripts/generate-token.ts"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "3.1076.0",
@@ -65,6 +66,7 @@
     "cache-manager": "7.2.8",
     "cookie-parser": "1.4.7",
     "csv-stringify": "^6.8.0",
+    "ecdsa-sig-formatter": "1.0.11",
     "jose": "6.2.3",
     "jsonwebtoken": "9.0.3",
     "lodash": "4.18.1",
