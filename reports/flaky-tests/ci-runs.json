@@ -1,11 +1,52 @@
 {
-  "generated_at": "2026-06-05T09:59:56.575Z",
-  "last_checked_at": "2026-06-05T09:59:56.575Z",
+  "generated_at": "2026-07-07T22:17:05.766Z",
+  "last_checked_at": "2026-07-07T22:17:05.766Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-06-05"
+    "to": "2026-07-07"
   },
   "flaky_shas": [
+    "cab0782",
+    "5f74ff3",
+    "63ac3c5",
+    "82d5f9b",
+    "456cbb7",
+    "ddaa776",
+    "76fcda2",
+    "1523dcc",
+    "ac7ea42",
+    "39dd5c2",
+    "f2df2e2",
+    "c76333c",
+    "939b623",
+    "4bd2569",
+    "3d3e805",
+    "9b159e4",
+    "6496767",
+    "7678ec4",
+    "64ff4b9",
+    "e3c0910",
+    "81aa055",
+    "d71b940",
+    "5dbc0b7",
+    "ea47278",
+    "4900d48",
+    "6dd74ef",
+    "a7b76d4",
+    "02eb776",
+    "accf93f",
+    "295d6ae",
+    "6492158",
+    "03debba",
+    "5dee9da",
+    "39a1e36",
+    "d116eb3",
+    "bdc1fd8",
+    "d25ec8e",
+    "9d86a17",
+    "f78a18a",
+    "e6e9481",
+    "762604a",
     "fd92912",
     "71fa82c",
     "0f9f8f4",
@@ -71,49 +112,234 @@
     "47477af",
     "dc3acbd",
     "ab8c16f",
-    "6dd74ef",
-    "a7b76d4",
-    "02eb776",
-    "accf93f",
-    "295d6ae",
-    "6492158",
-    "03debba",
-    "5dee9da",
-    "39a1e36",
-    "d116eb3",
-    "bdc1fd8",
-    "d25ec8e",
-    "9d86a17",
-    "f78a18a",
-    "e6e9481",
-    "762604a",
-    "e3c0910",
-    "81aa055",
-    "d71b940",
-    "5dbc0b7",
-    "ea47278",
-    "4900d48",
-    "1523dcc",
-    "ac7ea42",
-    "76fcda2",
-    "39dd5c2",
-    "f2df2e2",
-    "c76333c",
-    "939b623",
-    "4bd2569",
-    "3d3e805",
-    "9b159e4",
-    "6496767",
-    "7678ec4",
-    "64ff4b9",
-    "cab0782",
-    "5f74ff3",
-    "63ac3c5",
-    "82d5f9b",
-    "456cbb7",
-    "ddaa776"
+    "b17597a",
+    "736842f",
+    "e8d15dd",
+    "52a760e",
+    "75f7276",
+    "716033a",
+    "b76563f",
+    "a6d25b9",
+    "ff16d2f",
+    "dd9ac3e",
+    "0ab3dd7",
+    "8e3da11"
   ],
   "runs": [
+    {
+      "id": 27834989542,
+      "sha": "dd9ac3e",
+      "branch": "chore/spaces-subfolder",
+      "conclusion": "failure",
+      "created_at": "2026-06-19T15:37:51Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard › should log a warning for invalid client IP",
+          "error": "expect(received).rejects.toThrow()"
+        }
+      ]
+    },
+    {
+      "id": 27824407526,
+      "sha": "0ab3dd7",
+      "branch": "feat/relay-type-from-config-service",
+      "conclusion": "failure",
+      "created_at": "2026-06-19T12:00:04Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › batchWithdrawCLFee › should preview a batched transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27822840177,
+      "sha": "8e3da11",
+      "branch": "fix/siweLogin",
+      "conclusion": "failure",
+      "created_at": "2026-06-19T11:24:30Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › Swaps › should return a \"standard\" transaction preview if order data is not available",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27608089167,
+      "sha": "b17597a",
+      "branch": "fix/email-invites-aws-set-name",
+      "conclusion": "failure",
+      "created_at": "2026-06-16T09:30:52Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › requestValidatorsExit › should return a \"standard\" transaction preview if the stakes are not available",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27547829359,
+      "sha": "736842f",
+      "branch": "v1.114.0",
+      "conclusion": "failure",
+      "created_at": "2026-06-15T12:57:41Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › TWAPs › should return a \"standard\" transaction preview if the swap app is restricted",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27531409436,
+      "sha": "e8d15dd",
+      "branch": "valens/pla-1116-replace-hardcoded-zerion-routing-in-cgw-with-config-service",
+      "conclusion": "failure",
+      "created_at": "2026-06-15T07:40:47Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
+          "name": "Transaction Data Mapper (Unit) › Build address info index › should build an address info index for a nested multiSend (2)",
+          "error": "InvalidAddressError: Address \"5\" is invalid."
+        }
+      ]
+    },
+    {
+      "id": 27423645835,
+      "sha": "52a760e",
+      "branch": "feat/spaces-local-contacts",
+      "conclusion": "failure",
+      "created_at": "2026-06-12T14:55:40Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › Swaps › should return a \"standard\" transaction preview if buy token is not available",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27169565211,
+      "sha": "75f7276",
+      "branch": "dependabot/npm_and_yarn/aws-sdk-6766e9f310",
+      "conclusion": "failure",
+      "created_at": "2026-06-08T21:57:24Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › batchWithdrawCLFee › should return a \"standard\" transaction preview if the deployment is not dedicated-specific",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27031542651,
+      "sha": "716033a",
+      "branch": "wa-1753-reduce-flaky-tests",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T18:02:07Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "Console",
+          "error": "console.info"
+        },
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard › should log a warning for invalid client IP",
+          "error": "expect(received).rejects.toThrow()"
+        }
+      ]
+    },
+    {
+      "id": 27023293372,
+      "sha": "b76563f",
+      "branch": "wa-1753-reduce-flaky-tests",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T15:15:03Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+          "name": "Console",
+          "error": "console.info"
+        },
+        {
+          "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+          "name": "RedisCacheService › sets and gets the value of a zero-value counter",
+          "error": "ERR value is not an integer or out of range"
+        }
+      ]
+    },
+    {
+      "id": 27019630777,
+      "sha": "a6d25b9",
+      "branch": "chore/new-tests-for-resend",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T14:05:57Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › requestValidatorsExit › should return a \"standard\" transaction preview if not transacting with a deployment address",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27014234295,
+      "sha": "ff16d2f",
+      "branch": "feat/uuid-as-space-id",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T12:14:47Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository › findOrCreateByWalletAddress › should return the existing user id on concurrent duplicate insert",
+          "error": "expect(received).toBe(expected) // Object.is equality"
+        }
+      ]
+    },
     {
       "id": 26960768447,
       "sha": "cab0782",
