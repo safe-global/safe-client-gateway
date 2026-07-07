@@ -434,6 +434,8 @@ export default () => ({
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    ownersMaliciousFilter:
+      process.env.FF_OWNERS_MALICIOUS_FILTER?.toLowerCase() === 'true',
     hashVerification: {
       api: process.env.FF_HASH_VERIFICATION_API?.toLowerCase() === 'true',
       proposal:
@@ -985,6 +987,20 @@ export default () => ({
       blockaid: {
         apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
       },
+    },
+    maliciousAddressScan: {
+      timeoutMs: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_TIMEOUT_MS ?? `${1500}`,
+        10,
+      ),
+      maxBatchSize: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_MAX_BATCH_SIZE ?? `${100}`,
+        10,
+      ),
+      cacheTtlSeconds: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_CACHE_TTL_SECONDS ?? `${300}`,
+        10,
+      ),
     },
   },
   etherscan: {

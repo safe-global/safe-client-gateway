@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { AddressBulkScanResponse } from '@blockaid/client/resources/evm/address-bulk';
+import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
 import type { TransactionScanResponse } from '@blockaid/client/resources/index';
 import type { Address } from 'viem';
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
@@ -45,4 +47,15 @@ export interface IBlockaidApi {
     details: string;
     requestId: string;
   }): Promise<void>;
+
+  /**
+   * Scans a batch of addresses and returns Blockaid's verdict for each.
+   * @param {TransactionScanSupportedChain} chain - The Blockaid chain name.
+   * @param {Array<string>} addresses - The addresses to scan.
+   * @returns {Promise<AddressBulkScanResponse>} A map of address to verdict.
+   */
+  scanAddressBulk(
+    chain: TransactionScanSupportedChain,
+    addresses: Array<string>,
+  ): Promise<AddressBulkScanResponse>;
 }
