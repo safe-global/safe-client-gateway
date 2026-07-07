@@ -88,6 +88,18 @@ export class PushNotificationService implements IPushNotificationService {
       return 0;
     }
 
+    // Drop transfers the Transaction Service flagged as untrusted.
+    if (event.type === TransactionEventType.INCOMING_TOKEN && !event.trusted) {
+      this.loggingService.info({
+        type: LogType.NotificationSpamTokenDropped,
+        eventType: event.type,
+        chainId: event.chainId,
+        address: event.address,
+        tokenAddress: event.tokenAddress,
+      });
+      return 0;
+    }
+
     // Fetch Safe once for the entire event processing (eliminates N+1 getSafe calls)
     const safe = this.isOwnerOrDelegateOnlyEventToNotify(event)
       ? await this.safeRepository.getSafe({
@@ -422,6 +434,12 @@ export class PushNotificationService implements IPushNotificationService {
     // Asset sent to self - do not notify
     if (transfer?.from === event.address) {
       return null;
+    }
+
+    if (event.type === TransactionEventType.INCOMING_TOKEN) {
+      // Strip the boolean `trusted` flag: FirebaseNotification['data'] only accepts strings
+      const { trusted: _trusted, ...notification } = event;
+      return notification;
     }
 
     return event;

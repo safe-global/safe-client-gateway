@@ -8,6 +8,7 @@ export const IncomingTokenEventSchema = HookEventBaseSchema.extend({
   type: z.literal(TransactionEventType.INCOMING_TOKEN),
   tokenAddress: AddressSchema,
   txHash: z.string(),
+  trusted: z.boolean(),
 });
 
 export type IncomingTokenEvent = z.infer<typeof IncomingTokenEventSchema>;

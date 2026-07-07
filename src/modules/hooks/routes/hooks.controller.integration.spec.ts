@@ -33,6 +33,7 @@ describe('HooksController', () => {
         type: 'INCOMING_TOKEN',
         tokenAddress: faker.finance.ethereumAddress(),
         txHash: faker.string.hexadecimal({ length: 32 }),
+        trusted: true,
       };
       const safeAddress = faker.finance.ethereumAddress();
       const chainId = faker.string.numeric();
@@ -93,6 +94,7 @@ describe('HooksController', () => {
         type: 'INCOMING_TOKEN',
         tokenAddress: faker.finance.ethereumAddress(),
         txHash: faker.string.hexadecimal({ length: 32 }),
+        trusted: true,
       };
       const safeAddress = faker.finance.ethereumAddress();
       const chainId = faker.string.numeric();
