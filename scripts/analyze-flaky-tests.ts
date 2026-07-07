@@ -491,6 +491,27 @@ function generateReport(args: {
   }
   lines.push('');
 
+  // Drop low-sample weeks (<10 commits) from the chart: a 1/1-commit week
+  // reads as 100% and would flatten the real trend against the baseline.
+  const chartWeeks = weeklyTrend.filter((w) => w.commits >= 10);
+  if (chartWeeks.length > 1) {
+    const labels = chartWeeks.map((w) => `"${w.week.slice(5)}"`).join(', ');
+    const rates = chartWeeks.map((w) => w.rate).join(', ');
+    const maxRate = Math.max(...chartWeeks.map((w) => w.rate));
+    const yMax = Math.ceil((maxRate + 1) / 5) * 5;
+    lines.push('```mermaid');
+    lines.push('xychart-beta');
+    lines.push(
+      '    title "Weekly CI flakiness rate % (weeks with <10 commits omitted)"',
+    );
+    lines.push(`    x-axis [${labels}]`);
+    lines.push(`    y-axis "Flaky rate (%)" 0 --> ${yMax}`);
+    lines.push(`    bar [${rates}]`);
+    lines.push(`    line [${rates}]`);
+    lines.push('```');
+    lines.push('');
+  }
+
   // Flaky test leaderboard (above cascade baseline)
   const nonCascade = tests
     .filter((t) => !t.is_cascade)
