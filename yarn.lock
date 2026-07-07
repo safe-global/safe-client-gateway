@@ -3632,22 +3632,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^5.79.1":
-  version: 5.79.1
-  resolution: "bullmq@npm:5.79.1"
+"bullmq@npm:^5.79.2":
+  version: 5.79.2
+  resolution: "bullmq@npm:5.79.2"
   dependencies:
     cron-parser: "npm:4.9.0"
     ioredis: "npm:5.10.1"
-    msgpackr: "npm:2.0.2"
+    msgpackr: "npm:2.0.4"
     node-abort-controller: "npm:3.1.1"
-    semver: "npm:7.8.1"
+    semver: "npm:7.8.5"
     tslib: "npm:2.8.1"
   peerDependencies:
     redis: ">=5.0.0"
   peerDependenciesMeta:
     redis:
       optional: true
-  checksum: 10/eed94e57852cc127464316aed74aea5e67f406702c969530f7272632163af6fc454b2370e7e8f531bef84b1d631352536c3e19f2c79ce6fcbf10d57b7691738a
+  checksum: 10/d15a382b947d07168457049ad1108b64605c0c6048dd6a078720140f41886b1723d14b84a558850ea073c0b028ecc860ce2c952e3eef57eb5793fc5c63671bb8
   languageName: node
   linkType: hard
 
@@ -6316,15 +6316,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"msgpackr@npm:2.0.2":
-  version: 2.0.2
-  resolution: "msgpackr@npm:2.0.2"
+"msgpackr@npm:2.0.4":
+  version: 2.0.4
+  resolution: "msgpackr@npm:2.0.4"
   dependencies:
     msgpackr-extract: "npm:^3.0.4"
   dependenciesMeta:
     msgpackr-extract:
       optional: true
-  checksum: 10/36e0e9480e3a6193e0e756c80454f994561790286f74d80b17471549af6c899983ebc4b2a7f172f814bde61539e7221d2e1c08833e4f4ff6cd179f611d2b1b6a
+  checksum: 10/fb5eb85dee3b8b2ed83b81f5360f58cc3f3c290e79586d01c12cf54710b837ccc5d11abce4b5324b861e152fee9131a843cb4511ef03fcc037061c43f72b7195
   languageName: node
   linkType: hard
 
@@ -7206,7 +7206,7 @@ __metadata:
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
-    bullmq: "npm:^5.79.1"
+    bullmq: "npm:^5.79.2"
     cache-manager: "npm:7.2.8"
     cookie-parser: "npm:1.4.7"
     csv-stringify: "npm:^6.7.0"
@@ -7310,12 +7310,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:7.8.1":
-  version: 7.8.1
-  resolution: "semver@npm:7.8.1"
+"semver@npm:7.8.5":
+  version: 7.8.5
+  resolution: "semver@npm:7.8.5"
   bin:
     semver: bin/semver.js
-  checksum: 10/3244f6c4cb3f8126fea0426d353829ed4967e41e1f4696337c6fdcad87426466fe2badaf49d7dc85849acfc496ea0599432a4aecc33802d2d774e723acfa30e6
+  checksum: 10/9b01d2ff11e6e4a4539b7ca3c5f280c8704cb397a28504469f2ed4f00ad2194748d756647362a9712fff30984d15772ab7f083108c2fb508e2096ae9e708f22c
   languageName: node
   linkType: hard
 
