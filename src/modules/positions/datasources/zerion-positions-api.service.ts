@@ -94,7 +94,12 @@ export class ZerionPositionsApi implements IPositionsApi {
     });
     const chainName = await this._getChainName(args.chain);
 
-    const cached = await this.cacheService.hGet(cacheDir);
+    const syncFlagDir = CacheRouter.getZerionSyncFlagCacheDir({
+      address: args.safeAddress,
+    });
+    const flagged = (await this.cacheService.hGet(syncFlagDir)) != null;
+
+    const cached = flagged ? null : await this.cacheService.hGet(cacheDir);
     if (cached != null) {
       const { key, field } = cacheDir;
       this.loggingService.debug({ type: LogType.CacheHit, key, field });
@@ -116,7 +121,7 @@ export class ZerionPositionsApi implements IPositionsApi {
         currency: args.fiatCode.toLowerCase(),
         sort: 'value',
       };
-      if (args.sync) {
+      if (args.sync || flagged) {
         params.sync = 'true';
       }
       const networkRequest = {
@@ -135,6 +140,10 @@ export class ZerionPositionsApi implements IPositionsApi {
         JSON.stringify(balances),
         this.defaultExpirationTimeInSeconds,
       );
+      if (flagged) {
+        // Only a successful sync fetch consumes the flag.
+        await this.cacheService.deleteByKey(syncFlagDir.key);
+      }
       return this._mapPositions(chainName, balances);
     } catch (error) {
       if (error instanceof ZodError) {

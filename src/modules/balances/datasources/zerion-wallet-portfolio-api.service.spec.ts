@@ -21,6 +21,7 @@ const mockNetworkService = vi.mocked({
 const mockCacheService = vi.mocked({
   hGet: vi.fn(),
   hSet: vi.fn(),
+  deleteByKey: vi.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
@@ -73,6 +74,10 @@ describe('ZerionWalletPortfolioApi', () => {
       'balances.providers.zerion.walletPortfolioTtlSeconds',
       10,
     );
+    fakeConfigurationService.set(
+      'balances.providers.zerion.syncFlagMinSeconds',
+      1800,
+    );
 
     service = new ZerionWalletPortfolioApi(
       fakeConfigurationService,
@@ -84,9 +89,21 @@ describe('ZerionWalletPortfolioApi', () => {
     );
   });
 
+  /** Mocks hGet so the sync flag and the portfolio cache resolve separately. */
+  const mockCacheReads = (args: {
+    syncFlag: string | null;
+    cached: string | null;
+  }): void => {
+    mockCacheService.hGet.mockImplementation((cacheDir) =>
+      Promise.resolve(
+        cacheDir.key.includes('zerion_sync') ? args.syncFlag : args.cached,
+      ),
+    );
+  };
+
   it('returns the cached portfolio without a network call or budget check', async () => {
     const cached = buildPortfolioResponse({ ethereum: 100 });
-    mockCacheService.hGet.mockResolvedValue(JSON.stringify(cached));
+    mockCacheReads({ syncFlag: null, cached: JSON.stringify(cached) });
 
     const result = await service.getPortfolio({
       address,
@@ -181,6 +198,65 @@ describe('ZerionWalletPortfolioApi', () => {
         },
       },
     });
+  });
+
+  it('bypasses the cache and fetches with sync=true when the sync flag is set', async () => {
+    const stale = buildPortfolioResponse({ ethereum: 1 });
+    mockCacheReads({ syncFlag: 'true', cached: JSON.stringify(stale) });
+    mockNetworkService.get.mockResolvedValue({
+      data: buildPortfolioResponse({ ethereum: 2 }),
+      status: 200,
+    });
+
+    const result = await service.getPortfolio({
+      address,
+      currency: 'usd',
+      isTestnet: false,
+    });
+
+    expect(mockNetworkService.get).toHaveBeenCalledWith({
+      url: `${zerionBaseUri}/v1/wallets/${address}/portfolio`,
+      networkRequest: {
+        headers: { Authorization: `Basic ${zerionApiKey}` },
+        params: {
+          currency: 'usd',
+          'filter[positions]': 'no_filter',
+          sync: 'true',
+        },
+      },
+    });
+    expect(
+      result.data.attributes.positions_distribution_by_chain.ethereum,
+    ).toBe(2);
+    expect(mockCacheService.hSet).toHaveBeenCalled();
+    expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+      CacheRouter.getZerionSyncFlagCacheDir({ address }).key,
+    );
+  });
+
+  it('keeps the sync flag when the sync fetch fails', async () => {
+    mockCacheReads({ syncFlag: 'true', cached: null });
+    mockNetworkService.get.mockRejectedValue(new Error('zerion down'));
+    mockHttpErrorFactory.from.mockReturnValue(new Error('zerion down'));
+
+    await expect(
+      service.getPortfolio({ address, currency: 'usd', isTestnet: false }),
+    ).rejects.toThrow('zerion down');
+    expect(mockCacheService.deleteByKey).not.toHaveBeenCalled();
+  });
+
+  it('invalidatePortfolio clears the cache and sets the sync flag', async () => {
+    await service.invalidatePortfolio({ address });
+
+    expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+      CacheRouter.getZerionWalletPortfolioCacheKey({ address }),
+    );
+    // max(cacheTtl 10, syncFlagMinSeconds 1800)
+    expect(mockCacheService.hSet).toHaveBeenCalledWith(
+      CacheRouter.getZerionSyncFlagCacheDir({ address }),
+      'true',
+      1800,
+    );
   });
 
   it('keys the cache distinctly by testnet and trusted', () => {

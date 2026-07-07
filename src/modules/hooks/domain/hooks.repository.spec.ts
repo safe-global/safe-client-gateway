@@ -4,6 +4,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { IZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import type { BalancesRepository } from '@/modules/balances/domain/balances.repository';
 import type { BlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository';
 import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
@@ -19,6 +20,8 @@ import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests
 import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
+import type { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
+import type { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 import type { QueuesRepository } from '@/modules/queues/domain/queues-repository';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
@@ -57,6 +60,18 @@ const mockMessagesRepository = vi.mocked({
 const mockSafeAppsRepository = vi.mocked({
   clearSafeApps: vi.fn(),
 } as MockedObject<SafeAppsRepository>);
+
+const mockPortfolioRepository = vi.mocked({
+  clearPortfolio: vi.fn(),
+} as MockedObject<IPortfolioRepository>);
+
+const mockPositionsRepository = vi.mocked({
+  clearPositions: vi.fn(),
+} as MockedObject<IPositionsRepository>);
+
+const mockZerionWalletPortfolioApi = vi.mocked({
+  invalidatePortfolio: vi.fn(),
+} as MockedObject<IZerionWalletPortfolioApi>);
 
 const mockSafeRepository = vi.mocked({
   clearTransfers: vi.fn(),
@@ -115,6 +130,9 @@ describe('HooksRepository (Unit)', () => {
       mockCollectiblesRepository,
       mockDelegatesRepository,
       mockMessagesRepository,
+      mockPortfolioRepository,
+      mockPositionsRepository,
+      mockZerionWalletPortfolioApi,
       mockSafeAppsRepository,
       mockSafeRepository,
       mockStakingRepository,

@@ -161,6 +161,12 @@ export default () => ({
           process.env.ZERION_WALLET_PORTFOLIO_TTL_SECONDS ?? `${10}`,
           10,
         ),
+        // Minimum lifetime of the sync flag set after an on-chain event; must
+        // outlive Zerion's re-aggregation lag.
+        syncFlagMinSeconds: Number.parseInt(
+          process.env.ZERION_SYNC_FLAG_MIN_SECONDS ?? `${1800}`,
+          10,
+        ),
       },
     },
   },

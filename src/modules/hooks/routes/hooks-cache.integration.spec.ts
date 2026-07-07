@@ -11,6 +11,7 @@ import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -83,6 +84,72 @@ describe('Hook Events for Cache', () => {
 
   afterEach(async () => {
     await app.close();
+  });
+
+  it('INCOMING_TOKEN clears the Zerion portfolio caches and flags the address for sync', async () => {
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder().build();
+    const safeAddress = getAddress(safe.address);
+    const walletPortfolioCacheDir =
+      CacheRouter.getZerionWalletPortfolioCacheDir({
+        address: safeAddress,
+        fiatCode: 'usd',
+        isTestnet: false,
+      });
+    const portfolioCacheDir = CacheRouter.getPortfolioCacheDir({
+      address: safeAddress,
+      fiatCode: 'usd',
+    });
+    const positionsCacheDir = CacheRouter.getZerionPositionsCacheDir({
+      safeAddress,
+      fiatCode: 'usd',
+    });
+    for (const cacheDir of [
+      walletPortfolioCacheDir,
+      portfolioCacheDir,
+      positionsCacheDir,
+    ]) {
+      await fakeCacheService.hSet(
+        cacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+    }
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      type: 'INCOMING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    const cb = getSubscriptionCallback(queuesApiService);
+    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
+
+    await expect(
+      fakeCacheService.hGet(walletPortfolioCacheDir),
+    ).resolves.toBeNull();
+    await expect(fakeCacheService.hGet(portfolioCacheDir)).resolves.toBeNull();
+    await expect(fakeCacheService.hGet(positionsCacheDir)).resolves.toBeNull();
+    await expect(
+      fakeCacheService.hGet(
+        CacheRouter.getZerionSyncFlagCacheDir({
+          address: safeAddress,
+        }),
+      ),
+    ).resolves.toBe('true');
   });
 
   it.each([

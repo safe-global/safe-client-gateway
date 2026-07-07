@@ -85,6 +85,7 @@ export class CacheRouter {
   private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ZERION_WALLET_PORTFOLIO_KEY =
     'zerion_wallet_portfolio';
+  private static readonly ZERION_SYNC_KEY = 'zerion_sync';
   private static readonly ORM_QUERY_CACHE_KEY = 'orm_query_cache';
   private static readonly TRANSACTIONS_EXPORT_KEY = 'transactions_export';
   private static readonly CONTRACT_ANALYSIS_KEY = 'contract_analysis';
@@ -1080,6 +1081,15 @@ export class CacheRouter {
       CacheRouter.getZerionWalletPortfolioCacheKey(args),
       `${args.fiatCode.toLowerCase()}${trustedSuffix}${testnetSuffix}`,
     );
+  }
+
+  /**
+   * Flag: the wallet's on-chain state changed and the next Zerion fetch for
+   * it (any endpoint) must use sync=true. Any successful sync fetch consumes
+   * it — Zerion re-aggregates wallet-wide.
+   */
+  static getZerionSyncFlagCacheDir(args: { address: Address }): CacheDir {
+    return new CacheDir(`${CacheRouter.ZERION_SYNC_KEY}_${args.address}`, '');
   }
 
   static getZerionChainsCacheDir(

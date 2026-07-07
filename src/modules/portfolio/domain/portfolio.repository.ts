@@ -58,8 +58,14 @@ export class PortfolioRepository implements IPortfolioRepository {
       isTestnet: args.isTestnet,
     });
 
+    const syncFlagDir = CacheRouter.getZerionSyncFlagCacheDir({
+      address: args.address,
+    });
+    const flagged = (await this.cacheService.hGet(syncFlagDir)) != null;
+    const sync = args.sync || flagged;
+
     // If sync is true, we bypass the cache and fetch the portfolio from the API
-    const cached = args.sync ? null : await this.cacheService.hGet(cacheDir);
+    const cached = sync ? null : await this.cacheService.hGet(cacheDir);
     let portfolio: Portfolio;
 
     if (cached) {
@@ -70,7 +76,7 @@ export class PortfolioRepository implements IPortfolioRepository {
         fiatCode: args.fiatCode,
         trusted: args.trusted,
         isTestnet: args.isTestnet,
-        sync: args.sync,
+        sync,
       });
 
       portfolio = PortfolioSchema.parse(rawPortfolio);
@@ -80,6 +86,11 @@ export class PortfolioRepository implements IPortfolioRepository {
         JSON.stringify(portfolio),
         this.cacheExpirationSeconds,
       );
+
+      if (flagged) {
+        // Any successful sync fetch consumes the flag.
+        await this.cacheService.deleteByKey(syncFlagDir.key);
+      }
     }
 
     return this._applyFilters(portfolio, args);

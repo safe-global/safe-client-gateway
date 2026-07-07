@@ -11,10 +11,12 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { IZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -29,6 +31,8 @@ import {
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
+import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
@@ -55,6 +59,12 @@ export class EventCacheHelper {
     private readonly delegatesRepository: IDelegatesV2Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
+    @Inject(IPortfolioRepository)
+    private readonly portfolioRepository: IPortfolioRepository,
+    @Inject(IPositionsRepository)
+    private readonly positionsRepository: IPositionsRepository,
+    @Inject(IZerionWalletPortfolioApi)
+    private readonly zerionWalletPortfolioApi: IZerionWalletPortfolioApi,
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
@@ -252,6 +262,34 @@ export class EventCacheHelper {
     ];
   }
 
+  /**
+   * Clears the Zerion-backed portfolio caches after an on-chain event. The
+   * wallet-portfolio and portfolio-route caches are cross-chain aggregates,
+   * so they are cleared by address regardless of the event's chain.
+   */
+  private clearZerionCaches(event: {
+    type: string;
+    chainId: string;
+    address: Address;
+  }): Array<Promise<void>> {
+    this.loggingService.info({
+      type: LogType.PortfolioCacheInvalidated,
+      event_type: event.type,
+      chain_id: event.chainId,
+      address: event.address,
+    });
+    return [
+      this.zerionWalletPortfolioApi.invalidatePortfolio({
+        address: event.address,
+      }),
+      this.portfolioRepository.clearPortfolio({ address: event.address }),
+      this.positionsRepository.clearPositions({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
+    ];
+  }
+
   private onTransactionEventModuleTransaction(
     event: Extract<Event, { type: TransactionEventType.MODULE_TRANSACTION }>,
   ): Array<Promise<void>> {
@@ -260,7 +298,9 @@ export class EventCacheHelper {
     // - the stakes of a safe
     // - the list of module transactions for the safe
     // - the safe configuration
+    // - the Zerion-backed portfolio caches
     return [
+      ...this.clearZerionCaches(event),
       this.safeRepository.clearAllExecutedTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -298,7 +338,9 @@ export class EventCacheHelper {
     // - the transaction executed – clear multisig transaction
     // - the safe configuration - clear safe info
     // - the stakes of a safe
+    // - the Zerion-backed portfolio caches
     const promises = [
+      ...this.clearZerionCaches(event),
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -448,7 +490,9 @@ export class EventCacheHelper {
     // - the balance of the safe - clear safe balance
     // - the list of all executed transactions (including transfers) for the safe
     // - the incoming transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      ...this.clearZerionCaches(event),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -480,7 +524,9 @@ export class EventCacheHelper {
     // - the list of all executed transactions for the safe
     // - queued transactions and history – clear multisig transactions
     // - the transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      ...this.clearZerionCaches(event),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -510,7 +556,9 @@ export class EventCacheHelper {
     // - queued transactions and history – clear multisig transactions
     // - the transfers for that safe
     // - the incoming transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      ...this.clearZerionCaches(event),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -547,7 +595,9 @@ export class EventCacheHelper {
     // - the list of all executed transactions (including transfers) for the safe
     // - queued transactions and history – clear multisig transactions
     // - the transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      ...this.clearZerionCaches(event),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -644,7 +694,11 @@ export class EventCacheHelper {
   private onTransactionEventSafeCreated(
     event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
   ): Array<Promise<void>> {
-    return [this.safeRepository.clearIsSafe(event)];
+    // A freshly indexed Safe may have been funded before deployment.
+    return [
+      this.safeRepository.clearIsSafe(event),
+      ...this.clearZerionCaches(event),
+    ];
   }
 
   private onTransactionEventDelegate(

@@ -59,13 +59,26 @@ describe('PortfolioRepository', () => {
     const address = getAddress(faker.finance.ethereumAddress());
     const fiatCode = 'USD';
 
+    /** Mocks hGet so the sync flag and the portfolio cache resolve separately. */
+    const mockCacheReads = (args: {
+      syncFlag: string | null;
+      cached: string | null;
+    }): void => {
+      mockCacheService.hGet.mockImplementation((cacheDir) =>
+        Promise.resolve(
+          cacheDir.key.includes('zerion_sync') ? args.syncFlag : args.cached,
+        ),
+      );
+    };
+
     describe('caching', () => {
       it('should return cached portfolio if available', async () => {
         const cachedPortfolio = portfolioBuilder().build();
 
-        mockCacheService.hGet.mockResolvedValueOnce(
-          JSON.stringify(cachedPortfolio),
-        );
+        mockCacheReads({
+          syncFlag: null,
+          cached: JSON.stringify(cachedPortfolio),
+        });
 
         const result = await repository.getPortfolio({
           address,
@@ -91,7 +104,7 @@ describe('PortfolioRepository', () => {
           address,
           fiatCode,
           isTestnet: undefined,
-          sync: undefined,
+          sync: false,
           trusted: undefined,
         });
 
@@ -120,7 +133,10 @@ describe('PortfolioRepository', () => {
           sync: true,
         });
 
-        expect(mockCacheService.hGet).not.toHaveBeenCalled();
+        // Only the sync flag is read; the portfolio cache is bypassed.
+        expect(mockCacheService.hGet).toHaveBeenCalledExactlyOnceWith(
+          CacheRouter.getZerionSyncFlagCacheDir({ address }),
+        );
         expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
           address,
           fiatCode,
@@ -128,6 +144,26 @@ describe('PortfolioRepository', () => {
           trusted: undefined,
           sync: true,
         });
+      });
+
+      it('should fetch with sync=true and consume the flag when the sync flag is set', async () => {
+        const freshPortfolio = portfolioBuilder().build();
+        mockCacheReads({ syncFlag: 'true', cached: null });
+        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(freshPortfolio));
+
+        await repository.getPortfolio({ address, fiatCode });
+
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
+          address,
+          fiatCode,
+          isTestnet: undefined,
+          trusted: undefined,
+          sync: true,
+        });
+        expect(mockCacheService.hSet).toHaveBeenCalled();
+        expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+          CacheRouter.getZerionSyncFlagCacheDir({ address }).key,
+        );
       });
     });
 
