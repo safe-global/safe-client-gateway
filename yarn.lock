@@ -4178,10 +4178,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csv-stringify@npm:^6.7.0":
-  version: 6.7.0
-  resolution: "csv-stringify@npm:6.7.0"
-  checksum: 10/aa635f1c941b4682ac17479c640f7cf48825e5e442e28f093696a345006dbfe481f7962530ca314147bc88ff85d2cffc0690682934991e35f8c31a055aaa4566
+"csv-stringify@npm:^6.8.0":
+  version: 6.8.0
+  resolution: "csv-stringify@npm:6.8.0"
+  checksum: 10/5a9ba6a411566c58ff94894d465eb0a3b6ae346c4872f5e12fc904a6b5a02c5bd93235865f9a07fad001e770920b97e4e493912fcbe896ae850a354fc05a04b2
   languageName: node
   linkType: hard
 
@@ -7240,7 +7240,7 @@ __metadata:
     bullmq: "npm:^5.79.2"
     cache-manager: "npm:7.2.8"
     cookie-parser: "npm:1.4.7"
-    csv-stringify: "npm:^6.7.0"
+    csv-stringify: "npm:^6.8.0"
     husky: "npm:9.1.7"
     jose: "npm:6.2.3"
     jsonwebtoken: "npm:9.0.3"
