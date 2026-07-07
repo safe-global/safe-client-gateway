@@ -13,14 +13,13 @@ const kmsMock = mockClient(KMSClient);
 
 describe('AwsKmsSignerService', () => {
   const keyId = faker.string.uuid();
-  const config = { keyId };
 
   beforeEach(() => {
     kmsMock.reset();
   });
 
   function createSigner(): AwsKmsSignerService {
-    return new AwsKmsSignerService(config);
+    return new AwsKmsSignerService({ keyId });
   }
 
   describe('sign', () => {

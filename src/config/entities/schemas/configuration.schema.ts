@@ -54,6 +54,9 @@ export const RootConfigurationSchema = z
     BILLING_WEBHOOK_JWT_PUBLIC_KEY: z.string().optional(),
     BILLING_WEBHOOK_JWT_ISSUER: z.string().optional(),
     BILLING_WEBHOOK_JWT_KMS_KEY_ID: z.string().optional(),
+    // Only consumed by scripts/generate-token.ts, never by the running app.
+    // Declared here so the production guard below can see it.
+    BILLING_WEBHOOK_JWT_PRIVATE_KEY: z.string().optional(),
     AUTH0_CLIENT_SECRET: z.string().optional(),
     AUTH0_REDIRECT_URI: z.url().optional(),
     AUTH0_SCOPE: z.string().optional(),
@@ -191,6 +194,18 @@ export const RootConfigurationSchema = z
     // These fields are only required in deployed (production/staging) environments.
     const isDeployedEnv =
       !!config.CGW_ENV && ['production', 'staging'].includes(config.CGW_ENV);
+
+    // The billing webhook signing key must never live in deployed environments —
+    // tokens are long-lived and minted via KMS there (see scripts/generate-token.ts).
+    if (isDeployedEnv && config.BILLING_WEBHOOK_JWT_PRIVATE_KEY) {
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'must not be set in production and staging environments; sign via KMS (BILLING_WEBHOOK_JWT_KMS_KEY_ID) instead',
+        path: ['BILLING_WEBHOOK_JWT_PRIVATE_KEY'],
+      });
+    }
+
     if (!isDeployedEnv) {
       return;
     }

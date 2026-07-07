@@ -9,10 +9,8 @@ import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
 import { JwtService } from '@/datasources/jwt/jwt.service';
 import type { ILoggingService } from '@/logging/logging.interface';
-import {
-  BillingAuthService,
-  DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT,
-} from '@/modules/billing/domain/billing-auth.service';
+import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '@/modules/billing/domain/billing-auth.constants';
+import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
 import {
   SERVICE_ACCESS_PERMISSION_TYPE,
   SERVICE_ACCESS_ROLE,

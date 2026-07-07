@@ -44,7 +44,7 @@ In production, sign via an asymmetric AWS KMS key so the private key never exist
 
 The running app **never talks to KMS** — it verifies offline with the public key. KMS affects only minting.
 
-> **Enforced:** when `CGW_ENV=production`, the script requires `BILLING_WEBHOOK_JWT_KMS_KEY_ID` and refuses to mint with a local private key. The local-PEM path is for dev/CI only.
+> **Enforced:** when `CGW_ENV` is `production` or `staging`, the script requires `BILLING_WEBHOOK_JWT_KMS_KEY_ID` and refuses to mint with a local private key, and the app's env validation rejects `BILLING_WEBHOOK_JWT_PRIVATE_KEY` at startup. The local-PEM path is for dev/CI only.
 
 ### IAM: which principal signs
 
@@ -166,15 +166,15 @@ Read the token + public-key PEM from `kubectl logs job/billing-token-mint`, then
 
 Notes:
 - **Issuer must match the verifier.** If the app overrides `BILLING_WEBHOOK_JWT_ISSUER`, set the same value on the mint workload so `iss`/`aud` line up.
-- **`CGW_ENV` is irrelevant in KMS mode** — the production gate only blocks *local-PEM* signing, so the mint workload doesn't need `CGW_ENV=production`.
+- **`CGW_ENV` is irrelevant in KMS mode** — the production/staging gate only blocks *local-PEM* signing, so the mint workload doesn't need `CGW_ENV` set.
 
 ## Troubleshooting
 
 ### `ERROR: No signing key configured`
 The script had nothing to sign with. Set `BILLING_WEBHOOK_JWT_KMS_KEY_ID` (KMS mode) or `BILLING_WEBHOOK_JWT_PRIVATE_KEY` (local PEM). In KMS mode, also set `AWS_REGION`.
 
-### `ERROR: Production requires KMS signing`
-`CGW_ENV=production` but no `BILLING_WEBHOOK_JWT_KMS_KEY_ID` was set. Production must sign via KMS; a local private key is not accepted. Set the KMS key id (or run the mint outside production if you intended local signing).
+### `ERROR: Production and staging require KMS signing`
+`CGW_ENV` is `production` or `staging` but no `BILLING_WEBHOOK_JWT_KMS_KEY_ID` was set. Deployed environments must sign via KMS; a local private key is not accepted. Set the KMS key id (or run the mint outside production/staging if you intended local signing).
 
 ### `ERROR: Invalid --expires-in value`
 `--expires-in` must be a positive whole number of days.

@@ -15,7 +15,8 @@
  *     key). The private key never leaves KMS. Also prints the public key PEM to
  *     configure the verifier. Requires AWS_REGION + credentials (AWS_WEB_IDENTITY_TOKEN_FILE).
  *   - **Local PEM** — set BILLING_WEBHOOK_JWT_PRIVATE_KEY (ES256 EC P-256 PEM).
- *     For dev/CI only; rejected when CGW_ENV=production (KMS is required there).
+ *     For dev/CI only; rejected when CGW_ENV is production or staging (KMS is
+ *     required there).
  *
  * Usage:
  *   # local key
@@ -31,16 +32,26 @@ import { createPublicKey } from 'node:crypto';
 import { parseArgs } from 'node:util';
 import configuration from '@/config/entities/configuration';
 import { AwsKmsSignerService } from '@/datasources/kms/aws-kms-signer.service';
-import {
-  BillingAuthService,
-  DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT,
-} from '@/modules/billing/domain/billing-auth.service';
+import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '@/modules/billing/domain/billing-auth.constants';
+import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
 
 const DEFAULT_EXPIRES_IN_DAYS = 5 * 365; // ~5 years, long-lived service credential
 
 // Service identifiers only — keeps the `sub`/`service_name` claims clean and
 // avoids control/escape characters reaching the terminal or the token.
 const SUBJECT_PATTERN = /^[a-zA-Z0-9._-]{1,128}$/;
+
+type ClaimsArgs = {
+  issuer: string;
+  subject: string;
+  expiresInDays: number;
+};
+
+type MintResult = {
+  token: string;
+  /** Only set for KMS mode, where the caller can't derive it from local env. */
+  publicKeyPem?: string;
+};
 
 function fail(message: string): never {
   console.error(`ERROR: ${message}`);
@@ -65,19 +76,17 @@ function parseCliArgs(): { sub?: string; expiresIn?: string } {
   }
 }
 
-async function main(): Promise<void> {
-  const { sub, expiresIn } = parseCliArgs();
-
-  const config = configuration();
-  const { issuer, kms } = config.billing.webhook;
-
+function resolveSubject(sub?: string): string {
   const subject = sub ?? DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT;
   if (!SUBJECT_PATTERN.test(subject)) {
     fail(
       `Invalid --sub value: ${JSON.stringify(subject)}. Allowed: letters, digits, '.', '_', '-' (max 128 chars).`,
     );
   }
+  return subject;
+}
 
+function resolveExpiresInDays(expiresIn?: string): number {
   const expiresInDays = expiresIn
     ? Number.parseInt(expiresIn, 10)
     : DEFAULT_EXPIRES_IN_DAYS;
@@ -86,73 +95,110 @@ async function main(): Promise<void> {
       `Invalid --expires-in value: ${JSON.stringify(expiresIn)}. Must be a positive number of days.`,
     );
   }
+  return expiresInDays;
+}
 
-  const claimsArgs = { issuer, subject, expiresInDays };
+/** KMS signing mode — the private key never leaves KMS. */
+async function mintViaKms(
+  kms: { keyId: string; webIdentityTokenFile?: string },
+  claimsArgs: ClaimsArgs,
+): Promise<MintResult> {
+  const signer = new AwsKmsSignerService({
+    keyId: kms.keyId,
+    webIdentityTokenFile: kms.webIdentityTokenFile,
+  });
+  const token = await BillingAuthService.mintViaSigner(claimsArgs, (input) =>
+    signer.sign(input),
+  );
+  // Return the matching public key so ops can set BILLING_WEBHOOK_JWT_PUBLIC_KEY.
+  const spkiDer = await signer.getPublicKey();
+  const publicKeyPem = createPublicKey({
+    key: spkiDer,
+    format: 'der',
+    type: 'spki',
+  })
+    .export({ format: 'pem', type: 'spki' })
+    .toString();
+  return { token, publicKeyPem };
+}
 
-  let token: string;
-  let publicKeyPem: string | undefined;
+/** Local PEM signing mode — dev/CI only; deployed environments must sign via KMS. */
+function mintViaLocalKey(claimsArgs: ClaimsArgs): MintResult {
+  // Mirrors the RootConfigurationSchema guard, which rejects
+  // BILLING_WEBHOOK_JWT_PRIVATE_KEY in these environments at app startup.
+  const isDeployedEnv = ['production', 'staging'].includes(
+    process.env.CGW_ENV ?? '',
+  );
+  if (isDeployedEnv) {
+    fail(
+      'Production and staging require KMS signing: set BILLING_WEBHOOK_JWT_KMS_KEY_ID. Minting with a local BILLING_WEBHOOK_JWT_PRIVATE_KEY is not allowed in these environments.',
+    );
+  }
+  const privateKey = process.env.BILLING_WEBHOOK_JWT_PRIVATE_KEY?.replace(
+    /\\n/g,
+    '\n',
+  );
+  if (!privateKey) {
+    fail(
+      'No signing key configured. Set BILLING_WEBHOOK_JWT_KMS_KEY_ID to sign via KMS, or BILLING_WEBHOOK_JWT_PRIVATE_KEY (ES256 EC P-256 private key, PEM) to sign locally.',
+    );
+  }
+  return { token: BillingAuthService.mint({ privateKey, ...claimsArgs }) };
+}
 
+function printResult(args: {
+  result: MintResult;
+  claimsArgs: ClaimsArgs;
+  signedVia: string;
+}): void {
+  const { result, claimsArgs, signedVia } = args;
+  console.log(`
+✓ Generated billing-service webhook token:
+
+${result.token}
+
+• Subject (sub): ${claimsArgs.subject}
+• Issuer & Audience (iss/aud): ${claimsArgs.issuer}
+• Algorithm: ES256
+• Signed via: ${signedVia}
+• Expires in: ${claimsArgs.expiresInDays} days`);
+
+  if (result.publicKeyPem) {
+    console.log(`
+Configure the verifier with this public key (BILLING_WEBHOOK_JWT_PUBLIC_KEY):
+
+${result.publicKeyPem}`);
+  }
+}
+
+async function main(): Promise<void> {
+  const { sub, expiresIn } = parseCliArgs();
+
+  const config = configuration();
+  const { issuer, kms } = config.billing.webhook;
+
+  const claimsArgs: ClaimsArgs = {
+    issuer,
+    subject: resolveSubject(sub),
+    expiresInDays: resolveExpiresInDays(expiresIn),
+  };
+
+  let result: MintResult;
   try {
-    if (kms.keyId) {
-      // KMS signing mode — the private key never leaves KMS.
-      const signer = new AwsKmsSignerService({
-        keyId: kms.keyId,
-        webIdentityTokenFile: kms.webIdentityTokenFile,
-      });
-      token = await BillingAuthService.mintViaSigner(claimsArgs, (input) =>
-        signer.sign(input),
-      );
-      // Print the matching public key so ops can set BILLING_WEBHOOK_JWT_PUBLIC_KEY.
-      const spkiDer = await signer.getPublicKey();
-      publicKeyPem = createPublicKey({
-        key: spkiDer,
-        format: 'der',
-        type: 'spki',
-      })
-        .export({ format: 'pem', type: 'spki' })
-        .toString();
-    } else {
-      // Local PEM signing mode — dev/CI only; production must sign via KMS.
-      if (config.application.isProduction) {
-        fail(
-          'Production requires KMS signing: set BILLING_WEBHOOK_JWT_KMS_KEY_ID. Minting with a local BILLING_WEBHOOK_JWT_PRIVATE_KEY is not allowed in production.',
-        );
-      }
-      const privateKey = process.env.BILLING_WEBHOOK_JWT_PRIVATE_KEY?.replace(
-        /\\n/g,
-        '\n',
-      );
-      if (!privateKey) {
-        fail(
-          'No signing key configured. Set BILLING_WEBHOOK_JWT_KMS_KEY_ID to sign via KMS, or BILLING_WEBHOOK_JWT_PRIVATE_KEY (ES256 EC P-256 private key, PEM) to sign locally.',
-        );
-      }
-      token = BillingAuthService.mint({ privateKey, ...claimsArgs });
-    }
+    result = kms.keyId
+      ? await mintViaKms({ ...kms, keyId: kms.keyId }, claimsArgs)
+      : mintViaLocalKey(claimsArgs);
   } catch (error) {
     fail(
       `Failed to mint token: ${error instanceof Error ? error.message : 'unknown error'}`,
     );
   }
 
-  const signedVia = kms.keyId ? `KMS (${kms.keyId})` : 'local private key';
-  console.log(`
-✓ Generated billing-service webhook token:
-
-${token}
-
-• Subject (sub): ${subject}
-• Issuer & Audience (iss/aud): ${issuer}
-• Algorithm: ES256
-• Signed via: ${signedVia}
-• Expires in: ${expiresInDays} days`);
-
-  if (publicKeyPem) {
-    console.log(`
-Configure the verifier with this public key (BILLING_WEBHOOK_JWT_PUBLIC_KEY):
-
-${publicKeyPem}`);
-  }
+  printResult({
+    result,
+    claimsArgs,
+    signedVia: kms.keyId ? `KMS (${kms.keyId})` : 'local private key',
+  });
 }
 
 main().catch((error) => {

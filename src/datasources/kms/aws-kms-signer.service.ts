@@ -5,21 +5,9 @@ import {
   KMSClient,
   SignCommand,
 } from '@aws-sdk/client-kms';
-import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
+import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
+import type { KmsSignerConfig } from '@/datasources/kms/entities/kms-signer-config.entity';
 import type { IKmsSigner } from '@/datasources/kms/kms-signer.interface';
-
-export interface KmsSignerConfig {
-  keyId: string;
-  webIdentityTokenFile?: string;
-}
-
-function resolveCredentials(
-  config: KmsSignerConfig,
-): ReturnType<typeof fromTokenFile> | undefined {
-  // EKS provides pod credentials via IRSA (web identity token). Otherwise fall
-  // back to the default AWS provider chain (env keys).
-  return config.webIdentityTokenFile ? fromTokenFile() : undefined;
-}
 
 /**
  * Signs billing webhook tokens with an asymmetric AWS KMS key
@@ -31,7 +19,9 @@ export class AwsKmsSignerService implements IKmsSigner {
   private readonly client: KMSClient;
 
   constructor(private readonly config: KmsSignerConfig) {
-    this.client = new KMSClient({ credentials: resolveCredentials(config) });
+    this.client = new KMSClient({
+      credentials: resolveAwsCredentials(config.webIdentityTokenFile),
+    });
   }
 
   async sign(message: Buffer): Promise<Buffer> {

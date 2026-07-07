@@ -12,6 +12,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '@/modules/billing/domain/billing-auth.constants';
 import {
   type BillingServiceToken,
   BillingServiceTokenSchema,
@@ -19,16 +20,7 @@ import {
   SERVICE_ACCESS_ROLE,
   SERVICE_USER_TYPE,
 } from '@/modules/billing/domain/entities/billing-service-token.entity';
-
-export const DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT = 'billing-service';
-
-type BillingTokenClaimsArgs = {
-  issuer: string;
-  expiresInDays: number;
-  subject?: string;
-  /** Injectable clock for deterministic tests. */
-  now?: Date;
-};
+import type { BillingTokenClaims } from '@/modules/billing/domain/entities/billing-token-claims.entity';
 
 /**
  * Owns the billing-service webhook credential lifecycle — the "receiver issues
@@ -103,7 +95,7 @@ export class BillingAuthService {
    * `iat`/`exp` are `Date`s here; they are converted to second-based NumericDates
    * when the token is signed.
    */
-  private static buildClaims(args: BillingTokenClaimsArgs): {
+  private static buildClaims(args: BillingTokenClaims): {
     iss: string;
     sub: string;
     aud: Array<string>;
@@ -142,7 +134,7 @@ export class BillingAuthService {
    * key. Pure/static — the private key is supplied by the caller, so this runs
    * from the CLI without booting the app.
    */
-  static mint(args: BillingTokenClaimsArgs & { privateKey: string }): string {
+  static mint(args: BillingTokenClaims & { privateKey: string }): string {
     const client = jwtClientFactory();
     const token = client.sign(BillingAuthService.buildClaims(args), {
       secretOrPrivateKey: args.privateKey,
@@ -166,7 +158,7 @@ export class BillingAuthService {
    * @returns The signed compact JWS (`header.payload.signature`).
    */
   static async mintViaSigner(
-    args: BillingTokenClaimsArgs,
+    args: BillingTokenClaims,
     sign: (signingInput: Buffer) => Promise<Buffer>,
   ): Promise<string> {
     const claims = BillingAuthService.buildClaims(args);
