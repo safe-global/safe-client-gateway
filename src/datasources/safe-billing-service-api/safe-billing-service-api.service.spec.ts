@@ -281,6 +281,28 @@ describe('SafeBillingServiceApi', () => {
       });
     });
 
+    it('should forward the "all" status filter as a query param and cache field', async () => {
+      const customerId = faker.string.uuid();
+      mockDataSource.get.mockResolvedValueOnce(rawify({ subscriptions: [] }));
+
+      await target.getSubscriptionsByCustomerId({
+        customerId,
+        status: 'all',
+      });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir: new CacheDir(`${customerId}_safe_billing_subscriptions`, 'all'),
+        url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
+        notFoundExpireTimeSeconds,
+        networkRequest: {
+          headers: { Authorization: `Bearer ${apiToken}` },
+          params: { status: 'all' },
+          timeout: requestTimeout,
+        },
+        expireTimeSeconds,
+      });
+    });
+
     it('should forward network errors', async () => {
       const customerId = faker.string.uuid();
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
