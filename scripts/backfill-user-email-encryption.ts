@@ -48,7 +48,7 @@ import { DataSource } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { KmsService } from '@/datasources/kms/kms.service';
+import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
 import {
   EMAIL_ENCRYPTION_PREFIX,
   EMAIL_ENCRYPTION_VERSION,
@@ -76,7 +76,7 @@ async function mapWithConcurrency<T, R>(
   const workers = Array.from(
     { length: Math.min(concurrency, items.length) },
     async () => {
-      for (;;) {
+      while (true) {
         const i = next++;
         if (i >= items.length) {
           return;
@@ -122,7 +122,7 @@ async function backfillUserEmails(
 ): Promise<number> {
   let updated = 0;
 
-  for (;;) {
+  while (true) {
     const rows = await dataSource.query<Array<{ id: number; email: string }>>(
       `SELECT id, email FROM "users"
        WHERE email IS NOT NULL AND email NOT LIKE '${ENCRYPTED_PREFIX}%'
@@ -189,7 +189,7 @@ async function main(): Promise<void> {
 
   const emailEncryption = new EmailEncryptionService(
     configurationService,
-    new KmsService(configurationService),
+    new AwsKmsService(configurationService),
   );
   await emailEncryption.onModuleInit();
 

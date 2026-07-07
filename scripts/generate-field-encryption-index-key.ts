@@ -7,8 +7,8 @@
  * it. This script prints the *encrypted* key (safe to store in config). The
  * plaintext key material is zeroed and never printed.
  *
- * Usage (credentials via AWS_WEB_IDENTITY_TOKEN_FILE, or AWS_ACCESS_KEY_ID
- * and AWS_SECRET_ACCESS_KEY):
+ * Usage (credentials via AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID
+ * and KMS_AWS_SECRET_ACCESS_KEY):
  *   AWS_KMS_ENCRYPTION_KEY_ID=<arn-or-id> AWS_REGION=<region> \
  *     yarn generate:field-encryption-key
  *
@@ -26,7 +26,7 @@
 import { randomBytes } from 'node:crypto';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
-import { KmsService } from '@/datasources/kms/kms.service';
+import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
 
 function getByPath(obj: unknown, path: string): unknown {
   return path
@@ -56,7 +56,7 @@ function buildConfigurationService(): IConfigurationService {
 }
 
 async function main(): Promise<void> {
-  const kmsService = new KmsService(buildConfigurationService());
+  const kmsService = new AwsKmsService(buildConfigurationService());
   const plaintext = randomBytes(32);
   const encrypted = await kmsService.encrypt({ plaintext });
 

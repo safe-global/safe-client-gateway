@@ -2,7 +2,7 @@
 import { createHmac } from 'node:crypto';
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { KmsService } from '@/datasources/kms/kms.service';
+import { IKmsService } from '@/datasources/kms/kms.service.interface';
 import {
   BLIND_INDEX_LABEL,
   EMAIL_ENCRYPTION_PREFIX,
@@ -13,7 +13,7 @@ import {
 
 /**
  * The single crypto policy for user-email field encryption, built on the
- * stateless {@link KmsService}.
+ * stateless {@link IKmsService}.
  *
  * - {@link encrypt}/{@link decrypt}: the email value is encrypted directly by
  *   KMS. The encryption context (`{ userId, field }`) is cryptographically
@@ -42,7 +42,8 @@ export class EmailEncryptionService implements OnModuleInit {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    private readonly kmsService: KmsService,
+    @Inject(IKmsService)
+    private readonly kmsService: IKmsService,
   ) {
     this.enabled = this.configurationService.getOrThrow<boolean>(
       'spaces.fieldEncryption.enabled',
@@ -85,15 +86,19 @@ export class EmailEncryptionService implements OnModuleInit {
    * Deterministic keyed HMAC (base64url) over the normalised (trimmed,
    * lower-cased) input, used as a blind index for searchable/unique fields:
    * the same value always yields the same token, computable from the
-   * plaintext alone, without revealing it. Returns `null` when encryption is
-   * disabled — callers store/look up the plaintext value directly.
+   * plaintext alone, without revealing it. Gated on the index key being
+   * configured, not on {@link enabled}: once encryption has run and rows
+   * carry a blind index, disabling the flag again must not stop lookups from
+   * matching them (rollback safety) — only whether *new* rows get encrypted
+   * is gated on {@link enabled} (see {@link encrypt}). Returns `null` only
+   * when no key is configured at all, in which case callers store/look up
+   * the plaintext value directly.
    */
   blindIndex(plaintext: string): string | null {
-    if (!this.enabled) {
+    if (!this.emailIndexKey) {
       return null;
     }
-    // emailIndexKey presence is guaranteed by onModuleInit when enabled.
-    return createHmac('sha256', this.emailIndexKey as Buffer)
+    return createHmac('sha256', this.emailIndexKey)
       .update(BLIND_INDEX_LABEL)
       .update('\0')
       .update(plaintext.trim().toLowerCase(), 'utf8')

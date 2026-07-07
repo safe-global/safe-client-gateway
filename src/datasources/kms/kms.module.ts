@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Module } from '@nestjs/common';
-import { KmsService } from '@/datasources/kms/kms.service';
+import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import { IKmsService } from '@/datasources/kms/kms.service.interface';
 
 @Module({
-  providers: [KmsService],
-  exports: [KmsService],
+  providers: [{ provide: IKmsService, useClass: AwsKmsService }],
+  exports: [IKmsService],
 })
 export class KmsModule {}

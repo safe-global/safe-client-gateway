@@ -3,25 +3,14 @@
 import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { mockClient } from 'aws-sdk-client-mock';
-import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { KmsService } from '@/datasources/kms/kms.service';
-
-const configurationService = {
-  getOrThrow: vi.fn(),
-  get: vi.fn(),
-} as unknown as MockedObject<IConfigurationService>;
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
 
 const keyId = faker.string.uuid();
-const region = faker.helpers.arrayElement([
-  'eu-central-1',
-  'eu-west-1',
-  'us-east-1',
-]);
 const accessKeyId = faker.string.alphanumeric(20);
 const secretAccessKey = faker.string.alphanumeric(40);
 
-// KmsService is domain-agnostic: it must pass any caller-supplied context
+// AwsKmsService is domain-agnostic: it must pass any caller-supplied context
 // through verbatim, so the spec uses an arbitrary one.
 const encryptionContext: Record<string, string> = {
   [`a${faker.string.alpha(8)}`]: faker.string.alphanumeric(16),
@@ -36,7 +25,7 @@ function randomBytes(count: number): Uint8Array {
   );
 }
 
-describe('KmsService', () => {
+describe('AwsKmsService', () => {
   const kmsMock = mockClient(KMSClient);
 
   beforeEach(() => {
@@ -44,56 +33,47 @@ describe('KmsService', () => {
     kmsMock.reset();
   });
 
-  function mockConfiguration(args?: { webIdentityTokenFile?: string }): void {
-    configurationService.get.mockImplementation((key: string) => {
-      if (key === 'spaces.fieldEncryption.kms.keyId') {
-        return keyId;
-      }
-      if (key === 'spaces.fieldEncryption.kms.webIdentityTokenFile') {
-        return args?.webIdentityTokenFile;
-      }
-      return undefined;
-    });
-    configurationService.getOrThrow.mockImplementation((key: string) => {
-      const values: Record<string, unknown> = {
-        'spaces.fieldEncryption.kms.region': region,
-        'spaces.fieldEncryption.kms.accessKeyId': accessKeyId,
-        'spaces.fieldEncryption.kms.secretAccessKey': secretAccessKey,
-      };
-      if (key in values) return values[key];
-      throw new Error(`Unexpected config key: ${key}`);
-    });
-  }
-
-  function buildTarget(args?: { webIdentityTokenFile?: string }): KmsService {
-    mockConfiguration(args);
-    return new KmsService(configurationService);
+  function buildTarget(args?: {
+    webIdentityTokenFile?: string;
+  }): AwsKmsService {
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('spaces.fieldEncryption.kms.keyId', keyId);
+    if (args?.webIdentityTokenFile) {
+      fakeConfigurationService.set(
+        'spaces.fieldEncryption.kms.webIdentityTokenFile',
+        args.webIdentityTokenFile,
+      );
+    } else {
+      fakeConfigurationService.set(
+        'spaces.fieldEncryption.kms.accessKeyId',
+        accessKeyId,
+      );
+      fakeConfigurationService.set(
+        'spaces.fieldEncryption.kms.secretAccessKey',
+        secretAccessKey,
+      );
+    }
+    return new AwsKmsService(fakeConfigurationService);
   }
 
   describe('construction', () => {
     it('constructs without KMS configuration, so the app boots with field encryption disabled', () => {
-      configurationService.getOrThrow.mockImplementation((key: string) => {
-        throw new Error(`Missing required configuration: ${key}`);
-      });
-
-      expect(() => new KmsService(configurationService)).not.toThrow();
+      expect(
+        () => new AwsKmsService(new FakeConfigurationService()),
+      ).not.toThrow();
     });
 
     it('resolves the client eagerly when a key is configured, so a partial configuration fails at construction', () => {
-      configurationService.get.mockImplementation((key: string) =>
-        key === 'spaces.fieldEncryption.kms.keyId' ? keyId : undefined,
-      );
-      configurationService.getOrThrow.mockImplementation((key: string) => {
-        throw new Error(`Missing required configuration: ${key}`);
-      });
+      const fakeConfigurationService = new FakeConfigurationService();
+      fakeConfigurationService.set('spaces.fieldEncryption.kms.keyId', keyId);
 
-      expect(() => new KmsService(configurationService)).toThrow(
-        'Missing required configuration: spaces.fieldEncryption.kms.region',
+      expect(() => new AwsKmsService(fakeConfigurationService)).toThrow(
+        'No value set for key spaces.fieldEncryption.kms.accessKeyId',
       );
     });
 
     it('fails loudly if a KMS call is made while KMS is not configured', async () => {
-      const target = new KmsService(configurationService);
+      const target = new AwsKmsService(new FakeConfigurationService());
 
       await expect(
         target.encrypt({
@@ -209,16 +189,11 @@ describe('KmsService', () => {
 
   describe('credentials', () => {
     it('resolves credentials from the web identity token file without requiring static credentials', () => {
-      buildTarget({
-        webIdentityTokenFile: `/var/run/secrets/${faker.string.alphanumeric(8)}/token`,
-      });
-
-      expect(configurationService.getOrThrow).not.toHaveBeenCalledWith(
-        'spaces.fieldEncryption.kms.accessKeyId',
-      );
-      expect(configurationService.getOrThrow).not.toHaveBeenCalledWith(
-        'spaces.fieldEncryption.kms.secretAccessKey',
-      );
+      expect(() =>
+        buildTarget({
+          webIdentityTokenFile: `/var/run/secrets/${faker.string.alphanumeric(8)}/token`,
+        }),
+      ).not.toThrow();
     });
   });
 });

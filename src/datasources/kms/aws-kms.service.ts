@@ -3,9 +3,10 @@ import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
 import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IKmsService } from '@/datasources/kms/kms.service.interface';
 
 @Injectable()
-export class KmsService {
+export class AwsKmsService implements IKmsService {
   // Resolved in the constructor whenever a KMS key is configured, so a
   // partial configuration fails at construction. When field encryption is
   // disabled (the default) no KMS configuration exists, yet the DI container
@@ -47,7 +48,6 @@ export class KmsService {
     return Buffer.from(response.CiphertextBlob);
   }
 
-  /** Reverse of {@link encrypt}: decrypts a raw KMS ciphertext blob. */
   public async decrypt(args: {
     ciphertext: Buffer;
     encryptionContext?: Record<string, string>;
@@ -78,10 +78,9 @@ export class KmsService {
   }
 
   private createClient(): KMSClient {
-    const region = this.configurationService.getOrThrow<string>(
-      'spaces.fieldEncryption.kms.region',
-    );
-
+    // Region is not read from config: like AwsSesEmailService, it's left for
+    // the AWS SDK to resolve directly from the environment (AWS_REGION),
+    // rather than piping it through IConfigurationService.
     const webIdentityTokenFile = this.configurationService.get<string>(
       'spaces.fieldEncryption.kms.webIdentityTokenFile',
     );
@@ -96,6 +95,6 @@ export class KmsService {
           ),
         };
 
-    return new KMSClient({ region, credentials });
+    return new KMSClient({ credentials });
   }
 }

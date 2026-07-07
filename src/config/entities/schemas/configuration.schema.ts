@@ -74,6 +74,8 @@ export const RootConfigurationSchema = z
     AWS_SES_FROM_EMAIL: z.email().optional(),
     AWS_SES_FROM_NAME: z.string().optional(),
     AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
+    KMS_AWS_ACCESS_KEY_ID: z.string().optional(),
+    KMS_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     SES_AWS_ACCESS_KEY_ID: z.string().optional(),
     SES_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     FF_SES_EMAIL: z.string().optional(),
@@ -247,7 +249,6 @@ export const RootConfigurationSchema = z
     for (const field of [
       'SPACES_FIELD_ENCRYPTION_INDEX_KEY',
       'AWS_KMS_ENCRYPTION_KEY_ID',
-      'AWS_REGION',
     ] as const) {
       if (!config[field]) {
         ctx.addIssue({
@@ -257,15 +258,18 @@ export const RootConfigurationSchema = z
         });
       }
     }
-    // KMS credentials come from IRSA (web identity token) or a static key pair,
-    // mirroring AwsKmsApiService's credential resolution.
+    // KMS credentials come from IRSA (web identity token) or a static key
+    // pair, mirroring AwsKmsService's credential resolution. Dedicated
+    // KMS_AWS_* keys (like SES_AWS_*/CSV_AWS_*) so enabling field encryption
+    // doesn't silently repurpose the bare AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY
+    // credentials used by targeted messaging's S3 file storage.
     const hasStaticCredentials =
-      !!config.AWS_ACCESS_KEY_ID && !!config.AWS_SECRET_ACCESS_KEY;
+      !!config.KMS_AWS_ACCESS_KEY_ID && !!config.KMS_AWS_SECRET_ACCESS_KEY;
     if (!(config.AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
       ctx.addIssue({
         code: 'custom',
         message:
-          'AWS credentials are required when SPACES_FIELD_ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY',
+          'AWS credentials are required when SPACES_FIELD_ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID and KMS_AWS_SECRET_ACCESS_KEY',
         path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
       });
     }

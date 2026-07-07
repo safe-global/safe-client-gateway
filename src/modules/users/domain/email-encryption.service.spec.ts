@@ -3,18 +3,18 @@
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { KmsService } from '@/datasources/kms/kms.service';
+import type { IKmsService } from '@/datasources/kms/kms.service.interface';
 import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 
 const configurationService = {
   getOrThrow: vi.fn(),
   get: vi.fn(),
-} as unknown as MockedObject<IConfigurationService>;
+} as MockedObject<IConfigurationService>;
 
 const kmsService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
-} as unknown as MockedObject<KmsService>;
+} as MockedObject<IKmsService>;
 
 // A deterministic 32-byte blind-index key the mocked KMS "unwraps" to.
 const INDEX_KEY = Buffer.alloc(32, 7);
@@ -28,7 +28,7 @@ describe('EmailEncryptionService', () => {
 
   /**
    * Builds an EmailEncryptionService against mocked config + mocked
-   * KmsService and (by default) runs onModuleInit, during which the mocked
+   * IKmsService and (by default) runs onModuleInit, during which the mocked
    * KMS "unwraps" the configured index key to `unwrapsTo` (default:
    * INDEX_KEY).
    */
@@ -127,8 +127,20 @@ describe('EmailEncryptionService', () => {
       expect(withKey2.blindIndex(email)).not.toBe(token1);
     });
 
-    it('returns null when encryption is disabled', async () => {
-      const target = await buildTarget({ enabled: false });
+    it('still computes the index when disabled but a key is configured, so lookups keep matching rows written before a rollback', async () => {
+      const enabled = await buildTarget({ enabled: true });
+      const disabled = await buildTarget({ enabled: false });
+      const email = faker.internet.email();
+
+      expect(disabled.blindIndex(email)).not.toBeNull();
+      expect(disabled.blindIndex(email)).toBe(enabled.blindIndex(email));
+    });
+
+    it('returns null when no index key is configured', async () => {
+      const target = await buildTarget({
+        enabled: false,
+        wrappedEmailIndexKey: undefined,
+      });
 
       expect(target.blindIndex(faker.internet.email())).toBeNull();
     });

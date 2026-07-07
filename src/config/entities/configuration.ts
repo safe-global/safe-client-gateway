@@ -852,10 +852,15 @@ export default () => ({
         // Undefined when encryption is off; the schema validator requires real
         // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS
         // service only resolves them once a KMS call is actually made.
+        // Region is intentionally not read here: the AWS SDK resolves
+        // AWS_REGION from the environment directly, as it does for SES.
         keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
-        region: process.env.AWS_REGION,
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+        // Dedicated KMS credentials (like SES_AWS_*/CSV_AWS_*) so enabling
+        // field encryption doesn't reuse the bare AWS_ACCESS_KEY_ID/
+        // SECRET_ACCESS_KEY credentials scoped for targeted messaging's S3
+        // file storage.
+        accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
         // Set in EKS via IRSA; takes precedence over static credentials.
         webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
       },

@@ -106,9 +106,9 @@ export class UsersRepository implements IUsersRepository {
     options?: { extUserId?: string; email?: EmailAddress },
   ): Promise<User['id']> {
     const email = options?.email;
-    // When enabled, the blind index enforces uniqueness at insert (the email
-    // value is set once the id is known, below); when disabled, the plaintext
-    // email is stored directly.
+    // When an index key is configured, the blind index enforces uniqueness at
+    // insert (the email value is set once the id is known, below); otherwise
+    // the plaintext email is stored directly.
     const emailIndex = email
       ? this.emailEncryptionService.blindIndex(email)
       : null;
@@ -337,7 +337,8 @@ export class UsersRepository implements IUsersRepository {
         .orIgnore()
         .execute();
 
-      // Look up by blind index when enabled, by plaintext value when disabled.
+      // Look up by blind index when an index key is configured, by plaintext
+      // value otherwise.
       const user = await manager.findOneOrFail(DbUser, {
         where: emailIndex ? { emailIndex } : { email },
         select: { id: true, email: true },

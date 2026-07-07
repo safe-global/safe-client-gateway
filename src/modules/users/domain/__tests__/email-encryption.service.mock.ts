@@ -22,7 +22,7 @@ export function createMockEmailEncryptionService(): MockedObject<EmailEncryption
       (users: Array<{ id: number; email: string | null }>) =>
         Promise.resolve(users),
     ),
-  } as unknown as MockedObject<EmailEncryptionService>;
+  } as MockedObject<EmailEncryptionService>;
 }
 
 /**
@@ -73,5 +73,5 @@ export function createEncryptingMockEmailEncryptionService(): MockedObject<Email
           ),
         ),
     ),
-  } as unknown as MockedObject<EmailEncryptionService>;
+  } as MockedObject<EmailEncryptionService>;
 }

@@ -472,7 +472,6 @@ export default (): ReturnType<typeof configuration> => ({
       emailIndexKey: undefined,
       kms: {
         keyId: undefined,
-        region: undefined,
         accessKeyId: undefined,
         secretAccessKey: undefined,
         webIdentityTokenFile: undefined,
