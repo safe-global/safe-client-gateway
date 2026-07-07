@@ -5,22 +5,45 @@ import {
   KMSClient,
   SignCommand,
 } from '@aws-sdk/client-kms';
+import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { faker } from '@faker-js/faker';
 import { mockClient } from 'aws-sdk-client-mock';
 import { AwsKmsSignerService } from '@/datasources/kms/aws-kms-signer.service';
 
 const kmsMock = mockClient(KMSClient);
 
+vi.mock('@aws-sdk/credential-provider-web-identity', () => ({
+  fromTokenFile: vi.fn(),
+}));
+
 describe('AwsKmsSignerService', () => {
   const keyId = faker.string.uuid();
 
   beforeEach(() => {
+    vi.clearAllMocks();
     kmsMock.reset();
   });
 
   function createSigner(): AwsKmsSignerService {
     return new AwsKmsSignerService({ keyId });
   }
+
+  describe('credentials', () => {
+    it('uses web identity (IRSA) credentials when webIdentityTokenFile is set', () => {
+      new AwsKmsSignerService({
+        keyId,
+        webIdentityTokenFile: faker.system.filePath(),
+      });
+
+      expect(fromTokenFile).toHaveBeenCalledTimes(1);
+    });
+
+    it('falls back to the default provider chain when webIdentityTokenFile is not set', () => {
+      createSigner();
+
+      expect(fromTokenFile).not.toHaveBeenCalled();
+    });
+  });
 
   describe('sign', () => {
     it('sends an ES256 SignCommand and returns the DER signature', async () => {

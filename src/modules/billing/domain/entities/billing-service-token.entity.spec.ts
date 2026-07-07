@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { BillingServiceTokenSchema } from '@/modules/billing/domain/entities/billing-service-token.entity';
+import {
+  BillingServiceTokenSchema,
+  SERVICE_ACCESS_PERMISSION_TYPE,
+  SERVICE_ACCESS_ROLE,
+  SERVICE_USER_TYPE,
+} from '@/modules/billing/domain/entities/billing-service-token.entity';
 
 describe('BillingServiceTokenSchema', () => {
   const baseClaims = {
@@ -12,7 +17,7 @@ describe('BillingServiceTokenSchema', () => {
   it('accepts a token authorized via the SERVICE_ACCESS role', () => {
     const result = BillingServiceTokenSchema.safeParse({
       ...baseClaims,
-      roles: ['SERVICE_ACCESS'],
+      roles: [SERVICE_ACCESS_ROLE],
     });
 
     expect(result.success).toBe(true);
@@ -23,8 +28,8 @@ describe('BillingServiceTokenSchema', () => {
       ...baseClaims,
       data: {
         service_name: 'billing-service',
-        permission_type: 'SERVICE_ACCESS',
-        user_type: 'SERVICE_USER',
+        permission_type: SERVICE_ACCESS_PERMISSION_TYPE,
+        user_type: SERVICE_USER_TYPE,
       },
     });
 
@@ -34,7 +39,7 @@ describe('BillingServiceTokenSchema', () => {
   it('accepts a token whose roles include SERVICE_ACCESS among others', () => {
     const result = BillingServiceTokenSchema.safeParse({
       ...baseClaims,
-      roles: ['BILLING_ADMIN', 'SERVICE_ACCESS'],
+      roles: ['BILLING_ADMIN', SERVICE_ACCESS_ROLE],
     });
 
     expect(result.success).toBe(true);
@@ -60,8 +65,8 @@ describe('BillingServiceTokenSchema', () => {
       ...baseClaims,
       data: {
         service_name: '',
-        permission_type: 'SERVICE_ACCESS',
-        user_type: 'SERVICE_USER',
+        permission_type: SERVICE_ACCESS_PERMISSION_TYPE,
+        user_type: SERVICE_USER_TYPE,
       },
     });
 
@@ -73,7 +78,7 @@ describe('BillingServiceTokenSchema', () => {
       ...baseClaims,
       data: {
         service_name: 'billing-service',
-        permission_type: 'SERVICE_ACCESS',
+        permission_type: SERVICE_ACCESS_PERMISSION_TYPE,
         user_type: 'HUMAN_USER',
       },
     });

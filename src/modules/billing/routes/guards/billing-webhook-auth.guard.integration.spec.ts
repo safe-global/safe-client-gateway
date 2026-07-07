@@ -152,6 +152,17 @@ describe('BillingWebhookAuthGuard', () => {
       .expect(401);
   });
 
+  it('accepts a token whose audience list contains the expected issuer among others', async () => {
+    const token = signServiceToken({
+      aud: [ISSUER, faker.internet.domainName()],
+    });
+
+    await request(app.getHttpServer())
+      .post(PATH)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(202);
+  });
+
   it('rejects an expired token', async () => {
     const token = signServiceToken({ exp: new Date(Date.now() - 1_000) });
 

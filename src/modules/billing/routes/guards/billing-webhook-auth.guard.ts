@@ -36,8 +36,7 @@ export class BillingWebhookAuthGuard implements CanActivate {
   }
 
   private getBearerToken(request: Request): string | null {
-    const AUTH_HEADER_NAME = 'authorization';
-    const header = request.headers[AUTH_HEADER_NAME];
+    const header = request.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
       return null;
     }
