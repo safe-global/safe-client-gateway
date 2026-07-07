@@ -491,23 +491,26 @@ function generateReport(args: {
   }
   lines.push('');
 
-  // Drop low-sample weeks (<10 commits) from the chart: a 1/1-commit week
-  // reads as 100% and would flatten the real trend against the baseline.
+  // Plain-text bar chart in a fenced block: GitHub does not render Mermaid
+  // xychart-beta, but a code block renders everywhere. Drop low-sample weeks
+  // (<10 commits) so a 1/1-commit week reading 100% doesn't flatten the trend.
   const chartWeeks = weeklyTrend.filter((w) => w.commits >= 10);
   if (chartWeeks.length > 1) {
-    const labels = chartWeeks.map((w) => `"${w.week.slice(5)}"`).join(', ');
-    const rates = chartWeeks.map((w) => w.rate).join(', ');
-    const maxRate = Math.max(...chartWeeks.map((w) => w.rate));
-    const yMax = Math.ceil((maxRate + 1) / 5) * 5;
-    lines.push('```mermaid');
-    lines.push('xychart-beta');
+    const barWidth = 40;
+    const maxRate = Math.max(...chartWeeks.map((w) => w.rate), 1);
+    lines.push('```text');
     lines.push(
-      '    title "Weekly CI flakiness rate % (weeks with <10 commits omitted)"',
+      'Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted',
     );
-    lines.push(`    x-axis [${labels}]`);
-    lines.push(`    y-axis "Flaky rate (%)" 0 --> ${yMax}`);
-    lines.push(`    bar [${rates}]`);
-    lines.push(`    line [${rates}]`);
+    lines.push('');
+    for (const w of chartWeeks) {
+      const filled = Math.round((w.rate / maxRate) * barWidth);
+      const bar = '█'.repeat(filled) || '▏';
+      const label = w.week.slice(5);
+      const rate = `${w.rate.toFixed(1)}%`.padStart(6);
+      const n = `n=${w.commits}`.padEnd(6);
+      lines.push(`${label} ${rate}  ${n} ${bar}`);
+    }
     lines.push('```');
     lines.push('');
   }
@@ -562,15 +565,9 @@ function generateReport(args: {
   } else {
     for (const pr of prs) {
       const status = pr.merged_at ? 'Merged' : 'Open';
-      lines.push(
-        `### [#${pr.number}](${pr.url}) - ${pr.title} (${status})`,
-      );
-      lines.push('');
-      for (const f of pr.tests_fixed) {
-        lines.push(`- \`${f}\``);
-      }
-      lines.push('');
+      lines.push(`- [#${pr.number}](${pr.url}) - ${pr.title} (${status})`);
     }
+    lines.push('');
   }
 
   // Still open flaky tests
