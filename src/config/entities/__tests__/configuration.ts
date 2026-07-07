@@ -219,6 +219,7 @@ export default (): ReturnType<typeof configuration> => ({
     users: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
+    ownersMaliciousFilter: false,
     signatureVerification: {
       api: true,
       proposal: true,
@@ -549,6 +550,11 @@ export default (): ReturnType<typeof configuration> => ({
       blockaid: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
       },
+    },
+    maliciousAddressScan: {
+      timeoutMs: faker.number.int({ min: 100, max: 5000 }),
+      maxBatchSize: faker.number.int({ min: 1, max: 100 }),
+      cacheTtlSeconds: faker.number.int({ min: 1, max: 300 }),
     },
   },
   etherscan: {
