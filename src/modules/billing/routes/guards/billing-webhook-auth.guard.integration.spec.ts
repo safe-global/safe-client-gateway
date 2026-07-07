@@ -18,7 +18,8 @@ import { BillingAuthService } from '@/modules/billing/domain/billing-auth.servic
 import { BillingController } from '@/modules/billing/routes/billing.controller';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
 
-const ISSUER = 'safe-client-gateway';
+const ISSUER = faker.internet.domainName();
+const SUBJECT = faker.internet.domainWord();
 const PATH = '/v1/billing/webhooks';
 
 describe('BillingWebhookAuthGuard', () => {
@@ -36,12 +37,12 @@ describe('BillingWebhookAuthGuard', () => {
     return client.sign(
       {
         iss: ISSUER,
-        sub: 'billing-service',
+        sub: SUBJECT,
         aud: [ISSUER],
         exp: new Date(Date.now() + 60 * 60 * 1_000),
         roles: ['SERVICE_ACCESS'],
         data: {
-          service_name: 'billing-service',
+          service_name: SUBJECT,
           permission_type: 'SERVICE_ACCESS',
           user_type: 'SERVICE_USER',
         },
@@ -124,7 +125,7 @@ describe('BillingWebhookAuthGuard', () => {
   it('rejects a token signed with the wrong algorithm (HS256)', async () => {
     const token = signServiceToken(
       {},
-      { algorithm: 'HS256', secret: 'shared-secret' },
+      { algorithm: 'HS256', secret: faker.string.alphanumeric(32) },
     );
 
     await request(app.getHttpServer())
@@ -134,7 +135,7 @@ describe('BillingWebhookAuthGuard', () => {
   });
 
   it('rejects a token with the wrong issuer', async () => {
-    const token = signServiceToken({ iss: 'someone-else' });
+    const token = signServiceToken({ iss: faker.internet.domainName() });
 
     await request(app.getHttpServer())
       .post(PATH)
@@ -143,7 +144,7 @@ describe('BillingWebhookAuthGuard', () => {
   });
 
   it('rejects a token with the wrong audience', async () => {
-    const token = signServiceToken({ aud: ['someone-else'] });
+    const token = signServiceToken({ aud: [faker.internet.domainName()] });
 
     await request(app.getHttpServer())
       .post(PATH)
@@ -162,7 +163,7 @@ describe('BillingWebhookAuthGuard', () => {
 
   it('rejects a validly-signed token that is not a service token', async () => {
     const token = signServiceToken({
-      roles: ['SOME_OTHER_ROLE'],
+      roles: [faker.string.alpha({ length: 10, casing: 'upper' })],
       data: undefined,
     });
 
