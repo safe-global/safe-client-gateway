@@ -13,7 +13,7 @@ import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.
 import { PlanSchema } from '@/datasources/safe-billing-service-api/entities/plan.entity';
 import type {
   Subscription,
-  SubscriptionStatus,
+  SubscriptionStatusFilter,
 } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
 import { SubscriptionSchema } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
 import type { ISafeBillingServiceApi } from '@/domain/interfaces/safe-billing-service-api.interface';
@@ -80,7 +80,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
 
   getSubscriptionsByCustomerId(args: {
     customerId: string;
-    status?: SubscriptionStatus | 'all';
+    status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
     return this.request({
       cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir(args),

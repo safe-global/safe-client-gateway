@@ -17,6 +17,15 @@ export const SubscriptionStatusSchema = z.enum([
 
 export type SubscriptionStatus = z.infer<typeof SubscriptionStatusSchema>;
 
+export const SubscriptionStatusFilterSchema = z.enum([
+  ...SubscriptionStatusSchema.options,
+  'all',
+]);
+
+export type SubscriptionStatusFilter = z.infer<
+  typeof SubscriptionStatusFilterSchema
+>;
+
 export const SubscriptionSchema = z.object({
   id: z.string(),
   customerId: z.string(),

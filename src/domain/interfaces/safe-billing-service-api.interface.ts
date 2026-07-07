@@ -3,7 +3,7 @@ import type { Customer } from '@/datasources/safe-billing-service-api/entities/c
 import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.entity';
 import type {
   Subscription,
-  SubscriptionStatus,
+  SubscriptionStatusFilter,
 } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
 
 export const ISafeBillingServiceApi = Symbol('ISafeBillingServiceApi');
@@ -45,6 +45,6 @@ export interface ISafeBillingServiceApi {
    */
   getSubscriptionsByCustomerId(args: {
     customerId: string;
-    status?: SubscriptionStatus | 'all';
+    status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>>;
 }
