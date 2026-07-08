@@ -272,7 +272,7 @@ export class EventCacheHelper {
     chainId: string;
     address: Address;
   }): Array<Promise<void>> {
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.PortfolioCacheInvalidated,
       event_type: event.type,
       chain_id: event.chainId,
