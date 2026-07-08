@@ -215,7 +215,7 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     auth: false,
     oidc_auth: false,
-    billingWebhook: false,
+    billingService: false,
     counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,

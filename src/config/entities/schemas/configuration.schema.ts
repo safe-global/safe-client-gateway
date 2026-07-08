@@ -77,6 +77,7 @@ export const RootConfigurationSchema = z
     SES_AWS_ACCESS_KEY_ID: z.string().optional(),
     SES_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     FF_SES_EMAIL: z.string().optional(),
+    FF_BILLING_SERVICE: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -218,6 +219,8 @@ export const RootConfigurationSchema = z
       return;
     }
     const isSesEnabled = config.FF_SES_EMAIL?.toLowerCase() === 'true';
+    const isBillingServiceEnabled =
+      config.FF_BILLING_SERVICE?.toLowerCase() === 'true';
 
     for (const {
       field,
@@ -237,6 +240,12 @@ export const RootConfigurationSchema = z
         requiredWhen: isSesEnabled,
         message:
           'is required in production and staging environments when SES email is enabled',
+      },
+      {
+        field: 'SAFE_BILLING_SERVICE_API_TOKEN',
+        requiredWhen: isBillingServiceEnabled,
+        message:
+          'is required in production and staging environments when the billing service is enabled',
       },
     ]) {
       if (requiredWhen && !(config as Record<string, unknown>)[field]) {

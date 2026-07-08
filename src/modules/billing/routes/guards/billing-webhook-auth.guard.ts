@@ -14,7 +14,7 @@ import { BillingAuthService } from '@/modules/billing/domain/billing-auth.servic
  *
  * Extracts the `Authorization: Bearer <token>` credential (an HTTP concern) and
  * delegates verification to {@link BillingAuthService}. Only instantiated
- * when the `billingWebhook` feature is enabled.
+ * when the `billingService` feature is enabled.
  */
 @Injectable()
 export class BillingWebhookAuthGuard implements CanActivate {

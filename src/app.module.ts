@@ -24,6 +24,7 @@ import { CacheModule } from '@/datasources/cache/cache.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { NetworkModule } from '@/datasources/network/network.module';
+import { SafeBillingServiceApiModule } from '@/datasources/safe-billing-service-api/safe-billing-service-api.module';
 import {
   type ILoggingService,
   LoggingService,
@@ -81,7 +82,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
-      billingWebhook: isBillingWebhookFeatureEnabled,
+      billingService: isBillingServiceFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -93,7 +94,9 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
-        ...(isBillingWebhookFeatureEnabled ? [BillingModule] : []),
+        ...(isBillingServiceFeatureEnabled
+          ? [BillingModule, SafeBillingServiceApiModule]
+          : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,
