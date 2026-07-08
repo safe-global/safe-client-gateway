@@ -7,12 +7,20 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { checkoutSessionBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/checkout-session.builder';
 import { customerBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/customer.builder';
+import { paymentLinkBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/subscription.builder';
 import { SafeBillingServiceApi } from '@/datasources/safe-billing-service-api/safe-billing-service-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify } from '@/validation/entities/raw.entity';
+
+const mockNetworkService = vi.mocked({
+  get: vi.fn(),
+  post: vi.fn(),
+} as MockedObject<INetworkService>);
 
 const mockDataSource = vi.mocked({
   get: vi.fn(),
@@ -57,6 +65,7 @@ describe('SafeBillingServiceApi', () => {
 
     target = new SafeBillingServiceApi(
       mockDataSource,
+      mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
     );
@@ -87,6 +96,7 @@ describe('SafeBillingServiceApi', () => {
       () =>
         new SafeBillingServiceApi(
           mockDataSource,
+          mockNetworkService,
           emptyConfigService,
           httpErrorFactory,
         ),
@@ -309,6 +319,181 @@ describe('SafeBillingServiceApi', () => {
       await expect(
         target.getSubscriptionsByCustomerId({ customerId }),
       ).rejects.toThrow(new DataSourceError('Internal server error', status));
+    });
+  });
+
+  describe('listPaymentLinks', () => {
+    it('should call the billing service API with correct URL, headers and cache dir (no customerId)', async () => {
+      const paymentLinks = [
+        paymentLinkBuilder().build(),
+        paymentLinkBuilder().build(),
+      ];
+      mockDataSource.get.mockResolvedValueOnce(rawify({ paymentLinks }));
+
+      const result = await target.listPaymentLinks();
+
+      expect(result).toEqual(paymentLinks);
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir('safe_billing_payment_links', ''),
+          url: `${baseUri}/api/v1/payment-links`,
+        }),
+      );
+    });
+
+    it('should forward customerId as a query param and cache dir', async () => {
+      const customerId = faker.string.uuid();
+      const paymentLinks = [paymentLinkBuilder().build()];
+      mockDataSource.get.mockResolvedValueOnce(rawify({ paymentLinks }));
+
+      const result = await target.listPaymentLinks({ customerId });
+
+      expect(result).toEqual(paymentLinks);
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir(
+            `${customerId}_safe_billing_payment_links`,
+            '',
+          ),
+          url: `${baseUri}/api/v1/payment-links`,
+          params: { customerId },
+        }),
+      );
+    });
+
+    it('should throw a ZodError on a malformed response', async () => {
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify({ paymentLinks: [{ malformed: true }] }),
+      );
+
+      await expect(target.listPaymentLinks()).rejects.toThrow();
+    });
+
+    it('should forward network errors', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/api/v1/payment-links`),
+        { status } as Response,
+        { message: 'Internal server error' },
+      );
+      mockDataSource.get.mockRejectedValueOnce(error);
+
+      await expect(target.listPaymentLinks()).rejects.toThrow(
+        new DataSourceError('Internal server error', status),
+      );
+    });
+  });
+
+  describe('createCheckoutSession', () => {
+    it('should call the billing service API with correct URL, headers and body', async () => {
+      const paymentLinkId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
+      const returnUrl = faker.internet.url();
+      const checkoutSession = checkoutSessionBuilder().build();
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 201,
+        data: rawify(checkoutSession),
+      });
+
+      const result = await target.createCheckoutSession({
+        paymentLinkId,
+        upstreamCustomerId,
+        returnUrl,
+      });
+
+      expect(result).toEqual(checkoutSession);
+      expect(mockNetworkService.post).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/payment-links/${paymentLinkId}/checkout`,
+        data: { upstreamCustomerId, returnUrl },
+        networkRequest: {
+          headers: { Authorization: `Bearer ${apiToken}` },
+          timeout: requestTimeout,
+        },
+      });
+      expect(mockDataSource.post).not.toHaveBeenCalled();
+    });
+
+    it('should throw a ZodError on a malformed response', async () => {
+      mockNetworkService.post.mockResolvedValueOnce({
+        status: 201,
+        data: rawify({ malformed: true }),
+      });
+
+      await expect(
+        target.createCheckoutSession({
+          paymentLinkId: faker.string.uuid(),
+          upstreamCustomerId: faker.string.uuid(),
+          returnUrl: faker.internet.url(),
+        }),
+      ).rejects.toThrow();
+    });
+
+    it('should forward network errors', async () => {
+      const paymentLinkId = faker.string.uuid();
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/api/v1/payment-links/${paymentLinkId}/checkout`),
+        { status } as Response,
+        { message: 'Internal server error' },
+      );
+      mockNetworkService.post.mockRejectedValueOnce(error);
+
+      await expect(
+        target.createCheckoutSession({
+          paymentLinkId,
+          upstreamCustomerId: faker.string.uuid(),
+          returnUrl: faker.internet.url(),
+        }),
+      ).rejects.toThrow(new DataSourceError('Internal server error', status));
+    });
+  });
+
+  describe('getCheckoutSession', () => {
+    it('should call the billing service API with correct URL and headers', async () => {
+      const sessionId = faker.string.alphanumeric(32);
+      const checkoutSession = checkoutSessionBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(checkoutSession),
+      });
+
+      const result = await target.getCheckoutSession({ sessionId });
+
+      expect(result).toEqual(checkoutSession);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/sessions/${sessionId}`,
+        networkRequest: {
+          headers: { Authorization: `Bearer ${apiToken}` },
+          timeout: requestTimeout,
+        },
+      });
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+
+    it('should throw a ZodError on a malformed response', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({ malformed: true }),
+      });
+
+      await expect(
+        target.getCheckoutSession({ sessionId: faker.string.uuid() }),
+      ).rejects.toThrow();
+    });
+
+    it('should forward network errors', async () => {
+      const sessionId = faker.string.alphanumeric(32);
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/api/v1/sessions/${sessionId}`),
+        { status } as Response,
+        { message: 'Internal server error' },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(target.getCheckoutSession({ sessionId })).rejects.toThrow(
+        new DataSourceError('Internal server error', status),
+      );
     });
   });
 });

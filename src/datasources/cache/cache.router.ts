@@ -41,6 +41,8 @@ export class CacheRouter {
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_BALANCES_KEY = 'safe_balances';
   private static readonly SAFE_BILLING_CUSTOMER_KEY = 'safe_billing_customer';
+  private static readonly SAFE_BILLING_PAYMENT_LINKS_KEY =
+    'safe_billing_payment_links';
   private static readonly SAFE_BILLING_PLAN_KEY = 'safe_billing_plan';
   private static readonly SAFE_BILLING_PLANS_KEY = 'safe_billing_plans';
   private static readonly SAFE_BILLING_SUBSCRIPTIONS_KEY =
@@ -1204,5 +1206,14 @@ export class CacheRouter {
       `${customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
       status,
     );
+  }
+
+  static getSafeBillingPaymentLinksCacheDir(customerId?: string): CacheDir {
+    return customerId
+      ? new CacheDir(
+          `${customerId}_${CacheRouter.SAFE_BILLING_PAYMENT_LINKS_KEY}`,
+          '',
+        )
+      : new CacheDir(CacheRouter.SAFE_BILLING_PAYMENT_LINKS_KEY, '');
   }
 }

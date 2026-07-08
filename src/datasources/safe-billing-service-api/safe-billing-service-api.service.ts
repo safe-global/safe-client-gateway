@@ -7,8 +7,16 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+import {
+  type INetworkService,
+  NetworkService,
+} from '@/datasources/network/network.service.interface';
+import type { CheckoutSession } from '@/datasources/safe-billing-service-api/entities/checkout-session.entity';
+import { CheckoutSessionSchema } from '@/datasources/safe-billing-service-api/entities/checkout-session.entity';
 import type { Customer } from '@/datasources/safe-billing-service-api/entities/customer.entity';
 import { CustomerSchema } from '@/datasources/safe-billing-service-api/entities/customer.entity';
+import type { PaymentLink } from '@/datasources/safe-billing-service-api/entities/payment-link.entity';
+import { PaymentLinkSchema } from '@/datasources/safe-billing-service-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.entity';
 import { PlanSchema } from '@/datasources/safe-billing-service-api/entities/plan.entity';
 import type {
@@ -28,6 +36,8 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
 
   constructor(
     private readonly dataSource: CacheFirstDataSource,
+    @Inject(NetworkService)
+    private readonly networkService: INetworkService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
@@ -97,6 +107,45 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     });
   }
 
+  listPaymentLinks(args?: {
+    customerId?: string;
+  }): Promise<Array<PaymentLink>> {
+    return this.request({
+      cacheDir: CacheRouter.getSafeBillingPaymentLinksCacheDir(
+        args?.customerId,
+      ),
+      url: `${this.baseUri}/api/v1/payment-links`,
+      params: args?.customerId ? { customerId: args.customerId } : undefined,
+      schema: z
+        .object({ paymentLinks: z.array(PaymentLinkSchema) })
+        .transform((body) => body.paymentLinks),
+    });
+  }
+
+  createCheckoutSession(args: {
+    paymentLinkId: string;
+    upstreamCustomerId: string;
+    returnUrl: string;
+  }): Promise<CheckoutSession> {
+    return this.requestUncached({
+      method: 'post',
+      url: `${this.baseUri}/api/v1/payment-links/${args.paymentLinkId}/checkout`,
+      data: {
+        upstreamCustomerId: args.upstreamCustomerId,
+        returnUrl: args.returnUrl,
+      },
+      schema: CheckoutSessionSchema,
+    });
+  }
+
+  getCheckoutSession(args: { sessionId: string }): Promise<CheckoutSession> {
+    return this.requestUncached({
+      method: 'get',
+      url: `${this.baseUri}/api/v1/sessions/${args.sessionId}`,
+      schema: CheckoutSessionSchema,
+    });
+  }
+
   private async request<T>(args: {
     cacheDir: CacheDir;
     url: string;
@@ -115,6 +164,40 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
         },
         expireTimeSeconds: this.expireTimeSeconds,
       });
+      return args.schema.parse(data);
+    } catch (error) {
+      if (error instanceof ZodError) throw error;
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * Issues a request that bypasses the cache entirely, for endpoints that
+   * mutate state (checkout session creation) or that must always return
+   * fresh data (checkout session polling).
+   */
+  private async requestUncached<T>(args: {
+    method: 'get' | 'post';
+    url: string;
+    data?: object;
+    schema: z.ZodType<T>;
+  }): Promise<T> {
+    try {
+      const networkRequest = {
+        headers: this.authHeaders,
+        timeout: this.requestTimeout,
+      };
+      const { data } =
+        args.method === 'post'
+          ? await this.networkService.post<unknown>({
+              url: args.url,
+              data: args.data,
+              networkRequest,
+            })
+          : await this.networkService.get<unknown>({
+              url: args.url,
+              networkRequest,
+            });
       return args.schema.parse(data);
     } catch (error) {
       if (error instanceof ZodError) throw error;
