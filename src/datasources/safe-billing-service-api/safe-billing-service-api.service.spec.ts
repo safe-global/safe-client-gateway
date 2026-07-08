@@ -351,10 +351,7 @@ describe('SafeBillingServiceApi', () => {
       expect(result).toEqual(paymentLinks);
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
-          cacheDir: new CacheDir(
-            `${customerId}_safe_billing_payment_links`,
-            '',
-          ),
+          cacheDir: new CacheDir('safe_billing_payment_links', customerId),
           url: `${baseUri}/api/v1/payment-links`,
           params: { customerId },
         }),

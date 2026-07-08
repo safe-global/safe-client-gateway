@@ -749,11 +749,12 @@ export default () => ({
     },
   },
   safeBillingService: {
-    baseUri: process.env.SAFE_BILLING_SERVICE_BASE_URI,
+    baseUri:
+      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
+      'https://safe-billing-service.staging.5afe.dev',
     apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
     requestTimeout: Number.parseInt(
-      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ??
-        `${5_000}`,
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
       10,
     ),
   },

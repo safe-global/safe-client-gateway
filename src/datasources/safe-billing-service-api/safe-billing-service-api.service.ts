@@ -95,10 +95,10 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir(
-        args.customerId,
-        args.status ?? 'all',
-      ),
+      cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir({
+        customerId: args.customerId,
+        status: args.status ?? 'all',
+      }),
       url: `${this.baseUri}/api/v1/customers/${args.customerId}/subscriptions`,
       params: args.status ? { status: args.status } : undefined,
       schema: z
@@ -127,8 +127,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     upstreamCustomerId: string;
     returnUrl: string;
   }): Promise<CheckoutSession> {
-    return this.requestUncached({
-      method: 'post',
+    return this.postUncached({
       url: `${this.baseUri}/api/v1/payment-links/${args.paymentLinkId}/checkout`,
       data: {
         upstreamCustomerId: args.upstreamCustomerId,
@@ -139,21 +138,20 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
   }
 
   getCheckoutSession(args: { sessionId: string }): Promise<CheckoutSession> {
-    return this.requestUncached({
-      method: 'get',
+    return this.getUncached({
       url: `${this.baseUri}/api/v1/sessions/${args.sessionId}`,
       schema: CheckoutSessionSchema,
     });
   }
 
-  private async request<T>(args: {
+  private request<T>(args: {
     cacheDir: CacheDir;
     url: string;
     params?: NetworkRequest['params'];
     schema: z.ZodType<T>;
   }): Promise<T> {
-    try {
-      const data = await this.dataSource.get<unknown>({
+    return this.parse(
+      this.dataSource.get<unknown>({
         cacheDir: args.cacheDir,
         url: args.url,
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
@@ -163,42 +161,63 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
           timeout: this.requestTimeout,
         },
         expireTimeSeconds: this.expireTimeSeconds,
-      });
-      return args.schema.parse(data);
-    } catch (error) {
-      if (error instanceof ZodError) throw error;
-      throw this.httpErrorFactory.from(error);
-    }
+      }),
+      args.schema,
+    );
   }
 
   /**
-   * Issues a request that bypasses the cache entirely, for endpoints that
-   * mutate state (checkout session creation) or that must always return
-   * fresh data (checkout session polling).
+   * Issues a GET request that bypasses the cache entirely, for endpoints
+   * that must always return fresh data (checkout session polling).
    */
-  private async requestUncached<T>(args: {
-    method: 'get' | 'post';
+  private getUncached<T>(args: {
+    url: string;
+    schema: z.ZodType<T>;
+  }): Promise<T> {
+    return this.parse(
+      this.networkService
+        .get<unknown>({
+          url: args.url,
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+          },
+        })
+        .then(({ data }) => data),
+      args.schema,
+    );
+  }
+
+  /**
+   * Issues a POST request that bypasses the cache entirely, for endpoints
+   * that mutate state (checkout session creation).
+   */
+  private postUncached<T>(args: {
     url: string;
     data?: object;
     schema: z.ZodType<T>;
   }): Promise<T> {
+    return this.parse(
+      this.networkService
+        .post<unknown>({
+          url: args.url,
+          data: args.data,
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+          },
+        })
+        .then(({ data }) => data),
+      args.schema,
+    );
+  }
+
+  private async parse<T>(
+    data: Promise<unknown>,
+    schema: z.ZodType<T>,
+  ): Promise<T> {
     try {
-      const networkRequest = {
-        headers: this.authHeaders,
-        timeout: this.requestTimeout,
-      };
-      const { data } =
-        args.method === 'post'
-          ? await this.networkService.post<unknown>({
-              url: args.url,
-              data: args.data,
-              networkRequest,
-            })
-          : await this.networkService.get<unknown>({
-              url: args.url,
-              networkRequest,
-            });
-      return args.schema.parse(data);
+      return schema.parse(await data);
     } catch (error) {
       if (error instanceof ZodError) throw error;
       throw this.httpErrorFactory.from(error);

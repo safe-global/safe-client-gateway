@@ -2,6 +2,7 @@
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+import type { SubscriptionStatusFilter } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
@@ -1198,22 +1199,20 @@ export class CacheRouter {
     );
   }
 
-  static getSafeBillingSubscriptionsCacheDir(
-    customerId: string,
-    status: string,
-  ): CacheDir {
+  static getSafeBillingSubscriptionsCacheDir(args: {
+    customerId: string;
+    status: SubscriptionStatusFilter;
+  }): CacheDir {
     return new CacheDir(
-      `${customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
-      status,
+      `${args.customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
+      args.status,
     );
   }
 
   static getSafeBillingPaymentLinksCacheDir(customerId?: string): CacheDir {
-    return customerId
-      ? new CacheDir(
-          `${customerId}_${CacheRouter.SAFE_BILLING_PAYMENT_LINKS_KEY}`,
-          '',
-        )
-      : new CacheDir(CacheRouter.SAFE_BILLING_PAYMENT_LINKS_KEY, '');
+    return new CacheDir(
+      CacheRouter.SAFE_BILLING_PAYMENT_LINKS_KEY,
+      customerId ?? '',
+    );
   }
 }
