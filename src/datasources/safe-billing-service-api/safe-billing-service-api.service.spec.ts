@@ -62,6 +62,24 @@ describe('SafeBillingServiceApi', () => {
     );
   });
 
+  function expectedGetCall(args: {
+    cacheDir: CacheDir;
+    url: string;
+    params?: Record<string, string>;
+  }): unknown {
+    return {
+      cacheDir: args.cacheDir,
+      url: args.url,
+      notFoundExpireTimeSeconds,
+      networkRequest: {
+        headers: { Authorization: `Bearer ${apiToken}` },
+        params: args.params,
+        timeout: requestTimeout,
+      },
+      expireTimeSeconds,
+    };
+  }
+
   it('should error if baseUri is not defined', () => {
     const emptyConfigService = new FakeConfigurationService();
 
@@ -70,7 +88,7 @@ describe('SafeBillingServiceApi', () => {
         new SafeBillingServiceApi(
           mockDataSource,
           emptyConfigService,
-          new HttpErrorFactory(),
+          httpErrorFactory,
         ),
     ).toThrow();
   });
@@ -83,17 +101,12 @@ describe('SafeBillingServiceApi', () => {
       const result = await target.listPlans();
 
       expect(result).toEqual(plans);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir('safe_billing_plans', ''),
-        url: `${baseUri}/api/v1/plans`,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Bearer ${apiToken}` },
-          params: undefined,
-          timeout: requestTimeout,
-        },
-        expireTimeSeconds,
-      });
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir('safe_billing_plans', ''),
+          url: `${baseUri}/api/v1/plans`,
+        }),
+      );
     });
 
     it('should forward network errors', async () => {
@@ -127,17 +140,12 @@ describe('SafeBillingServiceApi', () => {
       const result = await target.getPlan({ planId: plan.id });
 
       expect(result).toEqual(plan);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(`${plan.id}_safe_billing_plan`, ''),
-        url: `${baseUri}/api/v1/plans/${plan.id}`,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Bearer ${apiToken}` },
-          params: undefined,
-          timeout: requestTimeout,
-        },
-        expireTimeSeconds,
-      });
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir(`${plan.id}_safe_billing_plan`, ''),
+          url: `${baseUri}/api/v1/plans/${plan.id}`,
+        }),
+      );
     });
 
     it('should forward a 401 as a DataSourceError', async () => {
@@ -180,20 +188,15 @@ describe('SafeBillingServiceApi', () => {
       });
 
       expect(result).toEqual(customer);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(
-          `${customer.upstreamCustomerId}_safe_billing_customer`,
-          '',
-        ),
-        url: `${baseUri}/api/v1/customers/${customer.upstreamCustomerId}`,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Bearer ${apiToken}` },
-          params: undefined,
-          timeout: requestTimeout,
-        },
-        expireTimeSeconds,
-      });
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir(
+            `${customer.upstreamCustomerId}_safe_billing_customer`,
+            '',
+          ),
+          url: `${baseUri}/api/v1/customers/${customer.upstreamCustomerId}`,
+        }),
+      );
     });
 
     it('should forward a 401 as a DataSourceError', async () => {
@@ -240,20 +243,15 @@ describe('SafeBillingServiceApi', () => {
       });
 
       expect(result).toEqual(subscriptions);
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(
-          `${customerId}_safe_billing_subscriptions`,
-          'all',
-        ),
-        url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Bearer ${apiToken}` },
-          params: undefined,
-          timeout: requestTimeout,
-        },
-        expireTimeSeconds,
-      });
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir(
+            `${customerId}_safe_billing_subscriptions`,
+            'all',
+          ),
+          url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
+        }),
+      );
     });
 
     it('should forward the status filter as a query param and cache field', async () => {
@@ -265,20 +263,16 @@ describe('SafeBillingServiceApi', () => {
         status: 'active',
       });
 
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(
-          `${customerId}_safe_billing_subscriptions`,
-          'active',
-        ),
-        url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Bearer ${apiToken}` },
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir(
+            `${customerId}_safe_billing_subscriptions`,
+            'active',
+          ),
+          url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
           params: { status: 'active' },
-          timeout: requestTimeout,
-        },
-        expireTimeSeconds,
-      });
+        }),
+      );
     });
 
     it('should forward the "all" status filter as a query param and cache field', async () => {
@@ -290,17 +284,16 @@ describe('SafeBillingServiceApi', () => {
         status: 'all',
       });
 
-      expect(mockDataSource.get).toHaveBeenCalledWith({
-        cacheDir: new CacheDir(`${customerId}_safe_billing_subscriptions`, 'all'),
-        url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
-        notFoundExpireTimeSeconds,
-        networkRequest: {
-          headers: { Authorization: `Bearer ${apiToken}` },
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expectedGetCall({
+          cacheDir: new CacheDir(
+            `${customerId}_safe_billing_subscriptions`,
+            'all',
+          ),
+          url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
           params: { status: 'all' },
-          timeout: requestTimeout,
-        },
-        expireTimeSeconds,
-      });
+        }),
+      );
     });
 
     it('should forward network errors', async () => {

@@ -21,7 +21,7 @@ import type { ISafeBillingServiceApi } from '@/domain/interfaces/safe-billing-se
 @Injectable()
 export class SafeBillingServiceApi implements ISafeBillingServiceApi {
   private readonly baseUri: string;
-  private readonly apiToken: string;
+  private readonly authHeaders: Record<string, string>;
   private readonly requestTimeout: number;
   private readonly expireTimeSeconds: number;
   private readonly notFoundExpireTimeSeconds: number;
@@ -35,9 +35,11 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'safeBillingService.baseUri',
     );
-    this.apiToken = this.configurationService.getOrThrow<string>(
-      'safeBillingService.apiToken',
-    );
+    this.authHeaders = {
+      Authorization: `Bearer ${this.configurationService.getOrThrow<string>(
+        'safeBillingService.apiToken',
+      )}`,
+    };
     this.requestTimeout = this.configurationService.getOrThrow<number>(
       'safeBillingService.requestTimeout',
     );
@@ -83,7 +85,10 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir(args),
+      cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir(
+        args.customerId,
+        args.status ?? 'all',
+      ),
       url: `${this.baseUri}/api/v1/customers/${args.customerId}/subscriptions`,
       params: args.status ? { status: args.status } : undefined,
       schema: z
@@ -104,7 +109,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
         url: args.url,
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         networkRequest: {
-          headers: this.authHeaders(),
+          headers: this.authHeaders,
           params: args.params,
           timeout: this.requestTimeout,
         },
@@ -115,9 +120,5 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
       if (error instanceof ZodError) throw error;
       throw this.httpErrorFactory.from(error);
     }
-  }
-
-  private authHeaders(): Record<string, string> {
-    return { Authorization: `Bearer ${this.apiToken}` };
   }
 }

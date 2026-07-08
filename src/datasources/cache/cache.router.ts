@@ -1196,13 +1196,13 @@ export class CacheRouter {
     );
   }
 
-  static getSafeBillingSubscriptionsCacheDir(args: {
-    customerId: string;
-    status?: string;
-  }): CacheDir {
+  static getSafeBillingSubscriptionsCacheDir(
+    customerId: string,
+    status: string,
+  ): CacheDir {
     return new CacheDir(
-      `${args.customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
-      args.status ?? 'all',
+      `${customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
+      status,
     );
   }
 }
