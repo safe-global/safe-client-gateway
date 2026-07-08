@@ -28,6 +28,7 @@ export class CacheRouter {
   private static readonly GAS_TOKENS_KEY = 'gas_tokens';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly INDEXING_KEY = 'indexing';
+  private static readonly MALICIOUS_ADDRESS_SCAN_KEY = 'malicious_address_scan';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
@@ -1028,6 +1029,22 @@ export class CacheRouter {
     return new CacheDir(
       `${args.chainId}_${CacheRouter.RECIPIENT_ANALYSIS_KEY}_${args.safeAddress}`,
       hash.digest('hex'),
+    );
+  }
+
+  /**
+   * Per-address Blockaid verdict cache.
+   * @param {string} args.chainId - The chain ID.
+   * @param {string} args.address - The lowercased address.
+   * @returns {CacheDir} - Cache directory.
+   */
+  static getMaliciousAddressScanCacheDir(args: {
+    chainId: string;
+    address: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.MALICIOUS_ADDRESS_SCAN_KEY}_${args.address}`,
+      '',
     );
   }
 

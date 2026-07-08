@@ -1,29 +1,49 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
 import type { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
 import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
+import { unionStrip } from '@/modules/owners/routes/utils/malicious-safe-strip';
 import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { MaliciousAddressScanner } from '@/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
 
 @Injectable()
 export class OwnersService {
+  private readonly maliciousFilterEnabled: boolean;
+
   constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
+    private readonly maliciousAddressScanner: MaliciousAddressScanner,
+  ) {
+    this.maliciousFilterEnabled = configurationService.getOrThrow<boolean>(
+      'features.ownersMaliciousFilter',
+    );
+  }
 
-  getSafesByOwner(args: {
+  async getSafesByOwner(args: {
     chainId: string;
     ownerAddress: Address;
   }): Promise<SafeList> {
-    return this.safeRepository.getSafesByOwner(args);
+    const safeList = await this.safeRepository.getSafesByOwner(args);
+    if (!this.maliciousFilterEnabled) return safeList;
+
+    const malicious = await this.maliciousAddressScanner.getMaliciousAddresses(
+      args.chainId,
+      safeList.safes,
+    );
+    if (malicious.size === 0) return safeList;
+    return { safes: unionStrip(safeList.safes, malicious) };
   }
 
   getSafesByOwnerV2(args: {
@@ -35,9 +55,52 @@ export class OwnersService {
 
   async getAllSafesByOwner(args: {
     ownerAddress: Address;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
+  }): Promise<SafesByChainId> {
     const safesByChainId = await this.safeRepository.getAllSafesByOwner(args);
-    return this.filterPoisonedAddresses(safesByChainId);
+    return this.stripPerChain(safesByChainId, { useHeuristic: true });
+  }
+
+  async getAllSafesByOwnerV2(args: {
+    ownerAddress: Address;
+  }): Promise<SafesByChainId> {
+    const safesByChainId = await this.safeRepository.getAllSafesByOwnerV2(args);
+    return this.stripPerChain(safesByChainId, { useHeuristic: false });
+  }
+
+  private async stripPerChain(
+    safesByChainId: SafesByChainId,
+    opts: { useHeuristic: boolean },
+  ): Promise<SafesByChainId> {
+    if (!(opts.useHeuristic || this.maliciousFilterEnabled)) {
+      return safesByChainId;
+    }
+
+    const results = await Promise.all(
+      Object.entries(safesByChainId).map(async ([chainId, addresses]) => {
+        if (addresses === null) return [chainId, null] as const;
+
+        const stripped = new Set<string>();
+        if (this.maliciousFilterEnabled) {
+          const malicious =
+            await this.maliciousAddressScanner.getMaliciousAddresses(
+              chainId,
+              addresses,
+            );
+          for (const address of malicious) stripped.add(address);
+        }
+        if (opts.useHeuristic) {
+          const poisoned = await this.detectPoisonedAddresses(
+            chainId,
+            addresses,
+          );
+          for (const address of poisoned) stripped.add(address.toLowerCase());
+        }
+
+        if (stripped.size === 0) return [chainId, addresses] as const;
+        return [chainId, unionStrip(addresses, stripped)] as const;
+      }),
+    );
+    return Object.fromEntries(results);
   }
 
   private async detectPoisonedAddresses(
@@ -85,33 +148,5 @@ export class OwnersService {
     );
 
     return poisoned;
-  }
-
-  private async filterPoisonedAddresses(safesByChainId: {
-    [chainId: string]: Array<string> | null;
-  }): Promise<{ [chainId: string]: Array<string> | null }> {
-    const entries = Object.entries(safesByChainId);
-    const results = await Promise.all(
-      entries.map(async ([chainId, addresses]) => {
-        if (addresses === null) {
-          return [chainId, null] as const;
-        }
-        const poisoned = await this.detectPoisonedAddresses(chainId, addresses);
-        if (poisoned.size === 0) {
-          return [chainId, addresses] as const;
-        }
-        return [
-          chainId,
-          addresses.filter((addr) => !poisoned.has(addr)),
-        ] as const;
-      }),
-    );
-    return Object.fromEntries(results);
-  }
-
-  getAllSafesByOwnerV2(args: {
-    ownerAddress: Address;
-  }): Promise<SafesByChainId> {
-    return this.safeRepository.getAllSafesByOwnerV2(args);
   }
 }

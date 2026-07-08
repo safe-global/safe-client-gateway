@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { BinaryLike } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import type { Address } from 'viem';
 
@@ -28,6 +27,6 @@ export function truncateAddress(address: Address, length = 4): Address {
   return `${address.slice(0, length + 2)}...${address.slice(-length)}` as Address;
 }
 
-export function hashSha1(value: BinaryLike): string {
+export function hashSha1(value: string): string {
   return createHash('sha1').update(value).digest('hex');
 }

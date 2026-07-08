@@ -12,5 +12,6 @@ export function incomingTokenEventBuilder(): IBuilder<IncomingToken> {
     .with('address', getAddress(faker.finance.ethereumAddress()))
     .with('chainId', faker.string.numeric())
     .with('tokenAddress', getAddress(faker.finance.ethereumAddress()))
-    .with('txHash', faker.string.hexadecimal());
+    .with('txHash', faker.string.hexadecimal())
+    .with('trusted', true);
 }

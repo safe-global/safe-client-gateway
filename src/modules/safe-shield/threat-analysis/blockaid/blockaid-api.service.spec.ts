@@ -6,6 +6,7 @@ import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
@@ -39,6 +40,9 @@ const mockBlockaidClient = {
     transaction: {
       report: vi.fn(),
     },
+    addressBulk: {
+      scan: vi.fn(),
+    },
   },
 } as MockedObject<Blockaid>;
 
@@ -46,13 +50,20 @@ const mockLoggingService = {
   info: vi.fn(),
 } as MockedObject<ILoggingService>;
 
+const addressScanTimeoutMs = 1500;
+const fakeConfigurationService = new FakeConfigurationService();
+fakeConfigurationService.set(
+  'safeShield.maliciousAddressScan.timeoutMs',
+  addressScanTimeoutMs,
+);
+
 describe('BlockaidApi', () => {
   let service: BlockaidApi;
 
   beforeEach(() => {
     vi.resetAllMocks();
 
-    service = new BlockaidApi(mockLoggingService);
+    service = new BlockaidApi(mockLoggingService, fakeConfigurationService);
     (service as any).blockaidClient = mockBlockaidClient;
   });
 
@@ -300,6 +311,45 @@ describe('BlockaidApi', () => {
           details,
           requestId,
         }),
+      ).rejects.toThrow('Blockaid API error');
+    });
+  });
+
+  describe('scanAddressBulk', () => {
+    const addresses = [
+      faker.finance.ethereumAddress(),
+      faker.finance.ethereumAddress(),
+    ];
+
+    it('should call blockaid client with the domain metadata and timeout/retries overrides', async () => {
+      mockBlockaidClient.evm.addressBulk.scan.mockResolvedValue({});
+
+      await service.scanAddressBulk('ethereum', addresses);
+
+      expect(mockBlockaidClient.evm.addressBulk.scan).toHaveBeenCalledWith(
+        { addresses, chain: 'ethereum', metadata: { domain: 'safe.global' } },
+        { timeout: addressScanTimeoutMs, maxRetries: 0 },
+      );
+    });
+
+    it('should return the verdicts from blockaid client', async () => {
+      const response = {
+        [addresses[0]]: 'Malicious' as const,
+        [addresses[1]]: 'Benign' as const,
+      };
+      mockBlockaidClient.evm.addressBulk.scan.mockResolvedValue(response);
+
+      const result = await service.scanAddressBulk('ethereum', addresses);
+
+      expect(result).toEqual(response);
+    });
+
+    it('should forward errors from blockaid client', async () => {
+      const error = new Error('Blockaid API error');
+      mockBlockaidClient.evm.addressBulk.scan.mockRejectedValue(error);
+
+      await expect(
+        service.scanAddressBulk('ethereum', addresses),
       ).rejects.toThrow('Blockaid API error');
     });
   });

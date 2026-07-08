@@ -35,6 +35,7 @@ import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { OidcAuthModule } from '@/modules/auth/oidc/oidc-auth.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
@@ -80,6 +81,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
+      billingWebhook: isBillingWebhookFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -91,6 +93,7 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
+        ...(isBillingWebhookFeatureEnabled ? [BillingModule] : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,
