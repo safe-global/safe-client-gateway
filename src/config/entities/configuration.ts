@@ -57,8 +57,16 @@ export default () => ({
       process.env.AUTH_STATE_TTL_MILLISECONDS ?? `${5 * 60 * 1_000}`,
       10, // 5 minutes
     ),
+    elevationWindowSeconds: Number.parseInt(
+      process.env.AUTH_ELEVATION_WINDOW_SECONDS ?? `${30 * 60}`,
+      10, // 30 minutes
+    ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
-    allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
+    // SPIKE ONLY (revert before PR): the allowed-domain validation branch
+    // requires https and rejects explicit ports, which breaks the local
+    // docker setup (http://localhost:3000). Undefined falls back to strict
+    // same-origin against postLoginRedirectUri, which is correct locally.
+    allowedRedirectDomain: undefined,
     auth0: {
       domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,

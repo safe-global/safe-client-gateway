@@ -51,8 +51,16 @@ export class OidcAuthService {
     this.redirectConfig = getRedirectConfig(this.configurationService);
   }
 
+  /**
+   * Whether the given state payload marks a step-up (elevation) round-trip.
+   */
+  public isElevationState(state: string): boolean {
+    return this.decodeState(state).elevate === true;
+  }
+
   public async authenticateWithOidc(
     code: string,
+    elevated = false,
   ): Promise<OidcAuthTokenResponse> {
     const {
       sub: extUserId,
@@ -61,11 +69,22 @@ export class OidcAuthService {
       exp: expirationTime,
       nbf,
       iat,
+      amr,
+      acr,
+      auth_time: authTime,
     } = await this.auth0Repository.authenticateWithAuthorizationCode(code);
 
     if (!(email && emailVerified)) {
       throw new UnauthorizedException(
         'A verified email is required to sign in',
+      );
+    }
+
+    // A step-up round-trip is only valid if the provider actually performed
+    // multi-factor authentication for it.
+    if (elevated && !amr?.includes('mfa')) {
+      throw new UnauthorizedException(
+        'Multi-factor authentication was not performed',
       );
     }
 
@@ -89,6 +108,12 @@ export class OidcAuthService {
       {
         auth_method: AuthMethod.Oidc,
         sub: userId.toString(),
+        amr,
+        acr,
+        auth_time: authTime,
+        // Server-side stamp: Auth0's auth_time reflects the SSO login, not
+        // the MFA challenge, so elevation freshness is recorded here instead.
+        mfa_verified_at: elevated ? Math.floor(Date.now() / 1_000) : undefined,
       },
       {
         nbf,
@@ -114,12 +139,16 @@ export class OidcAuthService {
    *   same-origin as the configured {@link postLoginRedirectUri}.
    * @param connection - Optional OIDC connection name to route directly
    *   to a specific identity provider.
+   * @param elevate - When true, requests step-up authentication: the
+   *   provider must re-challenge multi-factor authentication and stamp a
+   *   fresh auth_time, regardless of an existing provider session.
    * @returns The OIDC authorization URL, the encoded state, and its TTL.
    * @throws {BadRequestException} If {@link redirectUrl} is not same-origin.
    */
   public createOidcAuthorizationRequest(
     redirectUrl?: string,
     connection?: OidcConnection,
+    elevate?: boolean,
   ): {
     authorizationUrl: string;
     state: string;
@@ -132,6 +161,7 @@ export class OidcAuthService {
     const statePayload = {
       csrf: randomBytes(32).toString('hex'),
       redirectUrl: resolvedRedirectUrl,
+      elevate: elevate || undefined,
     };
 
     const state = Buffer.from(JSON.stringify(statePayload)).toString(
@@ -142,6 +172,7 @@ export class OidcAuthService {
       authorizationUrl: this.auth0Repository.getAuthorizationUrl(
         state,
         connection,
+        elevate,
       ),
       state,
       stateMaxAge: this.stateTtlMs,

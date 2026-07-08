@@ -85,6 +85,13 @@ export class OidcAuthController {
     description:
       'OIDC connection name to route to a specific identity provider.',
   })
+  @ApiQuery({
+    name: 'elevate',
+    required: false,
+    type: Boolean,
+    description:
+      'When true, requests step-up authentication: the provider re-challenges MFA and the new session carries a fresh auth_time.',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -96,11 +103,14 @@ export class OidcAuthController {
     redirectUrl?: string,
     @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
     connection?: OidcConnection,
+    @Query('elevate')
+    elevate?: string,
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
       this.oidcAuthService.createOidcAuthorizationRequest(
         redirectUrl,
         connection,
+        elevate === 'true',
       );
 
     res.cookie(OidcAuthController.OIDC_STATE_COOKIE_NAME, state, {
@@ -191,8 +201,9 @@ export class OidcAuthController {
     }
 
     try {
+      const elevated = this.oidcAuthService.isElevationState(state);
       const { accessToken, maxAge } =
-        await this.oidcAuthService.authenticateWithOidc(code);
+        await this.oidcAuthService.authenticateWithOidc(code, elevated);
 
       res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
         ...this.getCookieOptions(),

@@ -6,10 +6,15 @@ import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.
 
 // Auth0 ID token claims:
 // https://auth0.com/docs/tokens/references/id-token-structure
+// amr/acr/auth_time are only present when Auth0 performed (step-up)
+// authentication with MFA: https://auth0.com/docs/secure/multi-factor-authentication/step-up-authentication
 export const Auth0TokenSchema = JwtClaimsSchema.extend({
   sub: z.string().min(1),
   email: EmailAddressSchema.optional(),
   email_verified: z.boolean().optional(),
+  amr: z.array(z.string()).optional(),
+  acr: z.string().optional(),
+  auth_time: z.number().optional(),
 }).superRefine((token, ctx) => {
   if (token.email_verified === true && token.email === undefined) {
     ctx.addIssue({

@@ -21,6 +21,15 @@ export const SiweAuthPayloadDtoSchema = z.object({
 export const OidcAuthPayloadDtoSchema = z.object({
   auth_method: z.literal(AuthMethod.Oidc),
   sub: NumericStringSchema,
+  // Authentication context copied from the Auth0 ID token at login.
+  // amr contains "mfa" when Auth0 performed multi-factor authentication;
+  // auth_time (epoch seconds) is when the user last actively authenticated.
+  amr: z.array(z.string()).optional(),
+  acr: z.string().optional(),
+  auth_time: z.number().optional(),
+  // Epoch seconds of the last step-up MFA challenge, stamped by CGW at the
+  // elevation callback (Auth0's auth_time reflects login, not the challenge).
+  mfa_verified_at: z.number().optional(),
 });
 
 export const AuthPayloadDtoSchema = z.discriminatedUnion('auth_method', [
@@ -65,6 +74,10 @@ export class AuthPayload {
   auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
   chain_id?: string;
   signer_address?: Address;
+  amr?: Array<string>;
+  acr?: string;
+  auth_time?: number;
+  mfa_verified_at?: number;
 
   constructor(props?: AuthPayloadDto) {
     this.sub = props?.sub;
@@ -73,6 +86,27 @@ export class AuthPayload {
       this.chain_id = props.chain_id;
       this.signer_address = props.signer_address;
     }
+    if (props?.auth_method === AuthMethod.Oidc) {
+      this.amr = props.amr;
+      this.acr = props.acr;
+      this.auth_time = props.auth_time;
+      this.mfa_verified_at = props.mfa_verified_at;
+    }
+  }
+
+  /**
+   * Whether the session was multi-factor authenticated recently enough to
+   * perform a sensitive action. mfa_verified_at is stamped by the elevation
+   * callback; auth_time is accepted as a fallback for sessions whose initial
+   * login already included a fresh MFA challenge.
+   */
+  hasFreshMfa(maxAgeSeconds: number): boolean {
+    const verifiedAt = this.mfa_verified_at ?? this.auth_time;
+    return (
+      !!this.amr?.includes('mfa') &&
+      verifiedAt !== undefined &&
+      Date.now() / 1_000 - verifiedAt <= maxAgeSeconds
+    );
   }
 
   /**

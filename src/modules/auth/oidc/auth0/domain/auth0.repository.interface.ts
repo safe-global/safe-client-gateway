@@ -9,9 +9,14 @@ export interface IAuth0Repository {
    *
    * @param state - Opaque anti-CSRF state value that will be echoed back by Auth0.
    * @param connection - Optional OIDC connection name to route directly to a specific identity provider.
+   * @param elevate - When true, requests step-up authentication (fresh MFA challenge).
    * @returns The fully qualified Auth0 `/authorize` URL.
    */
-  getAuthorizationUrl(state: string, connection?: string): string;
+  getAuthorizationUrl(
+    state: string,
+    connection?: string,
+    elevate?: boolean,
+  ): string;
 
   /**
    * Authenticates an Auth0 authorization code and returns the verified token claims.

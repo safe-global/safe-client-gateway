@@ -14,6 +14,8 @@ import type { Raw } from '@/validation/entities/raw.entity';
 @Injectable()
 export class Auth0Api implements IAuth0Api {
   private static readonly AUTHORIZATION_CODE_GRANT_TYPE = 'authorization_code';
+  private static readonly MULTI_FACTOR_ACR_VALUE =
+    'http://schemas.openid.net/pape/policies/2007/06/multi-factor';
   private readonly baseUri: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -42,25 +44,45 @@ export class Auth0Api implements IAuth0Api {
     this.redirectUri = this.configurationService.getOrThrow<string>(
       `${prefix}.redirectUri`,
     );
-    this.audience = this.configurationService.getOrThrow<string>(
-      `${prefix}.audience`,
-    );
+    // Optional: without an audience Auth0 issues an opaque access token, but
+    // the ID token (the only thing CGW consumes) is unaffected.
+    this.audience =
+      this.configurationService.get<string>(`${prefix}.audience`) ?? '';
     this.scope = this.configurationService.getOrThrow<string>(
       `${prefix}.scope`,
     );
   }
 
-  public getAuthorizationUrl(state: string, connection?: string): string {
+  public getAuthorizationUrl(
+    state: string,
+    connection?: string,
+    elevate?: boolean,
+  ): string {
     const url = new URL('/authorize', this.baseUri);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('client_id', this.clientId);
     url.searchParams.set('redirect_uri', this.redirectUri);
     url.searchParams.set('scope', this.scope);
     url.searchParams.set('state', state);
-    url.searchParams.set('audience', this.audience);
+    // An empty audience param makes Auth0 reject the request with 400.
+    if (this.audience) {
+      url.searchParams.set('audience', this.audience);
+    }
 
     if (connection) {
       url.searchParams.set('connection', connection);
+    }
+
+    if (elevate) {
+      // Step-up authentication: acr_values makes Auth0 require MFA for this
+      // transaction. Deliberately NO max_age: the SSO session keeps covering
+      // the first factor, so the user is challenged only for the second one.
+      // Freshness is stamped server-side at the callback (mfa_verified_at).
+      // https://auth0.com/docs/secure/multi-factor-authentication/step-up-authentication/configure-step-up-authentication-for-web-apps
+      url.searchParams.set(
+        'acr_values',
+        Auth0Api.MULTI_FACTOR_ACR_VALUE,
+      );
     }
 
     return url.toString();
