@@ -20,7 +20,7 @@ describe('FeatureFlagService Integration', () => {
   let configurationService: IConfigurationService;
 
   afterEach(async () => {
-    if (app) await app.close();
+    if (app) await app?.close();
   });
 
   describe('with default config', () => {
@@ -94,7 +94,7 @@ describe('FeatureFlagService Integration', () => {
           url: expect.stringContaining(`/api/v2/chains/${CUSTOM_CGW_KEY}/1`),
         }),
       );
-      await app.close();
+      await app?.close();
     });
   });
 });

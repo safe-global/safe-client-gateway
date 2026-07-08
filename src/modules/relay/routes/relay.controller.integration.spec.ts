@@ -161,7 +161,7 @@ describe('Relay controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   // Regular relay tests for chains without no-fee campaign configuration

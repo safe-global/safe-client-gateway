@@ -85,7 +85,7 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('Failure: data page validation fails', async () => {

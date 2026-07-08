@@ -58,7 +58,7 @@ describe('Safes Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('safe info is correctly serialised', async () => {

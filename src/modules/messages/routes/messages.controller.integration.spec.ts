@@ -47,7 +47,7 @@ describe('Messages controller', () => {
 
   async function initApp(config: typeof configuration): Promise<void> {
     if (app) {
-      await app.close();
+      await app?.close();
     }
 
     const moduleFixture: TestingModule = await createTestModule({
@@ -83,7 +83,7 @@ describe('Messages controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET messages by hash', () => {

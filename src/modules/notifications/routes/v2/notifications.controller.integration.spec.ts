@@ -78,7 +78,7 @@ describe('Notifications Controller V2', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   beforeEach(() => {

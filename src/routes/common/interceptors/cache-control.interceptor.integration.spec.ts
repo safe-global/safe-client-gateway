@@ -42,7 +42,7 @@ describe('CacheControlInterceptor tests', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('should set the Cache-Control header to no-cache', () => {

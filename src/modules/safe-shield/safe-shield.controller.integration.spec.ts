@@ -60,7 +60,7 @@ describe('SafeShieldController', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('POST /v1/chains/:chainId/security/:safeAddress/threat-analysis', () => {

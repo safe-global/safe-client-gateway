@@ -50,7 +50,7 @@ describe('Owners Controller (Unit)', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET all safes by owner address', () => {

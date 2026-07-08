@@ -111,7 +111,7 @@ describe('Add transaction confirmations - Transactions Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('should throw a validation error', async () => {

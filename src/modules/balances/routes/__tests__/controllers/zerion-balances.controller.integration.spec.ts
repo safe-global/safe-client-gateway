@@ -76,7 +76,7 @@ describe('Balances Controller', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   beforeEach(() => {

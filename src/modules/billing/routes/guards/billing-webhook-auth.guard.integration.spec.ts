@@ -87,7 +87,7 @@ describe('BillingWebhookAuthGuard', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('is applied to the webhook endpoint', () => {
