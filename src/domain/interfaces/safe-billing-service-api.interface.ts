@@ -15,10 +15,10 @@ export interface ISafeBillingServiceApi {
 
   getPlan(args: { planId: string }): Promise<Plan>;
 
-  getCustomer(args: { customerId: string }): Promise<Customer>;
+  getCustomer(args: { upstreamCustomerId: string }): Promise<Customer>;
 
   getSubscriptionsByCustomerId(args: {
-    customerId: string;
+    upstreamCustomerId: string;
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>>;
 

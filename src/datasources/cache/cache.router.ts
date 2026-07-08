@@ -1209,19 +1209,19 @@ export class CacheRouter {
     return new CacheDir(`${planId}_${CacheRouter.SAFE_BILLING_PLAN_KEY}`, '');
   }
 
-  static getSafeBillingCustomerCacheDir(customerId: string): CacheDir {
+  static getSafeBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
     return new CacheDir(
-      `${customerId}_${CacheRouter.SAFE_BILLING_CUSTOMER_KEY}`,
+      `${upstreamCustomerId}_${CacheRouter.SAFE_BILLING_CUSTOMER_KEY}`,
       '',
     );
   }
 
   static getSafeBillingSubscriptionsCacheDir(args: {
-    customerId: string;
+    upstreamCustomerId: string;
     status: SubscriptionStatusFilter;
   }): CacheDir {
     return new CacheDir(
-      `${args.customerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
+      `${args.upstreamCustomerId}_${CacheRouter.SAFE_BILLING_SUBSCRIPTIONS_KEY}`,
       args.status,
     );
   }

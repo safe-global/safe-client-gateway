@@ -85,10 +85,12 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     });
   }
 
-  getCustomer(args: { customerId: string }): Promise<Customer> {
+  getCustomer(args: { upstreamCustomerId: string }): Promise<Customer> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingCustomerCacheDir(args.customerId),
-      url: `${this.baseUri}/api/v1/customers/${args.customerId}`,
+      cacheDir: CacheRouter.getSafeBillingCustomerCacheDir(
+        args.upstreamCustomerId,
+      ),
+      url: `${this.baseUri}/api/v1/customers/${args.upstreamCustomerId}`,
       schema: z
         .object({ customer: CustomerSchema })
         .transform((body) => body.customer),
@@ -101,15 +103,15 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
    * bounds how long a status change (cancel/upgrade/renew) can stay stale.
    */
   getSubscriptionsByCustomerId(args: {
-    customerId: string;
+    upstreamCustomerId: string;
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
     return this.request({
       cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir({
-        customerId: args.customerId,
+        upstreamCustomerId: args.upstreamCustomerId,
         status: args.status ?? 'all',
       }),
-      url: `${this.baseUri}/api/v1/customers/${args.customerId}/subscriptions`,
+      url: `${this.baseUri}/api/v1/customers/${args.upstreamCustomerId}/subscriptions`,
       params: args.status ? { status: args.status } : undefined,
       schema: z
         .object({ subscriptions: z.array(SubscriptionSchema) })

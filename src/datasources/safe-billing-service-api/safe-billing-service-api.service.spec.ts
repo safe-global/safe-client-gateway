@@ -201,7 +201,7 @@ describe('SafeBillingServiceApi', () => {
       mockDataSource.get.mockResolvedValueOnce(rawify({ customer }));
 
       const result = await target.getCustomer({
-        customerId: customer.upstreamCustomerId,
+        upstreamCustomerId: customer.upstreamCustomerId,
       });
 
       expect(result).toEqual(customer);
@@ -217,38 +217,38 @@ describe('SafeBillingServiceApi', () => {
     });
 
     it('should forward a 401 as a DataSourceError', async () => {
-      const customerId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
       const error = new NetworkResponseError(
-        new URL(`${baseUri}/api/v1/customers/${customerId}`),
+        new URL(`${baseUri}/api/v1/customers/${upstreamCustomerId}`),
         { status: 401 } as Response,
         { message: 'Token expired' },
       );
       mockDataSource.get.mockRejectedValueOnce(error);
 
-      await expect(target.getCustomer({ customerId })).rejects.toThrow(
-        new DataSourceError('Token expired', 401),
-      );
+      await expect(
+        target.getCustomer({ upstreamCustomerId }),
+      ).rejects.toThrow(new DataSourceError('Token expired', 401));
     });
 
     it('should forward network errors', async () => {
-      const customerId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
-        new URL(`${baseUri}/api/v1/customers/${customerId}`),
+        new URL(`${baseUri}/api/v1/customers/${upstreamCustomerId}`),
         { status } as Response,
         { message: 'Internal server error' },
       );
       mockDataSource.get.mockRejectedValueOnce(error);
 
-      await expect(target.getCustomer({ customerId })).rejects.toThrow(
-        new DataSourceError('Internal server error', status),
-      );
+      await expect(
+        target.getCustomer({ upstreamCustomerId }),
+      ).rejects.toThrow(new DataSourceError('Internal server error', status));
     });
   });
 
   describe('getSubscriptionsByCustomerId', () => {
     it('should call the billing service API with correct URL, headers and cache dir', async () => {
-      const customerId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
       const subscriptions = [
         subscriptionBuilder().build(),
         subscriptionBuilder().build(),
@@ -256,38 +256,38 @@ describe('SafeBillingServiceApi', () => {
       mockDataSource.get.mockResolvedValueOnce(rawify({ subscriptions }));
 
       const result = await target.getSubscriptionsByCustomerId({
-        customerId,
+        upstreamCustomerId,
       });
 
       expect(result).toEqual(subscriptions);
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${customerId}_safe_billing_subscriptions`,
+            `${upstreamCustomerId}_safe_billing_subscriptions`,
             'all',
           ),
-          url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
+          url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
           expireTimeSeconds: subscriptionsExpireTimeSeconds,
         }),
       );
     });
 
     it('should forward the status filter as a query param and cache field', async () => {
-      const customerId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
       mockDataSource.get.mockResolvedValueOnce(rawify({ subscriptions: [] }));
 
       await target.getSubscriptionsByCustomerId({
-        customerId,
+        upstreamCustomerId,
         status: 'active',
       });
 
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${customerId}_safe_billing_subscriptions`,
+            `${upstreamCustomerId}_safe_billing_subscriptions`,
             'active',
           ),
-          url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
+          url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
           params: { status: 'active' },
           expireTimeSeconds: subscriptionsExpireTimeSeconds,
         }),
@@ -295,21 +295,21 @@ describe('SafeBillingServiceApi', () => {
     });
 
     it('should forward the "all" status filter as a query param and cache field', async () => {
-      const customerId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
       mockDataSource.get.mockResolvedValueOnce(rawify({ subscriptions: [] }));
 
       await target.getSubscriptionsByCustomerId({
-        customerId,
+        upstreamCustomerId,
         status: 'all',
       });
 
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${customerId}_safe_billing_subscriptions`,
+            `${upstreamCustomerId}_safe_billing_subscriptions`,
             'all',
           ),
-          url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
+          url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
           params: { status: 'all' },
           expireTimeSeconds: subscriptionsExpireTimeSeconds,
         }),
@@ -317,17 +317,19 @@ describe('SafeBillingServiceApi', () => {
     });
 
     it('should forward network errors', async () => {
-      const customerId = faker.string.uuid();
+      const upstreamCustomerId = faker.string.uuid();
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
-        new URL(`${baseUri}/api/v1/customers/${customerId}/subscriptions`),
+        new URL(
+          `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
+        ),
         { status } as Response,
         { message: 'Internal server error' },
       );
       mockDataSource.get.mockRejectedValueOnce(error);
 
       await expect(
-        target.getSubscriptionsByCustomerId({ customerId }),
+        target.getSubscriptionsByCustomerId({ upstreamCustomerId }),
       ).rejects.toThrow(new DataSourceError('Internal server error', status));
     });
   });
