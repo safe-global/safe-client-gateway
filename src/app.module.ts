@@ -34,6 +34,7 @@ import { AboutModule } from '@/modules/about/about.module';
 import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { OidcAuthModule } from '@/modules/auth/oidc/oidc-auth.module';
+import { OidcProviderModule } from '@/modules/auth/oidc-provider/oidc-provider.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { BillingModule } from '@/modules/billing/billing.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
@@ -78,6 +79,7 @@ export class AppModule implements NestModule {
     const {
       auth: isAuthFeatureEnabled,
       oidc_auth: isOidcAuthFeatureEnabled,
+      oidcProvider: isOidcProviderFeatureEnabled,
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
@@ -92,6 +94,7 @@ export class AppModule implements NestModule {
         AboutModule,
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
+        ...(isOidcProviderFeatureEnabled ? [OidcProviderModule] : []),
         BalancesModule,
         ...(isBillingWebhookFeatureEnabled ? [BillingModule] : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),

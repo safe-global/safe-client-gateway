@@ -93,6 +93,8 @@ export class CacheRouter {
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
   private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
+  private static readonly OIDC_PROVIDER_REQUEST_KEY = 'oidc_provider_request';
+  private static readonly OIDC_PROVIDER_CODE_KEY = 'oidc_provider_code';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -100,6 +102,17 @@ export class CacheRouter {
 
   static getAuthNonceCacheDir(nonce: string): CacheDir {
     return new CacheDir(CacheRouter.getAuthNonceCacheKey(nonce), '');
+  }
+
+  static getOidcProviderRequestCacheDir(requestId: string): CacheDir {
+    return new CacheDir(
+      `${CacheRouter.OIDC_PROVIDER_REQUEST_KEY}_${requestId}`,
+      '',
+    );
+  }
+
+  static getOidcProviderCodeCacheDir(code: string): CacheDir {
+    return new CacheDir(`${CacheRouter.OIDC_PROVIDER_CODE_KEY}_${code}`, '');
   }
 
   static getBridgeChainsCacheDir(): CacheDir {

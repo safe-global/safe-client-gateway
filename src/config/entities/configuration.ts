@@ -76,6 +76,24 @@ export default () => ({
         10, // 30 seconds
       ),
     },
+    oidcProvider: {
+      clientId: process.env.OIDC_PROVIDER_CLIENT_ID,
+      clientSecret: process.env.OIDC_PROVIDER_CLIENT_SECRET,
+      redirectUris:
+        process.env.OIDC_PROVIDER_REDIRECT_URIS?.split(',')
+          .map((uri) => uri.trim())
+          .filter(Boolean) ?? [],
+      signInPageUrl: process.env.OIDC_PROVIDER_SIGN_IN_PAGE_URL,
+      issuer: process.env.OIDC_PROVIDER_ISSUER,
+      authorizationCodeTtlSeconds: Number.parseInt(
+        process.env.OIDC_PROVIDER_CODE_TTL_SECONDS ?? `${5 * 60}`,
+        10, // 5 minutes
+      ),
+      accessTokenTtlSeconds: Number.parseInt(
+        process.env.OIDC_PROVIDER_ACCESS_TOKEN_TTL_SECONDS ?? `${60 * 60}`,
+        10, // 1 hour
+      ),
+    },
     rateLimit: {
       max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`, 10),
       windowSeconds: Number.parseInt(
@@ -427,6 +445,7 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
+    oidcProvider: process.env.FF_OIDC_PROVIDER?.toLowerCase() === 'true',
     billingWebhook: process.env.FF_BILLING_WEBHOOK?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
