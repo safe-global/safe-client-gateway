@@ -384,6 +384,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
       10,
     ),
+    billingSubscriptions: Number.parseInt(
+      process.env.EXPIRATION_TIME_BILLING_SUBSCRIPTIONS_SECONDS ?? `${30}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,

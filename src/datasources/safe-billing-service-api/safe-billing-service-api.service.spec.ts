@@ -35,6 +35,7 @@ describe('SafeBillingServiceApi', () => {
   let apiToken: string;
   let requestTimeout: number;
   let expireTimeSeconds: number;
+  let subscriptionsExpireTimeSeconds: number;
   let notFoundExpireTimeSeconds: number;
 
   beforeEach(() => {
@@ -46,6 +47,7 @@ describe('SafeBillingServiceApi', () => {
     apiToken = faker.string.alphanumeric(32);
     requestTimeout = faker.number.int({ min: 1000, max: 10_000 });
     expireTimeSeconds = faker.number.int({ min: 1, max: 100 });
+    subscriptionsExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
     notFoundExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
 
     fakeConfigurationService.set('safeBillingService.baseUri', baseUri);
@@ -57,6 +59,10 @@ describe('SafeBillingServiceApi', () => {
     fakeConfigurationService.set(
       'expirationTimeInSeconds.default',
       expireTimeSeconds,
+    );
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.billingSubscriptions',
+      subscriptionsExpireTimeSeconds,
     );
     fakeConfigurationService.set(
       'expirationTimeInSeconds.notFound.default',
@@ -75,6 +81,7 @@ describe('SafeBillingServiceApi', () => {
     cacheDir: CacheDir;
     url: string;
     params?: Record<string, string>;
+    expireTimeSeconds?: number;
   }): unknown {
     return {
       cacheDir: args.cacheDir,
@@ -85,7 +92,7 @@ describe('SafeBillingServiceApi', () => {
         params: args.params,
         timeout: requestTimeout,
       },
-      expireTimeSeconds,
+      expireTimeSeconds: args.expireTimeSeconds ?? expireTimeSeconds,
     };
   }
 
@@ -260,6 +267,7 @@ describe('SafeBillingServiceApi', () => {
             'all',
           ),
           url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
+          expireTimeSeconds: subscriptionsExpireTimeSeconds,
         }),
       );
     });
@@ -281,6 +289,7 @@ describe('SafeBillingServiceApi', () => {
           ),
           url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
           params: { status: 'active' },
+          expireTimeSeconds: subscriptionsExpireTimeSeconds,
         }),
       );
     });
@@ -302,6 +311,7 @@ describe('SafeBillingServiceApi', () => {
           ),
           url: `${baseUri}/api/v1/customers/${customerId}/subscriptions`,
           params: { status: 'all' },
+          expireTimeSeconds: subscriptionsExpireTimeSeconds,
         }),
       );
     });

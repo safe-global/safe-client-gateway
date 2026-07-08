@@ -32,6 +32,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
   private readonly authHeaders: Record<string, string>;
   private readonly requestTimeout: number;
   private readonly expireTimeSeconds: number;
+  private readonly subscriptionsExpireTimeSeconds: number;
   private readonly notFoundExpireTimeSeconds: number;
 
   constructor(
@@ -56,6 +57,10 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     this.expireTimeSeconds = this.configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.default',
     );
+    this.subscriptionsExpireTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.billingSubscriptions',
+      );
     this.notFoundExpireTimeSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.default',
@@ -90,6 +95,11 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     });
   }
 
+  /**
+   * Cached with a short, dedicated TTL rather than the default one: there is
+   * no webhook-driven invalidation for subscription changes yet, so this
+   * bounds how long a status change (cancel/upgrade/renew) can stay stale.
+   */
   getSubscriptionsByCustomerId(args: {
     customerId: string;
     status?: SubscriptionStatusFilter;
@@ -104,6 +114,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
       schema: z
         .object({ subscriptions: z.array(SubscriptionSchema) })
         .transform((body) => body.subscriptions),
+      expireTimeSeconds: this.subscriptionsExpireTimeSeconds,
     });
   }
 
@@ -149,6 +160,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     url: string;
     params?: NetworkRequest['params'];
     schema: z.ZodType<T>;
+    expireTimeSeconds?: number;
   }): Promise<T> {
     return this.parse(
       this.dataSource.get<unknown>({
@@ -160,7 +172,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
           params: args.params,
           timeout: this.requestTimeout,
         },
-        expireTimeSeconds: this.expireTimeSeconds,
+        expireTimeSeconds: args.expireTimeSeconds ?? this.expireTimeSeconds,
       }),
       args.schema,
     );
