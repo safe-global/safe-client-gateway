@@ -141,26 +141,44 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     });
   }
 
+  /** Not cached: this creates a new resource on every call. */
   createCheckoutSession(args: {
     paymentLinkId: string;
     upstreamCustomerId: string;
     returnUrl: string;
   }): Promise<CheckoutSession> {
-    return this.postUncached({
-      url: `${this.baseUri}/api/v1/payment-links/${args.paymentLinkId}/checkout`,
-      data: {
-        upstreamCustomerId: args.upstreamCustomerId,
-        returnUrl: args.returnUrl,
-      },
-      schema: CheckoutSessionSchema,
-    });
+    return this.parse(
+      this.networkService
+        .post<unknown>({
+          url: `${this.baseUri}/api/v1/payment-links/${args.paymentLinkId}/checkout`,
+          data: {
+            upstreamCustomerId: args.upstreamCustomerId,
+            returnUrl: args.returnUrl,
+          },
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+          },
+        })
+        .then(({ data }) => data),
+      CheckoutSessionSchema,
+    );
   }
 
+  /** Not cached: always fetches a fresh session (e.g. for post-payment polling). */
   getCheckoutSession(args: { sessionId: string }): Promise<CheckoutSession> {
-    return this.getUncached({
-      url: `${this.baseUri}/api/v1/sessions/${args.sessionId}`,
-      schema: CheckoutSessionSchema,
-    });
+    return this.parse(
+      this.networkService
+        .get<unknown>({
+          url: `${this.baseUri}/api/v1/sessions/${args.sessionId}`,
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+          },
+        })
+        .then(({ data }) => data),
+      CheckoutSessionSchema,
+    );
   }
 
   private request<T>(args: {
@@ -182,52 +200,6 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
         },
         expireTimeSeconds: args.expireTimeSeconds ?? this.expireTimeSeconds,
       }),
-      args.schema,
-    );
-  }
-
-  /**
-   * Issues a GET request that bypasses the cache entirely, for endpoints
-   * that must always return fresh data (checkout session polling).
-   */
-  private getUncached<T>(args: {
-    url: string;
-    schema: z.ZodType<T>;
-  }): Promise<T> {
-    return this.parse(
-      this.networkService
-        .get<unknown>({
-          url: args.url,
-          networkRequest: {
-            headers: this.authHeaders,
-            timeout: this.requestTimeout,
-          },
-        })
-        .then(({ data }) => data),
-      args.schema,
-    );
-  }
-
-  /**
-   * Issues a POST request that bypasses the cache entirely, for endpoints
-   * that mutate state (checkout session creation).
-   */
-  private postUncached<T>(args: {
-    url: string;
-    data?: object;
-    schema: z.ZodType<T>;
-  }): Promise<T> {
-    return this.parse(
-      this.networkService
-        .post<unknown>({
-          url: args.url,
-          data: args.data,
-          networkRequest: {
-            headers: this.authHeaders,
-            timeout: this.requestTimeout,
-          },
-        })
-        .then(({ data }) => data),
       args.schema,
     );
   }
