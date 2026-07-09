@@ -30,15 +30,7 @@ describe('Balances Controller', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-      },
-    });
-
-    const moduleFixture = await createTestModule({ config: testConfiguration });
+    const moduleFixture = await createTestModule({ config: configuration });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
