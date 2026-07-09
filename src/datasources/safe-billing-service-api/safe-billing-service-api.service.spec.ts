@@ -120,7 +120,7 @@ describe('SafeBillingServiceApi', () => {
       expect(result).toEqual(plans);
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
-          cacheDir: new CacheDir('safe_billing_plans', ''),
+          cacheDir: new CacheDir('billing_plans', ''),
           url: `${baseUri}/api/v1/plans`,
         }),
       );
@@ -336,7 +336,7 @@ describe('SafeBillingServiceApi', () => {
   });
 
   describe('listPaymentLinks', () => {
-    it('should call the billing service API with correct URL, headers and cache dir (no customerId)', async () => {
+    it('should call the billing service API with correct URL, headers and cache dir (no upstreamCustomerId)', async () => {
       const paymentLinks = [
         paymentLinkBuilder().build(),
         paymentLinkBuilder().build(),
@@ -348,25 +348,25 @@ describe('SafeBillingServiceApi', () => {
       expect(result).toEqual(paymentLinks);
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
-          cacheDir: new CacheDir('safe_billing_payment_links', ''),
+          cacheDir: new CacheDir('billing_payment_links', ''),
           url: `${baseUri}/api/v1/payment-links`,
         }),
       );
     });
 
-    it('should forward customerId as a query param and cache dir', async () => {
-      const customerId = faker.string.uuid();
+    it('should forward upstreamCustomerId as the customerId query param and cache dir', async () => {
+      const upstreamCustomerId = faker.string.uuid();
       const paymentLinks = [paymentLinkBuilder().build()];
       mockDataSource.get.mockResolvedValueOnce(rawify({ paymentLinks }));
 
-      const result = await target.listPaymentLinks({ customerId });
+      const result = await target.listPaymentLinks({ upstreamCustomerId });
 
       expect(result).toEqual(paymentLinks);
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
-          cacheDir: new CacheDir('safe_billing_payment_links', customerId),
+          cacheDir: new CacheDir('billing_payment_links', upstreamCustomerId),
           url: `${baseUri}/api/v1/payment-links`,
-          params: { customerId },
+          params: { customerId: upstreamCustomerId },
         }),
       );
     });

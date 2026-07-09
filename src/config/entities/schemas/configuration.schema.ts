@@ -247,6 +247,12 @@ export const RootConfigurationSchema = z
         message:
           'is required in production and staging environments when the billing service is enabled',
       },
+      {
+        field: 'SAFE_BILLING_SERVICE_BASE_URI',
+        requiredWhen: isBillingServiceEnabled,
+        message:
+          'is required in production and staging environments when the billing service is enabled',
+      },
     ]) {
       if (requiredWhen && !(config as Record<string, unknown>)[field]) {
         ctx.addIssue({ code: 'custom', message, path: [field] });

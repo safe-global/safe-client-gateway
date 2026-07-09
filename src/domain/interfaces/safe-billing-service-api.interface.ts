@@ -23,11 +23,13 @@ export interface ISafeBillingServiceApi {
   }): Promise<Array<Subscription>>;
 
   /**
-   * When `args.customerId` is provided, only payment links associated with
-   * that upstream customer are returned; when omitted, only the general
+   * When `args.upstreamCustomerId` is provided, only payment links associated
+   * with that upstream customer are returned; when omitted, only the general
    * (customer-group-level) payment links are returned.
    */
-  listPaymentLinks(args?: { customerId?: string }): Promise<Array<PaymentLink>>;
+  listPaymentLinks(args?: {
+    upstreamCustomerId?: string;
+  }): Promise<Array<PaymentLink>>;
 
   /** Not cached: this creates a new resource on every call. */
   createCheckoutSession(args: {

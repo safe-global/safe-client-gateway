@@ -127,14 +127,16 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
   }
 
   listPaymentLinks(args?: {
-    customerId?: string;
+    upstreamCustomerId?: string;
   }): Promise<Array<PaymentLink>> {
     return this.request({
       cacheDir: CacheRouter.getSafeBillingPaymentLinksCacheDir(
-        args?.customerId,
+        args?.upstreamCustomerId,
       ),
       url: `${this.baseUri}/api/v1/payment-links`,
-      params: args?.customerId ? { customerId: args.customerId } : undefined,
+      params: args?.upstreamCustomerId
+        ? { customerId: args.upstreamCustomerId }
+        : undefined,
       schema: z
         .object({ paymentLinks: z.array(PaymentLinkSchema) })
         .transform((body) => body.paymentLinks),

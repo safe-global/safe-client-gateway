@@ -37,17 +37,16 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly BILLING_CUSTOMER_KEY = 'billing_customer';
+  private static readonly BILLING_PAYMENT_LINKS_KEY = 'billing_payment_links';
+  private static readonly BILLING_PLAN_KEY = 'billing_plan';
+  private static readonly BILLING_PLANS_KEY = 'billing_plans';
+  private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
   private static readonly SAFE_BALANCES_KEY = 'safe_balances';
-  private static readonly BILLING_CUSTOMER_KEY = 'billing_customer';
-  private static readonly BILLING_PLAN_KEY = 'billing_plan';
-  private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
-  private static readonly SAFE_BILLING_PAYMENT_LINKS_KEY =
-    'safe_billing_payment_links';
-  private static readonly SAFE_BILLING_PLANS_KEY = 'safe_billing_plans';
   private static readonly SAFE_COLLECTIBLES_KEY = 'safe_collectibles';
   private static readonly SAFE_EXISTS_KEY = 'safe_exists';
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
@@ -1201,7 +1200,7 @@ export class CacheRouter {
   }
 
   static getSafeBillingPlansCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.SAFE_BILLING_PLANS_KEY, '');
+    return new CacheDir(CacheRouter.BILLING_PLANS_KEY, '');
   }
 
   static getSafeBillingPlanCacheDir(planId: string): CacheDir {
@@ -1225,10 +1224,12 @@ export class CacheRouter {
     );
   }
 
-  static getSafeBillingPaymentLinksCacheDir(customerId?: string): CacheDir {
+  static getSafeBillingPaymentLinksCacheDir(
+    upstreamCustomerId?: string,
+  ): CacheDir {
     return new CacheDir(
-      CacheRouter.SAFE_BILLING_PAYMENT_LINKS_KEY,
-      customerId ?? '',
+      CacheRouter.BILLING_PAYMENT_LINKS_KEY,
+      upstreamCustomerId ?? '',
     );
   }
 }
