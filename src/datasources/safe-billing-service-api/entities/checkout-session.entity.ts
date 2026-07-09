@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
-// Field names intentionally mirror the upstream billing-service/Stripe wire
-// format (snake_case) rather than being remapped to camelCase, since this
-// schema is a near-verbatim pass-through of a Stripe Checkout Session object.
+// Field names intentionally mirror the upstream billing-service wire format
+// (snake_case) rather than being remapped to camelCase, since this schema is
+// a near-verbatim pass-through of the upstream checkout session object.
 export type CheckoutSession = z.infer<typeof CheckoutSessionSchema>;
 
 export const CheckoutSessionSchema = z.object({
