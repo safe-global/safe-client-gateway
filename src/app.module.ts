@@ -20,11 +20,11 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { BlocklistModule } from '@/config/entities/blocklist.module';
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { BillingApiModule } from '@/datasources/billing-api/billing-api.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
 import { NetworkModule } from '@/datasources/network/network.module';
-import { SafeBillingServiceApiModule } from '@/datasources/safe-billing-service-api/safe-billing-service-api.module';
 import {
   type ILoggingService,
   LoggingService,
@@ -95,7 +95,7 @@ export class AppModule implements NestModule {
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
         ...(isBillingServiceFeatureEnabled
-          ? [BillingModule, SafeBillingServiceApiModule]
+          ? [BillingModule, BillingApiModule]
           : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,

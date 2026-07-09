@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { PlanSchema } from '@/datasources/safe-billing-service-api/entities/plan.entity';
+import { PlanSchema } from '@/datasources/billing-api/entities/plan.entity';
 
 export type Subscription = z.infer<typeof SubscriptionSchema>;
 

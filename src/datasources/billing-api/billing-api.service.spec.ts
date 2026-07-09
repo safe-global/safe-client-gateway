@@ -3,17 +3,17 @@
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { BillingApi } from '@/datasources/billing-api/billing-api.service';
+import { checkoutSessionBuilder } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
+import { customerBuilder } from '@/datasources/billing-api/entities/__tests__/customer.builder';
+import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { checkoutSessionBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/checkout-session.builder';
-import { customerBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/customer.builder';
-import { paymentLinkBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/payment-link.builder';
-import { planBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/subscription.builder';
-import { SafeBillingServiceApi } from '@/datasources/safe-billing-service-api/safe-billing-service-api.service';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -27,8 +27,8 @@ const mockDataSource = vi.mocked({
   post: vi.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
-describe('SafeBillingServiceApi', () => {
-  let target: SafeBillingServiceApi;
+describe('BillingApi', () => {
+  let target: BillingApi;
   let fakeConfigurationService: FakeConfigurationService;
   let httpErrorFactory: HttpErrorFactory;
   let baseUri: string;
@@ -50,12 +50,9 @@ describe('SafeBillingServiceApi', () => {
     billingExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
     notFoundExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
 
-    fakeConfigurationService.set('safeBillingService.baseUri', baseUri);
-    fakeConfigurationService.set('safeBillingService.apiToken', apiToken);
-    fakeConfigurationService.set(
-      'safeBillingService.requestTimeout',
-      requestTimeout,
-    );
+    fakeConfigurationService.set('billing.baseUri', baseUri);
+    fakeConfigurationService.set('billing.apiToken', apiToken);
+    fakeConfigurationService.set('billing.requestTimeout', requestTimeout);
     fakeConfigurationService.set(
       'expirationTimeInSeconds.default',
       expireTimeSeconds,
@@ -69,7 +66,7 @@ describe('SafeBillingServiceApi', () => {
       notFoundExpireTimeSeconds,
     );
 
-    target = new SafeBillingServiceApi(
+    target = new BillingApi(
       mockDataSource,
       mockNetworkService,
       fakeConfigurationService,
@@ -101,7 +98,7 @@ describe('SafeBillingServiceApi', () => {
 
     expect(
       () =>
-        new SafeBillingServiceApi(
+        new BillingApi(
           mockDataSource,
           mockNetworkService,
           emptyConfigService,

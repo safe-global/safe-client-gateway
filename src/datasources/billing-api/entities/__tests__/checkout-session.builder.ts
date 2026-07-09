@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { CheckoutSession } from '@/datasources/safe-billing-service-api/entities/checkout-session.entity';
+import type { CheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
 
 export function checkoutSessionBuilder(): IBuilder<CheckoutSession> {
   return new Builder<CheckoutSession>()

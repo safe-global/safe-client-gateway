@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.entity';
+import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 
 export function planBuilder(): IBuilder<Plan> {
   return new Builder<Plan>()

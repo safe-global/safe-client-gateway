@@ -2,6 +2,19 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ZodError, z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import type { CheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
+import { CheckoutSessionSchema } from '@/datasources/billing-api/entities/checkout-session.entity';
+import type { Customer } from '@/datasources/billing-api/entities/customer.entity';
+import { CustomerSchema } from '@/datasources/billing-api/entities/customer.entity';
+import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+import { PaymentLinkSchema } from '@/datasources/billing-api/entities/payment-link.entity';
+import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
+import { PlanSchema } from '@/datasources/billing-api/entities/plan.entity';
+import type {
+  Subscription,
+  SubscriptionStatusFilter,
+} from '@/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionSchema } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -11,23 +24,10 @@ import {
   type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import type { CheckoutSession } from '@/datasources/safe-billing-service-api/entities/checkout-session.entity';
-import { CheckoutSessionSchema } from '@/datasources/safe-billing-service-api/entities/checkout-session.entity';
-import type { Customer } from '@/datasources/safe-billing-service-api/entities/customer.entity';
-import { CustomerSchema } from '@/datasources/safe-billing-service-api/entities/customer.entity';
-import type { PaymentLink } from '@/datasources/safe-billing-service-api/entities/payment-link.entity';
-import { PaymentLinkSchema } from '@/datasources/safe-billing-service-api/entities/payment-link.entity';
-import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.entity';
-import { PlanSchema } from '@/datasources/safe-billing-service-api/entities/plan.entity';
-import type {
-  Subscription,
-  SubscriptionStatusFilter,
-} from '@/datasources/safe-billing-service-api/entities/subscription.entity';
-import { SubscriptionSchema } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
-import type { ISafeBillingServiceApi } from '@/domain/interfaces/safe-billing-service-api.interface';
+import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 
 @Injectable()
-export class SafeBillingServiceApi implements ISafeBillingServiceApi {
+export class BillingApi implements IBillingApi {
   private readonly baseUri: string;
   private readonly authHeaders: Record<string, string>;
   private readonly requestTimeout: number;
@@ -43,16 +43,15 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
-    this.baseUri = this.configurationService.getOrThrow<string>(
-      'safeBillingService.baseUri',
-    );
+    this.baseUri =
+      this.configurationService.getOrThrow<string>('billing.baseUri');
     this.authHeaders = {
       Authorization: `Bearer ${this.configurationService.getOrThrow<string>(
-        'safeBillingService.apiToken',
+        'billing.apiToken',
       )}`,
     };
     this.requestTimeout = this.configurationService.getOrThrow<number>(
-      'safeBillingService.requestTimeout',
+      'billing.requestTimeout',
     );
     this.expireTimeSeconds = this.configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.default',
@@ -69,7 +68,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
 
   listPlans(): Promise<Array<Plan>> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingPlansCacheDir(),
+      cacheDir: CacheRouter.getBillingPlansCacheDir(),
       url: `${this.baseUri}/api/v1/plans`,
       schema: z
         .object({ plans: z.array(PlanSchema) })
@@ -79,7 +78,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
 
   getPlan(args: { planId: string }): Promise<Plan> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingPlanCacheDir(args.planId),
+      cacheDir: CacheRouter.getBillingPlanCacheDir(args.planId),
       url: `${this.baseUri}/api/v1/plans/${args.planId}`,
       schema: PlanSchema,
     });
@@ -92,9 +91,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
    */
   getCustomer(args: { upstreamCustomerId: string }): Promise<Customer> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingCustomerCacheDir(
-        args.upstreamCustomerId,
-      ),
+      cacheDir: CacheRouter.getBillingCustomerCacheDir(args.upstreamCustomerId),
       url: `${this.baseUri}/api/v1/customers/${args.upstreamCustomerId}`,
       schema: z
         .object({ customer: CustomerSchema })
@@ -113,7 +110,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingSubscriptionsCacheDir({
+      cacheDir: CacheRouter.getBillingSubscriptionsCacheDir({
         upstreamCustomerId: args.upstreamCustomerId,
         status: args.status ?? 'all',
       }),
@@ -130,7 +127,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     upstreamCustomerId?: string;
   }): Promise<Array<PaymentLink>> {
     return this.request({
-      cacheDir: CacheRouter.getSafeBillingPaymentLinksCacheDir(
+      cacheDir: CacheRouter.getBillingPaymentLinksCacheDir(
         args?.upstreamCustomerId,
       ),
       url: `${this.baseUri}/api/v1/payment-links`,

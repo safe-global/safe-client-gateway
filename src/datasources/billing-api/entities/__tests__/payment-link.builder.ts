@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { PaymentLink } from '@/datasources/safe-billing-service-api/entities/payment-link.entity';
+import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 
 export function paymentLinkBuilder(): IBuilder<PaymentLink> {
   return new Builder<PaymentLink>()

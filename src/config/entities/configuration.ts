@@ -537,6 +537,14 @@ export default () => ({
     secret: process.env.JWT_SECRET,
   },
   billing: {
+    baseUri:
+      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
+      'https://safe-billing-service.staging.5afe.dev',
+    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
+    requestTimeout: Number.parseInt(
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
+      10,
+    ),
     // ES256 service-to-service auth for incoming billing-service webhooks.
     // The CGW verifies tokens against its own public key (no JWKS); the
     // private key lives only in the provisioning CLI, not the running app.
@@ -778,16 +786,6 @@ export default () => ({
         10,
       ),
     },
-  },
-  safeBillingService: {
-    baseUri:
-      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
-      'https://safe-billing-service.staging.5afe.dev',
-    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
-    requestTimeout: Number.parseInt(
-      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
-      10,
-    ),
   },
   safeConfig: {
     baseUri:

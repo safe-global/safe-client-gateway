@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CheckoutSession } from '@/datasources/safe-billing-service-api/entities/checkout-session.entity';
-import type { Customer } from '@/datasources/safe-billing-service-api/entities/customer.entity';
-import type { PaymentLink } from '@/datasources/safe-billing-service-api/entities/payment-link.entity';
-import type { Plan } from '@/datasources/safe-billing-service-api/entities/plan.entity';
+import type { CheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
+import type { Customer } from '@/datasources/billing-api/entities/customer.entity';
+import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import type {
   Subscription,
   SubscriptionStatusFilter,
-} from '@/datasources/safe-billing-service-api/entities/subscription.entity';
+} from '@/datasources/billing-api/entities/subscription.entity';
 
-export const ISafeBillingServiceApi = Symbol('ISafeBillingServiceApi');
+export const IBillingApi = Symbol('IBillingApi');
 
-export interface ISafeBillingServiceApi {
+export interface IBillingApi {
   listPlans(): Promise<Array<Plan>>;
 
   getPlan(args: { planId: string }): Promise<Plan>;

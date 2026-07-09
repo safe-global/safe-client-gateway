@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
+import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { SubscriptionStatusFilter } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
@@ -1199,22 +1199,22 @@ export class CacheRouter {
     );
   }
 
-  static getSafeBillingPlansCacheDir(): CacheDir {
+  static getBillingPlansCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.BILLING_PLANS_KEY, '');
   }
 
-  static getSafeBillingPlanCacheDir(planId: string): CacheDir {
+  static getBillingPlanCacheDir(planId: string): CacheDir {
     return new CacheDir(`${planId}_${CacheRouter.BILLING_PLAN_KEY}`, '');
   }
 
-  static getSafeBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
+  static getBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
     return new CacheDir(
       `${upstreamCustomerId}_${CacheRouter.BILLING_CUSTOMER_KEY}`,
       '',
     );
   }
 
-  static getSafeBillingSubscriptionsCacheDir(args: {
+  static getBillingSubscriptionsCacheDir(args: {
     upstreamCustomerId: string;
     status: SubscriptionStatusFilter;
   }): CacheDir {
@@ -1224,9 +1224,7 @@ export class CacheRouter {
     );
   }
 
-  static getSafeBillingPaymentLinksCacheDir(
-    upstreamCustomerId?: string,
-  ): CacheDir {
+  static getBillingPaymentLinksCacheDir(upstreamCustomerId?: string): CacheDir {
     return new CacheDir(
       CacheRouter.BILLING_PAYMENT_LINKS_KEY,
       upstreamCustomerId ?? '',

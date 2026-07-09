@@ -2,8 +2,8 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import { planBuilder } from '@/datasources/safe-billing-service-api/entities/__tests__/plan.builder';
-import type { Subscription } from '@/datasources/safe-billing-service-api/entities/subscription.entity';
+import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
+import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 
 export function subscriptionBuilder(): IBuilder<Subscription> {
   return new Builder<Subscription>()
