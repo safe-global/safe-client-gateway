@@ -35,7 +35,6 @@ describe('Balances Controller', () => {
       ...defaultConfiguration,
       features: {
         ...defaultConfiguration.features,
-        counterfactualBalances: true,
       },
     });
 
@@ -793,6 +792,41 @@ describe('Balances Controller', () => {
           .expect({
             message: 'An error occurred',
             code: 500,
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(2);
+      });
+
+      it(`404 error response for a counterfactual (undeployed) Safe`, async () => {
+        const chainId = '1';
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+            return Promise.resolve({
+              data: rawify(chainResponse),
+              status: 200,
+            });
+          }
+          if (url === transactionServiceUrl) {
+            const error = new NetworkResponseError(
+              new URL(transactionServiceUrl),
+              {
+                status: 404,
+              } as Response,
+            );
+            return Promise.reject(error);
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .expect(404)
+          .expect({
+            message: 'An error occurred',
+            code: 404,
           });
 
         expect(networkService.get.mock.calls.length).toBe(2);

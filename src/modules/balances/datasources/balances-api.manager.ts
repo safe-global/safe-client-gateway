@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import {
@@ -18,7 +17,7 @@ import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class BalancesApiManager implements IBalancesApiManager {
@@ -40,12 +39,12 @@ export class BalancesApiManager implements IBalancesApiManager {
     );
   }
 
-  getApi(chainId: string, _safeAddress: Address): Promise<IBalancesApi> {
+  getApi(chainId: string): Promise<IBalancesApi> {
     return this._getSafeBalancesApi(chainId);
   }
 
-  async getFiatCodes(): Promise<Raw<Array<string>>> {
-    return rawify(await this.coingeckoApi.getFiatCodes());
+  getFiatCodes(): Promise<Raw<Array<string>>> {
+    return this.coingeckoApi.getFiatCodes();
   }
 
   private async _getSafeBalancesApi(chainId: string): Promise<SafeBalancesApi> {

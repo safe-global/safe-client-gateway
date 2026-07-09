@@ -63,7 +63,7 @@ beforeEach(() => {
 });
 
 describe('Balances API Manager Tests', () => {
-  describe('getApi checks', () => {
+  describe('SafeBalancesApi routing', () => {
     it('should return the Safe Transaction Service balances API', async () => {
       const chain = chainBuilder().build();
       configApiMock.getChain.mockResolvedValue(rawify(chain));
@@ -81,7 +81,7 @@ describe('Balances API Manager Tests', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const fiatCode = faker.finance.currencyCode();
 
-      const result = await manager.getApi(chain.chainId, safeAddress);
+      const result = await manager.getApi(chain.chainId);
       await result.getBalances({
         safeAddress,
         fiatCode,
@@ -138,10 +138,7 @@ describe('Balances API Manager Tests', () => {
       );
 
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeBalancesApi = await balancesApiManager.getApi(
-        chain.chainId,
-        safeAddress,
-      );
+      const safeBalancesApi = await balancesApiManager.getApi(chain.chainId);
       const trusted = faker.datatype.boolean();
       const excludeSpam = faker.datatype.boolean();
 

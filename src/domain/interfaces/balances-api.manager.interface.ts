@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address } from 'viem';
 import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
 import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import type { Raw } from '@/validation/entities/raw.entity';
@@ -13,10 +12,9 @@ export interface IBalancesApiManager extends IApiManager<IBalancesApi> {
    * provider) via configuration.
    *
    * @param chainId - the chain identifier to check.
-   * @param safeAddress - the Safe address to check.
    * @returns {@link IBalancesApi} configured for the input chain ID.
    */
-  getApi(chainId: string, safeAddress: Address): Promise<IBalancesApi>;
+  getApi(chainId: string): Promise<IBalancesApi>;
 
   /**
    * Gets the list of supported fiat codes.

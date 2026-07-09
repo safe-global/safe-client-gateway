@@ -40,7 +40,6 @@ describe('Collectibles Controller', () => {
       ...defaultConfiguration,
       features: {
         ...defaultConfiguration.features,
-        counterfactualBalances: false,
       },
     });
 

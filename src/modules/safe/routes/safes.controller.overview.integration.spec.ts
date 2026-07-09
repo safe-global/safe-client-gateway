@@ -45,7 +45,6 @@ describe('Safes Controller Overview', () => {
       },
       features: {
         ...configuration().features,
-        counterfactualBalances: true,
       },
     });
 

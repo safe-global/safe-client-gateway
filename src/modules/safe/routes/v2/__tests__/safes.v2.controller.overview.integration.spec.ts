@@ -47,7 +47,6 @@ describe('Safes V2 Controller Overview', () => {
       },
       features: {
         ...configuration().features,
-        counterfactualBalances: true,
         zerionBalancesEnabled: true,
       },
     });
@@ -407,7 +406,6 @@ describe('Safes V2 Controller Overview', () => {
           mappings: { ...configuration().mappings, safe: { maxOverviews: 3 } },
           features: {
             ...configuration().features,
-            counterfactualBalances: true,
             zerionBalancesEnabled: false,
           },
         }),

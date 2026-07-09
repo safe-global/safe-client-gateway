@@ -1333,7 +1333,6 @@ describe('Hook Events for Cache', () => {
     },
   ])('$type clears the balances API', async (payload) => {
     const chainId = faker.string.numeric();
-    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const data = {
       chainId: chainId,
       ...payload,
@@ -1349,12 +1348,12 @@ describe('Hook Events for Cache', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    const api = await balancesApiManager.getApi(chainId, safeAddress);
+    const api = await balancesApiManager.getApi(chainId);
 
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    const newApi = await balancesApiManager.getApi(chainId, safeAddress);
+    const newApi = await balancesApiManager.getApi(chainId);
     expect(api).not.toBe(newApi);
   });
 
