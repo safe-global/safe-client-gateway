@@ -37,7 +37,7 @@ export class ZerionCacheService {
    */
   async invalidate(address: Address, source: string): Promise<void> {
     this.loggingService.debug({
-      type: LogType.PortfolioCacheInvalidated,
+      type: LogType.ZerionCacheInvalidated,
       address,
       source,
     });

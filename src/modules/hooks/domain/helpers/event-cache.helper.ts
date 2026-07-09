@@ -264,8 +264,6 @@ export class EventCacheHelper {
     // - the safe configuration
     // - the Zerion-backed portfolio caches
     return [
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
       this.safeRepository.clearAllExecutedTransactions({
         chainId: event.chainId,
@@ -306,8 +304,6 @@ export class EventCacheHelper {
     // - the stakes of a safe
     // - the Zerion-backed portfolio caches
     const promises = [
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
@@ -460,8 +456,6 @@ export class EventCacheHelper {
     // - the incoming transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
@@ -496,8 +490,6 @@ export class EventCacheHelper {
     // - the transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
@@ -530,8 +522,6 @@ export class EventCacheHelper {
     // - the incoming transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
@@ -571,8 +561,6 @@ export class EventCacheHelper {
     // - the transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
@@ -673,8 +661,6 @@ export class EventCacheHelper {
     // A freshly indexed Safe may have been funded before deployment.
     return [
       this.safeRepository.clearIsSafe(event),
-      // The Zerion caches are cross-chain aggregates, so they are cleared by
-      // address regardless of the event's chain.
       this.zerionCache.invalidate(event.address, event.type),
     ];
   }

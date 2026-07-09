@@ -48,7 +48,7 @@ describe('ZerionCacheService', () => {
       await service.invalidate(address, 'refresh');
 
       expect(mockLoggingService.debug).toHaveBeenCalledWith({
-        type: LogType.PortfolioCacheInvalidated,
+        type: LogType.ZerionCacheInvalidated,
         address,
         source: 'refresh',
       });
