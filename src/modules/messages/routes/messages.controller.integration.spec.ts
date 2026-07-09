@@ -46,9 +46,7 @@ describe('Messages controller', () => {
   let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
-    if (app) {
-      await app?.close();
-    }
+    await app?.close();
 
     const moduleFixture: TestingModule = await createTestModule({
       config,

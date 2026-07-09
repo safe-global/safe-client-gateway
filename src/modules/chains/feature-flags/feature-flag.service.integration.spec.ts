@@ -20,7 +20,7 @@ describe('FeatureFlagService Integration', () => {
   let configurationService: IConfigurationService;
 
   afterEach(async () => {
-    if (app) await app?.close();
+    await app?.close();
   });
 
   describe('with default config', () => {
