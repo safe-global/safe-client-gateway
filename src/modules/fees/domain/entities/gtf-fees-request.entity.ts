@@ -7,7 +7,9 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
-export const TxFeesRequestSchema = z.object({
+export type GtfFeesRequest = z.infer<typeof GtfFeesRequestSchema>;
+
+export const GtfFeesRequestSchema = z.object({
   to: AddressSchema,
   value: NumericStringSchema,
   data: HexSchema,
@@ -16,5 +18,4 @@ export const TxFeesRequestSchema = z.object({
   nonce: NonNegativeNumericStringSchema,
   gasToken: AddressSchema,
   origin: z.enum(Origin).optional(),
-  fiatCode: z.string().optional(),
 });

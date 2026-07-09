@@ -53,18 +53,28 @@ export class FeesService {
     feePreviewDto: FeePreviewTransactionDto;
   }): Promise<FeePreviewResponse> {
     const chain = await this.chainsRepository.getChain(args.chainId);
-    if (chain.relayer?.type !== RelayerType.RELAY_FEE) {
-      throw new BadRequestException(
-        `Accessing fee preview is only available for chains with ${RelayerType.RELAY_FEE} relayer`,
-      );
+
+    switch (chain.relayer?.type) {
+      case RelayerType.RELAY_FEE: {
+        const txFeesResponse = await this.feeServiceApi.getRelayFees({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          request: args.feePreviewDto,
+        });
+        return FeePreviewResponse.fromRelayFees(txFeesResponse);
+      }
+      case RelayerType.GTF: {
+        const gtfFeesResponse = await this.feeServiceApi.getGtfFees({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          request: args.feePreviewDto,
+        });
+        return FeePreviewResponse.fromGtfFees(gtfFeesResponse);
+      }
+      default:
+        throw new BadRequestException(
+          'Fee preview is not available for this chain',
+        );
     }
-
-    const txFeesResponse = await this.feeServiceApi.getRelayFees({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      request: args.feePreviewDto,
-    });
-
-    return new FeePreviewResponse(txFeesResponse);
   }
 }

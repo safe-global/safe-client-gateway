@@ -16,6 +16,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 - [Client Gateway OpenAPI specification](https://safe-client.safe.global/api)
 - [Deploying the service](https://github.com/safe-global/safe-infrastructure)
+- [Billing webhook authentication & token generation](./src/modules/billing/README.md)
 
 ## Requirements
 

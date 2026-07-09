@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-
-import type { z } from 'zod';
-import type { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
+import { z } from 'zod';
 
 export type CanRelayResponse = z.infer<typeof CanRelayResponseSchema>;
+
+export const CanRelayResponseSchema = z.object({
+  canRelay: z.boolean(),
+});

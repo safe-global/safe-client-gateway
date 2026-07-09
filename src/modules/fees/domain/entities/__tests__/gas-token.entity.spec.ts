@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
-import { GasTokenSchema } from '@/modules/fees/domain/entities/schemas/gas-token.schema';
+import { GasTokenSchema } from '@/modules/fees/domain/entities/gas-token.entity';
 
 describe('GasTokenSchema', () => {
   it('should validate a valid gas token', () => {

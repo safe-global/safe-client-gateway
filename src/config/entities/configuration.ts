@@ -114,6 +114,12 @@ export default () => ({
       },
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
+        // Dedicated key for the assets-page endpoints (/portfolio and
+        // /positions) so the assets page keeps working with priority,
+        // unaffected by other endpoints exhausting the main account's
+        // rate-limit budget.
+        assetsApiKey:
+          process.env.ZERION_ASSETS_API_KEY ?? process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         currencies: [
           'USD',
@@ -149,6 +155,10 @@ export default () => ({
         ),
         perAddressLimitCalls: Number.parseInt(
           process.env.ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD ?? `${0}`,
+          10,
+        ),
+        walletPortfolioTtlSeconds: Number.parseInt(
+          process.env.ZERION_WALLET_PORTFOLIO_TTL_SECONDS ?? `${10}`,
           10,
         ),
       },
@@ -417,11 +427,14 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
+    billingWebhook: process.env.FF_BILLING_WEBHOOK?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    ownersMaliciousFilter:
+      process.env.FF_OWNERS_MALICIOUS_FILTER?.toLowerCase() === 'true',
     hashVerification: {
       api: process.env.FF_HASH_VERIFICATION_API?.toLowerCase() === 'true',
       proposal:
@@ -516,6 +529,30 @@ export default () => ({
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
+  },
+  billing: {
+    // ES256 service-to-service auth for incoming billing-service webhooks.
+    // The CGW verifies tokens against its own public key (no JWKS); the
+    // private key lives only in the provisioning CLI, not the running app.
+    webhook: {
+      // PEM keys provided via env often arrive with escaped newlines.
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
+        /\\n/g,
+        '\n',
+      ),
+      // The CGW's own identifier — a self-issued token uses it as both `iss` and `aud`.
+      issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+      // Optional: sign bearer tokens via an asymmetric KMS key (ECC_NIST_P256)
+      // instead of a local private key. Consumed only by the provisioning CLI;
+      // the running app never signs (it verifies offline with the public key).
+      kms: {
+        keyId: process.env.BILLING_WEBHOOK_JWT_KMS_KEY_ID,
+        // Region + credentials are resolved by the AWS SDK's default chain
+        // (AWS_REGION, env keys, shared profile, SSO). In EKS, IRSA provides
+        // pod credentials via the web identity token file.
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
   },
   locking: {
     baseUri:
@@ -973,6 +1010,20 @@ export default () => ({
       blockaid: {
         apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
       },
+    },
+    maliciousAddressScan: {
+      timeoutMs: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_TIMEOUT_MS ?? `${1500}`,
+        10,
+      ),
+      maxBatchSize: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_MAX_BATCH_SIZE ?? `${100}`,
+        10,
+      ),
+      cacheTtlSeconds: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_CACHE_TTL_SECONDS ?? `${300}`,
+        10,
+      ),
     },
   },
   etherscan: {

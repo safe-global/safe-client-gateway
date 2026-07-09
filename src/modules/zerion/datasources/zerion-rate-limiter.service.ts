@@ -21,7 +21,10 @@ type RateLimitScope = 'global' | 'per_address';
  * Cross-pod rate limiter for the shared Zerion API account budget.
  *
  * Zerion enforces an account-wide ceiling (~10 RPS), shared by every CGW pod
- * and every Zerion datasource (balances, positions, wallet portfolio…). This
+ * and every datasource on the main API key (balances, collectibles, wallet
+ * portfolio). The assets-page endpoints (portfolio, positions) use the
+ * dedicated assets key so they keep working even when the main budget is
+ * exhausted; they are not throttled here. This
  * limiter increments a single Redis fixed-window counter so the cluster stays
  * under that ceiling, with an optional per-address sub-budget that prevents one
  * hot wallet from starving the global budget.

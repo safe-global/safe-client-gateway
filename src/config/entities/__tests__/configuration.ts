@@ -61,6 +61,7 @@ export default (): ReturnType<typeof configuration> => ({
       },
       zerion: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
+        assetsApiKey: faker.string.hexadecimal({ length: 32 }),
         baseUri: faker.internet.url({ appendSlash: false }),
         currencies: Array.from(
           new Set([
@@ -81,6 +82,10 @@ export default (): ReturnType<typeof configuration> => ({
         perAddressLimitPeriodSeconds: faker.number.int({ min: 1, max: 10 }),
         // Disabled by default (matches the production default).
         perAddressLimitCalls: 0,
+        walletPortfolioTtlSeconds: faker.number.int({
+          min: 60,
+          max: 3600,
+        }),
       },
     },
   },
@@ -210,9 +215,11 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     auth: false,
     oidc_auth: false,
+    billingWebhook: false,
     users: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
+    ownersMaliciousFilter: false,
     signatureVerification: {
       api: true,
       proposal: true,
@@ -262,6 +269,20 @@ export default (): ReturnType<typeof configuration> => ({
   jwt: {
     issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
     secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
+  },
+  billing: {
+    webhook: {
+      // PEM keys provided via env often arrive with escaped newlines.
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
+        /\\n/g,
+        '\n',
+      ),
+      issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+      kms: {
+        keyId: process.env.BILLING_WEBHOOK_JWT_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
   },
   log: {
     level: 'debug',
@@ -543,6 +564,11 @@ export default (): ReturnType<typeof configuration> => ({
       blockaid: {
         apiKey: faker.string.hexadecimal({ length: 32 }),
       },
+    },
+    maliciousAddressScan: {
+      timeoutMs: faker.number.int({ min: 100, max: 5000 }),
+      maxBatchSize: faker.number.int({ min: 1, max: 100 }),
+      cacheTtlSeconds: faker.number.int({ min: 1, max: 300 }),
     },
   },
   etherscan: {

@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { TxFeesRequestSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-request.schema';
+import { TxFeesRequestSchema } from '@/modules/fees/domain/entities/tx-fees-request.entity';
 
 describe('TxFeesRequestSchema', () => {
   it('should validate a valid tx-fees request', () => {

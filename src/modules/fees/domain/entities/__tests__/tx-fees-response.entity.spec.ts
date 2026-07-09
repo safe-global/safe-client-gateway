@@ -4,10 +4,9 @@ import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import {
-  PricingContextSnapshotSchema,
   TxDataResponseSchema,
   TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
+} from '@/modules/fees/domain/entities/tx-fees-response.entity';
 
 describe('TxDataResponseSchema', () => {
   it('should accept chainId as a string and keep it as string', () => {
@@ -99,34 +98,6 @@ describe('TxDataResponseSchema', () => {
   });
 });
 
-describe('PricingContextSnapshotSchema', () => {
-  it('should validate a valid pricing context', () => {
-    const pricingContext = {
-      phase: 1,
-      priceSource: 'COINGECKO',
-      priceTimestamp: 1700000000,
-      gasPriceVolatilityBuffer: 1.3,
-    };
-
-    const result = PricingContextSnapshotSchema.safeParse(pricingContext);
-
-    expect(result.success).toBe(true);
-  });
-
-  it('should not allow an invalid priceSource', () => {
-    const pricingContext = {
-      phase: 1,
-      priceSource: 'INVALID_SOURCE',
-      priceTimestamp: 1700000000,
-      gasPriceVolatilityBuffer: 1.3,
-    };
-
-    const result = PricingContextSnapshotSchema.safeParse(pricingContext);
-
-    expect(result.success).toBe(false);
-  });
-});
-
 describe('TxFeesResponseSchema', () => {
   it('should validate a valid tx-fees response', () => {
     const response = txFeesResponseBuilder().build();
@@ -137,12 +108,10 @@ describe('TxFeesResponseSchema', () => {
   });
 
   it('should not allow a missing txData', () => {
-    const { relayCost, pricingContextSnapshot } =
-      txFeesResponseBuilder().build();
+    const { relayCost } = txFeesResponseBuilder().build();
 
     const result = TxFeesResponseSchema.safeParse({
       relayCost,
-      pricingContextSnapshot,
     });
 
     expect(!result.success && result.error.issues).toStrictEqual(
@@ -156,11 +125,10 @@ describe('TxFeesResponseSchema', () => {
   });
 
   it('should not allow a missing relayCost', () => {
-    const { txData, pricingContextSnapshot } = txFeesResponseBuilder().build();
+    const { txData } = txFeesResponseBuilder().build();
 
     const result = TxFeesResponseSchema.safeParse({
       txData,
-      pricingContextSnapshot,
     });
 
     expect(result.success).toBe(false);

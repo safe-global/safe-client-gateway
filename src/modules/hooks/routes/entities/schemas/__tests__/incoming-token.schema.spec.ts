@@ -68,12 +68,39 @@ describe('IncomingTokenEventSchema', () => {
     );
   });
 
+  it.each([true, false])('should allow a trusted value of %s', (trusted) => {
+    const incomingTokenEvent = incomingTokenEventBuilder()
+      .with('trusted', trusted)
+      .build();
+
+    const result = IncomingTokenEventSchema.safeParse(incomingTokenEvent);
+
+    expect(result.success && result.data.trusted).toBe(trusted);
+  });
+
+  it('should not allow a non-boolean trusted value', () => {
+    const incomingTokenEvent = incomingTokenEventBuilder()
+      .with('trusted', 'true' as unknown as boolean)
+      .build();
+
+    const result = IncomingTokenEventSchema.safeParse(incomingTokenEvent);
+
+    expect(!result.success && result.error.issues).toEqual([
+      expect.objectContaining({
+        code: 'invalid_type',
+        expected: 'boolean',
+        path: ['trusted'],
+      }),
+    ]);
+  });
+
   it.each([
     'type' as const,
     'address' as const,
     'chainId' as const,
     'tokenAddress' as const,
     'txHash' as const,
+    'trusted' as const,
   ])(`should not allow a missing %s`, (field) => {
     const incomingTokenEvent = incomingTokenEventBuilder().build();
     delete incomingTokenEvent[field];

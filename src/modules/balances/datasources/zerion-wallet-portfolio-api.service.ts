@@ -48,9 +48,9 @@ export interface IZerionWalletPortfolioApi {
 
 @Injectable()
 export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
-  private static readonly CACHE_TTL_SECONDS = 10;
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
+  private readonly cacheTtlSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -67,6 +67,9 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     );
     this.baseUri = this.configurationService.getOrThrow<string>(
       'balances.providers.zerion.baseUri',
+    );
+    this.cacheTtlSeconds = this.configurationService.getOrThrow<number>(
+      'balances.providers.zerion.walletPortfolioTtlSeconds',
     );
   }
 
@@ -126,7 +129,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       await this.cacheService.hSet(
         cacheDir,
         JSON.stringify(portfolio),
-        ZerionWalletPortfolioApi.CACHE_TTL_SECONDS,
+        this.cacheTtlSeconds,
       );
 
       return portfolio;

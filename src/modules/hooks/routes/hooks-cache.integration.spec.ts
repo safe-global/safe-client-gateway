@@ -90,6 +90,7 @@ describe('Hook Events for Cache', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_ETHER',
@@ -105,6 +106,7 @@ describe('Hook Events for Cache', () => {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears balances', async (payload) => {
     const chainId = faker.string.numeric();
@@ -796,11 +798,13 @@ describe('Hook Events for Cache', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears safe collectibles', async (payload) => {
     const chainId = faker.string.numeric();
@@ -854,11 +858,13 @@ describe('Hook Events for Cache', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears safe collectible transfers', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();
@@ -900,6 +906,7 @@ describe('Hook Events for Cache', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'INCOMING_ETHER',
@@ -1000,6 +1007,7 @@ describe('Hook Events for Cache', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_ETHER',
@@ -1015,6 +1023,7 @@ describe('Hook Events for Cache', () => {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears all transactions', async (payload) => {
     const safeAddress = faker.finance.ethereumAddress();

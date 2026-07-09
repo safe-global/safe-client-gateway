@@ -14,6 +14,7 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
@@ -78,7 +79,7 @@ describe('Fees Controller', () => {
       .expect(400)
       .expect(({ body }) => {
         expect(body.message).toBe(
-          `Accessing fee preview is only available for chains with ${RelayerType.RELAY_FEE} relayer`,
+          'Fee preview is not available for this chain',
         );
       });
   });
@@ -141,7 +142,7 @@ describe('Fees Controller', () => {
     networkService.post.mockImplementation(({ url }) => {
       if (
         url ===
-        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/relay-fees`
+        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/relay/fees`
       ) {
         return Promise.resolve({ data: rawify(mockFeeResponse), status: 200 });
       }
@@ -158,7 +159,66 @@ describe('Fees Controller', () => {
           fiatValue: '0.0025',
         });
         expect(body.txData).toBeDefined();
-        expect(body.pricingContextSnapshot).toBeDefined();
+      });
+  });
+
+  it('should return fee preview with feeBreakdown when chain resolves to the GTF relayer', async () => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const feePreviewDto = feePreviewTransactionDtoBuilder().build();
+    const mockGtfFeeResponse = gtfFeesResponseBuilder().build();
+
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (
+        url ===
+        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`
+      ) {
+        return Promise.resolve({
+          data: rawify(mockGtfFeeResponse),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send(feePreviewDto)
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.safeTxHash).toBeUndefined();
+        expect(body.relayCost).toBeUndefined();
+        expect(body.feeBreakdown).toEqual({
+          txValueUsd: mockGtfFeeResponse.feeBreakdown.txValueUsd,
+          trailingVolumeUsd: mockGtfFeeResponse.feeBreakdown.trailingVolumeUsd,
+          tierBps: mockGtfFeeResponse.feeBreakdown.tierBps,
+          gtfFeeUsd: mockGtfFeeResponse.feeBreakdown.gtfFeeUsd,
+          relayCostUsd: mockGtfFeeResponse.feeBreakdown.relayCostUsd,
+          totalUsd: mockGtfFeeResponse.feeBreakdown.totalUsd,
+          numberSignatures: mockGtfFeeResponse.feeBreakdown.numberSignatures,
+          valuationDetails: mockGtfFeeResponse.feeBreakdown.valuationDetails,
+        });
+        expect(body.maxFeeCapUsd).toBe(
+          mockGtfFeeResponse.pricingContextSnapshot.maxFeeCapUsd,
+        );
+        expect(body.txData).toEqual(
+          expect.objectContaining({
+            chainId: mockGtfFeeResponse.txData.chainId,
+            safeAddress: mockGtfFeeResponse.txData.safeAddress,
+            numberSignatures: mockGtfFeeResponse.feeBreakdown.numberSignatures,
+          }),
+        );
+        expect(body.txData.to).toBeUndefined();
+        expect(body.txData.nonce).toBeUndefined();
       });
   });
 
