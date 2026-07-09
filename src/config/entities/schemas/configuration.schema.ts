@@ -253,6 +253,12 @@ export const RootConfigurationSchema = z
         message:
           'is required in production and staging environments when the billing service is enabled',
       },
+      {
+        field: 'BILLING_WEBHOOK_JWT_PUBLIC_KEY',
+        requiredWhen: isBillingServiceEnabled,
+        message:
+          'is required in production and staging environments when the billing service is enabled',
+      },
     ]) {
       if (requiredWhen && !(config as Record<string, unknown>)[field]) {
         ctx.addIssue({ code: 'custom', message, path: [field] });
