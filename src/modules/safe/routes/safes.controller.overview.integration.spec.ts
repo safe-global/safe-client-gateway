@@ -43,9 +43,6 @@ describe('Safes Controller Overview', () => {
           maxOverviews: 3,
         },
       },
-      features: {
-        ...configuration().features,
-      },
     });
 
     const moduleFixture = await createTestModule({
