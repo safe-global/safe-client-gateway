@@ -1,25 +1,57 @@
 {
-  "generated_at": "2026-07-07T22:42:44.440Z",
-  "last_checked_at": "2026-07-07T22:42:44.440Z",
+  "generated_at": "2026-07-09T08:36:57.237Z",
+  "last_checked_at": "2026-07-09T08:36:57.237Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-07-07"
+    "to": "2026-07-09"
   },
   "flaky_shas": [
+    "76ce6b8",
+    "c2bce16",
+    "d1b9596",
+    "5e0c1c0",
+    "e678c65",
+    "49ef8cb",
+    "dd61dde",
+    "1fd2688",
     "dd9ac3e",
+    "952aed9",
     "0ab3dd7",
     "8e3da11",
+    "7a8b8ef",
+    "afe8485",
+    "55a3166",
+    "dfc3c79",
     "b17597a",
+    "6f06fc6",
     "736842f",
     "e8d15dd",
     "52a760e",
+    "dc066d7",
+    "2faca81",
+    "9c29283",
+    "5975959",
+    "dfbf10b",
+    "a2a8888",
     "75f7276",
+    "c007e67",
     "716033a",
     "b76563f",
+    "e4deeb8",
+    "6abecbc",
     "a6d25b9",
+    "b321c5f",
+    "6fdb934",
+    "4d1fcba",
     "ff16d2f",
+    "ea9c54c",
+    "ed8b9b2",
+    "6fd5e44",
+    "ec11809",
+    "ae592bf",
     "cab0782",
     "5f74ff3",
+    "67ed224",
     "63ac3c5",
     "82d5f9b",
     "456cbb7",
@@ -127,6 +159,154 @@
   ],
   "runs": [
     {
+      "id": 28860011587,
+      "sha": "76ce6b8",
+      "branch": "dependabot/npm_and_yarn/types/node-26.0.1",
+      "conclusion": "failure",
+      "created_at": "2026-07-07T10:39:22Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/bridge/domain/entities/bridge-name.entity.spec.ts",
+          "name": "BridgeStatusSchema > should not allow an unknown bridge name",
+          "error": "AssertionError: expected false to deeply equal [ ObjectContaining{…} ]"
+        }
+      ]
+    },
+    {
+      "id": 28655200371,
+      "sha": "c2bce16",
+      "branch": "moisesf/pla-1558-cgw-gtf-fee-flow-call-fee-service-fees-extend-preview-with",
+      "conclusion": "failure",
+      "created_at": "2026-07-03T10:39:25Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/domain/common/entities/name.builder.spec.ts",
+          "name": "nameBuilder > produces a value accepted by NameSchema and is idempotent under sanitization",
+          "error": "AssertionError: expected 'Mrs. Brooke Hamill-Jakubowski' to be 'Mrs. Brooke Hamill-Jakubowski ' // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 28517188941,
+      "sha": "d1b9596",
+      "branch": "dependabot/npm_and_yarn/smithy/util-stream-4.7.2",
+      "conclusion": "failure",
+      "created_at": "2026-07-01T12:22:53Z",
+      "failed_jobs": [
+        "integration-tests",
+        "unit-tests",
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller > Native (dedicated) staking > deposit > should preview a transaction",
+          "error": "Error: expected 200 \"OK\", got 500 \"Internal Server Error\""
+        },
+        {
+          "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+          "name": "RecipientAnalysisService > analyze > should analyze BridgeAndSwap with recipient same as Safe address",
+          "error": "AssertionError: expected {} to deeply equal { …(1) }"
+        },
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller > Native (dedicated) staking > deposit > should preview a transaction",
+          "error": "Error: expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 28434962560,
+      "sha": "5e0c1c0",
+      "branch": "feat/owners-blockaid-malicious-filter",
+      "conclusion": "failure",
+      "created_at": "2026-06-30T09:39:23Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard > should log a warning for invalid client IP",
+          "error": "AssertionError: promise resolved \"true\" instead of rejecting"
+        }
+      ]
+    },
+    {
+      "id": 28232724505,
+      "sha": "e678c65",
+      "branch": "feat/add-origin-and-nonce-fields-to-fee-service",
+      "conclusion": "failure",
+      "created_at": "2026-06-26T10:35:19Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller > Verification > should allow trusted delegate calls",
+          "error": "Error: expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 28103796321,
+      "sha": "49ef8cb",
+      "branch": "feat/fastify",
+      "conclusion": "failure",
+      "created_at": "2026-06-24T13:56:05Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard > should log a warning for invalid client IP",
+          "error": "AssertionError: promise resolved \"true\" instead of rejecting"
+        }
+      ]
+    },
+    {
+      "id": 28018053724,
+      "sha": "dd61dde",
+      "branch": "feat/vitest",
+      "conclusion": "failure",
+      "created_at": "2026-06-23T09:58:22Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller > Native (dedicated) staking > deposit > should preview a transaction",
+          "error": "Error: expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 28011112489,
+      "sha": "1fd2688",
+      "branch": "feat/enable-utf-8-in-names",
+      "conclusion": "failure",
+      "created_at": "2026-06-23T07:54:47Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository › findOrCreateByWalletAddress › should return the existing user id on concurrent duplicate insert",
+          "error": "expect(received).toBe(expected) // Object.is equality"
+        }
+      ]
+    },
+    {
       "id": 27834989542,
       "sha": "dd9ac3e",
       "branch": "chore/spaces-subfolder",
@@ -140,6 +320,23 @@
           "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
           "name": "RateLimitGuard › should log a warning for invalid client IP",
           "error": "expect(received).rejects.toThrow()"
+        }
+      ]
+    },
+    {
+      "id": 27830426016,
+      "sha": "952aed9",
+      "branch": "chore/members-subfolder",
+      "conclusion": "failure",
+      "created_at": "2026-06-19T14:05:06Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
+          "name": "Add transaction confirmations - Transactions Controller › should confirm a transaction with a APPROVED_HASH signature and return the updated transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
         }
       ]
     },
@@ -178,6 +375,74 @@
       ]
     },
     {
+      "id": 27758705653,
+      "sha": "7a8b8ef",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-18T12:15:01Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
+          "name": "Add transaction confirmations - Transactions Controller › should confirm a transaction with a CONTRACT_SIGNATURE signature and return the updated transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27754832957,
+      "sha": "afe8485",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-18T10:59:23Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › TWAPs › should preview a batched transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27753846722,
+      "sha": "55a3166",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-18T10:39:48Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › requestValidatorsExit › should preview a transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27753561023,
+      "sha": "dfc3c79",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-18T10:34:05Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+          "name": "RedisCacheService › sets and gets the value of a zero-value counter",
+          "error": "ERR value is not an integer or out of range"
+        }
+      ]
+    },
+    {
       "id": 27608089167,
       "sha": "b17597a",
       "branch": "fix/email-invites-aws-set-name",
@@ -191,6 +456,23 @@
           "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
           "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › requestValidatorsExit › should return a \"standard\" transaction preview if the stakes are not available",
           "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27552102879,
+      "sha": "6f06fc6",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-15T14:08:33Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
+          "name": "RedisCacheService › sets and gets the value of a counter key",
+          "error": "ERR value is not an integer or out of range"
         }
       ]
     },
@@ -246,6 +528,114 @@
       ]
     },
     {
+      "id": 27420558461,
+      "sha": "dc066d7",
+      "branch": "feat/space-audit-log",
+      "conclusion": "failure",
+      "created_at": "2026-06-12T14:01:39Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › deposit › should return a \"standard\" transaction preview if the deployment is on an unknown chain",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27357725068,
+      "sha": "2faca81",
+      "branch": "fix/space-access-require-active-member",
+      "conclusion": "failure",
+      "created_at": "2026-06-11T15:23:13Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › batchWithdrawCLFee › should preview a batched transaction",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27347232616,
+      "sha": "9c29283",
+      "branch": "feat/relay-type-from-config-service",
+      "conclusion": "failure",
+      "created_at": "2026-06-11T12:37:08Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+          "name": "Auth-redirect helper functions › resolveAndValidateRedirectUrl › non-production with allowedRedirectDomain › should accept subdomain of allowed domain",
+          "error": "expect(received).toBe(expected) // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 27214837020,
+      "sha": "5975959",
+      "branch": "feat/uuid-as-space-id",
+      "conclusion": "failure",
+      "created_at": "2026-06-09T14:53:48Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › should propose a transaction with APPROVED_HASH signature",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27213840871,
+      "sha": "dfbf10b",
+      "branch": "feat/uuid-as-space-id",
+      "conclusion": "failure",
+      "created_at": "2026-06-09T14:38:00Z",
+      "failed_jobs": [
+        "integration-tests",
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › Swaps › should return a \"standard\" transaction preview if buy token is not available",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        },
+        {
+          "file": "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
+          "name": "MessageVerifierHelper › verifyCreation › should throw if an address cannot be recovered from an CONTRACT_SIGNATURE signature",
+          "error": "expect(received).toThrow(expected)"
+        }
+      ]
+    },
+    {
+      "id": 27203494853,
+      "sha": "a2a8888",
+      "branch": "wa-2512/wire-email-delivery-into-resend-endpoint",
+      "conclusion": "failure",
+      "created_at": "2026-06-09T11:37:20Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › should propose a transaction with CONTRACT_SIGNATURE signature",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
       "id": 27169565211,
       "sha": "75f7276",
       "branch": "dependabot/npm_and_yarn/aws-sdk-6766e9f310",
@@ -259,6 +649,23 @@
           "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
           "name": "Preview transaction - Kiln - Transactions Controller › Native (dedicated) staking › batchWithdrawCLFee › should return a \"standard\" transaction preview if the deployment is not dedicated-specific",
           "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27133443676,
+      "sha": "c007e67",
+      "branch": "fix/expose-invited-member-email-to-admins",
+      "conclusion": "failure",
+      "created_at": "2026-06-08T11:06:17Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+          "name": "JobQueueService & TestJobConsumer integration › should invoke worker event handlers",
+          "error": "expect(received).toContainEqual(expected) // deep equality"
         }
       ]
     },
@@ -307,6 +714,40 @@
       ]
     },
     {
+      "id": 27022368818,
+      "sha": "e4deeb8",
+      "branch": "fix/expose-invited-member-email-to-admins",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T14:57:45Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
+          "name": "Transaction Data Mapper (Unit) › Build address info index › should build an address info index for a nested multiSend (2)",
+          "error": "InvalidAddressError: Address \"6\" is invalid."
+        }
+      ]
+    },
+    {
+      "id": 27021925964,
+      "sha": "6abecbc",
+      "branch": "chore/new-tests-for-resend",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T14:49:35Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+          "name": "Auth-redirect helper functions › resolveAndValidateRedirectUrl › non-production with allowedRedirectDomain › should accept subdomain of allowed domain",
+          "error": "expect(received).toBe(expected) // Object.is equality"
+        }
+      ]
+    },
+    {
       "id": 27019630777,
       "sha": "a6d25b9",
       "branch": "chore/new-tests-for-resend",
@@ -324,6 +765,57 @@
       ]
     },
     {
+      "id": 27019225341,
+      "sha": "b321c5f",
+      "branch": "moisesf/pla-1594-cgw-update-chainid-handling-from-number-to-string-in-fee",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T13:58:18Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › Swaps › should return a \"standard\" transaction preview if sell token is not available",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27017362697,
+      "sha": "6fdb934",
+      "branch": "chore/new-tests-for-resend",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T13:21:54Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard › should log a warning for invalid client IP",
+          "error": "expect(received).rejects.toThrow()"
+        }
+      ]
+    },
+    {
+      "id": 27014918763,
+      "sha": "4d1fcba",
+      "branch": "feat/vitest",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T12:30:04Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
+          "name": "Transaction Data Mapper (Unit) > Build address info index > should build an address info index for a nested multiSend (2)",
+          "error": "InvalidAddressError: Address \"2\" is invalid."
+        }
+      ]
+    },
+    {
       "id": 27014234295,
       "sha": "ff16d2f",
       "branch": "feat/uuid-as-space-id",
@@ -337,6 +829,108 @@
           "file": "src/modules/users/domain/users.repository.integration.spec.ts",
           "name": "UsersRepository › findOrCreateByWalletAddress › should return the existing user id on concurrent duplicate insert",
           "error": "expect(received).toBe(expected) // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 27013224423,
+      "sha": "ea9c54c",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T11:51:57Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+          "name": "Auth-redirect helper functions › resolveAndValidateRedirectUrl › non-production with allowedRedirectDomain › should accept subdomain of allowed domain",
+          "error": "expect(received).toBe(expected) // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 27013132645,
+      "sha": "ed8b9b2",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T11:49:47Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/routes/common/guards/rate-limit.guard.spec.ts",
+          "name": "RateLimitGuard › should log a warning for invalid client IP",
+          "error": "expect(received).rejects.toThrow()"
+        }
+      ]
+    },
+    {
+      "id": 27012964441,
+      "sha": "6fd5e44",
+      "branch": "feat/vitest",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T11:45:50Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Kiln - Transactions Controller > Native (dedicated) staking > deposit > should return a \"standard\" transaction preview if the deployment is unavailable",
+          "error": "Error: expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 27011151431,
+      "sha": "ec11809",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-06-05T11:03:22Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
+          "name": "Propose transaction - Transactions Controller › should propose a transaction from a delegate",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 26963442876,
+      "sha": "ae592bf",
+      "branch": "test/messages-create-202-read-after-write",
+      "conclusion": "failure",
+      "created_at": "2026-06-04T15:57:55Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - CoW Swap - Transactions Controller › Swaps › should return a \"standard\" transaction preview if the swap app is restricted",
+          "error": "expected 200 \"OK\", got 500 \"Internal Server Error\""
+        }
+      ]
+    },
+    {
+      "id": 26963439968,
+      "sha": "ae592bf",
+      "branch": "test/messages-create-202-read-after-write",
+      "conclusion": "failure",
+      "created_at": "2026-06-04T15:57:52Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+          "name": "RecipientAnalysisService › Safe Setup Comparison › should handle Safe setup comparison with different owner counts",
+          "error": "expect(received).toContain(expected) // indexOf"
         }
       ]
     },
@@ -371,6 +965,23 @@
           "file": "src/datasources/cache/redis.cache.service.integration.spec.ts",
           "name": "RedisCacheService › sets and gets the value of a counter key",
           "error": "ERR value is not an integer or out of range"
+        }
+      ]
+    },
+    {
+      "id": 26937888916,
+      "sha": "67ed224",
+      "branch": "feat/add-tenderly-simulation-before-relay",
+      "conclusion": "failure",
+      "created_at": "2026-06-04T07:38:24Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
+          "name": "Notifications Controller V2 › GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress › authentication › should return 403 if token is invalid",
+          "error": "expect(received).toThrow(expected)"
         }
       ]
     },
