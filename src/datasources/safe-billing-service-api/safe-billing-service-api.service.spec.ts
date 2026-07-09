@@ -159,7 +159,7 @@ describe('SafeBillingServiceApi', () => {
       expect(result).toEqual(plan);
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
-          cacheDir: new CacheDir(`${plan.id}_safe_billing_plan`, ''),
+          cacheDir: new CacheDir(`${plan.id}_billing_plan`, ''),
           url: `${baseUri}/api/v1/plans/${plan.id}`,
         }),
       );
@@ -208,7 +208,7 @@ describe('SafeBillingServiceApi', () => {
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${customer.upstreamCustomerId}_safe_billing_customer`,
+            `${customer.upstreamCustomerId}_billing_customer`,
             '',
           ),
           url: `${baseUri}/api/v1/customers/${customer.upstreamCustomerId}`,
@@ -264,7 +264,7 @@ describe('SafeBillingServiceApi', () => {
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${upstreamCustomerId}_safe_billing_subscriptions`,
+            `${upstreamCustomerId}_billing_subscriptions`,
             'all',
           ),
           url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
@@ -285,7 +285,7 @@ describe('SafeBillingServiceApi', () => {
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${upstreamCustomerId}_safe_billing_subscriptions`,
+            `${upstreamCustomerId}_billing_subscriptions`,
             'active',
           ),
           url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
@@ -307,7 +307,7 @@ describe('SafeBillingServiceApi', () => {
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
-            `${upstreamCustomerId}_safe_billing_subscriptions`,
+            `${upstreamCustomerId}_billing_subscriptions`,
             'all',
           ),
           url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
