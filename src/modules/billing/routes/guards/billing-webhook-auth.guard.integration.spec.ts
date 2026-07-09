@@ -10,8 +10,10 @@ import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
+import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
+import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { BillingModule } from '@/modules/billing/billing.module';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
@@ -66,6 +68,7 @@ describe('BillingWebhookAuthGuard', () => {
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
       billing: {
+        ...baseConfiguration.billing,
         webhook: {
           ...baseConfiguration.billing.webhook,
           publicKey,
@@ -77,6 +80,8 @@ describe('BillingWebhookAuthGuard', () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TestLoggingModule,
+        TestCacheModule,
+        TestNetworkModule,
         ConfigurationModule.register(testConfiguration),
         BillingModule,
       ],

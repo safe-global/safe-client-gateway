@@ -20,7 +20,6 @@ import { ConfigurationModule } from '@/config/configuration.module';
 import { BlocklistModule } from '@/config/entities/blocklist.module';
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
-import { BillingApiModule } from '@/datasources/billing-api/billing-api.module';
 import { CacheModule } from '@/datasources/cache/cache.module';
 import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
 import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
@@ -94,9 +93,7 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
-        ...(isBillingServiceFeatureEnabled
-          ? [BillingModule, BillingApiModule]
-          : []),
+        ...(isBillingServiceFeatureEnabled ? [BillingModule] : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,
