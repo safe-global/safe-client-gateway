@@ -28,9 +28,9 @@ import {
  * unconditionally:
  * - disabled → plaintext passthrough (no KMS), though ciphertext reads still
  *   decrypt (rollback safety);
- * - enabled → values are always encrypted on write and must be ciphertext on
- *   read; a plaintext row is an error (the backfill must complete before
- *   encryption is enabled).
+ * - enabled → values are always encrypted on write; reads decrypt ciphertext
+ *   and, until the backfill completes, also tolerate a plaintext row by
+ *   passing it through unchanged (see the `@todo` on {@link decrypt}).
  */
 @Injectable()
 export class EmailEncryptionService implements OnModuleInit {
@@ -123,19 +123,18 @@ export class EmailEncryptionService implements OnModuleInit {
   }
 
   /**
-   * Reverse of {@link encrypt}. With encryption enabled every stored value
-   * must be `kms:` ciphertext — plaintext is an error (the backfill must
-   * complete before enabling). With encryption disabled, plaintext is the
-   * stored form and passes through, while ciphertext is still decrypted so
-   * reads keep working after a rollback.
+   * Reverse of {@link encrypt}. `kms:` ciphertext is always decrypted.
+   * Plaintext also passes through unchanged for now, whether encryption is
+   * enabled or disabled — see the `@todo` below, this is temporary until the
+   * backfill completes, at which point a plaintext row while enabled should
+   * become a hard error again.
    */
   async decrypt(userId: number, value: string): Promise<string> {
+    // @todo: Restore the `this.enabled` guard below (throw on plaintext once
+    // enabled) once the backfill has completed. Until then, rows the
+    // backfill hasn't reached yet are still plaintext, and the fleet must be
+    // able to read them without error during the migration window.
     if (!this.isEncrypted(value)) {
-      if (this.enabled) {
-        throw new Error(
-          `Encountered an unencrypted value for user ${userId} while field encryption is enabled`,
-        );
-      }
       return value;
     }
     const parts = value.split(':');

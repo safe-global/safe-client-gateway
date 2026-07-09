@@ -208,15 +208,13 @@ describe('EmailEncryptionService', () => {
       ).resolves.toBe(email);
     });
 
-    it('throws on plaintext when encryption is enabled', async () => {
+    it('passes plaintext through when encryption is enabled (backfill in progress)', async () => {
       const target = await buildTarget({ enabled: true });
+      const email = faker.internet.email();
 
       await expect(
-        target.decrypt(
-          faker.number.int({ min: 1, max: 10_000 }),
-          faker.internet.email(),
-        ),
-      ).rejects.toThrow('unencrypted');
+        target.decrypt(faker.number.int({ min: 1, max: 10_000 }), email),
+      ).resolves.toBe(email);
     });
 
     it('passes plaintext through when encryption is disabled', async () => {
@@ -287,12 +285,13 @@ describe('EmailEncryptionService', () => {
       });
     });
 
-    it('throws on a plaintext email when encryption is enabled', async () => {
+    it('passes a plaintext email through when encryption is enabled (backfill in progress)', async () => {
       const target = await buildTarget({ enabled: true });
+      const email = faker.internet.email();
 
-      await expect(
-        target.decryptUserEmails([{ id: 1, email: faker.internet.email() }]),
-      ).rejects.toThrow('unencrypted');
+      const decrypted = await target.decryptUserEmails([{ id: 1, email }]);
+
+      expect(decrypted[0].email).toBe(email);
     });
 
     it('returns plaintext and null emails untouched when encryption is disabled', async () => {

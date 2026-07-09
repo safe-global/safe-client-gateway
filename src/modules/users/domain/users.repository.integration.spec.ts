@@ -1303,8 +1303,8 @@ describe('UsersRepository', () => {
     // EmailEncryptionService to a real AwsKmsService with only the AWS SDK
     // boundary mocked (same pattern as aws-kms.service.spec.ts). It proves
     // the actual kms:v1:... on-disk contract round-trips through a live
-    // repository call, and that a plaintext row surfaces its error uncaught
-    // rather than being swallowed somewhere in the repository.
+    // repository call, and that a plaintext row (not yet reached by the
+    // backfill) still reads back untouched rather than erroring.
     const kmsMock = mockClient(KMSClient);
     const keyId = faker.string.uuid();
     const indexKey = Buffer.alloc(INDEX_KEY_LENGTH, 7);
@@ -1388,18 +1388,19 @@ describe('UsersRepository', () => {
       ).resolves.toBe(email);
     });
 
-    it('rejects a plaintext row instead of leaking it, once encryption is enabled', async () => {
+    it('reads a plaintext row through untouched once encryption is enabled (backfill in progress)', async () => {
       const encryptingUsersRepository = await buildEncryptingUsersRepository();
       const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
       const insertResult = await dbUserRepository.insert({
         status: 'ACTIVE',
-        email: fakeEmailAddress(),
+        email,
       });
       const userId = insertResult.identifiers[0].id as number;
 
       await expect(
         encryptingUsersRepository.findEmailById(userId),
-      ).rejects.toThrow('unencrypted');
+      ).resolves.toBe(email);
     });
   });
 });
