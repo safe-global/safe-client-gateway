@@ -44,13 +44,6 @@ export interface IZerionWalletPortfolioApi {
     isTestnet: boolean;
     trusted?: boolean;
   }): Promise<ZerionWalletPortfolio>;
-
-  /**
-   * Clears all cached variants for the address and flags it so the next
-   * fetch asks Zerion to re-aggregate (sync=true) — clearing alone would
-   * re-cache Zerion's pre-event snapshot.
-   */
-  invalidatePortfolio(args: { address: Address }): Promise<void>;
 }
 
 @Injectable()
@@ -58,7 +51,6 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly cacheTtlSeconds: number;
-  private readonly syncFlagMinSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -79,9 +71,6 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     this.cacheTtlSeconds = this.configurationService.getOrThrow<number>(
       'balances.providers.zerion.walletPortfolioTtlSeconds',
     );
-    this.syncFlagMinSeconds = this.configurationService.getOrThrow<number>(
-      'balances.providers.zerion.syncFlagMinSeconds',
-    );
   }
 
   async getPortfolio(args: {
@@ -99,17 +88,10 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
 
     const { key, field } = cacheDir;
 
-    const syncFlagDir = CacheRouter.getZerionSyncFlagCacheDir({
-      address: args.address,
-    });
-    const needsSync = (await this.cacheService.hGet(syncFlagDir)) != null;
-
-    if (!needsSync) {
-      const cached = await this.cacheService.hGet(cacheDir);
-      if (cached != null) {
-        this.loggingService.debug({ type: LogType.CacheHit, key, field });
-        return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
-      }
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached != null) {
+      this.loggingService.debug({ type: LogType.CacheHit, key, field });
+      return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
     }
 
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
@@ -133,11 +115,6 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       params['filter[trash]'] = 'only_non_trash';
     }
 
-    if (needsSync) {
-      // Zerion re-aggregates from chain state before responding.
-      params.sync = 'true';
-    }
-
     try {
       const { data } = await this.networkService.get<ZerionWalletPortfolio>({
         url,
@@ -155,11 +132,6 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
         this.cacheTtlSeconds,
       );
 
-      if (needsSync) {
-        // Only a successful sync fetch consumes the flag.
-        await this.cacheService.deleteByKey(syncFlagDir.key);
-      }
-
       return portfolio;
     } catch (error) {
       if (error instanceof ZodError) {
@@ -167,23 +139,5 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       }
       throw this.httpErrorFactory.from(error);
     }
-  }
-
-  async invalidatePortfolio(args: { address: Address }): Promise<void> {
-    const syncFlagDir = CacheRouter.getZerionSyncFlagCacheDir({
-      address: args.address,
-    });
-    await Promise.all([
-      this.cacheService.deleteByKey(
-        CacheRouter.getZerionWalletPortfolioCacheKey({
-          address: args.address,
-        }),
-      ),
-      this.cacheService.hSet(
-        syncFlagDir,
-        'true',
-        Math.max(this.cacheTtlSeconds, this.syncFlagMinSeconds),
-      ),
-    ]);
   }
 }

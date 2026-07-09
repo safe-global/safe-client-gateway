@@ -10,12 +10,11 @@ import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delega
 import { EarnModule } from '@/modules/earn/earn.module';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { MessagesModule } from '@/modules/messages/messages.module';
-import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
-import { PositionsModule } from '@/modules/positions/positions.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { StakingModule } from '@/modules/staking/staking.module';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
   imports: [
@@ -26,12 +25,11 @@ import { TransactionsModule } from '@/modules/transactions/transactions.module';
     DelegatesV2RepositoryModule,
     EarnModule,
     MessagesModule,
-    PortfolioModule,
-    PositionsModule,
     SafeAppsModule,
     SafeRepositoryModule,
     StakingModule,
     TransactionsModule,
+    ZerionModule,
   ],
   providers: [EventCacheHelper, SafeDecoder, MultiSendDecoder],
   exports: [EventCacheHelper],

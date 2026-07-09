@@ -11,12 +11,10 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
-import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { IZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
 import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -31,12 +29,11 @@ import {
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
-import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
+import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
 
 @Injectable()
 export class EventCacheHelper {
@@ -59,12 +56,7 @@ export class EventCacheHelper {
     private readonly delegatesRepository: IDelegatesV2Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
-    @Inject(IPortfolioRepository)
-    private readonly portfolioRepository: IPortfolioRepository,
-    @Inject(IPositionsRepository)
-    private readonly positionsRepository: IPositionsRepository,
-    @Inject(IZerionWalletPortfolioApi)
-    private readonly zerionWalletPortfolioApi: IZerionWalletPortfolioApi,
+    private readonly zerionCache: ZerionCacheService,
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
@@ -262,34 +254,6 @@ export class EventCacheHelper {
     ];
   }
 
-  /**
-   * Clears the Zerion-backed portfolio caches after an on-chain event. The
-   * wallet-portfolio and portfolio-route caches are cross-chain aggregates,
-   * so they are cleared by address regardless of the event's chain.
-   */
-  private clearZerionCaches(event: {
-    type: string;
-    chainId: string;
-    address: Address;
-  }): Array<Promise<void>> {
-    this.loggingService.debug({
-      type: LogType.PortfolioCacheInvalidated,
-      event_type: event.type,
-      chain_id: event.chainId,
-      address: event.address,
-    });
-    return [
-      this.zerionWalletPortfolioApi.invalidatePortfolio({
-        address: event.address,
-      }),
-      this.portfolioRepository.clearPortfolio({ address: event.address }),
-      this.positionsRepository.clearPositions({
-        chainId: event.chainId,
-        safeAddress: event.address,
-      }),
-    ];
-  }
-
   private onTransactionEventModuleTransaction(
     event: Extract<Event, { type: TransactionEventType.MODULE_TRANSACTION }>,
   ): Array<Promise<void>> {
@@ -300,7 +264,9 @@ export class EventCacheHelper {
     // - the safe configuration
     // - the Zerion-backed portfolio caches
     return [
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
       this.safeRepository.clearAllExecutedTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -340,7 +306,9 @@ export class EventCacheHelper {
     // - the stakes of a safe
     // - the Zerion-backed portfolio caches
     const promises = [
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -492,7 +460,9 @@ export class EventCacheHelper {
     // - the incoming transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -526,7 +496,9 @@ export class EventCacheHelper {
     // - the transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -558,7 +530,9 @@ export class EventCacheHelper {
     // - the incoming transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -597,7 +571,9 @@ export class EventCacheHelper {
     // - the transfers for that safe
     // - the Zerion-backed portfolio caches
     return [
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -697,7 +673,9 @@ export class EventCacheHelper {
     // A freshly indexed Safe may have been funded before deployment.
     return [
       this.safeRepository.clearIsSafe(event),
-      ...this.clearZerionCaches(event),
+      // The Zerion caches are cross-chain aggregates, so they are cleared by
+      // address regardless of the event's chain.
+      this.zerionCache.invalidate(event.address, event.type),
     ];
   }
 

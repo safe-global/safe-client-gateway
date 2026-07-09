@@ -86,7 +86,7 @@ describe('Hook Events for Cache', () => {
     await app.close();
   });
 
-  it('INCOMING_TOKEN clears the Zerion portfolio caches and flags the address for sync', async () => {
+  it('INCOMING_TOKEN clears the Zerion portfolio caches', async () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
@@ -143,13 +143,6 @@ describe('Hook Events for Cache', () => {
     ).resolves.toBeNull();
     await expect(fakeCacheService.hGet(portfolioCacheDir)).resolves.toBeNull();
     await expect(fakeCacheService.hGet(positionsCacheDir)).resolves.toBeNull();
-    await expect(
-      fakeCacheService.hGet(
-        CacheRouter.getZerionSyncFlagCacheDir({
-          address: safeAddress,
-        }),
-      ),
-    ).resolves.toBe('true');
   });
 
   it.each([

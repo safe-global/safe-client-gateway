@@ -318,44 +318,6 @@ describe('ZerionPositionsApi', () => {
         });
       });
 
-      it('fetches with sync=true and consumes the flag when the sync flag is set', async () => {
-        const chain = chainBuilder().with('isTestnet', false).build();
-        const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
-        mockCacheService.hGet.mockImplementation((cacheDir) =>
-          Promise.resolve(cacheDir.key.includes('zerion_sync') ? 'true' : null),
-        );
-        mockNetworkService.get.mockResolvedValue({
-          data: rawify({ data: [] }),
-          status: 200,
-        });
-
-        await service.getPositions({
-          chain,
-          safeAddress,
-          fiatCode,
-        });
-
-        expect(mockNetworkService.get).toHaveBeenCalledWith({
-          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
-          networkRequest: {
-            headers: {
-              Authorization: `Basic ${zerionApiKey}`,
-            },
-            params: {
-              'filter[chain_ids]': chain.balancesProvider.chainName,
-              'filter[positions]': 'only_complex',
-              currency: fiatCode.toLowerCase(),
-              sort: 'value',
-              sync: 'true',
-            },
-          },
-        });
-        expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
-          CacheRouter.getZerionSyncFlagCacheDir({ address: safeAddress }).key,
-        );
-      });
-
       it('should include X-Env header for testnet chains', async () => {
         const chain = chainBuilder().with('isTestnet', true).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());

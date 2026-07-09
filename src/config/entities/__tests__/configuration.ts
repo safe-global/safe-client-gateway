@@ -86,10 +86,6 @@ export default (): ReturnType<typeof configuration> => ({
           min: 60,
           max: 3600,
         }),
-        syncFlagMinSeconds: faker.number.int({
-          min: 60,
-          max: 3600,
-        }),
       },
     },
   },

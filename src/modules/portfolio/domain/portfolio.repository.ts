@@ -17,6 +17,7 @@ import {
 import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
 import type { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
 import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
+import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
 
 /**
  * Portfolio repository.
@@ -33,6 +34,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly zerionCache: ZerionCacheService,
   ) {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
@@ -58,14 +60,8 @@ export class PortfolioRepository implements IPortfolioRepository {
       isTestnet: args.isTestnet,
     });
 
-    const syncFlagDir = CacheRouter.getZerionSyncFlagCacheDir({
-      address: args.address,
-    });
-    const flagged = (await this.cacheService.hGet(syncFlagDir)) != null;
-    const sync = args.sync || flagged;
-
     // If sync is true, we bypass the cache and fetch the portfolio from the API
-    const cached = sync ? null : await this.cacheService.hGet(cacheDir);
+    const cached = args.sync ? null : await this.cacheService.hGet(cacheDir);
     let portfolio: Portfolio;
 
     if (cached) {
@@ -76,7 +72,7 @@ export class PortfolioRepository implements IPortfolioRepository {
         fiatCode: args.fiatCode,
         trusted: args.trusted,
         isTestnet: args.isTestnet,
-        sync,
+        sync: args.sync,
       });
 
       portfolio = PortfolioSchema.parse(rawPortfolio);
@@ -86,28 +82,22 @@ export class PortfolioRepository implements IPortfolioRepository {
         JSON.stringify(portfolio),
         this.cacheExpirationSeconds,
       );
-
-      if (flagged) {
-        // Any successful sync fetch consumes the flag.
-        await this.cacheService.deleteByKey(syncFlagDir.key);
-      }
     }
 
     return this._applyFilters(portfolio, args);
   }
 
   /**
-   * Clears cached portfolio for an address.
+   * Refreshes an address: invalidates all Zerion-backed caches (wallet
+   * portfolio, portfolio route, positions). Not portfolio-route-only — the
+   * three caches serve views of the same Zerion aggregation, so a refresh must
+   * clear them together.
    *
    * @param {{ address: Address }} args - Clear parameters
-   * @returns {Promise<void>} Promise that resolves when cache is cleared
+   * @returns {Promise<void>} Promise that resolves when caches are cleared
    */
   public async clearPortfolio(args: { address: Address }): Promise<void> {
-    await this.cacheService.deleteByKey(
-      CacheRouter.getPortfolioCacheKey({
-        address: args.address,
-      }),
-    );
+    await this.zerionCache.invalidate(args.address, 'refresh');
   }
 
   /**
