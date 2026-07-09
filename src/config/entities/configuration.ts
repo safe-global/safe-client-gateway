@@ -406,7 +406,7 @@ export default () => ({
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
-    zerionEnabled: !!process.env.FF_ZERION_ENABLED,
+    zerionEnabled: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',

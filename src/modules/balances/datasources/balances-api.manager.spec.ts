@@ -78,7 +78,6 @@ const networkServiceMock = vi.mocked(networkService);
 beforeEach(() => {
   vi.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'features.zerionEnabled') return false;
     if (key === 'features.counterfactualBalances') return true;
     // TODO: Remove after Vault decoding has been released
     if (key === 'application.isProduction') return true;
@@ -134,7 +133,6 @@ describe('Balances API Manager Tests', () => {
           return expirationTimeInSeconds;
         if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
-        if (key === 'features.zerionEnabled') return false;
         if (key === 'features.counterfactualBalances') return true;
         // TODO: Remove after Vault decoding has been released
         if (key === 'application.isProduction') return true;
