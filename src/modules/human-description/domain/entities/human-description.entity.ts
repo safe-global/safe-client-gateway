@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address } from 'viem';
-import type { Hex } from 'viem/types/misc';
+import type { Address, Hex } from 'viem';
 
 export enum ValueType {
   Text = 'text',
