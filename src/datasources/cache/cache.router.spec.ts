@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 
 const address = getAddress(faker.finance.ethereumAddress());
 
@@ -122,6 +123,133 @@ describe('CacheRouter', () => {
       });
 
       expect(dirSingle.field).not.toBe(dirMulti.field);
+    });
+  });
+
+  describe('fee preview cache keys', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    describe('getRelayFeePreviewCacheDir', () => {
+      const baseArgs = {
+        chainId,
+        safeAddress,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '1000000000000000000',
+        data: '0x',
+        operation: 0,
+        gasToken: zeroAddress,
+        threshold: 1,
+        nonce: '0',
+        origin: Origin.NATIVE,
+        fiatCode: 'USD',
+      };
+
+      it('should produce correct cache dir key', () => {
+        const dir = CacheRouter.getRelayFeePreviewCacheDir(baseArgs);
+
+        expect(dir.key).toBe(`${chainId}_relay_fee_preview_${safeAddress}`);
+        expect(dir.field.length).toBe(64); // sha256 hex
+      });
+
+      it.each([
+        ['to', getAddress(faker.finance.ethereumAddress())],
+        ['nonce', '1'],
+        ['origin', Origin.SAFE_APP],
+        ['fiatCode', 'EUR'],
+      ] as const)('should produce a different hash when %s differs', (field, value) => {
+        const dir1 = CacheRouter.getRelayFeePreviewCacheDir(baseArgs);
+        const dir2 = CacheRouter.getRelayFeePreviewCacheDir({
+          ...baseArgs,
+          [field]: value,
+        });
+
+        expect(dir1.key).toBe(dir2.key);
+        expect(dir1.field).not.toBe(dir2.field);
+      });
+
+      it('should default origin and fiatCode the same as their explicit values', () => {
+        const { origin, fiatCode, ...rest } = baseArgs;
+        const dirDefaulted = CacheRouter.getRelayFeePreviewCacheDir(rest);
+        const dirExplicit = CacheRouter.getRelayFeePreviewCacheDir({
+          ...rest,
+          origin: Origin.NATIVE,
+          fiatCode: 'USD',
+        });
+
+        expect(dirDefaulted.field).toBe(dirExplicit.field);
+      });
+    });
+
+    describe('getGtfFeePreviewCacheDir', () => {
+      const baseArgs = {
+        chainId,
+        safeAddress,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '1000000000000000000',
+        data: '0x',
+        operation: 0,
+        nonce: '0',
+        gasToken: zeroAddress,
+        threshold: 1,
+        origin: Origin.NATIVE,
+      };
+
+      it('should produce correct cache dir key', () => {
+        const dir = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
+
+        expect(dir.key).toBe(`${chainId}_gtf_fee_preview_${safeAddress}`);
+        expect(dir.field.length).toBe(64); // sha256 hex
+      });
+
+      it.each([
+        ['to', getAddress(faker.finance.ethereumAddress())],
+        ['nonce', '1'],
+        ['origin', Origin.SAFE_APP],
+      ] as const)('should produce a different hash when %s differs', (field, value) => {
+        const dir1 = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
+        const dir2 = CacheRouter.getGtfFeePreviewCacheDir({
+          ...baseArgs,
+          [field]: value,
+        });
+
+        expect(dir1.key).toBe(dir2.key);
+        expect(dir1.field).not.toBe(dir2.field);
+      });
+
+      it('should default origin the same as its explicit value', () => {
+        const { origin, ...rest } = baseArgs;
+        const dirDefaulted = CacheRouter.getGtfFeePreviewCacheDir(rest);
+        const dirExplicit = CacheRouter.getGtfFeePreviewCacheDir({
+          ...rest,
+          origin: Origin.NATIVE,
+        });
+
+        expect(dirDefaulted.field).toBe(dirExplicit.field);
+      });
+    });
+
+    it('should not collide between relay and GTF cache dirs for the same transaction', () => {
+      const shared = {
+        chainId,
+        safeAddress,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '1000000000000000000',
+        data: '0x',
+        operation: 0,
+        nonce: '0',
+        gasToken: zeroAddress,
+        threshold: 1,
+        origin: Origin.NATIVE,
+      };
+
+      const relayDir = CacheRouter.getRelayFeePreviewCacheDir({
+        ...shared,
+        fiatCode: 'USD',
+      });
+      const gtfDir = CacheRouter.getGtfFeePreviewCacheDir(shared);
+
+      expect(relayDir.key).not.toBe(gtfDir.key);
     });
   });
 });

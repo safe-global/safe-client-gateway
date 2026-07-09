@@ -8,4 +8,5 @@ export const OutgoingTokenEventSchema = HookEventBaseSchema.extend({
   type: z.literal(TransactionEventType.OUTGOING_TOKEN),
   tokenAddress: AddressSchema,
   txHash: z.string(),
+  trusted: z.boolean(),
 });

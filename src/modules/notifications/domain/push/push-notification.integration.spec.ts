@@ -365,6 +365,33 @@ describe('Push notification queue integration', () => {
         notificationsRepository.enqueueNotification,
       ).not.toHaveBeenCalled();
     });
+
+    it('should suppress INCOMING_TOKEN when the token is not trusted (spam)', async () => {
+      const safeAddress = addr();
+      const event = incomingTokenEventBuilder()
+        .with('address', safeAddress)
+        .with('trusted', false)
+        .build();
+      currentChainId = event.chainId;
+      const subs = createSubscribers(1);
+
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
+
+      await pushNotificationService.enqueueEvent(event);
+
+      await retry(async () => {
+        const counts = await queue.getJobCounts();
+        expect(counts.active + counts.waiting + counts.delayed).toBe(0);
+      });
+
+      // Dropped before subscriber resolution — no lookups, no delivery
+      expect(
+        notificationsRepository.getSubscribersBySafe,
+      ).not.toHaveBeenCalled();
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   describe('PENDING_MULTISIG_TRANSACTION filtering', () => {

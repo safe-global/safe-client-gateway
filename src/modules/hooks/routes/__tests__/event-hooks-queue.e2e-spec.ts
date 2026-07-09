@@ -64,6 +64,7 @@ describe('Events queue processing e2e tests', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_ETHER',
@@ -79,6 +80,7 @@ describe('Events queue processing e2e tests', () => {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears balances', async (payload) => {
     const cacheDir = new CacheDir(
@@ -261,11 +263,13 @@ describe('Events queue processing e2e tests', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears safe collectibles', async (payload) => {
     const cacheDir = new CacheDir(
@@ -307,11 +311,13 @@ describe('Events queue processing e2e tests', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears safe collectible transfers', async (payload) => {
     const cacheDir = new CacheDir(
@@ -345,6 +351,7 @@ describe('Events queue processing e2e tests', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'INCOMING_ETHER',
@@ -429,6 +436,7 @@ describe('Events queue processing e2e tests', () => {
       type: 'INCOMING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
     {
       type: 'OUTGOING_ETHER',
@@ -444,6 +452,7 @@ describe('Events queue processing e2e tests', () => {
       type: 'OUTGOING_TOKEN',
       tokenAddress: faker.finance.ethereumAddress(),
       txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
     },
   ])('$type clears all transactions', async (payload) => {
     const cacheDir = new CacheDir(

@@ -7,6 +7,9 @@ WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
 COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
+# Compiled by `yarn build` into dist/scripts/ so the image can mint billing
+# webhook tokens as a one-off workload (see src/modules/billing/README.md).
+COPY --chown=node:node scripts/generate-token.ts ./scripts/generate-token.ts
 COPY --chown=node:node assets ./assets
 COPY --chown=node:node migrations ./migrations
 COPY --chown=node:node src ./src

@@ -7,7 +7,7 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 
 // Use inferred type
-function jwtClientFactory() {
+export function jwtClientFactory() {
   return {
     sign: <
       T extends object & {
