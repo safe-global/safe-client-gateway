@@ -30,7 +30,7 @@ export const PaymentLinkLineItemSchema = z.object({
 export type PaymentLinkMetadata = z.infer<typeof PaymentLinkMetadataSchema>;
 
 export const PaymentLinkMetadataSchema = z.object({
-  customerGroup: z.string().optional(),
+  customerGroup: z.string(),
   upstreamCustomerId: z.string().optional(),
 });
 

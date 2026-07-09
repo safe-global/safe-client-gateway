@@ -148,7 +148,7 @@ export class BillingApi implements IBillingApi {
   }): Promise<CheckoutSession> {
     return this.parse(
       this.networkService
-        .post<unknown>({
+        .post<CheckoutSession>({
           url: `${this.baseUri}/api/v1/payment-links/${args.paymentLinkId}/checkout`,
           data: {
             upstreamCustomerId: args.upstreamCustomerId,
@@ -168,7 +168,7 @@ export class BillingApi implements IBillingApi {
   getCheckoutSession(args: { sessionId: string }): Promise<CheckoutSession> {
     return this.parse(
       this.networkService
-        .get<unknown>({
+        .get<CheckoutSession>({
           url: `${this.baseUri}/api/v1/sessions/${args.sessionId}`,
           networkRequest: {
             headers: this.authHeaders,
@@ -188,7 +188,7 @@ export class BillingApi implements IBillingApi {
     expireTimeSeconds?: number;
   }): Promise<T> {
     return this.parse(
-      this.dataSource.get<unknown>({
+      this.dataSource.get<T>({
         cacheDir: args.cacheDir,
         url: args.url,
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
