@@ -14,5 +14,5 @@ export interface IPortfolioService {
     sync?: boolean;
   }): Promise<Portfolio>;
 
-  clearAllPortfolioCaches(args: { address: Address }): Promise<void>;
+  clearZerionCaches(args: { address: Address }): Promise<void>;
 }

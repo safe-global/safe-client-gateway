@@ -96,9 +96,7 @@ export class PortfolioRepository implements IPortfolioRepository {
    * @param {{ address: Address }} args - Clear parameters
    * @returns {Promise<void>} Promise that resolves when caches are cleared
    */
-  public async clearAllPortfolioCaches(args: {
-    address: Address;
-  }): Promise<void> {
+  public async clearZerionCaches(args: { address: Address }): Promise<void> {
     await this.zerionCache.invalidate(args.address, 'refresh');
   }
 

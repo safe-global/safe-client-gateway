@@ -23,7 +23,7 @@ describe('PortfolioApiService', () => {
 
     mockDomainService = {
       getPortfolio: vi.fn(),
-      clearAllPortfolioCaches: vi.fn(),
+      clearZerionCaches: vi.fn(),
     } as MockedObject<IDomainPortfolioService>;
 
     mockChainsRepository = {
@@ -215,13 +215,13 @@ describe('PortfolioApiService', () => {
     });
   });
 
-  describe('clearAllPortfolioCaches', () => {
-    it('should call domain service clearAllPortfolioCaches', async () => {
+  describe('clearZerionCaches', () => {
+    it('should call domain service clearZerionCaches', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      await service.clearAllPortfolioCaches({ address });
+      await service.clearZerionCaches({ address });
 
-      expect(mockDomainService.clearAllPortfolioCaches).toHaveBeenCalledWith({
+      expect(mockDomainService.clearZerionCaches).toHaveBeenCalledWith({
         address,
       });
     });

@@ -115,6 +115,6 @@ export class PortfolioController {
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    await this.portfolioService.clearAllPortfolioCaches({ address });
+    await this.portfolioService.clearZerionCaches({ address });
   }
 }
