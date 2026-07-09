@@ -4,7 +4,7 @@ import { PlanSchema } from '@/datasources/billing-api/entities/plan.entity';
 
 export type Subscription = z.infer<typeof SubscriptionSchema>;
 
-export const SubscriptionStatusSchema = z.enum([
+export const SubscriptionStatuses = [
   'active',
   'canceled',
   'incomplete',
@@ -13,12 +13,14 @@ export const SubscriptionStatusSchema = z.enum([
   'paused',
   'trialing',
   'unpaid',
-]);
+] as const;
+
+export const SubscriptionStatusSchema = z.enum(SubscriptionStatuses);
 
 export type SubscriptionStatus = z.infer<typeof SubscriptionStatusSchema>;
 
 export const SubscriptionStatusFilterSchema = z.enum([
-  ...SubscriptionStatusSchema.options,
+  ...SubscriptionStatuses,
   'all',
 ]);
 

@@ -3,6 +3,12 @@ import { z } from 'zod';
 
 export type Plan = z.infer<typeof PlanSchema>;
 
+export const PlanCurrencies = ['usd', 'eur'] as const;
+
+export const PlanBillingCycles = ['monthly', 'yearly'] as const;
+
+export const PlanTypes = ['standard', 'premium', 'enterprise'] as const;
+
 export const PlanSchema = z.object({
   id: z.string(),
   name: z.string().nullable(),
@@ -10,8 +16,8 @@ export const PlanSchema = z.object({
   currentPrice: z.number(),
   originalPrice: z.number(),
   paymentMethod: z.literal('fiat'),
-  currency: z.enum(['usd', 'eur']),
+  currency: z.enum(PlanCurrencies),
   features: z.array(z.string()),
-  billingCycle: z.enum(['monthly', 'yearly']).nullable(),
-  type: z.enum(['standard', 'premium', 'enterprise']),
+  billingCycle: z.enum(PlanBillingCycles).nullable(),
+  type: z.enum(PlanTypes),
 });
