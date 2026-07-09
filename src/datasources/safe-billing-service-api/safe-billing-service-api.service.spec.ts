@@ -35,7 +35,7 @@ describe('SafeBillingServiceApi', () => {
   let apiToken: string;
   let requestTimeout: number;
   let expireTimeSeconds: number;
-  let subscriptionsExpireTimeSeconds: number;
+  let billingExpireTimeSeconds: number;
   let notFoundExpireTimeSeconds: number;
 
   beforeEach(() => {
@@ -47,7 +47,7 @@ describe('SafeBillingServiceApi', () => {
     apiToken = faker.string.alphanumeric(32);
     requestTimeout = faker.number.int({ min: 1000, max: 10_000 });
     expireTimeSeconds = faker.number.int({ min: 1, max: 100 });
-    subscriptionsExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
+    billingExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
     notFoundExpireTimeSeconds = faker.number.int({ min: 1, max: 100 });
 
     fakeConfigurationService.set('safeBillingService.baseUri', baseUri);
@@ -61,8 +61,8 @@ describe('SafeBillingServiceApi', () => {
       expireTimeSeconds,
     );
     fakeConfigurationService.set(
-      'expirationTimeInSeconds.billingSubscriptions',
-      subscriptionsExpireTimeSeconds,
+      'expirationTimeInSeconds.billing',
+      billingExpireTimeSeconds,
     );
     fakeConfigurationService.set(
       'expirationTimeInSeconds.notFound.default',
@@ -212,6 +212,7 @@ describe('SafeBillingServiceApi', () => {
             '',
           ),
           url: `${baseUri}/api/v1/customers/${customer.upstreamCustomerId}`,
+          expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
     });
@@ -225,9 +226,9 @@ describe('SafeBillingServiceApi', () => {
       );
       mockDataSource.get.mockRejectedValueOnce(error);
 
-      await expect(
-        target.getCustomer({ upstreamCustomerId }),
-      ).rejects.toThrow(new DataSourceError('Token expired', 401));
+      await expect(target.getCustomer({ upstreamCustomerId })).rejects.toThrow(
+        new DataSourceError('Token expired', 401),
+      );
     });
 
     it('should forward network errors', async () => {
@@ -240,9 +241,9 @@ describe('SafeBillingServiceApi', () => {
       );
       mockDataSource.get.mockRejectedValueOnce(error);
 
-      await expect(
-        target.getCustomer({ upstreamCustomerId }),
-      ).rejects.toThrow(new DataSourceError('Internal server error', status));
+      await expect(target.getCustomer({ upstreamCustomerId })).rejects.toThrow(
+        new DataSourceError('Internal server error', status),
+      );
     });
   });
 
@@ -267,7 +268,7 @@ describe('SafeBillingServiceApi', () => {
             'all',
           ),
           url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
-          expireTimeSeconds: subscriptionsExpireTimeSeconds,
+          expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
     });
@@ -289,7 +290,7 @@ describe('SafeBillingServiceApi', () => {
           ),
           url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
           params: { status: 'active' },
-          expireTimeSeconds: subscriptionsExpireTimeSeconds,
+          expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
     });
@@ -311,7 +312,7 @@ describe('SafeBillingServiceApi', () => {
           ),
           url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
           params: { status: 'all' },
-          expireTimeSeconds: subscriptionsExpireTimeSeconds,
+          expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
     });

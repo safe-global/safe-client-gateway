@@ -32,7 +32,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
   private readonly authHeaders: Record<string, string>;
   private readonly requestTimeout: number;
   private readonly expireTimeSeconds: number;
-  private readonly subscriptionsExpireTimeSeconds: number;
+  private readonly billingExpireTimeSeconds: number;
   private readonly notFoundExpireTimeSeconds: number;
 
   constructor(
@@ -57,9 +57,9 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     this.expireTimeSeconds = this.configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.default',
     );
-    this.subscriptionsExpireTimeSeconds =
+    this.billingExpireTimeSeconds =
       this.configurationService.getOrThrow<number>(
-        'expirationTimeInSeconds.billingSubscriptions',
+        'expirationTimeInSeconds.billing',
       );
     this.notFoundExpireTimeSeconds =
       this.configurationService.getOrThrow<number>(
@@ -85,6 +85,11 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
     });
   }
 
+  /**
+   * Cached with a short, dedicated TTL rather than the default one: there is
+   * no webhook-driven invalidation for customer changes yet, so this bounds
+   * how long a change (e.g. a plan change) can stay stale.
+   */
   getCustomer(args: { upstreamCustomerId: string }): Promise<Customer> {
     return this.request({
       cacheDir: CacheRouter.getSafeBillingCustomerCacheDir(
@@ -94,6 +99,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
       schema: z
         .object({ customer: CustomerSchema })
         .transform((body) => body.customer),
+      expireTimeSeconds: this.billingExpireTimeSeconds,
     });
   }
 
@@ -116,7 +122,7 @@ export class SafeBillingServiceApi implements ISafeBillingServiceApi {
       schema: z
         .object({ subscriptions: z.array(SubscriptionSchema) })
         .transform((body) => body.subscriptions),
-      expireTimeSeconds: this.subscriptionsExpireTimeSeconds,
+      expireTimeSeconds: this.billingExpireTimeSeconds,
     });
   }
 

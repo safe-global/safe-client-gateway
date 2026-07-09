@@ -384,8 +384,8 @@ export default () => ({
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
       10,
     ),
-    billingSubscriptions: Number.parseInt(
-      process.env.EXPIRATION_TIME_BILLING_SUBSCRIPTIONS_SECONDS ?? `${30}`,
+    billing: Number.parseInt(
+      process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
       10,
     ),
     notFound: {

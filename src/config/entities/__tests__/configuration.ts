@@ -199,7 +199,7 @@ export default (): ReturnType<typeof configuration> => ({
     indexing: faker.number.int(),
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
-    billingSubscriptions: faker.number.int(),
+    billing: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
