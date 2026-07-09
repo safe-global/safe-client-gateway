@@ -324,7 +324,10 @@ function parseFailedTestsFromLog(log: string): Array<FailedTest> {
 			continue;
 		}
 
-		// Jest (pre-Vitest logs and branches lagging the migration):
+		// Jest — only reached by logs predating the Vitest migration (#3136,
+		// merged 2026-06-23). Safe to delete once the analysis window starts
+		// after that date (from ~2026-09 even a from-scratch 60-day rebuild
+		// sees only Vitest logs).
 		//   FAIL src/path/to/file.spec.ts
 		const jestFailMatch = line.match(/FAIL (src\/\S+)/);
 		if (!jestFailMatch) continue;
