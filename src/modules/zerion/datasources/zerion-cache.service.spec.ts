@@ -7,6 +7,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
 
 const mockCacheService = vi.mocked({
@@ -31,7 +32,7 @@ describe('ZerionCacheService', () => {
 
   describe('invalidate', () => {
     it('clears the wallet-portfolio, portfolio, and positions caches', async () => {
-      await service.invalidate(address, 'INCOMING_TOKEN');
+      await service.invalidate(address, TransactionEventType.INCOMING_TOKEN);
 
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         CacheRouter.getZerionWalletPortfolioCacheKey({ address }),
@@ -52,6 +53,22 @@ describe('ZerionCacheService', () => {
         address,
         source: 'refresh',
       });
+    });
+
+    it('is best-effort: a failed delete is logged, the rest proceed, nothing throws', async () => {
+      mockCacheService.deleteByKey
+        .mockRejectedValueOnce(new Error('redis down'))
+        .mockResolvedValue(1);
+
+      await expect(
+        service.invalidate(address, 'refresh'),
+      ).resolves.toBeUndefined();
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(3);
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('redis down'),
+      );
     });
   });
 });

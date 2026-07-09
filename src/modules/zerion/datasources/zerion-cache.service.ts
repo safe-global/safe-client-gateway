@@ -11,6 +11,11 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
+import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+
+/** What triggered an invalidation: an on-chain event, or a manual refresh. */
+export type ZerionCacheInvalidationSource = TransactionEventType | 'refresh';
 
 /**
  * Owns invalidation of the three Zerion-backed portfolio caches for a Safe:
@@ -29,28 +34,36 @@ export class ZerionCacheService {
   ) {}
 
   /**
-   * Clears every Zerion-backed cache for the Safe.
+   * Clears every Zerion-backed cache for the Safe, best-effort: a failed
+   * delete is logged but never thrown — neither the event listener nor the
+   * refresh caller can act on it, and the entry expires with its TTL anyway.
    *
    * @param address - The Safe address whose caches to clear.
-   * @param source - What triggered the invalidation, for observability: the
-   * on-chain event type (e.g. `INCOMING_TOKEN`) or `refresh`.
+   * @param source - What triggered the invalidation, for observability.
    */
-  async invalidate(address: Address, source: string): Promise<void> {
+  async invalidate(
+    address: Address,
+    source: ZerionCacheInvalidationSource,
+  ): Promise<void> {
     this.loggingService.debug({
       type: LogType.ZerionCacheInvalidated,
       address,
       source,
     });
-    await Promise.all([
-      this.cacheService.deleteByKey(
-        CacheRouter.getZerionWalletPortfolioCacheKey({ address }),
-      ),
-      this.cacheService.deleteByKey(
-        CacheRouter.getPortfolioCacheKey({ address }),
-      ),
-      this.cacheService.deleteByKey(
-        CacheRouter.getZerionPositionsCacheKey({ safeAddress: address }),
-      ),
-    ]);
+    const keys = [
+      CacheRouter.getZerionWalletPortfolioCacheKey({ address }),
+      CacheRouter.getPortfolioCacheKey({ address }),
+      CacheRouter.getZerionPositionsCacheKey({ safeAddress: address }),
+    ];
+    const results = await Promise.allSettled(
+      keys.map((key) => this.cacheService.deleteByKey(key)),
+    );
+    results.forEach((result, i) => {
+      if (result.status === 'rejected') {
+        this.loggingService.warn(
+          `Zerion cache invalidation failed for ${keys[i]} (source: ${source}): ${asError(result.reason)}`,
+        );
+      }
+    });
   }
 }

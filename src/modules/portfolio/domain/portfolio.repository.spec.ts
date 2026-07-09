@@ -611,9 +611,9 @@ describe('PortfolioRepository', () => {
       });
     });
 
-    describe('clearPortfolio', () => {
+    describe('clearAllPortfolioCaches', () => {
       it('invalidates all Zerion caches for the address', async () => {
-        await repository.clearPortfolio({ address });
+        await repository.clearAllPortfolioCaches({ address });
 
         expect(mockZerionCache.invalidate).toHaveBeenCalledWith(
           address,

@@ -86,7 +86,47 @@ describe('Hook Events for Cache', () => {
     await app.close();
   });
 
-  it('INCOMING_TOKEN clears the Zerion portfolio caches', async () => {
+  it.each([
+    {
+      type: 'INCOMING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
+    },
+    {
+      type: 'OUTGOING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
+    },
+    {
+      type: 'INCOMING_ETHER',
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
+    },
+    {
+      type: 'OUTGOING_ETHER',
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
+    },
+    {
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'SAFE_CREATED',
+      blockNumber: faker.number.int(),
+    },
+  ])('$type clears the Zerion portfolio caches', async (payload) => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
@@ -119,10 +159,7 @@ describe('Hook Events for Cache', () => {
     const data = {
       address: safeAddress,
       chainId: chainId,
-      type: 'INCOMING_TOKEN',
-      tokenAddress: faker.finance.ethereumAddress(),
-      txHash: faker.string.hexadecimal({ length: 32 }),
-      trusted: true,
+      ...payload,
     };
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {

@@ -34,5 +34,5 @@ export interface IPortfolioRepository {
    * @param {Address} args.address - The wallet address
    * @returns {Promise<void>} A promise that resolves when the cache is cleared
    */
-  clearPortfolio(args: { address: Address }): Promise<void>;
+  clearAllPortfolioCaches(args: { address: Address }): Promise<void>;
 }

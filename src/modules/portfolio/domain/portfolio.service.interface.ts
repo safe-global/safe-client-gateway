@@ -14,5 +14,5 @@ export interface IPortfolioService {
     sync?: boolean;
   }): Promise<Portfolio>;
 
-  clearPortfolio(args: { address: Address }): Promise<void>;
+  clearAllPortfolioCaches(args: { address: Address }): Promise<void>;
 }

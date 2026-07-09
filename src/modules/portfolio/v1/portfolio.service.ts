@@ -36,8 +36,10 @@ export class PortfolioApiService {
     return this.portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
   }
 
-  public async clearPortfolio(args: { address: Address }): Promise<void> {
-    await this.domainPortfolioService.clearPortfolio(args);
+  public async clearAllPortfolioCaches(args: {
+    address: Address;
+  }): Promise<void> {
+    await this.domainPortfolioService.clearAllPortfolioCaches(args);
   }
 
   /**
