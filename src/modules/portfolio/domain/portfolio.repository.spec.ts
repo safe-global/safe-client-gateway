@@ -52,7 +52,7 @@ describe('PortfolioRepository', () => {
 
     mockZerionCache = {
       invalidate: vi.fn(),
-    } as unknown as MockedObject<ZerionCacheService>;
+    } as MockedObject<ZerionCacheService>;
 
     repository = new PortfolioRepository(
       mockPortfolioApi,

@@ -61,7 +61,7 @@ const mockSafeAppsRepository = vi.mocked({
 
 const mockZerionCache = vi.mocked({
   invalidate: vi.fn(),
-} as unknown as MockedObject<ZerionCacheService>);
+} as MockedObject<ZerionCacheService>);
 
 const mockSafeRepository = vi.mocked({
   clearTransfers: vi.fn(),

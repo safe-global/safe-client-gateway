@@ -12,7 +12,7 @@ import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.se
 
 const mockCacheService = vi.mocked({
   deleteByKey: vi.fn(),
-} as unknown as MockedObject<ICacheService>);
+} as MockedObject<ICacheService>);
 
 const mockLoggingService = {
   debug: vi.fn(),
