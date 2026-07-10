@@ -845,6 +845,38 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
+    // Field-level encryption of user email addresses. The email value is
+    // encrypted directly by AWS KMS, bound to its owning user via the KMS
+    // encryption context; a KMS-wrapped HMAC key computes the email blind
+    // index for lookups/uniqueness.
+    fieldEncryption: {
+      // When true, the users repository encrypts emails before writing and
+      // requires every stored email to be ciphertext on read — enable only
+      // after the backfill has encrypted all existing rows
+      // (scripts/backfill-user-email-encryption).
+      enabled:
+        process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
+      // Base64 KMS-encrypted 32-byte key for the users.email blind index.
+      // Produced by scripts/generate-field-encryption-index-key. Required
+      // when field encryption is enabled.
+      emailIndexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
+      kms: {
+        // Undefined when encryption is off; the schema validator requires real
+        // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS
+        // service only resolves them once a KMS call is actually made.
+        // Region is intentionally not read here: the AWS SDK resolves
+        // AWS_REGION from the environment directly, as it does for SES.
+        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+        // Dedicated KMS credentials (like SES_AWS_*/CSV_AWS_*) so enabling
+        // field encryption doesn't reuse the bare AWS_ACCESS_KEY_ID/
+        // SECRET_ACCESS_KEY credentials scoped for targeted messaging's S3
+        // file storage.
+        accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
+        // Set in EKS via IRSA; takes precedence over static credentials.
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
     invite: {
       ttlMs: Number.parseInt(
         process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,

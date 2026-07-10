@@ -37,7 +37,9 @@
     "env:generate": "ts-node scripts/generate-env.ts",
     "env:generate:force": "ts-node scripts/generate-env.ts --force",
     "env:generate:update": "ts-node scripts/generate-env.ts --update",
-    "generate-token": "ts-node -r tsconfig-paths/register scripts/generate-token.ts"
+    "generate-token": "ts-node -r tsconfig-paths/register scripts/generate-token.ts",
+    "generate:field-encryption-key": "node --env-file=.env -r tsconfig-paths/register ./node_modules/.bin/ts-node scripts/generate-field-encryption-index-key.ts",
+    "backfill:user-email-encryption": "node --env-file=.env -r tsconfig-paths/register ./node_modules/.bin/ts-node scripts/backfill-user-email-encryption.ts"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "3.1076.0",
