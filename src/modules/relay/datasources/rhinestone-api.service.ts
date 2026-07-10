@@ -1,34 +1,34 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
-import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { Inject, Injectable } from "@nestjs/common";
+import type { Address, Hex } from "viem";
+import { IConfigurationService } from "@/config/configuration.service.interface";
+import { CacheRouter } from "@/datasources/cache/cache.router";
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+} from "@/datasources/cache/cache.service.interface";
+import { HttpErrorFactory } from "@/datasources/errors/http-error-factory";
+import { NetworkResponseError } from "@/datasources/network/entities/network.error.entity";
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+} from "@/datasources/network/network.service.interface";
+import type { IRelayApi } from "@/domain/interfaces/relay-api.interface";
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from "@/logging/logging.interface";
+import { asError } from "@/logging/utils";
 import {
   type Relay,
   type RhinestoneRelayResponse,
   RhinestoneRelayResponseSchema,
-} from '@/modules/relay/domain/entities/relay.entity';
+} from "@/modules/relay/domain/entities/relay.entity";
 import {
   type RelayTaskStatus,
   type RhinestoneTaskStatusResponse,
   RhinestoneTaskStatusResponseSchema,
-} from '@/modules/relay/domain/entities/relay-task-status.entity';
+} from "@/modules/relay/domain/entities/relay-task-status.entity";
 
 @Injectable()
 export class RhinestoneApi implements IRelayApi {
@@ -45,26 +45,12 @@ export class RhinestoneApi implements IRelayApi {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
     this.baseUri =
-      this.configurationService.getOrThrow<string>('relay.baseUri');
-    this.apiKey = this.configurationService.getOrThrow<string>('relay.apiKey');
+      this.configurationService.getOrThrow<string>("relay.baseUri");
+    this.apiKey = this.configurationService.getOrThrow<string>("relay.apiKey");
   }
 
   private headers(): Record<string, string> {
-    return { 'x-api-key': this.apiKey };
-  }
-
-  /**
-   * Builds a reproducible cURL for the Rhinestone submit request, so the exact
-   * failing call can be shared for debugging. Only logged on error. The API key
-   * is redacted — replace `$RHINESTONE_API_KEY` with a real key to run it.
-   */
-  private buildCurl(url: string, body: object): string {
-    return [
-      `curl -X POST '${url}'`,
-      `-H 'content-type: application/json'`,
-      `-H 'x-api-key: $RHINESTONE_API_KEY'`,
-      `--data-raw '${JSON.stringify(body)}'`,
-    ].join(' \\\n  ');
+    return { "x-api-key": this.apiKey };
   }
 
   /**
@@ -76,7 +62,7 @@ export class RhinestoneApi implements IRelayApi {
   private formatError(error: unknown): string {
     if (error instanceof NetworkResponseError) {
       const body =
-        typeof error.data === 'string'
+        typeof error.data === "string"
           ? error.data
           : JSON.stringify(error.data);
       return `status=${error.response.status} body=${body}`;
@@ -116,7 +102,7 @@ export class RhinestoneApi implements IRelayApi {
       return { taskId: response.taskId };
     } catch (error) {
       this.loggingService.error(
-        `Error relaying transaction for chain ${args.chainId}: ${this.formatError(error)}\n${this.buildCurl(url, body)}`,
+        `Error relaying transaction for chain ${args.chainId}: ${this.formatError(error)}`,
       );
       throw this.httpErrorFactory.from(error);
     }
