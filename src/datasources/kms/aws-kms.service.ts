@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
-import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
 import type { IKmsService } from '@/datasources/kms/kms.service.interface';
 
 @Injectable()
@@ -84,16 +84,14 @@ export class AwsKmsService implements IKmsService {
     const webIdentityTokenFile = this.configurationService.get<string>(
       'spaces.fieldEncryption.kms.webIdentityTokenFile',
     );
-    const credentials = webIdentityTokenFile
-      ? fromTokenFile({ webIdentityTokenFile })
-      : {
-          accessKeyId: this.configurationService.getOrThrow<string>(
-            'spaces.fieldEncryption.kms.accessKeyId',
-          ),
-          secretAccessKey: this.configurationService.getOrThrow<string>(
-            'spaces.fieldEncryption.kms.secretAccessKey',
-          ),
-        };
+    const credentials = resolveAwsCredentials(webIdentityTokenFile) ?? {
+      accessKeyId: this.configurationService.getOrThrow<string>(
+        'spaces.fieldEncryption.kms.accessKeyId',
+      ),
+      secretAccessKey: this.configurationService.getOrThrow<string>(
+        'spaces.fieldEncryption.kms.secretAccessKey',
+      ),
+    };
 
     return new KMSClient({ credentials });
   }
