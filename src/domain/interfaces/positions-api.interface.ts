@@ -15,10 +15,5 @@ export interface IPositionsApi {
     sync?: boolean;
   }): Promise<Raw<Array<Position>>>;
 
-  clearPositions(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void>;
-
   getFiatCodes(): Promise<Raw<Array<string>>>;
 }

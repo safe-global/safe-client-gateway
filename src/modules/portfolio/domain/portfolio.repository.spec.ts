@@ -14,6 +14,7 @@ import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests
 import { tokenInfoBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-info.builder';
 import { PortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository';
 import type { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
+import type { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
 import { rawify } from '@/validation/entities/raw.entity';
 
 describe('PortfolioRepository', () => {
@@ -21,6 +22,7 @@ describe('PortfolioRepository', () => {
   let mockPortfolioApi: MockedObject<IPortfolioApi>;
   let mockCacheService: MockedObject<ICacheService>;
   let mockConfigService: MockedObject<IConfigurationService>;
+  let mockZerionCache: MockedObject<ZerionCacheService>;
 
   const defaultCacheTtl = 30;
   const defaultDustThreshold = 0.001;
@@ -48,10 +50,15 @@ describe('PortfolioRepository', () => {
       }),
     } as unknown as MockedObject<IConfigurationService>;
 
+    mockZerionCache = {
+      invalidate: vi.fn(),
+    } as MockedObject<ZerionCacheService>;
+
     repository = new PortfolioRepository(
       mockPortfolioApi,
       mockCacheService,
       mockConfigService,
+      mockZerionCache,
     );
   });
 
@@ -604,15 +611,14 @@ describe('PortfolioRepository', () => {
       });
     });
 
-    describe('clearPortfolio', () => {
-      it('should clear cache for given address', async () => {
-        await repository.clearPortfolio({ address });
+    describe('clearZerionCaches', () => {
+      it('invalidates all Zerion caches for the address', async () => {
+        await repository.clearZerionCaches({ address });
 
-        const cacheKey = CacheRouter.getPortfolioCacheKey({
+        expect(mockZerionCache.invalidate).toHaveBeenCalledWith(
           address,
-        });
-
-        expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(cacheKey);
+          'refresh',
+        );
       });
     });
   });

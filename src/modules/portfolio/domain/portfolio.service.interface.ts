@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
 
@@ -14,5 +15,5 @@ export interface IPortfolioService {
     sync?: boolean;
   }): Promise<Portfolio>;
 
-  clearPortfolio(args: { address: Address }): Promise<void>;
+  clearZerionCaches(args: { address: Address }): Promise<void>;
 }
