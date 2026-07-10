@@ -246,6 +246,7 @@ describe('SpacesRepository', () => {
         user: {
           id: userId,
           email: null,
+          emailIndex: null,
           extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
@@ -391,6 +392,7 @@ describe('SpacesRepository', () => {
         user: {
           id: userId,
           email: null,
+          emailIndex: null,
           extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
