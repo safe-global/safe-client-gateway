@@ -3,9 +3,9 @@ import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { PortfolioRouteGuard } from '@/modules/portfolio/v1/guards/portfolio-route.guard';
 
-const mockConfigurationService = vi.mocked({
+const mockConfigurationService = {
   getOrThrow: vi.fn(),
-} as MockedObject<IConfigurationService>);
+} as MockedObject<IConfigurationService>;
 
 describe('PortfolioRouteGuard', () => {
   let target: PortfolioRouteGuard;
