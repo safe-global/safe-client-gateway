@@ -123,15 +123,15 @@ export class BillingApi implements IBillingApi {
     });
   }
 
-  listPaymentLinks(args?: {
-    upstreamCustomerId?: string;
-  }): Promise<Array<PaymentLink>> {
+  listPaymentLinks(
+    args: { upstreamCustomerId?: string } = {},
+  ): Promise<Array<PaymentLink>> {
     return this.request({
       cacheDir: CacheRouter.getBillingPaymentLinksCacheDir(
-        args?.upstreamCustomerId,
+        args.upstreamCustomerId,
       ),
       url: `${this.baseUri}/api/v1/payment-links`,
-      params: args?.upstreamCustomerId
+      params: args.upstreamCustomerId
         ? { customerId: args.upstreamCustomerId }
         : undefined,
       schema: z
