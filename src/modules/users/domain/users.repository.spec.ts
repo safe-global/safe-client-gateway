@@ -2,15 +2,20 @@
 
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
-import { QueryFailedError } from 'typeorm';
+import { IsNull, QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import type { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
@@ -25,6 +30,8 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 describe('UsersRepository', () => {
   const walletsRepository = {
     findOneByAddress: vi.fn(),
+    findOneOrFail: vi.fn(),
+    deleteByAddress: vi.fn(),
   } as MockedObject<IWalletsRepository>;
   // Passthrough crypto (disabled-like): blind index null, values unchanged, so
   // existing plaintext assertions hold. Encryption + blind-index lookups are
@@ -46,6 +53,7 @@ describe('UsersRepository', () => {
     createQueryBuilder: Mock;
   };
   let emailUpdateExecute: Mock;
+  let walletEncryptionService: MockedObject<WalletEncryptionService>;
   let target: UsersRepository;
 
   beforeEach(() => {
@@ -99,11 +107,15 @@ describe('UsersRepository', () => {
       ),
     );
 
+    // Created after resetAllMocks so the passthrough implementations survive.
+    walletEncryptionService = createMockWalletEncryptionService();
+
     target = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       createMockSpaceAuditRepository(),
       emailEncryptionService,
+      walletEncryptionService,
     );
   });
 
@@ -185,8 +197,75 @@ describe('UsersRepository', () => {
 
       expect(entityManager.delete).toHaveBeenCalledWith(DbUser, createdUserId);
     });
+    it('should dual-read the wallet lookup and insert ciphertext with its blind index when an index key is configured', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdUserId = faker.number.int({ min: 1 });
+      const entityManager = mockEntityManager({ createdUserId });
+      walletEncryptionService.addressIndex.mockReturnValue('address-token');
+      walletEncryptionService.encryptAddress.mockResolvedValue(
+        'kms:v1:ciphertext',
+      );
+
+      await expect(
+        target.findOrCreateByWalletAddress(
+          address,
+          'PENDING',
+          entityManager as never,
+        ),
+      ).resolves.toBe(createdUserId);
+
+      expect(entityManager.findOne).toHaveBeenCalledWith(Wallet, {
+        where: [
+          { addressIndex: 'address-token' },
+          { addressIndex: IsNull(), address },
+        ],
+        relations: { user: true },
+      });
+      expect(walletEncryptionService.encryptAddress).toHaveBeenCalledWith(
+        createdUserId,
+        address,
+      );
+      const queryBuilder = entityManager.createQueryBuilder.mock.results[0]
+        .value as { values: Mock };
+      expect(queryBuilder.values).toHaveBeenCalledWith({
+        user: { id: createdUserId },
+        address: 'kms:v1:ciphertext',
+        addressIndex: 'address-token',
+      });
+    });
   });
 
+  describe('deleteWalletFromUser', () => {
+    it('should dual-read the ownership lookup and delete by the caller plaintext address', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const userId = faker.number.int({ min: 1 });
+      walletsRepository.findOneByAddress.mockResolvedValue({
+        user: { id: userId, email: null },
+      } as never);
+      walletsRepository.findOneOrFail.mockResolvedValue({
+        id: 1,
+        address: 'kms:v1:ciphertext',
+      } as never);
+      walletEncryptionService.addressIndex.mockReturnValue('address-token');
+
+      await target.deleteWalletFromUser({ walletAddress, authPayload });
+
+      expect(walletsRepository.findOneOrFail).toHaveBeenCalledWith([
+        { addressIndex: 'address-token', user: { id: userId } },
+        {
+          addressIndex: IsNull(),
+          address: walletAddress,
+          user: { id: userId },
+        },
+      ]);
+      // deleteByAddress dual-reads internally from the plaintext; the stored
+      // row value (possibly ciphertext) must NOT be passed back in.
+      expect(walletsRepository.deleteByAddress).toHaveBeenCalledWith(
+        walletAddress,
+      );
+    });
+  });
   describe('findOrCreateByExtUserIdAndEmail', () => {
     it('should return an existing user id without re-persisting when the stored email matches', async () => {
       const userId = faker.number.int({ min: 1 });

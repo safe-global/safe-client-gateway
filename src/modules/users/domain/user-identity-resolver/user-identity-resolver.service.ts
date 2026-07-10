@@ -3,6 +3,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { In } from 'typeorm';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class UserIdentityResolverService {
     private readonly usersRepository: IUsersRepository,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
+    private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
   /**
@@ -43,7 +45,17 @@ export class UserIdentityResolverService {
     const walletByUserId = new Map<number, string>();
     for (const wallet of sortedWallets) {
       if (!walletByUserId.has(wallet.user.id)) {
-        walletByUserId.set(wallet.user.id, wallet.address);
+        // Stored addresses may be KMS ciphertext; the display value is the
+        // plaintext, decrypted under the owning user's scope (only the first
+        // wallet per user costs a KMS call, and the LRU cache absorbs
+        // repeats).
+        walletByUserId.set(
+          wallet.user.id,
+          await this.walletEncryptionService.decryptAddress(
+            wallet.user.id,
+            wallet.address,
+          ),
+        );
       }
     }
 

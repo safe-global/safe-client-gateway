@@ -14,6 +14,7 @@ import { UsersRepositoryModule } from '@/modules/users/domain/users-repository.m
 import { UsersController } from '@/modules/users/routes/users.controller';
 import { UsersService } from '@/modules/users/routes/users.service';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionModule } from '@/modules/wallets/domain/wallet-encryption.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db
     forwardRef(() => AuthModule),
     SiweModule,
     forwardRef(() => SpacesModule),
+    WalletEncryptionModule,
     SpaceAuditModule,
   ],
   providers: [

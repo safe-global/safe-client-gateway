@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { KmsModule } from '@/datasources/kms/kms.module';
+import { FieldCryptoModule } from '@/datasources/kms/field-crypto.module';
 import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -10,6 +10,7 @@ import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionModule } from '@/modules/wallets/domain/wallet-encryption.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 /**
@@ -28,8 +29,9 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Member, Wallet]),
     WalletsModule,
+    WalletEncryptionModule,
     SpaceAuditModule,
-    KmsModule,
+    FieldCryptoModule,
   ],
   providers: [
     EmailEncryptionService,

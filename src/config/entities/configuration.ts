@@ -855,10 +855,11 @@ export default () => ({
       // (scripts/backfill-user-email-encryption).
       enabled:
         process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
-      // Base64 KMS-encrypted 32-byte key for the users.email blind index.
+      // Base64 KMS-encrypted 32-byte key for blind indexes across all
+      // encrypted fields (per-field HMAC labels give domain separation).
       // Produced by scripts/generate-field-encryption-index-key. Required
       // when field encryption is enabled.
-      emailIndexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
+      indexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
       kms: {
         // Undefined when encryption is off; the schema validator requires real
         // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS

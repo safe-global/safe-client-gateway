@@ -8,10 +8,12 @@ import type {
   FindOptionsWhere,
   InsertResult,
 } from 'typeorm';
+import { IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
@@ -19,6 +21,7 @@ export class WalletsRepository implements IWalletsRepository {
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
   public async findOneOrFail(
@@ -89,14 +92,31 @@ export class WalletsRepository implements IWalletsRepository {
     address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet | null> {
-    return await this.findOne({ address }, relations);
+    // Dual-read during the backfill window: encrypted rows match on the
+    // blind index, rows the backfill has not reached yet
+    // (address_index IS NULL) still match on plaintext. The plaintext arm is
+    // removed together with restoring the throw-on-plaintext guard once the
+    // backfill --verify passes.
+    const addressIndex = this.walletEncryptionService.addressIndex(address);
+    const wallet = await this.findOne(
+      addressIndex
+        ? [{ addressIndex }, { addressIndex: IsNull(), address }]
+        : { address },
+      relations,
+    );
+    if (wallet && this.walletEncryptionService.isEncrypted(wallet.address)) {
+      // The row matched this plaintext's blind index, so the caller's
+      // (checksummed) input IS the plaintext - no KMS round trip needed.
+      wallet.address = address;
+    }
+    return wallet;
   }
 
   public async findByUser(
     userId: User['id'],
     select?: FindOptionsSelect<Wallet>,
   ): Promise<Array<Wallet>> {
-    return await this.find({
+    const wallets = await this.find({
       select,
       where: {
         user: {
@@ -104,6 +124,9 @@ export class WalletsRepository implements IWalletsRepository {
         },
       },
     });
+    // Single-owner list: every wallet belongs to userId, so addresses are
+    // decrypted here at the repository boundary.
+    return await this.walletEncryptionService.decryptWallets(userId, wallets);
   }
 
   public async create(
@@ -113,11 +136,23 @@ export class WalletsRepository implements IWalletsRepository {
     },
     entityManager: EntityManager,
   ): Promise<InsertResult> {
+    // The owning userId is known before the insert, so the ciphertext and
+    // blind index are computed up front - no two-phase update like email.
+    // With encryption disabled both calls pass through (plaintext, no index).
+    const addressIndex = this.walletEncryptionService.addressIndex(
+      args.walletAddress,
+    );
+    const address = (await this.walletEncryptionService.encryptAddress(
+      args.userId,
+      args.walletAddress,
+    )) as Address;
+
     return await entityManager.insert(Wallet, {
       user: {
         id: args.userId,
       },
-      address: args.walletAddress,
+      address,
+      ...(addressIndex && { addressIndex }),
     });
   }
 
@@ -125,8 +160,24 @@ export class WalletsRepository implements IWalletsRepository {
     const walletRepository =
       await this.postgresDatabaseService.getRepository(Wallet);
 
-    return await walletRepository.delete({
-      address,
+    const addressIndex = this.walletEncryptionService.addressIndex(address);
+    if (!addressIndex) {
+      return await walletRepository.delete({
+        address,
+      });
+    }
+
+    // Dual-read during the backfill window: delete() criteria cannot express
+    // blind index OR plaintext, so resolve the matching row ids first. The
+    // plaintext arm is removed together with restoring the
+    // throw-on-plaintext guard once the backfill --verify passes.
+    const wallets = await walletRepository.find({
+      where: [{ addressIndex }, { addressIndex: IsNull(), address }],
+      select: { id: true },
     });
+    if (wallets.length === 0) {
+      return { raw: [], affected: 0 };
+    }
+    return await walletRepository.delete(wallets.map((wallet) => wallet.id));
   }
 }

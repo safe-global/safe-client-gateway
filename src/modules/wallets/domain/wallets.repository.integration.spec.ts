@@ -17,6 +17,7 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
@@ -92,7 +93,10 @@ describe('WalletsRepository', () => {
     );
     await migrator.migrate();
 
-    walletsRepository = new WalletsRepository(postgresDatabaseService);
+    walletsRepository = new WalletsRepository(
+      postgresDatabaseService,
+      createMockWalletEncryptionService(),
+    );
   });
 
   afterEach(async () => {

@@ -29,6 +29,7 @@ import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
@@ -130,12 +131,16 @@ describe('SpaceAuditRepository', () => {
       mockConfigurationService,
       spaceAuditRepository,
     );
-    const walletsRepository = new WalletsRepository(postgresDatabaseService);
+    const walletsRepository = new WalletsRepository(
+      postgresDatabaseService,
+      createMockWalletEncryptionService(),
+    );
     usersRepository = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       spaceAuditRepository,
       createMockEmailEncryptionService(),
+      createMockWalletEncryptionService(),
     );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
@@ -143,6 +148,7 @@ describe('SpaceAuditRepository', () => {
       spacesRepository,
       spaceAuditRepository,
       createMockEmailEncryptionService(),
+      createMockWalletEncryptionService(),
     );
   });
 

@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
-import { QueryFailedError } from 'typeorm';
+import { In, IsNull, QueryFailedError } from 'typeorm';
 import type { Mocked, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -19,6 +19,9 @@ import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 
 describe('MembersRepository', () => {
   const usersRepository = {
@@ -34,6 +37,7 @@ describe('MembersRepository', () => {
     Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
   >;
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
+  let walletEncryptionService: MockedObject<WalletEncryptionService>;
   let target: MembersRepository;
 
   const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -58,12 +62,16 @@ describe('MembersRepository', () => {
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
 
+    // Created after resetAllMocks so the passthrough implementations survive.
+    walletEncryptionService = createMockWalletEncryptionService();
+
     target = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
       createMockSpaceAuditRepository(),
       createMockEmailEncryptionService(),
+      walletEncryptionService,
     );
   });
 
@@ -260,8 +268,47 @@ describe('MembersRepository', () => {
       );
       expect(entityManager.insert).toHaveBeenCalled();
     });
-  });
+    it('should resolve wallets found via the blind index back to the invited plaintext address', async () => {
+      const wallet = walletBuilder().build();
+      const encryptedRow = {
+        ...wallet,
+        address: 'kms:v1:ciphertext',
+        addressIndex: 'address-token',
+      } as unknown as Wallet;
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'MEMBER' as const,
+        name: nameBuilder(),
+      };
+      walletEncryptionService.addressIndex.mockReturnValue('address-token');
+      entityManager.find.mockResolvedValue([encryptedRow]);
+      entityManager.findOne.mockResolvedValue(null);
 
+      await target.inviteUsers({
+        authPayload,
+        spaceId: space.id,
+        users: [userToInvite],
+        inviteExpiresAt,
+      });
+
+      expect(entityManager.find).toHaveBeenCalledWith(Wallet, {
+        where: [
+          { addressIndex: In(['address-token']) },
+          { addressIndex: IsNull(), address: In([wallet.address]) },
+        ],
+        relations: { user: true },
+      });
+      // The encrypted row resolved to the existing user: no new user/wallet.
+      expect(
+        usersRepository.findOrCreateByWalletAddress,
+      ).not.toHaveBeenCalled();
+      expect(entityManager.insert).toHaveBeenCalledWith(
+        DbMember,
+        expect.objectContaining({ user: { id: wallet.user.id } }),
+      );
+    });
+  });
   describe('renewInvite', () => {
     it("should update the member's inviteExpiresAt by id", async () => {
       const memberId = faker.number.int();

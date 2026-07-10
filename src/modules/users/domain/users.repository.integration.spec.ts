@@ -14,6 +14,8 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import { INDEX_KEY_LENGTH } from '@/datasources/kms/field-crypto.constants';
+import { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -28,12 +30,12 @@ import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
-import { INDEX_KEY_LENGTH } from '@/modules/users/domain/email-encryption.constants';
 import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
@@ -113,9 +115,13 @@ describe('UsersRepository', () => {
 
     usersRepository = new UsersRepository(
       postgresDatabaseService,
-      new WalletsRepository(postgresDatabaseService),
+      new WalletsRepository(
+        postgresDatabaseService,
+        createMockWalletEncryptionService(),
+      ),
       createMockSpaceAuditRepository(),
       createMockEmailEncryptionService(),
+      createMockWalletEncryptionService(),
     );
   });
 
@@ -1314,7 +1320,7 @@ describe('UsersRepository', () => {
     // spaces.repository.integration.spec.ts, rather than a generic path
     // resolver over the whole config tree.
     function buildEncryptingConfigurationService(): MockedObject<IConfigurationService> {
-      const emailIndexKey = faker.string.alphanumeric(24);
+      const wrappedIndexKey = faker.string.alphanumeric(24);
       const accessKeyId = faker.string.alphanumeric(20);
       const secretAccessKey = faker.string.alphanumeric(40);
 
@@ -1323,8 +1329,8 @@ describe('UsersRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       configurationService.get.mockImplementation((key: string) => {
-        if (key === 'spaces.fieldEncryption.emailIndexKey') {
-          return emailIndexKey;
+        if (key === 'spaces.fieldEncryption.indexKey') {
+          return wrappedIndexKey;
         }
         if (key === 'spaces.fieldEncryption.kms.keyId') return keyId;
       });
@@ -1348,17 +1354,22 @@ describe('UsersRepository', () => {
       // The blind-index key unwrap in onModuleInit is the first Decrypt call.
       kmsMock.on(DecryptCommand).resolvesOnce({ Plaintext: indexKey });
 
-      const emailEncryptionService = new EmailEncryptionService(
+      const fieldCrypto = new FieldCryptoService(
         encryptingConfigurationService,
         new AwsKmsService(encryptingConfigurationService),
       );
-      await emailEncryptionService.onModuleInit();
+      await fieldCrypto.onModuleInit();
+      const emailEncryptionService = new EmailEncryptionService(fieldCrypto);
 
       return new UsersRepository(
         postgresDatabaseService,
-        new WalletsRepository(postgresDatabaseService),
+        new WalletsRepository(
+          postgresDatabaseService,
+          createMockWalletEncryptionService(),
+        ),
         createMockSpaceAuditRepository(),
         emailEncryptionService,
+        createMockWalletEncryptionService(),
       );
     }
 

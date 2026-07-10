@@ -23,6 +23,8 @@ import { userBuilder } from '@/modules/users/datasources/entities/__tests__/user
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
@@ -52,14 +54,18 @@ const walletsRepositoryMock = {
 
 describe('SpacesService', () => {
   let service: SpacesService;
+  let walletEncryptionServiceMock: MockedObject<WalletEncryptionService>;
 
   beforeEach(() => {
     vi.resetAllMocks();
+    // Created after resetAllMocks so the passthrough implementations survive.
+    walletEncryptionServiceMock = createMockWalletEncryptionService();
     service = new SpacesService(
       usersRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
       walletsRepositoryMock,
+      walletEncryptionServiceMock,
     );
   });
 
@@ -315,6 +321,61 @@ describe('SpacesService', () => {
       );
     });
 
+    it('should decrypt an encrypted inviter wallet address for invitedByName', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const inviter = userBuilder().with('id', inviterUserId).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+      const inviterMember = memberBuilder()
+        .with('user', inviter)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', null)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', space.name)
+          .with('members', [inviterMember, callerMember])
+          .with('safes', [])
+          .build(),
+      ]);
+      walletsRepositoryMock.find.mockResolvedValue([
+        {
+          address: 'kms:v1:ciphertext',
+          user: { id: inviterUserId },
+        } as unknown as Wallet,
+      ]);
+      walletEncryptionServiceMock.decryptAddress.mockResolvedValue(
+        walletAddress,
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(walletEncryptionServiceMock.decryptAddress).toHaveBeenCalledWith(
+        inviterUserId,
+        'kms:v1:ciphertext',
+      );
+      const invitedMember = result[0].members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedMember).toEqual(
+        expect.objectContaining({ invitedByName: walletAddress }),
+      );
+    });
     it('should hide the member roster but expose counts to a pending member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const callerUserId = Number(authPayload.sub);

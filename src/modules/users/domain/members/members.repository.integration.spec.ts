@@ -43,6 +43,7 @@ import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
@@ -134,7 +135,10 @@ describe('MembersRepository', () => {
         return testConfiguration.spaces.maxSpaceCreationsPerUser;
       }
     });
-    const walletsRepo = new WalletsRepository(postgresDatabaseService);
+    const walletsRepo = new WalletsRepository(
+      postgresDatabaseService,
+      createMockWalletEncryptionService(),
+    );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       new UsersRepository(
@@ -142,6 +146,7 @@ describe('MembersRepository', () => {
         walletsRepo,
         createMockSpaceAuditRepository(),
         createMockEmailEncryptionService(),
+        createMockWalletEncryptionService(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
@@ -150,6 +155,7 @@ describe('MembersRepository', () => {
       ),
       createMockSpaceAuditRepository(),
       createMockEmailEncryptionService(),
+      createMockWalletEncryptionService(),
     );
   });
 
@@ -3704,9 +3710,13 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         new UsersRepository(
           postgresDatabaseService,
-          new WalletsRepository(postgresDatabaseService),
+          new WalletsRepository(
+            postgresDatabaseService,
+            createMockWalletEncryptionService(),
+          ),
           createMockSpaceAuditRepository(),
           emailEncryptionService,
+          createMockWalletEncryptionService(),
         ),
         new SpacesRepository(
           postgresDatabaseService,
@@ -3715,6 +3725,7 @@ describe('MembersRepository', () => {
         ),
         createMockSpaceAuditRepository(),
         emailEncryptionService,
+        createMockWalletEncryptionService(),
       );
     });
 

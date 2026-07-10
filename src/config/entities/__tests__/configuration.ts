@@ -473,7 +473,7 @@ export default (): ReturnType<typeof configuration> => ({
     maxInvites: faker.number.int({ min: 5, max: 10 }),
     fieldEncryption: {
       enabled: false,
-      emailIndexKey: undefined,
+      indexKey: undefined,
       kms: {
         keyId: undefined,
         accessKeyId: undefined,

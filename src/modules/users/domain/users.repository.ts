@@ -23,6 +23,7 @@ import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
@@ -35,6 +36,7 @@ export class UsersRepository implements IUsersRepository {
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     private readonly emailEncryptionService: EmailEncryptionService,
+    private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
   /**
@@ -229,12 +231,30 @@ export class UsersRepository implements IUsersRepository {
       args.authPayload.signer_address,
     );
 
-    const wallet = await this.walletsRepository.findOneOrFail({
-      address: args.walletAddress,
-      user: { id: user.id },
-    });
+    // Dual-read ownership check during the backfill window: encrypted rows
+    // match on the blind index, rows the backfill has not reached yet
+    // (address_index IS NULL) still match on plaintext. The plaintext arm is
+    // removed together with restoring the throw-on-plaintext guard once the
+    // backfill --verify passes.
+    const addressIndex = this.walletEncryptionService.addressIndex(
+      args.walletAddress,
+    );
+    await this.walletsRepository.findOneOrFail(
+      addressIndex
+        ? [
+            { addressIndex, user: { id: user.id } },
+            {
+              addressIndex: IsNull(),
+              address: args.walletAddress,
+              user: { id: user.id },
+            },
+          ]
+        : { address: args.walletAddress, user: { id: user.id } },
+    );
 
-    await this.walletsRepository.deleteByAddress(wallet.address);
+    // Delete by the caller's plaintext: deleteByAddress dual-reads
+    // internally, whereas the stored row value may be ciphertext.
+    await this.walletsRepository.deleteByAddress(args.walletAddress);
   }
 
   public async findByWalletAddressOrFail(address: Address): Promise<User> {
@@ -269,21 +289,46 @@ export class UsersRepository implements IUsersRepository {
     const findOrCreate = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
+      // Dual-read during the backfill window: encrypted rows match on the
+      // blind index, rows the backfill has not reached yet
+      // (address_index IS NULL) still match on plaintext. Without the
+      // plaintext arm an existing un-backfilled wallet would be treated as
+      // new and its user logged into a fresh empty account. The plaintext
+      // arm is removed together with restoring the throw-on-plaintext guard
+      // once the backfill --verify passes.
+      const addressIndex = this.walletEncryptionService.addressIndex(address);
+      const where = addressIndex
+        ? [{ addressIndex }, { addressIndex: IsNull(), address }]
+        : { address };
       const existing = await manager.findOne(Wallet, {
-        where: { address },
+        where,
         relations: { user: true },
       });
       if (existing) {
         return existing.user.id;
       }
 
-      // `status` only applies when creating a user for a new wallet.
+      // status only applies when creating a user for a new wallet.
       const userId = await this.create(status, manager);
+      // The owning userId is known before the wallet insert, so ciphertext
+      // and blind index are computed up front - no two-phase update. A
+      // concurrent insert of the same address collides on the blind-index
+      // unique constraint (ciphertext itself is non-deterministic).
+      const storedAddress = addressIndex
+        ? ((await this.walletEncryptionService.encryptAddress(
+            userId,
+            address,
+          )) as Address)
+        : address;
       const insert = await manager
         .createQueryBuilder()
         .insert()
         .into(Wallet)
-        .values({ user: { id: userId }, address })
+        .values({
+          user: { id: userId },
+          address: storedAddress,
+          ...(addressIndex && { addressIndex }),
+        })
         .orIgnore()
         .execute();
 
@@ -293,7 +338,7 @@ export class UsersRepository implements IUsersRepository {
 
       await manager.delete(DbUser, userId);
       const raced = await manager.findOne(Wallet, {
-        where: { address },
+        where,
         relations: { user: true },
       });
       if (!raced) {

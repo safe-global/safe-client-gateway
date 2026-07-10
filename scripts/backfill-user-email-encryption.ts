@@ -53,9 +53,10 @@ import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
 import {
-  EMAIL_ENCRYPTION_PREFIX,
-  EMAIL_ENCRYPTION_VERSION,
-} from '@/modules/users/domain/email-encryption.constants';
+  FIELD_ENCRYPTION_PREFIX,
+  FIELD_ENCRYPTION_VERSION,
+} from '@/datasources/kms/field-crypto.constants';
+import { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
 import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 
 const BATCH_SIZE = 500;
@@ -66,7 +67,7 @@ const ENCRYPT_CONCURRENCY = 20;
 // (rather than the looser 'kms:%') means a malformed 'kms:'-prefixed value
 // can't be mistaken for done: it stays visible to both the batch SELECT below
 // and countPlaintext's --verify check.
-const ENCRYPTED_PREFIX = `${EMAIL_ENCRYPTION_PREFIX}:${EMAIL_ENCRYPTION_VERSION}:`;
+const ENCRYPTED_PREFIX = `${FIELD_ENCRYPTION_PREFIX}:${FIELD_ENCRYPTION_VERSION}:`;
 
 /** Runs `fn` over `items` with at most `concurrency` calls in flight. */
 async function mapWithConcurrency<T, R>(
@@ -288,11 +289,12 @@ async function main(): Promise<void> {
   const configurationService = buildConfigurationService();
   const config = configuration();
 
-  const emailEncryption = new EmailEncryptionService(
+  const fieldCrypto = new FieldCryptoService(
     configurationService,
     new AwsKmsService(configurationService),
   );
-  await emailEncryption.onModuleInit();
+  await fieldCrypto.onModuleInit();
+  const emailEncryption = new EmailEncryptionService(fieldCrypto);
 
   const dataSource = new DataSource({
     ...postgresConfig({

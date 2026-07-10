@@ -17,6 +17,7 @@ import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 export class SpacesService {
@@ -29,6 +30,7 @@ export class SpacesService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
+    private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
   public async create(args: {
@@ -193,7 +195,15 @@ export class SpacesService {
     });
     for (const wallet of wallets) {
       if (!result.has(wallet.user.id)) {
-        result.set(wallet.user.id, wallet.address);
+        // Stored addresses may be KMS ciphertext; the display value is the
+        // plaintext, decrypted under the owning user's scope.
+        result.set(
+          wallet.user.id,
+          await this.walletEncryptionService.decryptAddress(
+            wallet.user.id,
+            wallet.address,
+          ),
+        );
       }
     }
 

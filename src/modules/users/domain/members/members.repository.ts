@@ -14,7 +14,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In } from 'typeorm';
+import { In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -39,6 +39,7 @@ import type { IMembersRepository } from '@/modules/users/domain/members/members.
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -51,6 +52,7 @@ export class MembersRepository implements IMembersRepository {
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     private readonly emailEncryptionService: EmailEncryptionService,
+    private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
   /**
@@ -177,13 +179,44 @@ export class MembersRepository implements IMembersRepository {
       const walletUserIds = new Map<Address, User['id']>();
       if (walletAddresses.length > 0) {
         // Batch existing wallet lookups while keeping user creation atomic.
+        // Dual-read during the backfill window: encrypted rows match on the
+        // blind index, rows the backfill has not reached yet
+        // (address_index IS NULL) still match on plaintext. The plaintext
+        // arm is removed together with restoring the throw-on-plaintext
+        // guard once the backfill --verify passes.
+        const indexByAddress = new Map<Address, string | null>(
+          walletAddresses.map((address) => [
+            address,
+            this.walletEncryptionService.addressIndex(address),
+          ]),
+        );
+        const indexes = [...indexByAddress.values()].filter(
+          (index): index is string => index !== null,
+        );
         const wallets = await entityManager.find(Wallet, {
-          where: { address: In(walletAddresses) },
+          where: [
+            ...(indexes.length > 0 ? [{ addressIndex: In(indexes) }] : []),
+            { addressIndex: IsNull(), address: In(walletAddresses) },
+          ],
           relations: { user: true },
         });
 
+        // Map each row back to the caller's plaintext address: encrypted
+        // rows via their blind index (no KMS round trip - the plaintext is
+        // the invite input), un-backfilled rows via the stored plaintext.
+        const addressByIndex = new Map<string, Address>();
+        for (const [address, index] of indexByAddress) {
+          if (index !== null) {
+            addressByIndex.set(index, address);
+          }
+        }
         for (const wallet of wallets) {
-          walletUserIds.set(wallet.address, wallet.user.id);
+          const address = wallet.addressIndex
+            ? addressByIndex.get(wallet.addressIndex)
+            : wallet.address;
+          if (address) {
+            walletUserIds.set(address, wallet.user.id);
+          }
         }
       }
 
