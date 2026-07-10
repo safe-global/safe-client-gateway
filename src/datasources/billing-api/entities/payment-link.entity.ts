@@ -14,7 +14,7 @@ export type PaymentLinkPrice = z.infer<typeof PaymentLinkPriceSchema>;
 
 export const PaymentLinkPriceSchema = z.object({
   id: z.string(),
-  unitAmount: z.unknown().optional(),
+  unitAmount: z.number().nullish(),
   currency: z.string().optional(),
   recurring: PaymentLinkPriceRecurringSchema.optional(),
   product: z.union([z.string(), z.record(z.string(), z.unknown())]).optional(),
