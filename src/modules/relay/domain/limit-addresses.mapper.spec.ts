@@ -8,8 +8,10 @@ import {
   parseAbiParameters,
 } from 'viem';
 import type { MockedObject } from 'vitest';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import configuration from '@/config/entities/configuration';
+import {
+  getDeploymentVersionsByChainIds,
+  RELAY_SUPPORTED_CHAIN_IDS,
+} from '@/__tests__/deployments.helper';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -57,7 +59,7 @@ import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
-const supportedChainIds = Object.keys(configuration().relay.apiKey);
+const supportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 
 const SAFE_VERSIONS = getDeploymentVersionsByChainIds(
   'Safe',
