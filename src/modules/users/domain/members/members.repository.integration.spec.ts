@@ -22,6 +22,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -40,6 +41,7 @@ import {
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -152,6 +154,8 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         mockConfigurationService,
         createMockSpaceAuditRepository(),
+        createMockSpaceFieldEncryptionService(),
+        createMockMemberEncryptionService(),
       ),
       createMockSpaceAuditRepository(),
       createMockEmailEncryptionService(),
@@ -837,6 +841,7 @@ describe('MembersRepository', () => {
       ).resolves.toEqual([
         {
           address: memberWallet,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -3722,6 +3727,8 @@ describe('MembersRepository', () => {
           postgresDatabaseService,
           mockConfigurationService,
           createMockSpaceAuditRepository(),
+          createMockSpaceFieldEncryptionService(),
+          createMockMemberEncryptionService(),
         ),
         createMockSpaceAuditRepository(),
         emailEncryptionService,

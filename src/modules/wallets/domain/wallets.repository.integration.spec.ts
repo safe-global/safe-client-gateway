@@ -202,6 +202,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -243,6 +244,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -284,12 +286,14 @@ describe('WalletsRepository', () => {
       expect(wallets).toEqual([
         {
           address: address1,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
         },
         {
           address: address2,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -328,12 +332,14 @@ describe('WalletsRepository', () => {
       expect(wallets).toEqual([
         {
           address: address1,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
         },
         {
           address: address2,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -365,6 +371,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -393,6 +400,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address: getAddress(nonChecksummedAddress),
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -427,6 +435,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -455,6 +464,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address: getAddress(nonChecksummedAddress),
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -494,12 +504,14 @@ describe('WalletsRepository', () => {
       expect(wallets).toEqual([
         {
           address: address1,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
         },
         {
           address: address2,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -552,6 +564,7 @@ describe('WalletsRepository', () => {
       ).resolves.toEqual([
         {
           address: walletAddress,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -581,6 +594,7 @@ describe('WalletsRepository', () => {
       await expect(dbWalletRepository.find()).resolves.toEqual([
         {
           address: getAddress(nonChecksummedAddress),
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),

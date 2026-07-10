@@ -59,7 +59,7 @@ describe('AddressBookRequestsRepository', () => {
         name: 'kms:v1:n',
       });
       spaceFieldEncryptionService.decryptAddressBookRequests.mockResolvedValue([
-        { id: 5, address, name },
+        { address, name },
       ]);
 
       const result = await target.create({

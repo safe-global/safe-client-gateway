@@ -16,6 +16,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { SpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -26,6 +27,7 @@ import {
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -130,6 +132,8 @@ describe('SpaceAuditRepository', () => {
       postgresDatabaseService,
       mockConfigurationService,
       spaceAuditRepository,
+      createMockSpaceFieldEncryptionService(),
+      createMockMemberEncryptionService(),
     );
     const walletsRepository = new WalletsRepository(
       postgresDatabaseService,

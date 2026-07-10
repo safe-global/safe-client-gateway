@@ -231,6 +231,7 @@ describe('UsersRepository', () => {
 
       expect(wallet).toEqual({
         address: authPayload.signer_address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -504,6 +505,7 @@ describe('UsersRepository', () => {
       });
       expect(wallet).toEqual({
         address: walletAddress,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -721,6 +723,7 @@ describe('UsersRepository', () => {
       expect(wallets).toEqual([
         {
           address: authPayload.signer_address,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: wallets[0].id,
           updatedAt: expect.any(Date),
@@ -886,6 +889,7 @@ describe('UsersRepository', () => {
       });
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
