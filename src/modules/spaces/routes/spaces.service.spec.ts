@@ -15,11 +15,13 @@ import {
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -55,17 +57,27 @@ const walletsRepositoryMock = {
 describe('SpacesService', () => {
   let service: SpacesService;
   let walletEncryptionServiceMock: MockedObject<WalletEncryptionService>;
+  let spaceFieldEncryptionServiceMock: ReturnType<
+    typeof createMockSpaceFieldEncryptionService
+  >;
+  let memberEncryptionServiceMock: ReturnType<
+    typeof createMockMemberEncryptionService
+  >;
 
   beforeEach(() => {
     vi.resetAllMocks();
     // Created after resetAllMocks so the passthrough implementations survive.
     walletEncryptionServiceMock = createMockWalletEncryptionService();
+    spaceFieldEncryptionServiceMock = createMockSpaceFieldEncryptionService();
+    memberEncryptionServiceMock = createMockMemberEncryptionService();
     service = new SpacesService(
       usersRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
       walletsRepositoryMock,
       walletEncryptionServiceMock,
+      spaceFieldEncryptionServiceMock,
+      memberEncryptionServiceMock,
     );
   });
 
@@ -625,6 +637,48 @@ describe('SpacesService', () => {
       ).rejects.toThrow(UnauthorizedException);
 
       expect(membersRepositoryMock.find).not.toHaveBeenCalled();
+    });
+
+    it('should decrypt the space name and member display names before mapping the response', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const userId = Number(authPayload.sub);
+      const user = userBuilder().with('id', userId).build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('name', 'kms:v1:member-name')
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', 'kms:v1:space-name')
+          .with('members', [member])
+          .with('safes', [])
+          .build(),
+      ]);
+      spaceFieldEncryptionServiceMock.decryptSpaces.mockImplementation(
+        (spaces: Array<{ id: number; name: string }>) =>
+          Promise.resolve(
+            spaces.map((s) => ({ ...s, name: 'Decrypted space' })),
+          ),
+      );
+      memberEncryptionServiceMock.decryptName.mockResolvedValue(
+        'Decrypted member',
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].name).toBe('Decrypted space');
+      expect(result[0].members[0].name).toBe('Decrypted member');
+      expect(memberEncryptionServiceMock.decryptName).toHaveBeenCalledWith(
+        space.id,
+        'kms:v1:member-name',
+      );
+      expect(JSON.stringify(result)).not.toContain('kms:v1:');
     });
   });
 

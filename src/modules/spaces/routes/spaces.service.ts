@@ -5,6 +5,7 @@ import { In } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
@@ -14,6 +15,7 @@ import type {
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
 import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
+import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -31,6 +33,10 @@ export class SpacesService {
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
     private readonly walletEncryptionService: WalletEncryptionService,
+    @Inject(SpaceFieldEncryptionService)
+    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(MemberEncryptionService)
+    private readonly memberEncryptionService: MemberEncryptionService,
   ) {}
 
   public async create(args: {
@@ -103,36 +109,50 @@ export class SpacesService {
 
     const invitedByNames = await this.resolveInvitedByNames(spaces);
 
-    return spaces.map((space) => {
-      const memberUserIds = new Set(
-        space.members.map((member) => member.user.id),
-      );
+    // These rows were loaded directly (not via a decrypting repository
+    // boundary): decrypt the space names and the member display names before
+    // they are mapped into the response.
+    const decryptedSpaces =
+      await this.spaceFieldEncryptionService.decryptSpaces(spaces);
 
-      // A pending invitee sees the member and safe counts, but only their own
-      // membership row — not the other members' data.
-      const callerIsActive = callerStatusBySpace.get(space.id) === 'ACTIVE';
-      const visibleMembers = callerIsActive
-        ? space.members
-        : space.members.filter((member) => member.user.id === userId);
+    return await Promise.all(
+      decryptedSpaces.map(async (space) => {
+        const memberUserIds = new Set(
+          space.members.map((member) => member.user.id),
+        );
 
-      return {
-        uuid: space.uuid,
-        name: space.name,
-        members: visibleMembers.map((member) => ({
-          ...member,
-          ...(member.status === 'INVITED' &&
-            member.invitedBy != null &&
-            memberUserIds.has(member.invitedBy) &&
-            invitedByNames.has(member.invitedBy) && {
-              invitedByName: invitedByNames.get(member.invitedBy),
-            }),
-        })),
-        memberCount: space.members.filter(
-          (member) => member.status === 'ACTIVE',
-        ).length,
-        safeCount: space.safes?.length ?? 0,
-      };
-    });
+        // A pending invitee sees the member and safe counts, but only their
+        // own membership row — not the other members' data.
+        const callerIsActive = callerStatusBySpace.get(space.id) === 'ACTIVE';
+        const visibleMembers = callerIsActive
+          ? space.members
+          : space.members.filter((member) => member.user.id === userId);
+
+        return {
+          uuid: space.uuid,
+          name: space.name,
+          members: await Promise.all(
+            visibleMembers.map(async (member) => ({
+              ...member,
+              name: await this.memberEncryptionService.decryptName(
+                space.id,
+                member.name,
+              ),
+              ...(member.status === 'INVITED' &&
+                member.invitedBy != null &&
+                memberUserIds.has(member.invitedBy) &&
+                invitedByNames.has(member.invitedBy) && {
+                  invitedByName: invitedByNames.get(member.invitedBy),
+                }),
+            })),
+          ),
+          memberCount: space.members.filter(
+            (member) => member.status === 'ACTIVE',
+          ).length,
+          safeCount: space.safes?.length ?? 0,
+        };
+      }),
+    );
   }
 
   public async update(args: {

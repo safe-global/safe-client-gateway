@@ -17,6 +17,7 @@ import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-
 import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { SpaceFieldEncryptionModule } from '@/modules/spaces/domain/space-field-encryption.module';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBookRequestsController } from '@/modules/spaces/routes/address-books/address-book-requests.controller';
@@ -34,6 +35,7 @@ import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.ser
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { MemberEncryptionModule } from '@/modules/users/domain/members/member-encryption.module';
 import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { WalletEncryptionModule } from '@/modules/wallets/domain/wallet-encryption.module';
@@ -55,6 +57,8 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     forwardRef(() => UsersModule),
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
     SpaceAuditModule,
+    SpaceFieldEncryptionModule,
+    MemberEncryptionModule,
     UserIdentityResolverModule,
     WalletsModule,
     WalletEncryptionModule,

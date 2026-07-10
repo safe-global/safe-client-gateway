@@ -23,6 +23,7 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -30,6 +31,7 @@ import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
+import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
@@ -42,6 +44,12 @@ export class SpacesRepository implements ISpacesRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    @Inject(SpaceFieldEncryptionService)
+    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    // Consumed for the creator member row written below; member-name policy
+    // itself lives in the users module (Part B).
+    @Inject(MemberEncryptionService)
+    private readonly memberEncryptionService: MemberEncryptionService,
   ) {
     this.maxSpaceCreationsPerUser =
       this.configurationService.getOrThrow<number>(
@@ -82,17 +90,47 @@ export class SpacesRepository implements ISpacesRepository {
       async (entityManager) => {
         const insertResult = await entityManager.save(space);
 
+        // Two-phase create (unique to spaces): `spaces.id` is DB-generated,
+        // so the space-scoped encryption context is unknowable before insert.
+        // Save plaintext, then rewrite the space name and the
+        // cascade-inserted creator member name to ciphertext inside the same
+        // transaction, now that the ids exist. With encryption disabled both
+        // encrypt calls return their input and the rewrites are skipped.
+        const encryptedName =
+          await this.spaceFieldEncryptionService.encryptSpaceName(
+            insertResult.id,
+            args.name,
+          );
+        if (encryptedName !== args.name) {
+          await entityManager.update(Space, insertResult.id, {
+            name: encryptedName,
+          });
+        }
+        const encryptedMemberName =
+          await this.memberEncryptionService.encryptName(
+            insertResult.id,
+            member.name,
+          );
+        if (encryptedMemberName !== member.name) {
+          await entityManager.update(Member, insertResult.members[0].id, {
+            name: encryptedMemberName,
+          });
+        }
+
         await this.spaceAuditRepository.record(entityManager, {
           spaceId: insertResult.id,
           spaceUuid: insertResult.uuid,
           eventType: SpaceAuditEventType.SPACE_CREATED,
           actorUserId: args.userId,
-          payload: { name: insertResult.name },
+          // The payload reuses the ciphertext written to the source row
+          // (plaintext while encryption is disabled); the audit reader
+          // decrypts it under the same space-scoped context.
+          payload: { name: encryptedName },
         });
 
         return {
           uuid: insertResult.uuid,
-          name: insertResult.name,
+          name: args.name,
         };
       },
     );
@@ -228,14 +266,41 @@ export class SpacesRepository implements ISpacesRepository {
           throw new NotFoundException('Workspace not found.');
         }
 
+        const { name } = args.updatePayload;
+        // The stored name may be ciphertext: decrypt it for the plaintext
+        // diff, and always re-encrypt what gets written — writing the
+        // incoming plaintext directly would regress an encrypted row.
+        const currentName =
+          name !== undefined
+            ? await this.spaceFieldEncryptionService.decryptSpaceName(
+                args.id,
+                current.name,
+              )
+            : current.name;
+        const encryptedName =
+          name !== undefined
+            ? await this.spaceFieldEncryptionService.encryptSpaceName(
+                args.id,
+                name,
+              )
+            : undefined;
+
         await entityManager
           .createQueryBuilder()
           .update(Space)
-          .set(args.updatePayload)
+          .set({
+            ...args.updatePayload,
+            ...(encryptedName !== undefined && { name: encryptedName }),
+          })
           .where({ id: args.id })
           .execute();
 
-        const diff = this.diffSpaceUpdate(current, args.updatePayload);
+        const diff = this.diffSpaceUpdate({
+          current,
+          currentName,
+          updatePayload: args.updatePayload,
+          writtenName: encryptedName,
+        });
         if (diff) {
           await this.spaceAuditRepository.record(entityManager, {
             spaceId: current.id,
@@ -252,20 +317,32 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   /** Changed `name`/`status` fields of a space update, or `null` for a no-op. */
-  private diffSpaceUpdate(
-    current: Pick<Space, 'name' | 'status'>,
-    updatePayload: Partial<Pick<Space, 'name' | 'status'>>,
-  ): SpaceUpdatedPayload | null {
-    const { name, status } = updatePayload;
+  private diffSpaceUpdate(args: {
+    current: Pick<Space, 'name' | 'status'>;
+    /** The stored name decrypted, for the plaintext comparison. */
+    currentName: string;
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    /** The name value as written (ciphertext when encryption is enabled). */
+    writtenName?: string;
+  }): SpaceUpdatedPayload | null {
+    const { name, status } = args.updatePayload;
     const oldFields: SpaceUpdatedPayload['old'] = {};
     const newFields: SpaceUpdatedPayload['new'] = {};
 
-    if (name !== undefined && name !== current.name) {
-      oldFields.name = current.name;
-      newFields.name = name;
+    if (
+      name !== undefined &&
+      name !== args.currentName &&
+      args.writtenName !== undefined
+    ) {
+      // Audit payloads reuse stored ciphertext (contract pattern 5): old is
+      // the previous row value, new is the newly written value — no extra
+      // KMS calls, and the reader can reconstruct both contexts from the
+      // space id alone.
+      oldFields.name = args.current.name;
+      newFields.name = args.writtenName;
     }
-    if (status !== undefined && status !== current.status) {
-      oldFields.status = current.status;
+    if (status !== undefined && status !== args.current.status) {
+      oldFields.status = args.current.status;
       newFields.status = status;
     }
 

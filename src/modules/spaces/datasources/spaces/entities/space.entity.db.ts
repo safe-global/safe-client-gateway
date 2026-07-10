@@ -7,7 +7,6 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { NAME_MAX_LENGTH } from '@/domain/common/schemas/name.schema';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import {
@@ -30,7 +29,11 @@ export class Space implements DomainSpace {
   })
   uuid!: UUID;
 
-  @Column({ type: 'varchar', length: NAME_MAX_LENGTH })
+  // Encrypted directly by KMS under the space-scoped context (`kms:v1:`
+  // ciphertext exceeds the plaintext cap, so the column is text; plaintext
+  // length limits stay in the Zod DTOs). Encryption is performed in
+  // SpacesRepository (two-phase: the id is DB-generated).
+  @Column({ type: 'text' })
   name!: string;
 
   @Index('idx_space_status')

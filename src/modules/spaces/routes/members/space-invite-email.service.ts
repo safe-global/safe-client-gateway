@@ -8,6 +8,7 @@ import {
 import { asError } from '@/logging/utils';
 import { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   type EmailInviteUserInput,
@@ -41,6 +42,8 @@ export class SpaceInviteEmailService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(SpaceFieldEncryptionService)
+    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
     @Optional()
     private readonly sesEmailQueueService?: SesEmailQueueService,
   ) {
@@ -101,12 +104,17 @@ export class SpaceInviteEmailService {
     }
 
     try {
-      const { name: workspaceName } = await this.spacesRepository.findOneOrFail(
-        {
-          where: { id: spaceId },
-          select: { name: true },
-        },
-      );
+      const space = await this.spacesRepository.findOneOrFail({
+        where: { id: spaceId },
+        select: { name: true },
+      });
+      // Egress path: the stored name may be KMS ciphertext — decrypt before
+      // it is rendered into an inbox-bound email body.
+      const workspaceName =
+        await this.spaceFieldEncryptionService.decryptSpaceName(
+          spaceId,
+          space.name,
+        );
 
       const jobs = recipients.map((recipient) => {
         const templateArgs = {
