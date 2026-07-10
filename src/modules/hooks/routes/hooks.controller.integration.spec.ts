@@ -25,7 +25,7 @@ describe('HooksController', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('should return 410 if the hook is not CHAIN_UPDATE or SAFE_APPS_UPDATE', async () => {
@@ -86,7 +86,7 @@ describe('HooksController', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('should not return 410 if the feature flag is enabled', async () => {

@@ -112,7 +112,7 @@ describe('Alerts Controller', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     describe('GET /v1/alerts', () => {
@@ -868,7 +868,7 @@ describe('Alerts Controller', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('returns 404 (Not found) for valid signature/invalid payload', async () => {

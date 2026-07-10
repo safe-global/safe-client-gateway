@@ -17,7 +17,7 @@ describe('Root Controller tests', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('should redirect / to /api', async () => {

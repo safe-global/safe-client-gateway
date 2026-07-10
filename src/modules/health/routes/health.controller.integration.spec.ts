@@ -97,6 +97,6 @@ describe('Health Controller tests', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 });

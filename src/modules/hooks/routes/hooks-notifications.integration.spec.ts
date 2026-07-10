@@ -74,7 +74,7 @@ describe('Hook Events for Notifications', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it.each(

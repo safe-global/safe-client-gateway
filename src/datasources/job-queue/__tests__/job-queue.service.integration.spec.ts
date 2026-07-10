@@ -68,7 +68,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
   afterAll(async () => {
     await queue.close();
-    await app.close();
+    await app?.close();
   });
 
   it('should process a job added to the queue', async () => {

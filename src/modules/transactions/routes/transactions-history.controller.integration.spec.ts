@@ -89,7 +89,7 @@ describe('Transactions History Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('Failure: Config API fails', async () => {

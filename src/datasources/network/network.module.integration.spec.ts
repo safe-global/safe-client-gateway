@@ -97,7 +97,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it(`fetch client is created with timeout and is kept alive`, async () => {
@@ -188,7 +188,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('caches GET requests based on URL and options', async () => {
@@ -421,7 +421,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     beforeEach(() => {
@@ -524,7 +524,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     beforeEach(() => {

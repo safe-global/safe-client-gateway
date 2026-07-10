@@ -70,7 +70,7 @@ describe('Safes Controller Overview', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET /safes', () => {

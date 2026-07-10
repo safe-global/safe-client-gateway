@@ -83,7 +83,7 @@ describe('Hook Events for Cache', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it.each([

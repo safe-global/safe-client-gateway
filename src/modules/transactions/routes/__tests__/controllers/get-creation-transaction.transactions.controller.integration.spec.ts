@@ -41,7 +41,7 @@ describe('Get creation transaction', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('should return the creation transaction', async () => {
