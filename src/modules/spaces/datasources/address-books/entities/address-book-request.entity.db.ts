@@ -12,7 +12,6 @@ import type { Address } from 'viem';
 import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import {
   AddressBookRequestStatus,
   AddressBookRequest as DomainAddressBookRequest,
@@ -20,10 +19,19 @@ import {
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 @Entity('address_book_requests')
+// Split partial-unique indexes across the backfill window: plaintext pending
+// rows (address_index IS NULL) keep the old semantics, encrypted pending rows
+// are unique per blind index. Matches the 1781700000000-space-field-encryption
+// migration.
 @Index(
-  'UQ_ABR_space_requester_address_pending',
+  'UQ_ABR_space_requester_address_pending_plain',
   ['space', 'requestedBy', 'address'],
-  { unique: true, where: 'status = 0' },
+  { unique: true, where: 'status = 0 AND address_index IS NULL' },
+)
+@Index(
+  'UQ_ABR_space_requester_address_index_pending',
+  ['space', 'requestedBy', 'addressIndex'],
+  { unique: true, where: 'status = 0 AND address_index IS NOT NULL' },
 )
 @Index('IDX_ABR_space_status', ['space', 'status'])
 export class AddressBookRequest implements DomainAddressBookRequest {
@@ -69,19 +77,23 @@ export class AddressBookRequest implements DomainAddressBookRequest {
   })
   public readonly chainIds!: Array<string>;
 
+  // Encrypted directly by KMS under the space-scoped context; ciphertext passes
+  // through the transformer untouched, plaintext is checksummed as before.
+  // Encryption is performed in AddressBookRequestsRepository.
   @Column({
     name: 'address',
-    type: 'varchar',
-    length: 42,
+    type: 'text',
     nullable: false,
     transformer: databaseAddressTransformer,
   })
   address!: Address;
 
-  @Column({
-    type: 'varchar',
-    length: ADDRESS_BOOK_NAME_MAX_LENGTH,
-  })
+  // Blind index of the plaintext address; NULL until written encrypted or
+  // backfilled. No transformer: tokens are stored verbatim.
+  @Column({ name: 'address_index', type: 'text', nullable: true })
+  public readonly addressIndex?: string | null;
+
+  @Column({ type: 'text' })
   name!: string;
 
   @Column({
