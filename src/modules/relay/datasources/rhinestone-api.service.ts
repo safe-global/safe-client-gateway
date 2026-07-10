@@ -123,10 +123,7 @@ export class RhinestoneApi implements IRelayApi {
   }
 
   /**
-   * Retrieves the status of a relay task from Rhinestone. Status codes are
-   * Gelato-compatible (100/110/200/400/500), so they map 1:1 onto
-   * {@link RelayTaskStatus.status}. Only the transaction hash is returned;
-   * block/gas fields are not provided.
+   * Retrieves the status of a relay task from Rhinestone.
    */
   async getTaskStatus(args: {
     chainId: string;
