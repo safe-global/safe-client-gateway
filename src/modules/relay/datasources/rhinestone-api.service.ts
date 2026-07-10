@@ -54,20 +54,6 @@ export class RhinestoneApi implements IRelayApi {
   }
 
   /**
-   * Builds a reproducible cURL for the Rhinestone submit request, so the exact
-   * failing call can be shared for debugging. Only logged on error. The API key
-   * is redacted — replace `$RHINESTONE_API_KEY` with a real key to run it.
-   */
-  private buildCurl(url: string, body: object): string {
-    return [
-      `curl -X POST '${url}'`,
-      `-H 'content-type: application/json'`,
-      `-H 'x-api-key: $RHINESTONE_API_KEY'`,
-      `--data-raw '${JSON.stringify(body)}'`,
-    ].join(' \\\n  ');
-  }
-
-  /**
    * Builds a log-friendly error string. For a {@link NetworkResponseError}
    * (e.g. Rhinestone's 400 on validation / insufficient sponsorship budget /
    * chain disabled) it surfaces the HTTP status and response body, which carry
@@ -116,7 +102,7 @@ export class RhinestoneApi implements IRelayApi {
       return { taskId: response.taskId };
     } catch (error) {
       this.loggingService.error(
-        `Error relaying transaction for chain ${args.chainId}: ${this.formatError(error)}\n${this.buildCurl(url, body)}`,
+        `Error relaying transaction for chain ${args.chainId}: ${this.formatError(error)}}`,
       );
       throw this.httpErrorFactory.from(error);
     }

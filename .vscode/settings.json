@@ -1,6 +1,13 @@
 {
+  "biome.enabled": true,
   "editor.defaultFormatter": "biomejs.biome",
   "editor.formatOnSave": true,
+  "[typescript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[javascript]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[typescriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[javascriptreact]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[json]": { "editor.defaultFormatter": "biomejs.biome" },
+  "[jsonc]": { "editor.defaultFormatter": "biomejs.biome" },
   "js/ts.preferences.importModuleSpecifier": "non-relative",
   "remote.autoForwardPortsFallback": 0
 }
