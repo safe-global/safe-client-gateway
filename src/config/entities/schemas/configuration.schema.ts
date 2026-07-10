@@ -32,6 +32,51 @@ const relayRulesValidator = z
   )
   .optional();
 
+function validateFieldEncryptionConfig(
+  config: {
+    SPACES_FIELD_ENCRYPTION_ENABLED?: string;
+    SPACES_FIELD_ENCRYPTION_INDEX_KEY?: string;
+    AWS_KMS_ENCRYPTION_KEY_ID?: string;
+    AWS_WEB_IDENTITY_TOKEN_FILE?: string;
+    KMS_AWS_ACCESS_KEY_ID?: string;
+    KMS_AWS_SECRET_ACCESS_KEY?: string;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  // Field encryption, when enabled, needs the blind-index key regardless
+  // of environment — enabling it without the key is always broken.
+  if (config.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() !== 'true') {
+    return;
+  }
+  for (const field of [
+    'SPACES_FIELD_ENCRYPTION_INDEX_KEY',
+    'AWS_KMS_ENCRYPTION_KEY_ID',
+  ] as const) {
+    if (!config[field]) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required when SPACES_FIELD_ENCRYPTION_ENABLED is true',
+        path: [field],
+      });
+    }
+  }
+  // KMS credentials come from IRSA (web identity token) or a static key
+  // pair, mirroring AwsKmsService's credential resolution. Dedicated
+  // KMS_AWS_* keys (like SES_AWS_*/CSV_AWS_*) so enabling field encryption
+  // doesn't silently repurpose the bare AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY
+  // credentials used by targeted messaging's S3 file storage.
+  const hasStaticCredentials =
+    !!config.KMS_AWS_ACCESS_KEY_ID && !!config.KMS_AWS_SECRET_ACCESS_KEY;
+  if (!(config.AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'AWS credentials are required when SPACES_FIELD_ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID and KMS_AWS_SECRET_ACCESS_KEY',
+      path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
+    });
+  }
+}
+
 const DomainSchema = z.string().refine(
   (val) => {
     try {
@@ -210,69 +255,36 @@ export const RootConfigurationSchema = z
       });
     }
 
-    if (!isDeployedEnv) {
-      return;
-    }
-    const isSesEnabled = config.FF_SES_EMAIL?.toLowerCase() === 'true';
+    if (isDeployedEnv) {
+      const isSesEnabled = config.FF_SES_EMAIL?.toLowerCase() === 'true';
 
-    for (const {
-      field,
-      requiredWhen = true,
-      message = 'is required in production and staging environments',
-    } of [
-      { field: 'AWS_ACCESS_KEY_ID' },
-      { field: 'AWS_KMS_ENCRYPTION_KEY_ID' },
-      { field: 'AWS_SECRET_ACCESS_KEY' },
-      { field: 'AWS_REGION' },
-      { field: 'CSV_AWS_ACCESS_KEY_ID' },
-      { field: 'CSV_AWS_SECRET_ACCESS_KEY' },
-      { field: 'BLOCKAID_CLIENT_API_KEY' },
-      // SES permissions are set via IRSA in deployed environments, not static AWS keys.
-      {
-        field: 'AWS_WEB_IDENTITY_TOKEN_FILE',
-        requiredWhen: isSesEnabled,
-        message:
-          'is required in production and staging environments when SES email is enabled',
-      },
-    ]) {
-      if (requiredWhen && !(config as Record<string, unknown>)[field]) {
-        ctx.addIssue({ code: 'custom', message, path: [field] });
+      for (const {
+        field,
+        requiredWhen = true,
+        message = 'is required in production and staging environments',
+      } of [
+        { field: 'AWS_ACCESS_KEY_ID' },
+        { field: 'AWS_KMS_ENCRYPTION_KEY_ID' },
+        { field: 'AWS_SECRET_ACCESS_KEY' },
+        { field: 'AWS_REGION' },
+        { field: 'CSV_AWS_ACCESS_KEY_ID' },
+        { field: 'CSV_AWS_SECRET_ACCESS_KEY' },
+        { field: 'BLOCKAID_CLIENT_API_KEY' },
+        // SES permissions are set via IRSA in deployed environments, not static AWS keys.
+        {
+          field: 'AWS_WEB_IDENTITY_TOKEN_FILE',
+          requiredWhen: isSesEnabled,
+          message:
+            'is required in production and staging environments when SES email is enabled',
+        },
+      ]) {
+        if (requiredWhen && !(config as Record<string, unknown>)[field]) {
+          ctx.addIssue({ code: 'custom', message, path: [field] });
+        }
       }
     }
-  })
-  .superRefine((config, ctx) => {
-    // Field encryption, when enabled, needs the blind-index key regardless
-    // of environment — enabling it without the key is always broken.
-    if (config.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() !== 'true') {
-      return;
-    }
-    for (const field of [
-      'SPACES_FIELD_ENCRYPTION_INDEX_KEY',
-      'AWS_KMS_ENCRYPTION_KEY_ID',
-    ] as const) {
-      if (!config[field]) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'is required when SPACES_FIELD_ENCRYPTION_ENABLED is true',
-          path: [field],
-        });
-      }
-    }
-    // KMS credentials come from IRSA (web identity token) or a static key
-    // pair, mirroring AwsKmsService's credential resolution. Dedicated
-    // KMS_AWS_* keys (like SES_AWS_*/CSV_AWS_*) so enabling field encryption
-    // doesn't silently repurpose the bare AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY
-    // credentials used by targeted messaging's S3 file storage.
-    const hasStaticCredentials =
-      !!config.KMS_AWS_ACCESS_KEY_ID && !!config.KMS_AWS_SECRET_ACCESS_KEY;
-    if (!(config.AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
-      ctx.addIssue({
-        code: 'custom',
-        message:
-          'AWS credentials are required when SPACES_FIELD_ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID and KMS_AWS_SECRET_ACCESS_KEY',
-        path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
-      });
-    }
+
+    validateFieldEncryptionConfig(config, ctx);
   });
 
 export type FileStorageType = z.infer<

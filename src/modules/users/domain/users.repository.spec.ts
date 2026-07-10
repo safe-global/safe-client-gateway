@@ -25,7 +25,7 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 describe('UsersRepository', () => {
   const walletsRepository = {
     findOneByAddress: vi.fn(),
-  } as unknown as MockedObject<IWalletsRepository>;
+  } as MockedObject<IWalletsRepository>;
   // Passthrough crypto (disabled-like): blind index null, values unchanged, so
   // existing plaintext assertions hold. Encryption + blind-index lookups are
   // covered by integration tests.
@@ -35,7 +35,7 @@ describe('UsersRepository', () => {
     isEncrypted: vi.fn(),
     blindIndex: vi.fn(),
     decryptUserEmails: vi.fn(),
-  } as unknown as MockedObject<EmailEncryptionService>;
+  } as MockedObject<EmailEncryptionService>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
