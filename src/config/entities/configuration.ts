@@ -852,7 +852,7 @@ export default () => ({
       // When true, the users repository encrypts emails before writing and
       // requires every stored email to be ciphertext on read — enable only
       // after the backfill has encrypted all existing rows
-      // (scripts/backfill-user-email-encryption).
+      // (scripts/backfill-field-encryption).
       enabled:
         process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
       // Base64 KMS-encrypted 32-byte key for blind indexes across all

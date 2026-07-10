@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 /**
- * Generates the KMS-wrapped key for the users.email blind index.
+ * Generates the KMS-wrapped key for the field-encryption blind indexes.
  *
  * A random 32-byte key is generated locally and wrapped (encrypted) by KMS;
  * the app unwraps it once at boot and performs local HMAC computation with
@@ -18,10 +18,11 @@
  * ROTATION CAVEAT: the blind index is an HMAC under this single key; nothing
  * verifies against older keys. Once indexes are stored, repointing
  * SPACES_FIELD_ENCRYPTION_INDEX_KEY at a new key silently orphans every
- * existing users.email_index (lookups stop matching and the unique index
- * stops colliding). Changing the index key requires recomputing every stored
- * index — the regular backfill will NOT do this, as it skips rows whose email
- * is already encrypted.
+ * existing blind index (users.email_index and every address_index column:
+ * lookups stop matching and the unique indexes stop colliding). Changing the
+ * index key requires recomputing every stored index — the regular backfill
+ * (scripts/backfill-field-encryption.ts) will NOT do this, as it skips rows
+ * whose value is already encrypted.
  */
 import { randomBytes } from 'node:crypto';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -73,8 +74,8 @@ async function main(): Promise<void> {
       '',
       'If blind indexes are already stored, do NOT repoint SPACES_FIELD_ENCRYPTION_INDEX_KEY',
       'at this key: indexes are verified only under the configured key, so existing',
-      'users.email_index values would silently stop matching. Changing the index key',
-      'requires recomputing every stored index first.',
+      'blind-index values (users.email_index, *_index) would silently stop matching.',
+      'Changing the index key requires recomputing every stored index first.',
       '',
     ].join('\n'),
   );
