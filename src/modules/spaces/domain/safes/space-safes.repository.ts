@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
-import type {
-  EntityManager,
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
+import {
+  type EntityManager,
+  type FindOptionsRelations,
+  type FindOptionsSelect,
+  type FindOptionsWhere,
+  IsNull,
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -15,6 +16,7 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
   private readonly maxSafesPerSpace: number;
@@ -26,6 +28,8 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    @Inject(SpaceFieldEncryptionService)
+    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
   ) {
     this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
       'spaces.maxSafesPerSpace',
@@ -54,15 +58,15 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       address: SpaceSafe['address'];
     }>;
   }): Promise<void> {
-    const safesToInsert = args.payload.map((safe) => ({
-      space: { id: args.spaceId },
-      chainId: safe.chainId,
-      address: safe.address,
-    }));
-
-    const existingSafes = await this.findBySpaceId(args.spaceId);
-    if (existingSafes.length + safesToInsert.length > this.maxSafesPerSpace) {
-      const remaining = this.maxSafesPerSpace - existingSafes.length;
+    // A count is enough for the limit check — findBySpaceId would decrypt
+    // every existing row (one KMS call each) just to measure the length.
+    const spaceSafeRepository =
+      await this.postgresDatabaseService.getRepository(SpaceSafe);
+    const existingCount = await spaceSafeRepository.count({
+      where: { space: { id: args.spaceId } },
+    });
+    if (existingCount + args.payload.length > this.maxSafesPerSpace) {
+      const remaining = this.maxSafesPerSpace - existingCount;
       throw new BadRequestException(
         remaining > 0
           ? `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${remaining} more.`
@@ -70,8 +74,27 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       );
     }
 
+    // The owning space id is known before every insert, so ciphertext and
+    // blind index are computed up front — no two-phase dance like spaces.name.
+    const safesToInsert = await Promise.all(
+      args.payload.map(async (safe) => ({
+        space: { id: args.spaceId },
+        chainId: safe.chainId,
+        address: (await this.spaceFieldEncryptionService.encryptSafeAddress(
+          args.spaceId,
+          safe.address,
+        )) as SpaceSafe['address'],
+        addressIndex: this.spaceFieldEncryptionService.safeAddressIndex(
+          safe.address,
+        ),
+      })),
+    );
+
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       try {
+        // Catch-on-conflict as before; duplicates now collide on the partial
+        // unique indexes (blind index for encrypted rows, plaintext for
+        // not-yet-backfilled rows).
         await entityManager.insert(SpaceSafe, safesToInsert);
       } catch (err) {
         if (isUniqueConstraintError(err)) {
@@ -92,7 +115,10 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
         eventType: SpaceAuditEventType.SAFE_ADDED,
         actorUserId: args.actorUserId,
         payload: {
-          safes: args.payload.map((safe) => ({
+          // Reuses the ciphertext written to the source rows (plaintext when
+          // encryption is disabled); the audit reader decrypts it under the
+          // same space-scoped context.
+          safes: safesToInsert.map((safe) => ({
             chainId: safe.chainId,
             address: safe.address,
           })),
@@ -107,10 +133,15 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const spaceSafeRepository =
       await this.postgresDatabaseService.getRepository(SpaceSafe);
 
-    return await spaceSafeRepository.find({
+    const spaceSafes = await spaceSafeRepository.find({
       select: { chainId: true, address: true },
       where: { space: { id: spaceId } },
     });
+    // Repository boundary: callers receive plaintext addresses.
+    return await this.spaceFieldEncryptionService.decryptSpaceSafes(
+      spaceId,
+      spaceSafes,
+    );
   }
 
   public async findOrFail(
@@ -133,7 +164,41 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     const spaceSafeRepository =
       await this.postgresDatabaseService.getRepository(SpaceSafe);
 
-    return await spaceSafeRepository.find(args);
+    const spaceSafes = await spaceSafeRepository.find(args);
+    return await this.decryptLoadedSpaceSafes(spaceSafes);
+  }
+
+  /**
+   * Repository boundary for the generic finders: decrypts `address` on
+   * loaded rows. The space-scoped context comes from the loaded `space`
+   * relation, so callers reading encrypted addresses must include it
+   * ({@link findBySpaceId} passes the id explicitly instead). Plaintext rows
+   * (encryption disabled, or not yet backfilled) pass through untouched.
+   */
+  private async decryptLoadedSpaceSafes(
+    spaceSafes: Array<SpaceSafe>,
+  ): Promise<Array<SpaceSafe>> {
+    return await Promise.all(
+      spaceSafes.map(async (spaceSafe) => {
+        if (
+          typeof spaceSafe.address !== 'string' ||
+          !this.spaceFieldEncryptionService.isEncrypted(spaceSafe.address)
+        ) {
+          return spaceSafe;
+        }
+        if (spaceSafe.space === undefined) {
+          throw new Error(
+            'Cannot decrypt a SpaceSafe address without its space relation loaded',
+          );
+        }
+        const [decrypted] =
+          await this.spaceFieldEncryptionService.decryptSpaceSafes(
+            spaceSafe.space.id,
+            [spaceSafe],
+          );
+        return decrypted;
+      }),
+    );
   }
 
   public async delete(args: {
@@ -144,13 +209,33 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       address: SpaceSafe['address'];
     }>;
   }): Promise<void> {
+    // Dual-read during the backfill window: encrypted rows match on the
+    // blind index, not-yet-backfilled rows hold plaintext with a NULL index.
+    // Find-then-remove because TypeORM delete() criteria cannot express the
+    // OR across arms.
+    // @todo Remove the plaintext arm together with restoring the
+    // throw-on-plaintext guard once the backfill --verify passes.
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
-      args.payload.map((safe) => {
-        return {
+      args.payload.flatMap((safe) => {
+        const addressIndex = this.spaceFieldEncryptionService.safeAddressIndex(
+          safe.address,
+        );
+        const plaintextArm: FindOptionsWhere<SpaceSafe> = {
           space: { id: args.spaceId },
           chainId: safe.chainId,
+          addressIndex: IsNull(),
           address: safe.address,
         };
+        return addressIndex === null
+          ? [plaintextArm]
+          : [
+              {
+                space: { id: args.spaceId },
+                chainId: safe.chainId,
+                addressIndex,
+              },
+              plaintextArm,
+            ];
       });
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
