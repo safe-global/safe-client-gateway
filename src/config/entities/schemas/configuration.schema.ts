@@ -128,18 +128,7 @@ export const RootConfigurationSchema = z
       .min(1)
       .max(3599)
       .optional(),
-    RELAY_PROVIDER_API_KEY_OPTIMISM: z.string(),
-    RELAY_PROVIDER_API_KEY_BSC: z.string(),
-    RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: z.string(),
-    RELAY_PROVIDER_API_KEY_POLYGON: z.string(),
-    RELAY_PROVIDER_API_KEY_POLYGON_ZKEVM: z.string(),
-    RELAY_PROVIDER_API_KEY_BASE: z.string(),
-    RELAY_PROVIDER_API_KEY_ARBITRUM_ONE: z.string(),
-    RELAY_PROVIDER_API_KEY_AVALANCHE: z.string(),
-    RELAY_PROVIDER_API_KEY_LINEA: z.string(),
-    RELAY_PROVIDER_API_KEY_BLAST: z.string(),
-    RELAY_PROVIDER_API_KEY_UNICHAIN: z.string(),
-    RELAY_PROVIDER_API_KEY_SEPOLIA: z.string(),
+    RELAY_PROVIDER_API_KEY: z.string(),
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),

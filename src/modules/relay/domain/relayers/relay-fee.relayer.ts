@@ -25,7 +25,7 @@ import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-tra
 
 /**
  * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
- * On-chain the caller is Gelato's dispatcher; using a non-Safe sentinel keeps
+ * On-chain the caller is the relay provider's dispatcher; using a non-Safe sentinel keeps
  * `msg.sender`/`tx.origin` distinct from the Safe so refund-receiver-zero
  * flows debit the Safe to a third party (as they would in production).
  */
@@ -170,6 +170,7 @@ export class RelayFeeRelayer implements IRelayer {
         chainId,
         to,
         data,
+        safeTxHash,
       })
       .then(RelaySchema.parse);
   }

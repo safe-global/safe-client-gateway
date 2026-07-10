@@ -137,3 +137,26 @@ export function getDeploymentVersionsByChainIds(
     return acc;
   }, {});
 }
+
+/**
+ * Chain IDs used across relay tests to build deployment fixtures. Previously
+ * derived from `relay.apiKey` (one key per chain); that config is now a single
+ * project-level key, so relay tests reference this explicit list instead. The
+ * runtime relay chain gate is the chain's `relayer.type` (from ChainsRepository),
+ * not this list.
+ */
+export const RELAY_SUPPORTED_CHAIN_IDS: Array<string> = [
+  '1', // Ethereum Mainnet
+  '10', // Optimism
+  '56', // BNB
+  '100', // Gnosis
+  '130', // Unichain
+  '137', // Polygon
+  '1101', // Polygon zkEVM
+  '8453', // Base
+  '42161', // Arbitrum
+  '43114', // Avalanche
+  '59144', // Linea
+  '81457', // Blast
+  '11155111', // Sepolia
+];

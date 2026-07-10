@@ -351,21 +351,7 @@ export default (): ReturnType<typeof configuration> => ({
     baseUri: faker.internet.url({ appendSlash: false }),
     limit: faker.number.int({ min: 1 }),
     ttlSeconds: faker.number.int(),
-    apiKey: {
-      1: faker.string.hexadecimal({ length: 32 }),
-      10: faker.string.hexadecimal({ length: 32 }),
-      56: faker.string.hexadecimal({ length: 32 }),
-      100: faker.string.hexadecimal({ length: 32 }),
-      130: faker.string.hexadecimal({ length: 32 }),
-      137: faker.string.hexadecimal({ length: 32 }),
-      1101: faker.string.hexadecimal({ length: 32 }),
-      8453: faker.string.hexadecimal({ length: 32 }),
-      42161: faker.string.hexadecimal({ length: 32 }),
-      43114: faker.string.hexadecimal({ length: 32 }),
-      59144: faker.string.hexadecimal({ length: 32 }),
-      81457: faker.string.hexadecimal({ length: 32 }),
-      11155111: faker.string.hexadecimal({ length: 32 }),
-    },
+    apiKey: faker.string.hexadecimal({ length: 32 }),
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: Date.now() / 1000 - 10_000,

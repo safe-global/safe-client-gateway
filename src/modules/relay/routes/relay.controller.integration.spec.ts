@@ -6,7 +6,10 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import {
+  getDeploymentVersionsByChainIds,
+  RELAY_SUPPORTED_CHAIN_IDS,
+} from '@/__tests__/deployments.helper';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -57,7 +60,7 @@ import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
-const allSupportedChainIds = Object.keys(configuration().relay.apiKey);
+const allSupportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 const noFeeCampaignChains = Object.keys(
   configuration().relay.noFeeCampaign || {},
 );
@@ -240,10 +243,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -331,10 +334,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -390,10 +393,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -413,7 +416,7 @@ describe('Relay controller', () => {
                 });
             });
 
-            it('should return 201 with gasLimit provided but not forwarded to Gelato', async () => {
+            it('should return 201 with gasLimit provided but not forwarded to the relay provider', async () => {
               const chain = chainBuilder()
                 .with('chainId', chainId)
                 .with('relayer', relayerForChainId(chainId))
@@ -442,10 +445,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -465,13 +468,11 @@ describe('Relay controller', () => {
                   taskId,
                 });
 
-              // gasLimit should not be forwarded to Gelato Turbo Relayer
+              // gasLimit should not be forwarded to the relay provider
               expect(networkService.post).toHaveBeenCalledWith({
-                url: `${relayUrl}/rpc`,
-                data: expect.objectContaining({
-                  params: expect.not.objectContaining({
-                    gasLimit: expect.anything(),
-                  }),
+                url: `${relayUrl}/safe-transactions`,
+                data: expect.not.objectContaining({
+                  gasLimit: expect.anything(),
                 }),
                 networkRequest: expect.any(Object),
               });
@@ -534,14 +535,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({
-                        jsonrpc: '2.0',
-                        result: taskId,
-                        id: 1,
-                      }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -592,10 +589,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -673,10 +670,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -754,10 +751,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -826,14 +823,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({
-                          jsonrpc: '2.0',
-                          result: taskId,
-                          id: 1,
-                        }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -891,14 +884,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({
-                          jsonrpc: '2.0',
-                          result: taskId,
-                          id: 1,
-                        }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -963,14 +952,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({
-                          jsonrpc: '2.0',
-                          result: taskId,
-                          id: 1,
-                        }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1028,14 +1013,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({
-                          jsonrpc: '2.0',
-                          result: taskId,
-                          id: 1,
-                        }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1112,10 +1093,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1179,10 +1160,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1277,10 +1258,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1372,10 +1353,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1467,10 +1448,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1554,10 +1535,10 @@ describe('Relay controller', () => {
                 });
                 networkService.post.mockImplementation(({ url }) => {
                   switch (url) {
-                    case `${relayUrl}/rpc`:
+                    case `${relayUrl}/safe-transactions`:
                       return Promise.resolve({
-                        data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                        status: 200,
+                        data: rawify({ taskId }),
+                        status: 201,
                       });
                     default:
                       return Promise.reject(`No matching rule for url: ${url}`);
@@ -1915,10 +1896,10 @@ describe('Relay controller', () => {
               });
               networkService.post.mockImplementation(({ url }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     return Promise.resolve({
-                      data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -2265,7 +2246,7 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions`:
               return Promise.reject(new Error('Relayer error'));
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -2333,10 +2314,10 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/rpc`:
+                case `${relayUrl}/safe-transactions`:
                   return Promise.resolve({
-                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                    status: 200,
+                    data: rawify({ taskId }),
+                    status: 201,
                   });
                 default:
                   return Promise.reject(`No matching rule for url: ${url}`);
@@ -2429,10 +2410,10 @@ describe('Relay controller', () => {
             });
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/rpc`:
+                case `${relayUrl}/safe-transactions`:
                   return Promise.resolve({
-                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                    status: 200,
+                    data: rawify({ taskId }),
+                    status: 201,
                   });
                 default:
                   return Promise.reject(`No matching rule for url: ${url}`);
@@ -2495,10 +2476,10 @@ describe('Relay controller', () => {
           });
           networkService.post.mockImplementation(({ url }) => {
             switch (url) {
-              case `${relayUrl}/rpc`:
+              case `${relayUrl}/safe-transactions`:
                 return Promise.resolve({
-                  data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                  status: 200,
+                  data: rawify({ taskId }),
+                  status: 201,
                 });
               default:
                 return Promise.reject(`No matching rule for url: ${url}`);
@@ -2575,10 +2556,10 @@ describe('Relay controller', () => {
           });
           networkService.post.mockImplementation(({ url }) => {
             switch (url) {
-              case `${relayUrl}/rpc`:
+              case `${relayUrl}/safe-transactions`:
                 return Promise.resolve({
-                  data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                  status: 200,
+                  data: rawify({ taskId }),
+                  status: 201,
                 });
               default:
                 return Promise.reject(`No matching rule for url: ${url}`);
@@ -2646,10 +2627,10 @@ describe('Relay controller', () => {
           });
           networkService.post.mockImplementation(({ url }) => {
             switch (url) {
-              case `${relayUrl}/rpc`:
+              case `${relayUrl}/safe-transactions`:
                 return Promise.resolve({
-                  data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                  status: 200,
+                  data: rawify({ taskId }),
+                  status: 201,
                 });
               default:
                 return Promise.reject(`No matching rule for url: ${url}`);
@@ -2704,10 +2685,10 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions`:
               return Promise.resolve({
-                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                status: 200,
+                data: rawify({ taskId }),
+                status: 201,
               });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -2782,10 +2763,10 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions`:
               return Promise.resolve({
-                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                status: 200,
+                data: rawify({ taskId }),
+                status: 201,
               });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -2834,10 +2815,10 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions`:
               return Promise.resolve({
-                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                status: 200,
+                data: rawify({ taskId }),
+                status: 201,
               });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -2871,27 +2852,12 @@ describe('Relay controller', () => {
     describe('GET /v1/chains/:chainId/relay/status/:taskId', () => {
       it('should return task status with receipt', async () => {
         const taskId = faker.string.hexadecimal({ length: 64 });
-        const createdAt = faker.number.int();
-        const blockHash = faker.string.hexadecimal({ length: 64 });
-        const blockNumber = faker.string.numeric();
-        const gasUsed = faker.string.numeric();
         const transactionHash = faker.string.hexadecimal({ length: 64 });
-        const taskStatus = {
-          chainId,
-          createdAt,
-          id: taskId,
-          status: 200,
-          receipt: { blockHash, blockNumber, gasUsed, transactionHash },
-        };
-        networkService.post.mockImplementation(({ url }) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions/${taskId}/status`:
               return Promise.resolve({
-                data: rawify({
-                  jsonrpc: '2.0',
-                  result: taskStatus,
-                  id: 1,
-                }),
+                data: rawify({ taskId, status: 200, transactionHash }),
                 status: 200,
               });
             default:
@@ -2910,21 +2876,11 @@ describe('Relay controller', () => {
 
       it('should return task status without receipt (pending)', async () => {
         const taskId = faker.string.hexadecimal({ length: 64 });
-        const createdAt = faker.number.int();
-        networkService.post.mockImplementation(({ url }) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions/${taskId}/status`:
               return Promise.resolve({
-                data: rawify({
-                  jsonrpc: '2.0',
-                  result: {
-                    chainId,
-                    createdAt,
-                    id: taskId,
-                    status: 100,
-                  },
-                  id: 1,
-                }),
+                data: rawify({ taskId, status: 100 }),
                 status: 200,
               });
             default:
@@ -2942,9 +2898,9 @@ describe('Relay controller', () => {
 
       it('should forward error from relay provider', async () => {
         const taskId = faker.string.hexadecimal({ length: 64 });
-        networkService.post.mockImplementation(({ url }) => {
+        networkService.get.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions/${taskId}/status`:
               return Promise.reject(new Error('Task not found'));
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -3026,10 +2982,10 @@ describe('Relay controller', () => {
         });
         networkService.post.mockImplementation(({ url }) => {
           switch (url) {
-            case `${relayUrl}/rpc`:
+            case `${relayUrl}/safe-transactions`:
               return Promise.resolve({
-                data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                status: 200,
+                data: rawify({ taskId }),
+                status: 201,
               });
             default:
               return Promise.reject(`No matching rule for url: ${url}`);
@@ -3492,10 +3448,10 @@ describe('Relay controller', () => {
             // Mock the relay API call
             networkService.post.mockImplementation(({ url }) => {
               switch (url) {
-                case `${relayUrl}/rpc`:
+                case `${relayUrl}/safe-transactions`:
                   return Promise.resolve({
-                    data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-                    status: 200,
+                    data: rawify({ taskId }),
+                    status: 201,
                   });
                 default:
                   return Promise.reject(`No matching rule for url: ${url}`);
@@ -3614,15 +3570,11 @@ describe('Relay controller', () => {
             networkService.post.mockImplementation(
               ({ url, data: postData }) => {
                 switch (url) {
-                  case `${relayUrl}/rpc`:
+                  case `${relayUrl}/safe-transactions`:
                     relayApiCall = (postData ?? {}) as Record<string, unknown>;
                     return Promise.resolve({
-                      data: rawify({
-                        jsonrpc: '2.0',
-                        result: taskId,
-                        id: 1,
-                      }),
-                      status: 200,
+                      data: rawify({ taskId }),
+                      status: 201,
                     });
                   default:
                     return Promise.reject(`No matching rule for url: ${url}`);
@@ -3647,9 +3599,8 @@ describe('Relay controller', () => {
               .expect(201)
               .expect({ taskId });
 
-            // gasLimit should not be forwarded to Gelato Turbo Relayer
-            const params = relayApiCall.params as Record<string, unknown>;
-            expect(params).not.toHaveProperty('gasLimit');
+            // gasLimit should not be forwarded to the relay provider
+            expect(relayApiCall).not.toHaveProperty('gasLimit');
           });
         });
 
@@ -3766,10 +3717,10 @@ describe('Relay controller', () => {
       });
       networkService.post.mockImplementation(({ url }) => {
         switch (url) {
-          case `${relayUrl}/rpc`:
+          case `${relayUrl}/safe-transactions`:
             return Promise.resolve({
-              data: rawify({ jsonrpc: '2.0', result: taskId, id: 1 }),
-              status: 200,
+              data: rawify({ taskId }),
+              status: 201,
             });
           default:
             return Promise.reject(`No matching rule for url: ${url}`);

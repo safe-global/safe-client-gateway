@@ -199,6 +199,7 @@ describe('RelayFeeRelayer', () => {
         chainId,
         to: safeAddress,
         data: '0x',
+        safeTxHash,
       });
     });
 
