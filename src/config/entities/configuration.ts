@@ -384,6 +384,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
       10,
     ),
+    billing: Number.parseInt(
+      process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -427,7 +431,7 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
-    billingWebhook: process.env.FF_BILLING_WEBHOOK?.toLowerCase() === 'true',
+    billingService: process.env.FF_BILLING_SERVICE?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
@@ -533,6 +537,14 @@ export default () => ({
     secret: process.env.JWT_SECRET,
   },
   billing: {
+    baseUri:
+      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
+      'https://safe-billing-service.staging.5afe.dev',
+    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
+    requestTimeout: Number.parseInt(
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
+      10,
+    ),
     // ES256 service-to-service auth for incoming billing-service webhooks.
     // The CGW verifies tokens against its own public key (no JWKS); the
     // private key lives only in the provisioning CLI, not the running app.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
+import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
@@ -36,6 +37,11 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly BILLING_CUSTOMER_KEY = 'billing_customer';
+  private static readonly BILLING_PAYMENT_LINKS_KEY = 'billing_payment_links';
+  private static readonly BILLING_PLAN_KEY = 'billing_plan';
+  private static readonly BILLING_PLANS_KEY = 'billing_plans';
+  private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
@@ -1190,6 +1196,38 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getGtfFeePreviewCacheKey(args),
       hash.digest('hex'),
+    );
+  }
+
+  static getBillingPlansCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.BILLING_PLANS_KEY, '');
+  }
+
+  static getBillingPlanCacheDir(planId: string): CacheDir {
+    return new CacheDir(`${planId}_${CacheRouter.BILLING_PLAN_KEY}`, '');
+  }
+
+  static getBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
+    return new CacheDir(
+      `${upstreamCustomerId}_${CacheRouter.BILLING_CUSTOMER_KEY}`,
+      '',
+    );
+  }
+
+  static getBillingSubscriptionsCacheDir(args: {
+    upstreamCustomerId: string;
+    status: SubscriptionStatusFilter;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`,
+      args.status,
+    );
+  }
+
+  static getBillingPaymentLinksCacheDir(upstreamCustomerId?: string): CacheDir {
+    return new CacheDir(
+      CacheRouter.BILLING_PAYMENT_LINKS_KEY,
+      upstreamCustomerId ?? '',
     );
   }
 }

@@ -199,6 +199,7 @@ export default (): ReturnType<typeof configuration> => ({
     indexing: faker.number.int(),
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
+    billing: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
@@ -215,7 +216,7 @@ export default (): ReturnType<typeof configuration> => ({
     configHooksDebugLogs: false,
     auth: false,
     oidc_auth: false,
-    billingWebhook: false,
+    billingService: false,
     counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,
@@ -272,6 +273,9 @@ export default (): ReturnType<typeof configuration> => ({
     secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
   },
   billing: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiToken: faker.string.alphanumeric(32),
+    requestTimeout: faker.number.int({ min: 1000, max: 10_000 }),
     webhook: {
       // PEM keys provided via env often arrive with escaped newlines.
       publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
