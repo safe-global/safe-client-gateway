@@ -9,6 +9,7 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
 import type {
   SpaceAuditLogActorDto,
   SpaceAuditLogEntryDto,
@@ -45,6 +46,8 @@ export class SpaceAuditService {
     private readonly membersRepository: IMembersRepository,
     @Inject(UserIdentityResolverService)
     private readonly identityResolver: UserIdentityResolverService,
+    @Inject(SpaceFieldEncryptionService)
+    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
   ) {}
 
   public async getAuditLog(args: {
@@ -86,7 +89,9 @@ export class SpaceAuditService {
       count,
       next: buildNextPageURL(normalizedUrl, count)?.toString() ?? null,
       previous: buildPreviousPageURL(normalizedUrl)?.toString() ?? null,
-      results: rows.map((row) => this.toEntryDto(row, display)),
+      results: await Promise.all(
+        rows.map((row) => this.toEntryDto(args.spaceId, row, display)),
+      ),
     };
   }
 
@@ -167,18 +172,26 @@ export class SpaceAuditService {
     return new Set(members.map((member) => member.user.id));
   }
 
-  private toEntryDto(
+  private async toEntryDto(
+    spaceId: Space['id'],
     row: SpaceAuditLog,
     display: (userId: number) => string,
-  ): SpaceAuditLogEntryDto {
+  ): Promise<SpaceAuditLogEntryDto> {
     const targetUserId = getTargetUserId(row.payload);
+    // Audit payloads carry the source row's ciphertext (contract pattern 5);
+    // decrypt under the space-scoped context before returning to the client.
+    const payload = await this.spaceFieldEncryptionService.decryptAuditPayload(
+      spaceId,
+      row.eventType,
+      allowlistPayload(row),
+    );
     return {
       id: row.id,
       eventType: row.eventType,
       actorUserId: row.actorUserId,
       actor: display(row.actorUserId),
       targetUser: targetUserId === null ? null : display(targetUserId),
-      payload: allowlistPayload(row),
+      payload,
       createdAt: row.createdAt,
     };
   }

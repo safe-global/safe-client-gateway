@@ -6,6 +6,7 @@ import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceAuditLogBuilder } from '@/modules/spaces/datasources/audit/entities/__tests__/space-audit-log.entity.db.builder';
+import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import {
   FORMER_MEMBER_LABEL,
@@ -30,6 +31,9 @@ const identityResolver = {
 
 describe('SpaceAuditService', () => {
   let service: SpaceAuditService;
+  let spaceFieldEncryptionService: ReturnType<
+    typeof createMockSpaceFieldEncryptionService
+  >;
 
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const viewerUserId = faker.number.int({ min: 1, max: 100_000 });
@@ -61,10 +65,13 @@ describe('SpaceAuditService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    // Recreated after the reset so the passthrough implementation survives.
+    spaceFieldEncryptionService = createMockSpaceFieldEncryptionService();
     service = new SpaceAuditService(
       spaceAuditRepository,
       membersRepository,
       identityResolver,
+      spaceFieldEncryptionService,
     );
     identityResolver.resolveMany.mockResolvedValue(new Map());
     membersRepository.find.mockResolvedValue([]);
@@ -94,6 +101,40 @@ describe('SpaceAuditService', () => {
         status: 'ACTIVE',
       });
       expect(spaceAuditRepository.findBySpaceId).not.toHaveBeenCalled();
+    });
+
+    it('decrypts each row payload via decryptAuditPayload before returning it', async () => {
+      mockViewer();
+      const row = spaceAuditLogBuilder()
+        .with('spaceId', spaceId)
+        .with('eventType', 'ADDRESS_BOOK_DELETED')
+        .with('actorUserId', viewerUserId)
+        .with('payload', { address: 'kms:v1:blob', name: 'kms:v1:name' })
+        .build();
+      spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
+      spaceFieldEncryptionService.decryptAuditPayload.mockResolvedValue({
+        address: '0xPlaintext',
+        name: 'Alice',
+      });
+
+      const result = await service.getAuditLog({
+        authPayload,
+        spaceId,
+        routeUrl,
+        paginationData: new PaginationData(20, 0),
+        filters: {},
+      });
+
+      expect(
+        spaceFieldEncryptionService.decryptAuditPayload,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, 'ADDRESS_BOOK_DELETED', {
+        address: 'kms:v1:blob',
+        name: 'kms:v1:name',
+      });
+      expect(result.results[0].payload).toStrictEqual({
+        address: '0xPlaintext',
+        name: 'Alice',
+      });
     });
 
     it('should resolve actor and target display strings with one resolveMany call', async () => {
