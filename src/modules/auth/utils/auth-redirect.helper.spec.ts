@@ -202,6 +202,70 @@ describe('Auth-redirect helper functions', () => {
           resolveAndValidateRedirectUrl(config, faker.internet.url()),
         ).toThrow(BadRequestException);
       });
+
+      describe('loopback exception', () => {
+        it.each([
+          { host: 'localhost' },
+          { host: '127.0.0.1' },
+          { host: '[::1]' },
+        ])('should accept http://$host with any port', ({ host }) => {
+          const url = `http://${host}:${faker.internet.port()}/${faker.word.noun()}`;
+
+          expect(resolveAndValidateRedirectUrl(config, url)).toBe(url);
+        });
+
+        it('should accept loopback without a port', () => {
+          const url = `http://localhost/${faker.word.noun()}`;
+
+          expect(resolveAndValidateRedirectUrl(config, url)).toBe(url);
+        });
+
+        it('should accept https loopback', () => {
+          const url = `https://localhost:${faker.internet.port()}/${faker.word.noun()}`;
+
+          expect(resolveAndValidateRedirectUrl(config, url)).toBe(url);
+        });
+
+        it.each([
+          {
+            reason: 'lookalike hostname suffixed with allowed name',
+            url: (): string =>
+              `http://localhost.${faker.internet.domainName()}:3000`,
+          },
+          {
+            reason: 'lookalike hostname prefixed with loopback IP',
+            url: (): string =>
+              `http://127.0.0.1.${faker.internet.domainName()}`,
+          },
+          {
+            reason: 'loopback URL with userinfo',
+            url: (): string => `http://user:pass@localhost:3000`,
+          },
+          {
+            reason: 'non-HTTP scheme on loopback',
+            url: (): string => `ftp://localhost:3000`,
+          },
+        ])('should reject $reason', ({ url }) => {
+          expect(() => resolveAndValidateRedirectUrl(config, url())).toThrow(
+            BadRequestException,
+          );
+        });
+
+        it('should reject loopback in production', () => {
+          const prodConfig: RedirectConfig = {
+            postLoginRedirectUri: config.postLoginRedirectUri,
+            allowedRedirectDomain: allowedDomain,
+            isProduction: true,
+          };
+
+          expect(() =>
+            resolveAndValidateRedirectUrl(
+              prodConfig,
+              `http://localhost:${faker.internet.port()}`,
+            ),
+          ).toThrow(BadRequestException);
+        });
+      });
     });
   });
 });
