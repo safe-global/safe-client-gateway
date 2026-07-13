@@ -32,6 +32,7 @@ type OidcAuthTokenResponse = {
 
 @Injectable()
 export class OidcAuthService {
+  static readonly MFA_RESET_MAX_TOKEN_AGE_MS = 5 * 60 * 1_000;
   private readonly maxValidityPeriodInSeconds: number;
   private readonly stateTtlMs: number;
   private readonly redirectConfig: RedirectConfig;
@@ -113,11 +114,24 @@ export class OidcAuthService {
    * authenticator enrollment, which is how a user "switches" their
    * authenticator app.
    *
+   * As proof of possession of the current factor, the session token must
+   * have been issued within {@link OidcAuthService.MFA_RESET_MAX_TOKEN_AGE_MS}.
+   * The token's `iat` is copied from the Auth0 ID token, i.e. it marks the
+   * moment the user last completed a full login including the MFA challenge
+   * (TOTP or recovery code). A stolen long-lived session cannot pass this
+   * check without re-authenticating through Auth0.
+   *
    * @param authPayload - The authenticated user's payload (from the JWT cookie).
-   * @throws {UnauthorizedException} If the user has no linked OIDC identity
-   * (e.g. SIWE-only users).
+   * @param accessToken - The raw JWT cookie value, used to read the `iat` claim.
+   * @throws {UnauthorizedException} If the session is older than the allowed
+   * window or the user has no linked OIDC identity (e.g. SIWE-only users).
    */
-  public async resetMfa(authPayload: AuthPayload): Promise<void> {
+  public async resetMfa(
+    authPayload: AuthPayload,
+    accessToken?: string,
+  ): Promise<void> {
+    this.assertFreshSession(accessToken);
+
     const user = await this.usersRepository.findOneOrFail({
       id: Number(authPayload.getUserId()),
     });
@@ -127,6 +141,22 @@ export class OidcAuthService {
     }
 
     await this.auth0Repository.deleteUserAuthenticationMethods(user.extUserId);
+  }
+
+  private assertFreshSession(accessToken?: string): void {
+    const iat = accessToken
+      ? this.authRepository.decodeToken(accessToken).iat
+      : undefined;
+
+    const isFresh =
+      iat !== undefined &&
+      Date.now() - iat.getTime() <= OidcAuthService.MFA_RESET_MAX_TOKEN_AGE_MS;
+
+    if (!isFresh) {
+      throw new UnauthorizedException(
+        'A recent sign-in is required to reset MFA',
+      );
+    }
   }
 
   /**
@@ -139,12 +169,15 @@ export class OidcAuthService {
    *   same-origin as the configured {@link postLoginRedirectUri}.
    * @param connection - Optional OIDC connection name to route directly
    *   to a specific identity provider.
+   * @param prompt - Optional OIDC prompt value (`login` forces
+   *   re-authentication even with an active provider session).
    * @returns The OIDC authorization URL, the encoded state, and its TTL.
    * @throws {BadRequestException} If {@link redirectUrl} is not same-origin.
    */
   public createOidcAuthorizationRequest(
     redirectUrl?: string,
     connection?: OidcConnection,
+    prompt?: 'login',
   ): {
     authorizationUrl: string;
     state: string;
@@ -167,6 +200,7 @@ export class OidcAuthService {
       authorizationUrl: this.auth0Repository.getAuthorizationUrl(
         state,
         connection,
+        prompt,
       ),
       state,
       stateMaxAge: this.stateTtlMs,

@@ -19,8 +19,10 @@ import {
   ApiOperation,
   ApiQuery,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { type CookieOptions, Request, Response } from 'express';
+import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -93,6 +95,13 @@ export class OidcAuthController {
     description:
       'OIDC connection name to route to a specific identity provider.',
   })
+  @ApiQuery({
+    name: 'prompt',
+    required: false,
+    type: String,
+    description:
+      'OIDC prompt parameter. Only `login` is supported, forcing re-authentication even with an active provider session.',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -104,11 +113,14 @@ export class OidcAuthController {
     redirectUrl?: string,
     @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
     connection?: OidcConnection,
+    @Query('prompt', new ValidationPipe(z.literal('login').optional()))
+    prompt?: 'login',
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
       this.oidcAuthService.createOidcAuthorizationRequest(
         redirectUrl,
         connection,
+        prompt,
       );
 
     res.cookie(OidcAuthController.OIDC_STATE_COOKIE_NAME, state, {
@@ -220,15 +232,24 @@ export class OidcAuthController {
     summary: 'Reset MFA enrollments (switch authenticator)',
     description:
       'Deletes all Auth0 MFA enrollments (authenticators and recovery code) of the authenticated user. ' +
-      'The next OIDC login prompts the user to enroll a new authenticator.',
+      'Requires a recently issued session (fresh sign-in incl. MFA challenge) as proof of possession — ' +
+      'responds 401 otherwise. The next OIDC login prompts the user to enroll a new authenticator.',
   })
   @ApiOkResponse({ description: 'MFA enrollments deleted' })
+  @ApiUnauthorizedResponse({
+    description: 'Session is too old — a fresh sign-in is required',
+  })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   @Post('oidc/mfa/reset')
-  async resetMfa(@Auth() authPayload: AuthPayload): Promise<void> {
-    await this.oidcAuthService.resetMfa(authPayload);
+  async resetMfa(
+    @Req() req: Request,
+    @Auth() authPayload: AuthPayload,
+  ): Promise<void> {
+    const accessToken: string | undefined =
+      req.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
+    await this.oidcAuthService.resetMfa(authPayload, accessToken);
   }
 
   private getCookieOptions(): CookieOptions {

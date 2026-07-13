@@ -10,9 +10,14 @@ export interface IAuth0Api {
    *
    * @param state - Opaque anti-CSRF state value that will be echoed back by Auth0.
    * @param connection - Optional Auth0 connection name to route directly to a specific identity provider.
+   * @param prompt - Optional OIDC prompt value (`login` forces re-authentication).
    * @returns The fully qualified Auth0 `/authorize` URL.
    */
-  getAuthorizationUrl(state: string, connection?: string): string;
+  getAuthorizationUrl(
+    state: string,
+    connection?: string,
+    prompt?: string,
+  ): string;
 
   /**
    * Exchanges an OAuth 2.0 authorization code for Auth0 tokens.
