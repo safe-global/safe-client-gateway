@@ -13,7 +13,7 @@ import type {
   AddressBookRequestStatus,
 } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 @Injectable()
@@ -22,8 +22,8 @@ export class AddressBookRequestsRepository
 {
   constructor(
     private readonly db: PostgresDatabaseService,
-    @Inject(SpaceFieldEncryptionService)
-    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {}
 
   public async findBySpaceId(args: {
@@ -43,7 +43,7 @@ export class AddressBookRequestsRepository
       order: { createdAt: 'DESC' },
     });
     // Repository boundary: callers receive plaintext address + name.
-    return await this.spaceFieldEncryptionService.decryptAddressBookRequests(
+    return await this.spaceEncryptionService.decryptAddressBookRequests(
       args.spaceId,
       requests,
     );
@@ -68,7 +68,7 @@ export class AddressBookRequestsRepository
       order: { createdAt: 'DESC' },
     });
     // Repository boundary: callers receive plaintext address + name.
-    return await this.spaceFieldEncryptionService.decryptAddressBookRequests(
+    return await this.spaceEncryptionService.decryptAddressBookRequests(
       args.spaceId,
       requests,
     );
@@ -91,7 +91,7 @@ export class AddressBookRequestsRepository
     }
     // Repository boundary: callers receive plaintext address + name.
     const [decrypted] =
-      await this.spaceFieldEncryptionService.decryptAddressBookRequests(
+      await this.spaceEncryptionService.decryptAddressBookRequests(
         args.spaceId,
         [request],
       );
@@ -121,7 +121,7 @@ export class AddressBookRequestsRepository
     // The owning space id is known up front, so ciphertext + blind index are
     // computed before insert — no two-phase dance.
     const encrypted =
-      await this.spaceFieldEncryptionService.encryptAddressBookRequest(
+      await this.spaceEncryptionService.encryptAddressBookRequest(
         args.spaceId,
         { address: args.item.address, name: args.item.name },
       );

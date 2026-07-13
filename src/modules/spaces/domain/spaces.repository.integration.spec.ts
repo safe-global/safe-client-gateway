@@ -15,7 +15,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -115,7 +115,7 @@ describe('SpacesRepository', () => {
       postgresDatabaseService,
       mockConfigurationService,
       createMockSpaceAuditRepository(),
-      createMockSpaceFieldEncryptionService(),
+      createMockSpaceEncryptionService(),
       createMockMemberEncryptionService(),
     );
   });
@@ -274,7 +274,7 @@ describe('SpacesRepository', () => {
         postgresDatabaseService,
         config,
         createMockSpaceAuditRepository(),
-        createMockSpaceFieldEncryptionService(),
+        createMockSpaceEncryptionService(),
         createMockMemberEncryptionService(),
       );
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
@@ -317,7 +317,7 @@ describe('SpacesRepository', () => {
         postgresDatabaseService,
         config,
         createMockSpaceAuditRepository(),
-        createMockSpaceFieldEncryptionService(),
+        createMockSpaceEncryptionService(),
         createMockMemberEncryptionService(),
       );
 

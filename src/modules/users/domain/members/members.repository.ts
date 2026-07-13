@@ -31,12 +31,12 @@ import {
   type InviteUserInput,
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
@@ -51,7 +51,7 @@ export class MembersRepository implements IMembersRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    private readonly emailEncryptionService: EmailEncryptionService,
+    private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
@@ -63,7 +63,7 @@ export class MembersRepository implements IMembersRepository {
   private async decryptMemberUserEmails(
     members: Array<DbMember>,
   ): Promise<Array<DbMember>> {
-    const decryptedUsers = await this.emailEncryptionService.decryptUserEmails(
+    const decryptedUsers = await this.userEncryptionService.decryptUserEmails(
       members.flatMap((member) => (member.user ? [member.user] : [])),
     );
     const usersById = new Map(decryptedUsers.map((user) => [user.id, user]));

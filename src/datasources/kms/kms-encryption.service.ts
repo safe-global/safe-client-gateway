@@ -14,8 +14,8 @@ import { IKmsService } from '@/datasources/kms/kms.service.interface';
  * The single, domain-free crypto mechanics for all field-level encryption,
  * built on the stateless {@link IKmsService}. Per-entity policy (which owner,
  * how to shape the context, batch helpers) lives in thin wrappers:
- * EmailEncryptionService, WalletEncryptionService, MemberEncryptionService,
- * SpaceFieldEncryptionService — this service knows nothing about scopes.
+ * UserEncryptionService, WalletEncryptionService, MemberEncryptionService,
+ * SpaceEncryptionService — this service knows nothing about scopes.
  *
  * - {@link encrypt}/{@link decrypt}: the value is encrypted directly by KMS.
  *   The caller-supplied `encryptionContext` is passed straight to KMS as AAD

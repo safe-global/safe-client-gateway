@@ -4,6 +4,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import configuration from '@/config/entities/configuration';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
 import { AddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
@@ -17,7 +18,7 @@ import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-
 import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceFieldEncryptionModule } from '@/modules/spaces/domain/space-field-encryption.module';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBookRequestsController } from '@/modules/spaces/routes/address-books/address-book-requests.controller';
@@ -57,7 +58,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     forwardRef(() => UsersModule),
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
     SpaceAuditModule,
-    SpaceFieldEncryptionModule,
+    KmsEncryptionModule,
     MemberEncryptionModule,
     UserIdentityResolverModule,
     WalletsModule,
@@ -79,6 +80,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     SpaceSafesService,
     MembersService,
     SpaceInviteEmailService,
+    SpaceEncryptionService,
     {
       provide: ISpacesRepository,
       useClass: SpacesRepository,

@@ -53,8 +53,8 @@ export class AwsKmsService implements IKmsService {
     const { client, keyId } = this.getConfiguredClient();
     const response = await client.send(
       new DecryptCommand({
-        CiphertextBlob: new Uint8Array(args.ciphertext),
         KeyId: keyId,
+        CiphertextBlob: new Uint8Array(args.ciphertext),
         ...(args.encryptionContext && {
           EncryptionContext: args.encryptionContext,
         }),

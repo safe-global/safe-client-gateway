@@ -7,7 +7,7 @@ import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
@@ -19,8 +19,8 @@ describe('SpaceSafesRepository', () => {
 
   let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
-  let spaceFieldEncryptionService: ReturnType<
-    typeof createMockSpaceFieldEncryptionService
+  let spaceEncryptionService: ReturnType<
+    typeof createMockSpaceEncryptionService
   >;
   let spaceSafeRepository: { find: Mock; count: Mock };
   let entityManager: {
@@ -46,7 +46,7 @@ describe('SpaceSafesRepository', () => {
 
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
-    spaceFieldEncryptionService = createMockSpaceFieldEncryptionService();
+    spaceEncryptionService = createMockSpaceEncryptionService();
 
     spaceSafeRepository = {
       find: vi.fn().mockResolvedValue([]),
@@ -70,7 +70,7 @@ describe('SpaceSafesRepository', () => {
       postgresDatabaseService,
       configurationService,
       spaceAuditRepository,
-      spaceFieldEncryptionService,
+      spaceEncryptionService,
     );
   });
 
@@ -78,12 +78,10 @@ describe('SpaceSafesRepository', () => {
     it('encrypts addresses and computes blind indexes before insert, and reuses the ciphertext in the audit payload', async () => {
       const chainId = '1';
       const address = getAddress(faker.finance.ethereumAddress());
-      spaceFieldEncryptionService.encryptSafeAddress.mockResolvedValue(
+      spaceEncryptionService.encryptSafeAddress.mockResolvedValue(
         'kms:v1:safe-address',
       );
-      spaceFieldEncryptionService.safeAddressIndex.mockReturnValue(
-        'safe-index',
-      );
+      spaceEncryptionService.safeAddressIndex.mockReturnValue('safe-index');
 
       await target.create({
         spaceId,
@@ -92,7 +90,7 @@ describe('SpaceSafesRepository', () => {
       });
 
       expect(
-        spaceFieldEncryptionService.encryptSafeAddress,
+        spaceEncryptionService.encryptSafeAddress,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, address);
       expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
         {
@@ -145,9 +143,7 @@ describe('SpaceSafesRepository', () => {
       ).rejects.toThrow(
         'This Workspace only allows a maximum of 10 Safe Accounts.',
       );
-      expect(
-        spaceFieldEncryptionService.encryptSafeAddress,
-      ).not.toHaveBeenCalled();
+      expect(spaceEncryptionService.encryptSafeAddress).not.toHaveBeenCalled();
       expect(entityManager.insert).not.toHaveBeenCalled();
     });
   });
@@ -159,15 +155,13 @@ describe('SpaceSafesRepository', () => {
       const decrypted = [
         { chainId: '1', address: getAddress(faker.finance.ethereumAddress()) },
       ];
-      spaceFieldEncryptionService.decryptSpaceSafes.mockResolvedValue(
-        decrypted,
-      );
+      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue(decrypted);
 
       await expect(target.findBySpaceId(spaceId)).resolves.toStrictEqual(
         decrypted,
       );
       expect(
-        spaceFieldEncryptionService.decryptSpaceSafes,
+        spaceEncryptionService.decryptSpaceSafes,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
     });
   });
@@ -182,7 +176,7 @@ describe('SpaceSafesRepository', () => {
         space: { id: spaceId },
       };
       spaceSafeRepository.find.mockResolvedValue([row]);
-      spaceFieldEncryptionService.decryptSpaceSafes.mockResolvedValue([
+      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue([
         { ...row, address: plaintextAddress },
       ]);
 
@@ -190,7 +184,7 @@ describe('SpaceSafesRepository', () => {
 
       expect(result[0].address).toBe(plaintextAddress);
       expect(
-        spaceFieldEncryptionService.decryptSpaceSafes,
+        spaceEncryptionService.decryptSpaceSafes,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, [row]);
     });
 
@@ -205,9 +199,7 @@ describe('SpaceSafesRepository', () => {
       const result = await target.find({ where: { chainId: '1' } });
 
       expect(result).toStrictEqual([row]);
-      expect(
-        spaceFieldEncryptionService.decryptSpaceSafes,
-      ).not.toHaveBeenCalled();
+      expect(spaceEncryptionService.decryptSpaceSafes).not.toHaveBeenCalled();
     });
 
     it('throws on an encrypted row whose space relation was not loaded', async () => {
@@ -225,9 +217,7 @@ describe('SpaceSafesRepository', () => {
     it('looks up by blind index with a plaintext dual-read arm and audits the stored values', async () => {
       const chainId = '1';
       const address = getAddress(faker.finance.ethereumAddress());
-      spaceFieldEncryptionService.safeAddressIndex.mockReturnValue(
-        'safe-index',
-      );
+      spaceEncryptionService.safeAddressIndex.mockReturnValue('safe-index');
       const row = { id: 3, chainId, address: 'kms:v1:blob' };
       entityManager.find.mockResolvedValue([row]);
 

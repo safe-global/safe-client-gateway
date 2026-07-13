@@ -10,8 +10,8 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import type { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import type { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
@@ -36,13 +36,13 @@ describe('UsersRepository', () => {
   // Passthrough crypto (disabled-like): blind index null, values unchanged, so
   // existing plaintext assertions hold. Encryption + blind-index lookups are
   // covered by integration tests.
-  const emailEncryptionService = {
+  const userEncryptionService = {
     encrypt: vi.fn(),
     decrypt: vi.fn(),
     isEncrypted: vi.fn(),
     blindIndex: vi.fn(),
     decryptUserEmails: vi.fn(),
-  } as MockedObject<EmailEncryptionService>;
+  } as MockedObject<UserEncryptionService>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
@@ -82,25 +82,22 @@ describe('UsersRepository', () => {
       transaction: vi.fn(),
     } as MockedObject<PostgresDatabaseService>;
 
-    emailEncryptionService.encrypt.mockImplementation((_userId, email) =>
+    userEncryptionService.encrypt.mockImplementation((_userId, email) =>
       Promise.resolve(email),
     );
-    emailEncryptionService.decrypt.mockImplementation((_userId, value) =>
+    userEncryptionService.decrypt.mockImplementation((_userId, value) =>
       Promise.resolve(value),
     );
-    emailEncryptionService.isEncrypted.mockReturnValue(false);
-    emailEncryptionService.blindIndex.mockReturnValue(null);
+    userEncryptionService.isEncrypted.mockReturnValue(false);
+    userEncryptionService.blindIndex.mockReturnValue(null);
     // Mirrors the real batch helper, driven by the decrypt mock.
-    emailEncryptionService.decryptUserEmails.mockImplementation(async (users) =>
+    userEncryptionService.decryptUserEmails.mockImplementation(async (users) =>
       Promise.all(
         users.map(async (user) =>
           user.email
             ? {
                 ...user,
-                email: await emailEncryptionService.decrypt(
-                  user.id,
-                  user.email,
-                ),
+                email: await userEncryptionService.decrypt(user.id, user.email),
               }
             : user,
         ),
@@ -114,7 +111,7 @@ describe('UsersRepository', () => {
       postgresDatabaseService,
       walletsRepository,
       createMockSpaceAuditRepository(),
-      emailEncryptionService,
+      userEncryptionService,
       walletEncryptionService,
     );
   });
@@ -538,7 +535,7 @@ describe('UsersRepository', () => {
       const encrypted = `kms:v1:${Buffer.from(email, 'utf8').toString('base64url')}`;
       const user = { id: 7, email: encrypted };
       walletsRepository.findOneByAddress.mockResolvedValue({ user } as never);
-      emailEncryptionService.decrypt.mockResolvedValue(email);
+      userEncryptionService.decrypt.mockResolvedValue(email);
 
       const result = await target.findByWalletAddress(
         getAddress(faker.finance.ethereumAddress()),

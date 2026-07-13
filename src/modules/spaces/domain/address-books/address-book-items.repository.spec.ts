@@ -9,7 +9,7 @@ import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-datab
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -23,8 +23,8 @@ describe('AddressBookItemsRepository', () => {
 
   let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
-  let spaceFieldEncryptionService: ReturnType<
-    typeof createMockSpaceFieldEncryptionService
+  let spaceEncryptionService: ReturnType<
+    typeof createMockSpaceEncryptionService
   >;
   let spacesRepository: MockedObject<ISpacesRepository>;
   let itemRepository: { findBy: Mock; count: Mock; insert: Mock; update: Mock };
@@ -51,7 +51,7 @@ describe('AddressBookItemsRepository', () => {
 
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
-    spaceFieldEncryptionService = createMockSpaceFieldEncryptionService();
+    spaceEncryptionService = createMockSpaceEncryptionService();
 
     itemRepository = {
       findBy: vi.fn().mockResolvedValue([]),
@@ -82,7 +82,7 @@ describe('AddressBookItemsRepository', () => {
       spacesRepository,
       configurationService,
       spaceAuditRepository,
-      spaceFieldEncryptionService,
+      spaceEncryptionService,
     );
   });
 
@@ -93,7 +93,7 @@ describe('AddressBookItemsRepository', () => {
       const decrypted = [
         { address: getAddress(faker.finance.ethereumAddress()), name: 'Alice' },
       ];
-      spaceFieldEncryptionService.decryptAddressBookItems.mockResolvedValue(
+      spaceEncryptionService.decryptAddressBookItems.mockResolvedValue(
         decrypted,
       );
 
@@ -101,7 +101,7 @@ describe('AddressBookItemsRepository', () => {
         target.findAllBySpaceId({ authPayload, spaceId }),
       ).resolves.toStrictEqual(decrypted);
       expect(
-        spaceFieldEncryptionService.decryptAddressBookItems,
+        spaceEncryptionService.decryptAddressBookItems,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
     });
   });
@@ -111,7 +111,7 @@ describe('AddressBookItemsRepository', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'Alice';
       const chainIds = ['1'];
-      spaceFieldEncryptionService.encryptAddressBookItem.mockResolvedValue({
+      spaceEncryptionService.encryptAddressBookItem.mockResolvedValue({
         address: 'kms:v1:addr',
         name: 'kms:v1:name',
         addressIndex: 'idx',
@@ -124,7 +124,7 @@ describe('AddressBookItemsRepository', () => {
       });
 
       expect(
-        spaceFieldEncryptionService.encryptAddressBookItem,
+        spaceEncryptionService.encryptAddressBookItem,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, { address, name });
       expect(itemRepository.insert).toHaveBeenCalledExactlyOnceWith([
         expect.objectContaining({
@@ -152,7 +152,7 @@ describe('AddressBookItemsRepository', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'New name';
       const chainIds = ['1'];
-      spaceFieldEncryptionService.itemAddressIndex.mockReturnValue('idx');
+      spaceEncryptionService.itemAddressIndex.mockReturnValue('idx');
       itemRepository.findBy.mockResolvedValue([
         {
           id: 7,
@@ -161,7 +161,7 @@ describe('AddressBookItemsRepository', () => {
           addressIndex: 'idx',
         },
       ]);
-      spaceFieldEncryptionService.encryptAddressBookItem.mockResolvedValue({
+      spaceEncryptionService.encryptAddressBookItem.mockResolvedValue({
         address: 'kms:v1:addr',
         name: 'kms:v1:name',
         addressIndex: 'idx',
@@ -228,7 +228,7 @@ describe('AddressBookItemsRepository', () => {
   describe('deleteByAddress', () => {
     it('deletes via a dual-read lookup and audits the stored (ciphertext) values', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      spaceFieldEncryptionService.itemAddressIndex.mockReturnValue('idx');
+      spaceEncryptionService.itemAddressIndex.mockReturnValue('idx');
       entityManager.findOne.mockResolvedValue({
         id: 9,
         address: 'kms:v1:a',

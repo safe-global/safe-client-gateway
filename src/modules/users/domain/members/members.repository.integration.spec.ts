@@ -22,7 +22,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -33,9 +33,9 @@ import {
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
-  createEncryptingMockEmailEncryptionService,
-  createMockEmailEncryptionService,
-} from '@/modules/users/domain/__tests__/email-encryption.service.mock';
+  createEncryptingMockUserEncryptionService,
+  createMockUserEncryptionService,
+} from '@/modules/users/domain/__tests__/user-encryption.service.mock';
 import {
   MemberRole,
   MemberStatus,
@@ -147,18 +147,18 @@ describe('MembersRepository', () => {
         postgresDatabaseService,
         walletsRepo,
         createMockSpaceAuditRepository(),
-        createMockEmailEncryptionService(),
+        createMockUserEncryptionService(),
         createMockWalletEncryptionService(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
         mockConfigurationService,
         createMockSpaceAuditRepository(),
-        createMockSpaceFieldEncryptionService(),
+        createMockSpaceEncryptionService(),
         createMockMemberEncryptionService(),
       ),
       createMockSpaceAuditRepository(),
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
     );
   });
@@ -3709,8 +3709,7 @@ describe('MembersRepository', () => {
     let encryptingMembersRepository: MembersRepository;
 
     beforeEach(() => {
-      const emailEncryptionService =
-        createEncryptingMockEmailEncryptionService();
+      const userEncryptionService = createEncryptingMockUserEncryptionService();
       encryptingMembersRepository = new MembersRepository(
         postgresDatabaseService,
         new UsersRepository(
@@ -3720,18 +3719,18 @@ describe('MembersRepository', () => {
             createMockWalletEncryptionService(),
           ),
           createMockSpaceAuditRepository(),
-          emailEncryptionService,
+          userEncryptionService,
           createMockWalletEncryptionService(),
         ),
         new SpacesRepository(
           postgresDatabaseService,
           mockConfigurationService,
           createMockSpaceAuditRepository(),
-          createMockSpaceFieldEncryptionService(),
+          createMockSpaceEncryptionService(),
           createMockMemberEncryptionService(),
         ),
         createMockSpaceAuditRepository(),
-        emailEncryptionService,
+        userEncryptionService,
         createMockWalletEncryptionService(),
       );
     });

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import type { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 /**
- * A passthrough {@link SpaceFieldEncryptionService} double reproducing
+ * A passthrough {@link SpaceEncryptionService} double reproducing
  * exactly how the real service behaves when field encryption is disabled —
  * the default everywhere outside production rollout: values pass through
  * unchanged, blind indexes are null (callers store/look up plaintext), and
- * KMS is never touched. Mirrors createMockEmailEncryptionService.
+ * KMS is never touched. Mirrors createMockUserEncryptionService.
  */
-export function createMockSpaceFieldEncryptionService(): MockedObject<SpaceFieldEncryptionService> {
+export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryptionService> {
   return {
     isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
     encryptSpaceName: vi.fn((_spaceId: number, name: string) =>
@@ -54,5 +54,5 @@ export function createMockSpaceFieldEncryptionService(): MockedObject<SpaceField
         payload: Record<string, unknown>,
       ) => Promise.resolve(payload),
     ),
-  } as unknown as MockedObject<SpaceFieldEncryptionService>;
+  } as unknown as MockedObject<SpaceEncryptionService>;
 }

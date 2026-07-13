@@ -26,7 +26,7 @@ export class MemberEncryptionService {
     spaceId: number,
     members: Array<T>,
   ): Promise<Array<T>> {
-    return Promise.all(
+    return await Promise.all(
       members.map((member) =>
         Promise.all([
           this.kmsEncryption.decrypt(member.name, this.context(spaceId)),

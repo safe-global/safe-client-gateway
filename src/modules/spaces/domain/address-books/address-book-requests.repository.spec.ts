@@ -4,15 +4,15 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { AddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository';
 
 describe('AddressBookRequestsRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const requestedById = faker.number.int({ min: 1, max: 100_000 });
 
-  let spaceFieldEncryptionService: ReturnType<
-    typeof createMockSpaceFieldEncryptionService
+  let spaceEncryptionService: ReturnType<
+    typeof createMockSpaceEncryptionService
   >;
   let requestRepository: {
     find: Mock;
@@ -27,7 +27,7 @@ describe('AddressBookRequestsRepository', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    spaceFieldEncryptionService = createMockSpaceFieldEncryptionService();
+    spaceEncryptionService = createMockSpaceEncryptionService();
     requestRepository = {
       find: vi.fn().mockResolvedValue([]),
       findOne: vi.fn(),
@@ -39,7 +39,7 @@ describe('AddressBookRequestsRepository', () => {
       getRepository: vi.fn().mockResolvedValue(requestRepository),
     } as unknown as MockedObject<PostgresDatabaseService>;
 
-    target = new AddressBookRequestsRepository(db, spaceFieldEncryptionService);
+    target = new AddressBookRequestsRepository(db, spaceEncryptionService);
   });
 
   describe('create', () => {
@@ -47,7 +47,7 @@ describe('AddressBookRequestsRepository', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'Alice';
       const chainIds = ['1'];
-      spaceFieldEncryptionService.encryptAddressBookRequest.mockResolvedValue({
+      spaceEncryptionService.encryptAddressBookRequest.mockResolvedValue({
         address: 'kms:v1:a',
         name: 'kms:v1:n',
         addressIndex: 'idx',
@@ -58,7 +58,7 @@ describe('AddressBookRequestsRepository', () => {
         address: 'kms:v1:a',
         name: 'kms:v1:n',
       });
-      spaceFieldEncryptionService.decryptAddressBookRequests.mockResolvedValue([
+      spaceEncryptionService.decryptAddressBookRequests.mockResolvedValue([
         { address, name },
       ]);
 
@@ -69,7 +69,7 @@ describe('AddressBookRequestsRepository', () => {
       });
 
       expect(
-        spaceFieldEncryptionService.encryptAddressBookRequest,
+        spaceEncryptionService.encryptAddressBookRequest,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, { address, name });
       expect(requestRepository.insert).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
@@ -96,7 +96,7 @@ describe('AddressBookRequestsRepository', () => {
           name: 'Alice',
         },
       ];
-      spaceFieldEncryptionService.decryptAddressBookRequests.mockResolvedValue(
+      spaceEncryptionService.decryptAddressBookRequests.mockResolvedValue(
         decrypted,
       );
 
@@ -104,7 +104,7 @@ describe('AddressBookRequestsRepository', () => {
         decrypted,
       );
       expect(
-        spaceFieldEncryptionService.decryptAddressBookRequests,
+        spaceEncryptionService.decryptAddressBookRequests,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
     });
   });

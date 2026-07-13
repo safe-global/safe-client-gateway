@@ -23,7 +23,7 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -44,8 +44,8 @@ export class SpacesRepository implements ISpacesRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    @Inject(SpaceFieldEncryptionService)
-    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
     // Consumed for the creator member row written below; member-name policy
     // itself lives in the users module (Part B).
     @Inject(MemberEncryptionService)
@@ -97,7 +97,7 @@ export class SpacesRepository implements ISpacesRepository {
         // transaction, now that the ids exist. With encryption disabled both
         // encrypt calls return their input and the rewrites are skipped.
         const encryptedName =
-          await this.spaceFieldEncryptionService.encryptSpaceName(
+          await this.spaceEncryptionService.encryptSpaceName(
             insertResult.id,
             args.name,
           );
@@ -272,17 +272,14 @@ export class SpacesRepository implements ISpacesRepository {
         // incoming plaintext directly would regress an encrypted row.
         const currentName =
           name !== undefined
-            ? await this.spaceFieldEncryptionService.decryptSpaceName(
+            ? await this.spaceEncryptionService.decryptSpaceName(
                 args.id,
                 current.name,
               )
             : current.name;
         const encryptedName =
           name !== undefined
-            ? await this.spaceFieldEncryptionService.encryptSpaceName(
-                args.id,
-                name,
-              )
+            ? await this.spaceEncryptionService.encryptSpaceName(args.id, name)
             : undefined;
 
         await entityManager

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { IKmsService } from '@/datasources/kms/kms.service.interface';
@@ -14,9 +15,28 @@ const kmsService = {
   decrypt: vi.fn(),
 } as unknown as MockedObject<IKmsService>;
 
-const INDEX_KEY = Buffer.alloc(32, 7);
-const INDEX_KEY_2 = Buffer.alloc(32, 9);
-const WRAPPED_INDEX_KEY = Buffer.from('wrapped-index-key');
+/** Random `length`-byte buffer — KMS blobs and index keys are opaque here. */
+function randomBytes(length: number): Buffer {
+  return Buffer.from(
+    faker.string.hexadecimal({
+      length: length * 2,
+      casing: 'lower',
+      prefix: '',
+    }),
+    'hex',
+  );
+}
+
+// 32 is INDEX_KEY_LENGTH; the two keys only need to differ to prove the token
+// depends on the key.
+const INDEX_KEY = randomBytes(32);
+const INDEX_KEY_2 = randomBytes(32);
+const WRAPPED_INDEX_KEY = Buffer.from(faker.string.alphanumeric(17));
+
+const CONTEXT = {
+  owner: faker.string.numeric(),
+  field: `${faker.word.noun()}.${faker.word.noun()}`,
+};
 
 function stubGetOrThrow(enabled: boolean): void {
   configurationService.getOrThrow.mockImplementation((key: string) => {
@@ -91,9 +111,11 @@ describe('KmsEncryptionService', () => {
     });
 
     it('throws when the unwrapped index key is not 32 bytes', async () => {
+      const wrongLength = faker.number.int({ min: 1, max: 31 });
+
       await expect(
-        buildTarget({ unwrapsTo: Buffer.alloc(16, 1) }),
-      ).rejects.toThrow('must be 32 bytes, got 16');
+        buildTarget({ unwrapsTo: randomBytes(wrongLength) }),
+      ).rejects.toThrow(`must be 32 bytes, got ${wrongLength}`);
     });
 
     it('does not touch KMS when nothing is configured', async () => {
@@ -103,28 +125,27 @@ describe('KmsEncryptionService', () => {
     });
   });
 
-  const CONTEXT = { owner: '1', field: 'x.y' };
-
   describe('encrypt', () => {
     it('encrypts via KMS with the caller-supplied context as AAD', async () => {
       const target = await buildTarget();
-      kmsService.encrypt.mockResolvedValue(Buffer.from([1, 2, 3, 4]));
+      const value = faker.person.firstName();
+      const blob = randomBytes(4);
+      kmsService.encrypt.mockResolvedValue(blob);
 
-      const stored = await target.encrypt('Alice', CONTEXT);
+      const stored = await target.encrypt(value, CONTEXT);
 
-      expect(stored).toBe(
-        `kms:v1:${Buffer.from([1, 2, 3, 4]).toString('base64url')}`,
-      );
+      expect(stored).toBe(`kms:v1:${blob.toString('base64url')}`);
       expect(kmsService.encrypt).toHaveBeenCalledExactlyOnceWith({
-        plaintext: Buffer.from('Alice', 'utf8'),
+        plaintext: Buffer.from(value, 'utf8'),
         encryptionContext: CONTEXT,
       });
     });
 
     it('returns the plaintext unchanged when encryption is disabled', async () => {
       const target = await buildTarget({ enabled: false });
+      const value = faker.person.firstName();
 
-      await expect(target.encrypt('Alice', CONTEXT)).resolves.toBe('Alice');
+      await expect(target.encrypt(value, CONTEXT)).resolves.toBe(value);
       expect(kmsService.encrypt).not.toHaveBeenCalled();
     });
   });
@@ -132,15 +153,16 @@ describe('KmsEncryptionService', () => {
   describe('decrypt', () => {
     it('decrypts kms: values with the same context', async () => {
       const target = await buildTarget();
-      const blob = Buffer.from([9, 9, 9]);
-      kmsService.decrypt.mockResolvedValue(Buffer.from('Alice', 'utf8'));
+      const value = faker.person.firstName();
+      const blob = randomBytes(3);
+      kmsService.decrypt.mockResolvedValue(Buffer.from(value, 'utf8'));
 
       const plaintext = await target.decrypt(
         `kms:v1:${blob.toString('base64url')}`,
         CONTEXT,
       );
 
-      expect(plaintext).toBe('Alice');
+      expect(plaintext).toBe(value);
       expect(kmsService.decrypt).toHaveBeenCalledExactlyOnceWith({
         ciphertext: blob,
         encryptionContext: CONTEXT,
@@ -149,16 +171,17 @@ describe('KmsEncryptionService', () => {
 
     it('round-trips a value through encrypt then decrypt with the same context', async () => {
       const target = await buildTarget();
-      const blob = Buffer.from([5, 6, 7]);
+      const value = faker.person.firstName();
+      const blob = randomBytes(3);
       kmsService.encrypt.mockResolvedValue(blob);
-      kmsService.decrypt.mockResolvedValue(Buffer.from('Alice', 'utf8'));
+      kmsService.decrypt.mockResolvedValue(Buffer.from(value, 'utf8'));
 
-      const stored = await target.encrypt('Alice', CONTEXT);
+      const stored = await target.encrypt(value, CONTEXT);
       const plaintext = await target.decrypt(stored, CONTEXT);
 
-      expect(plaintext).toBe('Alice');
+      expect(plaintext).toBe(value);
       expect(kmsService.encrypt).toHaveBeenCalledExactlyOnceWith({
-        plaintext: Buffer.from('Alice', 'utf8'),
+        plaintext: Buffer.from(value, 'utf8'),
         encryptionContext: CONTEXT,
       });
       expect(kmsService.decrypt).toHaveBeenCalledExactlyOnceWith({
@@ -169,28 +192,31 @@ describe('KmsEncryptionService', () => {
 
     it('passes plaintext through unchanged when disabled (backfill window)', async () => {
       const target = await buildTarget({ enabled: false });
+      const value = faker.person.firstName();
 
-      await expect(target.decrypt('Alice', CONTEXT)).resolves.toBe('Alice');
+      await expect(target.decrypt(value, CONTEXT)).resolves.toBe(value);
       expect(kmsService.decrypt).not.toHaveBeenCalled();
     });
 
     it('passes plaintext through unchanged when enabled (backfill window)', async () => {
       const target = await buildTarget();
+      const value = faker.person.firstName();
 
-      await expect(target.decrypt('Alice', CONTEXT)).resolves.toBe('Alice');
+      await expect(target.decrypt(value, CONTEXT)).resolves.toBe(value);
       expect(kmsService.decrypt).not.toHaveBeenCalled();
     });
 
     it('decrypts kms: values even when encryption is disabled (rollback reads)', async () => {
       const target = await buildTarget({ enabled: false });
-      kmsService.decrypt.mockResolvedValue(Buffer.from('Alice', 'utf8'));
+      const value = faker.person.firstName();
+      kmsService.decrypt.mockResolvedValue(Buffer.from(value, 'utf8'));
 
       await expect(
         target.decrypt(
-          `kms:v1:${Buffer.from('x').toString('base64url')}`,
+          `kms:v1:${randomBytes(1).toString('base64url')}`,
           CONTEXT,
         ),
-      ).resolves.toBe('Alice');
+      ).resolves.toBe(value);
     });
 
     it('throws on malformed kms: ciphertext', async () => {
@@ -209,8 +235,10 @@ describe('KmsEncryptionService', () => {
 
     it('calls KMS on every decrypt (results are not cached)', async () => {
       const target = await buildTarget();
-      kmsService.decrypt.mockResolvedValue(Buffer.from('Alice', 'utf8'));
-      const stored = `kms:v1:${Buffer.from([1]).toString('base64url')}`;
+      kmsService.decrypt.mockResolvedValue(
+        Buffer.from(faker.person.firstName(), 'utf8'),
+      );
+      const stored = `kms:v1:${randomBytes(1).toString('base64url')}`;
 
       await target.decrypt(stored, CONTEXT);
       await target.decrypt(stored, CONTEXT);
@@ -222,24 +250,32 @@ describe('KmsEncryptionService', () => {
   describe('blindIndex', () => {
     it('is deterministic and normalises case/whitespace', async () => {
       const target = await buildTarget();
+      const raw = faker.string.hexadecimal({ length: 6, prefix: '0x' });
 
-      expect(target.blindIndex(' 0xAbC ')).toBe(target.blindIndex('0xabc'));
+      expect(target.blindIndex(`  ${raw.toUpperCase()}  `)).toBe(
+        target.blindIndex(raw.toLowerCase()),
+      );
     });
 
     it('differs for different inputs and does not reveal the plaintext', async () => {
       const target = await buildTarget();
+      const [value, other] = faker.helpers.uniqueArray(
+        () => faker.string.alpha(8),
+        2,
+      );
 
-      const token = target.blindIndex('alice');
-      expect(token).not.toBe(target.blindIndex('bob'));
-      expect(token).not.toContain('alice');
+      const token = target.blindIndex(value);
+      expect(token).not.toBe(target.blindIndex(other));
+      expect(token).not.toContain(value);
     });
 
     it('uses the index key (different key => different token)', async () => {
+      const value = faker.string.hexadecimal({ prefix: '0x' });
       const withKey1 = await buildTarget({ unwrapsTo: INDEX_KEY });
-      const token1 = withKey1.blindIndex('0xabc');
+      const token1 = withKey1.blindIndex(value);
       const withKey2 = await buildTarget({ unwrapsTo: INDEX_KEY_2 });
 
-      expect(withKey2.blindIndex('0xabc')).not.toBe(token1);
+      expect(withKey2.blindIndex(value)).not.toBe(token1);
     });
 
     it('returns null when no index key is configured', async () => {
@@ -248,7 +284,9 @@ describe('KmsEncryptionService', () => {
         wrappedIndexKey: undefined,
       });
 
-      expect(target.blindIndex('0xabc')).toBeNull();
+      expect(
+        target.blindIndex(faker.string.hexadecimal({ prefix: '0x' })),
+      ).toBeNull();
     });
   });
 
@@ -256,9 +294,13 @@ describe('KmsEncryptionService', () => {
     it('detects the kms: prefix', async () => {
       const target = await buildTarget();
 
-      expect(target.isEncrypted('kms:v1:abc')).toBe(true);
-      expect(target.isEncrypted('alice@example.com')).toBe(false);
-      expect(target.isEncrypted('0xabc')).toBe(false);
+      expect(target.isEncrypted(`kms:v1:${faker.string.alphanumeric()}`)).toBe(
+        true,
+      );
+      expect(target.isEncrypted(faker.internet.email())).toBe(false);
+      expect(
+        target.isEncrypted(faker.string.hexadecimal({ prefix: '0x' })),
+      ).toBe(false);
     });
   });
 });

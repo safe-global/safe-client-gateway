@@ -6,7 +6,7 @@ import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
@@ -21,8 +21,8 @@ describe('SpacesRepository', () => {
 
   let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
-  let spaceFieldEncryptionService: ReturnType<
-    typeof createMockSpaceFieldEncryptionService
+  let spaceEncryptionService: ReturnType<
+    typeof createMockSpaceEncryptionService
   >;
   let memberEncryptionService: ReturnType<
     typeof createMockMemberEncryptionService
@@ -53,7 +53,7 @@ describe('SpacesRepository', () => {
 
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
-    spaceFieldEncryptionService = createMockSpaceFieldEncryptionService();
+    spaceEncryptionService = createMockSpaceEncryptionService();
     memberEncryptionService = createMockMemberEncryptionService();
 
     queryBuilderSet = vi.fn().mockReturnThis();
@@ -86,7 +86,7 @@ describe('SpacesRepository', () => {
       postgresDatabaseService,
       configurationService,
       spaceAuditRepository,
-      spaceFieldEncryptionService,
+      spaceEncryptionService,
       memberEncryptionService,
     );
   });
@@ -108,7 +108,7 @@ describe('SpacesRepository', () => {
 
     it('rewrites the space name and creator member name to ciphertext after save, inside the transaction', async () => {
       mockSavedSpace();
-      spaceFieldEncryptionService.encryptSpaceName.mockResolvedValue(
+      spaceEncryptionService.encryptSpaceName.mockResolvedValue(
         'kms:v1:space-name',
       );
       memberEncryptionService.encryptName.mockResolvedValue(
@@ -120,7 +120,7 @@ describe('SpacesRepository', () => {
       // The caller gets the plaintext back, not the ciphertext.
       expect(result).toStrictEqual({ uuid: spaceUuid, name });
       expect(
-        spaceFieldEncryptionService.encryptSpaceName,
+        spaceEncryptionService.encryptSpaceName,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, name);
       expect(
         memberEncryptionService.encryptName,
@@ -163,10 +163,8 @@ describe('SpacesRepository', () => {
         name: 'kms:v1:old-name',
         status: 'ACTIVE',
       });
-      spaceFieldEncryptionService.decryptSpaceName.mockResolvedValue(
-        'Old name',
-      );
-      spaceFieldEncryptionService.encryptSpaceName.mockResolvedValue(
+      spaceEncryptionService.decryptSpaceName.mockResolvedValue('Old name');
+      spaceEncryptionService.encryptSpaceName.mockResolvedValue(
         'kms:v1:new-name',
       );
 
@@ -177,10 +175,10 @@ describe('SpacesRepository', () => {
       });
 
       expect(
-        spaceFieldEncryptionService.decryptSpaceName,
+        spaceEncryptionService.decryptSpaceName,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, 'kms:v1:old-name');
       expect(
-        spaceFieldEncryptionService.encryptSpaceName,
+        spaceEncryptionService.encryptSpaceName,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, 'New name');
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
         name: 'kms:v1:new-name',
@@ -206,10 +204,8 @@ describe('SpacesRepository', () => {
         name: 'kms:v1:old-name',
         status: 'ACTIVE',
       });
-      spaceFieldEncryptionService.decryptSpaceName.mockResolvedValue(
-        'Same name',
-      );
-      spaceFieldEncryptionService.encryptSpaceName.mockResolvedValue(
+      spaceEncryptionService.decryptSpaceName.mockResolvedValue('Same name');
+      spaceEncryptionService.encryptSpaceName.mockResolvedValue(
         'kms:v1:re-encrypted',
       );
 
@@ -240,12 +236,8 @@ describe('SpacesRepository', () => {
         actorUserId: userId,
       });
 
-      expect(
-        spaceFieldEncryptionService.decryptSpaceName,
-      ).not.toHaveBeenCalled();
-      expect(
-        spaceFieldEncryptionService.encryptSpaceName,
-      ).not.toHaveBeenCalled();
+      expect(spaceEncryptionService.decryptSpaceName).not.toHaveBeenCalled();
+      expect(spaceEncryptionService.encryptSpaceName).not.toHaveBeenCalled();
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
         status: 'ACTIVE',
       });
@@ -282,9 +274,7 @@ describe('SpacesRepository', () => {
           payload: { name: 'kms:v1:stored-name' },
         }),
       );
-      expect(
-        spaceFieldEncryptionService.decryptSpaceName,
-      ).not.toHaveBeenCalled();
+      expect(spaceEncryptionService.decryptSpaceName).not.toHaveBeenCalled();
       expect(entityManager.delete).toHaveBeenCalledWith(Space, spaceId);
     });
   });

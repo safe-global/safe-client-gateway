@@ -6,7 +6,7 @@ import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceAuditLogBuilder } from '@/modules/spaces/datasources/audit/entities/__tests__/space-audit-log.entity.db.builder';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import {
   FORMER_MEMBER_LABEL,
@@ -31,8 +31,8 @@ const identityResolver = {
 
 describe('SpaceAuditService', () => {
   let service: SpaceAuditService;
-  let spaceFieldEncryptionService: ReturnType<
-    typeof createMockSpaceFieldEncryptionService
+  let spaceEncryptionService: ReturnType<
+    typeof createMockSpaceEncryptionService
   >;
 
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
@@ -66,12 +66,12 @@ describe('SpaceAuditService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     // Recreated after the reset so the passthrough implementation survives.
-    spaceFieldEncryptionService = createMockSpaceFieldEncryptionService();
+    spaceEncryptionService = createMockSpaceEncryptionService();
     service = new SpaceAuditService(
       spaceAuditRepository,
       membersRepository,
       identityResolver,
-      spaceFieldEncryptionService,
+      spaceEncryptionService,
     );
     identityResolver.resolveMany.mockResolvedValue(new Map());
     membersRepository.find.mockResolvedValue([]);
@@ -112,7 +112,7 @@ describe('SpaceAuditService', () => {
         .with('payload', { address: 'kms:v1:blob', name: 'kms:v1:name' })
         .build();
       spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
-      spaceFieldEncryptionService.decryptAuditPayload.mockResolvedValue({
+      spaceEncryptionService.decryptAuditPayload.mockResolvedValue({
         address: '0xPlaintext',
         name: 'Alice',
       });
@@ -126,7 +126,7 @@ describe('SpaceAuditService', () => {
       });
 
       expect(
-        spaceFieldEncryptionService.decryptAuditPayload,
+        spaceEncryptionService.decryptAuditPayload,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, 'ADDRESS_BOOK_DELETED', {
         address: 'kms:v1:blob',
         name: 'kms:v1:name',

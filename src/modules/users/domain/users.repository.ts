@@ -17,10 +17,10 @@ import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/spac
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
@@ -35,7 +35,7 @@ export class UsersRepository implements IUsersRepository {
     private readonly walletsRepository: IWalletsRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    private readonly emailEncryptionService: EmailEncryptionService,
+    private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
@@ -47,7 +47,7 @@ export class UsersRepository implements IUsersRepository {
   private async decryptUserEmails(
     users: Array<DbUser>,
   ): Promise<Array<DbUser>> {
-    return await this.emailEncryptionService.decryptUserEmails(users);
+    return await this.userEncryptionService.decryptUserEmails(users);
   }
 
   public async findOneOrFail(
@@ -112,7 +112,7 @@ export class UsersRepository implements IUsersRepository {
     // insert (the email value is set once the id is known, below); otherwise
     // the plaintext email is stored directly.
     const emailIndex = email
-      ? this.emailEncryptionService.blindIndex(email)
+      ? this.userEncryptionService.blindIndex(email)
       : null;
     let emailColumns: { emailIndex?: string; email?: EmailAddress } = {};
     if (emailIndex) {
@@ -130,7 +130,7 @@ export class UsersRepository implements IUsersRepository {
 
     if (email && emailIndex) {
       await entityManager.update(DbUser, userId, {
-        email: (await this.emailEncryptionService.encrypt(
+        email: (await this.userEncryptionService.encrypt(
           userId,
           email,
         )) as EmailAddress,
@@ -369,7 +369,7 @@ export class UsersRepository implements IUsersRepository {
     const upsertThenSelect = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
-      const emailIndex = this.emailEncryptionService.blindIndex(email);
+      const emailIndex = this.userEncryptionService.blindIndex(email);
 
       await manager
         .createQueryBuilder()
@@ -393,7 +393,7 @@ export class UsersRepository implements IUsersRepository {
       // set the encrypted email now that the id is known.
       if (emailIndex && !user.email) {
         await manager.update(DbUser, user.id, {
-          email: (await this.emailEncryptionService.encrypt(
+          email: (await this.userEncryptionService.encrypt(
             user.id,
             email,
           )) as EmailAddress,
@@ -486,7 +486,7 @@ export class UsersRepository implements IUsersRepository {
   ): Promise<User['id'] | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const emailIndex = this.emailEncryptionService.blindIndex(email);
+    const emailIndex = this.userEncryptionService.blindIndex(email);
     const candidate = await userRepository.findOne({
       where: emailIndex ? { emailIndex } : { email },
       select: { id: true, status: true, extUserId: true },
@@ -560,7 +560,7 @@ export class UsersRepository implements IUsersRepository {
     email: EmailAddress,
   ): Promise<void> {
     // Stored email is KMS ciphertext bound to this user; compare plaintext.
-    const storedEmail = await this.emailEncryptionService.decrypt(
+    const storedEmail = await this.userEncryptionService.decrypt(
       userId,
       storedValue,
     );
@@ -579,9 +579,9 @@ export class UsersRepository implements IUsersRepository {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
-    const emailIndex = this.emailEncryptionService.blindIndex(email);
+    const emailIndex = this.userEncryptionService.blindIndex(email);
     const emailValue = emailIndex
-      ? await this.emailEncryptionService.encrypt(userId, email)
+      ? await this.userEncryptionService.encrypt(userId, email)
       : email;
 
     try {

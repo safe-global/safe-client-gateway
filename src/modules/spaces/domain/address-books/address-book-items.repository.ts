@@ -14,7 +14,7 @@ import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 import { MemberRole } from '@/modules/users/domain/entities/member.entity';
@@ -31,8 +31,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    @Inject(SpaceFieldEncryptionService)
-    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {
     this.maxItems = this.configurationService.getOrThrow<number>(
       'spaces.addressBooks.maxItems',
@@ -49,8 +49,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     });
     const repository = await this.db.getRepository(DbAddressBookItem);
     const items = await repository.findBy({ space: { id: space.id } });
-    // Repository boundary: callers receive plaintext address + name.
-    return await this.spaceFieldEncryptionService.decryptAddressBookItems(
+    return await this.spaceEncryptionService.decryptAddressBookItems(
       space.id,
       items,
     );
@@ -115,7 +114,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         space: { id: space.id },
       });
       // Repository boundary: callers receive plaintext.
-      return await this.spaceFieldEncryptionService.decryptAddressBookItems(
+      return await this.spaceEncryptionService.decryptAddressBookItems(
         space.id,
         rows,
       );
@@ -142,7 +141,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       // blind index, not-yet-backfilled rows hold plaintext with a NULL index.
       // @todo Remove the plaintext arm together with restoring the
       // throw-on-plaintext guard once the backfill --verify passes.
-      const addressIndex = this.spaceFieldEncryptionService.itemAddressIndex(
+      const addressIndex = this.spaceEncryptionService.itemAddressIndex(
         args.address,
       );
       const plaintextArm: FindOptionsWhere<DbAddressBookItem> = {
@@ -212,9 +211,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     // index, not-yet-backfilled rows hold plaintext with a NULL index.
     // @todo Remove the plaintext arm once the backfill --verify passes.
     const indexes = args.addressBookItems
-      .map((item) =>
-        this.spaceFieldEncryptionService.itemAddressIndex(item.address),
-      )
+      .map((item) => this.spaceEncryptionService.itemAddressIndex(item.address))
       .filter((index): index is string => index !== null);
     const plaintextAddresses = args.addressBookItems.map(
       (item) => item.address,
@@ -241,7 +238,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         item.addressIndex != null
           ? args.addressBookItems.find(
               (addressBookItem) =>
-                this.spaceFieldEncryptionService.itemAddressIndex(
+                this.spaceEncryptionService.itemAddressIndex(
                   addressBookItem.address,
                 ) === item.addressIndex,
             )
@@ -254,7 +251,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       // Encrypt-on-write: rewrite the (unchanged) address and the new name,
       // opportunistically backfilling not-yet-encrypted rows.
       const encrypted =
-        await this.spaceFieldEncryptionService.encryptAddressBookItem(
+        await this.spaceEncryptionService.encryptAddressBookItem(
           args.space.id,
           { address: patch.address, name: patch.name },
         );
@@ -293,7 +290,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     // front — no two-phase dance.
     const encrypted = await Promise.all(
       args.addressBookItems.map((addressBookItem) =>
-        this.spaceFieldEncryptionService.encryptAddressBookItem(args.space.id, {
+        this.spaceEncryptionService.encryptAddressBookItem(args.space.id, {
           address: addressBookItem.address,
           name: addressBookItem.name,
         }),

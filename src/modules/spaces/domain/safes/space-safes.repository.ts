@@ -16,7 +16,7 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
   private readonly maxSafesPerSpace: number;
@@ -28,8 +28,8 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    @Inject(SpaceFieldEncryptionService)
-    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {
     this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
       'spaces.maxSafesPerSpace',
@@ -80,11 +80,11 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       args.payload.map(async (safe) => ({
         space: { id: args.spaceId },
         chainId: safe.chainId,
-        address: (await this.spaceFieldEncryptionService.encryptSafeAddress(
+        address: (await this.spaceEncryptionService.encryptSafeAddress(
           args.spaceId,
           safe.address,
         )) as SpaceSafe['address'],
-        addressIndex: this.spaceFieldEncryptionService.safeAddressIndex(
+        addressIndex: this.spaceEncryptionService.safeAddressIndex(
           safe.address,
         ),
       })),
@@ -138,7 +138,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       where: { space: { id: spaceId } },
     });
     // Repository boundary: callers receive plaintext addresses.
-    return await this.spaceFieldEncryptionService.decryptSpaceSafes(
+    return await this.spaceEncryptionService.decryptSpaceSafes(
       spaceId,
       spaceSafes,
     );
@@ -182,7 +182,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       spaceSafes.map(async (spaceSafe) => {
         if (
           typeof spaceSafe.address !== 'string' ||
-          !this.spaceFieldEncryptionService.isEncrypted(spaceSafe.address)
+          !this.spaceEncryptionService.isEncrypted(spaceSafe.address)
         ) {
           return spaceSafe;
         }
@@ -191,11 +191,10 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
             'Cannot decrypt a SpaceSafe address without its space relation loaded',
           );
         }
-        const [decrypted] =
-          await this.spaceFieldEncryptionService.decryptSpaceSafes(
-            spaceSafe.space.id,
-            [spaceSafe],
-          );
+        const [decrypted] = await this.spaceEncryptionService.decryptSpaceSafes(
+          spaceSafe.space.id,
+          [spaceSafe],
+        );
         return decrypted;
       }),
     );
@@ -217,7 +216,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     // throw-on-plaintext guard once the backfill --verify passes.
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
       args.payload.flatMap((safe) => {
-        const addressIndex = this.spaceFieldEncryptionService.safeAddressIndex(
+        const addressIndex = this.spaceEncryptionService.safeAddressIndex(
           safe.address,
         );
         const plaintextArm: FindOptionsWhere<SpaceSafe> = {

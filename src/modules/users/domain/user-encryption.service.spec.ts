@@ -2,15 +2,15 @@
 import type { MockedObject } from 'vitest';
 import { createMockKmsEncryptionService } from '@/datasources/kms/__tests__/kms-encryption.service.mock';
 import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 
-describe('EmailEncryptionService', () => {
+describe('UserEncryptionService', () => {
   let fieldCrypto: MockedObject<KmsEncryptionService>;
-  let target: EmailEncryptionService;
+  let target: UserEncryptionService;
 
   beforeEach(() => {
     fieldCrypto = createMockKmsEncryptionService();
-    target = new EmailEncryptionService(fieldCrypto);
+    target = new UserEncryptionService(fieldCrypto);
   });
 
   it('isEncrypted delegates to KmsEncryptionService', () => {

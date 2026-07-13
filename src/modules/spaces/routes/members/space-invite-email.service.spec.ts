@@ -6,7 +6,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
-import { createMockSpaceFieldEncryptionService } from '@/modules/spaces/domain/__tests__/space-field-encryption.service.mock';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
@@ -38,8 +38,8 @@ const sesEmailQueueServiceMock = {
 describe('SpaceInviteEmailService', () => {
   let service: SpaceInviteEmailService;
   let workspaceName: string;
-  let spaceFieldEncryptionServiceMock: ReturnType<
-    typeof createMockSpaceFieldEncryptionService
+  let spaceEncryptionServiceMock: ReturnType<
+    typeof createMockSpaceEncryptionService
   >;
 
   const buildService = (
@@ -49,14 +49,14 @@ describe('SpaceInviteEmailService', () => {
       configurationServiceMock,
       spacesRepositoryMock,
       loggingServiceMock,
-      spaceFieldEncryptionServiceMock,
+      spaceEncryptionServiceMock,
       queue,
     );
 
   beforeEach(() => {
     vi.resetAllMocks();
     // Recreated after the reset so the passthrough implementation survives.
-    spaceFieldEncryptionServiceMock = createMockSpaceFieldEncryptionService();
+    spaceEncryptionServiceMock = createMockSpaceEncryptionService();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeWebApp.baseUri') {
         return BASE_URI;
@@ -100,7 +100,7 @@ describe('SpaceInviteEmailService', () => {
     spacesRepositoryMock.findOneOrFail.mockResolvedValue(
       spaceBuilder().with('name', 'kms:v1:workspace-name').build(),
     );
-    spaceFieldEncryptionServiceMock.decryptSpaceName.mockResolvedValue(
+    spaceEncryptionServiceMock.decryptSpaceName.mockResolvedValue(
       'Decrypted workspace',
     );
     sesEmailQueueServiceMock.enqueue.mockResolvedValue(undefined);
@@ -108,7 +108,7 @@ describe('SpaceInviteEmailService', () => {
     await service.enqueueInviteEmails({ users: [invite], spaceId });
 
     expect(
-      spaceFieldEncryptionServiceMock.decryptSpaceName,
+      spaceEncryptionServiceMock.decryptSpaceName,
     ).toHaveBeenCalledExactlyOnceWith(spaceId, 'kms:v1:workspace-name');
     expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({

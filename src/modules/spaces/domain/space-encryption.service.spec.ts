@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 const fieldCryptoService = {
   isEncrypted: vi.fn(),
@@ -13,8 +13,8 @@ const fieldCryptoService = {
   blindIndex: vi.fn(),
 } as unknown as MockedObject<KmsEncryptionService>;
 
-describe('SpaceFieldEncryptionService', () => {
-  let target: SpaceFieldEncryptionService;
+describe('SpaceEncryptionService', () => {
+  let target: SpaceEncryptionService;
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
 
   beforeEach(() => {
@@ -30,7 +30,7 @@ describe('SpaceFieldEncryptionService', () => {
     fieldCryptoService.isEncrypted.mockImplementation((value: string) =>
       value.startsWith('kms:'),
     );
-    target = new SpaceFieldEncryptionService(fieldCryptoService);
+    target = new SpaceEncryptionService(fieldCryptoService);
   });
 
   describe('isEncrypted', () => {

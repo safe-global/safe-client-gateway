@@ -9,7 +9,7 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type {
   SpaceAuditLogActorDto,
   SpaceAuditLogEntryDto,
@@ -46,8 +46,8 @@ export class SpaceAuditService {
     private readonly membersRepository: IMembersRepository,
     @Inject(UserIdentityResolverService)
     private readonly identityResolver: UserIdentityResolverService,
-    @Inject(SpaceFieldEncryptionService)
-    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {}
 
   public async getAuditLog(args: {
@@ -180,7 +180,7 @@ export class SpaceAuditService {
     const targetUserId = getTargetUserId(row.payload);
     // Audit payloads carry the source row's ciphertext (contract pattern 5);
     // decrypt under the space-scoped context before returning to the client.
-    const payload = await this.spaceFieldEncryptionService.decryptAuditPayload(
+    const payload = await this.spaceEncryptionService.decryptAuditPayload(
       spaceId,
       row.eventType,
       allowlistPayload(row),

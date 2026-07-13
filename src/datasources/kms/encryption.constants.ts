@@ -1,13 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-/*
- * On-disk contract — immutable once ciphertext or indexes exist:
- * - the `kms:v1:` prefix,
- * - the blind-index HMAC construction (domain label, `\0` separators, caller
- *   label segment, trim+lowercase normalisation, base64url).
- * Changing any of these makes stored values undecryptable or unmatchable.
- */
-
 /** Prefix marking a stored value as KMS ciphertext (`kms:v1:<base64url>`). */
 export const ENCRYPTION_PREFIX = 'kms';
 

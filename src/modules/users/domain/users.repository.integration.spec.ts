@@ -29,10 +29,10 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
+import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
@@ -120,7 +120,7 @@ describe('UsersRepository', () => {
         createMockWalletEncryptionService(),
       ),
       createMockSpaceAuditRepository(),
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
     );
   });
@@ -1307,7 +1307,7 @@ describe('UsersRepository', () => {
 
   describe('email encryption (real KMS)', () => {
     // Unlike the hand-rolled fake double used elsewhere, this wires the real
-    // EmailEncryptionService to a real AwsKmsService with only the AWS SDK
+    // UserEncryptionService to a real AwsKmsService with only the AWS SDK
     // boundary mocked (same pattern as aws-kms.service.spec.ts). It proves
     // the actual kms:v1:... on-disk contract round-trips through a live
     // repository call, and that a plaintext row (not yet reached by the
@@ -1363,7 +1363,7 @@ describe('UsersRepository', () => {
         new AwsKmsService(encryptingConfigurationService),
       );
       await fieldCrypto.onModuleInit();
-      const emailEncryptionService = new EmailEncryptionService(fieldCrypto);
+      const userEncryptionService = new UserEncryptionService(fieldCrypto);
 
       return new UsersRepository(
         postgresDatabaseService,
@@ -1372,7 +1372,7 @@ describe('UsersRepository', () => {
           createMockWalletEncryptionService(),
         ),
         createMockSpaceAuditRepository(),
-        emailEncryptionService,
+        userEncryptionService,
         createMockWalletEncryptionService(),
       );
     }

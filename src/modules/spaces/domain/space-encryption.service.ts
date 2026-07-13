@@ -13,7 +13,7 @@ import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/spac
  * during the backfill window) live in {@link KmsEncryptionService}.
  */
 @Injectable()
-export class SpaceFieldEncryptionService {
+export class SpaceEncryptionService {
   constructor(
     @Inject(KmsEncryptionService)
     private readonly kmsEncryption: KmsEncryptionService,

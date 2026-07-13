@@ -26,7 +26,7 @@ export class WalletEncryptionService {
     userId: number,
     wallets: Array<T>,
   ): Promise<Array<T>> {
-    return Promise.all(
+    return await Promise.all(
       wallets.map((wallet) =>
         wallet.address
           ? this.decryptAddress(userId, wallet.address).then((address) => ({

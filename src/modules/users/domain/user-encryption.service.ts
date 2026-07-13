@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 
 @Injectable()
-export class EmailEncryptionService {
+export class UserEncryptionService {
   constructor(private readonly kmsEncryption: KmsEncryptionService) {}
 
   isEncrypted(value: string): boolean {
@@ -25,7 +25,7 @@ export class EmailEncryptionService {
   async decryptUserEmails<T extends { id: number; email: string | null }>(
     users: Array<T>,
   ): Promise<Array<T>> {
-    return Promise.all(
+    return await Promise.all(
       users.map((user) =>
         user.email
           ? this.decrypt(user.id, user.email).then((email) => ({

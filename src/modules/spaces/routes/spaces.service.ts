@@ -5,7 +5,7 @@ import { In } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
@@ -33,8 +33,8 @@ export class SpacesService {
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
     private readonly walletEncryptionService: WalletEncryptionService,
-    @Inject(SpaceFieldEncryptionService)
-    private readonly spaceFieldEncryptionService: SpaceFieldEncryptionService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
     @Inject(MemberEncryptionService)
     private readonly memberEncryptionService: MemberEncryptionService,
   ) {}
@@ -113,7 +113,7 @@ export class SpacesService {
     // boundary): decrypt the space names and the member display names before
     // they are mapped into the response.
     const decryptedSpaces =
-      await this.spaceFieldEncryptionService.decryptSpaces(spaces);
+      await this.spaceEncryptionService.decryptSpaces(spaces);
 
     return await Promise.all(
       decryptedSpaces.map(async (space) => {
