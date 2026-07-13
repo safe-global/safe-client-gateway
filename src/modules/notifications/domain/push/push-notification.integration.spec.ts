@@ -157,7 +157,7 @@ describe('Push notification queue integration', () => {
 
   afterAll(async () => {
     await queue.close();
-    await app.close();
+    await app?.close();
   });
 
   describe('non-notifiable events', () => {

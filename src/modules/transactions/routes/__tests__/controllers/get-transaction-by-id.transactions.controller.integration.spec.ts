@@ -97,7 +97,7 @@ describe('Get by id - Transactions Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();

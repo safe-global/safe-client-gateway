@@ -25,6 +25,7 @@ import {
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -134,12 +135,14 @@ describe('SpaceAuditRepository', () => {
       postgresDatabaseService,
       walletsRepository,
       spaceAuditRepository,
+      createMockEmailEncryptionService(),
     );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
       spaceAuditRepository,
+      createMockEmailEncryptionService(),
     );
   });
 

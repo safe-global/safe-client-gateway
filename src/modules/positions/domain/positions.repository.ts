@@ -27,13 +27,6 @@ export class PositionsRepository implements IPositionsRepository {
     return PositionsSchema.parse(positions);
   }
 
-  async clearPositions(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
-    await this.positionsApi.clearPositions(args);
-  }
-
   getFiatCodes(): Promise<Array<string>> {
     return this.positionsApi.getFiatCodes().then(z.array(z.string()).parse);
   }

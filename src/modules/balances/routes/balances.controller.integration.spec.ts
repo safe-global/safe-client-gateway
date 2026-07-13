@@ -46,7 +46,7 @@ describe('Balances Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET /balances', () => {

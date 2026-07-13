@@ -45,7 +45,7 @@ describe('TargetedMessagingController', () => {
 
   afterEach(async () => {
     vi.resetAllMocks();
-    await app.close();
+    await app?.close();
   });
 
   describe('GET targeted Safe', () => {

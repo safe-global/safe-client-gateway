@@ -11,6 +11,7 @@ import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -82,7 +83,103 @@ describe('Hook Events for Cache', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
+  });
+
+  it.each([
+    {
+      type: 'INCOMING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
+    },
+    {
+      type: 'OUTGOING_TOKEN',
+      tokenAddress: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      trusted: true,
+    },
+    {
+      type: 'INCOMING_ETHER',
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
+    },
+    {
+      type: 'OUTGOING_ETHER',
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      value: faker.string.numeric(),
+    },
+    {
+      type: 'MODULE_TRANSACTION',
+      module: faker.finance.ethereumAddress(),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'EXECUTED_MULTISIG_TRANSACTION',
+      to: faker.finance.ethereumAddress(),
+      safeTxHash: faker.string.hexadecimal({ length: 32 }),
+      txHash: faker.string.hexadecimal({ length: 32 }),
+      failed: faker.helpers.arrayElement(['true', 'false']),
+      data: faker.string.hexadecimal({ length: 32 }),
+    },
+    {
+      type: 'SAFE_CREATED',
+      blockNumber: faker.number.int(),
+    },
+  ])('$type clears the Zerion portfolio caches', async (payload) => {
+    const chainId = faker.string.numeric();
+    const chain = chainBuilder().with('chainId', chainId).build();
+    const safe = safeBuilder().build();
+    const safeAddress = getAddress(safe.address);
+    const walletPortfolioCacheDir =
+      CacheRouter.getZerionWalletPortfolioCacheDir({
+        address: safeAddress,
+        fiatCode: 'usd',
+        isTestnet: false,
+      });
+    const portfolioCacheDir = CacheRouter.getPortfolioCacheDir({
+      address: safeAddress,
+      fiatCode: 'usd',
+    });
+    const positionsCacheDir = CacheRouter.getZerionPositionsCacheDir({
+      safeAddress,
+      fiatCode: 'usd',
+    });
+    for (const cacheDir of [
+      walletPortfolioCacheDir,
+      portfolioCacheDir,
+      positionsCacheDir,
+    ]) {
+      await fakeCacheService.hSet(
+        cacheDir,
+        faker.string.alpha(),
+        faker.number.int({ min: 1 }),
+      );
+    }
+    const data = {
+      address: safeAddress,
+      chainId: chainId,
+      ...payload,
+    };
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+          return Promise.resolve({ data: rawify(safe), status: 200 });
+        default:
+          return Promise.reject(new Error(`Could not match ${url}`));
+      }
+    });
+
+    const cb = getSubscriptionCallback(queuesApiService);
+    await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
+
+    await expect(
+      fakeCacheService.hGet(walletPortfolioCacheDir),
+    ).resolves.toBeNull();
+    await expect(fakeCacheService.hGet(portfolioCacheDir)).resolves.toBeNull();
+    await expect(fakeCacheService.hGet(positionsCacheDir)).resolves.toBeNull();
   });
 
   it.each([

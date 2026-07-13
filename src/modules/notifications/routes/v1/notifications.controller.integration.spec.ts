@@ -63,7 +63,7 @@ describe('Notifications Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   const buildInputDto = async (

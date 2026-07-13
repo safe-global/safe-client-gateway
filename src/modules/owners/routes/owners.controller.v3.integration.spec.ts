@@ -49,7 +49,7 @@ describe('Owners Controller V3 (Unit)', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET all safes by owner address', () => {

@@ -38,7 +38,7 @@ describe('Safes Controller Nonces', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('returns latest transaction nonce + 1 if greater than safe nonce', async () => {

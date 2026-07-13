@@ -14,6 +14,7 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { StakingModule } from '@/modules/staking/staking.module';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';
+import { ZerionModule } from '@/modules/zerion/zerion.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { TransactionsModule } from '@/modules/transactions/transactions.module';
     SafeRepositoryModule,
     StakingModule,
     TransactionsModule,
+    ZerionModule,
   ],
   providers: [EventCacheHelper, SafeDecoder, MultiSendDecoder],
   exports: [EventCacheHelper],

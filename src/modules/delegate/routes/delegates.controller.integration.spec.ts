@@ -45,7 +45,7 @@ describe('Delegates controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET delegates for a Safe', () => {

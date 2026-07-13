@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import {
   BridgeNameSchema,
   BridgeNames,
+  isBridgeName,
 } from '@/modules/bridge/domain/entities/bridge-name.entity';
 
 describe('BridgeStatusSchema', () => {
@@ -15,7 +16,12 @@ describe('BridgeStatusSchema', () => {
   });
 
   it('should not allow an unknown bridge name', () => {
-    const name = faker.word.noun();
+    // faker.word.noun() can itself be a bridge name (e.g. "omni", "polygon"),
+    // so resample until the word is genuinely not one.
+    let name = faker.word.noun();
+    while (isBridgeName(name)) {
+      name = faker.word.noun();
+    }
 
     const result = BridgeNameSchema.safeParse(name);
 

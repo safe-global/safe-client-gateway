@@ -93,7 +93,7 @@ describe('ZodErrorFilter tests', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('ZodErrorWithCode exception returns first issue', async () => {

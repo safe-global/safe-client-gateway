@@ -72,7 +72,7 @@ describe('OptionalAuthGuard', () => {
 
   afterEach(async () => {
     vi.useRealTimers();
-    await app.close();
+    await app?.close();
   });
 
   it('should allow access if there is no token', async () => {
