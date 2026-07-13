@@ -231,29 +231,18 @@ export class UsersRepository implements IUsersRepository {
       args.authPayload.signer_address,
     );
 
-    // Dual-read ownership check during the backfill window: encrypted rows
-    // match on the blind index, rows the backfill has not reached yet
-    // (address_index IS NULL) still match on plaintext. The plaintext arm is
-    // removed together with restoring the throw-on-plaintext guard once the
-    // backfill --verify passes.
+    // Match encrypted rows on the blind index; with encryption disabled
+    // (no index key configured) the address is stored and matched as plaintext.
     const addressIndex = this.walletEncryptionService.addressIndex(
       args.walletAddress,
     );
     await this.walletsRepository.findOneOrFail(
       addressIndex
-        ? [
-            { addressIndex, user: { id: user.id } },
-            {
-              addressIndex: IsNull(),
-              address: args.walletAddress,
-              user: { id: user.id },
-            },
-          ]
+        ? { addressIndex, user: { id: user.id } }
         : { address: args.walletAddress, user: { id: user.id } },
     );
 
-    // Delete by the caller's plaintext: deleteByAddress dual-reads
-    // internally, whereas the stored row value may be ciphertext.
+    // deleteByAddress resolves the same blind index (or plaintext) internally.
     await this.walletsRepository.deleteByAddress(args.walletAddress);
   }
 
@@ -289,17 +278,11 @@ export class UsersRepository implements IUsersRepository {
     const findOrCreate = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
-      // Dual-read during the backfill window: encrypted rows match on the
-      // blind index, rows the backfill has not reached yet
-      // (address_index IS NULL) still match on plaintext. Without the
-      // plaintext arm an existing un-backfilled wallet would be treated as
-      // new and its user logged into a fresh empty account. The plaintext
-      // arm is removed together with restoring the throw-on-plaintext guard
-      // once the backfill --verify passes.
+      // Match encrypted rows on the blind index; with encryption disabled
+      // (no index key configured) the address is stored and matched as
+      // plaintext.
       const addressIndex = this.walletEncryptionService.addressIndex(address);
-      const where = addressIndex
-        ? [{ addressIndex }, { addressIndex: IsNull(), address }]
-        : { address };
+      const where = addressIndex ? { addressIndex } : { address };
       const existing = await manager.findOne(Wallet, {
         where,
         relations: { user: true },

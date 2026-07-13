@@ -39,7 +39,6 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { MemberEncryptionModule } from '@/modules/users/domain/members/member-encryption.module';
 import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
-import { WalletEncryptionModule } from '@/modules/wallets/domain/wallet-encryption.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 const isSesEmailFeatureEnabled = configuration().features.sesEmail;
@@ -62,7 +61,6 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     MemberEncryptionModule,
     UserIdentityResolverModule,
     WalletsModule,
-    WalletEncryptionModule,
   ],
   controllers: [
     AddressBooksController,

@@ -108,8 +108,6 @@ export class SpaceInviteEmailService {
         where: { id: spaceId },
         select: { name: true },
       });
-      // Egress path: the stored name may be KMS ciphertext — decrypt before
-      // it is rendered into an inbox-bound email body.
       const workspaceName = await this.spaceEncryptionService.decryptSpaceName(
         spaceId,
         space.name,

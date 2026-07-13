@@ -153,6 +153,7 @@ describe('SpaceAuditRepository', () => {
       spaceAuditRepository,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
+      createMockMemberEncryptionService(),
     );
   });
 

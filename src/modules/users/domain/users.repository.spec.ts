@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
-import { IsNull, QueryFailedError } from 'typeorm';
+import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -194,7 +194,7 @@ describe('UsersRepository', () => {
 
       expect(entityManager.delete).toHaveBeenCalledWith(DbUser, createdUserId);
     });
-    it('should dual-read the wallet lookup and insert ciphertext with its blind index when an index key is configured', async () => {
+    it('should look up by the blind index and insert ciphertext with its blind index when an index key is configured', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const createdUserId = faker.number.int({ min: 1 });
       const entityManager = mockEntityManager({ createdUserId });
@@ -212,10 +212,7 @@ describe('UsersRepository', () => {
       ).resolves.toBe(createdUserId);
 
       expect(entityManager.findOne).toHaveBeenCalledWith(Wallet, {
-        where: [
-          { addressIndex: 'address-token' },
-          { addressIndex: IsNull(), address },
-        ],
+        where: { addressIndex: 'address-token' },
         relations: { user: true },
       });
       expect(walletEncryptionService.encryptAddress).toHaveBeenCalledWith(
@@ -233,7 +230,7 @@ describe('UsersRepository', () => {
   });
 
   describe('deleteWalletFromUser', () => {
-    it('should dual-read the ownership lookup and delete by the caller plaintext address', async () => {
+    it('should look up ownership by the blind index and delete by the caller plaintext address', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const userId = faker.number.int({ min: 1 });
@@ -248,16 +245,12 @@ describe('UsersRepository', () => {
 
       await target.deleteWalletFromUser({ walletAddress, authPayload });
 
-      expect(walletsRepository.findOneOrFail).toHaveBeenCalledWith([
-        { addressIndex: 'address-token', user: { id: userId } },
-        {
-          addressIndex: IsNull(),
-          address: walletAddress,
-          user: { id: userId },
-        },
-      ]);
-      // deleteByAddress dual-reads internally from the plaintext; the stored
-      // row value (possibly ciphertext) must NOT be passed back in.
+      expect(walletsRepository.findOneOrFail).toHaveBeenCalledWith({
+        addressIndex: 'address-token',
+        user: { id: userId },
+      });
+      // deleteByAddress resolves the blind index internally from the plaintext;
+      // the stored row value (possibly ciphertext) must NOT be passed back in.
       expect(walletsRepository.deleteByAddress).toHaveBeenCalledWith(
         walletAddress,
       );

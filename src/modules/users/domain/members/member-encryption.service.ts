@@ -35,8 +35,8 @@ export class MemberEncryptionService {
             : Promise.resolve(null),
         ]).then(([name, alias]) => ({
           ...member,
-          name: name as T['name'],
-          alias: alias as T['alias'],
+          name,
+          alias,
         })),
       ),
     );

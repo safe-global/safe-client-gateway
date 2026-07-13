@@ -54,5 +54,5 @@ export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryption
         payload: Record<string, unknown>,
       ) => Promise.resolve(payload),
     ),
-  } as unknown as MockedObject<SpaceEncryptionService>;
+  } as MockedObject<SpaceEncryptionService>;
 }

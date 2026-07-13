@@ -160,6 +160,7 @@ describe('MembersRepository', () => {
       createMockSpaceAuditRepository(),
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
+      createMockMemberEncryptionService(),
     );
   });
 
@@ -3732,6 +3733,7 @@ describe('MembersRepository', () => {
         createMockSpaceAuditRepository(),
         userEncryptionService,
         createMockWalletEncryptionService(),
+        createMockMemberEncryptionService(),
       );
     });
 

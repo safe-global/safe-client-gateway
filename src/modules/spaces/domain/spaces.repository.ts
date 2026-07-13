@@ -46,8 +46,6 @@ export class SpacesRepository implements ISpacesRepository {
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
-    // Consumed for the creator member row written below; member-name policy
-    // itself lives in the users module (Part B).
     @Inject(MemberEncryptionService)
     private readonly memberEncryptionService: MemberEncryptionService,
   ) {
@@ -90,12 +88,6 @@ export class SpacesRepository implements ISpacesRepository {
       async (entityManager) => {
         const insertResult = await entityManager.save(space);
 
-        // Two-phase create (unique to spaces): `spaces.id` is DB-generated,
-        // so the space-scoped encryption context is unknowable before insert.
-        // Save plaintext, then rewrite the space name and the
-        // cascade-inserted creator member name to ciphertext inside the same
-        // transaction, now that the ids exist. With encryption disabled both
-        // encrypt calls return their input and the rewrites are skipped.
         const encryptedName =
           await this.spaceEncryptionService.encryptSpaceName(
             insertResult.id,
@@ -122,9 +114,6 @@ export class SpacesRepository implements ISpacesRepository {
           spaceUuid: insertResult.uuid,
           eventType: SpaceAuditEventType.SPACE_CREATED,
           actorUserId: args.userId,
-          // The payload reuses the ciphertext written to the source row
-          // (plaintext while encryption is disabled); the audit reader
-          // decrypts it under the same space-scoped context.
           payload: { name: encryptedName },
         });
 
@@ -267,9 +256,6 @@ export class SpacesRepository implements ISpacesRepository {
         }
 
         const { name } = args.updatePayload;
-        // The stored name may be ciphertext: decrypt it for the plaintext
-        // diff, and always re-encrypt what gets written — writing the
-        // incoming plaintext directly would regress an encrypted row.
         const currentName =
           name !== undefined
             ? await this.spaceEncryptionService.decryptSpaceName(
@@ -331,10 +317,6 @@ export class SpacesRepository implements ISpacesRepository {
       name !== args.currentName &&
       args.writtenName !== undefined
     ) {
-      // Audit payloads reuse stored ciphertext (contract pattern 5): old is
-      // the previous row value, new is the newly written value — no extra
-      // KMS calls, and the reader can reconstruct both contexts from the
-      // space id alone.
       oldFields.name = args.current.name;
       newFields.name = args.writtenName;
     }

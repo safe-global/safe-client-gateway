@@ -18,6 +18,7 @@ describe('SpacesRepository', () => {
   const spaceUuid = fakeUuid();
   const userId = faker.number.int({ min: 1, max: 100_000 });
   const memberId = faker.number.int({ min: 1, max: 100_000 });
+  const maxSpaceCreationsPerUser = faker.number.int({ min: 1, max: 100 });
 
   let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
@@ -47,7 +48,8 @@ describe('SpacesRepository', () => {
       get: vi.fn(),
     } as unknown as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'spaces.maxSpaceCreationsPerUser') return 10;
+      if (key === 'spaces.maxSpaceCreationsPerUser')
+        return maxSpaceCreationsPerUser;
       throw new Error(`Unexpected config key: ${key}`);
     });
 
@@ -92,7 +94,7 @@ describe('SpacesRepository', () => {
   });
 
   describe('create', () => {
-    const name = 'My space';
+    const name = faker.lorem.words();
 
     function mockSavedSpace(): void {
       entityManager.save.mockImplementation((space: Space) =>
@@ -108,11 +110,13 @@ describe('SpacesRepository', () => {
 
     it('rewrites the space name and creator member name to ciphertext after save, inside the transaction', async () => {
       mockSavedSpace();
+      const encryptedSpaceName = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const encryptedMemberName = `kms:v1:${faker.string.alphanumeric(16)}`;
       spaceEncryptionService.encryptSpaceName.mockResolvedValue(
-        'kms:v1:space-name',
+        encryptedSpaceName,
       );
       memberEncryptionService.encryptName.mockResolvedValue(
-        'kms:v1:member-name',
+        encryptedMemberName,
       );
 
       const result = await target.create({ userId, name, status: 'ACTIVE' });
@@ -126,17 +130,17 @@ describe('SpacesRepository', () => {
         memberEncryptionService.encryptName,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, `${name} creator`);
       expect(entityManager.update).toHaveBeenCalledWith(Space, spaceId, {
-        name: 'kms:v1:space-name',
+        name: encryptedSpaceName,
       });
       expect(entityManager.update).toHaveBeenCalledWith(Member, memberId, {
-        name: 'kms:v1:member-name',
+        name: encryptedMemberName,
       });
       // The audit payload reuses the ciphertext written to the row.
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_CREATED',
-          payload: { name: 'kms:v1:space-name' },
+          payload: { name: encryptedSpaceName },
         }),
       );
     });
@@ -157,31 +161,33 @@ describe('SpacesRepository', () => {
 
   describe('update', () => {
     it('decrypts the stored name for the diff and writes/audits ciphertext on rename', async () => {
+      const storedCiphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const decryptedName = faker.lorem.words();
+      const newName = faker.lorem.words();
+      const newCiphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
-        name: 'kms:v1:old-name',
+        name: storedCiphertext,
         status: 'ACTIVE',
       });
-      spaceEncryptionService.decryptSpaceName.mockResolvedValue('Old name');
-      spaceEncryptionService.encryptSpaceName.mockResolvedValue(
-        'kms:v1:new-name',
-      );
+      spaceEncryptionService.decryptSpaceName.mockResolvedValue(decryptedName);
+      spaceEncryptionService.encryptSpaceName.mockResolvedValue(newCiphertext);
 
       await target.update({
         id: spaceId,
-        updatePayload: { name: 'New name' },
+        updatePayload: { name: newName },
         actorUserId: userId,
       });
 
       expect(
         spaceEncryptionService.decryptSpaceName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, 'kms:v1:old-name');
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, storedCiphertext);
       expect(
         spaceEncryptionService.encryptSpaceName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, 'New name');
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, newName);
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
-        name: 'kms:v1:new-name',
+        name: newCiphertext,
       });
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
@@ -190,34 +196,34 @@ describe('SpacesRepository', () => {
           // old: the previously stored ciphertext; new: the newly written
           // ciphertext — no extra KMS calls (contract pattern 5).
           payload: {
-            old: { name: 'kms:v1:old-name' },
-            new: { name: 'kms:v1:new-name' },
+            old: { name: storedCiphertext },
+            new: { name: newCiphertext },
           },
         }),
       );
     });
 
     it('records no name diff when the incoming name matches the decrypted stored name, but still writes ciphertext', async () => {
+      const sameName = faker.lorem.words();
+      const reEncrypted = `kms:v1:${faker.string.alphanumeric(16)}`;
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
-        name: 'kms:v1:old-name',
+        name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
       });
-      spaceEncryptionService.decryptSpaceName.mockResolvedValue('Same name');
-      spaceEncryptionService.encryptSpaceName.mockResolvedValue(
-        'kms:v1:re-encrypted',
-      );
+      spaceEncryptionService.decryptSpaceName.mockResolvedValue(sameName);
+      spaceEncryptionService.encryptSpaceName.mockResolvedValue(reEncrypted);
 
       await target.update({
         id: spaceId,
-        updatePayload: { name: 'Same name' },
+        updatePayload: { name: sameName },
         actorUserId: userId,
       });
 
       // Never write the incoming plaintext over an encrypted row.
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
-        name: 'kms:v1:re-encrypted',
+        name: reEncrypted,
       });
       expect(spaceAuditRepository.record).not.toHaveBeenCalled();
     });
@@ -226,7 +232,7 @@ describe('SpacesRepository', () => {
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
-        name: 'kms:v1:old-name',
+        name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
       });
 
@@ -250,7 +256,7 @@ describe('SpacesRepository', () => {
       await expect(
         target.update({
           id: spaceId,
-          updatePayload: { name: 'x' },
+          updatePayload: { name: faker.lorem.words() },
           actorUserId: userId,
         }),
       ).rejects.toThrow(NotFoundException);
@@ -259,10 +265,11 @@ describe('SpacesRepository', () => {
 
   describe('delete', () => {
     it('records the stored (possibly ciphertext) name in the SPACE_DELETED payload without extra KMS calls', async () => {
+      const storedCiphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
-        name: 'kms:v1:stored-name',
+        name: storedCiphertext,
       });
 
       await target.delete({ id: spaceId, actorUserId: userId });
@@ -271,7 +278,7 @@ describe('SpacesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_DELETED',
-          payload: { name: 'kms:v1:stored-name' },
+          payload: { name: storedCiphertext },
         }),
       );
       expect(spaceEncryptionService.decryptSpaceName).not.toHaveBeenCalled();

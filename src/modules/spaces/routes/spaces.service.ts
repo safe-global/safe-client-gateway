@@ -109,9 +109,6 @@ export class SpacesService {
 
     const invitedByNames = await this.resolveInvitedByNames(spaces);
 
-    // These rows were loaded directly (not via a decrypting repository
-    // boundary): decrypt the space names and the member display names before
-    // they are mapped into the response.
     const decryptedSpaces =
       await this.spaceEncryptionService.decryptSpaces(spaces);
 
@@ -121,8 +118,6 @@ export class SpacesService {
           space.members.map((member) => member.user.id),
         );
 
-        // A pending invitee sees the member and safe counts, but only their
-        // own membership row — not the other members' data.
         const callerIsActive = callerStatusBySpace.get(space.id) === 'ACTIVE';
         const visibleMembers = callerIsActive
           ? space.members
@@ -215,8 +210,6 @@ export class SpacesService {
     });
     for (const wallet of wallets) {
       if (!result.has(wallet.user.id)) {
-        // Stored addresses may be KMS ciphertext; the display value is the
-        // plaintext, decrypted under the owning user's scope.
         result.set(
           wallet.user.id,
           await this.walletEncryptionService.decryptAddress(

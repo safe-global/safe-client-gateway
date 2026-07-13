@@ -100,7 +100,6 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
           eventType: SpaceAuditEventType.ADDRESS_BOOK_UPSERTED,
           actorUserId: userId,
           payload: {
-            // Pattern 5: reuse the ciphertext written to the rows.
             created,
             updated: updated.map((item) => item.audit),
             ...(args.createdByOverride !== undefined && {
@@ -113,7 +112,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       const rows = await entityManager.findBy(DbAddressBookItem, {
         space: { id: space.id },
       });
-      // Repository boundary: callers receive plaintext.
+
       return await this.spaceEncryptionService.decryptAddressBookItems(
         space.id,
         rows,
@@ -137,22 +136,19 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     });
 
     await this.db.transaction(async (entityManager) => {
-      // Dual-read during the backfill window: encrypted rows match on the
-      // blind index, not-yet-backfilled rows hold plaintext with a NULL index.
-      // @todo Remove the plaintext arm together with restoring the
-      // throw-on-plaintext guard once the backfill --verify passes.
       const addressIndex = this.spaceEncryptionService.itemAddressIndex(
         args.address,
       );
-      const plaintextArm: FindOptionsWhere<DbAddressBookItem> = {
-        address: args.address,
-        space: { id: space.id },
-        addressIndex: IsNull(),
-      };
-      const where =
+      // Encryption disabled: match plaintext with a NULL index. Otherwise
+      // match on the blind index.
+      const where: FindOptionsWhere<DbAddressBookItem> =
         addressIndex === null
-          ? [plaintextArm]
-          : [{ space: { id: space.id }, addressIndex }, plaintextArm];
+          ? {
+              address: args.address,
+              space: { id: space.id },
+              addressIndex: IsNull(),
+            }
+          : { space: { id: space.id }, addressIndex };
       const item = await entityManager.findOne(DbAddressBookItem, { where });
       if (!item) {
         return;

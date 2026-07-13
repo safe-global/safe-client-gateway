@@ -10,7 +10,6 @@ import { UserEncryptionService } from '@/modules/users/domain/user-encryption.se
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletEncryptionModule } from '@/modules/wallets/domain/wallet-encryption.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 /**
@@ -29,7 +28,6 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Member, Wallet]),
     WalletsModule,
-    WalletEncryptionModule,
     SpaceAuditModule,
     KmsEncryptionModule,
   ],

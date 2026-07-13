@@ -43,8 +43,6 @@ export class SpaceEncryptionService {
   async decryptSpaces<T extends { id: number; name: string }>(
     spaces: Array<T>,
   ): Promise<Array<T>> {
-    // Independent KMS round-trips: run them concurrently rather than paying
-    // an O(N) sequential latency tax on list reads (like decryptUserEmails).
     return await Promise.all(
       spaces.map(async (space) => ({
         ...space,
@@ -207,8 +205,8 @@ export class SpaceEncryptionService {
         ]);
         return {
           ...entry,
-          address: address as T['address'],
-          name: name as T['name'],
+          address,
+          name,
         };
       }),
     );
@@ -231,7 +229,6 @@ export class SpaceEncryptionService {
     };
   }
 
-  /** Decrypts `address` (and `name`, when present) members of payload arrays. */
   private async decryptPayloadEntries(
     spaceId: number,
     entries: unknown,

@@ -13,6 +13,9 @@ const fieldCryptoService = {
   blindIndex: vi.fn(),
 } as unknown as MockedObject<KmsEncryptionService>;
 
+/** A ciphertext-shaped value, as produced by {@link KmsEncryptionService}. */
+const ciphertext = (): string => `kms:v1:${faker.string.alphanumeric(16)}`;
+
 describe('SpaceEncryptionService', () => {
   let target: SpaceEncryptionService;
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
@@ -35,8 +38,8 @@ describe('SpaceEncryptionService', () => {
 
   describe('isEncrypted', () => {
     it('delegates to KmsEncryptionService', () => {
-      expect(target.isEncrypted('kms:v1:abc')).toBe(true);
-      expect(target.isEncrypted('plain')).toBe(false);
+      expect(target.isEncrypted(ciphertext())).toBe(true);
+      expect(target.isEncrypted(faker.word.noun())).toBe(false);
       expect(fieldCryptoService.isEncrypted).toHaveBeenCalledTimes(2);
     });
   });
@@ -54,37 +57,39 @@ describe('SpaceEncryptionService', () => {
     });
 
     it('decryptSpaceName decrypts with a space scope', async () => {
-      await expect(target.decryptSpaceName(spaceId, 'kms:v1:x')).resolves.toBe(
-        'dec:kms:v1:x',
+      const value = ciphertext();
+
+      await expect(target.decryptSpaceName(spaceId, value)).resolves.toBe(
+        `dec:${value}`,
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        'kms:v1:x',
-        { spaceId: String(spaceId) },
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(value, {
+        spaceId: String(spaceId),
+      });
     });
 
     it('decryptSpaces decrypts each space under its own id and leaves the input untouched', async () => {
       const spaces = [
-        { id: 1, name: 'kms:v1:a' },
-        { id: 2, name: 'kms:v1:b' },
+        { id: faker.number.int({ min: 1, max: 100_000 }), name: ciphertext() },
+        { id: faker.number.int({ min: 1, max: 100_000 }), name: ciphertext() },
       ];
+      const originalName = spaces[0].name;
 
       const result = await target.decryptSpaces(spaces);
 
       expect(result).toStrictEqual([
-        { id: 1, name: 'dec:kms:v1:a' },
-        { id: 2, name: 'dec:kms:v1:b' },
+        { id: spaces[0].id, name: `dec:${originalName}` },
+        { id: spaces[1].id, name: `dec:${spaces[1].name}` },
       ]);
-      expect(spaces[0].name).toBe('kms:v1:a');
+      expect(spaces[0].name).toBe(originalName);
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         1,
-        'kms:v1:a',
-        { spaceId: '1' },
+        spaces[0].name,
+        { spaceId: String(spaces[0].id) },
       );
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         2,
-        'kms:v1:b',
-        { spaceId: '2' },
+        spaces[1].name,
+        { spaceId: String(spaces[1].id) },
       );
     });
   });
@@ -121,24 +126,24 @@ describe('SpaceEncryptionService', () => {
 
     it('decryptSpaceSafes decrypts each address under the space scope, leaving other members untouched', async () => {
       const safes = [
-        { chainId: '1', address: 'kms:v1:a' },
-        { chainId: '2', address: 'kms:v1:b' },
+        { chainId: faker.string.numeric(), address: ciphertext() },
+        { chainId: faker.string.numeric(), address: ciphertext() },
       ];
 
       const result = await target.decryptSpaceSafes(spaceId, safes);
 
       expect(result).toStrictEqual([
-        { chainId: '1', address: 'dec:kms:v1:a' },
-        { chainId: '2', address: 'dec:kms:v1:b' },
+        { chainId: safes[0].chainId, address: `dec:${safes[0].address}` },
+        { chainId: safes[1].chainId, address: `dec:${safes[1].address}` },
       ]);
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         1,
-        'kms:v1:a',
+        safes[0].address,
         { spaceId: String(spaceId) },
       );
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         2,
-        'kms:v1:b',
+        safes[1].address,
         { spaceId: String(spaceId) },
       );
     });
@@ -181,18 +186,26 @@ describe('SpaceEncryptionService', () => {
 
     it('decryptAddressBookItems decrypts address and name per item', async () => {
       const items = [
-        { address: 'kms:v1:a', name: 'kms:v1:n', chainIds: ['1'] },
+        {
+          address: ciphertext(),
+          name: ciphertext(),
+          chainIds: [faker.string.numeric()],
+        },
       ];
 
       const result = await target.decryptAddressBookItems(spaceId, items);
 
       expect(result).toStrictEqual([
-        { address: 'dec:kms:v1:a', name: 'dec:kms:v1:n', chainIds: ['1'] },
+        {
+          address: `dec:${items[0].address}`,
+          name: `dec:${items[0].name}`,
+          chainIds: items[0].chainIds,
+        },
       ]);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(items[0].address, {
         spaceId: String(spaceId),
       });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:n', {
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(items[0].name, {
         spaceId: String(spaceId),
       });
     });
@@ -235,18 +248,27 @@ describe('SpaceEncryptionService', () => {
 
     it('decryptAddressBookRequests decrypts address and name per request', async () => {
       const requests = [
-        { address: 'kms:v1:a', name: 'kms:v1:n', status: 'PENDING' },
+        {
+          address: ciphertext(),
+          name: ciphertext(),
+          status: faker.lorem.word(),
+        },
       ];
 
       const result = await target.decryptAddressBookRequests(spaceId, requests);
 
       expect(result).toStrictEqual([
-        { address: 'dec:kms:v1:a', name: 'dec:kms:v1:n', status: 'PENDING' },
+        {
+          address: `dec:${requests[0].address}`,
+          name: `dec:${requests[0].name}`,
+          status: requests[0].status,
+        },
       ]);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
-        spaceId: String(spaceId),
-      });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:n', {
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
+        requests[0].address,
+        { spaceId: String(spaceId) },
+      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(requests[0].name, {
         spaceId: String(spaceId),
       });
     });
@@ -254,42 +276,50 @@ describe('SpaceEncryptionService', () => {
 
   describe('decryptAuditPayload', () => {
     it('decrypts SPACE_CREATED and SPACE_DELETED names under the space scope', async () => {
+      const createdName = ciphertext();
+      const deletedName = ciphertext();
+
       await expect(
         target.decryptAuditPayload(spaceId, 'SPACE_CREATED', {
-          name: 'kms:v1:x',
+          name: createdName,
         }),
-      ).resolves.toStrictEqual({ name: 'dec:kms:v1:x' });
+      ).resolves.toStrictEqual({ name: `dec:${createdName}` });
       await expect(
         target.decryptAuditPayload(spaceId, 'SPACE_DELETED', {
-          name: 'kms:v1:y',
+          name: deletedName,
         }),
-      ).resolves.toStrictEqual({ name: 'dec:kms:v1:y' });
+      ).resolves.toStrictEqual({ name: `dec:${deletedName}` });
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         1,
-        'kms:v1:x',
+        createdName,
         { spaceId: String(spaceId) },
       );
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         2,
-        'kms:v1:y',
+        deletedName,
         { spaceId: String(spaceId) },
       );
     });
 
     it('decrypts SPACE_UPDATED old/new names, leaving status members untouched', async () => {
+      const oldName = ciphertext();
+      const newName = ciphertext();
+      const status = faker.lorem.word();
+
       await expect(
         target.decryptAuditPayload(spaceId, 'SPACE_UPDATED', {
-          old: { name: 'kms:v1:a', status: 'ACTIVE' },
-          new: { name: 'kms:v1:b', status: 'ACTIVE' },
+          old: { name: oldName, status },
+          new: { name: newName, status },
         }),
       ).resolves.toStrictEqual({
-        old: { name: 'dec:kms:v1:a', status: 'ACTIVE' },
-        new: { name: 'dec:kms:v1:b', status: 'ACTIVE' },
+        old: { name: `dec:${oldName}`, status },
+        new: { name: `dec:${newName}`, status },
       });
     });
 
     it('passes a status-only SPACE_UPDATED diff through without decrypting', async () => {
-      const payload = { old: { status: 'ACTIVE' }, new: { status: 'ACTIVE' } };
+      const status = faker.lorem.word();
+      const payload = { old: { status }, new: { status } };
 
       await expect(
         target.decryptAuditPayload(spaceId, 'SPACE_UPDATED', payload),
@@ -300,8 +330,8 @@ describe('SpaceEncryptionService', () => {
     it('decrypts SAFE_ADDED and SAFE_REMOVED addresses under the space scope', async () => {
       const payload = {
         safes: [
-          { chainId: '1', address: 'kms:v1:a' },
-          { chainId: '2', address: 'kms:v1:b' },
+          { chainId: faker.string.numeric(), address: ciphertext() },
+          { chainId: faker.string.numeric(), address: ciphertext() },
         ],
       };
 
@@ -309,57 +339,84 @@ describe('SpaceEncryptionService', () => {
         target.decryptAuditPayload(spaceId, 'SAFE_ADDED', payload),
       ).resolves.toStrictEqual({
         safes: [
-          { chainId: '1', address: 'dec:kms:v1:a' },
-          { chainId: '2', address: 'dec:kms:v1:b' },
+          {
+            chainId: payload.safes[0].chainId,
+            address: `dec:${payload.safes[0].address}`,
+          },
+          {
+            chainId: payload.safes[1].chainId,
+            address: `dec:${payload.safes[1].address}`,
+          },
         ],
       });
       await expect(
         target.decryptAuditPayload(spaceId, 'SAFE_REMOVED', payload),
       ).resolves.toStrictEqual({
         safes: [
-          { chainId: '1', address: 'dec:kms:v1:a' },
-          { chainId: '2', address: 'dec:kms:v1:b' },
+          {
+            chainId: payload.safes[0].chainId,
+            address: `dec:${payload.safes[0].address}`,
+          },
+          {
+            chainId: payload.safes[1].chainId,
+            address: `dec:${payload.safes[1].address}`,
+          },
         ],
       });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
-        spaceId: String(spaceId),
-      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
+        payload.safes[0].address,
+        { spaceId: String(spaceId) },
+      );
     });
 
     it('decrypts ADDRESS_BOOK_UPSERTED created and updated entries under the space scope', async () => {
+      const created = [{ address: ciphertext(), name: ciphertext() }];
+      const updated = [{ address: ciphertext(), name: ciphertext() }];
+      const onBehalfOfUserId = faker.number.int({ min: 1, max: 100_000 });
+
       await expect(
         target.decryptAuditPayload(spaceId, 'ADDRESS_BOOK_UPSERTED', {
-          created: [{ address: 'kms:v1:a', name: 'kms:v1:n' }],
-          updated: [{ address: 'kms:v1:b', name: 'kms:v1:m' }],
-          onBehalfOfUserId: 7,
+          created,
+          updated,
+          onBehalfOfUserId,
         }),
       ).resolves.toStrictEqual({
-        created: [{ address: 'dec:kms:v1:a', name: 'dec:kms:v1:n' }],
-        updated: [{ address: 'dec:kms:v1:b', name: 'dec:kms:v1:m' }],
-        onBehalfOfUserId: 7,
+        created: [
+          { address: `dec:${created[0].address}`, name: `dec:${created[0].name}` },
+        ],
+        updated: [
+          { address: `dec:${updated[0].address}`, name: `dec:${updated[0].name}` },
+        ],
+        onBehalfOfUserId,
       });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
-        spaceId: String(spaceId),
-      });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:m', {
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
+        created[0].address,
+        { spaceId: String(spaceId) },
+      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(updated[0].name, {
         spaceId: String(spaceId),
       });
     });
 
     it('decrypts ADDRESS_BOOK_DELETED address and name', async () => {
+      const address = ciphertext();
+      const name = ciphertext();
+
       await expect(
         target.decryptAuditPayload(spaceId, 'ADDRESS_BOOK_DELETED', {
-          address: 'kms:v1:a',
-          name: 'kms:v1:n',
+          address,
+          name,
         }),
       ).resolves.toStrictEqual({
-        address: 'dec:kms:v1:a',
-        name: 'dec:kms:v1:n',
+        address: `dec:${address}`,
+        name: `dec:${name}`,
       });
     });
 
     it('returns member events untouched without any decrypt call', async () => {
-      const payload = { targetUserId: 7 };
+      const payload = {
+        targetUserId: faker.number.int({ min: 1, max: 100_000 }),
+      };
 
       await expect(
         target.decryptAuditPayload(spaceId, 'MEMBER_INVITED', payload),

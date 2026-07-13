@@ -178,8 +178,6 @@ export class SpaceAuditService {
     display: (userId: number) => string,
   ): Promise<SpaceAuditLogEntryDto> {
     const targetUserId = getTargetUserId(row.payload);
-    // Audit payloads carry the source row's ciphertext (contract pattern 5);
-    // decrypt under the space-scoped context before returning to the client.
     const payload = await this.spaceEncryptionService.decryptAuditPayload(
       spaceId,
       row.eventType,

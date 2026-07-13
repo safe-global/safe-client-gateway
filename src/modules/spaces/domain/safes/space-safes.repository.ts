@@ -180,10 +180,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
   ): Promise<Array<SpaceSafe>> {
     return await Promise.all(
       spaceSafes.map(async (spaceSafe) => {
-        if (
-          typeof spaceSafe.address !== 'string' ||
-          !this.spaceEncryptionService.isEncrypted(spaceSafe.address)
-        ) {
+        if (!this.spaceEncryptionService.isEncrypted(spaceSafe.address)) {
           return spaceSafe;
         }
         if (spaceSafe.space === undefined) {
@@ -208,33 +205,21 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       address: SpaceSafe['address'];
     }>;
   }): Promise<void> {
-    // Dual-read during the backfill window: encrypted rows match on the
-    // blind index, not-yet-backfilled rows hold plaintext with a NULL index.
-    // Find-then-remove because TypeORM delete() criteria cannot express the
-    // OR across arms.
-    // @todo Remove the plaintext arm together with restoring the
-    // throw-on-plaintext guard once the backfill --verify passes.
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
-      args.payload.flatMap((safe) => {
+      args.payload.map((safe) => {
         const addressIndex = this.spaceEncryptionService.safeAddressIndex(
           safe.address,
         );
-        const plaintextArm: FindOptionsWhere<SpaceSafe> = {
-          space: { id: args.spaceId },
-          chainId: safe.chainId,
-          addressIndex: IsNull(),
-          address: safe.address,
-        };
+        // Encryption disabled: match plaintext with a NULL index. Otherwise
+        // match on the blind index.
         return addressIndex === null
-          ? [plaintextArm]
-          : [
-              {
-                space: { id: args.spaceId },
-                chainId: safe.chainId,
-                addressIndex,
-              },
-              plaintextArm,
-            ];
+          ? {
+              space: { id: args.spaceId },
+              chainId: safe.chainId,
+              addressIndex: IsNull(),
+              address: safe.address,
+            }
+          : { space: { id: args.spaceId }, chainId: safe.chainId, addressIndex };
       });
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {

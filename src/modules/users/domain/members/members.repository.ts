@@ -34,6 +34,7 @@ import { Member as DbMember } from '@/modules/users/datasources/entities/member.
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
+import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
@@ -53,6 +54,7 @@ export class MembersRepository implements IMembersRepository {
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
+    private readonly memberEncryptionService: MemberEncryptionService,
   ) {}
 
   /**
@@ -297,6 +299,12 @@ export class MembersRepository implements IMembersRepository {
       inviteExpiresAt,
     } = args;
     const { name, role } = userToInvite;
+    // Encrypt at rest under the space-scoped context; a disabled service
+    // passes the plaintext through unchanged (backfill-window safe).
+    const encryptedName = await this.memberEncryptionService.encryptName(
+      space.id,
+      name,
+    );
 
     const duplicateInviteError = (): UniqueConstraintError =>
       new UniqueConstraintError(
@@ -317,7 +325,7 @@ export class MembersRepository implements IMembersRepository {
         await entityManager.insert(DbMember, {
           user: { id: userId },
           space,
-          name,
+          name: encryptedName,
           role,
           status: 'INVITED',
           invitedBy,
@@ -334,7 +342,7 @@ export class MembersRepository implements IMembersRepository {
 
     if (existingMember.status === 'INVITED') {
       await entityManager.update(DbMember, existingMember.id, {
-        name,
+        name: encryptedName,
         role,
         invitedBy,
         inviteExpiresAt,
@@ -385,10 +393,15 @@ export class MembersRepository implements IMembersRepository {
     const member = space.members[0];
     this.assertInviteNotExpired(member);
 
+    const encryptedName = await this.memberEncryptionService.encryptName(
+      space.id,
+      args.payload.name,
+    );
+
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
-        name: args.payload.name,
+        name: encryptedName,
         inviteExpiresAt: null,
       });
 
@@ -469,7 +482,11 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
 
-    return await this.decryptMemberUserEmails(space.members);
+    const emailDecrypted = await this.decryptMemberUserEmails(space.members);
+    return await this.memberEncryptionService.decryptMembers(
+      args.spaceId,
+      emailDecrypted,
+    );
   }
 
   public async findSelfMembershipOrFail(args: {
@@ -555,7 +572,16 @@ export class MembersRepository implements IMembersRepository {
         );
       }
 
-      await entityManager.update(DbMember, member.id, { alias: args.alias });
+      // A cleared alias (null) is stored as-is; only a present value is
+      // encrypted under the space-scoped context.
+      const encryptedAlias =
+        args.alias === null
+          ? null
+          : await this.memberEncryptionService.encryptAlias(
+              args.spaceId,
+              args.alias,
+            );
+      await entityManager.update(DbMember, member.id, { alias: encryptedAlias });
 
       const space = await this.findSpaceForAuditOrFail(
         entityManager,
@@ -705,7 +731,11 @@ export class MembersRepository implements IMembersRepository {
         'The user is not an active member of the workspace.',
       );
     }
-    const [decryptedMember] = await this.decryptMemberUserEmails([member]);
+    const [emailDecrypted] = await this.decryptMemberUserEmails([member]);
+    const [decryptedMember] =
+      await this.memberEncryptionService.decryptMembers(args.spaceId, [
+        emailDecrypted,
+      ]);
     return decryptedMember;
   }
 }

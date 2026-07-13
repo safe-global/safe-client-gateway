@@ -25,11 +25,12 @@ describe('WalletEncryptionService', () => {
 
   describe('isEncrypted', () => {
     it('delegates to KmsEncryptionService', () => {
+      const value = `kms:v1:${faker.string.alphanumeric(16)}`;
       fieldCryptoService.isEncrypted.mockReturnValue(true);
 
-      expect(target.isEncrypted('kms:v1:abc')).toBe(true);
+      expect(target.isEncrypted(value)).toBe(true);
       expect(fieldCryptoService.isEncrypted).toHaveBeenCalledExactlyOnceWith(
-        'kms:v1:abc',
+        value,
       );
     });
   });
@@ -38,10 +39,11 @@ describe('WalletEncryptionService', () => {
     it('encrypts scoped to the owning user', async () => {
       const userId = faker.number.int({ min: 1 });
       const address = getAddress(faker.finance.ethereumAddress());
-      fieldCryptoService.encrypt.mockResolvedValue('kms:v1:ciphertext');
+      const ciphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
+      fieldCryptoService.encrypt.mockResolvedValue(ciphertext);
 
       await expect(target.encryptAddress(userId, address)).resolves.toBe(
-        'kms:v1:ciphertext',
+        ciphertext,
       );
       expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
         address,
@@ -53,9 +55,10 @@ describe('WalletEncryptionService', () => {
   describe('addressIndex', () => {
     it('computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      fieldCryptoService.blindIndex.mockReturnValue('address-token');
+      const token = faker.string.alphanumeric(16);
+      fieldCryptoService.blindIndex.mockReturnValue(token);
 
-      expect(target.addressIndex(address)).toBe('address-token');
+      expect(target.addressIndex(address)).toBe(token);
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
         address,
       );
@@ -74,13 +77,14 @@ describe('WalletEncryptionService', () => {
     it('decrypts scoped to the owning user', async () => {
       const userId = faker.number.int({ min: 1 });
       const address = getAddress(faker.finance.ethereumAddress());
+      const ciphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
       fieldCryptoService.decrypt.mockResolvedValue(address);
 
       await expect(
-        target.decryptAddress(userId, 'kms:v1:ciphertext'),
+        target.decryptAddress(userId, ciphertext),
       ).resolves.toBe(address);
       expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        'kms:v1:ciphertext',
+        ciphertext,
         { userId: String(userId) },
       );
     });
@@ -89,29 +93,33 @@ describe('WalletEncryptionService', () => {
   describe('decryptWallets', () => {
     it('returns copies with decrypted addresses, leaving the input untouched', async () => {
       const userId = faker.number.int({ min: 1 });
+      const idA = faker.number.int({ min: 1, max: 1000 });
+      const idB = faker.number.int({ min: 1001, max: 2000 });
+      const ciphertextA = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const ciphertextB = `kms:v1:${faker.string.alphanumeric(16)}`;
       const plaintextA = getAddress(faker.finance.ethereumAddress());
       const plaintextB = getAddress(faker.finance.ethereumAddress());
       fieldCryptoService.decrypt
         .mockResolvedValueOnce(plaintextA)
         .mockResolvedValueOnce(plaintextB);
       const wallets = [
-        { id: 1, address: 'kms:v1:a' },
-        { id: 2, address: 'kms:v1:b' },
+        { id: idA, address: ciphertextA },
+        { id: idB, address: ciphertextB },
       ];
 
       const decrypted = await target.decryptWallets(userId, wallets);
 
       expect(decrypted).toStrictEqual([
-        { id: 1, address: plaintextA },
-        { id: 2, address: plaintextB },
+        { id: idA, address: plaintextA },
+        { id: idB, address: plaintextB },
       ]);
       // The input rows keep their stored (encrypted) values.
-      expect(wallets[0].address).toBe('kms:v1:a');
+      expect(wallets[0].address).toBe(ciphertextA);
       expect(fieldCryptoService.decrypt).toHaveBeenCalledTimes(2);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(ciphertextA, {
         userId: String(userId),
       });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:b', {
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(ciphertextB, {
         userId: String(userId),
       });
     });

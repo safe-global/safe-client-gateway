@@ -2,8 +2,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletEncryptionModule } from '@/modules/wallets/domain/wallet-encryption.module';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
@@ -11,14 +12,15 @@ import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.
   imports: [
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([Wallet]),
-    WalletEncryptionModule,
+    KmsEncryptionModule,
   ],
   providers: [
+    WalletEncryptionService,
     {
       provide: IWalletsRepository,
       useClass: WalletsRepository,
     },
   ],
-  exports: [IWalletsRepository],
+  exports: [IWalletsRepository, WalletEncryptionService],
 })
 export class WalletsModule {}

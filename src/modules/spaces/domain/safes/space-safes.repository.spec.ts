@@ -16,6 +16,7 @@ describe('SpaceSafesRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const spaceUuid = fakeUuid();
   const actorUserId = faker.number.int({ min: 1, max: 100_000 });
+  const maxSafesPerSpace = faker.number.int({ min: 1, max: 100 });
 
   let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
@@ -40,7 +41,7 @@ describe('SpaceSafesRepository', () => {
       get: vi.fn(),
     } as unknown as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'spaces.maxSafesPerSpace') return 10;
+      if (key === 'spaces.maxSafesPerSpace') return maxSafesPerSpace;
       throw new Error(`Unexpected config key: ${key}`);
     });
 
@@ -76,12 +77,14 @@ describe('SpaceSafesRepository', () => {
 
   describe('create', () => {
     it('encrypts addresses and computes blind indexes before insert, and reuses the ciphertext in the audit payload', async () => {
-      const chainId = '1';
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const addressIndex = faker.string.hexadecimal({ length: 32 });
       spaceEncryptionService.encryptSafeAddress.mockResolvedValue(
-        'kms:v1:safe-address',
+        encryptedAddress,
       );
-      spaceEncryptionService.safeAddressIndex.mockReturnValue('safe-index');
+      spaceEncryptionService.safeAddressIndex.mockReturnValue(addressIndex);
 
       await target.create({
         spaceId,
@@ -96,8 +99,8 @@ describe('SpaceSafesRepository', () => {
         {
           space: { id: spaceId },
           chainId,
-          address: 'kms:v1:safe-address',
-          addressIndex: 'safe-index',
+          address: encryptedAddress,
+          addressIndex,
         },
       ]);
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
@@ -105,14 +108,14 @@ describe('SpaceSafesRepository', () => {
         expect.objectContaining({
           eventType: 'SAFE_ADDED',
           payload: {
-            safes: [{ chainId, address: 'kms:v1:safe-address' }],
+            safes: [{ chainId, address: encryptedAddress }],
           },
         }),
       );
     });
 
     it('inserts plaintext with a NULL index when encryption is disabled (passthrough)', async () => {
-      const chainId = '1';
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
 
       await target.create({
@@ -127,7 +130,7 @@ describe('SpaceSafesRepository', () => {
     });
 
     it('enforces the per-space limit from a count query before encrypting anything', async () => {
-      spaceSafeRepository.count.mockResolvedValue(10);
+      spaceSafeRepository.count.mockResolvedValue(maxSafesPerSpace);
 
       await expect(
         target.create({
@@ -135,13 +138,13 @@ describe('SpaceSafesRepository', () => {
           actorUserId,
           payload: [
             {
-              chainId: '1',
+              chainId: faker.string.numeric({ length: { min: 1, max: 6 } }),
               address: getAddress(faker.finance.ethereumAddress()),
             },
           ],
         }),
       ).rejects.toThrow(
-        'This Workspace only allows a maximum of 10 Safe Accounts.',
+        `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts.`,
       );
       expect(spaceEncryptionService.encryptSafeAddress).not.toHaveBeenCalled();
       expect(entityManager.insert).not.toHaveBeenCalled();
@@ -150,10 +153,13 @@ describe('SpaceSafesRepository', () => {
 
   describe('findBySpaceId', () => {
     it('routes loaded rows through decryptSpaceSafes (repository boundary)', async () => {
-      const rows = [{ chainId: '1', address: 'kms:v1:blob' }];
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const rows = [
+        { chainId, address: `kms:v1:${faker.string.alphanumeric(16)}` },
+      ];
       spaceSafeRepository.find.mockResolvedValue(rows);
       const decrypted = [
-        { chainId: '1', address: getAddress(faker.finance.ethereumAddress()) },
+        { chainId, address: getAddress(faker.finance.ethereumAddress()) },
       ];
       spaceEncryptionService.decryptSpaceSafes.mockResolvedValue(decrypted);
 
@@ -170,9 +176,9 @@ describe('SpaceSafesRepository', () => {
     it('decrypts encrypted rows via their loaded space relation', async () => {
       const plaintextAddress = getAddress(faker.finance.ethereumAddress());
       const row = {
-        id: 1,
-        chainId: '1',
-        address: 'kms:v1:blob',
+        id: faker.number.int({ min: 1, max: 100_000 }),
+        chainId: faker.string.numeric({ length: { min: 1, max: 6 } }),
+        address: `kms:v1:${faker.string.alphanumeric(16)}`,
         space: { id: spaceId },
       };
       spaceSafeRepository.find.mockResolvedValue([row]);
@@ -189,36 +195,47 @@ describe('SpaceSafesRepository', () => {
     });
 
     it('returns plaintext rows untouched without needing the space relation', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const row = {
-        id: 1,
-        chainId: '1',
+        id: faker.number.int({ min: 1, max: 100_000 }),
+        chainId,
         address: getAddress(faker.finance.ethereumAddress()),
       };
       spaceSafeRepository.find.mockResolvedValue([row]);
 
-      const result = await target.find({ where: { chainId: '1' } });
+      const result = await target.find({ where: { chainId } });
 
       expect(result).toStrictEqual([row]);
       expect(spaceEncryptionService.decryptSpaceSafes).not.toHaveBeenCalled();
     });
 
     it('throws on an encrypted row whose space relation was not loaded', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       spaceSafeRepository.find.mockResolvedValue([
-        { id: 1, chainId: '1', address: 'kms:v1:blob' },
+        {
+          id: faker.number.int({ min: 1, max: 100_000 }),
+          chainId,
+          address: `kms:v1:${faker.string.alphanumeric(16)}`,
+        },
       ]);
 
-      await expect(target.find({ where: { chainId: '1' } })).rejects.toThrow(
+      await expect(target.find({ where: { chainId } })).rejects.toThrow(
         'Cannot decrypt a SpaceSafe address without its space relation loaded',
       );
     });
   });
 
   describe('delete', () => {
-    it('looks up by blind index with a plaintext dual-read arm and audits the stored values', async () => {
-      const chainId = '1';
+    it('looks up by blind index alone when a key is configured and audits the stored values', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
-      spaceEncryptionService.safeAddressIndex.mockReturnValue('safe-index');
-      const row = { id: 3, chainId, address: 'kms:v1:blob' };
+      const addressIndex = faker.string.hexadecimal({ length: 32 });
+      spaceEncryptionService.safeAddressIndex.mockReturnValue(addressIndex);
+      const row = {
+        id: faker.number.int({ min: 1, max: 100_000 }),
+        chainId,
+        address: `kms:v1:${faker.string.alphanumeric(16)}`,
+      };
       entityManager.find.mockResolvedValue([row]);
 
       await target.delete({
@@ -228,30 +245,26 @@ describe('SpaceSafesRepository', () => {
       });
 
       expect(entityManager.find).toHaveBeenCalledExactlyOnceWith(SpaceSafe, {
-        where: [
-          { space: { id: spaceId }, chainId, addressIndex: 'safe-index' },
-          {
-            space: { id: spaceId },
-            chainId,
-            addressIndex: IsNull(),
-            address,
-          },
-        ],
+        where: [{ space: { id: spaceId }, chainId, addressIndex }],
       });
       expect(entityManager.remove).toHaveBeenCalledExactlyOnceWith([row]);
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_REMOVED',
-          payload: { safes: [{ chainId, address: 'kms:v1:blob' }] },
+          payload: { safes: [{ chainId, address: row.address }] },
         }),
       );
     });
 
     it('looks up by the plaintext arm alone when no blind-index key is configured', async () => {
-      const chainId = '1';
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
-      const row = { id: 3, chainId, address };
+      const row = {
+        id: faker.number.int({ min: 1, max: 100_000 }),
+        chainId,
+        address,
+      };
       entityManager.find.mockResolvedValue([row]);
 
       await target.delete({

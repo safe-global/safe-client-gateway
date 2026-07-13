@@ -30,7 +30,7 @@ export class UserEncryptionService {
         user.email
           ? this.decrypt(user.id, user.email).then((email) => ({
               ...user,
-              email: email as T['email'],
+              email,
             }))
           : Promise.resolve(user),
       ),

@@ -365,9 +365,10 @@ describe('SpacesService', () => {
           .with('safes', [])
           .build(),
       ]);
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
       walletsRepositoryMock.find.mockResolvedValue([
         {
-          address: 'kms:v1:ciphertext',
+          address: encryptedAddress,
           user: { id: inviterUserId },
         } as unknown as Wallet,
       ]);
@@ -379,7 +380,7 @@ describe('SpacesService', () => {
 
       expect(walletEncryptionServiceMock.decryptAddress).toHaveBeenCalledWith(
         inviterUserId,
-        'kms:v1:ciphertext',
+        encryptedAddress,
       );
       const invitedMember = result[0].members.find(
         (m) => m.status === 'INVITED',
@@ -644,18 +645,22 @@ describe('SpacesService', () => {
       const userId = Number(authPayload.sub);
       const user = userBuilder().with('id', userId).build();
       const space = spaceBuilder().build();
+      const encryptedMemberName = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const encryptedSpaceName = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const decryptedSpaceName = faker.lorem.words();
+      const decryptedMemberName = faker.person.fullName();
       const member = memberBuilder()
         .with('user', user)
         .with('space', space)
         .with('status', 'ACTIVE')
-        .with('name', 'kms:v1:member-name')
+        .with('name', encryptedMemberName)
         .build();
 
       membersRepositoryMock.find.mockResolvedValue([member]);
       spacesRepositoryMock.find.mockResolvedValue([
         spaceBuilder()
           .with('id', space.id)
-          .with('name', 'kms:v1:space-name')
+          .with('name', encryptedSpaceName)
           .with('members', [member])
           .with('safes', [])
           .build(),
@@ -663,20 +668,20 @@ describe('SpacesService', () => {
       spaceEncryptionServiceMock.decryptSpaces.mockImplementation(
         (spaces: Array<{ id: number; name: string }>) =>
           Promise.resolve(
-            spaces.map((s) => ({ ...s, name: 'Decrypted space' })),
+            spaces.map((s) => ({ ...s, name: decryptedSpaceName })),
           ),
       );
       memberEncryptionServiceMock.decryptName.mockResolvedValue(
-        'Decrypted member',
+        decryptedMemberName,
       );
 
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-      expect(result[0].name).toBe('Decrypted space');
-      expect(result[0].members[0].name).toBe('Decrypted member');
+      expect(result[0].name).toBe(decryptedSpaceName);
+      expect(result[0].members[0].name).toBe(decryptedMemberName);
       expect(memberEncryptionServiceMock.decryptName).toHaveBeenCalledWith(
         space.id,
-        'kms:v1:member-name',
+        encryptedMemberName,
       );
       expect(JSON.stringify(result)).not.toContain('kms:v1:');
     });

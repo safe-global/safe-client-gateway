@@ -65,7 +65,6 @@ describe('SpaceAuditService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    // Recreated after the reset so the passthrough implementation survives.
     spaceEncryptionService = createMockSpaceEncryptionService();
     service = new SpaceAuditService(
       spaceAuditRepository,
@@ -105,16 +104,20 @@ describe('SpaceAuditService', () => {
 
     it('decrypts each row payload via decryptAuditPayload before returning it', async () => {
       mockViewer();
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const encryptedName = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const decryptedAddress = faker.finance.ethereumAddress();
+      const decryptedName = faker.person.fullName();
       const row = spaceAuditLogBuilder()
         .with('spaceId', spaceId)
         .with('eventType', 'ADDRESS_BOOK_DELETED')
         .with('actorUserId', viewerUserId)
-        .with('payload', { address: 'kms:v1:blob', name: 'kms:v1:name' })
+        .with('payload', { address: encryptedAddress, name: encryptedName })
         .build();
       spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
       spaceEncryptionService.decryptAuditPayload.mockResolvedValue({
-        address: '0xPlaintext',
-        name: 'Alice',
+        address: decryptedAddress,
+        name: decryptedName,
       });
 
       const result = await service.getAuditLog({
@@ -128,12 +131,12 @@ describe('SpaceAuditService', () => {
       expect(
         spaceEncryptionService.decryptAuditPayload,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, 'ADDRESS_BOOK_DELETED', {
-        address: 'kms:v1:blob',
-        name: 'kms:v1:name',
+        address: encryptedAddress,
+        name: encryptedName,
       });
       expect(result.results[0].payload).toStrictEqual({
-        address: '0xPlaintext',
-        name: 'Alice',
+        address: decryptedAddress,
+        name: decryptedName,
       });
     });
 
@@ -195,7 +198,7 @@ describe('SpaceAuditService', () => {
       const row = spaceAuditLogBuilder()
         .with('spaceId', spaceId)
         .with('eventType', 'SPACE_CREATED')
-        .with('payload', { name: 'My space' })
+        .with('payload', { name: faker.lorem.words() })
         .build();
       spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
       identityResolver.resolveMany.mockResolvedValue(new Map());

@@ -31,7 +31,7 @@ export class WalletEncryptionService {
         wallet.address
           ? this.decryptAddress(userId, wallet.address).then((address) => ({
               ...wallet,
-              address: address as T['address'],
+              address,
             }))
           : Promise.resolve(wallet),
       ),
