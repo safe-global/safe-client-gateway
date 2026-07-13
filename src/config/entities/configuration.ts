@@ -37,6 +37,7 @@ export default () => ({
     // Defaults to true.
     runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
     port: process.env.APPLICATION_PORT || '3000',
+    host: process.env.APPLICATION_HOST || '0.0.0.0',
     allowCors: process.env.ALLOW_CORS?.toLowerCase() === 'true',
   },
   auth: {

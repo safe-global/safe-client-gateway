@@ -21,6 +21,7 @@ export default (): ReturnType<typeof configuration> => ({
     isDevelopment: faker.datatype.boolean(),
     runMigrations: true,
     port: faker.internet.port().toString(),
+    host: process.env.APPLICATION_HOST || '0.0.0.0',
     allowCors: faker.datatype.boolean(),
   },
   auth: {
