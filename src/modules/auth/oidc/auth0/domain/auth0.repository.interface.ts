@@ -20,4 +20,12 @@ export interface IAuth0Repository {
    * @returns The decoded Auth0 token with claims.
    */
   authenticateWithAuthorizationCode(code: string): Promise<Auth0Token>;
+
+  /**
+   * Deletes all MFA authentication methods of the given Auth0 user so that
+   * the next login triggers a fresh authenticator enrollment.
+   *
+   * @param extUserId - The Auth0 user identifier (`sub` claim).
+   */
+  deleteUserAuthenticationMethods(extUserId: string): Promise<void>;
 }

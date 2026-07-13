@@ -4,7 +4,10 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  AuthMethod,
+  type AuthPayload,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import {
@@ -102,6 +105,28 @@ export class OidcAuthService {
       accessToken,
       maxAge: getMillisecondsUntil(exp),
     };
+  }
+
+  /**
+   * Deletes all Auth0 MFA enrollments (authenticators and recovery code) of
+   * the authenticated user. The next OIDC login triggers a fresh
+   * authenticator enrollment, which is how a user "switches" their
+   * authenticator app.
+   *
+   * @param authPayload - The authenticated user's payload (from the JWT cookie).
+   * @throws {UnauthorizedException} If the user has no linked OIDC identity
+   * (e.g. SIWE-only users).
+   */
+  public async resetMfa(authPayload: AuthPayload): Promise<void> {
+    const user = await this.usersRepository.findOneOrFail({
+      id: Number(authPayload.getUserId()),
+    });
+
+    if (!user.extUserId) {
+      throw new UnauthorizedException('User is not linked to an OIDC identity');
+    }
+
+    await this.auth0Repository.deleteUserAuthenticationMethods(user.extUserId);
   }
 
   /**

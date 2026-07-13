@@ -21,4 +21,15 @@ export interface IAuth0Api {
    * @returns The raw Auth0 token response.
    */
   exchangeAuthorizationCode(code: string): Promise<Raw<Auth0TokenResponse>>;
+
+  /**
+   * Deletes all authentication methods (MFA enrollments, including TOTP and
+   * the recovery code) of the given user via the Auth0 Management API.
+   *
+   * On the next login, Auth0's MFA policy prompts the user to enroll a new
+   * authenticator from scratch.
+   *
+   * @param extUserId - The Auth0 user identifier (`sub` claim).
+   */
+  deleteUserAuthenticationMethods(extUserId: string): Promise<void>;
 }

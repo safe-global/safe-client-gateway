@@ -26,4 +26,10 @@ export class Auth0Repository implements IAuth0Repository {
     const { id_token } = Auth0TokenResponseSchema.parse(response);
     return this.auth0TokenVerifier.verifyAndDecode(id_token);
   }
+
+  public async deleteUserAuthenticationMethods(
+    extUserId: string,
+  ): Promise<void> {
+    await this.auth0Api.deleteUserAuthenticationMethods(extUserId);
+  }
 }

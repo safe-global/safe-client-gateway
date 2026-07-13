@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Inject, Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
@@ -11,9 +12,14 @@ import type { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.
 import type { Auth0TokenResponse } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 
+const ManagementApiTokenResponseSchema = z.object({
+  access_token: z.string(),
+});
+
 @Injectable()
 export class Auth0Api implements IAuth0Api {
   private static readonly AUTHORIZATION_CODE_GRANT_TYPE = 'authorization_code';
+  private static readonly CLIENT_CREDENTIALS_GRANT_TYPE = 'client_credentials';
   private readonly baseUri: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -85,5 +91,48 @@ export class Auth0Api implements IAuth0Api {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  public async deleteUserAuthenticationMethods(
+    extUserId: string,
+  ): Promise<void> {
+    try {
+      const accessToken = await this.getManagementApiToken();
+      await this.networkService.delete({
+        url: new URL(
+          `/api/v2/users/${encodeURIComponent(extUserId)}/authentication-methods`,
+          this.baseUri,
+        ).toString(),
+        networkRequest: {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * Fetches a Management API access token via the Client Credentials grant.
+   *
+   * Requires the Auth0 application to be authorized for the Management API
+   * (audience `https://{domain}/api/v2/`) with at least the
+   * `delete:authentication_methods` scope.
+   *
+   * Note: the token is fetched per request (no caching) — acceptable for a
+   * spike, should be cached before production use.
+   */
+  private async getManagementApiToken(): Promise<string> {
+    const response = await this.networkService.postForm({
+      url: new URL('/oauth/token', this.baseUri).toString(),
+      data: {
+        grant_type: Auth0Api.CLIENT_CREDENTIALS_GRANT_TYPE,
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        audience: new URL('/api/v2/', this.baseUri).toString(),
+      },
+    });
+
+    return ManagementApiTokenResponseSchema.parse(response.data).access_token;
   }
 }

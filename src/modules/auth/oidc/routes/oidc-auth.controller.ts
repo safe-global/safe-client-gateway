@@ -3,14 +3,19 @@
 import {
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
+  Post,
   Query,
   Req,
   Res,
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiForbiddenResponse,
   ApiFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
@@ -19,12 +24,15 @@ import { type CookieOptions, Request, Response } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import {
   type OidcConnection,
   OidcConnectionSchema,
 } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   getCookieOptions,
@@ -206,6 +214,21 @@ export class OidcAuthController {
       );
       res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }
+  }
+
+  @ApiOperation({
+    summary: 'Reset MFA enrollments (switch authenticator)',
+    description:
+      'Deletes all Auth0 MFA enrollments (authenticators and recovery code) of the authenticated user. ' +
+      'The next OIDC login prompts the user to enroll a new authenticator.',
+  })
+  @ApiOkResponse({ description: 'MFA enrollments deleted' })
+  @ApiForbiddenResponse({ description: 'Not authenticated' })
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('oidc/mfa/reset')
+  async resetMfa(@Auth() authPayload: AuthPayload): Promise<void> {
+    await this.oidcAuthService.resetMfa(authPayload);
   }
 
   private getCookieOptions(): CookieOptions {
