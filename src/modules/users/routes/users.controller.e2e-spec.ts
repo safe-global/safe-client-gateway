@@ -7,10 +7,7 @@ import request from 'supertest';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage, generateSiweNonce } from 'viem/siwe';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -67,7 +64,7 @@ describe('UsersController', () => {
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterAll(async () => {

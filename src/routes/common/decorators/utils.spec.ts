@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { Request } from 'express';
 import type { MockedObject } from 'vitest';
-import {
-  getRouteUrl,
-  type RequestLike,
-} from '@/routes/common/http/http-request.utils';
+import { getRouteUrl } from '@/routes/common/decorators/utils';
 
-describe('http-request.utils tests', () => {
+describe('utils tests', () => {
   describe('getRouteUrl tests', () => {
     const request = {
       get: vi.fn(),
       originalUrl: faker.system.filePath(),
       protocol: faker.internet.protocol(),
-    } as MockedObject<RequestLike>;
+    } as MockedObject<Request>;
 
     const requestMock = vi.mocked(request);
 

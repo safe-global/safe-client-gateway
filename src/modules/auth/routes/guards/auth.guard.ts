@@ -5,13 +5,14 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
-declare module 'fastify' {
-  interface FastifyRequest {
+declare module 'express' {
+  // Inject AuthPayload to express.Request
+  interface Request {
     [AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]?: AuthPayloadDto;
   }
 }
@@ -37,10 +38,10 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const request: Request = context.switchToHttp().getRequest();
 
     const accessToken: string | undefined =
-      request.cookies?.[ACCESS_TOKEN_COOKIE_NAME];
+      request.cookies[ACCESS_TOKEN_COOKIE_NAME];
 
     // No token in the request
     if (!accessToken) {

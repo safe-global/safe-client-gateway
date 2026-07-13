@@ -5,7 +5,7 @@ import {
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 // biome-ignore lint/suspicious/noDeprecatedImports: only multi-callback `tap` overloads are deprecated in rxjs; we use the single-observer signature.
 import { type Observable, tap } from 'rxjs';
 
@@ -20,8 +20,8 @@ export class CacheControlInterceptor implements NestInterceptor {
   ): Observable<unknown> | Promise<Observable<unknown>> {
     return next.handle().pipe(
       tap(() => {
-        const response = context.switchToHttp().getResponse<FastifyReply>();
-        if (!response.sent) {
+        const response: Response = context.switchToHttp().getResponse();
+        if (!response.headersSent) {
           response.header('Cache-Control', 'no-cache');
         }
       }),

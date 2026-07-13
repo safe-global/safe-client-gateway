@@ -5,7 +5,7 @@ import {
   type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 import { ZodError, type z } from 'zod';
 import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
 
@@ -28,7 +28,7 @@ import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
 export class ZodErrorFilter implements ExceptionFilter {
   catch(exception: ZodError | ZodErrorWithCode, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
+    const response = ctx.getResponse<Response>();
 
     // Check if this is a ZodErrorWithCode (has HTTP status code property)
     // Note: In Zod 4, both ZodError and ZodErrorWithCode pass instanceof checks
@@ -37,13 +37,13 @@ export class ZodErrorFilter implements ExceptionFilter {
       const code = exception.code;
       const error = this.mapZodErrorResponse(exception);
 
-      response.status(code).send({
+      response.status(code).json({
         statusCode: code,
         ...error,
       });
     } else {
       // Domain-level validation error (internal) - hide details for security
-      response.status(HttpStatus.BAD_GATEWAY).send({
+      response.status(HttpStatus.BAD_GATEWAY).json({
         statusCode: HttpStatus.BAD_GATEWAY,
         message: 'Bad gateway',
       });

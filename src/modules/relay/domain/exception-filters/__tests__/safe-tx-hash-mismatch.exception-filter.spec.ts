@@ -11,10 +11,10 @@ import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/except
 function buildMockHost(): {
   host: ArgumentsHost;
   mockStatus: Mock;
-  mockSend: Mock;
+  mockJson: Mock;
 } {
-  const mockSend = vi.fn();
-  const mockStatus = vi.fn().mockReturnValue({ send: mockSend });
+  const mockJson = vi.fn();
+  const mockStatus = vi.fn().mockReturnValue({ json: mockJson });
   const mockGetResponse = vi.fn().mockReturnValue({ status: mockStatus });
   const mockSwitchToHttp = vi
     .fn()
@@ -22,7 +22,7 @@ function buildMockHost(): {
   const host = {
     switchToHttp: mockSwitchToHttp,
   } as unknown as ArgumentsHost;
-  return { host, mockStatus, mockSend };
+  return { host, mockStatus, mockJson };
 }
 
 describe('SafeTxHashMismatchExceptionFilter', () => {
@@ -38,12 +38,12 @@ describe('SafeTxHashMismatchExceptionFilter', () => {
       casing: 'lower',
     }) as Hex;
     const error = new SafeTxHashMismatchError(safeTxHash);
-    const { host, mockStatus, mockSend } = buildMockHost();
+    const { host, mockStatus, mockJson } = buildMockHost();
 
     filter.catch(error, host);
 
     expect(mockStatus).toHaveBeenCalledWith(HttpStatus.UNPROCESSABLE_ENTITY);
-    expect(mockSend).toHaveBeenCalledWith({
+    expect(mockJson).toHaveBeenCalledWith({
       message: error.message,
       statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });
@@ -55,11 +55,11 @@ describe('SafeTxHashMismatchExceptionFilter', () => {
       casing: 'lower',
     }) as Hex;
     const error = new SafeTxHashMismatchError(safeTxHash);
-    const { host, mockSend } = buildMockHost();
+    const { host, mockJson } = buildMockHost();
 
     filter.catch(error, host);
 
-    const { message } = mockSend.mock.calls[0][0] as { message: string };
+    const { message } = mockJson.mock.calls[0][0] as { message: string };
     expect(message).toContain(safeTxHash);
   });
 });

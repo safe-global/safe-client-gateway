@@ -5,10 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -65,7 +62,7 @@ describe('MembersController', () => {
     maxInvites = configService.getOrThrow('spaces.maxInvites');
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterAll(async () => {

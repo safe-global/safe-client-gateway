@@ -8,7 +8,7 @@ import {
   type NestInterceptor,
 } from '@nestjs/common';
 import { Inject } from '@nestjs/common/decorators';
-import type { FastifyReply } from 'fastify';
+import type { Request, Response } from 'express';
 import isNumber from 'lodash/isNumber';
 // biome-ignore lint/suspicious/noDeprecatedImports: only multi-callback `tap` overloads are deprecated in rxjs; we use the observer-object signature.
 import { type Observable, tap } from 'rxjs';
@@ -18,7 +18,6 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { formatRouteLogMessage } from '@/logging/utils';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 /**
  * The {@link RouteLoggerInterceptor} is an interceptor that logs the requests
@@ -42,8 +41,8 @@ export class RouteLoggerInterceptor implements NestInterceptor {
     const startTimeMs: number = performance.now();
 
     const httpContext = context.switchToHttp();
-    const request = httpContext.getRequest<HttpRequest>();
-    const response = httpContext.getResponse<FastifyReply>();
+    const request: Request = httpContext.getRequest();
+    const response: Response = httpContext.getResponse();
 
     return next.handle().pipe(
       tap({
@@ -68,11 +67,7 @@ export class RouteLoggerInterceptor implements NestInterceptor {
    * compute the response time of the route
    * @private
    */
-  private onError(
-    request: HttpRequest,
-    error: Error,
-    startTimeMs: number,
-  ): void {
+  private onError(request: Request, error: Error, startTimeMs: number): void {
     let statusCode: number = HttpStatus.INTERNAL_SERVER_ERROR;
     if ('code' in error && isNumber(error.code)) {
       statusCode = error.code;
@@ -98,8 +93,8 @@ export class RouteLoggerInterceptor implements NestInterceptor {
   }
 
   private onComplete(
-    request: HttpRequest,
-    response: FastifyReply,
+    request: Request,
+    response: Response,
     startTimeMs: number,
   ): void {
     this.loggingService.info(

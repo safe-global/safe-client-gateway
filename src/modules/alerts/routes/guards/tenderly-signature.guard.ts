@@ -6,8 +6,8 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 @Injectable()
 export class TenderlySignatureGuard implements CanActivate {
@@ -26,7 +26,7 @@ export class TenderlySignatureGuard implements CanActivate {
   }
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const request: Request = context.switchToHttp().getRequest();
 
     const signature = this.getSignature(request.headers);
     const digest = this.getDigest(request);
@@ -34,7 +34,7 @@ export class TenderlySignatureGuard implements CanActivate {
     return this.isValidSignature({ signature, digest });
   }
 
-  private getSignature(headers: HttpRequest['headers']): string {
+  private getSignature(headers: Request['headers']): string {
     const signature = headers[TenderlySignatureGuard.SIGNATURE_HEADER];
 
     if (typeof signature !== 'string') {
@@ -44,7 +44,7 @@ export class TenderlySignatureGuard implements CanActivate {
     return signature;
   }
 
-  private getDigest(args: HttpRequest): string {
+  private getDigest(args: Request): string {
     const timestamp = args.headers[TenderlySignatureGuard.TIMESTAMP_HEADER];
 
     if (!timestamp) {

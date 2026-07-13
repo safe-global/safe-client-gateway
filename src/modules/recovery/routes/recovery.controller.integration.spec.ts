@@ -7,10 +7,7 @@ import request from 'supertest';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -84,7 +81,7 @@ describe('Recovery Controller', () => {
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterAll(async () => {

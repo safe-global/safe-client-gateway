@@ -13,10 +13,7 @@ import {
 import { APP_FILTER } from '@nestjs/core';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
@@ -67,7 +64,7 @@ describe('GlobalErrorFilter tests', () => {
     vi.spyOn(loggingService, 'info');
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterAll(async () => {

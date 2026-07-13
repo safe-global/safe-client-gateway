@@ -6,10 +6,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -91,7 +88,7 @@ describe('BillingWebhookAuthGuard', () => {
     }).compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

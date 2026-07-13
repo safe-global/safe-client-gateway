@@ -6,10 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -57,7 +54,7 @@ describe('Safes Controller', () => {
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

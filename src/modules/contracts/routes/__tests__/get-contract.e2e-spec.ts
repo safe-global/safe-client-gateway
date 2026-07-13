@@ -3,10 +3,7 @@ import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 import type { RedisClientType } from '@/datasources/cache/cache.module';
 
@@ -20,7 +17,7 @@ describe('Get contract e2e test', () => {
     const moduleRef = await createBaseTestModule();
 
     app = await new TestAppProvider().provide(moduleRef);
-    await initTestApplication(app);
+    await app.init();
     redisClient = await redisClientFactory();
   });
 

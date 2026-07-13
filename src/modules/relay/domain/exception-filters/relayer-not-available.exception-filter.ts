@@ -6,7 +6,7 @@ import {
   type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 
@@ -17,14 +17,14 @@ export class RelayerNotAvailableExceptionFilter implements ExceptionFilter {
     host: ArgumentsHost,
   ): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
+    const response = ctx.getResponse<Response>();
 
     const statusCode =
       exception instanceof RelayerTypeNotImplementedError
         ? HttpStatus.NOT_IMPLEMENTED
         : HttpStatus.FORBIDDEN;
 
-    response.status(statusCode).send({
+    response.status(statusCode).json({
       message: exception.message,
       statusCode,
     });

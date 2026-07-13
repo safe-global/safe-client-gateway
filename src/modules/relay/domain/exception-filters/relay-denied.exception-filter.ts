@@ -6,7 +6,7 @@ import {
   type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import type { Response } from 'express';
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 
@@ -17,9 +17,9 @@ export class RelayDeniedExceptionFilter implements ExceptionFilter {
     host: ArgumentsHost,
   ): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
+    const response = ctx.getResponse<Response>();
 
-    response.status(HttpStatus.FORBIDDEN).send({
+    response.status(HttpStatus.FORBIDDEN).json({
       message: exception.message,
       statusCode: HttpStatus.FORBIDDEN,
     });

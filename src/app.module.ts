@@ -70,7 +70,6 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { BlocklistGuard } from '@/routes/common/guards/blocklist.guard';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
-import { NullResponseInterceptor } from '@/routes/common/interceptors/null-response.interceptor';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 
 @Module({})
@@ -197,10 +196,6 @@ export class AppModule implements NestModule {
         {
           provide: APP_INTERCEPTOR,
           useClass: CacheControlInterceptor,
-        },
-        {
-          provide: APP_INTERCEPTOR,
-          useClass: NullResponseInterceptor,
         },
         {
           provide: APP_GUARD,

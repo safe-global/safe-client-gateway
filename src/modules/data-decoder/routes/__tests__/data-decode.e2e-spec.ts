@@ -3,10 +3,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { transactionDataDtoBuilder } from '@/modules/data-decoder/routes/entities/__tests__/transaction-data.dto.builder';
@@ -19,7 +16,7 @@ describe('Data decode e2e tests', () => {
     const moduleRef = await createBaseTestModule();
 
     app = await new TestAppProvider().provide(moduleRef);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterAll(async () => {

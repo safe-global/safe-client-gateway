@@ -6,9 +6,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CaptchaService } from '@/routes/captcha/captcha.service';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 @Injectable()
 export class CaptchaGuard implements CanActivate {
@@ -28,7 +28,7 @@ export class CaptchaGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const request: Request = context.switchToHttp().getRequest();
     const token = request.headers['x-captcha-token'] as string | undefined;
 
     if (!token) {

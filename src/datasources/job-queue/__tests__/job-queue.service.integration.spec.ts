@@ -5,10 +5,6 @@ import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Queue } from 'bullmq';
-import {
-  createTestApplication,
-  initTestApplication,
-} from '@/__tests__/test-app.provider';
 import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import { TestJobConsumer } from './../__tests__/test.job.consumer';
@@ -51,8 +47,8 @@ describe('JobQueueService & TestJobConsumer integration', () => {
     consumer = moduleFixture.get(TestJobConsumer);
     queue = moduleFixture.get(getQueueToken('test-queue'));
 
-    app = createTestApplication(moduleFixture);
-    await initTestApplication(app);
+    app = moduleFixture.createNestApplication();
+    await app.init();
   });
 
   afterEach(async () => {

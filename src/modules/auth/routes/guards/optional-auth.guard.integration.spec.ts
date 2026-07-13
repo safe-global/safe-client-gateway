@@ -10,10 +10,7 @@ import {
 } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
@@ -70,7 +67,7 @@ describe('OptionalAuthGuard', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

@@ -2,7 +2,7 @@
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
+import { getMillisecondsUntil } from '@/domain/common/utils/time';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
@@ -100,7 +100,7 @@ export class OidcAuthService {
     const exp = expirationTime ?? maxExpirationTime;
     return {
       accessToken,
-      maxAge: getSecondsUntil(exp),
+      maxAge: getMillisecondsUntil(exp),
     };
   }
 

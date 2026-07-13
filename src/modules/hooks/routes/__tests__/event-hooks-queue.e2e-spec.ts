@@ -6,10 +6,7 @@ import type { ChannelWrapper } from 'amqp-connection-manager';
 import { getAddress } from 'viem';
 import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
 import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 import { retry } from '@/__tests__/util/retry';
 import configuration from '@/config/entities/configuration';
@@ -49,7 +46,7 @@ describe('Events queue processing e2e tests', () => {
     });
 
     app = await new TestAppProvider().provide(moduleRef);
-    await initTestApplication(app);
+    await app.init();
     redisClient = await redisClientFactory();
     const amqpClient = amqpClientFactory(queue);
     channel = amqpClient.channel;

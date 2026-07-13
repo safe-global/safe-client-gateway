@@ -15,10 +15,6 @@ import request from 'supertest';
 import type { Address } from 'viem';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
-import {
-  createTestApplication,
-  initTestApplication,
-} from '@/__tests__/test-app.provider';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
@@ -114,9 +110,9 @@ describe('RouteLoggerInterceptor tests', () => {
       controllers: [TestController],
     }).compile();
 
-    app = createTestApplication(moduleFixture);
+    app = moduleFixture.createNestApplication();
     app.useGlobalInterceptors(new RouteLoggerInterceptor(mockLoggingService));
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

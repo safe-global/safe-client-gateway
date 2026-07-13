@@ -4,10 +4,6 @@ import type { Server } from 'node:net';
 import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
-import {
-  createTestApplication,
-  initTestApplication,
-} from '@/__tests__/test-app.provider';
 import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
@@ -34,8 +30,8 @@ describe('PaginationDataDecorator', () => {
       imports: [TestModule],
     }).compile();
 
-    app = createTestApplication(moduleFixture);
-    await initTestApplication(app);
+    app = moduleFixture.createNestApplication();
+    await app.init();
   });
 
   afterEach(async () => {

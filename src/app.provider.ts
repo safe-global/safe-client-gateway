@@ -1,97 +1,36 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-
-import fastifyCookie from '@fastify/cookie';
-import type { INestApplication } from '@nestjs/common';
+import type { DynamicModule, INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
-import {
-  FastifyAdapter,
-  type NestFastifyApplication,
-} from '@nestjs/platform-fastify';
+import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { TestingModule } from '@nestjs/testing';
+import cookieParser from 'cookie-parser';
+import { json } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
-export function configureVersioning(app: INestApplication): void {
+function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
     type: VersioningType.URI,
   });
 }
 
-// Mirrors the units accepted by the `bytes` library that Express' body-parser
-// used, so a previously valid `EXPRESS_JSON_LIMIT` keeps parsing post-migration.
-const BODY_LIMIT_UNITS = {
-  b: 1,
-  kb: 1024,
-  mb: 1024 ** 2,
-  gb: 1024 ** 3,
-  tb: 1024 ** 4,
-  pb: 1024 ** 5,
-} as const;
-
-type BodyLimitUnit = keyof typeof BODY_LIMIT_UNITS;
-
-// Express route-matching defaults that Fastify does not replicate out of the
-// box. Exported so tests exercise the same routing behaviour as production.
-export const FASTIFY_ROUTER_OPTIONS = {
-  // Express matched routes regardless of a trailing slash; Fastify does not
-  // by default. Preserve the previous behaviour so `/path/` keeps resolving
-  // to the `/path` handler instead of returning 404.
-  ignoreTrailingSlash: true,
-  // Express imposed no limit on route parameter length, but Fastify defaults
-  // to 100, which 404s composite ids such as
-  // `multisig_<address>_<safeTxHash>` (~118 chars). 256 is ~2× the longest
-  // legitimate id, which is sufficient without admitting kilobyte-long segments.
-  maxParamLength: 256,
-};
-
-type FastifyAdapterConfiguration = {
-  jsonLimit?: string;
-  trustProxy: string;
-};
-
-export function parseTrustProxy(value: string): string | number {
-  return /^[0-9]+$/.test(value) ? Number.parseInt(value, 10) : value;
-}
-
-export function parseBodyLimit(value: string | undefined): number | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (/^[0-9]+$/.test(normalized)) {
-    return Number.parseInt(normalized, 10);
-  }
-
-  const match = /^(\d+(?:\.\d+)?)\s*(b|kb|mb|gb|tb|pb)$/.exec(normalized);
-  if (!match) {
-    throw new Error(`Invalid JSON body size limit: ${value}`);
-  }
-
-  const amount = Number.parseFloat(match[1]);
-  const unit = match[2] as BodyLimitUnit;
-  return Math.floor(amount * BODY_LIMIT_UNITS[unit]);
-}
-
-export function createFastifyAdapterFromConfiguration(
-  config: FastifyAdapterConfiguration,
-): FastifyAdapter {
-  const bodyLimit = parseBodyLimit(config.jsonLimit);
-
-  return new FastifyAdapter({
-    trustProxy: parseTrustProxy(config.trustProxy),
-    routerOptions: FASTIFY_ROUTER_OPTIONS,
-    ...(bodyLimit === undefined ? {} : { bodyLimit }),
-  });
-}
-
-export function createFastifyAdapter(
-  configurationService: Pick<IConfigurationService, 'get' | 'getOrThrow'>,
-): FastifyAdapter {
-  return createFastifyAdapterFromConfiguration({
-    jsonLimit: configurationService.get<string>('express.jsonLimit'),
-    trustProxy: configurationService.getOrThrow<string>('express.trustProxy'),
-  });
+/**
+ * Configures Express `trust proxy` so `req.ip` reflects the originating client
+ * (from `X-Forwarded-For`) rather than the nearest upstream hop. The value is a
+ * comma-separated list of trusted subnets/presets, or an integer hop count.
+ * @see https://expressjs.com/en/guide/behind-proxies.html
+ */
+export function configureTrustProxy(app: INestApplication): void {
+  const configurationService = app.get<IConfigurationService>(
+    IConfigurationService,
+  );
+  const value = configurationService.getOrThrow<string>('express.trustProxy');
+  // A purely numeric value is a hop count; anything else is a comma-separated
+  // list of trusted subnets/presets passed straight to Express.
+  const trustProxy = /^\d+$/.test(value) ? Number.parseInt(value, 10) : value;
+  (app as NestExpressApplication).set('trust proxy', trustProxy);
 }
 
 export function configureShutdownHooks(app: INestApplication): void {
@@ -144,15 +83,70 @@ function configureSwagger(app: INestApplication): void {
   });
 }
 
-async function configureCookies(app: INestApplication): Promise<void> {
-  await (app as NestFastifyApplication).register(fastifyCookie);
+function configureRequestBodyLimit(app: INestApplication): void {
+  const configurationService = app.get<IConfigurationService>(
+    IConfigurationService,
+  );
+
+  const jsonBodySizeLimit =
+    configurationService.get<string>('express.jsonLimit');
+  if (jsonBodySizeLimit) {
+    app.use(json({ limit: jsonBodySizeLimit }));
+  }
 }
 
-export const DEFAULT_CONFIGURATION: Array<
-  (app: INestApplication) => void | Promise<void>
-> = [
+function configureCookies(app: INestApplication): void {
+  app.use(cookieParser());
+}
+
+export const DEFAULT_CONFIGURATION: Array<(app: INestApplication) => void> = [
   configureVersioning,
   configureShutdownHooks,
   configureSwagger,
+  configureRequestBodyLimit,
   configureCookies,
+  configureTrustProxy,
 ];
+
+/**
+ * The main goal of {@link AppProvider} is to provide
+ * a {@link INestApplication}.
+ *
+ * Extensions of this class should return the application in
+ * {@link getApp}.
+ *
+ * Each provider should have a {@link configuration} which specifies
+ * the steps taken to configure the application
+ */
+export abstract class AppProvider<T extends DynamicModule | TestingModule> {
+  protected abstract readonly configuration: Array<
+    (app: INestApplication) => void
+  >;
+
+  public async provide(module: T): Promise<INestApplication> {
+    const app = await this.getApp(module);
+    for (const f of this.configuration) {
+      f(app);
+    }
+    return app;
+  }
+
+  protected abstract getApp(module: T): Promise<INestApplication>;
+}
+
+/**
+ * The default {@link AppProvider}
+ *
+ * This provider should be used to retrieve the actual implementation of the
+ * service
+ */
+export class DefaultAppProvider<
+  T extends DynamicModule,
+> extends AppProvider<T> {
+  protected readonly configuration: Array<(app: INestApplication) => void> =
+    DEFAULT_CONFIGURATION;
+
+  protected getApp(module: T): Promise<INestApplication> {
+    return NestFactory.create(module);
+  }
+}

@@ -7,11 +7,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import {
-  createTestApplication,
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -112,7 +108,7 @@ describe('Alerts Controller', () => {
       configurationService = moduleFixture.get(IConfigurationService);
       signingKey = configurationService.getOrThrow('alerts-route.signingKey');
       app = await new TestAppProvider().provide(moduleFixture);
-      await initTestApplication(app);
+      await app.init();
     });
 
     afterAll(async () => {
@@ -867,8 +863,8 @@ describe('Alerts Controller', () => {
       const moduleFixture = await createTestModule({
         config: testConfiguration,
       });
-      app = createTestApplication(moduleFixture);
-      await initTestApplication(app);
+      app = moduleFixture.createNestApplication();
+      await app.init();
     });
 
     afterAll(async () => {

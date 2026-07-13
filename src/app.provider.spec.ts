@@ -1,52 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  Body,
-  Controller,
-  Get,
-  type INestApplication,
-  Post,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, type INestApplication, Req } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import type { FastifyRequest } from 'fastify';
+import type { Request } from 'express';
 import request from 'supertest';
-import { createFastifyAdapter, parseBodyLimit } from '@/app.provider';
+import { configureTrustProxy } from '@/app.provider';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 
 @Controller()
-class ProbeController {
+class IpProbeController {
   @Get('ip')
-  getIp(@Req() req: FastifyRequest): { ip: string } {
+  getIp(@Req() req: Request): { ip: string | undefined } {
     return { ip: req.ip };
-  }
-
-  @Post('body')
-  postBody(@Body() body: unknown): unknown {
-    return body;
   }
 }
 
-describe('createFastifyAdapter', () => {
+describe('configureTrustProxy', () => {
   let app: INestApplication;
 
-  const createApp = async (trustProxy: string, jsonLimit = '1mb') => {
+  const createApp = async (trustProxy: string): Promise<INestApplication> => {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('express.trustProxy', trustProxy);
-    fakeConfigurationService.set('express.jsonLimit', jsonLimit);
 
     const moduleRef = await Test.createTestingModule({
-      controllers: [ProbeController],
+      controllers: [IpProbeController],
       providers: [
         { provide: IConfigurationService, useValue: fakeConfigurationService },
       ],
     }).compile();
 
-    const testApp = moduleRef.createNestApplication(
-      createFastifyAdapter(fakeConfigurationService),
-    );
+    const testApp = moduleRef.createNestApplication();
+    configureTrustProxy(testApp);
     await testApp.init();
-    await testApp.getHttpAdapter().getInstance().ready();
     return testApp;
   };
 
@@ -71,6 +56,9 @@ describe('createFastifyAdapter', () => {
       .get('/ip')
       .set('X-Forwarded-For', '1.2.3.4, 203.0.113.7');
 
+    // Walking right-to-left, the trusted (loopback) socket is skipped and the
+    // first public address wins; the client-supplied leftmost value (1.2.3.4)
+    // is never reached.
     expect(body.ip).toBe('203.0.113.7');
   });
 
@@ -91,52 +79,8 @@ describe('createFastifyAdapter', () => {
       .get('/ip')
       .set('X-Forwarded-For', '203.0.113.7');
 
+    // Trust disabled: X-Forwarded-For is ignored and the loopback socket peer
+    // is returned (127.0.0.1, ::ffff:127.0.0.1 or ::1).
     expect(body.ip).toMatch(/127\.0\.0\.1$|::1$/);
-  });
-
-  it('enforces the configured JSON body size limit', async () => {
-    app = await createApp('0', '8');
-
-    await request(app.getHttpServer())
-      .post('/body')
-      .send({ value: 'too-large' })
-      .expect(413);
-  });
-});
-
-describe('parseBodyLimit', () => {
-  it('returns undefined when unset', () => {
-    expect(parseBodyLimit(undefined)).toBeUndefined();
-    expect(parseBodyLimit('')).toBeUndefined();
-  });
-
-  it('treats a bare number as bytes', () => {
-    expect(parseBodyLimit('1024')).toBe(1024);
-  });
-
-  it.each([
-    ['1b', 1],
-    ['1kb', 1024],
-    ['1mb', 1024 ** 2],
-    ['1gb', 1024 ** 3],
-    // tb/pb preserve parity with the `bytes` library Express used
-    ['1tb', 1024 ** 4],
-    ['2pb', 2 * 1024 ** 5],
-  ])('parses unit suffix %s', (input, expected) => {
-    expect(parseBodyLimit(input)).toBe(expected);
-  });
-
-  it('is case-insensitive and tolerates whitespace', () => {
-    expect(parseBodyLimit(' 1 MB ')).toBe(1024 ** 2);
-  });
-
-  it('floors fractional values', () => {
-    expect(parseBodyLimit('1.5kb')).toBe(1536);
-  });
-
-  it('throws on an unrecognised limit', () => {
-    expect(() => parseBodyLimit('not-a-size')).toThrow(
-      'Invalid JSON body size limit: not-a-size',
-    );
   });
 });

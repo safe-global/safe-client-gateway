@@ -8,10 +8,7 @@ import request from 'supertest';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage } from 'viem/siwe';
 import type { MockedObject } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -68,7 +65,7 @@ describe('AuthController', () => {
       configService.getOrThrow<number>('auth.maxValidityPeriodSeconds') * 1_000;
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   }
 
   beforeEach(async () => {

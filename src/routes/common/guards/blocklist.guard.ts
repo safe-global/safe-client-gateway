@@ -7,6 +7,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { getAddress, isAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { IBlocklistService } from '@/config/entities/blocklist.interface';
@@ -15,11 +16,6 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import {
-  getRouteParam,
-  getRoutePath,
-  type HttpRequest,
-} from '@/routes/common/http/http-request.utils';
 
 @Injectable()
 export class BlocklistGuard implements CanActivate {
@@ -43,8 +39,8 @@ export class BlocklistGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest<HttpRequest>();
-    const addressParam = getRouteParam(request, this.parameterName);
+    const request: Request = context.switchToHttp().getRequest();
+    const addressParam = request.params[this.parameterName];
 
     if (!(typeof addressParam === 'string' && isAddress(addressParam))) {
       return true;
@@ -58,7 +54,7 @@ export class BlocklistGuard implements CanActivate {
         this.loggingService.warn({
           type: LogType.BlocklistHit,
           address: normalizedAddress,
-          route: getRoutePath(request),
+          route: request.route?.path || request.path,
           method: request.method,
           clientIp: request.ip,
         });

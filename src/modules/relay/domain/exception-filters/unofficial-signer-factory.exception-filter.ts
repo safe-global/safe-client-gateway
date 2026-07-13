@@ -6,16 +6,16 @@ import {
   ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { FastifyReply } from 'fastify';
+import { Response } from 'express';
 import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
 
 @Catch(UnofficialSignerFactoryError)
 export class UnofficialSignerFactoryExceptionFilter implements ExceptionFilter {
   catch(_: UnofficialSignerFactoryError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
+    const response = ctx.getResponse<Response>();
 
-    response.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
+    response.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
       message: 'Unofficial SafeWebAuthnSignerFactory contract.',
       statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });

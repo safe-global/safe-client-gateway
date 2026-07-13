@@ -6,10 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
@@ -36,7 +33,7 @@ describe('Owners Controller (Unit)', () => {
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

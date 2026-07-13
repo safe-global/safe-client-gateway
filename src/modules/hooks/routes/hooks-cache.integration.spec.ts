@@ -6,10 +6,6 @@ import type { INestApplication } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 import { encodeFunctionData, getAddress, type Hash, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import {
-  createTestApplication,
-  initTestApplication,
-} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -63,7 +59,7 @@ describe('Hook Events for Cache', () => {
       config,
     });
 
-    app = createTestApplication(moduleFixture);
+    app = moduleFixture.createNestApplication();
 
     fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
     configurationService = moduleFixture.get(IConfigurationService);
@@ -78,7 +74,7 @@ describe('Hook Events for Cache', () => {
     networkService = moduleFixture.get(NetworkService);
     queuesApiService = moduleFixture.get(IQueuesApiService);
 
-    await initTestApplication(app);
+    await app.init();
   }
 
   beforeEach(async () => {

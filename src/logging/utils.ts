@@ -1,13 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import type { Request } from 'express';
 import get from 'lodash/get';
-import {
-  getHeader,
-  getRequestPath,
-  getRouteParam,
-  getRoutePath,
-  type RequestLike,
-} from '@/routes/common/http/http-request.utils';
 
 const HEADER_IP_ADDRESS = 'X-Real-IP';
 const HEADER_SAFE_APP_USER_AGENT = 'Safe-App-User-Agent';
@@ -15,7 +9,7 @@ const HEADER_ORIGIN = 'Origin';
 
 export function formatRouteLogMessage(
   statusCode: number,
-  request: RequestLike,
+  request: Request,
   startTimeMs: number,
   detail?: string,
 ): {
@@ -30,22 +24,19 @@ export function formatRouteLogMessage(
   detail: string | null;
   origin: string | null;
 } {
-  const clientIp = getHeader(request, HEADER_IP_ADDRESS) ?? null;
-  const safeAppUserAgent =
-    getHeader(request, HEADER_SAFE_APP_USER_AGENT) ?? null;
-  const chainIdParam = getRouteParam(request, 'chainId');
+  const clientIp = request.header(HEADER_IP_ADDRESS) ?? null;
+  const safeAppUserAgent = request.header(HEADER_SAFE_APP_USER_AGENT) ?? null;
+  const chainIdParam = request.params.chainId;
   const chainId = typeof chainIdParam === 'string' ? chainIdParam : null;
-  const origin = getHeader(request, HEADER_ORIGIN) ?? null;
+  const origin = request.header(HEADER_ORIGIN) ?? null;
 
   return {
     chain_id: chainId,
     client_ip: clientIp,
-    // method is always set on FastifyRequest and on the raw Node IncomingMessage
-    // passed by NotFoundLoggerMiddleware; 'UNKNOWN' is a type-required sentinel.
-    method: request.method ?? 'UNKNOWN',
+    method: request.method,
     response_time_ms: performance.now() - startTimeMs,
-    route: getRoutePath(request),
-    path: getRequestPath(request),
+    route: request.route.path,
+    path: request.url,
     safe_app_user_agent: safeAppUserAgent,
     status_code: statusCode,
     detail: detail ?? null,

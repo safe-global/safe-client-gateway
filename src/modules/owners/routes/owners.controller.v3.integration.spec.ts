@@ -6,10 +6,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -48,7 +45,7 @@ describe('Owners Controller V3 (Unit)', () => {
     loggingService = moduleFixture.get(LoggingService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {
@@ -1099,7 +1096,7 @@ describe('Owners Controller V3 (Unit)', () => {
       const moduleFixture = await createTestModule({ config: customConfig });
       networkService = moduleFixture.get(NetworkService);
       app = await new TestAppProvider().provide(moduleFixture);
-      await initTestApplication(app);
+      await app.init();
     });
 
     it('returns 401 when the captcha token header is missing', async () => {

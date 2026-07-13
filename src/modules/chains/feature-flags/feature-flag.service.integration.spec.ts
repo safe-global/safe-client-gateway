@@ -3,10 +3,7 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -36,7 +33,7 @@ describe('FeatureFlagService Integration', () => {
         moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
 
       app = await new TestAppProvider().provide(moduleFixture);
-      await initTestApplication(app);
+      await app.init();
     });
 
     describe('Service key configuration', () => {
@@ -89,7 +86,7 @@ describe('FeatureFlagService Integration', () => {
         status: 200,
       });
       const app = await new TestAppProvider().provide(moduleFixture);
-      await initTestApplication(app);
+      await app.init();
       await featureFlagSvc.isFeatureEnabled('1', 'test').catch(() => {});
 
       expect(networkService.get).toHaveBeenCalledWith(

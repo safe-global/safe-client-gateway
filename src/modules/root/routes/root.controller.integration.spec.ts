@@ -3,10 +3,7 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 
 describe('Root Controller tests', () => {
@@ -16,7 +13,7 @@ describe('Root Controller tests', () => {
     const moduleFixture = await createTestModule();
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

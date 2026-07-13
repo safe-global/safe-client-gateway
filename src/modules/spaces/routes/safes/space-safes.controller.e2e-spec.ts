@@ -5,10 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -61,7 +58,7 @@ describe('SpaceSafesController', () => {
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
   });
 
   afterEach(async () => {

@@ -15,7 +15,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import type { FastifyReply } from 'fastify';
+import { type CookieOptions, Request, Response } from 'express';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
@@ -27,10 +27,8 @@ import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-a
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
-  getClearCookieOptions,
-  getSetCookieOptions,
+  getCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -93,7 +91,7 @@ export class OidcAuthController {
   @Get('oidc/authorize')
   authorize(
     @Res({ passthrough: true })
-    res: FastifyReply,
+    res: Response,
     @Query('redirect_url', new ValidationPipe(RedirectUrlSchema))
     redirectUrl?: string,
     @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
@@ -105,18 +103,11 @@ export class OidcAuthController {
         connection,
       );
 
-    res.setCookie(
-      OidcAuthController.OIDC_STATE_COOKIE_NAME,
-      state,
-      // `stateMaxAge` is in milliseconds; cookies expect seconds. Floor to at
-      // least 1s so a sub-second TTL never collapses to `Max-Age=0`, which a
-      // browser drops immediately and would break the callback state check.
-      getSetCookieOptions(
-        this.isProduction,
-        Math.max(1, Math.floor(stateMaxAge / 1_000)),
-      ),
-    );
-    res.redirect(authorizationUrl, 302);
+    res.cookie(OidcAuthController.OIDC_STATE_COOKIE_NAME, state, {
+      ...this.getCookieOptions(),
+      maxAge: stateMaxAge,
+    });
+    res.redirect(authorizationUrl);
   }
 
   @ApiOperation({
@@ -159,9 +150,9 @@ export class OidcAuthController {
   })
   @Get('oidc/callback')
   async callback(
-    @Req() req: HttpRequest,
+    @Req() req: Request,
     @Res({ passthrough: true })
-    res: FastifyReply,
+    res: Response,
     @Query('code') code?: string,
     @Query('state') state?: string,
     @Query('error') error?: string,
@@ -170,10 +161,9 @@ export class OidcAuthController {
     const expectedState: string | undefined =
       req.cookies?.[OidcAuthController.OIDC_STATE_COOKIE_NAME];
     // Always clear the one-time state cookie
-    res.setCookie(
+    res.clearCookie(
       OidcAuthController.OIDC_STATE_COOKIE_NAME,
-      '',
-      getClearCookieOptions(this.isProduction),
+      this.getCookieOptions(),
     );
 
     if (error) {
@@ -182,7 +172,6 @@ export class OidcAuthController {
       );
       res.redirect(
         this.buildErrorRedirectUrl(error, expectedState, errorDescription),
-        302,
       );
       return;
     }
@@ -191,14 +180,13 @@ export class OidcAuthController {
       this.loggingService.warn('Auth callback: missing code or state');
       res.redirect(
         this.buildErrorRedirectUrl('invalid_request', expectedState),
-        302,
       );
       return;
     }
 
     if (!expectedState || expectedState !== state) {
       this.loggingService.warn('Auth callback: state mismatch');
-      res.redirect(this.buildErrorRedirectUrl('invalid_request'), 302);
+      res.redirect(this.buildErrorRedirectUrl('invalid_request'));
       return;
     }
 
@@ -206,22 +194,22 @@ export class OidcAuthController {
       const { accessToken, maxAge } =
         await this.oidcAuthService.authenticateWithOidc(code);
 
-      res.setCookie(
-        ACCESS_TOKEN_COOKIE_NAME,
-        accessToken,
-        getSetCookieOptions(this.isProduction, maxAge),
-      );
-      res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state), 302);
+      res.cookie(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
+        ...this.getCookieOptions(),
+        maxAge,
+      });
+      res.redirect(this.oidcAuthService.getPostLoginRedirectUri(state));
     } catch (err) {
       const error = asError(err);
       this.loggingService.warn(
         `Auth callback: authentication failed: ${error.message}`,
       );
-      res.redirect(
-        this.buildErrorRedirectUrl('authentication_failed', state),
-        302,
-      );
+      res.redirect(this.buildErrorRedirectUrl('authentication_failed', state));
     }
+  }
+
+  private getCookieOptions(): CookieOptions {
+    return getCookieOptions(this.isProduction);
   }
 
   /**

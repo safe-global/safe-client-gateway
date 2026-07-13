@@ -7,10 +7,7 @@ import type { TestingModule } from '@nestjs/testing';
 import { sign } from 'jsonwebtoken';
 import request from 'supertest';
 import type { MockedObject, MockInstance } from 'vitest';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
+import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -124,7 +121,7 @@ describe('OidcAuthController', () => {
     auth0JwksFixture = getAuth0JwksFixture();
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    await app.init();
     mockAuth0Jwks({
       fetchMock,
       issuer: `https://${auth0Config.domain}/`,

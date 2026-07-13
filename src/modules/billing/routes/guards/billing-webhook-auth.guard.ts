@@ -6,8 +6,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 /**
  * Protects the billing-service webhook endpoint with a service-to-service JWT.
@@ -21,7 +21,7 @@ export class BillingWebhookAuthGuard implements CanActivate {
   constructor(private readonly tokenService: BillingAuthService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const request: Request = context.switchToHttp().getRequest();
 
     const token = this.getBearerToken(request);
     if (!token) {
@@ -35,7 +35,7 @@ export class BillingWebhookAuthGuard implements CanActivate {
     return true;
   }
 
-  private getBearerToken(request: HttpRequest): string | null {
+  private getBearerToken(request: Request): string | null {
     const header = request.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
       return null;
