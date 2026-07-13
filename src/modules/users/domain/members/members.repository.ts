@@ -178,12 +178,10 @@ export class MembersRepository implements IMembersRepository {
     );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      const walletUserIds = new Map<Address, User['id']>();
+      // Keyed by the raw address string (wallet rows store a plain string);
+      // lookups by the caller's `Address` inputs still match by value.
+      const walletUserIds = new Map<string, User['id']>();
       if (walletAddresses.length > 0) {
-        // Batch existing wallet lookups while keeping user creation atomic.
-        // Enabled: match encrypted rows on their blind index. Disabled: no
-        // index key is configured, so match the stored plaintext directly
-        // (address_index IS NULL).
         const indexByAddress = new Map<Address, string | null>(
           walletAddresses.map((address) => [
             address,
@@ -201,9 +199,6 @@ export class MembersRepository implements IMembersRepository {
           relations: { user: true },
         });
 
-        // Map each row back to the caller's plaintext address: encrypted
-        // rows via their blind index (no KMS round trip - the plaintext is
-        // the invite input), plaintext rows via the stored address.
         const addressByIndex = new Map<string, Address>();
         for (const [address, index] of indexByAddress) {
           if (index !== null) {
@@ -297,8 +292,6 @@ export class MembersRepository implements IMembersRepository {
       inviteExpiresAt,
     } = args;
     const { name, role } = userToInvite;
-    // Encrypt at rest under the space-scoped context; a disabled service
-    // passes the plaintext through unchanged.
     const encryptedName = await this.memberEncryptionService.encryptName(
       space.id,
       name,
@@ -570,8 +563,6 @@ export class MembersRepository implements IMembersRepository {
         );
       }
 
-      // A cleared alias (null) is stored as-is; only a present value is
-      // encrypted under the space-scoped context.
       const encryptedAlias =
         args.alias === null
           ? null
