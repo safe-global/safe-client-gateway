@@ -37,19 +37,16 @@ describe('AwsKmsService', () => {
     webIdentityTokenFile?: string;
   }): AwsKmsService {
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('spaces.fieldEncryption.kms.keyId', keyId);
+    fakeConfigurationService.set('encryption.kms.keyId', keyId);
     if (args?.webIdentityTokenFile) {
       fakeConfigurationService.set(
-        'spaces.fieldEncryption.kms.webIdentityTokenFile',
+        'encryption.kms.webIdentityTokenFile',
         args.webIdentityTokenFile,
       );
     } else {
+      fakeConfigurationService.set('encryption.kms.accessKeyId', accessKeyId);
       fakeConfigurationService.set(
-        'spaces.fieldEncryption.kms.accessKeyId',
-        accessKeyId,
-      );
-      fakeConfigurationService.set(
-        'spaces.fieldEncryption.kms.secretAccessKey',
+        'encryption.kms.secretAccessKey',
         secretAccessKey,
       );
     }
@@ -65,10 +62,10 @@ describe('AwsKmsService', () => {
 
     it('resolves the client eagerly when a key is configured, so a partial configuration fails at construction', () => {
       const fakeConfigurationService = new FakeConfigurationService();
-      fakeConfigurationService.set('spaces.fieldEncryption.kms.keyId', keyId);
+      fakeConfigurationService.set('encryption.kms.keyId', keyId);
 
       expect(() => new AwsKmsService(fakeConfigurationService)).toThrow(
-        'No value set for key spaces.fieldEncryption.kms.accessKeyId',
+        'No value set for key encryption.kms.accessKeyId',
       );
     });
 
@@ -80,7 +77,7 @@ describe('AwsKmsService', () => {
           plaintext: Buffer.from(faker.string.alphanumeric(12)),
         }),
       ).rejects.toThrow(
-        'AWS KMS is not configured: spaces.fieldEncryption.kms.keyId is required',
+        'AWS KMS is not configured: encryption.kms.keyId is required',
       );
     });
   });

@@ -20,9 +20,7 @@ export class AwsKmsService implements IKmsService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.keyId = this.configurationService.get<string>(
-      'spaces.fieldEncryption.kms.keyId',
-    );
+    this.keyId = this.configurationService.get<string>('encryption.kms.keyId');
     if (this.keyId) {
       this.client = this.createClient();
     }
@@ -71,7 +69,7 @@ export class AwsKmsService implements IKmsService {
   private getConfiguredClient(): { client: KMSClient; keyId: string } {
     if (!(this.client && this.keyId)) {
       throw new Error(
-        'AWS KMS is not configured: spaces.fieldEncryption.kms.keyId is required',
+        'AWS KMS is not configured: encryption.kms.keyId is required',
       );
     }
     return { client: this.client, keyId: this.keyId };
@@ -82,14 +80,14 @@ export class AwsKmsService implements IKmsService {
     // the AWS SDK to resolve directly from the environment (AWS_REGION),
     // rather than piping it through IConfigurationService.
     const webIdentityTokenFile = this.configurationService.get<string>(
-      'spaces.fieldEncryption.kms.webIdentityTokenFile',
+      'encryption.kms.webIdentityTokenFile',
     );
     const credentials = resolveAwsCredentials(webIdentityTokenFile) ?? {
       accessKeyId: this.configurationService.getOrThrow<string>(
-        'spaces.fieldEncryption.kms.accessKeyId',
+        'encryption.kms.accessKeyId',
       ),
       secretAccessKey: this.configurationService.getOrThrow<string>(
-        'spaces.fieldEncryption.kms.secretAccessKey',
+        'encryption.kms.secretAccessKey',
       ),
     };
 

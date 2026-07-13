@@ -14,8 +14,8 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
-import { INDEX_KEY_LENGTH } from '@/datasources/kms/field-crypto.constants';
-import { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
+import { INDEX_KEY_LENGTH } from '@/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -1333,17 +1333,17 @@ describe('UsersRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       configurationService.get.mockImplementation((key: string) => {
-        if (key === 'spaces.fieldEncryption.indexKey') {
+        if (key === 'encryption.indexKey') {
           return wrappedIndexKey;
         }
-        if (key === 'spaces.fieldEncryption.kms.keyId') return keyId;
+        if (key === 'encryption.kms.keyId') return keyId;
       });
       configurationService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'spaces.fieldEncryption.enabled') return true;
-        if (key === 'spaces.fieldEncryption.kms.accessKeyId') {
+        if (key === 'encryption.enabled') return true;
+        if (key === 'encryption.kms.accessKeyId') {
           return accessKeyId;
         }
-        if (key === 'spaces.fieldEncryption.kms.secretAccessKey') {
+        if (key === 'encryption.kms.secretAccessKey') {
           return secretAccessKey;
         }
       });
@@ -1358,7 +1358,7 @@ describe('UsersRepository', () => {
       // The blind-index key unwrap in onModuleInit is the first Decrypt call.
       kmsMock.on(DecryptCommand).resolvesOnce({ Plaintext: indexKey });
 
-      const fieldCrypto = new FieldCryptoService(
+      const fieldCrypto = new KmsEncryptionService(
         encryptingConfigurationService,
         new AwsKmsService(encryptingConfigurationService),
       );

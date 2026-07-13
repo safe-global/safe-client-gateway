@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { FieldCryptoModule } from '@/datasources/kms/field-crypto.module';
+import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -31,7 +31,7 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     WalletsModule,
     WalletEncryptionModule,
     SpaceAuditModule,
-    FieldCryptoModule,
+    KmsEncryptionModule,
   ],
   providers: [
     EmailEncryptionService,

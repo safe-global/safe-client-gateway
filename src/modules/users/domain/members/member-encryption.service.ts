@@ -1,21 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
+import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 
 @Injectable()
 export class MemberEncryptionService {
-  constructor(private readonly fieldCryptoService: FieldCryptoService) {}
+  constructor(private readonly kmsEncryption: KmsEncryptionService) {}
+
+  private context(spaceId: number): Record<string, string> {
+    return { spaceId: String(spaceId) };
+  }
 
   encryptName(spaceId: number, name: string): Promise<string> {
-    return this.fieldCryptoService.encrypt('members.name', { spaceId }, name);
+    return this.kmsEncryption.encrypt(name, this.context(spaceId));
   }
 
   encryptAlias(spaceId: number, alias: string): Promise<string> {
-    return this.fieldCryptoService.encrypt('members.alias', { spaceId }, alias);
+    return this.kmsEncryption.encrypt(alias, this.context(spaceId));
   }
 
   decryptName(spaceId: number, value: string): Promise<string> {
-    return this.fieldCryptoService.decrypt('members.name', { spaceId }, value);
+    return this.kmsEncryption.decrypt(value, this.context(spaceId));
   }
 
   async decryptMembers<T extends { name: string; alias: string | null }>(
@@ -25,9 +29,9 @@ export class MemberEncryptionService {
     return Promise.all(
       members.map((member) =>
         Promise.all([
-          this.fieldCryptoService.decrypt('members.name', { spaceId }, member.name),
+          this.kmsEncryption.decrypt(member.name, this.context(spaceId)),
           member.alias
-            ? this.fieldCryptoService.decrypt('members.alias', { spaceId }, member.alias)
+            ? this.kmsEncryption.decrypt(member.alias, this.context(spaceId))
             : Promise.resolve(null),
         ]).then(([name, alias]) => ({
           ...member,

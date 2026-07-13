@@ -3,7 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
+import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 import { SpaceFieldEncryptionService } from '@/modules/spaces/domain/space-field-encryption.service';
 
 const fieldCryptoService = {
@@ -11,8 +11,7 @@ const fieldCryptoService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
   blindIndex: vi.fn(),
-  emailBlindIndex: vi.fn(),
-} as unknown as MockedObject<FieldCryptoService>;
+} as unknown as MockedObject<KmsEncryptionService>;
 
 describe('SpaceFieldEncryptionService', () => {
   let target: SpaceFieldEncryptionService;
@@ -20,11 +19,11 @@ describe('SpaceFieldEncryptionService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    // Tagging fakes make the (field, scope, value) wiring visible in outputs.
-    fieldCryptoService.encrypt.mockImplementation((_field, _scope, value) =>
+    // Tagging fakes make the (value, context) wiring visible in outputs.
+    fieldCryptoService.encrypt.mockImplementation((value, _ctx) =>
       Promise.resolve(`enc:${value}`),
     );
-    fieldCryptoService.decrypt.mockImplementation((_field, _scope, value) =>
+    fieldCryptoService.decrypt.mockImplementation((value, _ctx) =>
       Promise.resolve(`dec:${value}`),
     );
     fieldCryptoService.blindIndex.mockReturnValue('index-token');
@@ -35,35 +34,32 @@ describe('SpaceFieldEncryptionService', () => {
   });
 
   describe('isEncrypted', () => {
-    it('delegates to FieldCryptoService', () => {
+    it('delegates to KmsEncryptionService', () => {
       expect(target.isEncrypted('kms:v1:abc')).toBe(true);
       expect(target.isEncrypted('plain')).toBe(false);
       expect(fieldCryptoService.isEncrypted).toHaveBeenCalledTimes(2);
     });
   });
 
-  describe('spaces.name', () => {
-    it('encryptSpaceName encrypts under spaces.name with a space scope', async () => {
+  describe('space name', () => {
+    it('encryptSpaceName encrypts with a space scope', async () => {
       const name = faker.word.noun();
 
       await expect(target.encryptSpaceName(spaceId, name)).resolves.toBe(
         `enc:${name}`,
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
-        'spaces.name',
-        { spaceId },
-        name,
-      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(name, {
+        spaceId: String(spaceId),
+      });
     });
 
-    it('decryptSpaceName decrypts under spaces.name with a space scope', async () => {
+    it('decryptSpaceName decrypts with a space scope', async () => {
       await expect(target.decryptSpaceName(spaceId, 'kms:v1:x')).resolves.toBe(
         'dec:kms:v1:x',
       );
       expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        'spaces.name',
-        { spaceId },
         'kms:v1:x',
+        { spaceId: String(spaceId) },
       );
     });
 
@@ -82,39 +78,35 @@ describe('SpaceFieldEncryptionService', () => {
       expect(spaces[0].name).toBe('kms:v1:a');
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         1,
-        'spaces.name',
-        { spaceId: 1 },
         'kms:v1:a',
+        { spaceId: '1' },
       );
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         2,
-        'spaces.name',
-        { spaceId: 2 },
         'kms:v1:b',
+        { spaceId: '2' },
       );
     });
   });
 
-  describe('space_safes.address', () => {
-    it('encryptSafeAddress encrypts under space_safes.address', async () => {
+  describe('space safe address', () => {
+    it('encryptSafeAddress encrypts with a space scope', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       await expect(target.encryptSafeAddress(spaceId, address)).resolves.toBe(
         `enc:${address}`,
       );
       expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
-        'space_safes.address',
-        { spaceId },
         address,
+        { spaceId: String(spaceId) },
       );
     });
 
-    it('safeAddressIndex computes the blind index under space_safes.address', () => {
+    it('safeAddressIndex computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(target.safeAddressIndex(address)).toBe('index-token');
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        'space_safes.address',
         address,
       );
     });
@@ -141,15 +133,13 @@ describe('SpaceFieldEncryptionService', () => {
       ]);
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         1,
-        'space_safes.address',
-        { spaceId },
         'kms:v1:a',
+        { spaceId: String(spaceId) },
       );
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         2,
-        'space_safes.address',
-        { spaceId },
         'kms:v1:b',
+        { spaceId: String(spaceId) },
       );
     });
   });
@@ -169,28 +159,22 @@ describe('SpaceFieldEncryptionService', () => {
         name: `enc:${name}`,
         addressIndex: 'index-token',
       });
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(
-        'space_address_book_items.address',
-        { spaceId },
-        address,
-      );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(
-        'space_address_book_items.name',
-        { spaceId },
-        name,
-      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(address, {
+        spaceId: String(spaceId),
+      });
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
+        spaceId: String(spaceId),
+      });
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        'space_address_book_items.address',
         address,
       );
     });
 
-    it('itemAddressIndex computes the blind index under space_address_book_items.address', () => {
+    it('itemAddressIndex computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(target.itemAddressIndex(address)).toBe('index-token');
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        'space_address_book_items.address',
         address,
       );
     });
@@ -205,21 +189,17 @@ describe('SpaceFieldEncryptionService', () => {
       expect(result).toStrictEqual([
         { address: 'dec:kms:v1:a', name: 'dec:kms:v1:n', chainIds: ['1'] },
       ]);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'space_address_book_items.address',
-        { spaceId },
-        'kms:v1:a',
-      );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'space_address_book_items.name',
-        { spaceId },
-        'kms:v1:n',
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+        spaceId: String(spaceId),
+      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:n', {
+        spaceId: String(spaceId),
+      });
     });
   });
 
   describe('address_book_requests', () => {
-    it('encryptAddressBookRequest encrypts both members under the request field ids', async () => {
+    it('encryptAddressBookRequest encrypts both members and computes the address index', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = faker.word.noun();
 
@@ -233,28 +213,22 @@ describe('SpaceFieldEncryptionService', () => {
         name: `enc:${name}`,
         addressIndex: 'index-token',
       });
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(
-        'address_book_requests.address',
-        { spaceId },
-        address,
-      );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(
-        'address_book_requests.name',
-        { spaceId },
-        name,
-      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(address, {
+        spaceId: String(spaceId),
+      });
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
+        spaceId: String(spaceId),
+      });
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        'address_book_requests.address',
         address,
       );
     });
 
-    it('requestAddressIndex computes the blind index under address_book_requests.address', () => {
+    it('requestAddressIndex computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(target.requestAddressIndex(address)).toBe('index-token');
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        'address_book_requests.address',
         address,
       );
     });
@@ -269,21 +243,17 @@ describe('SpaceFieldEncryptionService', () => {
       expect(result).toStrictEqual([
         { address: 'dec:kms:v1:a', name: 'dec:kms:v1:n', status: 'PENDING' },
       ]);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'address_book_requests.address',
-        { spaceId },
-        'kms:v1:a',
-      );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'address_book_requests.name',
-        { spaceId },
-        'kms:v1:n',
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+        spaceId: String(spaceId),
+      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:n', {
+        spaceId: String(spaceId),
+      });
     });
   });
 
   describe('decryptAuditPayload', () => {
-    it('decrypts SPACE_CREATED and SPACE_DELETED names under spaces.name', async () => {
+    it('decrypts SPACE_CREATED and SPACE_DELETED names under the space scope', async () => {
       await expect(
         target.decryptAuditPayload(spaceId, 'SPACE_CREATED', {
           name: 'kms:v1:x',
@@ -296,15 +266,13 @@ describe('SpaceFieldEncryptionService', () => {
       ).resolves.toStrictEqual({ name: 'dec:kms:v1:y' });
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         1,
-        'spaces.name',
-        { spaceId },
         'kms:v1:x',
+        { spaceId: String(spaceId) },
       );
       expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
         2,
-        'spaces.name',
-        { spaceId },
         'kms:v1:y',
+        { spaceId: String(spaceId) },
       );
     });
 
@@ -329,7 +297,7 @@ describe('SpaceFieldEncryptionService', () => {
       expect(fieldCryptoService.decrypt).not.toHaveBeenCalled();
     });
 
-    it('decrypts SAFE_ADDED and SAFE_REMOVED addresses under space_safes.address', async () => {
+    it('decrypts SAFE_ADDED and SAFE_REMOVED addresses under the space scope', async () => {
       const payload = {
         safes: [
           { chainId: '1', address: 'kms:v1:a' },
@@ -353,14 +321,12 @@ describe('SpaceFieldEncryptionService', () => {
           { chainId: '2', address: 'dec:kms:v1:b' },
         ],
       });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'space_safes.address',
-        { spaceId },
-        'kms:v1:a',
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+        spaceId: String(spaceId),
+      });
     });
 
-    it('decrypts ADDRESS_BOOK_UPSERTED created and updated entries under the item field ids', async () => {
+    it('decrypts ADDRESS_BOOK_UPSERTED created and updated entries under the space scope', async () => {
       await expect(
         target.decryptAuditPayload(spaceId, 'ADDRESS_BOOK_UPSERTED', {
           created: [{ address: 'kms:v1:a', name: 'kms:v1:n' }],
@@ -372,16 +338,12 @@ describe('SpaceFieldEncryptionService', () => {
         updated: [{ address: 'dec:kms:v1:b', name: 'dec:kms:v1:m' }],
         onBehalfOfUserId: 7,
       });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'space_address_book_items.address',
-        { spaceId },
-        'kms:v1:a',
-      );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'space_address_book_items.name',
-        { spaceId },
-        'kms:v1:m',
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+        spaceId: String(spaceId),
+      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:m', {
+        spaceId: String(spaceId),
+      });
     });
 
     it('decrypts ADDRESS_BOOK_DELETED address and name', async () => {

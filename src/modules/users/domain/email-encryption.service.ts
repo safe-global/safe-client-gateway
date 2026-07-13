@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
+import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 
 @Injectable()
 export class EmailEncryptionService {
-  constructor(private readonly fieldCrypto: FieldCryptoService) {}
+  constructor(private readonly kmsEncryption: KmsEncryptionService) {}
 
   isEncrypted(value: string): boolean {
-    return this.fieldCrypto.isEncrypted(value);
+    return this.kmsEncryption.isEncrypted(value);
   }
 
   blindIndex(plaintext: string): string | null {
-    return this.fieldCrypto.emailBlindIndex(plaintext);
+    return this.kmsEncryption.blindIndex(plaintext);
   }
 
   encrypt(userId: number, email: string): Promise<string> {
-    return this.fieldCrypto.encrypt('users.email', { userId }, email);
+    return this.kmsEncryption.encrypt(email, { userId: String(userId) });
   }
 
   decrypt(userId: number, value: string): Promise<string> {
-    return this.fieldCrypto.decrypt('users.email', { userId }, value);
+    return this.kmsEncryption.decrypt(value, { userId: String(userId) });
   }
 
   async decryptUserEmails<T extends { id: number; email: string | null }>(

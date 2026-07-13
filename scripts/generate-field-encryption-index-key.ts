@@ -13,11 +13,11 @@
  *     yarn generate:field-encryption-key
  *
  * Outputs the value to set (initial setup):
- *   SPACES_FIELD_ENCRYPTION_INDEX_KEY
+ *   ENCRYPTION_INDEX_KEY
  *
  * ROTATION CAVEAT: the blind index is an HMAC under this single key; nothing
  * verifies against older keys. Once indexes are stored, repointing
- * SPACES_FIELD_ENCRYPTION_INDEX_KEY at a new key silently orphans every
+ * ENCRYPTION_INDEX_KEY at a new key silently orphans every
  * existing blind index (users.email_index and every address_index column:
  * lookups stop matching and the unique indexes stop colliding). Changing the
  * index key requires recomputing every stored index — the regular backfill
@@ -70,9 +70,9 @@ async function main(): Promise<void> {
       '',
       'Generated a new KMS-wrapped blind-index key. For initial setup, set the following in your environment:',
       '',
-      `SPACES_FIELD_ENCRYPTION_INDEX_KEY=${encrypted.toString('base64')}`,
+      `ENCRYPTION_INDEX_KEY=${encrypted.toString('base64')}`,
       '',
-      'If blind indexes are already stored, do NOT repoint SPACES_FIELD_ENCRYPTION_INDEX_KEY',
+      'If blind indexes are already stored, do NOT repoint ENCRYPTION_INDEX_KEY',
       'at this key: indexes are verified only under the configured key, so existing',
       'blind-index values (users.email_index, *_index) would silently stop matching.',
       'Changing the index key requires recomputing every stored index first.',

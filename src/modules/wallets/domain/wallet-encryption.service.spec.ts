@@ -3,17 +3,17 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
+import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 
 // Plain vi.fn() mock: the wrapper is policy only — these tests assert the
-// exact (field, scope, value) wiring into FieldCryptoService and nothing else.
+// exact (value, context) wiring into KmsEncryptionService and nothing else.
 const fieldCryptoService = {
   isEncrypted: vi.fn(),
   encrypt: vi.fn(),
   decrypt: vi.fn(),
   blindIndex: vi.fn(),
-} as unknown as MockedObject<FieldCryptoService>;
+} as unknown as MockedObject<KmsEncryptionService>;
 
 describe('WalletEncryptionService', () => {
   let target: WalletEncryptionService;
@@ -24,7 +24,7 @@ describe('WalletEncryptionService', () => {
   });
 
   describe('isEncrypted', () => {
-    it('delegates to FieldCryptoService', () => {
+    it('delegates to KmsEncryptionService', () => {
       fieldCryptoService.isEncrypted.mockReturnValue(true);
 
       expect(target.isEncrypted('kms:v1:abc')).toBe(true);
@@ -35,7 +35,7 @@ describe('WalletEncryptionService', () => {
   });
 
   describe('encryptAddress', () => {
-    it("encrypts under 'wallets.address' scoped to the owning user", async () => {
+    it('encrypts scoped to the owning user', async () => {
       const userId = faker.number.int({ min: 1 });
       const address = getAddress(faker.finance.ethereumAddress());
       fieldCryptoService.encrypt.mockResolvedValue('kms:v1:ciphertext');
@@ -44,21 +44,19 @@ describe('WalletEncryptionService', () => {
         'kms:v1:ciphertext',
       );
       expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
-        'wallets.address',
-        { userId },
         address,
+        { userId: String(userId) },
       );
     });
   });
 
   describe('addressIndex', () => {
-    it("computes the blind index under 'wallets.address'", () => {
+    it('computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       fieldCryptoService.blindIndex.mockReturnValue('address-token');
 
       expect(target.addressIndex(address)).toBe('address-token');
       expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        'wallets.address',
         address,
       );
     });
@@ -73,7 +71,7 @@ describe('WalletEncryptionService', () => {
   });
 
   describe('decryptAddress', () => {
-    it("decrypts under 'wallets.address' scoped to the owning user", async () => {
+    it('decrypts scoped to the owning user', async () => {
       const userId = faker.number.int({ min: 1 });
       const address = getAddress(faker.finance.ethereumAddress());
       fieldCryptoService.decrypt.mockResolvedValue(address);
@@ -82,9 +80,8 @@ describe('WalletEncryptionService', () => {
         target.decryptAddress(userId, 'kms:v1:ciphertext'),
       ).resolves.toBe(address);
       expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        'wallets.address',
-        { userId },
         'kms:v1:ciphertext',
+        { userId: String(userId) },
       );
     });
   });
@@ -111,16 +108,12 @@ describe('WalletEncryptionService', () => {
       // The input rows keep their stored (encrypted) values.
       expect(wallets[0].address).toBe('kms:v1:a');
       expect(fieldCryptoService.decrypt).toHaveBeenCalledTimes(2);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'wallets.address',
-        { userId },
-        'kms:v1:a',
-      );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        'wallets.address',
-        { userId },
-        'kms:v1:b',
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:a', {
+        userId: String(userId),
+      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:b', {
+        userId: String(userId),
+      });
     });
   });
 });

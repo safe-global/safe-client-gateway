@@ -4,7 +4,7 @@
  *
  * Tables and fields, in run order:
  *
- *   users.email                       + email_index (legacy construction)
+ *   users.email                       + email_index
  *   wallets.address                   + address_index
  *   spaces.name
  *   space_safes.address               + address_index
@@ -17,17 +17,16 @@
  *
  * Each plaintext value is encrypted directly by KMS, bound to its owner via
  * the KMS encryption context ({ userId } for users/wallets, { spaceId } for
- * everything else, plus the field id). Searchable address columns also get a
- * blind index; blind indexes cannot be computed in SQL, so this cannot be a
- * pure SQL migration.
+ * everything else). Searchable address columns also get a blind index; blind
+ * indexes cannot be computed in SQL, so this cannot be a pure SQL migration.
  *
  * Release choreography (2026-07-10 expansion spec): deploy the code with
  * encryption disabled, run both column migrations, enable
- * SPACES_FIELD_ENCRYPTION_ENABLED (new writes encrypt; plaintext rows still
+ * ENCRYPTION_ENABLED (new writes encrypt; plaintext rows still
  * read through the temporary passthrough and the dual-read lookups), then run
  * this script until --verify passes:
  *
- *   SPACES_FIELD_ENCRYPTION_INDEX_KEY=... \
+ *   ENCRYPTION_INDEX_KEY=... \
  *   AWS_KMS_ENCRYPTION_KEY_ID=... AWS_REGION=... \
  *     ts-node scripts/backfill-field-encryption.ts [--verify] [--dry-run]
  *
@@ -37,7 +36,7 @@
  *              table still has plaintext.
  *
  * This script always encrypts via KMS — it forces field encryption on for
- * itself regardless of SPACES_FIELD_ENCRYPTION_ENABLED, so the fleet's flag
+ * itself regardless of ENCRYPTION_ENABLED, so the fleet's flag
  * state is irrelevant to it. Rows written by a still-disabled fleet after a
  * backfill pass remain plaintext: re-run this same command until --verify
  * passes; the dual-read lookups and the plaintext read passthrough keep such
@@ -45,7 +44,7 @@
  *
  * ONLY after --verify exits 0 (in the target environment) may the temporary
  * read tolerance be removed: the plaintext-passthrough `@todo` in
- * FieldCryptoService.decrypt and the dual-read plaintext arms in the
+ * KmsEncryptionService.decrypt and the dual-read plaintext arms in the
  * repositories (each marked with a "throw-on-plaintext" comment). That flip
  * is deliberately NOT part of the rollout PRs.
  *
@@ -66,24 +65,19 @@
  *   (SAFE_REMOVED, ADDRESS_BOOK_DELETED, SPACE_DELETED), the writers' rule
  *   of carrying the source row's ciphertext into the payload is impossible
  *   for historical rows — this is the one place the backfill mints fresh
- *   ciphertext for audit data, under the payload's field id and the row's
- *   own space scope, which is exactly the context the audit reader
- *   (decryptAuditPayload) reconstructs.
+ *   ciphertext for audit data, under the row's own space scope, which is
+ *   exactly the context the audit reader (decryptAuditPayload) reconstructs.
  */
 import { DataSource } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
-import type {
-  EncryptedField,
-  FieldScope,
-} from '@/datasources/kms/field-crypto.constants';
 import {
-  FIELD_ENCRYPTION_PREFIX,
-  FIELD_ENCRYPTION_VERSION,
-} from '@/datasources/kms/field-crypto.constants';
-import { FieldCryptoService } from '@/datasources/kms/field-crypto.service';
+  ENCRYPTION_PREFIX,
+  ENCRYPTION_VERSION,
+} from '@/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 
 const BATCH_SIZE = 500;
 // Bounds concurrent KMS Encrypt calls per batch; KMS comfortably handles this,
@@ -93,20 +87,13 @@ const ENCRYPT_CONCURRENCY = 20;
 // (rather than the looser 'kms:%') means a malformed 'kms:'-prefixed value
 // can't be mistaken for done: it stays visible to both the batch SELECTs
 // below and countPlaintext's --verify check.
-const ENCRYPTED_PREFIX = `${FIELD_ENCRYPTION_PREFIX}:${FIELD_ENCRYPTION_VERSION}:`;
+const ENCRYPTED_PREFIX = `${ENCRYPTION_PREFIX}:${ENCRYPTION_VERSION}:`;
 
 interface ColumnSpec {
   /** Column holding the plaintext/ciphertext value. */
   column: string;
-  /** Field id bound into the KMS encryption context. */
-  field: EncryptedField;
   /** Blind-index column populated alongside the value, when searchable. */
   indexColumn?: string;
-  /**
-   * users.email predates the field-segmented blind index; its legacy
-   * construction (no field segment) is an immutable on-disk contract.
-   */
-  legacyEmailIndex?: boolean;
 }
 
 interface TableSpec {
@@ -127,9 +114,7 @@ const TABLES: Array<TableSpec> = [
     columns: [
       {
         column: 'email',
-        field: 'users.email',
         indexColumn: 'email_index',
-        legacyEmailIndex: true,
       },
     ],
   },
@@ -140,7 +125,6 @@ const TABLES: Array<TableSpec> = [
     columns: [
       {
         column: 'address',
-        field: 'wallets.address',
         indexColumn: 'address_index',
       },
     ],
@@ -149,7 +133,7 @@ const TABLES: Array<TableSpec> = [
     table: 'spaces',
     scopeColumn: 'id',
     scopeKey: 'spaceId',
-    columns: [{ column: 'name', field: 'spaces.name' }],
+    columns: [{ column: 'name' }],
   },
   {
     table: 'space_safes',
@@ -158,7 +142,6 @@ const TABLES: Array<TableSpec> = [
     columns: [
       {
         column: 'address',
-        field: 'space_safes.address',
         indexColumn: 'address_index',
       },
     ],
@@ -170,10 +153,9 @@ const TABLES: Array<TableSpec> = [
     columns: [
       {
         column: 'address',
-        field: 'space_address_book_items.address',
         indexColumn: 'address_index',
       },
-      { column: 'name', field: 'space_address_book_items.name' },
+      { column: 'name' },
     ],
   },
   {
@@ -183,20 +165,16 @@ const TABLES: Array<TableSpec> = [
     columns: [
       {
         column: 'address',
-        field: 'address_book_requests.address',
         indexColumn: 'address_index',
       },
-      { column: 'name', field: 'address_book_requests.name' },
+      { column: 'name' },
     ],
   },
   {
     table: 'members',
     scopeColumn: 'space_id',
     scopeKey: 'spaceId',
-    columns: [
-      { column: 'name', field: 'members.name' },
-      { column: 'alias', field: 'members.alias' },
-    ],
+    columns: [{ column: 'name' }, { column: 'alias' }],
   },
 ];
 
@@ -278,17 +256,17 @@ function getByPath(obj: unknown, path: string): unknown {
 /**
  * Reads the resolved configuration object by dotted key, like the app does.
  *
- * Forces `spaces.fieldEncryption.enabled` on regardless of
- * SPACES_FIELD_ENCRYPTION_ENABLED: this script's whole job is to produce
+ * Forces `encryption.enabled` on regardless of
+ * ENCRYPTION_ENABLED: this script's whole job is to produce
  * ciphertext, including when run before the fleet-wide flag flip (see the
- * file docstring), so FieldCryptoService.encrypt must never take the
+ * file docstring), so KmsEncryptionService.encrypt must never take the
  * disabled/passthrough branch here. This also means onModuleInit will
- * require SPACES_FIELD_ENCRYPTION_INDEX_KEY to be set, which the backfill
+ * require ENCRYPTION_INDEX_KEY to be set, which the backfill
  * needs anyway to compute real blind indexes.
  */
 function buildConfigurationService(): IConfigurationService {
   const config = configuration();
-  config.spaces.fieldEncryption.enabled = true;
+  config.encryption.enabled = true;
   return {
     getOrThrow: <T>(key: string): T => {
       const value = getByPath(config, key);
@@ -314,7 +292,7 @@ interface BackfillRow {
 
 async function backfillTable(
   dataSource: DataSource,
-  fieldCrypto: FieldCryptoService,
+  fieldCrypto: KmsEncryptionService,
   spec: TableSpec,
 ): Promise<number> {
   const label = `${spec.table}.${spec.columns.map((c) => c.column).join('/')}`;
@@ -352,10 +330,10 @@ async function backfillTable(
       rows,
       ENCRYPT_CONCURRENCY,
       async (row) => {
-        const scope: FieldScope =
+        const context: Record<string, string> =
           spec.scopeKey === 'userId'
-            ? { userId: Number(row.scope_id) }
-            : { spaceId: Number(row.scope_id) };
+            ? { userId: String(row.scope_id) }
+            : { spaceId: String(row.scope_id) };
         const assignments: Array<{ column: string; value: string | null }> = [];
         for (const columnSpec of spec.columns) {
           const value = row[columnSpec.column];
@@ -369,11 +347,7 @@ async function backfillTable(
             continue;
           }
           const encryptStartedAt = process.hrtime.bigint();
-          const encrypted = await fieldCrypto.encrypt(
-            columnSpec.field,
-            scope,
-            value,
-          );
+          const encrypted = await fieldCrypto.encrypt(value, context);
           encryptDurationsMs.push(
             Number(process.hrtime.bigint() - encryptStartedAt) / 1e6,
           );
@@ -381,9 +355,7 @@ async function backfillTable(
           if (columnSpec.indexColumn) {
             assignments.push({
               column: columnSpec.indexColumn,
-              value: columnSpec.legacyEmailIndex
-                ? fieldCrypto.emailBlindIndex(value)
-                : fieldCrypto.blindIndex(columnSpec.field, value),
+              value: fieldCrypto.blindIndex(value),
             });
           }
         }
@@ -530,8 +502,7 @@ interface AuditRow {
 }
 
 async function encryptPayloadValue(
-  fieldCrypto: FieldCryptoService,
-  field: EncryptedField,
+  fieldCrypto: KmsEncryptionService,
   spaceId: number,
   holder: JsonObject,
   key: string,
@@ -544,31 +515,25 @@ async function encryptPayloadValue(
   ) {
     return false;
   }
-  holder[key] = await fieldCrypto.encrypt(field, { spaceId }, value);
+  holder[key] = await fieldCrypto.encrypt(value, { spaceId: String(spaceId) });
   return true;
 }
 
-interface FieldKey {
-  field: EncryptedField;
-  key: string;
-}
-
-/** Encrypts each of `fields` on a single payload object, in place. */
+/** Encrypts each of `keys` on a single payload object, in place. */
 async function rewriteObjectFields(
-  fieldCrypto: FieldCryptoService,
+  fieldCrypto: KmsEncryptionService,
   spaceId: number,
   holder: unknown,
-  fields: Array<FieldKey>,
+  keys: Array<string>,
 ): Promise<boolean> {
   if (!holder || typeof holder !== 'object' || Array.isArray(holder)) {
     return false;
   }
   let changed = false;
-  for (const { field, key } of fields) {
+  for (const key of keys) {
     changed =
       (await encryptPayloadValue(
         fieldCrypto,
-        field,
         spaceId,
         holder as JsonObject,
         key,
@@ -577,12 +542,12 @@ async function rewriteObjectFields(
   return changed;
 }
 
-/** Encrypts `fields` on every object of an array-valued payload member. */
+/** Encrypts `keys` on every object of an array-valued payload member. */
 async function rewriteEntryList(
-  fieldCrypto: FieldCryptoService,
+  fieldCrypto: KmsEncryptionService,
   spaceId: number,
   list: unknown,
-  fields: Array<FieldKey>,
+  keys: Array<string>,
 ): Promise<boolean> {
   if (!Array.isArray(list)) {
     return false;
@@ -590,49 +555,45 @@ async function rewriteEntryList(
   let changed = false;
   for (const entry of list) {
     changed =
-      (await rewriteObjectFields(fieldCrypto, spaceId, entry, fields)) ||
-      changed;
+      (await rewriteObjectFields(fieldCrypto, spaceId, entry, keys)) || changed;
   }
   return changed;
 }
 
 /**
  * Returns the payload with every embedded plaintext name/address freshly
- * encrypted under the payload's field id and the row's space scope, or null
- * when nothing needed rewriting. See the file docstring for why the audit
- * backfill mints new ciphertext instead of reusing the source rows'.
+ * encrypted under the row's space scope, or null when nothing needed
+ * rewriting. See the file docstring for why the audit backfill mints new
+ * ciphertext instead of reusing the source rows'.
  */
 async function rewriteAuditPayload(
-  fieldCrypto: FieldCryptoService,
+  fieldCrypto: KmsEncryptionService,
   row: AuditRow,
 ): Promise<JsonObject | null> {
   const payload = structuredClone(row.payload);
   const spaceId = row.space_id;
-  const addressBookFields: Array<FieldKey> = [
-    { field: 'space_address_book_items.address', key: 'address' },
-    { field: 'space_address_book_items.name', key: 'name' },
-  ];
+  const addressBookKeys = ['address', 'name'];
   let changed = false;
 
   switch (row.event_type) {
     case 'SPACE_CREATED':
     case 'SPACE_DELETED':
       changed = await rewriteObjectFields(fieldCrypto, spaceId, payload, [
-        { field: 'spaces.name', key: 'name' },
+        'name',
       ]);
       break;
     case 'SPACE_UPDATED':
       for (const side of ['old', 'new'] as const) {
         changed =
           (await rewriteObjectFields(fieldCrypto, spaceId, payload[side], [
-            { field: 'spaces.name', key: 'name' },
+            'name',
           ])) || changed;
       }
       break;
     case 'SAFE_ADDED':
     case 'SAFE_REMOVED':
       changed = await rewriteEntryList(fieldCrypto, spaceId, payload.safes, [
-        { field: 'space_safes.address', key: 'address' },
+        'address',
       ]);
       break;
     case 'ADDRESS_BOOK_UPSERTED':
@@ -642,7 +603,7 @@ async function rewriteAuditPayload(
             fieldCrypto,
             spaceId,
             payload[listKey],
-            addressBookFields,
+            addressBookKeys,
           )) || changed;
       }
       break;
@@ -651,7 +612,7 @@ async function rewriteAuditPayload(
         fieldCrypto,
         spaceId,
         payload,
-        addressBookFields,
+        addressBookKeys,
       );
       break;
   }
@@ -661,7 +622,7 @@ async function rewriteAuditPayload(
 
 async function backfillAuditPayloads(
   dataSource: DataSource,
-  fieldCrypto: FieldCryptoService,
+  fieldCrypto: KmsEncryptionService,
 ): Promise<number> {
   let updated = 0;
 
@@ -754,7 +715,7 @@ async function main(): Promise<void> {
   const configurationService = buildConfigurationService();
   const config = configuration();
 
-  const fieldCrypto = new FieldCryptoService(
+  const fieldCrypto = new KmsEncryptionService(
     configurationService,
     new AwsKmsService(configurationService),
   );
