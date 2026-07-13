@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { ExecutionContext } from '@nestjs/common';
 import { createParamDecorator } from '@nestjs/common';
-import type { Request } from 'express';
-import { getRouteUrl } from '@/routes/common/decorators/utils';
+import {
+  getRouteUrl,
+  type HttpRequest,
+} from '@/routes/common/http/http-request.utils';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 
 /**
@@ -13,7 +15,7 @@ import { PaginationData } from '@/routes/common/pagination/pagination.data';
  */
 export const PaginationDataDecorator = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): PaginationData => {
-    const request: Request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<HttpRequest>();
     return PaginationData.fromCursor(getRouteUrl(request));
   },
 );
