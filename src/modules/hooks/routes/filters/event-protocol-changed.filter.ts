@@ -5,16 +5,16 @@ import {
   type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import { EventProtocolChangedError } from '@/modules/hooks/routes/errors/event-protocol-changed.error';
 
 @Catch(EventProtocolChangedError)
 export class EventProtocolChangedFilter implements ExceptionFilter {
   catch(_: EventProtocolChangedError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
+    const response = ctx.getResponse<FastifyReply>();
 
-    response.status(HttpStatus.GONE).json({
+    response.status(HttpStatus.GONE).send({
       message: 'Unsupported protocol for this kind of event',
       statusCode: HttpStatus.GONE,
     });

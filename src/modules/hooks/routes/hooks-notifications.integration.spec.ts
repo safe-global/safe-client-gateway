@@ -3,6 +3,10 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -57,7 +61,7 @@ describe('Hook Events for Notifications', () => {
       ],
     });
 
-    app = moduleFixture.createNestApplication();
+    app = createTestApplication(moduleFixture);
 
     hooksRepository = moduleFixture.get(IHooksRepository);
     networkService = moduleFixture.get(NetworkService);
@@ -65,7 +69,7 @@ describe('Hook Events for Notifications', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     pushNotificationService = moduleFixture.get(IPushNotificationService);
 
-    await app.init();
+    await initTestApplication(app);
   }
 
   beforeEach(async () => {

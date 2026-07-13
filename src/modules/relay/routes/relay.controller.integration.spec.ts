@@ -7,7 +7,10 @@ import request from 'supertest';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -157,7 +160,7 @@ describe('Relay controller', () => {
     balancesService = moduleFixture.get(BalancesService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {

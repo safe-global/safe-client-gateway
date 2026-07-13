@@ -2,7 +2,10 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createBaseTestModule } from '@/__tests__/testing-module';
 
 describe('Get health e2e test', () => {
@@ -12,7 +15,7 @@ describe('Get health e2e test', () => {
     const moduleRef = await createBaseTestModule();
 
     app = await new TestAppProvider().provide(moduleRef);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterAll(async () => {
