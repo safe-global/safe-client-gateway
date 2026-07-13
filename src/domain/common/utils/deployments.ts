@@ -10,10 +10,7 @@ import {
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
 } from '@safe-global/safe-deployments';
-import {
-  _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
-  _SAFE_DEPLOYMENTS,
-} from '@safe-global/safe-deployments/dist/deployments';
+import { _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
 import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
 import { type Address, getAddress, type parseAbi } from 'viem';
 
@@ -183,16 +180,6 @@ function formatDeployments(
 }
 
 /**
- * Gets the list of Safe versions available in the safe-deployments package.
- * Infers versions from the _SAFE_DEPLOYMENTS constant exported by the package.
- *
- * @returns {Array<string>} - a list of Safe versions in descending order
- */
-function getSafeVersions(): Array<string> {
-  return _SAFE_DEPLOYMENTS.map((deployment) => deployment.version);
-}
-
-/**
  * Gets the list of CompatibilityFallbackHandler versions available in the safe-deployments package.
  * Infers versions from the _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS constant exported by the package.
  * Note: CompatibilityFallbackHandler was introduced in Safe v1.3.0.
@@ -203,41 +190,6 @@ export function getFallbackHandlerVersions(): Array<string> {
   return _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS.map(
     (deployment) => deployment.version,
   );
-}
-
-/**
- * Detects the Safe version from a mastercopy address.
- * Checks both L1 and L2 singleton deployments across all known versions.
- *
- * @param {string} chainId - the chain ID
- * @param {Address} mastercopyAddress - the mastercopy address to check
- *
- * @returns {string | null} - the Safe version if found, null otherwise
- */
-export function getVersionFromMastercopy(
-  chainId: string,
-  mastercopyAddress: Address,
-): string | null {
-  const versions = getSafeVersions();
-
-  for (const version of versions) {
-    const l1Singletons = getSafeSingletonDeployments({ chainId, version });
-    const l2Singletons = getSafeL2SingletonDeployments({ chainId, version });
-
-    const found =
-      l1Singletons.some(
-        (addr) => addr.toLowerCase() === mastercopyAddress.toLowerCase(),
-      ) ||
-      l2Singletons.some(
-        (addr) => addr.toLowerCase() === mastercopyAddress.toLowerCase(),
-      );
-
-    if (found) {
-      return version;
-    }
-  }
-
-  return null;
 }
 
 /**

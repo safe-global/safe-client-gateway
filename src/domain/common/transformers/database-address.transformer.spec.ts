@@ -4,7 +4,7 @@ import { getAddress } from 'viem';
 import {
   databaseAddressTransformer,
   databaseNullableAddressTransformer,
-} from './databaseAddress.transformer';
+} from './database-address.transformer';
 
 describe('databaseAddressTransformer', () => {
   describe('to', () => {

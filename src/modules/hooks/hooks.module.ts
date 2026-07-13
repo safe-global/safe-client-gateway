@@ -6,7 +6,7 @@ import { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interf
 import { HooksController } from '@/modules/hooks/routes/hooks.controller';
 import { HooksService } from '@/modules/hooks/routes/hooks.service';
 import { PushNotificationModule } from '@/modules/notifications/domain/push/push-notification.module';
-import { QueuesRepositoryModule } from '../queues/domain/queues-repository.interface';
+import { QueuesRepositoryModule } from '@/modules/queues/domain/queues-repository.interface';
 
 @Module({
   imports: [
