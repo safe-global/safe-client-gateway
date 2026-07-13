@@ -10,21 +10,30 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiForbiddenResponse,
   ApiFoundResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
+import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import {
   type OidcConnection,
   OidcConnectionSchema,
 } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
-import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
+import {
+  type Authenticator,
+  OidcAuthService,
+} from '@/modules/auth/oidc/routes/oidc-auth.service';
+import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   getClearCookieOptions,
@@ -87,6 +96,13 @@ export class OidcAuthController {
     description:
       'OIDC connection name to route to a specific identity provider.',
   })
+  @ApiQuery({
+    name: 'enroll',
+    required: false,
+    type: Boolean,
+    description:
+      'When true, requests hosted enrollment of a new authenticator: the provider challenges an existing factor, then walks the user through enrolling the new one.',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -98,11 +114,14 @@ export class OidcAuthController {
     redirectUrl?: string,
     @Query('connection', new ValidationPipe(OidcConnectionSchema.optional()))
     connection?: OidcConnection,
+    @Query('enroll', new ValidationPipe(z.literal('true').optional()))
+    enroll?: 'true',
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
       this.oidcAuthService.createOidcAuthorizationRequest(
         redirectUrl,
         connection,
+        enroll === 'true',
       );
 
     res.setCookie(
@@ -203,8 +222,18 @@ export class OidcAuthController {
     }
 
     try {
-      const { accessToken, maxAge } =
+      const { accessToken, maxAge, userId } =
         await this.oidcAuthService.authenticateWithOidc(code);
+
+      if (this.oidcAuthService.isEnrollmentState(state)) {
+        try {
+          await this.oidcAuthService.cleanupSupersededAuthenticators(userId);
+        } catch (cleanupError) {
+          this.loggingService.warn(
+            `Auth callback: superseded authenticator cleanup failed: ${asError(cleanupError).message}`,
+          );
+        }
+      }
 
       res.setCookie(
         ACCESS_TOKEN_COOKIE_NAME,
@@ -222,6 +251,22 @@ export class OidcAuthController {
         302,
       );
     }
+  }
+
+  @ApiOperation({
+    summary: 'List MFA authenticators',
+    description:
+      'Lists the MFA authentication methods of the authenticated user for the self-service authenticator ' +
+      'management UI.',
+  })
+  @ApiOkResponse({ description: 'MFA authentication methods' })
+  @ApiForbiddenResponse({ description: 'Not authenticated' })
+  @UseGuards(AuthGuard)
+  @Get('oidc/mfa/authenticators')
+  async listAuthenticators(
+    @Auth() authPayload: AuthPayload,
+  ): Promise<Array<Authenticator>> {
+    return await this.oidcAuthService.listAuthenticators(authPayload);
   }
 
   /**
