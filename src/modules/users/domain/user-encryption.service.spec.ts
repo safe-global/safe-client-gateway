@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import { createMockKmsEncryptionService } from '@/datasources/kms/__tests__/kms-encryption.service.mock';
 import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
@@ -14,61 +15,74 @@ describe('UserEncryptionService', () => {
   });
 
   it('isEncrypted delegates to KmsEncryptionService', () => {
-    expect(target.isEncrypted('kms:v1:abc')).toBe(true);
-    expect(target.isEncrypted('a@b.com')).toBe(false);
+    expect(target.isEncrypted(`kms:v1:${faker.string.alphanumeric(24)}`)).toBe(
+      true,
+    );
+    expect(target.isEncrypted(faker.internet.email())).toBe(false);
     expect(fieldCrypto.isEncrypted).toHaveBeenCalledTimes(2);
   });
 
   it('blindIndex delegates to KmsEncryptionService with just the value', () => {
-    fieldCrypto.blindIndex.mockReturnValue('email-token');
+    const token = faker.string.alphanumeric(24);
+    // Surrounding whitespace/casing to show the value is passed through verbatim.
+    const value = `  ${faker.internet.email().toUpperCase()}  `;
+    fieldCrypto.blindIndex.mockReturnValue(token);
 
-    expect(target.blindIndex(' A@B.com ')).toBe('email-token');
-    expect(fieldCrypto.blindIndex).toHaveBeenCalledExactlyOnceWith(' A@B.com ');
+    expect(target.blindIndex(value)).toBe(token);
+    expect(fieldCrypto.blindIndex).toHaveBeenCalledExactlyOnceWith(value);
   });
 
   it('encrypt binds the owning userId', async () => {
-    fieldCrypto.encrypt.mockResolvedValue('kms:v1:ciphertext');
+    const userId = faker.number.int({ min: 1 });
+    const email = faker.internet.email();
+    const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
+    fieldCrypto.encrypt.mockResolvedValue(ciphertext);
 
-    await expect(target.encrypt(42, 'a@b.com')).resolves.toBe(
-      'kms:v1:ciphertext',
-    );
-    expect(fieldCrypto.encrypt).toHaveBeenCalledExactlyOnceWith('a@b.com', {
-      userId: '42',
+    await expect(target.encrypt(userId, email)).resolves.toBe(ciphertext);
+    expect(fieldCrypto.encrypt).toHaveBeenCalledExactlyOnceWith(email, {
+      userId: String(userId),
     });
   });
 
   it('decrypt binds the owning userId', async () => {
-    fieldCrypto.decrypt.mockResolvedValue('a@b.com');
+    const userId = faker.number.int({ min: 1 });
+    const email = faker.internet.email();
+    const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
+    fieldCrypto.decrypt.mockResolvedValue(email);
 
-    await expect(target.decrypt(42, 'kms:v1:ciphertext')).resolves.toBe(
-      'a@b.com',
-    );
-    expect(fieldCrypto.decrypt).toHaveBeenCalledExactlyOnceWith(
-      'kms:v1:ciphertext',
-      { userId: '42' },
-    );
+    await expect(target.decrypt(userId, ciphertext)).resolves.toBe(email);
+    expect(fieldCrypto.decrypt).toHaveBeenCalledExactlyOnceWith(ciphertext, {
+      userId: String(userId),
+    });
   });
 
   describe('decryptUserEmails', () => {
     it('returns decrypted copies, leaving the input untouched', async () => {
+      const encryptedUserId = faker.number.int({ min: 1 });
+      const email = faker.internet.email();
+      const encryptedEmail = `kms:v1:${email}`;
+      const nullEmailUser = {
+        id: faker.number.int({ min: 1 }),
+        email: null,
+      };
       fieldCrypto.decrypt.mockImplementation((value, _ctx) =>
         Promise.resolve(value.replace('kms:v1:', '')),
       );
       const users = [
-        { id: 1, email: 'kms:v1:a@b.com' },
-        { id: 2, email: null },
+        { id: encryptedUserId, email: encryptedEmail },
+        nullEmailUser,
       ];
 
       const result = await target.decryptUserEmails(users);
 
       expect(result).toStrictEqual([
-        { id: 1, email: 'a@b.com' },
-        { id: 2, email: null },
+        { id: encryptedUserId, email },
+        nullEmailUser,
       ]);
-      expect(users[0].email).toBe('kms:v1:a@b.com');
+      expect(users[0].email).toBe(encryptedEmail);
       expect(fieldCrypto.decrypt).toHaveBeenCalledExactlyOnceWith(
-        'kms:v1:a@b.com',
-        { userId: '1' },
+        encryptedEmail,
+        { userId: String(encryptedUserId) },
       );
     });
   });

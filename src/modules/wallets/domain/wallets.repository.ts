@@ -8,7 +8,6 @@ import type {
   FindOptionsWhere,
   InsertResult,
 } from 'typeorm';
-import { IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
@@ -92,16 +91,11 @@ export class WalletsRepository implements IWalletsRepository {
     address: Address,
     relations?: FindOptionsRelations<Wallet>,
   ): Promise<Wallet | null> {
-    // Dual-read during the backfill window: encrypted rows match on the
-    // blind index, rows the backfill has not reached yet
-    // (address_index IS NULL) still match on plaintext. The plaintext arm is
-    // removed together with restoring the throw-on-plaintext guard once the
-    // backfill --verify passes.
+    // Match encrypted rows on the blind index; with encryption disabled
+    // (no index key configured) the address is stored and matched as plaintext.
     const addressIndex = this.walletEncryptionService.addressIndex(address);
     const wallet = await this.findOne(
-      addressIndex
-        ? [{ addressIndex }, { addressIndex: IsNull(), address }]
-        : { address },
+      addressIndex ? { addressIndex } : { address },
       relations,
     );
     if (wallet && this.walletEncryptionService.isEncrypted(wallet.address)) {

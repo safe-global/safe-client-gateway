@@ -114,7 +114,7 @@ describe('UserIdentityResolverService', () => {
       buildWallet({
         id: 1,
         user: buildUser({ id: 4 }),
-        address: 'kms:v1:ciphertext' as never,
+        address: 'kms:v1:ciphertext',
       }),
     ]);
     walletEncryptionService.decryptAddress.mockResolvedValue(plaintext);

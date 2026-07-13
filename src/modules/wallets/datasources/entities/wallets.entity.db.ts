@@ -7,7 +7,6 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import type { Address } from 'viem';
 import type { z } from 'zod';
 import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -52,7 +51,7 @@ export class Wallet implements z.infer<typeof WalletSchema> {
     type: 'text',
     transformer: databaseAddressTransformer,
   })
-  address!: Address;
+  address!: string;
 
   // Blind index (keyed HMAC) of the plaintext address; NULL until the row
   // is encrypted. Stored verbatim, deliberately no transformer.

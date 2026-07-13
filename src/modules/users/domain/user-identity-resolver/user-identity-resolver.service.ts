@@ -45,10 +45,6 @@ export class UserIdentityResolverService {
     const walletByUserId = new Map<number, string>();
     for (const wallet of sortedWallets) {
       if (!walletByUserId.has(wallet.user.id)) {
-        // Stored addresses may be KMS ciphertext; the display value is the
-        // plaintext, decrypted under the owning user's scope (only the first
-        // wallet per user costs a KMS call, and the LRU cache absorbs
-        // repeats).
         walletByUserId.set(
           wallet.user.id,
           await this.walletEncryptionService.decryptAddress(

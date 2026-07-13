@@ -13,7 +13,7 @@ const fieldCryptoService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
   blindIndex: vi.fn(),
-} as unknown as MockedObject<KmsEncryptionService>;
+} as MockedObject<KmsEncryptionService>;
 
 describe('WalletEncryptionService', () => {
   let target: WalletEncryptionService;
@@ -80,9 +80,9 @@ describe('WalletEncryptionService', () => {
       const ciphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
       fieldCryptoService.decrypt.mockResolvedValue(address);
 
-      await expect(
-        target.decryptAddress(userId, ciphertext),
-      ).resolves.toBe(address);
+      await expect(target.decryptAddress(userId, ciphertext)).resolves.toBe(
+        address,
+      );
       expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
         ciphertext,
         { userId: String(userId) },

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -45,7 +44,9 @@ describe('WalletsRepository', () => {
       const userId = faker.number.int({ min: 1 });
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const entityManager = {
-        insert: vi.fn().mockResolvedValue({ identifiers: [{ id: 1 }] }),
+        insert: vi
+          .fn()
+          .mockResolvedValue({ identifiers: [{ id: faker.number.int() }] }),
       };
 
       await target.create({ userId, walletAddress }, entityManager as never);
@@ -59,13 +60,15 @@ describe('WalletsRepository', () => {
     it('should insert the encrypted address and its blind index when an index key is configured', async () => {
       const userId = faker.number.int({ min: 1 });
       const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const addressIndex = faker.string.alphanumeric(24);
+      const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
       const entityManager = {
-        insert: vi.fn().mockResolvedValue({ identifiers: [{ id: 1 }] }),
+        insert: vi
+          .fn()
+          .mockResolvedValue({ identifiers: [{ id: faker.number.int() }] }),
       };
-      walletEncryptionService.addressIndex.mockReturnValue('address-token');
-      walletEncryptionService.encryptAddress.mockResolvedValue(
-        'kms:v1:ciphertext',
-      );
+      walletEncryptionService.addressIndex.mockReturnValue(addressIndex);
+      walletEncryptionService.encryptAddress.mockResolvedValue(ciphertext);
 
       await target.create({ userId, walletAddress }, entityManager as never);
 
@@ -75,8 +78,8 @@ describe('WalletsRepository', () => {
       );
       expect(entityManager.insert).toHaveBeenCalledWith(Wallet, {
         user: { id: userId },
-        address: 'kms:v1:ciphertext',
-        addressIndex: 'address-token',
+        address: ciphertext,
+        addressIndex,
       });
     });
   });
@@ -93,22 +96,21 @@ describe('WalletsRepository', () => {
       });
     });
 
-    it('should dual-read by blind index and plaintext, returning the caller plaintext for an encrypted row', async () => {
+    it('should look up by blind index, returning the caller plaintext for an encrypted row', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      walletEncryptionService.addressIndex.mockReturnValue('address-token');
+      const addressIndex = faker.string.alphanumeric(24);
+      const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
+      walletEncryptionService.addressIndex.mockReturnValue(addressIndex);
       walletRepository.findOne.mockResolvedValue({
-        id: 1,
-        address: 'kms:v1:ciphertext',
-        addressIndex: 'address-token',
+        id: faker.number.int(),
+        address: ciphertext,
+        addressIndex,
       });
 
       const wallet = await target.findOneByAddress(address);
 
       expect(walletRepository.findOne).toHaveBeenCalledWith({
-        where: [
-          { addressIndex: 'address-token' },
-          { addressIndex: IsNull(), address },
-        ],
+        where: { addressIndex },
         relations: undefined,
       });
       expect(wallet?.address).toBe(address);
@@ -118,20 +120,22 @@ describe('WalletsRepository', () => {
   describe('findByUser', () => {
     it('should decrypt the addresses of the returned wallets', async () => {
       const userId = faker.number.int({ min: 1 });
+      const walletId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
+      const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
       walletRepository.find.mockResolvedValue([
-        { id: 1, address: 'kms:v1:ciphertext' },
+        { id: walletId, address: ciphertext },
       ]);
       walletEncryptionService.decryptWallets.mockResolvedValue([
-        { id: 1, address },
+        { id: walletId, address },
       ] as never);
 
       await expect(target.findByUser(userId)).resolves.toStrictEqual([
-        { id: 1, address },
+        { id: walletId, address },
       ]);
       expect(walletEncryptionService.decryptWallets).toHaveBeenCalledWith(
         userId,
-        [{ id: 1, address: 'kms:v1:ciphertext' }],
+        [{ id: walletId, address: ciphertext }],
       );
     });
   });
@@ -149,34 +153,18 @@ describe('WalletsRepository', () => {
       expect(walletRepository.find).not.toHaveBeenCalled();
     });
 
-    it('should find matching rows via dual-read and delete them by id when an index key is configured', async () => {
+    it('should delete by blind index when an index key is configured', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
-      walletEncryptionService.addressIndex.mockReturnValue('address-token');
-      walletRepository.find.mockResolvedValue([{ id: 4 }]);
+      const addressIndex = faker.string.alphanumeric(24);
+      walletEncryptionService.addressIndex.mockReturnValue(addressIndex);
       walletRepository.delete.mockResolvedValue({ raw: [], affected: 1 });
-
-      await target.deleteByAddress(address);
-
-      expect(walletRepository.find).toHaveBeenCalledWith({
-        where: [
-          { addressIndex: 'address-token' },
-          { addressIndex: IsNull(), address },
-        ],
-        select: { id: true },
-      });
-      expect(walletRepository.delete).toHaveBeenCalledWith([4]);
-    });
-
-    it('should not delete anything when no rows match', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      walletEncryptionService.addressIndex.mockReturnValue('address-token');
-      walletRepository.find.mockResolvedValue([]);
 
       await expect(target.deleteByAddress(address)).resolves.toStrictEqual({
         raw: [],
-        affected: 0,
+        affected: 1,
       });
-      expect(walletRepository.delete).not.toHaveBeenCalled();
+      expect(walletRepository.delete).toHaveBeenCalledWith({ addressIndex });
+      expect(walletRepository.find).not.toHaveBeenCalled();
     });
   });
 });

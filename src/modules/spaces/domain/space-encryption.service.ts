@@ -70,10 +70,10 @@ export class SpaceEncryptionService {
     return await Promise.all(
       safes.map(async (safe) => ({
         ...safe,
-        address: (await this.kmsEncryption.decrypt(
+        address: await this.kmsEncryption.decrypt(
           safe.address,
           this.context(spaceId),
-        )) as T['address'],
+        ),
       })),
     );
   }
