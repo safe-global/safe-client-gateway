@@ -137,7 +137,9 @@ describe('SpaceCounterfactualSafesService', () => {
   it('filters deployed safes per chain across multiple chains', async () => {
     const chainA = '1';
     const chainB = '11155111';
-    const deployedA = counterfactualSafeBuilder().with('chainId', chainA).build();
+    const deployedA = counterfactualSafeBuilder()
+      .with('chainId', chainA)
+      .build();
     const undeployedA = counterfactualSafeBuilder()
       .with('chainId', chainA)
       .build();
