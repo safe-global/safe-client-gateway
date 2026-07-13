@@ -19,10 +19,10 @@ import {
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 
 @Entity('address_book_requests')
-// Split partial-unique indexes across the backfill window: plaintext pending
-// rows (address_index IS NULL) keep the old semantics, encrypted pending rows
-// are unique per blind index. Matches the 1781700000000-space-field-encryption
-// migration.
+// Split partial-unique indexes by encryption mode: plaintext pending rows
+// (address_index IS NULL, encryption disabled) keep the old semantics,
+// encrypted pending rows are unique per blind index. Matches the
+// 1781700000000-space-field-encryption migration.
 @Index(
   'UQ_ABR_space_requester_address_pending_plain',
   ['space', 'requestedBy', 'address'],
@@ -88,8 +88,8 @@ export class AddressBookRequest implements DomainAddressBookRequest {
   })
   address!: Address;
 
-  // Blind index of the plaintext address; NULL until written encrypted or
-  // backfilled. No transformer: tokens are stored verbatim.
+  // Blind index of the plaintext address; NULL for plaintext rows
+  // (encryption disabled). No transformer: tokens are stored verbatim.
   @Column({ name: 'address_index', type: 'text', nullable: true })
   public readonly addressIndex?: string | null;
 

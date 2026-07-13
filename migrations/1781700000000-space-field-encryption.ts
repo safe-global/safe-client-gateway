@@ -9,9 +9,9 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *   varchar caps; plaintext length limits are enforced in the DTO schemas).
  * - Adds a nullable `address_index` blind-index column beside each unique
  *   address column.
- * - Splits each uniqueness constraint into a plaintext arm (rows not yet
- *   backfilled: `address_index IS NULL`) and a blind-index arm, following the
- *   users.email precedent.
+ * - Splits each uniqueness constraint into a plaintext arm (plaintext rows
+ *   when encryption is disabled: `address_index IS NULL`) and a blind-index
+ *   arm, following the users.email precedent.
  * - Drops `idx_members_name`: nothing filters or orders by members.name, and
  *   a btree over ciphertext is meaningless.
  *

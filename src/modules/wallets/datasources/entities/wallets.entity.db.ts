@@ -13,7 +13,7 @@ import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import type { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
 
 @Entity('wallets')
-// Plaintext uniqueness for rows the backfill has not reached; blind-index
+// Plaintext uniqueness for plaintext rows (encryption disabled); blind-index
 // uniqueness for encrypted rows (a TypeORM @Unique cannot express partials).
 @Index('UQ_wallet_address_plain', ['address'], {
   unique: true,
@@ -41,9 +41,9 @@ export class Wallet implements z.infer<typeof WalletSchema> {
   })
   user!: User;
 
-  // Encrypted directly by KMS bound to the owning user (`kms:v1:...`) once
-  // field encryption is enabled; EIP-55 plaintext until the backfill reaches
-  // the row. Lookups and uniqueness for encrypted rows use `addressIndex`.
+  // Encrypted directly by KMS bound to the owning user (`kms:v1:...`) when
+  // field encryption is enabled; EIP-55 plaintext when disabled. Lookups and
+  // uniqueness for encrypted rows use `addressIndex`.
   // The transformer passes `kms:` values through untouched and checksums
   // everything else. Encryption is performed in WalletsRepository /
   // UsersRepository (both know the owning userId before every insert).

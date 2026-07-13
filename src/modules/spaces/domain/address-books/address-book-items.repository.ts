@@ -203,25 +203,19 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     }>
   > {
     const repository = args.entityManager.getRepository(DbAddressBookItem);
-    // Dual-read during the backfill window: encrypted rows match on the blind
-    // index, not-yet-backfilled rows hold plaintext with a NULL index.
-    // @todo Remove the plaintext arm once the backfill --verify passes.
+    // Enabled: match encrypted rows on their blind index. Disabled: no index
+    // key, so match the stored plaintext (address_index IS NULL) directly.
     const indexes = args.addressBookItems
       .map((item) => this.spaceEncryptionService.itemAddressIndex(item.address))
       .filter((index): index is string => index !== null);
-    const plaintextAddresses = args.addressBookItems.map(
-      (item) => item.address,
-    );
-    const where: Array<FindOptionsWhere<DbAddressBookItem>> = [
-      ...(indexes.length > 0
-        ? [{ space: { id: args.space.id }, addressIndex: In(indexes) }]
-        : []),
-      {
-        space: { id: args.space.id },
-        addressIndex: IsNull(),
-        address: In(plaintextAddresses),
-      },
-    ];
+    const where: FindOptionsWhere<DbAddressBookItem> =
+      indexes.length > 0
+        ? { space: { id: args.space.id }, addressIndex: In(indexes) }
+        : {
+            space: { id: args.space.id },
+            addressIndex: IsNull(),
+            address: In(args.addressBookItems.map((item) => item.address)),
+          };
     const existingAddressBookItems = await repository.findBy(where);
 
     const updated: Array<{
@@ -244,8 +238,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       if (!patch) {
         continue;
       }
-      // Encrypt-on-write: rewrite the (unchanged) address and the new name,
-      // opportunistically backfilling not-yet-encrypted rows.
+      // Encrypt-on-write: rewrite the (unchanged) address and the new name
+      // under the space-scoped context.
       const encrypted =
         await this.spaceEncryptionService.encryptAddressBookItem(
           args.space.id,

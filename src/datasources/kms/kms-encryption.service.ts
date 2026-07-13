@@ -31,9 +31,9 @@ import { IKmsService } from '@/datasources/kms/kms.service.interface';
  * Encryption is gated centrally here so wrappers can call unconditionally:
  * - disabled → plaintext passthrough (no KMS), though ciphertext reads still
  *   decrypt (rollback safety);
- * - enabled → values are always encrypted on write; reads decrypt ciphertext
- *   and, until the backfill completes, also tolerate a plaintext row by
- *   passing it through unchanged (see the `@todo` on {@link decrypt}).
+ * - enabled → values are always encrypted on write, and reads decrypt
+ *   ciphertext; a plaintext value read while enabled is a hard error (all
+ *   rows are expected to be encrypted, having been backfilled beforehand).
  */
 @Injectable()
 export class KmsEncryptionService implements OnModuleInit {
@@ -101,18 +101,19 @@ export class KmsEncryptionService implements OnModuleInit {
 
   /**
    * Reverse of {@link encrypt}. `kms:` ciphertext is always decrypted, using
-   * the caller-supplied `encryptionContext` as AAD. Plaintext also passes
-   * through unchanged for now, whether encryption is enabled or disabled —
-   * temporary until the backfill completes, at which point a plaintext value
-   * while enabled should become a hard error again.
+   * the caller-supplied `encryptionContext` as AAD. A plaintext value passes
+   * through unchanged only while encryption is disabled (rollback/off); while
+   * enabled every row is expected to be encrypted, so plaintext is a hard
+   * error rather than a silent passthrough.
    */
   async decrypt(
     value: string,
     encryptionContext: Record<string, string>,
   ): Promise<string> {
-    // @todo: Throw on plaintext when `this.enabled` once the backfill has
-    // completed (all fields, all tables). See scripts/backfill-field-encryption.
     if (!this.isEncrypted(value)) {
+      if (this.enabled) {
+        throw new Error('Expected ciphertext but got a plaintext value');
+      }
       return value;
     }
     const parts = value.split(':');

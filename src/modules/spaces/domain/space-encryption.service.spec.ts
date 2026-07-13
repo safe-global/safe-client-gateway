@@ -62,9 +62,12 @@ describe('SpaceEncryptionService', () => {
       await expect(target.decryptSpaceName(spaceId, value)).resolves.toBe(
         `dec:${value}`,
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(value, {
-        spaceId: String(spaceId),
-      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
+        value,
+        {
+          spaceId: String(spaceId),
+        },
+      );
     });
 
     it('decryptSpaces decrypts each space under its own id and leaves the input untouched', async () => {
@@ -202,9 +205,12 @@ describe('SpaceEncryptionService', () => {
           chainIds: items[0].chainIds,
         },
       ]);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(items[0].address, {
-        spaceId: String(spaceId),
-      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
+        items[0].address,
+        {
+          spaceId: String(spaceId),
+        },
+      );
       expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(items[0].name, {
         spaceId: String(spaceId),
       });
@@ -268,9 +274,12 @@ describe('SpaceEncryptionService', () => {
         requests[0].address,
         { spaceId: String(spaceId) },
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(requests[0].name, {
-        spaceId: String(spaceId),
-      });
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
+        requests[0].name,
+        {
+          spaceId: String(spaceId),
+        },
+      );
     });
   });
 
@@ -382,10 +391,16 @@ describe('SpaceEncryptionService', () => {
         }),
       ).resolves.toStrictEqual({
         created: [
-          { address: `dec:${created[0].address}`, name: `dec:${created[0].name}` },
+          {
+            address: `dec:${created[0].address}`,
+            name: `dec:${created[0].name}`,
+          },
         ],
         updated: [
-          { address: `dec:${updated[0].address}`, name: `dec:${updated[0].name}` },
+          {
+            address: `dec:${updated[0].address}`,
+            name: `dec:${updated[0].name}`,
+          },
         ],
         onBehalfOfUserId,
       });

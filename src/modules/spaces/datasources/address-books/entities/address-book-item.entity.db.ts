@@ -13,10 +13,10 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import type { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 
 @Entity('space_address_book_items')
-// Split partial-unique indexes across the backfill window (TypeORM @Unique cannot
-// express partials): plaintext rows (address_index IS NULL) keep the old
-// semantics, encrypted rows are unique per blind index. Matches the
-// 1781700000000-space-field-encryption migration.
+// Split partial-unique indexes by encryption mode (TypeORM @Unique cannot
+// express partials): plaintext rows (address_index IS NULL, encryption
+// disabled) keep the old semantics, encrypted rows are unique per blind
+// index. Matches the 1781700000000-space-field-encryption migration.
 @Index('UQ_SABI_space_id_address_plain', ['space', 'address'], {
   unique: true,
   where: 'address_index IS NULL',
@@ -68,8 +68,8 @@ export class AddressBookItem implements DomainAddressBookItem {
   address!: Address;
 
   // Blind index of the plaintext address for lookups/uniqueness while
-  // `address` is non-deterministic ciphertext. NULL until written encrypted or
-  // backfilled. No transformer: tokens are stored verbatim.
+  // `address` is non-deterministic ciphertext. NULL for plaintext rows
+  // (encryption disabled). No transformer: tokens are stored verbatim.
   @Column({ name: 'address_index', type: 'text', nullable: true })
   public readonly addressIndex?: string | null;
 

@@ -29,15 +29,17 @@ export function createMockUserEncryptionService(): MockedObject<UserEncryptionSe
  * An {@link UserEncryptionService} double that mimics the *enabled*
  * configuration with a reversible fake cipher instead of KMS: `encrypt`
  * produces `kms:v1:<base64url userId:email>` so rows land in the database as
- * ciphertext, `decrypt` reverses it (passing plaintext input through
- * unchanged, like the real enabled service during the backfill window, and
- * throwing on a userId mismatch), and `blindIndex` is a deterministic tag.
+ * ciphertext, `decrypt` reverses it (rejecting a plaintext value, like the
+ * real enabled service, and throwing on a userId mismatch), and `blindIndex`
+ * is a deterministic tag.
  * Lets integration suites assert that read paths actually decrypt.
  */
 export function createEncryptingMockUserEncryptionService(): MockedObject<UserEncryptionService> {
   const decrypt = (userId: number, value: string): Promise<string> => {
     if (!value.startsWith('kms:v1:')) {
-      return Promise.resolve(value);
+      return Promise.reject(
+        new Error('Expected ciphertext but got a plaintext value'),
+      );
     }
     const decoded = Buffer.from(
       value.slice('kms:v1:'.length),

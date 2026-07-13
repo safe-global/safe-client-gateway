@@ -190,7 +190,7 @@ describe('KmsEncryptionService', () => {
       });
     });
 
-    it('passes plaintext through unchanged when disabled (backfill window)', async () => {
+    it('passes plaintext through unchanged when disabled', async () => {
       const target = await buildTarget({ enabled: false });
       const value = faker.person.firstName();
 
@@ -198,11 +198,13 @@ describe('KmsEncryptionService', () => {
       expect(kmsService.decrypt).not.toHaveBeenCalled();
     });
 
-    it('passes plaintext through unchanged when enabled (backfill window)', async () => {
+    it('throws on a plaintext value when enabled', async () => {
       const target = await buildTarget();
       const value = faker.person.firstName();
 
-      await expect(target.decrypt(value, CONTEXT)).resolves.toBe(value);
+      await expect(target.decrypt(value, CONTEXT)).rejects.toThrow(
+        'Expected ciphertext but got a plaintext value',
+      );
       expect(kmsService.decrypt).not.toHaveBeenCalled();
     });
 

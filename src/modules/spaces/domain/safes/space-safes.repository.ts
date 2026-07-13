@@ -94,7 +94,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       try {
         // Catch-on-conflict as before; duplicates now collide on the partial
         // unique indexes (blind index for encrypted rows, plaintext for
-        // not-yet-backfilled rows).
+        // plaintext rows when encryption is disabled).
         await entityManager.insert(SpaceSafe, safesToInsert);
       } catch (err) {
         if (isUniqueConstraintError(err)) {
@@ -173,7 +173,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
    * loaded rows. The space-scoped context comes from the loaded `space`
    * relation, so callers reading encrypted addresses must include it
    * ({@link findBySpaceId} passes the id explicitly instead). Plaintext rows
-   * (encryption disabled, or not yet backfilled) pass through untouched.
+   * (encryption disabled) pass through untouched.
    */
   private async decryptLoadedSpaceSafes(
     spaceSafes: Array<SpaceSafe>,
@@ -219,7 +219,11 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
               addressIndex: IsNull(),
               address: safe.address,
             }
-          : { space: { id: args.spaceId }, chainId: safe.chainId, addressIndex };
+          : {
+              space: { id: args.spaceId },
+              chainId: safe.chainId,
+              addressIndex,
+            };
       });
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {

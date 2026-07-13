@@ -14,10 +14,10 @@ import type { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/safes
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 
 @Entity('space_safes')
-// Uniqueness is split across the backfill window (TypeORM @Unique cannot
-// express partial indexes): plaintext rows (address_index IS NULL) keep the
-// old semantics, encrypted rows are unique per blind index. Matches the
-// 1781700000000-space-field-encryption migration.
+// Uniqueness is split by encryption mode (TypeORM @Unique cannot express
+// partial indexes): plaintext rows (address_index IS NULL, encryption
+// disabled) keep the old semantics, encrypted rows are unique per blind
+// index. Matches the 1781700000000-space-field-encryption migration.
 @Index('UQ_SS_chainId_address_space_plain', ['chainId', 'address', 'space'], {
   unique: true,
   where: 'address_index IS NULL',
@@ -55,8 +55,8 @@ export class SpaceSafe implements DomainSpaceSafe {
 
   // Blind index (deterministic keyed HMAC) of the plaintext address, for
   // lookups and uniqueness while `address` is non-deterministic ciphertext.
-  // NULL until the row is written encrypted or backfilled. No transformer:
-  // tokens are stored verbatim.
+  // NULL for plaintext rows (encryption disabled). No transformer: tokens
+  // are stored verbatim.
   @Column({ name: 'address_index', type: 'text', nullable: true })
   public readonly addressIndex?: string | null;
 

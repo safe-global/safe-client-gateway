@@ -148,7 +148,7 @@ describe('AddressBookItemsRepository', () => {
       );
     });
 
-    it('matches an existing encrypted row by blind index (dual-read), re-encrypts, and audits ciphertext', async () => {
+    it('matches an existing encrypted row by blind index, re-encrypts, and audits ciphertext', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'New name';
       const chainIds = ['1'];
@@ -173,14 +173,10 @@ describe('AddressBookItemsRepository', () => {
         addressBookItems: [{ address, name, chainIds }],
       });
 
-      expect(itemRepository.findBy).toHaveBeenCalledWith([
-        { space: { id: spaceId }, addressIndex: In(['idx']) },
-        {
-          space: { id: spaceId },
-          addressIndex: IsNull(),
-          address: In([address]),
-        },
-      ]);
+      expect(itemRepository.findBy).toHaveBeenCalledWith({
+        space: { id: spaceId },
+        addressIndex: In(['idx']),
+      });
       expect(itemRepository.update).toHaveBeenCalledExactlyOnceWith(
         7,
         expect.objectContaining({
@@ -226,7 +222,7 @@ describe('AddressBookItemsRepository', () => {
   });
 
   describe('deleteByAddress', () => {
-    it('deletes via a dual-read lookup and audits the stored (ciphertext) values', async () => {
+    it('deletes via the blind-index lookup and audits the stored (ciphertext) values', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       spaceEncryptionService.itemAddressIndex.mockReturnValue('idx');
       entityManager.findOne.mockResolvedValue({
@@ -240,10 +236,7 @@ describe('AddressBookItemsRepository', () => {
       expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(
         DbAddressBookItem,
         {
-          where: [
-            { space: { id: spaceId }, addressIndex: 'idx' },
-            { address, space: { id: spaceId }, addressIndex: IsNull() },
-          ],
+          where: { space: { id: spaceId }, addressIndex: 'idx' },
         },
       );
       expect(entityManager.delete).toHaveBeenCalledExactlyOnceWith(
@@ -272,7 +265,7 @@ describe('AddressBookItemsRepository', () => {
       expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(
         DbAddressBookItem,
         {
-          where: [{ address, space: { id: spaceId }, addressIndex: IsNull() }],
+          where: { address, space: { id: spaceId }, addressIndex: IsNull() },
         },
       );
     });

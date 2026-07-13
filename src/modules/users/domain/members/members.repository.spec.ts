@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
-import { In, IsNull, QueryFailedError } from 'typeorm';
+import { In, QueryFailedError } from 'typeorm';
 import type { Mocked, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -38,7 +38,10 @@ describe('MembersRepository', () => {
   let entityManager: Mocked<
     Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
   >;
-  let dbMembersRepository: { find: ReturnType<typeof vi.fn>; findOne: ReturnType<typeof vi.fn> };
+  let dbMembersRepository: {
+    find: ReturnType<typeof vi.fn>;
+    findOne: ReturnType<typeof vi.fn>;
+  };
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let walletEncryptionService: MockedObject<WalletEncryptionService>;
   let memberEncryptionService: MockedObject<MemberEncryptionService>;
@@ -301,10 +304,7 @@ describe('MembersRepository', () => {
       });
 
       expect(entityManager.find).toHaveBeenCalledWith(Wallet, {
-        where: [
-          { addressIndex: In(['address-token']) },
-          { addressIndex: IsNull(), address: In([wallet.address]) },
-        ],
+        where: { addressIndex: In(['address-token']) },
         relations: { user: true },
       });
       // The encrypted row resolved to the existing user: no new user/wallet.
@@ -465,10 +465,15 @@ describe('MembersRepository', () => {
       const member = memberBuilder().with('status', 'ACTIVE').build();
       member.user.id = authenticatedUserId;
       dbMembersRepository.findOne.mockResolvedValue(member);
-      memberEncryptionService.decryptMembers.mockImplementation((_spaceId, members) =>
-        Promise.resolve(
-          members.map((m) => ({ ...m, name: 'plain-name', alias: 'plain-alias' })),
-        ),
+      memberEncryptionService.decryptMembers.mockImplementation(
+        (_spaceId, members) =>
+          Promise.resolve(
+            members.map((m) => ({
+              ...m,
+              name: 'plain-name',
+              alias: 'plain-alias',
+            })),
+          ),
       );
 
       const result = await target.findSelfMembershipOrFail({
@@ -480,7 +485,10 @@ describe('MembersRepository', () => {
         space.id,
         expect.arrayContaining([expect.objectContaining({ id: member.id })]),
       );
-      expect(result).toMatchObject({ name: 'plain-name', alias: 'plain-alias' });
+      expect(result).toMatchObject({
+        name: 'plain-name',
+        alias: 'plain-alias',
+      });
     });
   });
 
@@ -490,12 +498,13 @@ describe('MembersRepository', () => {
       self.user.id = authenticatedUserId;
       const other = memberBuilder().with('status', 'ACTIVE').build();
       dbMembersRepository.findOne.mockResolvedValue(self);
-      const rosterSpace = spaceBuilder()
-        .with('members', [self, other])
-        .build();
+      const rosterSpace = spaceBuilder().with('members', [self, other]).build();
       spacesRepository.findOneOrFail.mockResolvedValue(rosterSpace);
-      memberEncryptionService.decryptMembers.mockImplementation((_spaceId, members) =>
-        Promise.resolve(members.map((m) => ({ ...m, name: 'plain', alias: 'plain' }))),
+      memberEncryptionService.decryptMembers.mockImplementation(
+        (_spaceId, members) =>
+          Promise.resolve(
+            members.map((m) => ({ ...m, name: 'plain', alias: 'plain' })),
+          ),
       );
 
       const result = await target.findAuthorizedMembersOrFail({
@@ -511,9 +520,9 @@ describe('MembersRepository', () => {
         ]),
       );
       expect(result).toHaveLength(2);
-      expect(result.every((m) => m.name === 'plain' && m.alias === 'plain')).toBe(
-        true,
-      );
+      expect(
+        result.every((m) => m.name === 'plain' && m.alias === 'plain'),
+      ).toBe(true);
     });
   });
 

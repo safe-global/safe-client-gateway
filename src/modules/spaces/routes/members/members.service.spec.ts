@@ -475,7 +475,11 @@ describe('MembersService', () => {
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
       memberEncryptionServiceMock.decryptName.mockResolvedValue(plaintextName);
 
-      const result = await service.renewInvite({ authPayload, spaceId, userId });
+      const result = await service.renewInvite({
+        authPayload,
+        spaceId,
+        userId,
+      });
 
       expect(memberEncryptionServiceMock.decryptName).toHaveBeenCalledWith(
         spaceId,

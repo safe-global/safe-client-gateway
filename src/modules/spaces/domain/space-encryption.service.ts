@@ -10,7 +10,7 @@ import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/spac
  * A thin wrapper over {@link KmsEncryptionService} that builds the
  * `{ spaceId }` encryption context so repositories never handle it directly.
  * All crypto mechanics and gating (enabled/disabled, plaintext passthrough
- * during the backfill window) live in {@link KmsEncryptionService}.
+ * while disabled) live in {@link KmsEncryptionService}.
  */
 @Injectable()
 export class SpaceEncryptionService {
@@ -134,8 +134,8 @@ export class SpaceEncryptionService {
    * Returns a copy of an audit payload with every encrypted member decrypted
    * under the row's space scope. Writers put the source row's ciphertext into
    * payloads, and encryption contexts are space-scoped with no row ids, so
-   * `spaceId` alone reconstructs every context. Plaintext members (legacy
-   * rows, or encryption disabled) pass through unchanged inside
+   * `spaceId` alone reconstructs every context. Plaintext members (written
+   * while encryption was disabled) pass through unchanged inside
    * {@link KmsEncryptionService.decrypt}.
    */
   async decryptAuditPayload(

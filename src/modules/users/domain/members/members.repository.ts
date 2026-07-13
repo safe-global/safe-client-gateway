@@ -181,11 +181,9 @@ export class MembersRepository implements IMembersRepository {
       const walletUserIds = new Map<Address, User['id']>();
       if (walletAddresses.length > 0) {
         // Batch existing wallet lookups while keeping user creation atomic.
-        // Dual-read during the backfill window: encrypted rows match on the
-        // blind index, rows the backfill has not reached yet
-        // (address_index IS NULL) still match on plaintext. The plaintext
-        // arm is removed together with restoring the throw-on-plaintext
-        // guard once the backfill --verify passes.
+        // Enabled: match encrypted rows on their blind index. Disabled: no
+        // index key is configured, so match the stored plaintext directly
+        // (address_index IS NULL).
         const indexByAddress = new Map<Address, string | null>(
           walletAddresses.map((address) => [
             address,
@@ -196,16 +194,16 @@ export class MembersRepository implements IMembersRepository {
           (index): index is string => index !== null,
         );
         const wallets = await entityManager.find(Wallet, {
-          where: [
-            ...(indexes.length > 0 ? [{ addressIndex: In(indexes) }] : []),
-            { addressIndex: IsNull(), address: In(walletAddresses) },
-          ],
+          where:
+            indexes.length > 0
+              ? { addressIndex: In(indexes) }
+              : { addressIndex: IsNull(), address: In(walletAddresses) },
           relations: { user: true },
         });
 
         // Map each row back to the caller's plaintext address: encrypted
         // rows via their blind index (no KMS round trip - the plaintext is
-        // the invite input), un-backfilled rows via the stored plaintext.
+        // the invite input), plaintext rows via the stored address.
         const addressByIndex = new Map<string, Address>();
         for (const [address, index] of indexByAddress) {
           if (index !== null) {
@@ -300,7 +298,7 @@ export class MembersRepository implements IMembersRepository {
     } = args;
     const { name, role } = userToInvite;
     // Encrypt at rest under the space-scoped context; a disabled service
-    // passes the plaintext through unchanged (backfill-window safe).
+    // passes the plaintext through unchanged.
     const encryptedName = await this.memberEncryptionService.encryptName(
       space.id,
       name,
@@ -581,7 +579,9 @@ export class MembersRepository implements IMembersRepository {
               args.spaceId,
               args.alias,
             );
-      await entityManager.update(DbMember, member.id, { alias: encryptedAlias });
+      await entityManager.update(DbMember, member.id, {
+        alias: encryptedAlias,
+      });
 
       const space = await this.findSpaceForAuditOrFail(
         entityManager,
@@ -732,10 +732,10 @@ export class MembersRepository implements IMembersRepository {
       );
     }
     const [emailDecrypted] = await this.decryptMemberUserEmails([member]);
-    const [decryptedMember] =
-      await this.memberEncryptionService.decryptMembers(args.spaceId, [
-        emailDecrypted,
-      ]);
+    const [decryptedMember] = await this.memberEncryptionService.decryptMembers(
+      args.spaceId,
+      [emailDecrypted],
+    );
     return decryptedMember;
   }
 }
