@@ -26,6 +26,8 @@ async function bootstrap(): Promise<void> {
     app.get<IConfigurationService>(IConfigurationService);
   const applicationPort: string =
     configurationService.getOrThrow('application.port');
+  const applicationHost: string =
+    configurationService.getOrThrow('application.host');
 
   if (
     configurationService.getOrThrow('application.allowCors') &&
@@ -34,7 +36,7 @@ async function bootstrap(): Promise<void> {
     app.enableCors({ origin: true, credentials: true });
   }
 
-  await app.listen(applicationPort);
+  await app.listen(applicationPort, applicationHost);
 }
 
 bootstrap().catch((error: unknown) => {
