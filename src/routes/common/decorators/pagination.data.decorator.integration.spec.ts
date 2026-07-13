@@ -35,7 +35,7 @@ describe('PaginationDataDecorator', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('no cursor', async () => {

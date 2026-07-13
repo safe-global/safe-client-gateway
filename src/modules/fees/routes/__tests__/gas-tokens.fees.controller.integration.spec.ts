@@ -37,7 +37,7 @@ describe('Fees Controller - gas tokens', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('Success', async () => {

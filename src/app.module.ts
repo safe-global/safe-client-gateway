@@ -81,7 +81,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
-      billingWebhook: isBillingWebhookFeatureEnabled,
+      billingService: isBillingServiceFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -93,7 +93,7 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
-        ...(isBillingWebhookFeatureEnabled ? [BillingModule] : []),
+        ...(isBillingServiceFeatureEnabled ? [BillingModule] : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,

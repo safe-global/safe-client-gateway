@@ -104,7 +104,8 @@ export class PortfolioController {
 
   @ApiOperation({
     summary: 'Clear portfolio cache',
-    description: 'Clears the cached portfolio data for a specific address',
+    description:
+      'Clears all cached Zerion portfolio data (overview, portfolio, positions) for a specific address',
   })
   @ApiParam({
     name: 'address',
@@ -117,6 +118,6 @@ export class PortfolioController {
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    await this.portfolioService.clearPortfolio({ address });
+    await this.portfolioService.clearZerionCaches({ address });
   }
 }

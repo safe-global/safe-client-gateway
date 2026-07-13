@@ -36,8 +36,8 @@ export class PortfolioApiService {
     return this.portfolioRouteMapper.mapDomainToRoute(domainPortfolio);
   }
 
-  public async clearPortfolio(args: { address: Address }): Promise<void> {
-    await this.domainPortfolioService.clearPortfolio(args);
+  public async clearZerionCaches(args: { address: Address }): Promise<void> {
+    await this.domainPortfolioService.clearZerionCaches(args);
   }
 
   /**

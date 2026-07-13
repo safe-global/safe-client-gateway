@@ -70,7 +70,7 @@ describe('Community Controller', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   beforeEach(() => {

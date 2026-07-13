@@ -116,7 +116,7 @@ describe('RouteLoggerInterceptor tests', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('500 error triggers error level', async () => {

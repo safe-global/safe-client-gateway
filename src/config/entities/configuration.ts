@@ -384,6 +384,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
       10,
     ),
+    billing: Number.parseInt(
+      process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -427,7 +431,7 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
-    billingWebhook: process.env.FF_BILLING_WEBHOOK?.toLowerCase() === 'true',
+    billingService: process.env.FF_BILLING_SERVICE?.toLowerCase() === 'true',
     counterfactualBalances:
       process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
@@ -533,6 +537,14 @@ export default () => ({
     secret: process.env.JWT_SECRET,
   },
   billing: {
+    baseUri:
+      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
+      'https://safe-billing-service.staging.5afe.dev',
+    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
+    requestTimeout: Number.parseInt(
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
+      10,
+    ),
     // ES256 service-to-service auth for incoming billing-service webhooks.
     // The CGW verifies tokens against its own public key (no JWKS); the
     // private key lives only in the provisioning CLI, not the running app.
@@ -833,6 +845,38 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
+    // Field-level encryption of user email addresses. The email value is
+    // encrypted directly by AWS KMS, bound to its owning user via the KMS
+    // encryption context; a KMS-wrapped HMAC key computes the email blind
+    // index for lookups/uniqueness.
+    fieldEncryption: {
+      // When true, the users repository encrypts emails before writing and
+      // requires every stored email to be ciphertext on read — enable only
+      // after the backfill has encrypted all existing rows
+      // (scripts/backfill-user-email-encryption).
+      enabled:
+        process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
+      // Base64 KMS-encrypted 32-byte key for the users.email blind index.
+      // Produced by scripts/generate-field-encryption-index-key. Required
+      // when field encryption is enabled.
+      emailIndexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
+      kms: {
+        // Undefined when encryption is off; the schema validator requires real
+        // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS
+        // service only resolves them once a KMS call is actually made.
+        // Region is intentionally not read here: the AWS SDK resolves
+        // AWS_REGION from the environment directly, as it does for SES.
+        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+        // Dedicated KMS credentials (like SES_AWS_*/CSV_AWS_*) so enabling
+        // field encryption doesn't reuse the bare AWS_ACCESS_KEY_ID/
+        // SECRET_ACCESS_KEY credentials scoped for targeted messaging's S3
+        // file storage.
+        accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
+        // Set in EKS via IRSA; takes precedence over static credentials.
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
     invite: {
       ttlMs: Number.parseInt(
         process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,

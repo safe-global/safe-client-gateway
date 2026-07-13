@@ -32,6 +32,51 @@ const relayRulesValidator = z
   )
   .optional();
 
+function validateFieldEncryptionConfig(
+  config: {
+    SPACES_FIELD_ENCRYPTION_ENABLED?: string;
+    SPACES_FIELD_ENCRYPTION_INDEX_KEY?: string;
+    AWS_KMS_ENCRYPTION_KEY_ID?: string;
+    AWS_WEB_IDENTITY_TOKEN_FILE?: string;
+    KMS_AWS_ACCESS_KEY_ID?: string;
+    KMS_AWS_SECRET_ACCESS_KEY?: string;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  // Field encryption, when enabled, needs the blind-index key regardless
+  // of environment — enabling it without the key is always broken.
+  if (config.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() !== 'true') {
+    return;
+  }
+  for (const field of [
+    'SPACES_FIELD_ENCRYPTION_INDEX_KEY',
+    'AWS_KMS_ENCRYPTION_KEY_ID',
+  ] as const) {
+    if (!config[field]) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required when SPACES_FIELD_ENCRYPTION_ENABLED is true',
+        path: [field],
+      });
+    }
+  }
+  // KMS credentials come from IRSA (web identity token) or a static key
+  // pair, mirroring AwsKmsService's credential resolution. Dedicated
+  // KMS_AWS_* keys (like SES_AWS_*/CSV_AWS_*) so enabling field encryption
+  // doesn't silently repurpose the bare AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY
+  // credentials used by targeted messaging's S3 file storage.
+  const hasStaticCredentials =
+    !!config.KMS_AWS_ACCESS_KEY_ID && !!config.KMS_AWS_SECRET_ACCESS_KEY;
+  if (!(config.AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'AWS credentials are required when SPACES_FIELD_ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID and KMS_AWS_SECRET_ACCESS_KEY',
+      path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
+    });
+  }
+}
+
 const DomainSchema = z.string().refine(
   (val) => {
     try {
@@ -74,9 +119,12 @@ export const RootConfigurationSchema = z
     AWS_SES_FROM_EMAIL: z.email().optional(),
     AWS_SES_FROM_NAME: z.string().optional(),
     AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
+    KMS_AWS_ACCESS_KEY_ID: z.string().optional(),
+    KMS_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     SES_AWS_ACCESS_KEY_ID: z.string().optional(),
     SES_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     FF_SES_EMAIL: z.string().optional(),
+    FF_BILLING_SERVICE: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -143,6 +191,14 @@ export const RootConfigurationSchema = z
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
+    // Safe billing service configuration
+    SAFE_BILLING_SERVICE_BASE_URI: z.url().optional(),
+    SAFE_BILLING_SERVICE_API_TOKEN: z.string().optional(),
+    SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_SAFE_TOKEN_ADDRESS: z.string().optional(),
     RELAY_NO_FEE_CAMPAIGN_SEPOLIA_START_TIMESTAMP: z.coerce
       .number()
@@ -180,6 +236,8 @@ export const RootConfigurationSchema = z
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
+    SPACES_FIELD_ENCRYPTION_ENABLED: z.string().optional(),
+    SPACES_FIELD_ENCRYPTION_INDEX_KEY: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
     CSV_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     CSV_EXPORT_QUEUE_CONCURRENCY: z.coerce.number().min(1).optional(),
@@ -210,6 +268,8 @@ export const RootConfigurationSchema = z
       return;
     }
     const isSesEnabled = config.FF_SES_EMAIL?.toLowerCase() === 'true';
+    const isBillingServiceEnabled =
+      config.FF_BILLING_SERVICE?.toLowerCase() === 'true';
 
     for (const {
       field,
@@ -230,11 +290,31 @@ export const RootConfigurationSchema = z
         message:
           'is required in production and staging environments when SES email is enabled',
       },
+      {
+        field: 'SAFE_BILLING_SERVICE_API_TOKEN',
+        requiredWhen: isBillingServiceEnabled,
+        message:
+          'is required in production and staging environments when the billing service is enabled',
+      },
+      {
+        field: 'SAFE_BILLING_SERVICE_BASE_URI',
+        requiredWhen: isBillingServiceEnabled,
+        message:
+          'is required in production and staging environments when the billing service is enabled',
+      },
+      {
+        field: 'BILLING_WEBHOOK_JWT_PUBLIC_KEY',
+        requiredWhen: isBillingServiceEnabled,
+        message:
+          'is required in production and staging environments when the billing service is enabled',
+      },
     ]) {
       if (requiredWhen && !(config as Record<string, unknown>)[field]) {
         ctx.addIssue({ code: 'custom', message, path: [field] });
       }
     }
+
+    validateFieldEncryptionConfig(config, ctx);
   });
 
 export type FileStorageType = z.infer<

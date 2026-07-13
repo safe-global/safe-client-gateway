@@ -97,7 +97,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   function getImitationAddress(address: Address): Address {

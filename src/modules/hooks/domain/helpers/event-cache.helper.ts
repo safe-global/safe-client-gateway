@@ -33,6 +33,7 @@ import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
 import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
+import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
 
 @Injectable()
 export class EventCacheHelper {
@@ -55,6 +56,7 @@ export class EventCacheHelper {
     private readonly delegatesRepository: IDelegatesV2Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
+    private readonly zerionCache: ZerionCacheService,
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: ISafeAppsRepository,
     @Inject(ISafeRepository)
@@ -260,7 +262,9 @@ export class EventCacheHelper {
     // - the stakes of a safe
     // - the list of module transactions for the safe
     // - the safe configuration
+    // - the Zerion-backed portfolio caches
     return [
+      this.zerionCache.invalidate(event.address, event.type),
       this.safeRepository.clearAllExecutedTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -298,7 +302,9 @@ export class EventCacheHelper {
     // - the transaction executed – clear multisig transaction
     // - the safe configuration - clear safe info
     // - the stakes of a safe
+    // - the Zerion-backed portfolio caches
     const promises = [
+      this.zerionCache.invalidate(event.address, event.type),
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -448,7 +454,9 @@ export class EventCacheHelper {
     // - the balance of the safe - clear safe balance
     // - the list of all executed transactions (including transfers) for the safe
     // - the incoming transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -480,7 +488,9 @@ export class EventCacheHelper {
     // - the list of all executed transactions for the safe
     // - queued transactions and history – clear multisig transactions
     // - the transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -510,7 +520,9 @@ export class EventCacheHelper {
     // - queued transactions and history – clear multisig transactions
     // - the transfers for that safe
     // - the incoming transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -547,7 +559,9 @@ export class EventCacheHelper {
     // - the list of all executed transactions (including transfers) for the safe
     // - queued transactions and history – clear multisig transactions
     // - the transfers for that safe
+    // - the Zerion-backed portfolio caches
     return [
+      this.zerionCache.invalidate(event.address, event.type),
       this.balancesRepository.clearBalances({
         chainId: event.chainId,
         safeAddress: event.address,
@@ -644,7 +658,11 @@ export class EventCacheHelper {
   private onTransactionEventSafeCreated(
     event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
   ): Array<Promise<void>> {
-    return [this.safeRepository.clearIsSafe(event)];
+    // A freshly indexed Safe may have been funded before deployment.
+    return [
+      this.safeRepository.clearIsSafe(event),
+      this.zerionCache.invalidate(event.address, event.type),
+    ];
   }
 
   private onTransactionEventDelegate(

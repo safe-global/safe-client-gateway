@@ -81,7 +81,7 @@ describe('Auth decorator', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('no token', async () => {

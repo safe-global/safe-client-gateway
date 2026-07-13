@@ -85,7 +85,7 @@ describe('Recovery Controller', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   afterEach(() => {

@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
+import { mockClient } from 'aws-sdk-client-mock';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -23,12 +27,16 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
+import { INDEX_KEY_LENGTH } from '@/modules/users/domain/email-encryption.constants';
+import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -107,6 +115,7 @@ describe('UsersRepository', () => {
       postgresDatabaseService,
       new WalletsRepository(postgresDatabaseService),
       createMockSpaceAuditRepository(),
+      createMockEmailEncryptionService(),
     );
   });
 
@@ -225,6 +234,7 @@ describe('UsersRepository', () => {
         user: {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -314,6 +324,7 @@ describe('UsersRepository', () => {
         {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
           extUserId: null,
           id: users[0].id,
           status,
@@ -496,6 +507,7 @@ describe('UsersRepository', () => {
         user: {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
           extUserId: null,
           id: wallet.user.id,
           status,
@@ -712,6 +724,7 @@ describe('UsersRepository', () => {
           user: {
             createdAt: expect.any(Date),
             email: null,
+            emailIndex: null,
             extUserId: null,
             id: wallets[0].user.id,
             status,
@@ -768,6 +781,7 @@ describe('UsersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -805,6 +819,7 @@ describe('UsersRepository', () => {
       ).resolves.toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
         extUserId: null,
         id: userInsertResult.identifiers[0].id,
         status,
@@ -855,6 +870,7 @@ describe('UsersRepository', () => {
       expect(user).toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
         id: userId,
         status: 'ACTIVE',
         updatedAt: expect.any(Date),
@@ -873,6 +889,7 @@ describe('UsersRepository', () => {
         user: {
           createdAt: expect.any(Date),
           email: null,
+          emailIndex: null,
           id: userId,
           status: 'ACTIVE',
           updatedAt: expect.any(Date),
@@ -945,34 +962,50 @@ describe('UsersRepository', () => {
   });
 
   describe('findOrCreateByExtUserIdAndEmail', () => {
-    it('should enforce unique non-null user emails', async () => {
+    it('should enforce unique non-null email blind indexes', async () => {
+      // Email uniqueness is now enforced by the partial unique index on the
+      // blind index column (idx_users_email_index), which replaced idx_users_email
+      // once the stored email became non-deterministic ciphertext.
       const dbUserRepository = dataSource.getRepository(User);
-      const email = fakeEmailAddress();
+      const emailIndex = faker.string.alphanumeric(64);
 
-      await dbUserRepository.insert({
-        status: 'ACTIVE',
-        email,
-      });
+      await dbUserRepository.insert({ status: 'ACTIVE', emailIndex });
 
       await expect(
-        dbUserRepository.insert({
-          status: 'ACTIVE',
-          email,
-        }),
-      ).rejects.toThrow(/duplicate key|idx_users_email/);
+        dbUserRepository.insert({ status: 'ACTIVE', emailIndex }),
+      ).rejects.toThrow(/duplicate key|idx_users_email_index/);
     });
 
-    it('should enforce lowercase user emails', async () => {
+    it('should allow multiple users with a null email blind index', async () => {
+      // The unique index is partial (WHERE email_index IS NOT NULL), so users
+      // without an email — every user while field encryption is disabled — can
+      // coexist.
       const dbUserRepository = dataSource.getRepository(User);
 
-      await expect(
-        dbUserRepository.insert({
-          status: 'ACTIVE',
-          email: faker.internet.email().toUpperCase(),
-        }),
-      ).rejects.toThrow(
-        /violates check constraint|users_email_lowercase_check/,
-      );
+      await dbUserRepository.insert({ status: 'ACTIVE', emailIndex: null });
+      await dbUserRepository.insert({ status: 'ACTIVE', emailIndex: null });
+
+      await expect(dbUserRepository.count()).resolves.toBe(2);
+    });
+
+    it('should store non-lowercase email values verbatim', async () => {
+      // The users_email_lowercase_check constraint was dropped so the column can
+      // hold ciphertext, which is not lowercase. The lowercase invariant now
+      // lives in EmailAddressSchema, applied before values reach the database.
+      const dbUserRepository = dataSource.getRepository(User);
+      const mixedCaseEmail = faker.internet
+        .email()
+        .toUpperCase() as EmailAddress;
+
+      const insertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email: mixedCaseEmail,
+      });
+
+      const stored = await dbUserRepository.findOneOrFail({
+        where: { id: insertResult.identifiers[0].id as number },
+      });
+      expect(stored.email).toBe(mixedCaseEmail);
     });
 
     it('should persist a normalized email when the user has none yet', async () => {
@@ -1114,6 +1147,7 @@ describe('UsersRepository', () => {
       expect(user).toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
         extUserId: null,
         id: userId,
         status: 'ACTIVE',
@@ -1146,6 +1180,7 @@ describe('UsersRepository', () => {
       expect(user).toEqual({
         createdAt: expect.any(Date),
         email: null,
+        emailIndex: null,
         extUserId: null,
         id: userId,
         status,
@@ -1260,6 +1295,112 @@ describe('UsersRepository', () => {
       const result = await usersRepository.findEmailsByIds([999999]);
 
       expect(result).toEqual(new Map());
+    });
+  });
+
+  describe('email encryption (real KMS)', () => {
+    // Unlike the hand-rolled fake double used elsewhere, this wires the real
+    // EmailEncryptionService to a real AwsKmsService with only the AWS SDK
+    // boundary mocked (same pattern as aws-kms.service.spec.ts). It proves
+    // the actual kms:v1:... on-disk contract round-trips through a live
+    // repository call, and that a plaintext row (not yet reached by the
+    // backfill) still reads back untouched rather than erroring.
+    const kmsMock = mockClient(KMSClient);
+    const keyId = faker.string.uuid();
+    const indexKey = Buffer.alloc(INDEX_KEY_LENGTH, 7);
+
+    beforeEach(() => {
+      kmsMock.reset();
+    });
+
+    // Same mockConfigurationService.getOrThrow/get key-switch idiom used in
+    // spaces.repository.integration.spec.ts, rather than a generic path
+    // resolver over the whole config tree.
+    function buildEncryptingConfigurationService(): MockedObject<IConfigurationService> {
+      const emailIndexKey = faker.string.alphanumeric(24);
+      const accessKeyId = faker.string.alphanumeric(20);
+      const secretAccessKey = faker.string.alphanumeric(40);
+
+      const configurationService = vi.mocked({
+        get: vi.fn(),
+        getOrThrow: vi.fn(),
+      } as MockedObject<IConfigurationService>);
+      configurationService.get.mockImplementation((key: string) => {
+        if (key === 'spaces.fieldEncryption.emailIndexKey') {
+          return emailIndexKey;
+        }
+        if (key === 'spaces.fieldEncryption.kms.keyId') return keyId;
+      });
+      configurationService.getOrThrow.mockImplementation((key: string) => {
+        if (key === 'spaces.fieldEncryption.enabled') return true;
+        if (key === 'spaces.fieldEncryption.kms.accessKeyId') {
+          return accessKeyId;
+        }
+        if (key === 'spaces.fieldEncryption.kms.secretAccessKey') {
+          return secretAccessKey;
+        }
+      });
+
+      return configurationService;
+    }
+
+    async function buildEncryptingUsersRepository(): Promise<UsersRepository> {
+      const encryptingConfigurationService =
+        buildEncryptingConfigurationService();
+
+      // The blind-index key unwrap in onModuleInit is the first Decrypt call.
+      kmsMock.on(DecryptCommand).resolvesOnce({ Plaintext: indexKey });
+
+      const emailEncryptionService = new EmailEncryptionService(
+        encryptingConfigurationService,
+        new AwsKmsService(encryptingConfigurationService),
+      );
+      await emailEncryptionService.onModuleInit();
+
+      return new UsersRepository(
+        postgresDatabaseService,
+        new WalletsRepository(postgresDatabaseService),
+        createMockSpaceAuditRepository(),
+        emailEncryptionService,
+      );
+    }
+
+    it('round-trips the real kms:v1: on-disk value through create and decrypt', async () => {
+      const encryptingUsersRepository = await buildEncryptingUsersRepository();
+      const email = fakeEmailAddress();
+      const ciphertextBlob = Buffer.from(faker.string.alphanumeric(16));
+      kmsMock.on(EncryptCommand).resolves({ CiphertextBlob: ciphertextBlob });
+      kmsMock
+        .on(DecryptCommand)
+        .resolves({ Plaintext: Buffer.from(email, 'utf8') });
+
+      const userId = await encryptingUsersRepository.findOrCreateByEmail(email);
+
+      const dbUserRepository = dataSource.getRepository(User);
+      const stored = await dbUserRepository.findOneOrFail({
+        where: { id: userId },
+      });
+      expect(stored.email).toBe(
+        `kms:v1:${ciphertextBlob.toString('base64url')}`,
+      );
+      await expect(
+        encryptingUsersRepository.findEmailById(userId),
+      ).resolves.toBe(email);
+    });
+
+    it('reads a plaintext row through untouched once encryption is enabled (backfill in progress)', async () => {
+      const encryptingUsersRepository = await buildEncryptingUsersRepository();
+      const dbUserRepository = dataSource.getRepository(User);
+      const email = fakeEmailAddress();
+      const insertResult = await dbUserRepository.insert({
+        status: 'ACTIVE',
+        email,
+      });
+      const userId = insertResult.identifiers[0].id as number;
+
+      await expect(
+        encryptingUsersRepository.findEmailById(userId),
+      ).resolves.toBe(email);
     });
   });
 });

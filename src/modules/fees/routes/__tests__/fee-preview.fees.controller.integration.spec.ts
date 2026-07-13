@@ -57,7 +57,7 @@ describe('Fees Controller', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('should return 400 if relay-fee is not available for the chain', async () => {
