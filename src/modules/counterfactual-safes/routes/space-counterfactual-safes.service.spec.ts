@@ -10,23 +10,24 @@ import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-sa
 import { SpaceCounterfactualSafesService } from '@/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 const mockMembersRepository = vi.mocked({
   findOne: vi.fn(),
-} as unknown as MockedObject<IMembersRepository>);
+} as MockedObject<IMembersRepository>);
 
 const mockSpaceSafesRepository = vi.mocked({
   findBySpaceId: vi.fn(),
-} as unknown as MockedObject<ISpaceSafesRepository>);
+} as MockedObject<ISpaceSafesRepository>);
 
 const mockCounterfactualSafesRepository = vi.mocked({
   find: vi.fn(),
-} as unknown as MockedObject<ICounterfactualSafesRepository>);
+} as MockedObject<ICounterfactualSafesRepository>);
 
 const mockSafeRepository = vi.mocked({
   isSafe: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>);
+} as MockedObject<ISafeRepository>);
 
 describe('SpaceCounterfactualSafesService', () => {
   let target: SpaceCounterfactualSafesService;
@@ -41,10 +42,11 @@ describe('SpaceCounterfactualSafesService', () => {
     );
   });
 
-  const spaceId = faker.string.uuid();
+  const spaceId = faker.number.int({ min: 1 });
   const authPayloadDto = siweAuthPayloadDtoBuilder().build();
   const userId = Number(authPayloadDto.sub);
   const authPayload = new AuthPayload(authPayloadDto);
+  const member = memberBuilder().with('id', userId).build();
 
   it('excludes counterfactual rows whose Safe is already deployed on-chain', async () => {
     const chainId = '11155111';
@@ -57,9 +59,7 @@ describe('SpaceCounterfactualSafesService', () => {
       .with('address', getAddress(faker.finance.ethereumAddress()))
       .build();
 
-    mockMembersRepository.findOne.mockResolvedValue({
-      id: userId,
-    } as never);
+    mockMembersRepository.findOne.mockResolvedValue(member);
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId, address: deployed.address },
       { chainId, address: undeployed.address },
@@ -72,7 +72,7 @@ describe('SpaceCounterfactualSafesService', () => {
       async ({ address }) => address === deployed.address,
     );
 
-    const result = await target.get(spaceId as never, authPayload);
+    const result = await target.get(spaceId, authPayload);
 
     const returned = result.safes[chainId] ?? [];
     expect(returned).toHaveLength(1);
@@ -85,16 +85,14 @@ describe('SpaceCounterfactualSafesService', () => {
       .with('chainId', chainId)
       .build();
 
-    mockMembersRepository.findOne.mockResolvedValue({
-      id: userId,
-    } as never);
+    mockMembersRepository.findOne.mockResolvedValue(member);
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId, address: undeployed.address },
     ]);
     mockCounterfactualSafesRepository.find.mockResolvedValue([undeployed]);
     mockSafeRepository.isSafe.mockResolvedValue(false);
 
-    const result = await target.get(spaceId as never, authPayload);
+    const result = await target.get(spaceId, authPayload);
 
     expect(result.safes[chainId]).toHaveLength(1);
   });
@@ -103,24 +101,24 @@ describe('SpaceCounterfactualSafesService', () => {
     const chainId = '11155111';
     const safe = counterfactualSafeBuilder().with('chainId', chainId).build();
 
-    mockMembersRepository.findOne.mockResolvedValue({ id: userId } as never);
+    mockMembersRepository.findOne.mockResolvedValue(member);
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId, address: safe.address },
     ]);
     mockCounterfactualSafesRepository.find.mockResolvedValue([safe]);
     mockSafeRepository.isSafe.mockRejectedValue(new Error('tx service down'));
 
-    const result = await target.get(spaceId as never, authPayload);
+    const result = await target.get(spaceId, authPayload);
 
     expect(result.safes[chainId]).toHaveLength(1);
     expect(result.safes[chainId][0].address).toBe(safe.address);
   });
 
   it('returns no safes and skips lookups when the space has no safes', async () => {
-    mockMembersRepository.findOne.mockResolvedValue({ id: userId } as never);
+    mockMembersRepository.findOne.mockResolvedValue(member);
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
 
-    const result = await target.get(spaceId as never, authPayload);
+    const result = await target.get(spaceId, authPayload);
 
     expect(result).toEqual({ safes: {} });
     expect(mockCounterfactualSafesRepository.find).not.toHaveBeenCalled();
@@ -128,9 +126,9 @@ describe('SpaceCounterfactualSafesService', () => {
   });
 
   it('throws when the user is not a member of the space', async () => {
-    mockMembersRepository.findOne.mockResolvedValue(null as never);
+    mockMembersRepository.findOne.mockResolvedValue(null);
 
-    await expect(target.get(spaceId as never, authPayload)).rejects.toThrow();
+    await expect(target.get(spaceId, authPayload)).rejects.toThrow();
     expect(mockSpaceSafesRepository.findBySpaceId).not.toHaveBeenCalled();
   });
 
@@ -147,7 +145,7 @@ describe('SpaceCounterfactualSafesService', () => {
       .with('chainId', chainB)
       .build();
 
-    mockMembersRepository.findOne.mockResolvedValue({ id: userId } as never);
+    mockMembersRepository.findOne.mockResolvedValue(member);
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId: chainA, address: deployedA.address },
       { chainId: chainA, address: undeployedA.address },
@@ -162,7 +160,7 @@ describe('SpaceCounterfactualSafesService', () => {
       async ({ address }) => address === deployedA.address,
     );
 
-    const result = await target.get(spaceId as never, authPayload);
+    const result = await target.get(spaceId, authPayload);
 
     expect(result.safes[chainA]).toHaveLength(1);
     expect(result.safes[chainA][0].address).toBe(undeployedA.address);
