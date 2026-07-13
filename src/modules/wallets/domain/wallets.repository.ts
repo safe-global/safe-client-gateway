@@ -161,23 +161,8 @@ export class WalletsRepository implements IWalletsRepository {
       await this.postgresDatabaseService.getRepository(Wallet);
 
     const addressIndex = this.walletEncryptionService.addressIndex(address);
-    if (!addressIndex) {
-      return await walletRepository.delete({
-        address,
-      });
-    }
-
-    // Dual-read during the backfill window: delete() criteria cannot express
-    // blind index OR plaintext, so resolve the matching row ids first. The
-    // plaintext arm is removed together with restoring the
-    // throw-on-plaintext guard once the backfill --verify passes.
-    const wallets = await walletRepository.find({
-      where: [{ addressIndex }, { addressIndex: IsNull(), address }],
-      select: { id: true },
-    });
-    if (wallets.length === 0) {
-      return { raw: [], affected: 0 };
-    }
-    return await walletRepository.delete(wallets.map((wallet) => wallet.id));
+    return await walletRepository.delete(
+      addressIndex ? { addressIndex } : { address },
+    );
   }
 }
