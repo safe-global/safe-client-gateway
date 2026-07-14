@@ -218,7 +218,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-5 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
           prompt: |
             Review round 1 of 3. Follow the instructions in
             .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
@@ -244,7 +244,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-5 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
           prompt: |
             Review round 2 of 3. Follow the instructions in
             .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
@@ -276,7 +276,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-5 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
           prompt: |
             Review round 3 of 3 (final round). Follow the instructions in
             .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
