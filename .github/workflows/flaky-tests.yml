@@ -215,104 +215,39 @@ jobs:
       # Review loop: an independent Claude session (fresh context, same review
       # prompt as claude-code-review.yml) reviews the PR and posts its
       # findings as a PR comment; if it requests changes, another fresh
-      # session addresses them. Unrolled to 3 rounds, stops early on approve.
-      # Each Verdict step reads $RUNNER_TEMP/verdict and latches a cumulative
-      # `done` flag, so later steps check a single output; a missing verdict
-      # file counts as request-changes so a failed review never ends the loop
-      # with a silent approve.
+      # session addresses them. Three rounds of the shared composite action,
+      # each latching a cumulative `done` flag so the loop stops early on
+      # approve.
       - name: Review round 1
+        id: round1
         if: steps.fixpr.outputs.number != ''
-        uses: anthropics/claude-code-action@v1
+        uses: ./.github/actions/flaky-review-round
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
-          prompt: |
-            Review round 1 of 3. Follow the instructions in
-            .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
-      - name: Verdict 1
-        id: verdict1
-        if: steps.fixpr.outputs.number != ''
-        run: |
-          v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
-          rm -f "$RUNNER_TEMP/verdict"
-          echo "done=$([ "$v" = "approve" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
-      - name: Address review 1
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.done != 'true'
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
-          prompt: |
-            Follow the instructions in .github/prompts/flaky-fix-address.md
-            for PR #${{ steps.fixpr.outputs.number }}.
-
+          round: '1'
+          total-rounds: '3'
+          pr-number: ${{ steps.fixpr.outputs.number }}
+          prev-done: 'false'
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Review round 2
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.done != 'true'
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
-          prompt: |
-            Review round 2 of 3. Follow the instructions in
-            .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
-      - name: Verdict 2
-        id: verdict2
+        id: round2
         if: steps.fixpr.outputs.number != ''
-        env:
-          PREV_DONE: ${{ steps.verdict1.outputs.done }}
-        run: |
-          v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
-          rm -f "$RUNNER_TEMP/verdict"
-          if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
-            echo "done=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "done=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Address review 2
-        if: steps.fixpr.outputs.number != '' && steps.verdict2.outputs.done != 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: ./.github/actions/flaky-review-round
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
-          prompt: |
-            Follow the instructions in .github/prompts/flaky-fix-address.md
-            for PR #${{ steps.fixpr.outputs.number }}.
-
+          round: '2'
+          total-rounds: '3'
+          pr-number: ${{ steps.fixpr.outputs.number }}
+          prev-done: ${{ steps.round1.outputs.done }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
       - name: Review round 3
-        if: steps.fixpr.outputs.number != '' && steps.verdict2.outputs.done != 'true'
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
-          prompt: |
-            Review round 3 of 3 (final round). Follow the instructions in
-            .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
-      - name: Verdict 3
-        id: verdict3
+        id: round3
         if: steps.fixpr.outputs.number != ''
-        env:
-          PREV_DONE: ${{ steps.verdict2.outputs.done }}
-        run: |
-          v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
-          rm -f "$RUNNER_TEMP/verdict"
-          if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
-            echo "done=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "done=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Address review 3
-        if: steps.fixpr.outputs.number != '' && steps.verdict3.outputs.done != 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: ./.github/actions/flaky-review-round
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
-          prompt: |
-            Follow the instructions in .github/prompts/flaky-fix-address.md
-            for PR #${{ steps.fixpr.outputs.number }}. This was the final
-            review round: end your reply comment with a note that the
-            automated review loop is exhausted, the changes from this final
-            round have NOT been re-reviewed, and any remaining findings
-            await human review.
+          round: '3'
+          total-rounds: '3'
+          pr-number: ${{ steps.fixpr.outputs.number }}
+          prev-done: ${{ steps.round2.outputs.done }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
       # The fix and address sessions claim >=10 clean runs; re-check
       # mechanically so a skipped or hallucinated verification fails the job
       # instead of leaving a broken PR open unnoticed.

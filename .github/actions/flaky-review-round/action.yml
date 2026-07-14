@@ -1,0 +1,66 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+name: Flaky-fix review round
+description: >-
+  One round of the flaky-fix review loop: an independent Claude session
+  reviews the fix PR and posts its findings; a verdict step latches the
+  cumulative done flag; on request-changes another fresh session addresses
+  the findings. Skips itself entirely once an earlier round approved.
+inputs:
+  round:
+    description: 1-based number of this round
+    required: true
+  total-rounds:
+    description: Total number of rounds in the loop
+    required: true
+  pr-number:
+    description: Number of the fix PR under review
+    required: true
+  prev-done:
+    description: "'true' when an earlier round already approved"
+    required: true
+  anthropic-api-key:
+    description: Anthropic API key for the Claude sessions
+    required: true
+outputs:
+  done:
+    description: "'true' once this or any earlier round approved"
+    value: ${{ steps.verdict.outputs.done }}
+runs:
+  using: composite
+  steps:
+    - name: Review
+      if: inputs.prev-done != 'true'
+      uses: anthropics/claude-code-action@v1
+      with:
+        anthropic_api_key: ${{ inputs.anthropic-api-key }}
+        claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+        prompt: |
+          Review round ${{ inputs.round }} of ${{ inputs.total-rounds }}.
+          Follow the instructions in .github/prompts/flaky-fix-review.md
+          for PR #${{ inputs.pr-number }}.
+    # A missing verdict file counts as request-changes so a failed review
+    # never ends the loop with a silent approve.
+    - name: Verdict
+      id: verdict
+      shell: bash
+      env:
+        PREV_DONE: ${{ inputs.prev-done }}
+      run: |
+        v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
+        rm -f "$RUNNER_TEMP/verdict"
+        if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
+          echo "done=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "done=false" >> "$GITHUB_OUTPUT"
+        fi
+    - name: Address review
+      if: steps.verdict.outputs.done != 'true'
+      uses: anthropics/claude-code-action@v1
+      with:
+        anthropic_api_key: ${{ inputs.anthropic-api-key }}
+        claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+        prompt: |
+          Follow the instructions in .github/prompts/flaky-fix-address.md
+          for PR #${{ inputs.pr-number }}.
+          ${{ inputs.round == inputs.total-rounds && 'This was the final review round: end your reply comment with a note that the automated review loop is exhausted, the changes from this final round have NOT been re-reviewed, and any remaining findings await human review.' || '' }}
