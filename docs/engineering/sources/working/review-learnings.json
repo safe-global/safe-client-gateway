@@ -950,5 +950,276 @@
     "ruleIds": [
       "TYPE-04"
     ]
+  },
+  {
+    "id": "RL-20260602-004",
+    "title": "Find-or-create helper name promised a status the method does not guarantee",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3104
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4601263199
+    ],
+    "learning": "`findOrCreatePendingByEmail` returned the existing user id even when that user was ACTIVE — PENDING was only the create-path status, not a postcondition — so callers skim-reading the signature could gate behavior on a status the method never guaranteed. It was renamed to `findOrCreateByEmail` (matching `findOrCreateByWalletAddress`). Do not encode a status or other postcondition in a helper name unless the method guarantees it on every path.",
+    "ruleIds": [
+      "NAME-01"
+    ]
+  },
+  {
+    "id": "RL-20260602-005",
+    "title": "Admin fixtures seeded invitedBy with random ints instead of null",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3104
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3340180275,
+      3340185014
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Integration fixtures seeded space admins with `invitedBy: faker.number.int(...)`, but an admin is never invited by anyone — the value should be `null`. Nothing asserted on the field, so tests passed, but the fixture misrepresented domain semantics and misleads future readers. Fixture values must reflect domain reality even when unasserted.",
+    "ruleIds": [
+      "TEST-08"
+    ]
+  },
+  {
+    "id": "RL-20260603-001",
+    "title": "Sequential awaits for independent membership lookups",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3131
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3349814508
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A route service awaited `findAuthorizedMembersOrFail` and then `findActiveAdmin` sequentially even though the two lookups are independent. Run independent repository/API lookups in one `Promise.all` so the request path pays a single round-trip latency.",
+    "ruleIds": [
+      "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20260604-001",
+    "title": "Inline max-length literal and entity limit changed without a migration",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3130
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3354743560,
+      3354746421,
+      3355335248,
+      3355562319,
+      3357005668
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A DTO schema inlined `makeNameSchema({ maxLength: 255 })` instead of a named constant shared with peer entities, and tightening it to the entity's 30-char limit had to be reverted because the entity code claimed 30 while no migration had ever changed the column — the DB still allowed more. Validation limits are named constants shared between schema and entity, and an entity column limit changes only together with the migration that enforces it.",
+    "ruleIds": [
+      "DB-05"
+    ]
+  },
+  {
+    "id": "RL-20260604-002",
+    "title": "Schema-centralization refactor silently changed the wire contract",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3130
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4613389880,
+      4613508241
+    ],
+    "learning": "A refactor that centralized field rules via `Schema.shape.<field>` accidentally made a required DTO field optional (`.optional()` added during the move) and missed a sibling entity that should have received the same `ChainIdSchema` tightening; both were fixed after review. When centralizing or reusing shared schema shapes, preserve requiredness and bounds exactly, sweep sibling entities for the same field, and call out any intentional behavior change in the PR description.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20260604-003",
+    "title": "Simulation persistence flag defaulted to saving every payload",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3116
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3341415292,
+      3348639860
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A Tenderly simulation request copied `save: true` from the web client, persisting every relay simulation (Safe addresses + calldata) on a third-party surface. Review changed it to `save_if_fails` only. Flags that persist request payloads to external services default to the least-retentive option that still supports debugging.",
+    "ruleIds": [
+      "SEC-02"
+    ]
+  },
+  {
+    "id": "RL-20260604-004",
+    "title": "Nested ternaries for error formatting instead of a small utils helper",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3116
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3341301060,
+      3355092843
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Error-message construction used ternary-of-ternary template literals inline in a datasource; review asked twice to extract it into a small helper with plain `if`s in a utils file. Message/formatting logic beyond one branch gets a named helper — nested ternaries in template literals are a readability flag.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20260605-001",
+    "title": "Lifecycle status check placed in the repository instead of the service",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3134
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3363313189
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A repository method checked `member.status !== 'INVITED'` and threw `ConflictException` before its write. Business-rule gating (which lifecycle states allow an operation) belongs in the service layer; repositories persist, query, and map constraint errors. The boundary cuts both ways: services stay out of persistence internals, repositories stay out of business rules.",
+    "ruleIds": [
+      "MOD-02"
+    ]
+  },
+  {
+    "id": "RL-20260605-002",
+    "title": "Single-statement write wrapped in an unnecessary transaction",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3134
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3363311497
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An invite-renewal update wrapped one UPDATE in `postgresDatabaseService.transaction(...)`. A single statement is already atomic; explicit transactions are for multi-step writes that must commit or roll back together. Do not add transaction plumbing around a lone write.",
+    "ruleIds": [
+      "DB-02"
+    ]
+  },
+  {
+    "id": "RL-20260605-003",
+    "title": "Numeric-string ID schema accepted zero and relied on loose shared schema",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3137
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3363064198,
+      3363076462,
+      3363127441
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4631889692
+    ],
+    "learning": "A chainId response field moved from `z.number()` to a numeric string; review iterations settled on `/^[1-9]\\d*$/` because `^\\d+$` accepts `\"0\"` and leading zeros, and the shared `ChainIdSchema` was too loose (negatives, floats) to reuse without a separate fix. Test builders had to generate conforming values too: `faker.string.numeric()` allows leading zeros, so `faker.number.int(...).toString()` was used instead. Numeric-string ID schemas reject zero, leading zeros, signs, and floats, and test-data generators must satisfy the same constraint.",
+    "ruleIds": [
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20260608-001",
+    "title": "Conditionally required env vars added as standalone checks that also fired locally",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3142,
+      3135
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3374599297,
+      3374627868,
+      3373466288,
+      3363461187,
+      3372114899
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new deployed-env requirement (`AWS_WEB_IDENTITY_TOKEN_FILE` when SES email is enabled) was first added as a separate `superRefine` check plus local-env validation, defeating the existing deployed-env-only guard. Review consolidated it into the shared deployed-env required-fields list with a `requiredWhen` condition and per-field message. Conditionally required env vars extend that single list — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow` so startup fails fast instead of failing at send time.",
+    "ruleIds": [
+      "CONFIG-02"
+    ]
+  },
+  {
+    "id": "RL-20260608-002",
+    "title": "Default-off feature module made @Global and wired into the shared test module",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3135
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3362158084,
+      3372121498,
+      3372586936
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A default-off SES email module was registered in the shared testing module and later marked `@Global()` to avoid per-test wiring — review called both the wrong fix: the rest of the app does not need the module, and `@Global` includes it in every initialization. Keep default-off feature modules scoped: import them only where used and add test-module overrides only in the specs that exercise them.",
+    "ruleIds": [
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20260608-003",
+    "title": "Generic email-queue service injected directly into a domain service",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3135
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3362186688
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`MembersService` injected the generic `SesEmailQueueService` directly; review asked for a feature-specific middleman (`SpaceInviteEmailService`) that owns email preparation and queue dispatch for that flow. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly — the middleman keeps templates, config, and dispatch concerns out of the domain flow.",
+    "ruleIds": [
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20260608-004",
+    "title": "Environment-specific invite URL hardcoded as a constant",
+    "sourceWindowId": "CLOSED-20260602-20260609",
+    "prNumbers": [
+      3135
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3362171539
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An email template hardcoded `SPACE_INVITE_URL = 'http://localhost:3001/...'` with a TODO; review blocked the merge until it was configurable. Environment-specific URLs (like TTLs and other tunables) go through configuration from the first commit — a TODO does not ship.",
+    "ruleIds": [
+      "CONFIG-03"
+    ]
   }
 ]

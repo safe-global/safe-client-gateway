@@ -77,11 +77,13 @@
     "project": "general",
     "area": "modules",
     "title": "Behavior in the right module",
-    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally.",
+    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly.",
     "check": "Does new API/product behavior live in the right module?",
     "exampleRefs": [],
     "reviewLearningIds": [
-      "RL-20260128-002"
+      "RL-20260128-002",
+      "RL-20260608-002",
+      "RL-20260608-003"
     ]
   },
   {
@@ -89,10 +91,13 @@
     "project": "general",
     "area": "modules",
     "title": "Persistence behind repositories",
-    "rule": "Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters.",
-    "check": "Are persistence workflows hidden behind repositories?",
+    "rule": "Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters. The boundary cuts both ways: repositories do not own business-rule gating — lifecycle checks such as \"only INVITED can be renewed\" live in the service layer.",
+    "check": "Are persistence workflows hidden behind repositories, and do business-rule/status checks stay in services?",
     "exampleRefs": [],
-    "reviewLearningIds": ["RL-20260529-001"]
+    "reviewLearningIds": [
+      "RL-20260529-001",
+      "RL-20260605-001"
+    ]
   },
   {
     "id": "MOD-03",
@@ -128,7 +133,9 @@
     "rule": "Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local debt; extract a third boundary instead of adding new ones.",
     "check": "Did I avoid adding or expanding `forwardRef` cycles, including not adding `forwardRef` where no circular dependency exists?",
     "exampleRefs": [],
-    "reviewLearningIds": ["RL-20260529-002"]
+    "reviewLearningIds": [
+      "RL-20260529-002"
+    ]
   },
   {
     "id": "MOD-06",
@@ -145,13 +152,14 @@
     "project": "general",
     "area": "naming",
     "title": "Names reveal behavior",
-    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants.",
+    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is).",
     "check": "Do names describe behavior honestly and avoid redundant scope?",
     "exampleRefs": [
       "examples/testing.md#test-02-suffix-matches-the-test-layer"
     ],
     "reviewLearningIds": [
-      "RL-20260506-001"
+      "RL-20260506-001",
+      "RL-20260602-004"
     ]
   },
   {
@@ -175,7 +183,7 @@
     "project": "general",
     "area": "naming",
     "title": "Document non-trivial code",
-    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact.",
+    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals.",
     "check": "Did I document public/non-trivial logic and remove dead code?",
     "exampleRefs": [
       "examples/error-handling.md#style-01-log-04-internal-errors-do-not-leak-into-user-responses",
@@ -184,7 +192,8 @@
     "reviewLearningIds": [
       "RL-20260506-005",
       "RL-20260128-001",
-      "RL-20251222-001"
+      "RL-20251222-001",
+      "RL-20260604-004"
     ]
   },
   {
@@ -217,7 +226,7 @@
     "project": "general",
     "area": "types",
     "title": "Validate external inputs",
-    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings.",
+    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros).",
     "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
@@ -225,7 +234,8 @@
     "reviewLearningIds": [
       "RL-20260116-002",
       "RL-20260526-001",
-      "RL-20260527-001"
+      "RL-20260527-001",
+      "RL-20260605-003"
     ]
   },
   {
@@ -233,7 +243,7 @@
     "project": "general",
     "area": "types",
     "title": "DTO matches wire shape",
-    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time.",
+    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description.",
     "check": "Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?",
     "exampleRefs": [
       "examples/schemas-and-validation.md#type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays",
@@ -245,7 +255,8 @@
       "RL-20260520-002",
       "RL-20260108-002",
       "RL-20251223-001",
-      "RL-20260602-003"
+      "RL-20260602-003",
+      "RL-20260604-002"
     ]
   },
   {
@@ -319,7 +330,9 @@
     "title": "Space routes enforce membership before data access",
     "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id.",
     "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?",
-    "exampleRefs": ["examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"],
+    "exampleRefs": [
+      "examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"
+    ],
     "reviewLearningIds": [
       "RL-20260520-001",
       "RL-20260602-001"
@@ -384,10 +397,13 @@
     "project": "general",
     "area": "database",
     "title": "Atomic state transitions",
-    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows.",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic.",
     "check": "Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?",
     "exampleRefs": [],
-    "reviewLearningIds": ["RL-20260602-002"]
+    "reviewLearningIds": [
+      "RL-20260602-002",
+      "RL-20260605-002"
+    ]
   },
   {
     "id": "DB-03",
@@ -397,7 +413,9 @@
     "rule": "Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING/`generatedMaps` instead of issuing a follow-up `find` after an insert/upsert.",
     "check": "Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?",
     "exampleRefs": [],
-    "reviewLearningIds": ["RL-20260529-003"]
+    "reviewLearningIds": [
+      "RL-20260529-003"
+    ]
   },
   {
     "id": "DB-04",
@@ -414,7 +432,7 @@
     "project": "general",
     "area": "database",
     "title": "Migrations agree with code",
-    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match.",
+    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match.",
     "check": "Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?",
     "exampleRefs": [
       "examples/database-migrations.md#db-05-do-not-use-the-recorded-migration-id-as-an-array-index",
@@ -424,7 +442,8 @@
       "RL-20260520-003",
       "RL-20260506-007",
       "RL-20260116-001",
-      "RL-20260601-001"
+      "RL-20260601-001",
+      "RL-20260604-001"
     ]
   },
   {
@@ -470,12 +489,15 @@
     "project": "general",
     "area": "config",
     "title": "Config fails fast",
-    "rule": "Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read.",
+    "rule": "Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read. Conditionally required env vars extend the shared deployed-env `superRefine` required-fields list with a `requiredWhen` condition — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow`.",
     "check": "Does config validation fail at startup?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/configuration.md#config-02-conditionally-required-env-vars-extend-the-deployed-env-required-list"
+    ],
     "reviewLearningIds": [
       "RL-20260506-004",
-      "RL-20251219-002"
+      "RL-20251219-002",
+      "RL-20260608-001"
     ]
   },
   {
@@ -483,13 +505,14 @@
     "project": "general",
     "area": "config",
     "title": "TTLs are config",
-    "rule": "TTLs/timeouts/cache settings are configured, not hardcoded. Follow precedents in similar repositories before introducing new hardcoded knobs.",
+    "rule": "TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs.",
     "check": "Are TTLs/timeouts/tunables configured?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent"
     ],
     "reviewLearningIds": [
-      "RL-20260506-003"
+      "RL-20260506-003",
+      "RL-20260608-004"
     ]
   },
   {
@@ -526,10 +549,12 @@
     "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks.",
     "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?",
     "exampleRefs": [
-      "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page"
+      "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page",
+      "examples/repositories-and-pagination.md#perf-01-parallelize-independent-lookups-with-promiseall"
     ],
     "reviewLearningIds": [
-      "RL-20260506-006"
+      "RL-20260506-006",
+      "RL-20260603-001"
     ]
   },
   {
@@ -632,10 +657,12 @@
     "project": "general",
     "area": "tests",
     "title": "Test names match assertions",
-    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`.",
-    "check": "Do test names and generated data match the assertions?",
+    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int.",
+    "check": "Do test names, fixtures, and generated data match the assertions and the domain semantics?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260602-005"
+    ]
   },
   {
     "id": "TEST-09",
@@ -719,14 +746,15 @@
     "project": "general",
     "area": "security",
     "title": "Bounded sensitive fields",
-    "rule": "Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the \"doesn't exist\" branch explicitly.",
+    "rule": "Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the \"doesn't exist\" branch explicitly. Flags that persist request payloads to external/third-party services default to the least-retentive option (`save_if_fails`, not `save: true`).",
     "check": "Are secrets, unverified payloads, and sensitive fields bounded and explicitly selected?",
     "exampleRefs": [
       "examples/auth-and-secrets.md#sec-02-default-headers-come-first-caller-headers-override",
       "examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys"
     ],
     "reviewLearningIds": [
-      "RL-20251219-001"
+      "RL-20251219-001",
+      "RL-20260604-003"
     ]
   },
   {

@@ -89,3 +89,66 @@ is a silent feature flip on every consumer that did not redeploy with
 the new name. Reading both for one release lets operations migrate
 during a normal rollout window, after which the legacy branch can be
 deleted with a clean PR that only touches the loader.
+
+## CONFIG-02 — Conditionally required env vars extend the deployed-env required list
+
+Source: PR #3135, #3142 (RL-20260608-001)
+
+### Avoid
+
+A standalone `superRefine` check for the new field, plus validation that
+also fires in local development:
+
+```ts
+.superRefine((config, ctx) => {
+  if (config.FF_FEATURE?.toLowerCase() === 'true' && !config.FEATURE_TOKEN_FILE) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'is required when the feature is enabled',
+      path: ['FEATURE_TOKEN_FILE'],
+    });
+  }
+});
+```
+
+### Prefer
+
+One deployed-env-only `superRefine` with a declarative required-fields
+list; conditional requirements express themselves as `requiredWhen`:
+
+```ts
+.superRefine((config, ctx) => {
+  const isDeployedEnv =
+    !!config.CGW_ENV && ['production', 'staging'].includes(config.CGW_ENV);
+  if (!isDeployedEnv) return;
+
+  for (const {
+    field,
+    requiredWhen = true,
+    message = 'is required in production and staging environments',
+  } of [
+    { field: 'PROVIDER_API_KEY' },
+    {
+      field: 'FEATURE_TOKEN_FILE',
+      requiredWhen: config.FF_FEATURE?.toLowerCase() === 'true',
+      message: 'is required in deployed environments when the feature is enabled',
+    },
+  ]) {
+    if (requiredWhen && !(config as Record<string, unknown>)[field]) {
+      ctx.addIssue({ code: 'custom', message, path: [field] });
+    }
+  }
+});
+```
+
+Inside the feature module, read values the enabled feature needs with
+`getOrThrow` so a deployed misconfiguration fails at startup, not at
+first use.
+
+### Why
+
+The deployed-env guard exists so local development runs without
+production secrets. A standalone check for a new field either re-fires
+locally (defeating the guard) or duplicates the env gating. One
+extendable list keeps every conditionally required var in one place,
+with per-field conditions and messages.

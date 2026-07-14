@@ -142,3 +142,49 @@ memory just to project to addresses at the end. Pushing the projected
 field per page keeps the working set proportional to the answer, not to
 the upstream's response shape, and shows up immediately when a user has a
 deep pagination depth.
+
+## PERF-01 — Parallelize independent lookups with Promise.all
+
+Source: PR #3131 (RL-20260603-001)
+
+### Avoid
+
+Sequential awaits for lookups that do not depend on each other:
+
+```ts
+const members = await this.membersRepository.findAuthorizedMembersOrFail({
+  authPayload: args.authPayload,
+  spaceId: args.spaceId,
+});
+const isActiveAdmin = Boolean(
+  await this.membersRepository.findActiveAdmin({
+    userId: getAuthenticatedUserIdOrFail(args.authPayload),
+    spaceId: args.spaceId,
+  }),
+);
+```
+
+### Prefer
+
+One `Promise.all` so the request path pays a single round-trip latency:
+
+```ts
+const [members, activeAdmin] = await Promise.all([
+  this.membersRepository.findAuthorizedMembersOrFail({
+    authPayload: args.authPayload,
+    spaceId: args.spaceId,
+  }),
+  this.membersRepository.findActiveAdmin({
+    userId: getAuthenticatedUserIdOrFail(args.authPayload),
+    spaceId: args.spaceId,
+  }),
+]);
+const isActiveAdmin = Boolean(activeAdmin);
+```
+
+### Why
+
+Each awaited repository call is a database round trip. When the second
+lookup does not consume the first's result, sequencing them doubles the
+endpoint's latency floor for no benefit; `Promise.all` keeps the
+independent I/O concurrent and fails fast on the first rejection.
