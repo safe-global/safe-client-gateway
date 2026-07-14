@@ -13,7 +13,7 @@
  *   address_book_requests.address     + address_index
  *   address_book_requests.name
  *   members.name, members.alias
- *   space_audit_log.payload           (embedded name/address values)
+ *   space_audit_log.payload           (whole payload as one blob)
  *
  * Each plaintext value is encrypted directly by KMS, bound to its owner via
  * the KMS encryption context ({ userId } for users/wallets, { spaceId } for
@@ -61,12 +61,11 @@
  *   disables those triggers to rewrite payload values in place. That is the
  *   deliberate, one-time exception to audit immutability called out in the
  *   design spec: the representation changes from plaintext to ciphertext,
- *   the content never does. Because source rows may since have been deleted
- *   (SAFE_REMOVED, ADDRESS_BOOK_DELETED, SPACE_DELETED), the writers' rule
- *   of carrying the source row's ciphertext into the payload is impossible
- *   for historical rows — this is the one place the backfill mints fresh
- *   ciphertext for audit data, under the row's own space scope, which is
- *   exactly the context the audit reader (decryptAuditPayload) reconstructs.
+ *   the content never does. The payload column is plain text holding the
+ *   whole payload serialized to JSON, so an audit row is backfilled exactly
+ *   like any other space-scoped text column — the entire JSON is encrypted as
+ *   one blob under the row's space scope, which is exactly the context the
+ *   audit reader (decryptAuditPayload) uses to decrypt and re-parse it.
  */
 import { DataSource } from 'typeorm';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -176,9 +175,21 @@ const TABLES: Array<TableSpec> = [
     scopeKey: 'spaceId',
     columns: [{ column: 'name' }, { column: 'alias' }],
   },
+  // space_audit_log.payload is a single text column holding the whole audit
+  // payload serialized to JSON, encrypted as one blob under the row's space
+  // scope — structurally identical to spaces.name, so it rides the same path.
+  // The table is append-only (its triggers reject UPDATE), but backfillTable's
+  // DISABLE/ENABLE TRIGGER USER (used everywhere to preserve updated_at) also
+  // lifts that guard for this deliberate, reviewed, one-time representation
+  // rewrite (plaintext JSON -> ciphertext blob); content and shape are
+  // unchanged. See the file docstring.
+  {
+    table: 'space_audit_log',
+    scopeColumn: 'space_id',
+    scopeKey: 'spaceId',
+    columns: [{ column: 'payload' }],
+  },
 ];
-
-const AUDIT_TABLE = 'space_audit_log';
 
 /** Runs `fn` over `items` with at most `concurrency` calls in flight. */
 async function mapWithConcurrency<T, R>(
@@ -366,6 +377,8 @@ async function backfillTable(
     const batchWriteStartedAt = process.hrtime.bigint();
     await dataSource.transaction(async (manager) => {
       // Preserves updated_at by suspending the touch trigger for the batch.
+      // For space_audit_log this same switch also lifts the append-only guard
+      // (the deliberate one-time exception documented in the file docstring).
       await manager.query(`ALTER TABLE "${spec.table}" DISABLE TRIGGER USER`);
       for (const row of encryptedRows) {
         if (row.assignments.length === 0) {
@@ -453,258 +466,11 @@ async function countTablePlaintext(
   return remaining;
 }
 
-/**
- * SQL predicate matching audit rows whose payload still embeds at least one
- * non-blank plaintext name/address for the encrypted event types. Reused by
- * both the batch SELECT (so rewritten rows drop out and the loop terminates)
- * and the --verify count.
- */
-const AUDIT_PLAINTEXT_PREDICATE = `
-  (event_type IN ('SPACE_CREATED', 'SPACE_DELETED')
-    AND payload->>'name' IS NOT NULL AND payload->>'name' <> ''
-    AND payload->>'name' NOT LIKE '${ENCRYPTED_PREFIX}%')
-  OR (event_type = 'SPACE_UPDATED' AND (
-    (payload->'old'->>'name' IS NOT NULL AND payload->'old'->>'name' <> ''
-      AND payload->'old'->>'name' NOT LIKE '${ENCRYPTED_PREFIX}%')
-    OR (payload->'new'->>'name' IS NOT NULL AND payload->'new'->>'name' <> ''
-      AND payload->'new'->>'name' NOT LIKE '${ENCRYPTED_PREFIX}%')))
-  OR (event_type IN ('SAFE_ADDED', 'SAFE_REMOVED')
-    AND EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements(COALESCE(payload->'safes', '[]'::jsonb)) AS safe
-      WHERE safe->>'address' IS NOT NULL AND safe->>'address' <> ''
-        AND safe->>'address' NOT LIKE '${ENCRYPTED_PREFIX}%'))
-  OR (event_type = 'ADDRESS_BOOK_UPSERTED'
-    AND EXISTS (
-      SELECT 1
-      FROM jsonb_array_elements(
-        COALESCE(payload->'created', '[]'::jsonb)
-          || COALESCE(payload->'updated', '[]'::jsonb)
-      ) AS entry
-      WHERE (entry->>'address' IS NOT NULL AND entry->>'address' <> ''
-          AND entry->>'address' NOT LIKE '${ENCRYPTED_PREFIX}%')
-        OR (entry->>'name' IS NOT NULL AND entry->>'name' <> ''
-          AND entry->>'name' NOT LIKE '${ENCRYPTED_PREFIX}%')))
-  OR (event_type = 'ADDRESS_BOOK_DELETED'
-    AND ((payload->>'address' IS NOT NULL AND payload->>'address' <> ''
-        AND payload->>'address' NOT LIKE '${ENCRYPTED_PREFIX}%')
-      OR (payload->>'name' IS NOT NULL AND payload->>'name' <> ''
-        AND payload->>'name' NOT LIKE '${ENCRYPTED_PREFIX}%')))
-`;
-
-type JsonObject = Record<string, unknown>;
-
-interface AuditRow {
-  id: string;
-  space_id: number;
-  event_type: string;
-  payload: JsonObject;
-}
-
-async function encryptPayloadValue(
-  fieldCrypto: KmsEncryptionService,
-  spaceId: number,
-  holder: JsonObject,
-  key: string,
-): Promise<boolean> {
-  const value = holder[key];
-  if (
-    typeof value !== 'string' ||
-    value === '' ||
-    value.startsWith(ENCRYPTED_PREFIX)
-  ) {
-    return false;
-  }
-  holder[key] = await fieldCrypto.encrypt(value, { spaceId: String(spaceId) });
-  return true;
-}
-
-/** Encrypts each of `keys` on a single payload object, in place. */
-async function rewriteObjectFields(
-  fieldCrypto: KmsEncryptionService,
-  spaceId: number,
-  holder: unknown,
-  keys: Array<string>,
-): Promise<boolean> {
-  if (!holder || typeof holder !== 'object' || Array.isArray(holder)) {
-    return false;
-  }
-  let changed = false;
-  for (const key of keys) {
-    changed =
-      (await encryptPayloadValue(
-        fieldCrypto,
-        spaceId,
-        holder as JsonObject,
-        key,
-      )) || changed;
-  }
-  return changed;
-}
-
-/** Encrypts `keys` on every object of an array-valued payload member. */
-async function rewriteEntryList(
-  fieldCrypto: KmsEncryptionService,
-  spaceId: number,
-  list: unknown,
-  keys: Array<string>,
-): Promise<boolean> {
-  if (!Array.isArray(list)) {
-    return false;
-  }
-  let changed = false;
-  for (const entry of list) {
-    changed =
-      (await rewriteObjectFields(fieldCrypto, spaceId, entry, keys)) || changed;
-  }
-  return changed;
-}
-
-/**
- * Returns the payload with every embedded plaintext name/address freshly
- * encrypted under the row's space scope, or null when nothing needed
- * rewriting. See the file docstring for why the audit backfill mints new
- * ciphertext instead of reusing the source rows'.
- */
-async function rewriteAuditPayload(
-  fieldCrypto: KmsEncryptionService,
-  row: AuditRow,
-): Promise<JsonObject | null> {
-  const payload = structuredClone(row.payload);
-  const spaceId = row.space_id;
-  const addressBookKeys = ['address', 'name'];
-  let changed = false;
-
-  switch (row.event_type) {
-    case 'SPACE_CREATED':
-    case 'SPACE_DELETED':
-      changed = await rewriteObjectFields(fieldCrypto, spaceId, payload, [
-        'name',
-      ]);
-      break;
-    case 'SPACE_UPDATED':
-      for (const side of ['old', 'new'] as const) {
-        changed =
-          (await rewriteObjectFields(fieldCrypto, spaceId, payload[side], [
-            'name',
-          ])) || changed;
-      }
-      break;
-    case 'SAFE_ADDED':
-    case 'SAFE_REMOVED':
-      changed = await rewriteEntryList(fieldCrypto, spaceId, payload.safes, [
-        'address',
-      ]);
-      break;
-    case 'ADDRESS_BOOK_UPSERTED':
-      for (const listKey of ['created', 'updated'] as const) {
-        changed =
-          (await rewriteEntryList(
-            fieldCrypto,
-            spaceId,
-            payload[listKey],
-            addressBookKeys,
-          )) || changed;
-      }
-      break;
-    case 'ADDRESS_BOOK_DELETED':
-      changed = await rewriteObjectFields(
-        fieldCrypto,
-        spaceId,
-        payload,
-        addressBookKeys,
-      );
-      break;
-  }
-
-  return changed ? payload : null;
-}
-
-async function backfillAuditPayloads(
-  dataSource: DataSource,
-  fieldCrypto: KmsEncryptionService,
-): Promise<number> {
-  let updated = 0;
-
-  while (true) {
-    const rows = await dataSource.query<Array<AuditRow>>(
-      `SELECT id, space_id, event_type, payload FROM "${AUDIT_TABLE}"
-       WHERE ${AUDIT_PLAINTEXT_PREDICATE}
-       LIMIT $1`,
-      [BATCH_SIZE],
-    );
-    if (rows.length === 0) {
-      break;
-    }
-
-    const rewritten = await mapWithConcurrency(
-      rows,
-      ENCRYPT_CONCURRENCY,
-      async (row) => ({
-        id: row.id,
-        payload: await rewriteAuditPayload(fieldCrypto, row),
-      }),
-    );
-
-    // Termination guard: every selected row must produce a rewrite, or the
-    // same rows would be re-selected forever. A row matching the SQL
-    // predicate but yielding no JS rewrite means malformed payload data.
-    if (rewritten.every((row) => row.payload === null)) {
-      throw new Error(
-        `${AUDIT_TABLE} rows match the plaintext predicate but produced no ` +
-          `rewrite (ids: ${rows
-            .slice(0, 10)
-            .map((row) => row.id)
-            .join(', ')}); fix the payload data before re-running`,
-      );
-    }
-
-    await dataSource.transaction(async (manager) => {
-      // The audit table's user triggers reject UPDATE by design (append-
-      // only). Disabling them here is the deliberate, one-time, reviewed
-      // exception from the design spec: this rewrite changes representation
-      // (plaintext -> ciphertext), never content or shape.
-      await manager.query(`ALTER TABLE "${AUDIT_TABLE}" DISABLE TRIGGER USER`);
-      for (const row of rewritten) {
-        if (!row.payload) {
-          continue;
-        }
-        await manager.query(
-          `UPDATE "${AUDIT_TABLE}" SET payload = $1::jsonb WHERE id = $2`,
-          [JSON.stringify(row.payload), row.id],
-        );
-      }
-      await manager.query(`ALTER TABLE "${AUDIT_TABLE}" ENABLE TRIGGER USER`);
-    });
-
-    updated += rows.length;
-    process.stdout.write(`  ${AUDIT_TABLE}.payload: ${updated} rewritten\r`);
-  }
-
-  console.info(`  ${AUDIT_TABLE}.payload: ${updated} rewritten`);
-  return updated;
-}
-
-async function countAuditPlaintext(dataSource: DataSource): Promise<number> {
-  const [{ count }] = await dataSource.query<Array<{ count: string }>>(
-    `SELECT COUNT(*)::int AS count FROM "${AUDIT_TABLE}"
-     WHERE ${AUDIT_PLAINTEXT_PREDICATE}`,
-  );
-  const remaining = Number(count);
-  if (remaining > 0) {
-    console.info(
-      `  ${AUDIT_TABLE}.payload: ${remaining} plaintext payload(s) remaining`,
-    );
-  }
-  return remaining;
-}
-
 async function countAllPlaintext(dataSource: DataSource): Promise<number> {
   let remaining = 0;
   for (const spec of TABLES) {
     remaining += await countTablePlaintext(dataSource, spec);
   }
-  remaining += await countAuditPlaintext(dataSource);
   return remaining;
 }
 
@@ -747,7 +513,6 @@ async function main(): Promise<void> {
     for (const spec of TABLES) {
       await backfillTable(dataSource, fieldCrypto, spec);
     }
-    await backfillAuditPayloads(dataSource, fieldCrypto);
 
     const remaining = await countAllPlaintext(dataSource);
     console.info(`Done. Plaintext remaining: ${remaining}`);
