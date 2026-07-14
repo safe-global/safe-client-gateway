@@ -1,14 +1,14 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-07-09T08:36:57.242Z | Period: 2026-01-16 to 2026-07-09
+Generated: 2026-07-14T12:11:55.140Z | Period: 2026-01-16 to 2026-07-14
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 1683 |
+| Total unique commits | 1734 |
 | Flaky commits (pass + fail on same SHA) | 124 |
-| Flakiness rate | 7.4% |
+| Flakiness rate | 7.2% |
 | Cascade baseline | 1 failures (7 tests) |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
@@ -52,6 +52,8 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-06-29 | 81 | 3 | 3.7% |
 | 2026-07-05 | 6 | 0 | 0% |
 | 2026-07-06 | 49 | 1 | 2% |
+| 2026-07-12 | 5 | 0 | 0% |
+| 2026-07-13 | 46 | 0 | 0% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -81,6 +83,7 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 06-22   5.6%  n=71   ████████████
 06-29   3.7%  n=81   ████████
 07-06   2.0%  n=49   ████
+07-13   0.0%  n=46   ▏
 ```
 
 ## Flaky Test Leaderboard (Non-Cascade)
@@ -103,9 +106,9 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/domain/common/entities/safe-signature.spec.ts` | 4 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/modules/users/domain/users.repository.integration.spec.ts` | 4 | Open | - |
 | `src/modules/auth/utils/auth-redirect.helper.spec.ts` | 3 | Fixed | [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) |
+| `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 3 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | Open | - |
-| `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 2 | Open | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts` | 2 | Fixed | [#2913](https://github.com/safe-global/safe-client-gateway/pull/2913) |
 
 ## Cascade Tests
@@ -127,7 +130,8 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 ## Fix PRs
 
-- [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) - fix(tests): resolve remaining flaky tests after Vitest migration (Open)
+- [#3262](https://github.com/safe-global/safe-client-gateway/pull/3262) - fix: await Fastify ready when initializing test apps (Merged)
+- [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) - fix(tests): resolve remaining flaky tests after Vitest migration (Merged)
 - [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) - chore(tests): reduce CI flakiness (clearMocks + seeded faker) (Merged)
 - [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) - feat: replace Jest with Vitest (Merged)
 - [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) - chore: Fix flaky unit test (Merged)
@@ -153,7 +157,6 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 - `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (9 failures)
 - `src/modules/users/domain/users.repository.integration.spec.ts` (4 failures)
 - `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures)
-- `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` (2 failures)
 
 ---
 

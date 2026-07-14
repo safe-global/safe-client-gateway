@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-09T08:36:57.237Z",
-  "last_checked_at": "2026-07-09T08:36:57.237Z",
+  "generated_at": "2026-07-14T12:11:55.133Z",
+  "last_checked_at": "2026-07-14T12:11:55.133Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-07-09"
+    "to": "2026-07-14"
   },
   "flaky_shas": [
     "76ce6b8",
@@ -155,9 +155,27 @@
     "1efc9d3",
     "47477af",
     "dc3acbd",
-    "ab8c16f"
+    "ab8c16f",
+    "9ebe58e"
   ],
   "runs": [
+    {
+      "id": 29012179026,
+      "sha": "9ebe58e",
+      "branch": "feat/portfolio-route-zerion-guard",
+      "conclusion": "failure",
+      "created_at": "2026-07-09T10:36:53Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/bridge/domain/entities/bridge-name.entity.spec.ts",
+          "name": "BridgeStatusSchema > should not allow an unknown bridge name",
+          "error": "AssertionError: expected false to deeply equal [ ObjectContaining{…} ]"
+        }
+      ]
+    },
     {
       "id": 28860011587,
       "sha": "76ce6b8",

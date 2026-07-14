@@ -1,11 +1,20 @@
 {
-  "generated_at": "2026-07-09T08:36:57.237Z",
+  "generated_at": "2026-07-14T12:11:55.133Z",
   "prs": [
+    {
+      "number": 3262,
+      "title": "fix: await Fastify ready when initializing test apps",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3262",
+      "merged_at": "2026-07-14T10:09:53Z",
+      "tests_fixed": [
+        "src/modules/portfolio/v1/portfolio.controller.integration.spec.ts"
+      ]
+    },
     {
       "number": 3242,
       "title": "fix(tests): resolve remaining flaky tests after Vitest migration",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3242",
-      "merged_at": null,
+      "merged_at": "2026-07-10T14:09:16Z",
       "tests_fixed": [
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
         "src/datasources/network/network.module.integration.spec.ts",

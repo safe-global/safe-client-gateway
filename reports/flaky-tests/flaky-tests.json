@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-07-09T08:36:57.237Z",
+  "generated_at": "2026-07-14T12:11:55.133Z",
   "summary": {
-    "total_commits": 1683,
+    "total_commits": 1734,
     "flaky_commits": 124,
-    "flakiness_rate": 7.4,
+    "flakiness_rate": 7.2,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-07-09"
+      "to": "2026-07-14"
     }
   },
   "weekly_trend": [
@@ -219,6 +219,18 @@
       "commits": 49,
       "flaky": 1,
       "rate": 2
+    },
+    {
+      "week": "2026-07-12",
+      "commits": 5,
+      "flaky": 0,
+      "rate": 0
+    },
+    {
+      "week": "2026-07-13",
+      "commits": 46,
+      "flaky": 0,
+      "rate": 0
     }
   ],
   "tests": [
@@ -377,6 +389,16 @@
       }
     },
     {
+      "file": "src/modules/bridge/domain/entities/bridge-name.entity.spec.ts",
+      "failure_count": 3,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 3242,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3242"
+      }
+    },
+    {
       "file": "src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts",
       "failure_count": 2,
       "is_cascade": false,
@@ -392,16 +414,6 @@
       "is_cascade": false,
       "status": "open",
       "fix_pr": null
-    },
-    {
-      "file": "src/modules/bridge/domain/entities/bridge-name.entity.spec.ts",
-      "failure_count": 2,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": {
-        "number": 3242,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/3242"
-      }
     },
     {
       "file": "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
