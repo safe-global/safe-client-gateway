@@ -424,10 +424,7 @@ export default () => ({
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
-    // Support both new (FF_ZERION_ENABLED) and legacy (FF_ZERION_BALANCES_CHAIN_IDS) env vars
-    zerionBalancesEnabled:
-      !!process.env.FF_ZERION_ENABLED ||
-      !!process.env.FF_ZERION_BALANCES_CHAIN_IDS,
+    zerion: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',

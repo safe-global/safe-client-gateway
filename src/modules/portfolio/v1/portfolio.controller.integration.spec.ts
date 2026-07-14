@@ -13,7 +13,7 @@ import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 
 describe('Portfolio Controller', () => {
-  describe('with features.zerionBalancesEnabled=false', () => {
+  describe('with features.zerion=false', () => {
     let app: INestApplication<Server>;
 
     beforeAll(async () => {
@@ -22,7 +22,7 @@ describe('Portfolio Controller', () => {
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          zerionBalancesEnabled: false,
+          zerion: false,
         },
       });
 
@@ -54,7 +54,7 @@ describe('Portfolio Controller', () => {
     });
   });
 
-  describe('with features.zerionBalancesEnabled=true', () => {
+  describe('with features.zerion=true', () => {
     let app: INestApplication<Server>;
 
     beforeAll(async () => {
@@ -63,7 +63,7 @@ describe('Portfolio Controller', () => {
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          zerionBalancesEnabled: true,
+          zerion: true,
         },
       });
 

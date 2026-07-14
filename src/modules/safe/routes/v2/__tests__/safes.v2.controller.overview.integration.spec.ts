@@ -50,7 +50,7 @@ describe('Safes V2 Controller Overview', () => {
       },
       features: {
         ...configuration().features,
-        zerionBalancesEnabled: true,
+        zerion: true,
       },
     });
 
@@ -402,14 +402,14 @@ describe('Safes V2 Controller Overview', () => {
       expect(portfolioCallCount).toBe(1);
     });
 
-    it('should use Safe balances API when zerionBalancesEnabled is false, even for chains with Zerion chain name', async () => {
+    it('should use Safe balances API when the zerion flag is false, even for chains with Zerion chain name', async () => {
       const moduleFixture = await createTestModule({
         config: () => ({
           ...configuration(),
           mappings: { ...configuration().mappings, safe: { maxOverviews: 3 } },
           features: {
             ...configuration().features,
-            zerionBalancesEnabled: false,
+            zerion: false,
           },
         }),
       });

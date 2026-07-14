@@ -15,16 +15,16 @@ describe('PortfolioRouteGuard', () => {
     target = new PortfolioRouteGuard(mockConfigurationService);
   });
 
-  it('should activate when features.zerionBalancesEnabled is true', () => {
+  it('should activate when features.zerion is true', () => {
     mockConfigurationService.getOrThrow.mockReturnValue(true);
 
     expect(target.canActivate()).toBe(true);
     expect(mockConfigurationService.getOrThrow).toHaveBeenCalledWith(
-      'features.zerionBalancesEnabled',
+      'features.zerion',
     );
   });
 
-  it('should not activate when features.zerionBalancesEnabled is false', () => {
+  it('should not activate when features.zerion is false', () => {
     mockConfigurationService.getOrThrow.mockReturnValue(false);
 
     expect(target.canActivate()).toBe(false);

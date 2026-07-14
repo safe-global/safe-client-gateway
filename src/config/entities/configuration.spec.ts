@@ -32,3 +32,34 @@ describe('configuration - express.trustProxy', () => {
     expect(configuration().express.trustProxy).toBe('10.0.0.0/8');
   });
 });
+
+describe('configuration - features.zerion', () => {
+  const ENV_KEY = 'FF_ZERION_ENABLED';
+  const original = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (original === undefined) {
+      delete process.env[ENV_KEY];
+    } else {
+      process.env[ENV_KEY] = original;
+    }
+  });
+
+  it('defaults to false when unset', () => {
+    delete process.env[ENV_KEY];
+
+    expect(configuration().features.zerion).toBe(false);
+  });
+
+  it.each(['true', 'TRUE', 'True'])('is enabled when set to %s', (value) => {
+    process.env[ENV_KEY] = value;
+
+    expect(configuration().features.zerion).toBe(true);
+  });
+
+  it.each(['false', '0', '1,10,137'])('is disabled when set to %s', (value) => {
+    process.env[ENV_KEY] = value;
+
+    expect(configuration().features.zerion).toBe(false);
+  });
+});
