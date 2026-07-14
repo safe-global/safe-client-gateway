@@ -24,6 +24,7 @@ import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
 import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
 import type { TransactionsRepository } from '@/modules/transactions/domain/transactions.repository';
+import type { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
 
 const mockBalancesRepository = vi.mocked({
   clearApi: vi.fn(),
@@ -57,6 +58,10 @@ const mockMessagesRepository = vi.mocked({
 const mockSafeAppsRepository = vi.mocked({
   clearSafeApps: vi.fn(),
 } as MockedObject<SafeAppsRepository>);
+
+const mockZerionCache = vi.mocked({
+  invalidate: vi.fn(),
+} as MockedObject<ZerionCacheService>);
 
 const mockSafeRepository = vi.mocked({
   clearTransfers: vi.fn(),
@@ -115,6 +120,7 @@ describe('HooksRepository (Unit)', () => {
       mockCollectiblesRepository,
       mockDelegatesRepository,
       mockMessagesRepository,
+      mockZerionCache,
       mockSafeAppsRepository,
       mockSafeRepository,
       mockStakingRepository,

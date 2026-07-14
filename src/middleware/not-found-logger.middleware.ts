@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { ServerResponse } from 'node:http';
 import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
-import type { NextFunction, Request, Response } from 'express';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
 import { formatRouteLogMessage } from '@/logging/utils';
+import type { RequestLike } from '@/routes/common/http/http-request.utils';
 
 /**
  * Middleware which logs requests that resulted in 404. Request side effects
@@ -21,7 +23,13 @@ export class NotFoundLoggerMiddleware implements NestMiddleware {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
-  use(req: Request, res: Response, next: NextFunction): void {
+  use(
+    // `@fastify/middie` runs this on the raw Node request and adds `originalUrl`;
+    // `RequestLike` is the shared shape `formatRouteLogMessage` consumes.
+    req: RequestLike,
+    res: ServerResponse,
+    next: (error?: Error) => void,
+  ): void {
     const startTimeMs: number = performance.now();
 
     res.once('finish', () => {

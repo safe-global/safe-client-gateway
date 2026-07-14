@@ -51,7 +51,6 @@ services:
       - EMAIL_API_KEY
       - FF_AUTH
       - FF_CONFIG_HOOKS_DEBUG_LOGS
-      - FF_COUNTERFACTUAL_BALANCES
       - FF_DEBUG_LOGS
       - FF_EMAIL
       - FF_ETH_SIGN

@@ -177,20 +177,41 @@ export class RedisCacheService
     const forceQuitTimeout = setTimeout(() => {
       this.forceQuit();
     }, this.quitTimeoutInSeconds * 1000);
-    await this.client.quit();
-    clearTimeout(forceQuitTimeout);
+    try {
+      await this.client.quit();
+    } catch {
+      // `quit` throws `ClientClosedError` if the connection is already closed
+      // (e.g. the socket dropped). Fall back to a force close.
+      this.forceQuit();
+    } finally {
+      clearTimeout(forceQuitTimeout);
+    }
   }
 
   /**
    * Forces the closing of the Redis connection associated with this service.
    */
   private forceQuit(): void {
+    // `destroy` throws `ClientClosedError` when the socket is no longer open.
+    // As this runs in a `setTimeout` callback, an uncaught throw here would
+    // crash the process, so guard against it.
+    if (!this.client.isOpen) {
+      return;
+    }
     this.loggingService.warn({
       type: LogType.CacheEvent,
       source: 'RedisCacheService',
       event: 'Forcing Redis connection close',
     });
-    this.client.destroy();
+    try {
+      this.client.destroy();
+    } catch {
+      this.loggingService.error({
+        type: LogType.CacheError,
+        source: 'RedisCacheService',
+        event: 'Error forcing Redis connection close',
+      });
+    }
   }
 
   /**
@@ -198,9 +219,10 @@ export class RedisCacheService
    *
    * @param {number} ttl - The TTL to enforce.
    *
-   * @returns {number} The TTL if it is less than or equal to MAX_TTL, otherwise MAX_TTL.
+   * @returns {number} The integer TTL, capped at MAX_TTL. Floored because Redis
+   * EX/EXPIRE require integer seconds and reject a fractional value.
    */
   private enforceMaxRedisTTL(ttl: number): number {
-    return Math.min(ttl, MAX_TTL);
+    return Math.floor(Math.min(ttl, MAX_TTL));
   }
 }

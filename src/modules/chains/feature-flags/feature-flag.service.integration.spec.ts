@@ -3,7 +3,10 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -20,7 +23,7 @@ describe('FeatureFlagService Integration', () => {
   let configurationService: IConfigurationService;
 
   afterEach(async () => {
-    if (app) await app.close();
+    await app?.close();
   });
 
   describe('with default config', () => {
@@ -33,7 +36,7 @@ describe('FeatureFlagService Integration', () => {
         moduleFixture.get<IFeatureFlagService>(IFeatureFlagService);
 
       app = await new TestAppProvider().provide(moduleFixture);
-      await app.init();
+      await initTestApplication(app);
     });
 
     describe('Service key configuration', () => {
@@ -86,7 +89,7 @@ describe('FeatureFlagService Integration', () => {
         status: 200,
       });
       const app = await new TestAppProvider().provide(moduleFixture);
-      await app.init();
+      await initTestApplication(app);
       await featureFlagSvc.isFeatureEnabled('1', 'test').catch(() => {});
 
       expect(networkService.get).toHaveBeenCalledWith(
@@ -94,7 +97,7 @@ describe('FeatureFlagService Integration', () => {
           url: expect.stringContaining(`/api/v2/chains/${CUSTOM_CGW_KEY}/1`),
         }),
       );
-      await app.close();
+      await app?.close();
     });
   });
 });

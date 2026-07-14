@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import Blockaid from '@blockaid/client';
+import type { AddressBulkScanResponse } from '@blockaid/client/resources/evm/address-bulk';
+import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
 import type { JsonRpcScanParams } from '@blockaid/client/resources/evm/json-rpc';
 import type { TransactionScanResponse } from '@blockaid/client/resources/index';
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, numberToHex } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
 import type { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
-import { BLOCKAID_REQUEST_ID_HEADER } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import {
+  BLOCKAID_REQUEST_ID_HEADER,
+  BLOCKAID_SCAN_DOMAIN,
+} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
 import {
@@ -20,12 +26,18 @@ import {
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {
   private readonly blockaidClient: Blockaid;
+  private readonly addressScanTimeoutMs: number;
 
   constructor(
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {
     this.blockaidClient = new Blockaid();
+    this.addressScanTimeoutMs = this.configurationService.getOrThrow<number>(
+      'safeShield.maliciousAddressScan.timeoutMs',
+    );
   }
 
   public async scanTransaction(
@@ -86,6 +98,16 @@ export class BlockaidApi implements IBlockaidApi {
         request_id: args.requestId,
       },
     });
+  }
+
+  public scanAddressBulk(
+    chain: TransactionScanSupportedChain,
+    addresses: Array<string>,
+  ): Promise<AddressBulkScanResponse> {
+    return this.blockaidClient.evm.addressBulk.scan(
+      { addresses, chain, metadata: { domain: BLOCKAID_SCAN_DOMAIN } },
+      { timeout: this.addressScanTimeoutMs, maxRetries: 0 },
+    );
   }
 
   private logScanResponse(

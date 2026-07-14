@@ -30,6 +30,7 @@ export enum LogType {
   NotificationSent = 'NOTIFICATION_SENT',
   NotificationEventProcessed = 'NOTIFICATION_EVENT_PROCESSED',
   NotificationDeliveryQueued = 'NOTIFICATION_DELIVERY_QUEUED',
+  NotificationSpamTokenDropped = 'NOTIFICATION_SPAM_TOKEN_DROPPED',
   PortfolioDegradedServe = 'PORTFOLIO_DEGRADED_SERVE',
   PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
   RateLimit = 'RATE_LIMIT',
@@ -38,4 +39,5 @@ export enum LogType {
   TransactionValidity = 'TRANSACTION_VALIDITY',
   TxnExportFetchRequest = 'TRANSACTION_EXPORT_FETCH_REQUEST',
   TxnExportFetchRequestError = 'TRANSACTION_EXPORT_FETCH_REQUEST_ERROR',
+  ZerionCacheInvalidated = 'ZERION_CACHE_INVALIDATED',
 }

@@ -9,7 +9,7 @@ import {
   Unique,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';

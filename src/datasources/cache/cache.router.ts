@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
+import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 
@@ -26,6 +28,7 @@ export class CacheRouter {
   private static readonly GAS_TOKENS_KEY = 'gas_tokens';
   private static readonly INCOMING_TRANSFERS_KEY = 'incoming_transfers';
   private static readonly INDEXING_KEY = 'indexing';
+  private static readonly MALICIOUS_ADDRESS_SCAN_KEY = 'malicious_address_scan';
   private static readonly MESSAGE_KEY = 'message';
   private static readonly MESSAGES_KEY = 'messages';
   private static readonly MODULE_TRANSACTION_KEY = 'module_transaction';
@@ -34,6 +37,11 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
+  private static readonly BILLING_CUSTOMER_KEY = 'billing_customer';
+  private static readonly BILLING_PAYMENT_LINKS_KEY = 'billing_payment_links';
+  private static readonly BILLING_PLAN_KEY = 'billing_plan';
+  private static readonly BILLING_PLANS_KEY = 'billing_plans';
+  private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
@@ -90,6 +98,7 @@ export class CacheRouter {
   private static readonly RECIPIENT_ANALYSIS_KEY = 'recipient_analysis';
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
+  private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -1021,6 +1030,22 @@ export class CacheRouter {
     );
   }
 
+  /**
+   * Per-address Blockaid verdict cache.
+   * @param {string} args.chainId - The chain ID.
+   * @param {string} args.address - The lowercased address.
+   * @returns {CacheDir} - Cache directory.
+   */
+  static getMaliciousAddressScanCacheDir(args: {
+    chainId: string;
+    address: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.MALICIOUS_ADDRESS_SCAN_KEY}_${args.address}`,
+      '',
+    );
+  }
+
   static getPortfolioCacheKey(args: { address: Address }): string {
     return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
   }
@@ -1120,11 +1145,89 @@ export class CacheRouter {
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.nonce}_${args.origin ?? 'NATIVE'}_${args.fiatCode ?? 'USD'}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.gasToken}_${args.threshold}_${args.nonce}_${args.origin ?? Origin.NATIVE}_${args.fiatCode ?? 'USD'}`,
     );
     return new CacheDir(
       CacheRouter.getRelayFeePreviewCacheKey(args),
       hash.digest('hex'),
+    );
+  }
+
+  static getGtfFeePreviewCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.GTF_FEE_PREVIEW_KEY}_${args.safeAddress}`;
+  }
+
+  /**
+   * Gets cache directory for GTF fee preview.
+   * The field is a hash of request parameters to ensure uniqueness.
+   * Nonce is included because it determines the safeTxHash.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeAddress - Safe address
+   * @param args.to - Transaction recipient
+   * @param args.value - Transaction value
+   * @param args.data - Transaction data
+   * @param args.operation - Operation type (0=Call, 1=DelegateCall)
+   * @param args.nonce - Safe transaction nonce
+   * @param args.gasToken - Gas token address
+   * @param args.threshold - Safe threshold (number of signatures)
+   * @param args.origin - Transaction origin
+   * @returns CacheDir - Cache directory
+   */
+  static getGtfFeePreviewCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    to: Address;
+    value: string;
+    data: string;
+    operation: number;
+    nonce: string;
+    gasToken: Address;
+    threshold: number;
+    origin?: string;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.origin ?? Origin.NATIVE}`,
+    );
+    return new CacheDir(
+      CacheRouter.getGtfFeePreviewCacheKey(args),
+      hash.digest('hex'),
+    );
+  }
+
+  static getBillingPlansCacheDir(): CacheDir {
+    return new CacheDir(CacheRouter.BILLING_PLANS_KEY, '');
+  }
+
+  static getBillingPlanCacheDir(planId: string): CacheDir {
+    return new CacheDir(`${planId}_${CacheRouter.BILLING_PLAN_KEY}`, '');
+  }
+
+  static getBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
+    return new CacheDir(
+      `${upstreamCustomerId}_${CacheRouter.BILLING_CUSTOMER_KEY}`,
+      '',
+    );
+  }
+
+  static getBillingSubscriptionsCacheDir(args: {
+    upstreamCustomerId: string;
+    status: SubscriptionStatusFilter;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`,
+      args.status,
+    );
+  }
+
+  static getBillingPaymentLinksCacheDir(upstreamCustomerId?: string): CacheDir {
+    return new CacheDir(
+      CacheRouter.BILLING_PAYMENT_LINKS_KEY,
+      upstreamCustomerId ?? '',
     );
   }
 }

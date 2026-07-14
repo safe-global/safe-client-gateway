@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
+
 /**
  * Maps chain IDs to Blockaid API chain names.
  * Using chain ID (not name) for stability - chain names may change in Config Service.
  */
-export const CHAIN_ID_TO_BLOCKAID_CHAIN: Record<string, string> = {
+export const CHAIN_ID_TO_BLOCKAID_CHAIN: Record<
+  string,
+  TransactionScanSupportedChain
+> = {
   '1': 'ethereum',
   '11155111': 'ethereum-sepolia',
   '10': 'optimism',
@@ -23,6 +29,8 @@ export const CHAIN_ID_TO_BLOCKAID_CHAIN: Record<string, string> = {
  * @param chainId - The chain ID to map
  * @returns The Blockaid chain name or null if not supported
  */
-export function getBlockaidChainName(chainId: string): string | null {
+export function getBlockaidChainName(
+  chainId: string,
+): TransactionScanSupportedChain | null {
   return CHAIN_ID_TO_BLOCKAID_CHAIN[chainId] ?? null;
 }

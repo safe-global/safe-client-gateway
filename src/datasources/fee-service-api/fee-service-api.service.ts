@@ -1,21 +1,38 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
+import type { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
+import {
+  type CanRelayResponse,
+  CanRelayResponseSchema,
+} from '@/modules/fees/domain/entities/can-relay-response.entity';
+import {
+  type GtfFeesRequest,
+  GtfFeesRequestSchema,
+} from '@/modules/fees/domain/entities/gtf-fees-request.entity';
+import {
+  type GtfFeesResponse,
+  GtfFeesResponseSchema,
+} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import { CanRelayResponseSchema } from '@/modules/fees/domain/entities/schemas/can-relay-response.schema';
-import { TxFeesResponseSchema } from '@/modules/fees/domain/entities/schemas/tx-fees-response.schema';
-import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
-import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
+import {
+  type TxFeesRequest,
+  TxFeesRequestSchema,
+} from '@/modules/fees/domain/entities/tx-fees-request.entity';
+import {
+  type TxFeesResponse,
+  TxFeesResponseSchema,
+} from '@/modules/fees/domain/entities/tx-fees-response.entity';
 import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
@@ -65,7 +82,7 @@ export class FeeServiceApi implements IFeeServiceApi {
    * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
    * transaction parameters — serves from cache on hit, writes through on miss.
    */
-  async getRelayFees(args: {
+  getRelayFees(args: {
     chainId: string;
     safeAddress: Address;
     request: TxFeesRequest;
@@ -83,23 +100,72 @@ export class FeeServiceApi implements IFeeServiceApi {
       origin: args.request.origin,
       fiatCode: args.request.fiatCode,
     });
-    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay-fees`;
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/relay/fees`;
 
+    return this.postFeeRequest({
+      cacheDir,
+      url,
+      // parsed to strip fields outside this endpoint's contract.
+      data: TxFeesRequestSchema.parse({
+        ...args.request,
+        origin: args.request.origin ?? Origin.NATIVE,
+      }),
+      responseSchema: TxFeesResponseSchema,
+    });
+  }
+
+  /**
+   * {@inheritdoc IFeeServiceApi.getGtfFees}
+   *
+   * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
+   * transaction parameters — serves from cache on hit, writes through on miss.
+   */
+  getGtfFees(args: {
+    chainId: string;
+    safeAddress: Address;
+    request: GtfFeesRequest;
+  }): Promise<GtfFeesResponse> {
+    const cacheDir = CacheRouter.getGtfFeePreviewCacheDir({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      to: args.request.to,
+      value: args.request.value,
+      data: args.request.data,
+      operation: args.request.operation,
+      nonce: args.request.nonce,
+      gasToken: args.request.gasToken,
+      threshold: args.request.numberSignatures,
+      origin: args.request.origin,
+    });
+    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/fees`;
+
+    return this.postFeeRequest({
+      cacheDir,
+      url,
+      // origin is mandatory for this fee endpoint; parsed to strip fields outside its contract.
+      data: GtfFeesRequestSchema.parse({
+        ...args.request,
+        origin: args.request.origin ?? Origin.NATIVE,
+      }),
+      responseSchema: GtfFeesResponseSchema,
+    });
+  }
+
+  private async postFeeRequest<TResponse, TRequest extends object>(args: {
+    cacheDir: CacheDir;
+    url: string;
+    data: TRequest;
+    responseSchema: z.ZodType<TResponse>;
+  }): Promise<TResponse> {
     try {
-      const data = await this.dataSource.post<TxFeesResponse>({
-        cacheDir,
-        url,
-        // The fee service persists a quote keyed by `nonce` (required) and
-        // `origin` (defaults to NATIVE when omitted). This persisted quote is
-        // what `/can-relay` later checks against, so both must be sent here.
-        data: {
-          ...args.request,
-          origin: args.request.origin ?? Origin.NATIVE,
-        },
+      const data = await this.dataSource.post<TResponse>({
+        cacheDir: args.cacheDir,
+        url: args.url,
+        data: args.data,
         notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
         expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
       });
-      return TxFeesResponseSchema.parse(data);
+      return args.responseSchema.parse(data);
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

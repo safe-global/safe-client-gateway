@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -16,16 +21,16 @@ describe('HooksController', () => {
     beforeAll(async () => {
       const moduleFixture = await createTestModule();
 
-      app = moduleFixture.createNestApplication();
+      app = createTestApplication(moduleFixture);
 
       configurationService = moduleFixture.get(IConfigurationService);
       authToken = configurationService.getOrThrow('auth.token');
 
-      await app.init();
+      await initTestApplication(app);
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('should return 410 if the hook is not CHAIN_UPDATE or SAFE_APPS_UPDATE', async () => {
@@ -33,6 +38,7 @@ describe('HooksController', () => {
         type: 'INCOMING_TOKEN',
         tokenAddress: faker.finance.ethereumAddress(),
         txHash: faker.string.hexadecimal({ length: 32 }),
+        trusted: true,
       };
       const safeAddress = faker.finance.ethereumAddress();
       const chainId = faker.string.numeric();
@@ -43,7 +49,7 @@ describe('HooksController', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(410);
@@ -51,7 +57,7 @@ describe('HooksController', () => {
 
     it('should throw an error if authorization is not sent in the request headers', async () => {
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .send({})
         .expect(403);
     });
@@ -76,16 +82,16 @@ describe('HooksController', () => {
         config: testConfiguration,
       });
 
-      app = moduleFixture.createNestApplication();
+      app = createTestApplication(moduleFixture);
 
       configurationService = moduleFixture.get(IConfigurationService);
       authToken = configurationService.getOrThrow('auth.token');
 
-      await app.init();
+      await initTestApplication(app);
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('should not return 410 if the feature flag is enabled', async () => {
@@ -93,6 +99,7 @@ describe('HooksController', () => {
         type: 'INCOMING_TOKEN',
         tokenAddress: faker.finance.ethereumAddress(),
         txHash: faker.string.hexadecimal({ length: 32 }),
+        trusted: true,
       };
       const safeAddress = faker.finance.ethereumAddress();
       const chainId = faker.string.numeric();
@@ -103,7 +110,7 @@ describe('HooksController', () => {
       };
 
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .set('Authorization', `Basic ${authToken}`)
         .send(data)
         .expect(202);
@@ -111,7 +118,7 @@ describe('HooksController', () => {
 
     it('should throw an error if authorization is not sent in the request headers', async () => {
       await request(app.getHttpServer())
-        .post(`/hooks/events`)
+        .post(`/v1/hooks/events`)
         .send({})
         .expect(403);
     });

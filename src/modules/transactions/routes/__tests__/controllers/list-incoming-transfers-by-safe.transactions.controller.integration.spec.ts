@@ -6,7 +6,10 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -51,11 +54,11 @@ describe('List incoming transfers by Safe - Transactions Controller', () => {
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('Failure: Config API fails', async () => {

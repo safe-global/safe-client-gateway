@@ -7,6 +7,10 @@ import type { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import type { Address, Hash } from 'viem';
 import type { MockedObject } from 'vitest';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { retry } from '@/__tests__/util/retry';
 import { IConfigurationService } from '@/config/configuration.service.interface';
@@ -120,7 +124,7 @@ describe('Push notification queue integration', () => {
       ],
     });
 
-    app = moduleFixture.createNestApplication();
+    app = createTestApplication(moduleFixture);
 
     pushNotificationService = moduleFixture.get(IPushNotificationService);
     notificationsRepository = moduleFixture.get(INotificationsRepositoryV2);
@@ -132,7 +136,7 @@ describe('Push notification queue integration', () => {
     consumer = moduleFixture.get(PushNotificationConsumer);
     transactionApiManager = moduleFixture.get(ITransactionApiManager);
 
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {
@@ -157,7 +161,7 @@ describe('Push notification queue integration', () => {
 
   afterAll(async () => {
     await queue.close();
-    await app.close();
+    await app?.close();
   });
 
   describe('non-notifiable events', () => {
@@ -361,6 +365,33 @@ describe('Push notification queue integration', () => {
         expect(counts.active + counts.waiting + counts.delayed).toBe(0);
       });
 
+      expect(
+        notificationsRepository.enqueueNotification,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should suppress INCOMING_TOKEN when the token is not trusted (spam)', async () => {
+      const safeAddress = addr();
+      const event = incomingTokenEventBuilder()
+        .with('address', safeAddress)
+        .with('trusted', false)
+        .build();
+      currentChainId = event.chainId;
+      const subs = createSubscribers(1);
+
+      notificationsRepository.getSubscribersBySafe.mockResolvedValue(subs);
+
+      await pushNotificationService.enqueueEvent(event);
+
+      await retry(async () => {
+        const counts = await queue.getJobCounts();
+        expect(counts.active + counts.waiting + counts.delayed).toBe(0);
+      });
+
+      // Dropped before subscriber resolution — no lookups, no delivery
+      expect(
+        notificationsRepository.getSubscribersBySafe,
+      ).not.toHaveBeenCalled();
       expect(
         notificationsRepository.enqueueNotification,
       ).not.toHaveBeenCalled();

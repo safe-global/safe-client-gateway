@@ -8,6 +8,10 @@ import { Test } from '@nestjs/testing';
 import { ClsModule } from 'nestjs-cls';
 import { getGlobalDispatcher } from 'undici';
 import { fakeJson } from '@/__tests__/faker';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/configuration';
@@ -83,8 +87,8 @@ describe('NetworkModule', () => {
       CircuitBreakerService,
     );
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = createTestApplication(moduleFixture);
+    await initTestApplication(app);
   }
 
   beforeEach(() => {
@@ -97,7 +101,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it(`fetch client is created with timeout and is kept alive`, async () => {
@@ -188,7 +192,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     it('caches GET requests based on URL and options', async () => {
@@ -421,7 +425,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     beforeEach(() => {
@@ -524,7 +528,7 @@ describe('NetworkModule', () => {
     });
 
     afterAll(async () => {
-      await app.close();
+      await app?.close();
     });
 
     beforeEach(() => {

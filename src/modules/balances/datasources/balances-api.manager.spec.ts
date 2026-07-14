@@ -8,10 +8,7 @@ import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
 import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
@@ -41,25 +38,6 @@ const httpErrorFactory = {
   from: vi.fn(),
 } as MockedObject<HttpErrorFactory>;
 
-const transactionApiManagerMock = {
-  getApi: vi.fn(),
-} as MockedObject<ITransactionApiManager>;
-
-const transactionApiMock = {
-  isSafe: vi.fn(),
-} as MockedObject<ITransactionApi>;
-
-const zerionBalancesApi = {
-  getBalances: vi.fn(),
-  clearBalances: vi.fn(),
-  getCollectibles: vi.fn(),
-  clearCollectibles: vi.fn(),
-  getFiatCodes: vi.fn(),
-  getBalance: vi.fn(),
-} as IBalancesApi;
-
-const zerionBalancesApiMock = vi.mocked(zerionBalancesApi);
-
 const coingeckoApi = {
   getNativeCoinPrice: vi.fn(),
   getTokenPrices: vi.fn(),
@@ -78,34 +56,43 @@ const networkServiceMock = vi.mocked(networkService);
 beforeEach(() => {
   vi.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'features.counterfactualBalances') return true;
+    if (key === 'safeTransaction.useVpcUrl') return false;
     // TODO: Remove after Vault decoding has been released
     if (key === 'application.isProduction') return true;
   });
 });
 
 describe('Balances API Manager Tests', () => {
-  describe('getApi checks', () => {
-    it('should return the Zerion API if the Safe address is not known by the Safe Transaction Service', async () => {
+  describe('SafeBalancesApi routing', () => {
+    it('should return the Safe Transaction Service balances API', async () => {
+      const chain = chainBuilder().build();
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
+      dataSourceMock.get.mockResolvedValue(rawify([]));
+      coingeckoApiMock.getTokenPrices.mockResolvedValue(rawify([]));
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
         dataSourceMock,
         cacheService,
         httpErrorFactory,
-        zerionBalancesApiMock,
         coingeckoApiMock,
-        transactionApiManagerMock,
         networkServiceMock,
       );
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const chainId = faker.string.numeric();
-      transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
-      transactionApiMock.isSafe.mockResolvedValue(false);
+      const fiatCode = faker.finance.currencyCode();
 
-      const result = await manager.getApi(chainId, safeAddress);
+      const result = await manager.getApi(chain.chainId);
+      await result.getBalances({
+        safeAddress,
+        fiatCode,
+        chain,
+      });
 
-      expect(result).toEqual(zerionBalancesApi);
+      expect(dataSourceMock.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${chain.transactionService}/api/v1/safes/${safeAddress}/balances/`,
+        }),
+      );
     });
 
     const txServiceUrl = faker.internet.url({ appendSlash: false });
@@ -133,7 +120,6 @@ describe('Balances API Manager Tests', () => {
           return expirationTimeInSeconds;
         if (key === 'expirationTimeInSeconds.notFound.default')
           return notFoundExpireTimeSeconds;
-        if (key === 'features.counterfactualBalances') return true;
         // TODO: Remove after Vault decoding has been released
         if (key === 'application.isProduction') return true;
         throw new Error(`Unexpected key: ${key}`);
@@ -147,19 +133,12 @@ describe('Balances API Manager Tests', () => {
         dataSourceMock,
         cacheService,
         httpErrorFactory,
-        zerionBalancesApiMock,
         coingeckoApiMock,
-        transactionApiManagerMock,
         networkServiceMock,
       );
-      transactionApiManagerMock.getApi.mockResolvedValue(transactionApiMock);
-      transactionApiMock.isSafe.mockResolvedValue(true);
 
       const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeBalancesApi = await balancesApiManager.getApi(
-        chain.chainId,
-        safeAddress,
-      );
+      const safeBalancesApi = await balancesApiManager.getApi(chain.chainId);
       const trusted = faker.datatype.boolean();
       const excludeSpam = faker.datatype.boolean();
 
@@ -187,26 +166,21 @@ describe('Balances API Manager Tests', () => {
   });
 
   describe('getFiatCodes checks', () => {
-    it('should return the intersection of all providers supported currencies', async () => {
-      zerionBalancesApiMock.getFiatCodes.mockResolvedValue(
-        rawify(['EUR', 'GBP', 'ETH']),
-      );
-      coingeckoApiMock.getFiatCodes.mockResolvedValue(rawify(['GBP']));
+    it('should return Safe balances supported currencies', async () => {
+      coingeckoApiMock.getFiatCodes.mockResolvedValue(rawify(['EUR', 'GBP']));
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
         dataSourceMock,
         cacheService,
         httpErrorFactory,
-        zerionBalancesApiMock,
         coingeckoApiMock,
-        transactionApiManagerMock,
         networkServiceMock,
       );
 
       const result = await manager.getFiatCodes();
 
-      expect(result).toStrictEqual(['GBP']);
+      expect(result).toStrictEqual(['EUR', 'GBP']);
     });
   });
 });

@@ -37,9 +37,6 @@ import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-i
 import type { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
-import { TXSCreationTransaction } from '@/modules/transactions/routes/entities/txs-creation-transaction.entity';
-import { TXSMultisigTransaction } from '@/modules/transactions/routes/entities/txs-multisig-transaction.entity';
-import type { TXSMultisigTransactionPage } from '@/modules/transactions/routes/entities/txs-multisig-transaction-page.entity';
 import { ModuleTransactionMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
 import { ModuleTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-details.mapper';
 import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
@@ -195,22 +192,6 @@ export class TransactionsService {
     }
   }
 
-  async getDomainMultisigTransactionBySafeTxHash(args: {
-    chainId: string;
-    safeTxHash: string;
-  }): Promise<TXSMultisigTransaction> {
-    const tx = await this.safeRepository.getMultiSigTransactionWithNoCache({
-      chainId: args.chainId,
-      safeTransactionHash: args.safeTxHash,
-    });
-    const dataDecoded =
-      await this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction: tx,
-      });
-    return new TXSMultisigTransaction({ ...tx, dataDecoded });
-  }
-
   async getMultisigTransactions(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
@@ -282,40 +263,6 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
-  }
-
-  async getDomainMultisigTransactions(args: {
-    safeAddress: Address;
-    chainId: string;
-    // Transaction Service parameters
-    failed?: boolean;
-    modified__lt?: string;
-    modified__gt?: string;
-    modified__lte?: string;
-    modified__gte?: string;
-    nonce__lt?: number;
-    nonce__gt?: number;
-    nonce__lte?: number;
-    nonce__gte?: number;
-    nonce?: number;
-    safe_tx_hash?: string;
-    to?: string;
-    value__lt?: number;
-    value__gt?: number;
-    value?: number;
-    executed?: boolean;
-    has_confirmations?: boolean;
-    trusted?: boolean;
-    execution_date__gte?: string;
-    execution_date__lte?: string;
-    submission_date__gte?: string;
-    submission_date__lte?: string;
-    transaction_hash?: string;
-    ordering?: string;
-    limit?: number;
-    offset?: number;
-  }): Promise<TXSMultisigTransactionPage> {
-    return await this.safeRepository.getMultisigTransactionsWithNoCache(args);
   }
 
   async deleteTransaction(args: {
@@ -625,14 +572,6 @@ export class TransactionsService {
       ...tx,
       dataDecoded,
     };
-  }
-
-  async getDomainCreationTransaction(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<TXSCreationTransaction> {
-    const tx = await this.safeRepository.getCreationTransaction(args);
-    return new TXSCreationTransaction(tx);
   }
 
   /**

@@ -332,6 +332,39 @@ describe('Configuration validator', () => {
     );
   });
 
+  describe('BILLING_WEBHOOK_JWT_PRIVATE_KEY', () => {
+    it.each([
+      'production',
+      'staging',
+    ])('should reject BILLING_WEBHOOK_JWT_PRIVATE_KEY in %s environment', (env) => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: env,
+        BILLING_WEBHOOK_JWT_PRIVATE_KEY: faker.string.alphanumeric(),
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: BILLING_WEBHOOK_JWT_PRIVATE_KEY must not be set in production and staging environments; sign via KMS (BILLING_WEBHOOK_JWT_KMS_KEY_ID) instead',
+      );
+    });
+
+    it('should accept BILLING_WEBHOOK_JWT_PRIVATE_KEY outside staging and production', () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'development',
+        BILLING_WEBHOOK_JWT_PRIVATE_KEY: faker.string.alphanumeric(),
+      };
+
+      expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+        config,
+      );
+    });
+  });
+
   describe('RELAY_NO_FEE_CAMPAIGN relay rules validation', () => {
     describe.each([
       'RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES',

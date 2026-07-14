@@ -37,6 +37,7 @@ export default () => ({
     // Defaults to true.
     runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
     port: process.env.APPLICATION_PORT || '3000',
+    host: process.env.APPLICATION_HOST || '0.0.0.0',
     allowCors: process.env.ALLOW_CORS?.toLowerCase() === 'true',
   },
   auth: {
@@ -114,6 +115,12 @@ export default () => ({
       },
       zerion: {
         apiKey: process.env.ZERION_API_KEY,
+        // Dedicated key for the assets-page endpoints (/portfolio and
+        // /positions) so the assets page keeps working with priority,
+        // unaffected by other endpoints exhausting the main account's
+        // rate-limit budget.
+        assetsApiKey:
+          process.env.ZERION_ASSETS_API_KEY ?? process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
         currencies: [
           'USD',
@@ -149,6 +156,10 @@ export default () => ({
         ),
         perAddressLimitCalls: Number.parseInt(
           process.env.ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD ?? `${0}`,
+          10,
+        ),
+        walletPortfolioTtlSeconds: Number.parseInt(
+          process.env.ZERION_WALLET_PORTFOLIO_TTL_SECONDS ?? `${10}`,
           10,
         ),
       },
@@ -374,6 +385,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
       10,
     ),
+    billing: Number.parseInt(
+      process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -390,10 +405,13 @@ export default () => ({
     },
   },
   express: {
-    // Controls the maximum request body size. If this is a number, then the value
-    // specifies the number of bytes; if it is a string, the value is passed to the
-    // bytes library for parsing. Defaults to '100kb'.
-    // https://expressjs.com/en/resources/middleware/body-parser.html
+    // Controls the maximum request body size for the Fastify JSON parser. A
+    // bare number is interpreted as bytes; a string accepts an optional unit
+    // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
+    // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
+    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
+    // are retained for backwards compatibility after the Express->Fastify
+    // migration; rename deferred to avoid a breaking configuration change.
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
     // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
     // header set by upstream proxies instead of the direct socket address.
@@ -414,13 +432,14 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
-    counterfactualBalances:
-      process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
+    billingService: process.env.FF_BILLING_SERVICE?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
     improvedAddressPoisoning:
       process.env.FF_IMPROVED_ADDRESS_POISONING?.toLowerCase() === 'true',
+    ownersMaliciousFilter:
+      process.env.FF_OWNERS_MALICIOUS_FILTER?.toLowerCase() === 'true',
     hashVerification: {
       api: process.env.FF_HASH_VERIFICATION_API?.toLowerCase() === 'true',
       proposal:
@@ -515,6 +534,38 @@ export default () => ({
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
+  },
+  billing: {
+    baseUri:
+      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
+      'https://safe-billing-service.staging.5afe.dev',
+    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
+    requestTimeout: Number.parseInt(
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
+      10,
+    ),
+    // ES256 service-to-service auth for incoming billing-service webhooks.
+    // The CGW verifies tokens against its own public key (no JWKS); the
+    // private key lives only in the provisioning CLI, not the running app.
+    webhook: {
+      // PEM keys provided via env often arrive with escaped newlines.
+      publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
+        /\\n/g,
+        '\n',
+      ),
+      // The CGW's own identifier — a self-issued token uses it as both `iss` and `aud`.
+      issuer: process.env.BILLING_WEBHOOK_JWT_ISSUER ?? 'safe-client-gateway',
+      // Optional: sign bearer tokens via an asymmetric KMS key (ECC_NIST_P256)
+      // instead of a local private key. Consumed only by the provisioning CLI;
+      // the running app never signs (it verifies offline with the public key).
+      kms: {
+        keyId: process.env.BILLING_WEBHOOK_JWT_KMS_KEY_ID,
+        // Region + credentials are resolved by the AWS SDK's default chain
+        // (AWS_REGION, env keys, shared profile, SSO). In EKS, IRSA provides
+        // pod credentials via the web identity token file.
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
   },
   locking: {
     baseUri:
@@ -793,6 +844,38 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
+    // Field-level encryption of user email addresses. The email value is
+    // encrypted directly by AWS KMS, bound to its owning user via the KMS
+    // encryption context; a KMS-wrapped HMAC key computes the email blind
+    // index for lookups/uniqueness.
+    fieldEncryption: {
+      // When true, the users repository encrypts emails before writing and
+      // requires every stored email to be ciphertext on read — enable only
+      // after the backfill has encrypted all existing rows
+      // (scripts/backfill-user-email-encryption).
+      enabled:
+        process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
+      // Base64 KMS-encrypted 32-byte key for the users.email blind index.
+      // Produced by scripts/generate-field-encryption-index-key. Required
+      // when field encryption is enabled.
+      emailIndexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
+      kms: {
+        // Undefined when encryption is off; the schema validator requires real
+        // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS
+        // service only resolves them once a KMS call is actually made.
+        // Region is intentionally not read here: the AWS SDK resolves
+        // AWS_REGION from the environment directly, as it does for SES.
+        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+        // Dedicated KMS credentials (like SES_AWS_*/CSV_AWS_*) so enabling
+        // field encryption doesn't reuse the bare AWS_ACCESS_KEY_ID/
+        // SECRET_ACCESS_KEY credentials scoped for targeted messaging's S3
+        // file storage.
+        accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
+        // Set in EKS via IRSA; takes precedence over static credentials.
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
     invite: {
       ttlMs: Number.parseInt(
         process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,
@@ -972,6 +1055,20 @@ export default () => ({
       blockaid: {
         apiKey: process.env.BLOCKAID_CLIENT_API_KEY,
       },
+    },
+    maliciousAddressScan: {
+      timeoutMs: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_TIMEOUT_MS ?? `${1500}`,
+        10,
+      ),
+      maxBatchSize: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_MAX_BATCH_SIZE ?? `${100}`,
+        10,
+      ),
+      cacheTtlSeconds: Number.parseInt(
+        process.env.MALICIOUS_ADDRESS_SCAN_CACHE_TTL_SECONDS ?? `${300}`,
+        10,
+      ),
     },
   },
   etherscan: {

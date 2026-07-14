@@ -6,7 +6,10 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -35,18 +38,7 @@ describe('Collectibles Controller', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-        counterfactualBalances: false,
-      },
-    });
-
-    const moduleFixture = await createTestModule({
-      config: testConfiguration,
-    });
+    const moduleFixture = await createTestModule({ config: configuration });
 
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
@@ -55,11 +47,11 @@ describe('Collectibles Controller', () => {
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET /v2/collectibles', () => {

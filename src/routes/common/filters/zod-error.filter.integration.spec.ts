@@ -12,7 +12,10 @@ import { APP_FILTER } from '@nestjs/core';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { z } from 'zod';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
@@ -89,11 +92,11 @@ describe('ZodErrorFilter tests', () => {
     }).compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('ZodErrorWithCode exception returns first issue', async () => {

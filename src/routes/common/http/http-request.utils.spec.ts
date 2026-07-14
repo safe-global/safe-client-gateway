@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
+import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
+import {
+  getRouteUrl,
+  type RequestLike,
+} from '@/routes/common/http/http-request.utils';
+
+describe('http-request.utils tests', () => {
+  describe('getRouteUrl tests', () => {
+    const request = {
+      get: vi.fn(),
+      originalUrl: faker.system.filePath(),
+      protocol: faker.internet.protocol(),
+    } as MockedObject<RequestLike>;
+
+    const requestMock = vi.mocked(request);
+
+    it('Uses X-Forwarded-Proto as protocol if set', () => {
+      const protocol = faker.internet.protocol();
+      const host = faker.internet.domainName();
+      request.get.mockImplementation((arg) => {
+        if (arg === 'X-Forwarded-Proto') {
+          return protocol;
+        }
+        if (arg === 'Host') {
+          return host;
+        }
+        throw Error('Unknown arg');
+      });
+
+      const actual = getRouteUrl(requestMock).toString();
+
+      expect(actual).toBe(`${protocol}://${host}${request.originalUrl}`);
+    });
+
+    it('Uses request protocol if X-Forwarded-Proto is not set', () => {
+      const host = faker.internet.domainName();
+      request.get.mockImplementation((arg) => {
+        if (arg === 'X-Forwarded-Proto') {
+          return undefined;
+        }
+        if (arg === 'Host') {
+          return host;
+        }
+        throw Error('Unknown arg');
+      });
+
+      const actual = getRouteUrl(requestMock).toString();
+
+      expect(actual).toBe(
+        `${request.protocol}://${host}${request.originalUrl}`,
+      );
+    });
+  });
+});

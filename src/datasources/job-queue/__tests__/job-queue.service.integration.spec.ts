@@ -5,6 +5,10 @@ import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { Queue } from 'bullmq';
+import {
+  createTestApplication,
+  initTestApplication,
+} from '@/__tests__/test-app.provider';
 import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
 import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import { TestJobConsumer } from './../__tests__/test.job.consumer';
@@ -47,18 +51,28 @@ describe('JobQueueService & TestJobConsumer integration', () => {
     consumer = moduleFixture.get(TestJobConsumer);
     queue = moduleFixture.get(getQueueToken('test-queue'));
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
+    app = createTestApplication(moduleFixture);
+    await initTestApplication(app);
   });
 
   afterEach(async () => {
-    consumer.cleanup();
+    // Remove jobs that have not started yet, then wait for already-active jobs
+    // to emit their terminal (completed/failed) event before clearing state.
+    // BullMQ delivers those events asynchronously, so clearing eagerly lets a
+    // prior job's event land in the next test and pollute its assertions.
     await queue.drain(true);
+    await waitUntil(
+      () =>
+        consumer.completedJobs.length + consumer.failedJobs.length ===
+        consumer.handledJobs.length,
+      10000,
+    );
+    consumer.cleanup();
   });
 
   afterAll(async () => {
     await queue.close();
-    await app.close();
+    await app?.close();
   });
 
   it('should process a job added to the queue', async () => {

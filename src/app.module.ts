@@ -35,6 +35,7 @@ import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { OidcAuthModule } from '@/modules/auth/oidc/oidc-auth.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
+import { BillingModule } from '@/modules/billing/billing.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
@@ -69,6 +70,7 @@ import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 import { BlocklistGuard } from '@/routes/common/guards/blocklist.guard';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
+import { NullResponseInterceptor } from '@/routes/common/interceptors/null-response.interceptor';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
 
 @Module({})
@@ -80,6 +82,7 @@ export class AppModule implements NestModule {
       users: isUsersFeatureEnabled,
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
+      billingService: isBillingServiceFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -91,6 +94,7 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
+        ...(isBillingServiceFeatureEnabled ? [BillingModule] : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,
@@ -193,6 +197,10 @@ export class AppModule implements NestModule {
         {
           provide: APP_INTERCEPTOR,
           useClass: CacheControlInterceptor,
+        },
+        {
+          provide: APP_INTERCEPTOR,
+          useClass: NullResponseInterceptor,
         },
         {
           provide: APP_GUARD,

@@ -4,7 +4,10 @@ import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import configuration from '@/config/entities/__tests__/configuration';
 import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
@@ -29,7 +32,7 @@ describe('Health Controller tests', () => {
     cacheService = moduleFixture.get(CacheService);
     queuesApi = moduleFixture.get(QueueReadiness);
 
-    await app.init();
+    await initTestApplication(app);
   });
 
   describe('readiness tests', () => {
@@ -97,6 +100,6 @@ describe('Health Controller tests', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 });

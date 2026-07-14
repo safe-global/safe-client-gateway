@@ -21,7 +21,7 @@ import { SubmissionDbMapper } from '@/modules/targeted-messaging/datasources/ent
 import { TargetedSafeDbMapper } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.db.mapper';
 import type { TargetedSafe as DbTargetedSafe } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.entity';
 import { TargetedMessagingDatasource } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource';
-import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/entities/tests/create-outreach.dto.builder';
+import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/entities/__tests__/create-outreach.dto.builder';
 import { OutreachFileProcessor } from './outreach-file-processor';
 
 const mockLoggingService = {

@@ -15,6 +15,7 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import { InviteType } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
+import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
@@ -62,6 +63,7 @@ describe('MembersRepository', () => {
       usersRepository,
       spacesRepository,
       createMockSpaceAuditRepository(),
+      createMockEmailEncryptionService(),
     );
   });
 

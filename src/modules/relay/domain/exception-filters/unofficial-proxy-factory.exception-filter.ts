@@ -5,16 +5,16 @@ import {
   type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
-import type { Response } from 'express';
+import type { FastifyReply } from 'fastify';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 
 @Catch(UnofficialProxyFactoryError)
 export class UnofficialProxyFactoryExceptionFilter implements ExceptionFilter {
   catch(_: UnofficialProxyFactoryError, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
+    const response = ctx.getResponse<FastifyReply>();
 
-    response.status(HttpStatus.UNPROCESSABLE_ENTITY).json({
+    response.status(HttpStatus.UNPROCESSABLE_ENTITY).send({
       message: 'Unofficial ProxyFactory contract.',
       statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
     });

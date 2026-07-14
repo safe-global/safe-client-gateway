@@ -5,9 +5,9 @@ import {
   type SESv2ClientConfig,
   SendEmailCommand,
 } from '@aws-sdk/client-sesv2';
-import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
 import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
 import { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
 
@@ -38,16 +38,14 @@ export class AwsSesEmailService implements IEmailService {
     // Local development uses SES-specific static AWS keys. Deployed environments
     // use IRSA via the projected web identity token file, so SES does not pick up
     // the generic AWS keys used by other integrations.
-    this.credentials = webIdentityTokenFile
-      ? fromTokenFile()
-      : {
-          accessKeyId: this.configurationService.getOrThrow<string>(
-            'email.ses.aws.accessKeyId',
-          ),
-          secretAccessKey: this.configurationService.getOrThrow<string>(
-            'email.ses.aws.secretAccessKey',
-          ),
-        };
+    this.credentials = resolveAwsCredentials(webIdentityTokenFile) ?? {
+      accessKeyId: this.configurationService.getOrThrow<string>(
+        'email.ses.aws.accessKeyId',
+      ),
+      secretAccessKey: this.configurationService.getOrThrow<string>(
+        'email.ses.aws.secretAccessKey',
+      ),
+    };
 
     this.client = new SESv2Client({
       maxAttempts: 1, //do not retry at the SDK level, let the JobQueue handle retries with backoff
