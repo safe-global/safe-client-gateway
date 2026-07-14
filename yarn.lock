@@ -1543,16 +1543,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/cache-manager@npm:3.1.2":
-  version: 3.1.2
-  resolution: "@nestjs/cache-manager@npm:3.1.2"
+"@nestjs/cache-manager@npm:3.1.3":
+  version: 3.1.3
+  resolution: "@nestjs/cache-manager@npm:3.1.3"
   peerDependencies:
     "@nestjs/common": ^9.0.0 || ^10.0.0 || ^11.0.0
     "@nestjs/core": ^9.0.0 || ^10.0.0 || ^11.0.0
     cache-manager: ">=6"
     keyv: ">=5"
     rxjs: ^7.8.1
-  checksum: 10/963144f433353b9d13b3a6cef5f75e2e23ad93f5012bce980c9fe959d9a9cd20565279ffe0d1b0800908d999e4e6d79f07cf3cc4e266989911c7ab79e0d7a02e
+  checksum: 10/34c3772f8c0d0e5c9cc3f5b4763f47e7d5f3a66f885cdbf89926523c22c2079b742202d20e4bdd059bec9d1be45821f3b5c6d80d7bbabf650f4631d523691d1e
   languageName: node
   linkType: hard
 
@@ -2098,12 +2098,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-deployments@npm:1.37.56":
-  version: 1.37.56
-  resolution: "@safe-global/safe-deployments@npm:1.37.56"
+"@safe-global/safe-deployments@npm:1.37.58":
+  version: 1.37.58
+  resolution: "@safe-global/safe-deployments@npm:1.37.58"
   dependencies:
     semver: "npm:^7.6.2"
-  checksum: 10/fd9a226aed59fe017bfade1b0f62e78df246c58a1ad8f88739023c785a1b3226fe5a14c09226f8b5541fb348e84c3cf1cd5b41571a0c3e6685ceeaafb00d4a9a
+  checksum: 10/2e2d895530e3eb60ababfd75634420df28ffaa8c166eaa0de027101348469aedf5b95efe20729500bd7d89cf1220119eb69f2d812510a33f218c386a7d787c90
   languageName: node
   linkType: hard
 
@@ -7032,7 +7032,7 @@ __metadata:
     "@fastify/static": "npm:^9.1.3"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.10.0"
     "@nestjs/bullmq": "npm:^11.0.4"
-    "@nestjs/cache-manager": "npm:3.1.2"
+    "@nestjs/cache-manager": "npm:3.1.3"
     "@nestjs/cli": "npm:11.0.23"
     "@nestjs/common": "npm:11.1.27"
     "@nestjs/config": "npm:4.0.4"
@@ -7044,7 +7044,7 @@ __metadata:
     "@nestjs/swagger": "npm:11.4.4"
     "@nestjs/testing": "npm:11.1.27"
     "@nestjs/typeorm": "npm:11.0.3"
-    "@safe-global/safe-deployments": "npm:1.37.56"
+    "@safe-global/safe-deployments": "npm:1.37.58"
     "@safe-global/safe-modules-deployments": "npm:3.0.3"
     "@smithy/util-stream": "npm:4.7.4"
     "@swc/core": "npm:1.15.43"
