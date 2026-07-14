@@ -218,7 +218,6 @@ export default (): ReturnType<typeof configuration> => ({
     auth: false,
     oidc_auth: false,
     billingService: false,
-    counterfactualBalances: false,
     users: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
