@@ -29,8 +29,13 @@ outputs:
 runs:
   using: composite
   steps:
+    # continue-on-error on the Claude steps: a transient action failure
+    # (API 5xx, quota) must not abort the loop and the downstream
+    # mechanical verification — it degrades to a request-changes verdict
+    # that the next round retries.
     - name: Review
       if: inputs.prev-done != 'true'
+      continue-on-error: true
       uses: anthropics/claude-code-action@v1
       with:
         anthropic_api_key: ${{ inputs.anthropic-api-key }}
@@ -47,7 +52,7 @@ runs:
       env:
         PREV_DONE: ${{ inputs.prev-done }}
       run: |
-        v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
+        v=$(tr -d '\r\n' < "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
         rm -f "$RUNNER_TEMP/verdict"
         if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
           echo "done=true" >> "$GITHUB_OUTPUT"
@@ -56,6 +61,7 @@ runs:
         fi
     - name: Address review
       if: steps.verdict.outputs.done != 'true'
+      continue-on-error: true
       uses: anthropics/claude-code-action@v1
       with:
         anthropic_api_key: ${{ inputs.anthropic-api-key }}

@@ -265,7 +265,8 @@ jobs:
           case "$cmd" in
             *test:integration*|*test:e2e*) yarn build ;;
           esac
+          read -ra cmd_arr <<< "$cmd"
           for i in $(seq 1 10); do
             echo "Verification run $i/10: $cmd"
-            eval "$cmd"
+            "${cmd_arr[@]}"
           done
