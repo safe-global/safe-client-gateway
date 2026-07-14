@@ -55,7 +55,7 @@ jobs:
   fix-flaky-test:
     needs: update-data
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     permissions:
       contents: write
       pull-requests: write
@@ -186,3 +186,102 @@ jobs:
                with bullets covering the observed flaky failure, the root
                cause, and the fix, and a `## Verification` section stating how
                many consecutive local runs passed.
+            6. Write the PR number (digits only, nothing else) to
+               ${{ runner.temp }}/pr-number. Later workflow steps run an
+               independent review of your PR — do not review it yourself.
+      - name: Get fix PR number
+        id: fixpr
+        run: |
+          n=""
+          if [ -f "$RUNNER_TEMP/pr-number" ]; then
+            n=$(tr -cd '0-9' < "$RUNNER_TEMP/pr-number")
+          fi
+          echo "number=$n" >> "$GITHUB_OUTPUT"
+
+      # Review loop: an independent Claude session (fresh context, same review
+      # prompt and model as claude-code-review.yml) reviews the PR and posts
+      # its findings as a PR comment; if it requests changes, another fresh
+      # session addresses them. Unrolled to 3 rounds, stops early on approve.
+      # The verdict travels between steps via $RUNNER_TEMP/verdict; a missing
+      # file counts as request-changes so a failed review never ends the loop
+      # with a silent approve.
+      - name: Review round 1
+        if: steps.fixpr.outputs.number != ''
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-6 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          prompt: |
+            Review round 1 of 3. Follow the instructions in
+            .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
+      - name: Verdict 1
+        id: verdict1
+        if: steps.fixpr.outputs.number != ''
+        run: |
+          v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
+          rm -f "$RUNNER_TEMP/verdict"
+          echo "verdict=$v" >> "$GITHUB_OUTPUT"
+      - name: Address review 1
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-8 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          prompt: |
+            Follow the instructions in .github/prompts/flaky-fix-address.md
+            for PR #${{ steps.fixpr.outputs.number }}.
+
+      - name: Review round 2
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-6 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          prompt: |
+            Review round 2 of 3. Follow the instructions in
+            .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
+      - name: Verdict 2
+        id: verdict2
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve'
+        run: |
+          v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
+          rm -f "$RUNNER_TEMP/verdict"
+          echo "verdict=$v" >> "$GITHUB_OUTPUT"
+      - name: Address review 2
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-8 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          prompt: |
+            Follow the instructions in .github/prompts/flaky-fix-address.md
+            for PR #${{ steps.fixpr.outputs.number }}.
+
+      - name: Review round 3
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-6 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          prompt: |
+            Review round 3 of 3 (final round). Follow the instructions in
+            .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
+      - name: Verdict 3
+        id: verdict3
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve'
+        run: |
+          v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
+          rm -f "$RUNNER_TEMP/verdict"
+          echo "verdict=$v" >> "$GITHUB_OUTPUT"
+      - name: Address review 3
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve' && steps.verdict3.outputs.verdict != 'approve'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-8 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          prompt: |
+            Follow the instructions in .github/prompts/flaky-fix-address.md
+            for PR #${{ steps.fixpr.outputs.number }}. This was the final
+            review round: after your reply, note in a short additional PR
+            comment that the automated review loop is exhausted and the
+            remaining findings await human review.
