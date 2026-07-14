@@ -81,6 +81,26 @@ describe('ChainApiManager', () => {
     expect(target.createApi).toHaveBeenCalledTimes(2);
   });
 
+  it('should not evict a replacement entry when a destroyed creation fails', async () => {
+    const chainId = faker.string.numeric();
+    const error = new Error('Creation failed');
+    let rejectCreation!: (error: Error) => void;
+    target.createApi.mockReturnValueOnce(
+      new Promise((_, reject) => {
+        rejectCreation = reject;
+      }),
+    );
+
+    const first = target.getApi(chainId);
+    target.destroyApi(chainId);
+    const second = await target.getApi(chainId);
+    rejectCreation(error);
+
+    await expect(first).rejects.toThrow(error);
+    expect(await target.getApi(chainId)).toBe(second);
+    expect(target.createApi).toHaveBeenCalledTimes(2);
+  });
+
   it('should reject instead of throwing when creation throws synchronously', async () => {
     const chainId = faker.string.numeric();
     const error = new Error('Creation failed');
