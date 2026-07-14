@@ -267,6 +267,10 @@ export const RootConfigurationSchema = z
       });
     }
 
+    // Field encryption validation runs regardless of environment: enabling it
+    // without its dependencies is always broken, deployed or not.
+    validateFieldEncryptionConfig(config, ctx);
+
     if (!isDeployedEnv) {
       return;
     }
@@ -316,8 +320,6 @@ export const RootConfigurationSchema = z
         ctx.addIssue({ code: 'custom', message, path: [field] });
       }
     }
-
-    validateFieldEncryptionConfig(config, ctx);
   });
 
 export type FileStorageType = z.infer<
