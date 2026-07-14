@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
@@ -48,6 +53,8 @@ export class SpaceAuditService {
     private readonly identityResolver: UserIdentityResolverService,
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   public async getAuditLog(args: {
@@ -182,6 +189,12 @@ export class SpaceAuditService {
   /**
    * Decrypts a row's payload blob, then re-parses it against the taxonomy.
    * Rows that fail to decrypt, parse or validate degrade to an empty payload.
+   *
+   * A degrade is never silent: decrypt/parse throws (e.g. a KMS failure, or an
+   * un-backfilled plaintext row read while encryption is enabled — a hard error
+   * in {@link KmsEncryptionService.decrypt}) and schema-validation misses both
+   * emit a `warn` so ops has a signal instead of just an empty payload. The row
+   * id and event type are logged, never the (decrypted) payload contents.
    */
   private async decodePayload(
     spaceId: Space['id'],
@@ -196,8 +209,17 @@ export class SpaceAuditService {
         eventType: row.eventType,
         payload,
       });
-      return result.success ? result.data.payload : {};
-    } catch {
+      if (result.success) {
+        return result.data.payload;
+      }
+      this.loggingService.warn(
+        `Audit payload failed schema validation; returning empty payload. spaceId=${spaceId} auditLogId=${row.id} eventType=${row.eventType}`,
+      );
+      return {};
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to decode audit payload; returning empty payload. spaceId=${spaceId} auditLogId=${row.id} eventType=${row.eventType}: ${asError(error).message}`,
+      );
       return {};
     }
   }

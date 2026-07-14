@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceAuditLogBuilder } from '@/modules/spaces/datasources/audit/entities/__tests__/space-audit-log.entity.db.builder';
@@ -29,6 +30,13 @@ const membersRepository = {
 const identityResolver = {
   resolveMany: vi.fn(),
 } as MockedObject<UserIdentityResolverService>;
+
+const loggingService: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+};
 
 describe('SpaceAuditService', () => {
   let service: SpaceAuditService;
@@ -72,6 +80,7 @@ describe('SpaceAuditService', () => {
       membersRepository,
       identityResolver,
       spaceEncryptionService,
+      loggingService,
     );
     identityResolver.resolveMany.mockResolvedValue(new Map());
     membersRepository.find.mockResolvedValue([]);
@@ -356,6 +365,35 @@ describe('SpaceAuditService', () => {
         });
 
         expect(page.results[0].payload).toStrictEqual({});
+        expect(loggingService.warn).toHaveBeenCalledWith(
+          expect.stringContaining('failed schema validation'),
+        );
+      });
+
+      it('should degrade to an empty payload and warn when decryption throws (e.g. an un-backfilled plaintext row read while encryption is enabled)', async () => {
+        mockViewer();
+        const row = spaceAuditLogBuilder()
+          .with('spaceId', spaceId)
+          .with('eventType', 'SPACE_CREATED')
+          .with('payload', JSON.stringify({ name: faker.lorem.words() }))
+          .build();
+        spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
+        spaceEncryptionService.decryptAuditPayload.mockRejectedValueOnce(
+          new Error('Expected ciphertext but got a plaintext value'),
+        );
+
+        const page = await service.getAuditLog({
+          authPayload,
+          spaceId,
+          routeUrl,
+          paginationData: new PaginationData(20, 0),
+          filters: {},
+        });
+
+        expect(page.results[0].payload).toStrictEqual({});
+        expect(loggingService.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Failed to decode audit payload'),
+        );
       });
     });
 
