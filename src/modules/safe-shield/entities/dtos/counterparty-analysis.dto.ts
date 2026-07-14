@@ -10,6 +10,12 @@ import type {
   CounterpartyAnalysisResponse,
   GroupedAnalysisResults,
 } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import {
+  CommonStatus,
+  type ContractAnalysisResult,
+  type RecipientAnalysisResult,
+  type UnofficialFallbackHandlerAnalysisResult,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
 import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
 import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
 import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
@@ -19,12 +25,6 @@ import {
   DeadlockStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import {
-  CommonStatus,
-  type ContractAnalysisResult,
-  type RecipientAnalysisResult,
-  type UnofficialFallbackHandlerAnalysisResult,
-} from '../analysis-result.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
 
 /**

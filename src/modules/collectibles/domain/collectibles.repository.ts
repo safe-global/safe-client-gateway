@@ -23,10 +23,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Page<Collectible>> {
-    const api = await this.balancesApiManager.getApi(
-      args.chain.chainId,
-      args.safeAddress,
-    );
+    const api = await this.balancesApiManager.getApi(args.chain.chainId);
     const page = await api.getCollectibles(args);
     return CollectiblePageSchema.parse(page);
   }
@@ -35,10 +32,7 @@ export class CollectiblesRepository implements ICollectiblesRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const api = await this.balancesApiManager.getApi(
-      args.chainId,
-      args.safeAddress,
-    );
+    const api = await this.balancesApiManager.getApi(args.chainId);
     await api.clearCollectibles({ safeAddress: args.safeAddress });
   }
 }

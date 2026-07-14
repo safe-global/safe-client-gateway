@@ -9,7 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
 import { databaseEnumTransformer } from '@/domain/common/utils/enum';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { ADDRESS_BOOK_NAME_MAX_LENGTH } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';

@@ -18,15 +18,15 @@ import {
 import { asError } from '@/logging/utils';
 import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
+import type { DeadlockAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   type AnalysisResult,
   CommonStatus,
 } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
+import { DeadlockStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import type { DeadlockAnalysisResponse } from '../entities/analysis-responses.entity';
-import { DeadlockStatus } from '../entities/deadlock-status.entity';
-import { DeadlockStatusGroup } from '../entities/status-group.entity';
 import {
   DEADLOCK_DESCRIPTION_MAPPING,
   DEADLOCK_SEVERITY_MAPPING,

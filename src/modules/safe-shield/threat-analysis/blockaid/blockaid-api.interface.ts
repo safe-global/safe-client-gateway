@@ -3,8 +3,8 @@ import type { AddressBulkScanResponse } from '@blockaid/client/resources/evm/add
 import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
 import type { TransactionScanResponse } from '@blockaid/client/resources/index';
 import type { Address } from 'viem';
+import type { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
-import type { ReportEvent } from '../../entities/dtos/report-false-result.dto';
 
 export const IBlockaidApi = Symbol('IBlockaidApi');
 
