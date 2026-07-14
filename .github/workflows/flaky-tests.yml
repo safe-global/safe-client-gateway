@@ -1,0 +1,185 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+name: Flaky Tests
+
+on:
+  schedule:
+    - cron: '15 5 * * *'
+  workflow_dispatch:
+
+# The two jobs run sequentially and mutate shared state (the reports branch,
+# fix PRs), so never let two scheduled runs overlap.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Incrementally extends reports/flaky-tests/* on the reports branch with the
+  # CI runs that happened since the last run (scripts/analyze-flaky-tests.ts
+  # resumes from lastCheckedAt in ci-runs.json). Deterministic — no Claude.
+  update-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: reports/flaky-tests-baseline
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '24.11.0' # Krypton
+      # The analyzer only imports Node builtins and shells out to `gh`, so a
+      # full `yarn install` is not needed — tsx alone can execute it.
+      - run: npx --yes tsx scripts/analyze-flaky-tests.ts
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Commit and push updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add reports/flaky-tests
+          if git diff --cached --quiet; then
+            echo "No new CI data since the last run."
+            exit 0
+          fi
+          git commit -m "chore: daily flaky test data update"
+          git push
+
+  # Picks one open flaky test from the refreshed data, diagnoses and fixes the
+  # root cause, verifies by repeated local runs, and opens a draft PR.
+  fix-flaky-test:
+    needs: update-data
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      actions: read
+      id-token: write
+    env:
+      POSTGRES_TEST_DB: test-db
+      POSTGRES_TEST_USER: postgres
+      POSTGRES_TEST_PASSWORD: postgres
+      POSTGRES_TEST_PORT: 5433
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
+      LOG_SILENT: true
+    services:
+      redis:
+        image: redis
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+      postgres:
+        image: postgres:14.8
+        env:
+          POSTGRES_DB: test-db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5433:5432
+      rabbitmq:
+        image: rabbitmq:alpine
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmqctl await_startup"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      # One fix PR in flight at a time: while a flaky-fix/* PR is open, skip
+      # the (expensive) fix stage instead of piling up overlapping PRs.
+      - name: Check for open flaky-fix PR
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open=$(gh pr list --state open --json headRefName \
+            --jq '[.[] | select(.headRefName | startswith("flaky-fix/"))] | length')
+          echo "open_prs=$open" >> "$GITHUB_OUTPUT"
+          if [ "$open" != "0" ]; then
+            echo "Skipping fix stage: $open flaky-fix PR(s) still open."
+          fi
+      - name: Fetch flaky test data
+        if: steps.guard.outputs.open_prs == '0'
+        run: |
+          git fetch --depth 1 origin reports/flaky-tests-baseline
+          mkdir -p "$RUNNER_TEMP/flaky-tests"
+          for f in flaky-tests.json ci-runs.json fix-prs.json; do
+            git show FETCH_HEAD:reports/flaky-tests/$f > "$RUNNER_TEMP/flaky-tests/$f"
+          done
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        if: steps.guard.outputs.open_prs == '0'
+        with:
+          node-version: '24.11.0' # Krypton
+          cache: 'yarn'
+      - if: steps.guard.outputs.open_prs == '0'
+        run: yarn install --immutable
+      - if: steps.guard.outputs.open_prs == '0'
+        run: yarn generate-abis
+      - name: Fix one flaky test
+        if: steps.guard.outputs.open_prs == '0'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--model claude-opus-4-8 --max-turns 150 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          prompt: |
+            You are a daily automation that fixes flaky tests in this
+            repository (safe-global/safe-client-gateway, NestJS + Vitest).
+            The checkout is at main, dependencies are installed, ABIs are
+            generated, and Postgres/Redis/RabbitMQ service containers are
+            running with the same env as CI.
+
+            Input data, generated from CI history by
+            scripts/analyze-flaky-tests.ts (lives on the
+            reports/flaky-tests-baseline branch):
+            - ${{ runner.temp }}/flaky-tests/flaky-tests.json — flaky test
+              files with failure_count, is_cascade, status, fix_pr
+            - ${{ runner.temp }}/flaky-tests/ci-runs.json — the underlying CI
+              runs, including failed_tests with error excerpts per file
+            - ${{ runner.temp }}/flaky-tests/fix-prs.json — fix PRs opened so far
+
+            Steps:
+            1. Pick exactly ONE test file: status "open", is_cascade false,
+               fix_pr null, and no open or recently merged PR already touching
+               it (verify with `gh pr list`). Prefer the highest failure_count.
+               If no file qualifies, print the reason and stop — open no PR
+               and push nothing.
+            2. Diagnose the root cause from the error excerpts in ci-runs.json
+               and by reading the test and the code under test. Recurring root
+               causes in this repo: mock/shared state leaking between tests,
+               faker generating occasionally-invalid or colliding data,
+               unmocked network calls (transient 503s), teardown running
+               against an undefined app, and time- or ordering-dependent
+               assertions.
+            3. Fix the root cause. Never mask flakiness with retries, repeats,
+               raised timeouts, or skipped tests.
+            4. Verify the fix by running the affected file in a loop at least
+               10 times — every run must pass. Unit tests:
+               `yarn test:unit <file>`. Integration tests: run `yarn build`
+               once first (migrations load from dist), then
+               `yarn test:integration <file>`.
+            5. Commit to a branch named `flaky-fix/<short-slug>` (never commit
+               to main) and open a DRAFT pull request against main. Title:
+               `fix(tests): <what was fixed>`. Body: a `## Summary` section
+               with bullets covering the observed flaky failure, the root
+               cause, and the fix, and a `## Verification` section stating how
+               many consecutive local runs passed.
