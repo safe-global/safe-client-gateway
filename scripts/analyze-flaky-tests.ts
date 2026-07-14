@@ -97,10 +97,15 @@ function getDateRange(resumeAfter?: string | null): {
 	const toStr = to.toISOString().split("T")[0];
 
 	if (resumeAfter) {
-		// Resume from 1 day before last check to catch in-progress runs
+		// Resume from the Monday of the last-checked week, or 1 day before the
+		// last check if that is earlier (to catch in-progress runs). Covering
+		// the whole current week lets the weekly trend rebuild its still-open
+		// row instead of freezing it at the previous run's mid-week state.
 		const resume = new Date(resumeAfter);
-		resume.setDate(resume.getDate() - 1);
-		return { from: resume.toISOString().split("T")[0], to: toStr };
+		resume.setUTCDate(resume.getUTCDate() - 1);
+		const weekStart = new Date(`${getWeekStart(resumeAfter)}T00:00:00Z`);
+		const fromDate = resume < weekStart ? resume : weekStart;
+		return { from: fromDate.toISOString().split("T")[0], to: toStr };
 	}
 
 	const from = new Date(to);
@@ -109,11 +114,12 @@ function getDateRange(resumeAfter?: string | null): {
 }
 
 function getWeekStart(dateStr: string): string {
+	// UTC throughout — local-time weekdays put Sunday-evening runs into
+	// spurious extra rows next to the real Monday-keyed week.
 	const date = new Date(dateStr);
-	const day = date.getDay();
-	const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-	const monday = new Date(date.setDate(diff));
-	return monday.toISOString().split("T")[0];
+	const day = date.getUTCDay();
+	date.setUTCDate(date.getUTCDate() + (day === 0 ? -6 : 1 - day));
+	return date.toISOString().split("T")[0];
 }
 
 // --- Incremental support ---
@@ -844,22 +850,33 @@ async function main(): Promise<void> {
 		...newFlakyShas,
 	]);
 
-	// Merge weekly trend (keep existing weeks, add new ones)
-	const existingWeeks = new Set(existing?.weeklyTrend.map((w) => w.week) ?? []);
+	// Merge weekly trend: rows from the last-checked week onward are rebuilt
+	// from this fetch — the window reaches back to that week's Monday, so the
+	// data covers them completely and still-open weeks don't freeze at a
+	// mid-week state. Older rows are kept as-is. The rebuild iterates over
+	// allGhRuns (not just new runs) because already-processed runs must still
+	// count into the rebuilt weeks.
+	const rebuildFromWeek = existing ? getWeekStart(existing.lastCheckedAt) : "";
+	const keptWeekly = (existing?.weeklyTrend ?? []).filter(
+		(w) => w.week < rebuildFromWeek,
+	);
+	const keptWeeks = new Set(keptWeekly.map((w) => w.week));
 	const newWeeklyMap = new Map<
 		string,
 		{ commits: Set<string>; flaky: Set<string> }
 	>();
-	for (const run of runs) {
+	for (const run of allGhRuns) {
+		if (run.conclusion !== "success" && run.conclusion !== "failure") continue;
 		const week = getWeekStart(run.created_at);
-		if (existingWeeks.has(week)) continue;
+		if (keptWeeks.has(week)) continue;
+		const sha = run.head_sha.substring(0, 7);
 		const entry = newWeeklyMap.get(week) ?? {
 			commits: new Set(),
 			flaky: new Set(),
 		};
-		entry.commits.add(run.sha);
-		if (newFlakyShas.has(run.sha)) {
-			entry.flaky.add(run.sha);
+		entry.commits.add(sha);
+		if (mergedFlakyShas.has(sha)) {
+			entry.flaky.add(sha);
 		}
 		newWeeklyMap.set(week, entry);
 	}
@@ -874,10 +891,9 @@ async function main(): Promise<void> {
 				? Math.round((data.flaky.size / data.commits.size) * 1000) / 10
 				: 0,
 	}));
-	const mergedWeeklyTrend = [
-		...(existing?.weeklyTrend ?? []),
-		...newWeeklyRows,
-	].sort((a, b) => a.week.localeCompare(b.week));
+	const mergedWeeklyTrend = [...keptWeekly, ...newWeeklyRows].sort((a, b) =>
+		a.week.localeCompare(b.week),
+	);
 
 	// Merge test failure counts
 	const mergedTestCounts = new Map(existing?.testCounts ?? []);

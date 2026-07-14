@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-07-14T12:11:55.133Z",
+  "generated_at": "2026-07-14T13:17:42.259Z",
   "summary": {
-    "total_commits": 1734,
-    "flaky_commits": 124,
-    "flakiness_rate": 7.2,
+    "total_commits": 1785,
+    "flaky_commits": 125,
+    "flakiness_rate": 7,
     "period": {
       "from": "2026-01-16",
       "to": "2026-07-14"
@@ -216,19 +216,13 @@
     },
     {
       "week": "2026-07-06",
-      "commits": 49,
-      "flaky": 1,
-      "rate": 2
-    },
-    {
-      "week": "2026-07-12",
-      "commits": 5,
-      "flaky": 0,
-      "rate": 0
+      "commits": 95,
+      "flaky": 2,
+      "rate": 2.1
     },
     {
       "week": "2026-07-13",
-      "commits": 46,
+      "commits": 56,
       "flaky": 0,
       "rate": 0
     }

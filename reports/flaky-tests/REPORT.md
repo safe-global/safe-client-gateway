@@ -1,14 +1,14 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-07-14T12:11:55.140Z | Period: 2026-01-16 to 2026-07-14
+Generated: 2026-07-14T13:17:42.265Z | Period: 2026-01-16 to 2026-07-14
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 1734 |
-| Flaky commits (pass + fail on same SHA) | 124 |
-| Flakiness rate | 7.2% |
+| Total unique commits | 1785 |
+| Flaky commits (pass + fail on same SHA) | 125 |
+| Flakiness rate | 7% |
 | Cascade baseline | 1 failures (7 tests) |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
@@ -51,9 +51,8 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-06-28 | 3 | 0 | 0% |
 | 2026-06-29 | 81 | 3 | 3.7% |
 | 2026-07-05 | 6 | 0 | 0% |
-| 2026-07-06 | 49 | 1 | 2% |
-| 2026-07-12 | 5 | 0 | 0% |
-| 2026-07-13 | 46 | 0 | 0% |
+| 2026-07-06 | 95 | 2 | 2.1% |
+| 2026-07-13 | 56 | 0 | 0% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -82,8 +81,8 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 06-15  18.2%  n=66   ███████████████████████████████████████
 06-22   5.6%  n=71   ████████████
 06-29   3.7%  n=81   ████████
-07-06   2.0%  n=49   ████
-07-13   0.0%  n=46   ▏
+07-06   2.1%  n=95   ████
+07-13   0.0%  n=56   ▏
 ```
 
 ## Flaky Test Leaderboard (Non-Cascade)
