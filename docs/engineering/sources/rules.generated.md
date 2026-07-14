@@ -260,10 +260,10 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 <a id="mod-01"></a>
 ### `MOD-01` Behavior in the right module
 
-> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003`
+> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003`
 
 **📜 Rule**\
-New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly.
+New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables.
 
 **✅ Check**\
 > Does new API/product behavior live in the right module?
@@ -286,10 +286,10 @@ Services do not know persistence/email uniqueness internals; repositories own DB
 <a id="mod-03"></a>
 ### `MOD-03` No single-use DI abstractions
 
-> **general** · modules
+> **general** · modules · ↩ `RL-20260707-001`
 
 **📜 Rule**\
-Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused.
+Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Do not merge superficially similar security guards — coupling two security paths is worse than duplication.
 
 **✅ Check**\
 > Did I avoid single-use DI abstractions?
@@ -755,10 +755,10 @@ Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), 
 <a id="type-02"></a>
 ### `TYPE-02` Schemas in entity files
 
-> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003`
+> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005`
 
 **📜 Rule**\
-Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file.
+Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders.
 
 **✅ Check**\
 > Are reusable schemas in entity/schema files?
@@ -1111,10 +1111,10 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 <a id="type-05"></a>
 ### `TYPE-05` Parser generics complete
 
-> **general** · types
+> **general** · types · ↩ `RL-20260710-006`
 
 **📜 Rule**\
-Parser/decode generics include every field the code reads downstream.
+Parser/decode generics include every field the code reads downstream. Thread the expected type through datasource/network generics — a bare `<unknown>` without an adjacent schema parse is a flag.
 
 **✅ Check**\
 > Do parser/decode types include every field the code reads?
@@ -1544,10 +1544,10 @@ unknown case at the boundary they own.
 <a id="db-01"></a>
 ### `DB-01` Unique constraint matches lifecycle
 
-> **general** · database
+> **general** · database · ↩ `RL-20260710-011`
 
 **📜 Rule**\
-Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically.
+Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically. When a feature flag switches storage format (e.g. encryption), uniqueness and other invariants must hold in both modes (complementary partial unique indexes), and reverse migrations pre-check for rows the narrowed column cannot hold.
 
 **✅ Check**\
 > Do unique constraints match nullable/lifecycle behavior?
@@ -1710,10 +1710,10 @@ the previous run is cheap; recovering attribution after a release is not.
 <a id="cache-01"></a>
 ### `CACHE-01` Multi-step cache writes checked
 
-> **general** · cache
+> **general** · cache · ↩ `RL-20260710-002`
 
 **📜 Rule**\
-Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache.
+Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache. Invalidation fan-out over independent keys uses `Promise.allSettled` with a per-key warn and does not throw when callers cannot act on the failure; sibling clear methods with identical shape receive the same hardening; tests parameterize over every invalidating event type.
 
 **✅ Check**\
 > Are multi-step cache/Redis operations fully checked?
@@ -1723,10 +1723,10 @@ Redis pipelines and cache marker writes must validate every meaningful result. H
 <a id="cache-02"></a>
 ### `CACHE-02` Cache keys cover all inputs
 
-> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004`
+> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008`
 
 **📜 Rule**\
-Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys.
+Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix.
 
 **✅ Check**\
 > Are cache keys, bounded caches, and TTL semantics tested?
@@ -1896,10 +1896,10 @@ code path inside `request()`.
 <a id="config-01"></a>
 ### `CONFIG-01` Defaults safe and OSS-generic
 
-> **general** · config
+> **general** · config · ↩ `RL-20260710-007`
 
 **📜 Rule**\
-Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`.
+Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging.
 
 **✅ Check**\
 > Are defaults safe, minimal, and OSS-generic?
@@ -1994,7 +1994,7 @@ with per-field conditions and messages.
 <a id="config-03"></a>
 ### `CONFIG-03` TTLs are config
 
-> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004`
+> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003`
 
 **📜 Rule**\
 TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs.
@@ -2077,10 +2077,10 @@ Runtime dependency versions are pinned exactly; do not hardcode contract version
 <a id="config-05"></a>
 ### `CONFIG-05` Env metadata matches runtime
 
-> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002`
+> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002` · `RL-20260710-010`
 
 **📜 Rule**\
-Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR.
+Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.
 
 **✅ Check**\
 > Do tool versions and env metadata match runtime behavior?
@@ -2193,7 +2193,7 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001`
+> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011`
 
 **📜 Rule**\
 Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them.
@@ -2318,10 +2318,10 @@ independent I/O concurrent and fails fast on the first rejection.
 <a id="test-01"></a>
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 1 example · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009`
 
 **📜 Rule**\
-Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest).
+Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol.
 
 **✅ Check**\
 > Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?
@@ -2735,10 +2735,10 @@ unknown case at the boundary they own.
 <a id="log-02"></a>
 ### `LOG-02` No noisy success logs
 
-> **general** · logging
+> **general** · logging · ↩ `RL-20260710-001`
 
 **📜 Rule**\
-Hot worker events and expected success paths are not noisy logs.
+Hot worker events and expected success paths are not noisy logs. Logs emitted once per queue/AMQP event are `debug`.
 
 **✅ Check**\
 > Did I avoid noisy success logs?

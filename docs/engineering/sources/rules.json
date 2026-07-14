@@ -86,13 +86,15 @@
     "project": "general",
     "area": "modules",
     "title": "Behavior in the right module",
-    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly.",
+    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables.",
     "check": "Does new API/product behavior live in the right module?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260128-002",
       "RL-20260608-002",
-      "RL-20260608-003"
+      "RL-20260608-003",
+      "RL-20260710-004",
+      "RL-20260707-003"
     ]
   },
   {
@@ -113,10 +115,12 @@
     "project": "general",
     "area": "modules",
     "title": "No single-use DI abstractions",
-    "rule": "Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused.",
+    "rule": "Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Do not merge superficially similar security guards — coupling two security paths is worse than duplication.",
     "check": "Did I avoid single-use DI abstractions?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260707-001"
+    ]
   },
   {
     "id": "MOD-04",
@@ -226,7 +230,7 @@
     "project": "general",
     "area": "types",
     "title": "Schemas in entity files",
-    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file.",
+    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders.",
     "check": "Are reusable schemas in entity/schema files?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
@@ -236,7 +240,8 @@
       "RL-20260116-002",
       "RL-20260619-003",
       "RL-20260624-001",
-      "RL-20260703-003"
+      "RL-20260703-003",
+      "RL-20260710-005"
     ]
   },
   {
@@ -286,10 +291,12 @@
     "project": "general",
     "area": "types",
     "title": "Parser generics complete",
-    "rule": "Parser/decode generics include every field the code reads downstream.",
+    "rule": "Parser/decode generics include every field the code reads downstream. Thread the expected type through datasource/network generics — a bare `<unknown>` without an adjacent schema parse is a flag.",
     "check": "Do parser/decode types include every field the code reads?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260710-006"
+    ]
   },
   {
     "id": "TYPE-06",
@@ -415,10 +422,12 @@
     "project": "general",
     "area": "database",
     "title": "Unique constraint matches lifecycle",
-    "rule": "Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically.",
+    "rule": "Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically. When a feature flag switches storage format (e.g. encryption), uniqueness and other invariants must hold in both modes (complementary partial unique indexes), and reverse migrations pre-check for rows the narrowed column cannot hold.",
     "check": "Do unique constraints match nullable/lifecycle behavior?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260710-011"
+    ]
   },
   {
     "id": "DB-02",
@@ -480,17 +489,19 @@
     "project": "general",
     "area": "cache",
     "title": "Multi-step cache writes checked",
-    "rule": "Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache.",
+    "rule": "Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache. Invalidation fan-out over independent keys uses `Promise.allSettled` with a per-key warn and does not throw when callers cannot act on the failure; sibling clear methods with identical shape receive the same hardening; tests parameterize over every invalidating event type.",
     "check": "Are multi-step cache/Redis operations fully checked?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260710-002"
+    ]
   },
   {
     "id": "CACHE-02",
     "project": "general",
     "area": "cache",
     "title": "Cache keys cover all inputs",
-    "rule": "Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys.",
+    "rule": "Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix.",
     "check": "Are cache keys, bounded caches, and TTL semantics tested?",
     "exampleRefs": [
       "examples/cache.md#cache-02-bump-the-key-when-the-cached-payload-shape-changes",
@@ -501,7 +512,8 @@
       "RL-20260121-001",
       "RL-20260114-001",
       "RL-20251215-001",
-      "RL-20260703-004"
+      "RL-20260703-004",
+      "RL-20260710-008"
     ]
   },
   {
@@ -509,10 +521,12 @@
     "project": "general",
     "area": "config",
     "title": "Defaults safe and OSS-generic",
-    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`.",
+    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging.",
     "check": "Are defaults safe, minimal, and OSS-generic?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260710-007"
+    ]
   },
   {
     "id": "CONFIG-02",
@@ -542,7 +556,8 @@
     ],
     "reviewLearningIds": [
       "RL-20260506-003",
-      "RL-20260608-004"
+      "RL-20260608-004",
+      "RL-20260707-003"
     ]
   },
   {
@@ -560,7 +575,7 @@
     "project": "general",
     "area": "config",
     "title": "Env metadata matches runtime",
-    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR.",
+    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.",
     "check": "Do tool versions and env metadata match runtime behavior?",
     "exampleRefs": [
       "examples/configuration.md#change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release",
@@ -569,7 +584,8 @@
     "reviewLearningIds": [
       "RL-20260108-001",
       "RL-20251215-003",
-      "RL-20260619-002"
+      "RL-20260619-002",
+      "RL-20260710-010"
     ]
   },
   {
@@ -587,7 +603,8 @@
       "RL-20260506-006",
       "RL-20260603-001",
       "RL-20260619-001",
-      "RL-20260626-001"
+      "RL-20260626-001",
+      "RL-20260710-011"
     ]
   },
   {
@@ -595,7 +612,7 @@
     "project": "general",
     "area": "tests",
     "title": "Use builders and fakes",
-    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest).",
+    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol.",
     "check": "Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?",
     "exampleRefs": [
       "examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures"
@@ -605,7 +622,10 @@
       "RL-20260521-001",
       "RL-20260619-005",
       "RL-20260624-003",
-      "RL-20260623-001"
+      "RL-20260623-001",
+      "RL-20260710-003",
+      "RL-20260707-002",
+      "RL-20260710-009"
     ]
   },
   {
@@ -740,10 +760,12 @@
     "project": "general",
     "area": "logging",
     "title": "No noisy success logs",
-    "rule": "Hot worker events and expected success paths are not noisy logs.",
+    "rule": "Hot worker events and expected success paths are not noisy logs. Logs emitted once per queue/AMQP event are `debug`.",
     "check": "Did I avoid noisy success logs?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260710-001"
+    ]
   },
   {
     "id": "LOG-03",

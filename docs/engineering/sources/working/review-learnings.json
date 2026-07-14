@@ -1922,5 +1922,293 @@
     "ruleIds": [
       "TEST-08"
     ]
+  },
+  {
+    "id": "RL-20260710-001",
+    "title": "Per-event handler log emitted at info instead of debug",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3241
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3541924480,
+      3543206829
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A cache-invalidation handler logged at `info` on every transaction event; review pointed out the AMQP event volume would flood Datadog and it moved to `debug`. Logs emitted once per queue event are `debug` — reserve `info` for low-frequency lifecycle signals.",
+    "ruleIds": [
+      "LOG-02"
+    ]
+  },
+  {
+    "id": "RL-20260710-002",
+    "title": "Cache-invalidation fan-out rethrew on partial failure the caller cannot act on",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3241
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4926313988,
+      4926528604
+    ],
+    "learning": "`ZerionCacheService.invalidate` ran three `deleteByKey` calls under `Promise.all`, so one rejection propagated to callers that cannot act on it (the AMQP listener will not replay the event; the wallet should not get a 500 for a failed invalidation whose entry expires with its TTL). Reworked to `Promise.allSettled` with a per-key warn, never throwing. Also: the invalidation source param was typed as a union (`TransactionEventType | 'refresh'`) instead of bare `string`, the method renamed to state its real blast radius (`clearZerionCaches`), and the integration test became an `it.each` over all seven invalidating event types. Best-effort invalidation semantics, honest names, and full event-type coverage.",
+    "ruleIds": [
+      "CACHE-01"
+    ]
+  },
+  {
+    "id": "RL-20260710-003",
+    "title": "Mocks double-cast through unknown and asserted via .mock.calls",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3241,
+      3196,
+      3214
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3557560672,
+      3557577185,
+      3527453029,
+      3506952776,
+      3506958656
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20260710-004",
+    "title": "Two modules, config sections, and namespaces for one upstream billing service",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3228
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3551071716,
+      3551160646
+    ],
+    "reviewIds": [
+      4662379914
+    ],
+    "issueCommentIds": [],
+    "learning": "A billing API client added a `safeBillingService` config section next to the existing `billing` one, a second module wired alongside `BillingModule`, and mixed `SAFE_BILLING_*`/`BILLING_*` cache-key prefixes; review asked to consolidate — config sections use the topic name (no `-service` suffix, like `transactions`), the two modules were merged, and the namespaces unified. One upstream service maps to one module, one config section, and one namespace prefix.",
+    "ruleIds": [
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20260710-005",
+    "title": "Inline z.enum literals instead of as-const arrays shared with builders",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3228
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3551091623,
+      3551106538
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Subscription/plan schemas inlined literal arrays in `z.enum([...])`; review asked for `export const SubscriptionStatus = [...] as const` consumed as `z.enum([...SubscriptionStatus])` — the same array then feeds `faker.helpers.arrayElement` in test builders. Declare enum value sets once as `as const` arrays shared by schema and builders.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260710-006",
+    "title": "Network calls typed <unknown> where the expected shape was known",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3228
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3551145238,
+      3551153043
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A billing datasource called `networkService.post<unknown>` / `dataSource.get<unknown>` and cast later; review asked to carry the generic through (the helper already receives the Zod schema, so the type parameter can be derived) instead of `unknown`. Thread the expected type through datasource generics and validate with the schema — bare `<unknown>` without an adjacent parse is a flag.",
+    "ruleIds": [
+      "TYPE-05"
+    ]
+  },
+  {
+    "id": "RL-20260710-007",
+    "title": "Staging URL shipped as the production default for a new base URI",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3228
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4923514895,
+      4923783624
+    ],
+    "learning": "A new service client defaulted `baseUri` to the staging host, so a production deploy with the env var missing would silently send a production token to staging. The fix adds the base URI to the deployed-env `requiredWhen` config check. Never default a base URI to a staging host — deployed environments must require it explicitly so misconfiguration fails at boot.",
+    "ruleIds": [
+      "CONFIG-01"
+    ]
+  },
+  {
+    "id": "RL-20260710-008",
+    "title": "Identifier embedded in the cache-key prefix instead of the CacheDir field",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3228
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4923514895,
+      4923783624
+    ],
+    "learning": "Billing cache keys interpolated the id into the key prefix (`${planId}_billing_plan`) and mixed two prefixes, so bulk invalidation by shared prefix (`prefix:*`) was impossible; the fix normalizes on one prefix with the identifier as the `CacheDir` field. Keys share one scannable prefix per resource; identifiers go in the field, not the prefix.",
+    "ruleIds": [
+      "CACHE-02"
+    ]
+  },
+  {
+    "id": "RL-20260707-001",
+    "title": "Interface demanded for a single-implementation auth service; interface justified for a disableable KMS service",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3217,
+      3196
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3504546923,
+      3505529765,
+      3512382860,
+      3527049561,
+      3536540425
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A review asked a webhook guard to inject an interface like `AuthGuard` does; the author kept the concrete `BillingAuthService` — it only verifies JWTs, has no data access, has exactly one plausible implementation, and `CaptchaGuard` sets the precedent. A suggestion to merge it into the generic `AuthGuard` was also declined: the similarity was superficial and merging couples two security paths. In the same window, `KmsService` DID gain an `IKmsService` interface — justified because a disabled-mode no-op implementation replaced a `client: undefined` construct-anyway workaround. Interfaces earn their place with a real second implementation or boundary, not by convention.",
+    "ruleIds": [
+      "MOD-03"
+    ]
+  },
+  {
+    "id": "RL-20260707-002",
+    "title": "Test values: literals where faker belongs, randomization demanded where a contract constant belongs",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3217
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3512798535,
+      3512800884,
+      3512838259,
+      3527067664,
+      3527073174,
+      3535099400,
+      3535257009
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20260707-003",
+    "title": "Bulk scan call and its tunables placed outside the provider's API service",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3214
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3506998282,
+      3518611820,
+      3519244148,
+      3506962870,
+      3518611691
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A malicious-address scanner instantiated its own Blockaid client and hardcoded `SCAN_TIMEOUT_MS`/`MAX_BATCH`/`CACHE_TTL_SECONDS`; review moved the bulk scan into `BlockaidApi` (all Blockaid logic in one place, no separate client provider) and the tunables into the config service — with the follow-up note that ideally business-specific tunables live in the feature service and are passed in, keeping the generic client free of business specifics. Provider calls belong in the provider's API service; tunables come from config, owned by the feature.",
+    "ruleIds": [
+      "MOD-01",
+      "CONFIG-03"
+    ]
+  },
+  {
+    "id": "RL-20260710-009",
+    "title": "Ad-hoc config-service mocks where FakeConfigurationService exists",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3196
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3527347712,
+      3537054009
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "New specs built ad-hoc `getOrThrow`/`get` mockImplementation blocks for the configuration service while other specs use `FakeConfigurationService`; review asked for the fake for consistency (\"unclear why in one test it's mocked and in another it's faked\"). Use `FakeConfigurationService` for config in tests unless a spec genuinely needs call assertions.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20260710-010",
+    "title": "KMS reused the shared root AWS credentials instead of prefixed per-feature vars",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3196
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3527337897
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4903970856
+    ],
+    "learning": "Field-encryption KMS initially keyed off the shared root `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`, coupling it to targeted messaging's credentials; the fix introduced dedicated `KMS_AWS_*` vars, matching the existing `SES_AWS_*`/`CSV_AWS_*` pattern. Per-feature AWS credentials use prefixed env vars — an operator rotating one service's creds must not surprise three services.",
+    "ruleIds": [
+      "CONFIG-05"
+    ]
+  },
+  {
+    "id": "RL-20260710-011",
+    "title": "Encryption rollout: uniqueness lost while disabled, serial KMS calls, unguarded down-migration",
+    "sourceWindowId": "CLOSED-20260707-20260711",
+    "prNumbers": [
+      3196
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4890551465,
+      4903970856
+    ],
+    "learning": "The email-encryption rollout initially dropped the plaintext unique index unconditionally (two concurrent inserts of the same email could both succeed while the feature was off), decrypted list emails serially (O(N) KMS round-trips per members read), encrypted backfill rows serially inside a transaction holding `DISABLE TRIGGER USER`, threw unattributable decrypt errors, and had a `down()` that would explode on residual ciphertext. All fixed: complementary partial unique indexes so uniqueness holds in both modes, `Promise.all` for list decrypts, bounded-concurrency encrypt outside the transaction, `userId` in decrypt errors, and a guarded reverse migration. When a flag switches storage format, every invariant (uniqueness, error attribution, migration reversibility) must hold in both modes, and independent KMS calls are parallelized.",
+    "ruleIds": [
+      "DB-01",
+      "PERF-01"
+    ]
   }
 ]
