@@ -114,7 +114,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/flaky-tests"
           list_prs() {
             out="$RUNNER_TEMP/flaky-tests/$2"
-            gh pr list --state "$1" --limit 200 --json number,title,headRefName \
+            gh pr list --state "$1" --limit 200 --json number,title,headRefName,body \
               --jq '[.[] | select(.headRefName | startswith("flaky-fix/"))]' > "$out"
             for num in $(jq -r '.[].number' "$out"); do
               files=$(gh pr view "$num" --json files --jq '[.files[].path]')
@@ -164,8 +164,10 @@ jobs:
 
             Steps:
             1. Pick exactly ONE test file: status "open", is_cascade false,
-               fix_pr null, and not among the changed files of any PR in
-               open-fix-prs.json or merged-fix-prs.json. Prefer the highest
+               fix_pr null, and not already covered by any PR in
+               open-fix-prs.json or merged-fix-prs.json — covered means the
+               test file appears in the PR's changed files OR in a
+               `Flaky-Test:` line in its body. Prefer the highest
                failure_count. Multiple fix PRs may be open at once; one PR
                per test, never a duplicate for the same test. If no file
                qualifies, print the reason and stop — open no PR and push
@@ -188,8 +190,12 @@ jobs:
                to main) and open a DRAFT pull request against main. Title:
                `fix(tests): <what was fixed>`. Body: a `## Summary` section
                with bullets covering the observed flaky failure, the root
-               cause, and the fix, and a `## Verification` section stating how
-               many consecutive local runs passed.
+               cause, and the fix, a `## Verification` section stating how
+               many consecutive local runs passed, and — on its own line,
+               exactly this format — `Flaky-Test: <path of the flaky test
+               file>`. This marker links the PR to the test in the flaky
+               report and prevents duplicate fixes, and it matters most when
+               the fix does not change the test file itself.
             6. Write the PR number (digits only, nothing else) to
                ${{ runner.temp }}/pr-number, and the exact single-run command
                for the fixed test (e.g. `yarn test:unit src/.../foo.spec.ts`)
@@ -234,7 +240,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-fable-5 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             Follow the instructions in .github/prompts/flaky-fix-address.md
             for PR #${{ steps.fixpr.outputs.number }}.
@@ -266,7 +272,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-fable-5 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             Follow the instructions in .github/prompts/flaky-fix-address.md
             for PR #${{ steps.fixpr.outputs.number }}.
@@ -298,7 +304,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-fable-5 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             Follow the instructions in .github/prompts/flaky-fix-address.md
             for PR #${{ steps.fixpr.outputs.number }}. This was the final
