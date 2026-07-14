@@ -76,7 +76,7 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('create', () => {
-    it('encrypts addresses and computes blind indexes before insert, and reuses the ciphertext in the audit payload', async () => {
+    it('encrypts addresses and computes blind indexes before insert, and records the plaintext in the audit payload', async () => {
       const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
       const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
@@ -108,7 +108,7 @@ describe('SpaceSafesRepository', () => {
         expect.objectContaining({
           eventType: 'SAFE_ADDED',
           payload: {
-            safes: [{ chainId, address: encryptedAddress }],
+            safes: [{ chainId, address }],
           },
         }),
       );
@@ -226,7 +226,7 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('delete', () => {
-    it('looks up by blind index alone when a key is configured and audits the stored values', async () => {
+    it('looks up by blind index alone when a key is configured and audits the decrypted values', async () => {
       const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
       const addressIndex = faker.string.hexadecimal({ length: 32 });
@@ -237,6 +237,9 @@ describe('SpaceSafesRepository', () => {
         address: `kms:v1:${faker.string.alphanumeric(16)}`,
       };
       entityManager.find.mockResolvedValue([row]);
+      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue([
+        { chainId, address },
+      ]);
 
       await target.delete({
         spaceId,
@@ -248,11 +251,14 @@ describe('SpaceSafesRepository', () => {
         where: [{ space: { id: spaceId }, chainId, addressIndex }],
       });
       expect(entityManager.remove).toHaveBeenCalledExactlyOnceWith([row]);
+      expect(
+        spaceEncryptionService.decryptSpaceSafes,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, [row]);
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_REMOVED',
-          payload: { safes: [{ chainId, address: row.address }] },
+          payload: { safes: [{ chainId, address }] },
         }),
       );
     });

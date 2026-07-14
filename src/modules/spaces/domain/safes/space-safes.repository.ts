@@ -115,10 +115,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
         eventType: SpaceAuditEventType.SAFE_ADDED,
         actorUserId: args.actorUserId,
         payload: {
-          // Reuses the ciphertext written to the source rows (plaintext when
-          // encryption is disabled); the audit reader decrypts it under the
-          // same space-scoped context.
-          safes: safesToInsert.map((safe) => ({
+          safes: args.payload.map((safe) => ({
             chainId: safe.chainId,
             address: safe.address,
           })),
@@ -240,13 +237,19 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
         entityManager,
         args.spaceId,
       );
+
+      const decryptedSafes =
+        await this.spaceEncryptionService.decryptSpaceSafes(
+          args.spaceId,
+          spaceSafes,
+        );
       await this.spaceAuditRepository.record(entityManager, {
         spaceId: space.id,
         spaceUuid: space.uuid,
         eventType: SpaceAuditEventType.SAFE_REMOVED,
         actorUserId: args.actorUserId,
         payload: {
-          safes: spaceSafes.map((safe) => ({
+          safes: decryptedSafes.map((safe) => ({
             chainId: safe.chainId,
             address: safe.address,
           })),

@@ -30,7 +30,7 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
       `ALTER TABLE "wallets" ADD COLUMN "address_index" text`,
     );
     await queryRunner.query(
-      `ALTER TABLE "wallets" DROP CONSTRAINT "UQ_wallet_address"`,
+      `ALTER TABLE "wallets" DROP CONSTRAINT IF EXISTS "UQ_wallet_address"`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_wallet_address_plain" ON "wallets" ("address") WHERE "address_index" IS NULL`,
@@ -52,7 +52,7 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
       `ALTER TABLE "space_safes" ADD COLUMN "address_index" text`,
     );
     await queryRunner.query(
-      `ALTER TABLE "space_safes" DROP CONSTRAINT "UQ_SS_chainId_address_space"`,
+      `ALTER TABLE "space_safes" DROP CONSTRAINT IF EXISTS "UQ_SS_chainId_address_space"`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_SS_chainId_address_space_plain" ON "space_safes" ("chain_id", "address", "space_id") WHERE "address_index" IS NULL`,
@@ -72,7 +72,7 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
       `ALTER TABLE "space_address_book_items" ADD COLUMN "address_index" text`,
     );
     await queryRunner.query(
-      `ALTER TABLE "space_address_book_items" DROP CONSTRAINT "UQ_SABI_space_id_address"`,
+      `ALTER TABLE "space_address_book_items" DROP CONSTRAINT IF EXISTS "UQ_SABI_space_id_address"`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_SABI_space_id_address_plain" ON "space_address_book_items" ("space_id", "address") WHERE "address_index" IS NULL`,
@@ -92,7 +92,7 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
       `ALTER TABLE "address_book_requests" ADD COLUMN "address_index" text`,
     );
     await queryRunner.query(
-      `DROP INDEX "UQ_ABR_space_requester_address_pending"`,
+      `DROP INDEX IF EXISTS "UQ_ABR_space_requester_address_pending"`,
     );
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_ABR_space_requester_address_pending_plain" ON "address_book_requests" ("space_id", "requested_by", "address") WHERE "status" = 0 AND "address_index" IS NULL`,
@@ -108,7 +108,7 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "members" ALTER COLUMN "alias" TYPE text`,
     );
-    await queryRunner.query(`DROP INDEX "idx_members_name"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "idx_members_name"`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
@@ -144,7 +144,7 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
 
     // address_book_requests
     await queryRunner.query(
-      `DROP INDEX "UQ_ABR_space_requester_address_index_pending"`,
+      `DROP INDEX IF EXISTS "UQ_ABR_space_requester_address_index_pending"`,
     );
     await queryRunner.query(
       `DROP INDEX "UQ_ABR_space_requester_address_pending_plain"`,
@@ -163,8 +163,12 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
     );
 
     // space_address_book_items
-    await queryRunner.query(`DROP INDEX "UQ_SABI_space_id_address_index"`);
-    await queryRunner.query(`DROP INDEX "UQ_SABI_space_id_address_plain"`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "UQ_SABI_space_id_address_index"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "UQ_SABI_space_id_address_plain"`,
+    );
     await queryRunner.query(
       `ALTER TABLE "space_address_book_items" DROP COLUMN "address_index"`,
     );
@@ -179,10 +183,14 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
     );
 
     // space_safes
-    await queryRunner.query(`DROP INDEX "UQ_SS_chainId_addressIndex_space"`);
-    await queryRunner.query(`DROP INDEX "UQ_SS_chainId_address_space_plain"`);
     await queryRunner.query(
-      `ALTER TABLE "space_safes" DROP COLUMN "address_index"`,
+      `DROP INDEX IF EXISTS "UQ_SS_chainId_addressIndex_space"`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS "UQ_SS_chainId_address_space_plain"`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "space_safes" DROP COLUMN IF EXISTS "address_index"`,
     );
     await queryRunner.query(
       `ALTER TABLE "space_safes" ADD CONSTRAINT "UQ_SS_chainId_address_space" UNIQUE ("chain_id", "address", "space_id")`,
@@ -197,10 +205,10 @@ export class SpaceFieldEncryption1781700000000 implements MigrationInterface {
     );
 
     // wallets
-    await queryRunner.query(`DROP INDEX "UQ_wallet_address_index"`);
-    await queryRunner.query(`DROP INDEX "UQ_wallet_address_plain"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "UQ_wallet_address_index"`);
+    await queryRunner.query(`DROP INDEX IF EXISTS "UQ_wallet_address_plain"`);
     await queryRunner.query(
-      `ALTER TABLE "wallets" DROP COLUMN "address_index"`,
+      `ALTER TABLE "wallets" DROP COLUMN IF EXISTS "address_index"`,
     );
     await queryRunner.query(
       `ALTER TABLE "wallets" ADD CONSTRAINT "UQ_wallet_address" UNIQUE ("address")`,

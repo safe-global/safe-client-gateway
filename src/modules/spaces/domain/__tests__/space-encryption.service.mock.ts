@@ -47,12 +47,11 @@ export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryption
       (_spaceId: number, requests: Array<{ address: string; name: string }>) =>
         Promise.resolve(requests),
     ),
-    decryptAuditPayload: vi.fn(
-      (
-        _spaceId: number,
-        _eventType: string,
-        payload: Record<string, unknown>,
-      ) => Promise.resolve(payload),
+    encryptAuditPayload: vi.fn((_spaceId: number, payload: unknown) =>
+      Promise.resolve(JSON.stringify(payload)),
+    ),
+    decryptAuditPayload: vi.fn((_spaceId: number, payload: string) =>
+      Promise.resolve(JSON.parse(payload)),
     ),
   } as MockedObject<SpaceEncryptionService>;
 }

@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 
 /**
  * Space-scoped field-encryption policy for the spaces module: space names,
@@ -131,65 +130,35 @@ export class SpaceEncryptionService {
   }
 
   /**
-   * Returns a copy of an audit payload with every encrypted member decrypted
-   * under the row's space scope. Writers put the source row's ciphertext into
-   * payloads, and encryption contexts are space-scoped with no row ids, so
-   * `spaceId` alone reconstructs every context. Plaintext members (written
-   * while encryption was disabled) pass through unchanged inside
+   * Encrypts an entire audit payload as one blob: the payload is serialized to
+   * JSON and encrypted under the row's space scope. Returns the plaintext JSON
+   * unchanged when encryption is disabled ({@link KmsEncryptionService}).
+   */
+  async encryptAuditPayload(
+    spaceId: number,
+    payload: unknown,
+  ): Promise<string> {
+    return await this.kmsEncryption.encrypt(
+      JSON.stringify(payload),
+      this.context(spaceId),
+    );
+  }
+
+  /**
+   * Reverse of {@link encryptAuditPayload}: decrypts the blob under the row's
+   * space scope and parses it back to the payload object. Plaintext JSON
+   * (written while encryption was disabled) passes through unchanged inside
    * {@link KmsEncryptionService.decrypt}.
    */
   async decryptAuditPayload(
     spaceId: number,
-    eventType: string,
-    payload: Record<string, unknown>,
-  ): Promise<Record<string, unknown>> {
-    switch (eventType) {
-      case SpaceAuditEventType.SPACE_CREATED:
-      case SpaceAuditEventType.SPACE_DELETED:
-        return {
-          ...payload,
-          ...(typeof payload.name === 'string' && {
-            name: await this.decryptSpaceName(spaceId, payload.name),
-          }),
-        };
-      case SpaceAuditEventType.SPACE_UPDATED:
-        return {
-          ...payload,
-          old: await this.decryptSpaceFieldsMember(spaceId, payload.old),
-          new: await this.decryptSpaceFieldsMember(spaceId, payload.new),
-        };
-      case SpaceAuditEventType.SAFE_ADDED:
-      case SpaceAuditEventType.SAFE_REMOVED:
-        return {
-          ...payload,
-          safes: await this.decryptPayloadEntries(spaceId, payload.safes),
-        };
-      case SpaceAuditEventType.ADDRESS_BOOK_UPSERTED:
-        return {
-          ...payload,
-          created: await this.decryptPayloadEntries(spaceId, payload.created),
-          updated: await this.decryptPayloadEntries(spaceId, payload.updated),
-        };
-      case SpaceAuditEventType.ADDRESS_BOOK_DELETED:
-        return {
-          ...payload,
-          ...(typeof payload.address === 'string' && {
-            address: await this.kmsEncryption.decrypt(
-              payload.address,
-              this.context(spaceId),
-            ),
-          }),
-          ...(typeof payload.name === 'string' && {
-            name: await this.kmsEncryption.decrypt(
-              payload.name,
-              this.context(spaceId),
-            ),
-          }),
-        };
-      default:
-        // Member events carry user ids, never encrypted values.
-        return payload;
-    }
+    payload: string,
+  ): Promise<unknown> {
+    const json = await this.kmsEncryption.decrypt(
+      payload,
+      this.context(spaceId),
+    );
+    return JSON.parse(json);
   }
 
   /** Decrypts the address+name members of a list of entries, per entry. */
@@ -207,55 +176,6 @@ export class SpaceEncryptionService {
           ...entry,
           address,
           name,
-        };
-      }),
-    );
-  }
-
-  /** Decrypts the optional `name` member of a SPACE_UPDATED old/new object. */
-  private async decryptSpaceFieldsMember(
-    spaceId: number,
-    fields: unknown,
-  ): Promise<unknown> {
-    if (fields === null || typeof fields !== 'object') {
-      return fields;
-    }
-    const record = fields as Record<string, unknown>;
-    return {
-      ...record,
-      ...(typeof record.name === 'string' && {
-        name: await this.decryptSpaceName(spaceId, record.name),
-      }),
-    };
-  }
-
-  private async decryptPayloadEntries(
-    spaceId: number,
-    entries: unknown,
-  ): Promise<unknown> {
-    if (!Array.isArray(entries)) {
-      return entries;
-    }
-    return await Promise.all(
-      entries.map(async (entry: unknown) => {
-        if (entry === null || typeof entry !== 'object') {
-          return entry;
-        }
-        const record = entry as Record<string, unknown>;
-        return {
-          ...record,
-          ...(typeof record.address === 'string' && {
-            address: await this.kmsEncryption.decrypt(
-              record.address,
-              this.context(spaceId),
-            ),
-          }),
-          ...(typeof record.name === 'string' && {
-            name: await this.kmsEncryption.decrypt(
-              record.name,
-              this.context(spaceId),
-            ),
-          }),
         };
       }),
     );

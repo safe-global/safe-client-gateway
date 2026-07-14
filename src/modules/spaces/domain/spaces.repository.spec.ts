@@ -135,12 +135,13 @@ describe('SpacesRepository', () => {
       expect(entityManager.update).toHaveBeenCalledWith(Member, memberId, {
         name: encryptedMemberName,
       });
-      // The audit payload reuses the ciphertext written to the row.
+      // The audit payload carries the plaintext name (encrypted as a whole
+      // blob by the audit repository).
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_CREATED',
-          payload: { name: encryptedSpaceName },
+          payload: { name },
         }),
       );
     });
@@ -193,11 +194,11 @@ describe('SpacesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_UPDATED',
-          // old: the previously stored ciphertext; new: the newly written
-          // ciphertext — no extra KMS calls (contract pattern 5).
+          // Plaintext old/new names — the decrypted stored name and the
+          // incoming name; the audit payload is encrypted as a whole blob.
           payload: {
-            old: { name: storedCiphertext },
-            new: { name: newCiphertext },
+            old: { name: decryptedName },
+            new: { name: newName },
           },
         }),
       );
@@ -264,24 +265,28 @@ describe('SpacesRepository', () => {
   });
 
   describe('delete', () => {
-    it('records the stored (possibly ciphertext) name in the SPACE_DELETED payload without extra KMS calls', async () => {
+    it('records the decrypted name in the SPACE_DELETED payload', async () => {
       const storedCiphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const decryptedName = faker.lorem.words();
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
         name: storedCiphertext,
       });
+      spaceEncryptionService.decryptSpaceName.mockResolvedValue(decryptedName);
 
       await target.delete({ id: spaceId, actorUserId: userId });
 
+      expect(
+        spaceEncryptionService.decryptSpaceName,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, storedCiphertext);
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_DELETED',
-          payload: { name: storedCiphertext },
+          payload: { name: decryptedName },
         }),
       );
-      expect(spaceEncryptionService.decryptSpaceName).not.toHaveBeenCalled();
       expect(entityManager.delete).toHaveBeenCalledWith(Space, spaceId);
     });
   });

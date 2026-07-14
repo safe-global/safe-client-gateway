@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'node:crypto';
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import type {
-  SpaceAuditEventPayload,
-  SpaceAuditEventType,
-} from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import type { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 
 /**
  * Append-only audit log of space mutations. Rows are immutable — the table
@@ -37,8 +34,8 @@ export class SpaceAuditLog {
   @Column({ name: 'actor_user_id', type: 'integer', update: false })
   actorUserId!: number;
 
-  @Column({ type: 'jsonb', default: {}, update: false })
-  payload!: SpaceAuditEventPayload;
+  @Column({ type: 'text', update: false })
+  payload!: string;
 
   @Column({
     name: 'created_at',

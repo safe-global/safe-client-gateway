@@ -127,6 +127,7 @@ describe('SpaceAuditRepository', () => {
     spaceAuditRepository = new SpaceAuditRepository(
       postgresDatabaseService,
       mockConfigurationService,
+      createMockSpaceEncryptionService(),
     );
     spacesRepository = new SpacesRepository(
       postgresDatabaseService,
@@ -254,7 +255,7 @@ describe('SpaceAuditRepository', () => {
         eventType: 'SPACE_CREATED',
         actorUserId: adminUserId,
       });
-      expect(rows[0].payload).toHaveProperty('name');
+      expect(JSON.parse(rows[0].payload)).toHaveProperty('name');
     });
 
     it('should record MEMBER_ROLE_UPDATED with old and new role', async () => {
@@ -275,7 +276,7 @@ describe('SpaceAuditRepository', () => {
       });
       expect(rows).toHaveLength(1);
       expect(rows[0].actorUserId).toBe(adminUserId);
-      expect(rows[0].payload).toStrictEqual({
+      expect(JSON.parse(rows[0].payload)).toStrictEqual({
         targetUserId: invitee.userId,
         oldRole: 'MEMBER',
         newRole: 'ADMIN',
@@ -351,7 +352,7 @@ describe('SpaceAuditRepository', () => {
       expect(timestamps.size).toBe(1);
       for (const row of rows) {
         expect(row.actorUserId).toBe(adminUserId);
-        expect(row.payload).toMatchObject({ role: 'MEMBER' });
+        expect(JSON.parse(row.payload)).toMatchObject({ role: 'MEMBER' });
       }
     });
 
@@ -392,7 +393,7 @@ describe('SpaceAuditRepository', () => {
       });
       expect(rowsA).toHaveLength(1);
       expect(rowsA[0].actorUserId).toBe(invitee.userId);
-      expect(rowsA[0].payload).toStrictEqual({
+      expect(JSON.parse(rowsA[0].payload)).toStrictEqual({
         targetUserId: invitee.userId,
         accountDeleted: true,
       });
@@ -644,6 +645,7 @@ describe('SpaceAuditRepository', () => {
       const disabledRepository = new SpaceAuditRepository(
         postgresDatabaseService,
         disabledConfigurationService,
+        createMockSpaceEncryptionService(),
       );
 
       await postgresDatabaseService.transaction(async (entityManager) => {

@@ -114,7 +114,7 @@ export class SpacesRepository implements ISpacesRepository {
           spaceUuid: insertResult.uuid,
           eventType: SpaceAuditEventType.SPACE_CREATED,
           actorUserId: args.userId,
-          payload: { name: encryptedName },
+          payload: { name: args.name },
         });
 
         return {
@@ -282,7 +282,6 @@ export class SpacesRepository implements ISpacesRepository {
           current,
           currentName,
           updatePayload: args.updatePayload,
-          writtenName: encryptedName,
         });
         if (diff) {
           await this.spaceAuditRepository.record(entityManager, {
@@ -299,26 +298,24 @@ export class SpacesRepository implements ISpacesRepository {
     );
   }
 
-  /** Changed `name`/`status` fields of a space update, or `null` for a no-op. */
+  /**
+   * Changed `name`/`status` fields of a space update, or `null` for a no-op.
+   * Names are the plaintext values — the audit payload is encrypted as a whole
+   * blob by the audit repository.
+   */
   private diffSpaceUpdate(args: {
-    current: Pick<Space, 'name' | 'status'>;
+    current: Pick<Space, 'status'>;
     /** The stored name decrypted, for the plaintext comparison. */
     currentName: string;
     updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
-    /** The name value as written (ciphertext when encryption is enabled). */
-    writtenName?: string;
   }): SpaceUpdatedPayload | null {
     const { name, status } = args.updatePayload;
     const oldFields: SpaceUpdatedPayload['old'] = {};
     const newFields: SpaceUpdatedPayload['new'] = {};
 
-    if (
-      name !== undefined &&
-      name !== args.currentName &&
-      args.writtenName !== undefined
-    ) {
-      oldFields.name = args.current.name;
-      newFields.name = args.writtenName;
+    if (name !== undefined && name !== args.currentName) {
+      oldFields.name = args.currentName;
+      newFields.name = name;
     }
     if (status !== undefined && status !== args.current.status) {
       oldFields.status = args.current.status;
@@ -362,12 +359,16 @@ export class SpacesRepository implements ISpacesRepository {
         throw new NotFoundException('Workspace not found.');
       }
 
+      const name = await this.spaceEncryptionService.decryptSpaceName(
+        space.id,
+        space.name,
+      );
       await this.spaceAuditRepository.record(entityManager, {
         spaceId: space.id,
         spaceUuid: space.uuid,
         eventType: SpaceAuditEventType.SPACE_DELETED,
         actorUserId: args.actorUserId,
-        payload: { name: space.name },
+        payload: { name },
       });
 
       await entityManager.delete(Space, space.id);

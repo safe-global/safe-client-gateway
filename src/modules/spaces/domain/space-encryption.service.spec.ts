@@ -283,160 +283,58 @@ describe('SpaceEncryptionService', () => {
     });
   });
 
-  describe('decryptAuditPayload', () => {
-    it('decrypts SPACE_CREATED and SPACE_DELETED names under the space scope', async () => {
-      const createdName = ciphertext();
-      const deletedName = ciphertext();
-
-      await expect(
-        target.decryptAuditPayload(spaceId, 'SPACE_CREATED', {
-          name: createdName,
-        }),
-      ).resolves.toStrictEqual({ name: `dec:${createdName}` });
-      await expect(
-        target.decryptAuditPayload(spaceId, 'SPACE_DELETED', {
-          name: deletedName,
-        }),
-      ).resolves.toStrictEqual({ name: `dec:${deletedName}` });
-      expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
-        1,
-        createdName,
-        { spaceId: String(spaceId) },
-      );
-      expect(fieldCryptoService.decrypt).toHaveBeenNthCalledWith(
-        2,
-        deletedName,
-        { spaceId: String(spaceId) },
-      );
-    });
-
-    it('decrypts SPACE_UPDATED old/new names, leaving status members untouched', async () => {
-      const oldName = ciphertext();
-      const newName = ciphertext();
-      const status = faker.lorem.word();
-
-      await expect(
-        target.decryptAuditPayload(spaceId, 'SPACE_UPDATED', {
-          old: { name: oldName, status },
-          new: { name: newName, status },
-        }),
-      ).resolves.toStrictEqual({
-        old: { name: `dec:${oldName}`, status },
-        new: { name: `dec:${newName}`, status },
-      });
-    });
-
-    it('passes a status-only SPACE_UPDATED diff through without decrypting', async () => {
-      const status = faker.lorem.word();
-      const payload = { old: { status }, new: { status } };
-
-      await expect(
-        target.decryptAuditPayload(spaceId, 'SPACE_UPDATED', payload),
-      ).resolves.toStrictEqual(payload);
-      expect(fieldCryptoService.decrypt).not.toHaveBeenCalled();
-    });
-
-    it('decrypts SAFE_ADDED and SAFE_REMOVED addresses under the space scope', async () => {
+  describe('audit payload', () => {
+    it('encryptAuditPayload serializes and encrypts the whole payload under the space scope', async () => {
       const payload = {
         safes: [
-          { chainId: faker.string.numeric(), address: ciphertext() },
-          { chainId: faker.string.numeric(), address: ciphertext() },
+          {
+            chainId: faker.string.numeric(),
+            address: faker.finance.ethereumAddress(),
+          },
         ],
       };
 
-      await expect(
-        target.decryptAuditPayload(spaceId, 'SAFE_ADDED', payload),
-      ).resolves.toStrictEqual({
-        safes: [
-          {
-            chainId: payload.safes[0].chainId,
-            address: `dec:${payload.safes[0].address}`,
-          },
-          {
-            chainId: payload.safes[1].chainId,
-            address: `dec:${payload.safes[1].address}`,
-          },
-        ],
-      });
-      await expect(
-        target.decryptAuditPayload(spaceId, 'SAFE_REMOVED', payload),
-      ).resolves.toStrictEqual({
-        safes: [
-          {
-            chainId: payload.safes[0].chainId,
-            address: `dec:${payload.safes[0].address}`,
-          },
-          {
-            chainId: payload.safes[1].chainId,
-            address: `dec:${payload.safes[1].address}`,
-          },
-        ],
-      });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        payload.safes[0].address,
+      await expect(target.encryptAuditPayload(spaceId, payload)).resolves.toBe(
+        `enc:${JSON.stringify(payload)}`,
+      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
+        JSON.stringify(payload),
         { spaceId: String(spaceId) },
       );
     });
 
-    it('decrypts ADDRESS_BOOK_UPSERTED created and updated entries under the space scope', async () => {
-      const created = [{ address: ciphertext(), name: ciphertext() }];
-      const updated = [{ address: ciphertext(), name: ciphertext() }];
-      const onBehalfOfUserId = faker.number.int({ min: 1, max: 100_000 });
+    it('decryptAuditPayload decrypts and parses the whole payload under the space scope', async () => {
+      const payload = {
+        old: { name: faker.word.noun() },
+        new: { name: faker.word.noun() },
+      };
+      const value = ciphertext();
+      fieldCryptoService.decrypt.mockResolvedValue(JSON.stringify(payload));
 
       await expect(
-        target.decryptAuditPayload(spaceId, 'ADDRESS_BOOK_UPSERTED', {
-          created,
-          updated,
-          onBehalfOfUserId,
-        }),
-      ).resolves.toStrictEqual({
-        created: [
-          {
-            address: `dec:${created[0].address}`,
-            name: `dec:${created[0].name}`,
-          },
-        ],
-        updated: [
-          {
-            address: `dec:${updated[0].address}`,
-            name: `dec:${updated[0].name}`,
-          },
-        ],
-        onBehalfOfUserId,
-      });
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(
-        created[0].address,
-        { spaceId: String(spaceId) },
+        target.decryptAuditPayload(spaceId, value),
+      ).resolves.toStrictEqual(payload);
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
+        value,
+        {
+          spaceId: String(spaceId),
+        },
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(updated[0].name, {
-        spaceId: String(spaceId),
-      });
     });
 
-    it('decrypts ADDRESS_BOOK_DELETED address and name', async () => {
-      const address = ciphertext();
-      const name = ciphertext();
-
-      await expect(
-        target.decryptAuditPayload(spaceId, 'ADDRESS_BOOK_DELETED', {
-          address,
-          name,
-        }),
-      ).resolves.toStrictEqual({
-        address: `dec:${address}`,
-        name: `dec:${name}`,
-      });
-    });
-
-    it('returns member events untouched without any decrypt call', async () => {
+    it('round-trips a payload through encrypt then decrypt', async () => {
       const payload = {
         targetUserId: faker.number.int({ min: 1, max: 100_000 }),
       };
+      // Untag what the encrypt fake tagged, for a real round-trip.
+      fieldCryptoService.decrypt.mockImplementation((value: string) =>
+        Promise.resolve(value.replace(/^enc:/, '')),
+      );
 
+      const encrypted = await target.encryptAuditPayload(spaceId, payload);
       await expect(
-        target.decryptAuditPayload(spaceId, 'MEMBER_INVITED', payload),
+        target.decryptAuditPayload(spaceId, encrypted),
       ).resolves.toStrictEqual(payload);
-      expect(fieldCryptoService.decrypt).not.toHaveBeenCalled();
     });
   });
 });

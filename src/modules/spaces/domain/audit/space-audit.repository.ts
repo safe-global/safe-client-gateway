@@ -17,6 +17,7 @@ import type {
   SpaceAuditFindArgs,
   SpaceAuditRecordArgs,
 } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
 export class SpaceAuditRepository implements ISpaceAuditRepository {
@@ -27,6 +28,8 @@ export class SpaceAuditRepository implements ISpaceAuditRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {
     this.isEnabled = this.configurationService.getOrThrow<boolean>(
       'features.spaceAuditLog',
@@ -47,12 +50,17 @@ export class SpaceAuditRepository implements ISpaceAuditRepository {
       payload: args.payload,
     });
 
+    const payload = await this.spaceEncryptionService.encryptAuditPayload(
+      args.spaceId,
+      event.payload,
+    );
+
     await entityManager.insert(SpaceAuditLog, {
       spaceId: args.spaceId,
       spaceUuid: args.spaceUuid,
       eventType: event.eventType,
       actorUserId: args.actorUserId,
-      payload: event.payload,
+      payload,
     });
   }
 

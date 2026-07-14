@@ -156,13 +156,18 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
 
       await entityManager.delete(DbAddressBookItem, item.id);
 
+      // Row carries ciphertext; decrypt to plaintext for the payload (the audit
+      // repository encrypts the whole payload as one blob).
+      const [decrypted] =
+        await this.spaceEncryptionService.decryptAddressBookItems(space.id, [
+          item,
+        ]);
       await this.spaceAuditRepository.record(entityManager, {
         spaceId: space.id,
         spaceUuid: space.uuid,
         eventType: SpaceAuditEventType.ADDRESS_BOOK_DELETED,
         actorUserId: userId,
-        // Pattern 5: the row's stored (ciphertext) values.
-        payload: { address: item.address, name: item.name },
+        payload: { address: decrypted.address, name: decrypted.name },
       });
     });
   }
@@ -188,8 +193,8 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
 
   /**
    * @returns each updated row as `{ address }` (plaintext, for the new-items
-   * filter) plus `{ audit }` (the ciphertext written to the row, for the audit
-   * payload — contract pattern 5).
+   * filter) plus `{ audit }` (the plaintext `{ address, name }` for the audit
+   * payload, which is encrypted as a whole blob by the audit repository).
    */
   private async updateExistingAddressBookItems(args: {
     userId: number;
@@ -255,15 +260,16 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       updated.push({
         address: patch.address,
         audit: {
-          address: encrypted.address as AddressBookItem['address'],
-          name: encrypted.name,
+          address: patch.address,
+          name: patch.name,
         },
       });
     }
     return updated;
   }
 
-  /** @returns the ciphertext `{ address, name }` written to the new rows. */
+  /** @returns the plaintext `{ address, name }` of the new rows, for the audit
+   * payload (encrypted as a whole blob by the audit repository). */
   private async createNewAddressBookItems(args: {
     userId: number;
     addressBookItems: Array<AddressBookItem>;
@@ -297,10 +303,9 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
         lastUpdatedBy: args.userId,
       })),
     );
-    // Pattern 5: audit carries the ciphertext written to the rows.
-    return encrypted.map((entry) => ({
-      address: entry.address as AddressBookItem['address'],
-      name: entry.name,
+    return args.addressBookItems.map((item) => ({
+      address: item.address,
+      name: item.name,
     }));
   }
 

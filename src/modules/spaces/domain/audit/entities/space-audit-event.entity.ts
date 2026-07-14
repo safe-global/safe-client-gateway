@@ -36,15 +36,6 @@ export const SpaceAuditEventTypeSchema = z.enum(
   getStringEnumKeys(SpaceAuditEventType),
 );
 
-/**
- * A KMS field-encryption ciphertext (`kms:v1:<base64url>`). Audit payloads carry
- * the source row's stored value, which is ciphertext once field encryption is
- * enabled (contract pattern 5), so address members accept it alongside a
- * plaintext checksummed address. Name members are already `z.string()`.
- */
-const KmsCiphertextSchema = z.string().regex(/^kms:v1:[A-Za-z0-9_-]+$/);
-const AuditAddressSchema = z.union([AddressSchema, KmsCiphertextSchema]);
-
 const UserIdSchema = z.number().int().positive();
 
 const SpaceFieldsSchema = z.object({
@@ -54,11 +45,11 @@ const SpaceFieldsSchema = z.object({
 
 const SpaceSafeSchema = z.object({
   chainId: NumericStringSchema,
-  address: AuditAddressSchema,
+  address: AddressSchema,
 });
 
 const AddressBookEntrySchema = z.object({
-  address: AuditAddressSchema,
+  address: AddressSchema,
   name: z.string(),
 });
 
@@ -153,7 +144,7 @@ export const AddressBookUpsertedEventSchema = z.object({
 export const AddressBookDeletedEventSchema = z.object({
   eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_DELETED),
   payload: z.object({
-    address: AuditAddressSchema,
+    address: AddressSchema,
     name: z.string(),
   }),
 });

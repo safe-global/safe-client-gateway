@@ -74,11 +74,18 @@ export class SpaceAuditService {
       ...args.filters,
     });
 
+    const decoded = await Promise.all(
+      rows.map(async (row) => ({
+        row,
+        payload: await this.decodePayload(args.spaceId, row),
+      })),
+    );
+
     const display = await this.buildDisplayResolver({
       spaceId: args.spaceId,
       viewerIsActiveAdmin,
-      subjectIds: rows.flatMap((row) => {
-        const targetUserId = getTargetUserId(row.payload);
+      subjectIds: decoded.flatMap(({ row, payload }) => {
+        const targetUserId = getTargetUserId(payload);
         return targetUserId === null
           ? [row.actorUserId]
           : [row.actorUserId, targetUserId];
@@ -89,8 +96,8 @@ export class SpaceAuditService {
       count,
       next: buildNextPageURL(normalizedUrl, count)?.toString() ?? null,
       previous: buildPreviousPageURL(normalizedUrl)?.toString() ?? null,
-      results: await Promise.all(
-        rows.map((row) => this.toEntryDto(args.spaceId, row, display)),
+      results: decoded.map(({ row, payload }) =>
+        this.toEntryDto(row, payload, display),
       ),
     };
   }
@@ -172,17 +179,35 @@ export class SpaceAuditService {
     return new Set(members.map((member) => member.user.id));
   }
 
-  private async toEntryDto(
+  /**
+   * Decrypts a row's payload blob, then re-parses it against the taxonomy.
+   * Rows that fail to decrypt, parse or validate degrade to an empty payload.
+   */
+  private async decodePayload(
     spaceId: Space['id'],
     row: SpaceAuditLog,
+  ): Promise<Record<string, unknown>> {
+    try {
+      const payload = await this.spaceEncryptionService.decryptAuditPayload(
+        spaceId,
+        row.payload,
+      );
+      const result = SpaceAuditEventSchema.safeParse({
+        eventType: row.eventType,
+        payload,
+      });
+      return result.success ? result.data.payload : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private toEntryDto(
+    row: SpaceAuditLog,
+    payload: Record<string, unknown>,
     display: (userId: number) => string,
-  ): Promise<SpaceAuditLogEntryDto> {
-    const targetUserId = getTargetUserId(row.payload);
-    const payload = await this.spaceEncryptionService.decryptAuditPayload(
-      spaceId,
-      row.eventType,
-      allowlistPayload(row),
-    );
+  ): SpaceAuditLogEntryDto {
+    const targetUserId = getTargetUserId(payload);
     return {
       id: row.id,
       eventType: row.eventType,
@@ -195,18 +220,8 @@ export class SpaceAuditService {
   }
 }
 
-function getTargetUserId(payload: SpaceAuditLog['payload']): number | null {
+function getTargetUserId(payload: Record<string, unknown>): number | null {
   return 'targetUserId' in payload && typeof payload.targetUserId === 'number'
     ? payload.targetUserId
     : null;
-}
-
-// Payloads are re-parsed against the taxonomy at read time; rows that no
-// longer parse degrade to an empty payload.
-function allowlistPayload(row: SpaceAuditLog): Record<string, unknown> {
-  const result = SpaceAuditEventSchema.safeParse({
-    eventType: row.eventType,
-    payload: row.payload,
-  });
-  return result.success ? result.data.payload : {};
 }

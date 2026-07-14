@@ -107,7 +107,7 @@ describe('AddressBookItemsRepository', () => {
   });
 
   describe('upsertMany', () => {
-    it('encrypts new items before insert and records ciphertext in the audit payload', async () => {
+    it('encrypts new items before insert and records the plaintext in the audit payload', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'Alice';
       const chainIds = ['1'];
@@ -141,14 +141,14 @@ describe('AddressBookItemsRepository', () => {
         expect.objectContaining({
           eventType: 'ADDRESS_BOOK_UPSERTED',
           payload: expect.objectContaining({
-            created: [{ address: 'kms:v1:addr', name: 'kms:v1:name' }],
+            created: [{ address, name }],
             updated: [],
           }),
         }),
       );
     });
 
-    it('matches an existing encrypted row by blind index, re-encrypts, and audits ciphertext', async () => {
+    it('matches an existing encrypted row by blind index, re-encrypts, and audits the plaintext', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'New name';
       const chainIds = ['1'];
@@ -193,7 +193,7 @@ describe('AddressBookItemsRepository', () => {
         expect.objectContaining({
           payload: expect.objectContaining({
             created: [],
-            updated: [{ address: 'kms:v1:addr', name: 'kms:v1:name' }],
+            updated: [{ address, name }],
           }),
         }),
       );
@@ -222,14 +222,15 @@ describe('AddressBookItemsRepository', () => {
   });
 
   describe('deleteByAddress', () => {
-    it('deletes via the blind-index lookup and audits the stored (ciphertext) values', async () => {
+    it('deletes via the blind-index lookup and audits the decrypted values', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
+      const name = 'Alice';
       spaceEncryptionService.itemAddressIndex.mockReturnValue('idx');
-      entityManager.findOne.mockResolvedValue({
-        id: 9,
-        address: 'kms:v1:a',
-        name: 'kms:v1:n',
-      });
+      const item = { id: 9, address: 'kms:v1:a', name: 'kms:v1:n' };
+      entityManager.findOne.mockResolvedValue(item);
+      spaceEncryptionService.decryptAddressBookItems.mockResolvedValue([
+        { id: 9, address, name },
+      ]);
 
       await target.deleteByAddress({ authPayload, spaceId, address });
 
@@ -243,11 +244,14 @@ describe('AddressBookItemsRepository', () => {
         DbAddressBookItem,
         9,
       );
+      expect(
+        spaceEncryptionService.decryptAddressBookItems,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, [item]);
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({
           eventType: 'ADDRESS_BOOK_DELETED',
-          payload: { address: 'kms:v1:a', name: 'kms:v1:n' },
+          payload: { address, name },
         }),
       );
     });
