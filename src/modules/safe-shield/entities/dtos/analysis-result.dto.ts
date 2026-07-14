@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { AnalysisResult, AnalysisStatus } from '../analysis-result.entity';
-import { Severity } from '../severity.entity';
+import type {
+  AnalysisResult,
+  AnalysisStatus,
+} from '@/modules/safe-shield/entities/analysis-result.entity';
+import { Severity } from '@/modules/safe-shield/entities/severity.entity';
 
 /**
  * Generic DTO for a single analysis result.

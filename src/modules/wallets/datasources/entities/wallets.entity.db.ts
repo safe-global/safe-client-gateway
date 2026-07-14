@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import { databaseAddressTransformer } from '@/domain/common/transformers/databaseAddress.transformer';
+import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import type { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
 
