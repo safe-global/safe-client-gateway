@@ -84,8 +84,8 @@ export function configureFastifyBodyParsers(
   const { bodyLimit, onConstructorPoisoning, onProtoPoisoning } =
     instance.initialConfig;
   const parseJson = instance.getDefaultJsonParser(
-    onProtoPoisoning || 'error',
-    onConstructorPoisoning || 'error',
+    onProtoPoisoning ?? 'error',
+    onConstructorPoisoning ?? 'error',
   );
 
   adapter.useBodyParser(

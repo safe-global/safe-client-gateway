@@ -144,6 +144,21 @@ describe('createFastifyAdapter', () => {
       .expect(400);
   });
 
+  // Guards the urlencoded re-registration in `configureFastifyBodyParsers`:
+  // `useBodyParser` suppresses ALL of Nest's default parsers, not just JSON,
+  // so dropping that block would silently 415 form-encoded requests.
+  it('still parses urlencoded bodies', async () => {
+    app = await createApp('0');
+
+    const { body } = await request(app.getHttpServer())
+      .post('/body-echo')
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .send('a=1&b=2')
+      .expect(200);
+
+    expect(body).toEqual({ parsed: { a: '1', b: '2' } });
+  });
+
   it('still rejects prototype-poisoning payloads', async () => {
     app = await createApp('0');
 
