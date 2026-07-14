@@ -68,7 +68,7 @@
     "amqplib": "2.0.1",
     "bullmq": "^5.79.2",
     "cache-manager": "7.2.8",
-    "csv-stringify": "^6.8.0",
+    "csv-stringify": "^6.8.1",
     "ecdsa-sig-formatter": "1.0.11",
     "jose": "6.2.3",
     "jsonwebtoken": "9.0.3",

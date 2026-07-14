@@ -4007,10 +4007,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csv-stringify@npm:^6.8.0":
-  version: 6.8.0
-  resolution: "csv-stringify@npm:6.8.0"
-  checksum: 10/5a9ba6a411566c58ff94894d465eb0a3b6ae346c4872f5e12fc904a6b5a02c5bd93235865f9a07fad001e770920b97e4e493912fcbe896ae850a354fc05a04b2
+"csv-stringify@npm:^6.8.1":
+  version: 6.8.1
+  resolution: "csv-stringify@npm:6.8.1"
+  checksum: 10/b866fa222277e1be2819d98286d49a2e158cf9d3a90c670106c1a8b6d45837201dc7b468f531397c449fc87f181d29ed41879a4f9f4ccc3462b2a001afedaeb8
   languageName: node
   linkType: hard
 
@@ -7045,7 +7045,7 @@ __metadata:
     aws-sdk-client-mock: "npm:4.1.0"
     bullmq: "npm:^5.79.2"
     cache-manager: "npm:7.2.8"
-    csv-stringify: "npm:^6.8.0"
+    csv-stringify: "npm:^6.8.1"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
     jose: "npm:6.2.3"
