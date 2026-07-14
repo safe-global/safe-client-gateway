@@ -370,7 +370,7 @@ describe('SpacesService', () => {
         {
           address: encryptedAddress,
           user: { id: inviterUserId },
-        } as unknown as Wallet,
+        } as Wallet,
       ]);
       walletEncryptionServiceMock.decryptAddress.mockResolvedValue(
         walletAddress,

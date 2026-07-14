@@ -11,7 +11,7 @@ const fieldCryptoService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
   blindIndex: vi.fn(),
-} as unknown as MockedObject<KmsEncryptionService>;
+} as MockedObject<KmsEncryptionService>;
 
 /** A ciphertext-shaped value, as produced by {@link KmsEncryptionService}. */
 const ciphertext = (): string => `kms:v1:${faker.string.alphanumeric(16)}`;

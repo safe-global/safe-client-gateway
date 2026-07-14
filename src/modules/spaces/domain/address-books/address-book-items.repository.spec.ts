@@ -43,7 +43,7 @@ describe('AddressBookItemsRepository', () => {
     configurationService = {
       getOrThrow: vi.fn(),
       get: vi.fn(),
-    } as unknown as MockedObject<IConfigurationService>;
+    } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'spaces.addressBooks.maxItems') return 100;
       throw new Error(`Unexpected config key: ${key}`);
@@ -70,12 +70,12 @@ describe('AddressBookItemsRepository', () => {
       transaction: vi.fn((fn: (em: unknown) => Promise<unknown>) =>
         fn(entityManager),
       ),
-    } as unknown as MockedObject<PostgresDatabaseService>;
+    } as MockedObject<PostgresDatabaseService>;
     spacesRepository = {
       findOneOrFail: vi
         .fn()
         .mockResolvedValue({ id: spaceId, uuid: spaceUuid }),
-    } as unknown as MockedObject<ISpacesRepository>;
+    } as MockedObject<ISpacesRepository>;
 
     target = new AddressBookItemsRepository(
       db,

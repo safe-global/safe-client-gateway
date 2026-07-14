@@ -12,7 +12,7 @@ const fieldCryptoService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
   blindIndex: vi.fn(),
-} as unknown as MockedObject<KmsEncryptionService>;
+} as MockedObject<KmsEncryptionService>;
 
 describe('MemberEncryptionService', () => {
   let target: MemberEncryptionService;

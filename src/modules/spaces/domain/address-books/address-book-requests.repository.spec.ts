@@ -37,7 +37,7 @@ describe('AddressBookRequestsRepository', () => {
     };
     db = {
       getRepository: vi.fn().mockResolvedValue(requestRepository),
-    } as unknown as MockedObject<PostgresDatabaseService>;
+    } as MockedObject<PostgresDatabaseService>;
 
     target = new AddressBookRequestsRepository(db, spaceEncryptionService);
   });

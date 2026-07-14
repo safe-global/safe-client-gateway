@@ -8,12 +8,12 @@ import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 const configurationService = {
   getOrThrow: vi.fn(),
   get: vi.fn(),
-} as unknown as MockedObject<IConfigurationService>;
+} as MockedObject<IConfigurationService>;
 
 const kmsService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
-} as unknown as MockedObject<IKmsService>;
+} as MockedObject<IKmsService>;
 
 /** Random `length`-byte buffer — KMS blobs and index keys are opaque here. */
 function randomBytes(length: number): Buffer {

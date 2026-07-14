@@ -68,7 +68,7 @@ describe('MembersRepository', () => {
         .fn()
         .mockImplementation((callback) => callback(entityManager)),
       getRepository: vi.fn().mockResolvedValue(dbMembersRepository),
-    } as unknown as MockedObject<PostgresDatabaseService>;
+    } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
 
     // Created after resetAllMocks so the passthrough implementations survive.
@@ -285,7 +285,7 @@ describe('MembersRepository', () => {
         ...wallet,
         address: 'kms:v1:ciphertext',
         addressIndex: 'address-token',
-      } as unknown as Wallet;
+      } as Wallet;
       const userToInvite = {
         type: InviteType.Wallet,
         address: wallet.address,

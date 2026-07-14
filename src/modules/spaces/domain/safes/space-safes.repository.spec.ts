@@ -39,7 +39,7 @@ describe('SpaceSafesRepository', () => {
     configurationService = {
       getOrThrow: vi.fn(),
       get: vi.fn(),
-    } as unknown as MockedObject<IConfigurationService>;
+    } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'spaces.maxSafesPerSpace') return maxSafesPerSpace;
       throw new Error(`Unexpected config key: ${key}`);
@@ -65,7 +65,7 @@ describe('SpaceSafesRepository', () => {
       transaction: vi.fn((fn: (em: unknown) => Promise<unknown>) =>
         fn(entityManager),
       ),
-    } as unknown as MockedObject<PostgresDatabaseService>;
+    } as MockedObject<PostgresDatabaseService>;
 
     target = new SpaceSafesRepository(
       postgresDatabaseService,
