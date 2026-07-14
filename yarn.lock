@@ -2098,12 +2098,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-deployments@npm:1.37.56":
-  version: 1.37.56
-  resolution: "@safe-global/safe-deployments@npm:1.37.56"
+"@safe-global/safe-deployments@npm:1.37.58":
+  version: 1.37.58
+  resolution: "@safe-global/safe-deployments@npm:1.37.58"
   dependencies:
     semver: "npm:^7.6.2"
-  checksum: 10/fd9a226aed59fe017bfade1b0f62e78df246c58a1ad8f88739023c785a1b3226fe5a14c09226f8b5541fb348e84c3cf1cd5b41571a0c3e6685ceeaafb00d4a9a
+  checksum: 10/2e2d895530e3eb60ababfd75634420df28ffaa8c166eaa0de027101348469aedf5b95efe20729500bd7d89cf1220119eb69f2d812510a33f218c386a7d787c90
   languageName: node
   linkType: hard
 
@@ -7028,7 +7028,7 @@ __metadata:
     "@nestjs/swagger": "npm:11.4.4"
     "@nestjs/testing": "npm:11.1.27"
     "@nestjs/typeorm": "npm:11.0.3"
-    "@safe-global/safe-deployments": "npm:1.37.56"
+    "@safe-global/safe-deployments": "npm:1.37.58"
     "@safe-global/safe-modules-deployments": "npm:3.0.3"
     "@smithy/util-stream": "npm:4.7.4"
     "@swc/core": "npm:1.15.43"
