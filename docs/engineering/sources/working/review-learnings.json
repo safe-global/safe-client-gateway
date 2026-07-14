@@ -1400,16 +1400,18 @@
     "sourceWindowId": "CLOSED-20260609-20260616",
     "prNumbers": [
       3163,
-      3105
+      3105,
+      3200
     ],
     "prState": "merged",
     "reviewCommentIds": [
       3403368538,
-      3442038620
+      3442038620,
+      3514171620
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`. The same mistake recurred with a chain `relayer` field that is always present but nullable (#3105).",
+    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`. The same mistake recurred with a chain `relayer` field that is always present but nullable (#3105). Conversely, genuinely optional fields must be `@ApiPropertyOptional`, not `@ApiProperty` (#3200).",
     "ruleIds": [
       "TYPE-04"
     ]
@@ -1785,6 +1787,140 @@
     "ruleIds": [
       "TEST-01",
       "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20260703-001",
+    "title": "Deprecated-endpoint removal asked to cover the whole family",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3225
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4868633683
+    ],
+    "learning": "A PR removing a deprecated `/raw` endpoint was asked to remove all `/raw` endpoints in the same PR. When retiring a deprecated surface, sweep the entire family in one change — a partial removal leaves an inconsistent API and a second cleanup PR.",
+    "ruleIds": [
+      "CHANGE-01"
+    ]
+  },
+  {
+    "id": "RL-20260703-002",
+    "title": "Local chainId regex forked because the shared schema was too loose",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3200
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3514154007,
+      3519071151
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4875418705
+    ],
+    "learning": "A GTF fee schema re-declared `z.coerce.string().regex(/^[1-9]\\d*$/)` because the shared `NonNegativeNumericStringSchema` allowed leading zeros and `ChainIdSchema` allowed negatives/decimals. The resolution: tighten the shared `NonNegativeNumericStringSchema` (reject leading zeros, with tests) and reuse it via `.pipe()` plus a zero-refine — and defer the wider `ChainIdSchema` consolidation to its own PR. When a shared schema is too loose, tighten it with tests instead of forking a local copy; scope broad consolidations separately.",
+    "ruleIds": [
+      "TYPE-01"
+    ]
+  },
+  {
+    "id": "RL-20260703-003",
+    "title": "Inferred type split into a separate file from its schema",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3200
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3514162756
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new entity file contained only `export type GtfFeesRequest = z.infer<typeof GtfFeesRequestSchema>` while the schema lived elsewhere; review asked to keep the schema and its inferred type together in the same `*.entity.ts`, matching the repo convention. Do not split a schema from its `z.infer` type.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260703-004",
+    "title": "Cache-key builder duplicated an enum default as a bare string",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3200
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4866715766,
+      4867161384
+    ],
+    "learning": "Cache-dir builders used `args.origin ?? 'NATIVE'` while the datasource used `Origin.NATIVE` — if the enum value ever changes, the cache key silently diverges from the request actually sent. Fixed by importing the enum in the cache router, plus tests asserting that differing `nonce`/`origin`/`to` inputs produce differing cache keys. Cache-key builders share the datasource's constants, and key composition gets difference tests.",
+    "ruleIds": [
+      "CACHE-02"
+    ]
+  },
+  {
+    "id": "RL-20260703-005",
+    "title": "Outbound request stripping applied in one flow but not its sibling",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3200
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4866715766,
+      4867161384
+    ],
+    "learning": "The new GTF flow parsed its outbound request through `GtfFeesRequestSchema` to strip fields outside the endpoint contract, but the sibling relay flow still forwarded `{...args.request, origin}` unfiltered — a DTO growth would silently leak fields upstream (and into cache keys). Also, a response class spread a wider object into its constructor and relied on the constructor to drop extras; review asked for explicit field picking. Parse outbound requests through the endpoint schema in every flow, and pick fields explicitly instead of spreading wider objects.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20260706-001",
+    "title": "Fourth feature gate rejected on an already multi-gated Zerion path",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3141
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      3382003178,
+      3382026776,
+      3411728135,
+      3411730356
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A PR wiring `chain.balancesProvider.enabled` into Zerion routing added a fourth gate to a path already controlled by a global flag, a chain-name mapping, and a per-chain endpoint flag; review pushed to consolidate and simplify balances gating instead of adding another flag (one added branch was also dead code — the wallet never queries balances for counterfactual Safes). The PR was closed unmerged. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable.",
+    "ruleIds": [
+      "PR-01"
+    ]
+  },
+  {
+    "id": "RL-20260702-001",
+    "title": "Randomly generated invalid input was occasionally valid, flaking the test",
+    "sourceWindowId": "CLOSED-20260630-20260707",
+    "prNumbers": [
+      3139
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3500014779
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A rate-limit guard spec used `faker.string.sample(10)` as an \"invalid IP\", but a random sample can occasionally parse as a valid IPv4/IPv6, making the rejection assertion flake; the fix uses a guaranteed-invalid literal. Fixtures meant to be invalid must be invalid by construction — a literal or a constructive generator — never a random sample that is only usually invalid.",
+    "ruleIds": [
+      "TEST-08"
     ]
   }
 ]

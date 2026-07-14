@@ -74,10 +74,10 @@
 <a id="change-01"></a>
 ### `CHANGE-01` Smallest correct change
 
-> **general** · scope
+> **general** · scope · ↩ `RL-20260703-001`
 
 **📜 Rule**\
-A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require.
+A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance.
 
 **✅ Check**\
 > Is this the smallest correct change for the behavior?
@@ -232,10 +232,10 @@ deleted with a clean PR that only touches the loader.
 <a id="pr-01"></a>
 ### `PR-01` New abstractions justified
 
-> **general** · scope · ↩ `RL-20260626-003`
+> **general** · scope · ↩ `RL-20260626-003` · `RL-20260706-001`
 
 **📜 Rule**\
-New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys.
+New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable.
 
 **✅ Check**\
 > Can I justify every new abstraction or file?
@@ -742,10 +742,10 @@ binding explicit and impossible to forget.
 <a id="type-01"></a>
 ### `TYPE-01` Use project types
 
-> **general** · types · ↩ `RL-20260609-002` · `RL-20260612-003`
+> **general** · types · ↩ `RL-20260609-002` · `RL-20260612-003` · `RL-20260703-002`
 
 **📜 Rule**\
-Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that.
+Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that. When a shared schema is too loose for a new use, tighten the shared schema with tests (or build on it via `.pipe()`) instead of forking a local copy; defer wider consolidation to its own PR.
 
 **✅ Check**\
 > Did I use project types and shared schemas first?
@@ -755,10 +755,10 @@ Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), 
 <a id="type-02"></a>
 ### `TYPE-02` Schemas in entity files
 
-> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001`
+> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003`
 
 **📜 Rule**\
-Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s.
+Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file.
 
 **✅ Check**\
 > Are reusable schemas in entity/schema files?
@@ -881,10 +881,10 @@ same notion of absence.
 <a id="type-04"></a>
 ### `TYPE-04` DTO matches wire shape
 
-> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003` · `RL-20260604-002` · `RL-20260612-006`
+> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003` · `RL-20260604-002` · `RL-20260612-006` · `RL-20260703-005`
 
 **📜 Rule**\
-DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`.
+DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`. Outbound requests to internal services are parsed through the endpoint's schema in every flow (symmetric field stripping); pick fields explicitly instead of spreading a wider object into a constructor.
 
 **✅ Check**\
 > Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?
@@ -1723,10 +1723,10 @@ Redis pipelines and cache marker writes must validate every meaningful result. H
 <a id="cache-02"></a>
 ### `CACHE-02` Cache keys cover all inputs
 
-> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001`
+> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004`
 
 **📜 Rule**\
-Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy.
+Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys.
 
 **✅ Check**\
 > Are cache keys, bounded caches, and TTL semantics tested?
@@ -2595,10 +2595,10 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · ↩ `RL-20260602-005` · `RL-20260615-002`
+> **general** · tests · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001`
 
 **📜 Rule**\
-Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs.
+Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
