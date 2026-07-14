@@ -1221,5 +1221,276 @@
     "ruleIds": [
       "CONFIG-03"
     ]
+  },
+  {
+    "id": "RL-20260609-001",
+    "title": "Named-receiver convention requested but destructuring is the established pattern",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3153
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      4458844358
+    ],
+    "issueCommentIds": [
+      4660072080,
+      4660281882,
+      4660748977
+    ],
+    "learning": "A review requested `const member = ...` over destructuring (`const { name } = ...`) as a claimed convention; a repo-wide check showed destructuring in ~79 non-test files across services, datasources, mappers, repositories, and controllers, and the request was withdrawn. Destructuring return values is an accepted CGW pattern — do not flag it, and verify a claimed convention against the codebase before requesting changes based on it.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20260609-002",
+    "title": "UUID fields typed as plain string instead of the nominal UUID type",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3117
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3349578796
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new `uuid` field was typed `string`; review switched it to the nominal `UUID` type from `node:crypto` so `Space['uuid']` is a distinct type and lookups like `findIdByUuid(uuid: Space['uuid'])` are type-checked end to end. Use the nominal `UUID` type for UUID-shaped fields, not `string`.",
+    "ruleIds": [
+      "TYPE-01"
+    ]
+  },
+  {
+    "id": "RL-20260609-003",
+    "title": "Identifier-format validation placed in the repository instead of a pipe",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3117
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3363036591
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4611798756
+    ],
+    "learning": "A space-id lookup validated numeric/UUID format inside the repository (throwing `BadRequestException` from the data layer), and the two id pipes returned different 400 bodies for the same error class. The follow-up moved format checks into the pipes with one shared error-message constant; the repository assumes validated input. Param-format validation belongs in pipes/controllers with a single stable error contract — repositories should not throw HTTP exceptions for format errors.",
+    "ruleIds": [
+      "ROUTE-02"
+    ]
+  },
+  {
+    "id": "RL-20260609-004",
+    "title": "TypeORM UPDATE does not populate generatedMaps",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3117
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3349808981
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A review suggested reading `result.generatedMaps[0]` instead of `result.raw[0]` after an update with `.returning(['id', 'uuid'])`, but TypeORM only fills `generatedMaps` for INSERT — for UPDATE it stays empty and tests failed, so the code went back to `raw`. Read RETURNING values from `generatedMaps` on inserts and from `raw` on updates.",
+    "ruleIds": [
+      "DB-03"
+    ]
+  },
+  {
+    "id": "RL-20260612-001",
+    "title": "Type-preserving normalization used .transform() instead of .overwrite()",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3165
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3404497616
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A chainIds dedup used `.transform((ids) => Array.from(new Set(ids)))`; review pointed at Zod v4's `.overwrite(...)`, which expresses type-preserving normalization without turning the schema into a pipeline (keeps introspection and the input type intact). Prefer `.overwrite()` over `.transform()` when the normalization does not change the type.",
+    "ruleIds": [
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20260612-002",
+    "title": "Pagination links built from the raw cursor instead of the clamped values",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3163
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3397267491,
+      3398478661,
+      3403512894
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An audit-log endpoint clamped `limit` to 100 and `offset` to ≥0 for the query, but built `next`/`previous` from the raw route URL — so `?cursor=limit=500` returned 100 rows with `next: null`, silently truncating the feed. The fix normalizes the cursor with the existing `setCursor`/`PaginationData` helper before building links, plus a unit test for the oversized-cursor case. Page links must derive from the clamped/normalized pagination values actually used in the query, never the raw client cursor.",
+    "ruleIds": [
+      "DATA-01"
+    ]
+  },
+  {
+    "id": "RL-20260612-003",
+    "title": "Lowercase transform stacked on the already-checksumming AddressSchema",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3163
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3403186159
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An audit payload schema wrapped `AddressSchema` in a `.toLowerCase()` transform, but `AddressSchema` already validates and returns the EIP-55 checksummed form via `getAddress()`. The transform was dropped; payloads store the checksummed address. Do not re-normalize what the canonical schema already normalizes — store addresses in the checksummed form `AddressSchema` produces.",
+    "ruleIds": [
+      "TYPE-01"
+    ]
+  },
+  {
+    "id": "RL-20260612-004",
+    "title": "Implementation widened the interface's narrow parameter type",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3163
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3403394514,
+      3403404364
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A diff helper took `QueryDeepPartialEntity<Space>` although the interface already declared `Partial<Pick<Space, 'name' | 'status'>>`, forcing extra branching; an inline anonymous return shape also duplicated an existing schema's payload. Keep implementation signatures as narrow as the interface declares, and derive payload type aliases from the schema (`z.infer<typeof Schema>['payload']`) instead of restating the shape.",
+    "ruleIds": [
+      "TYPE-06"
+    ]
+  },
+  {
+    "id": "RL-20260612-005",
+    "title": "Empty comma-separated query param produced a confusing validation error",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3163
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4682606234,
+      4684183783
+    ],
+    "learning": "`?event_type=` failed with `Invalid event type \"\"` because `''.split(',')` yields `[\"\"]`. The fix filters empties so an empty param behaves like an omitted one. When parsing comma-separated query params, `.split(',').filter(Boolean)` (or short-circuit on empty) — the empty-string case always exists.",
+    "ruleIds": [
+      "ROUTE-02"
+    ]
+  },
+  {
+    "id": "RL-20260612-006",
+    "title": "ApiPropertyOptional used for an always-present nullable field",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3163
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3403368538
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20260615-001",
+    "title": "Role-authorization test used a pending member, conflating two denial factors",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3156
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3401294891,
+      3401294926,
+      3402240546
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Tests meant to prove a non-admin MEMBER is rejected used an invited (pending) member; once content access became ACTIVE-only, the 403/404 could stem from the pending status rather than the missing ADMIN role, reducing the tests' signal. Negative authorization tests must isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks.",
+    "ruleIds": [
+      "TEST-04"
+    ]
+  },
+  {
+    "id": "RL-20260615-002",
+    "title": "Test helpers named by action instead of the membership state they produce",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3156
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3391136657,
+      3401897527,
+      3401990790,
+      3401993584,
+      3401997948
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "E2e helpers `inviteMember`/`invitePendingMember`/`inviteActiveMember` needed explanatory comments and renaming rounds; the review settled on `createPendingMember`/`createActiveMember` — named for the state they produce, making the comments unnecessary — and on using the same wording (\"pending member\") across test descriptions. Name test helpers after the resulting state and keep terminology consistent across specs.",
+    "ruleIds": [
+      "TEST-08"
+    ]
+  },
+  {
+    "id": "RL-20260615-003",
+    "title": "Status-narrowed WHERE turned an authorization failure into a 404",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3156
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4690844169,
+      4691812451
+    ],
+    "learning": "`updateAlias` narrowed its WHERE to `status: 'ACTIVE'`, so a pending invitee fell into the `affected === 0` branch and received `NotFoundException` (404) while every sibling path rejected pending callers with 403 via `assertMember`. The fix asserts membership first, then updates — the authorization rule lives in one place and the status code stays consistent. Do not encode authorization in a WHERE clause whose empty result surfaces as 404.",
+    "ruleIds": [
+      "ROUTE-03"
+    ]
+  },
+  {
+    "id": "RL-20260615-004",
+    "title": "New recursive calldata walker written next to an existing one; missing negative cache assertions",
+    "sourceWindowId": "CLOSED-20260609-20260616",
+    "prNumbers": [
+      3114
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4561945559,
+      4562618865
+    ],
+    "learning": "A nested-`multiSend` `approveHash` walker initially handled only one nesting level; review pointed at the existing recursive decoded-transaction helper in `safe-shield/utils/transaction-mapping.utils.ts`, whose shape was adapted. The added tests also closed a negative-assertion gap: cache-invalidation tests must assert that unrelated Safes' caches stay untouched, not only that the targeted caches are cleared. Search for existing recursive transaction walkers before writing one, and pair invalidation tests with not-invalidated assertions.",
+    "ruleIds": [
+      "REUSE-01",
+      "TEST-09"
+    ]
   }
 ]

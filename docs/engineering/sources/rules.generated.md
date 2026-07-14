@@ -492,7 +492,7 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001`
+> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004`
 
 **📜 Rule**\
 Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates.
@@ -613,10 +613,10 @@ someone remembered to add the string.
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004`
+> **general** · naming · 2 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it.
 
 **✅ Check**\
 > Did I document public/non-trivial logic and remove dead code?
@@ -742,10 +742,10 @@ binding explicit and impossible to forget.
 <a id="type-01"></a>
 ### `TYPE-01` Use project types
 
-> **general** · types
+> **general** · types · ↩ `RL-20260609-002` · `RL-20260612-003`
 
 **📜 Rule**\
-Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`.
+Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that.
 
 **✅ Check**\
 > Did I use project types and shared schemas first?
@@ -818,10 +818,10 @@ same notion of absence.
 <a id="type-03"></a>
 ### `TYPE-03` Validate external inputs
 
-> **general** · types · 1 example · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003`
+> **general** · types · 1 example · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001`
 
 **📜 Rule**\
-Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros).
+Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable.
 
 **✅ Check**\
 > Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?
@@ -881,10 +881,10 @@ same notion of absence.
 <a id="type-04"></a>
 ### `TYPE-04` DTO matches wire shape
 
-> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003` · `RL-20260604-002`
+> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003` · `RL-20260604-002` · `RL-20260612-006`
 
 **📜 Rule**\
-DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description.
+DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`.
 
 **✅ Check**\
 > Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?
@@ -1124,10 +1124,10 @@ Parser/decode generics include every field the code reads downstream.
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 1 example · ↩ `RL-20260506-005`
+> **general** · types · 1 example · ↩ `RL-20260506-005` · `RL-20260612-004`
 
 **📜 Rule**\
-Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`.
+Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes.
 
 **✅ Check**\
 > Did I avoid unsafe casts, `any`, and silent type drift?
@@ -1461,10 +1461,10 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 <a id="route-02"></a>
 ### `ROUTE-02` Inputs validated at controller
 
-> **general** · routes · ↩ `RL-20260123-002`
+> **general** · routes · ↩ `RL-20260123-002` · `RL-20260609-003` · `RL-20260612-005`
 
 **📜 Rule**\
-Validate params, query, and body at the controller via Zod schemas and `ValidationPipe`; do not duplicate presence checks in services. Cache-busting params should be booleans with server-generated keys, not unbounded client strings.
+Validate params, query, and body at the controller via Zod schemas and `ValidationPipe`; do not duplicate presence checks in services. Cache-busting params should be booleans with server-generated keys, not unbounded client strings. Identifier-format validation lives in pipes/controllers with one shared error-message constant — repositories assume validated input and never throw HTTP exceptions for format errors. Comma-separated query params treat `''` like an omitted param (`.split(',').filter(Boolean)`).
 
 **✅ Check**\
 > Are params, query, and bodies validated?
@@ -1474,10 +1474,10 @@ Validate params, query, and body at the controller via Zod schemas and `Validati
 <a id="route-03"></a>
 ### `ROUTE-03` Stable empty shapes
 
-> **general** · routes · 1 example · ↩ `RL-20260114-002`
+> **general** · routes · 1 example · ↩ `RL-20260114-002` · `RL-20260615-003`
 
 **📜 Rule**\
-Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes.
+Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403.
 
 **✅ Check**\
 > Do empty responses use stable empty shapes?
@@ -1570,10 +1570,10 @@ Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped tr
 <a id="db-03"></a>
 ### `DB-03` No redundant DB trips
 
-> **general** · database · ↩ `RL-20260529-003`
+> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004`
 
 **📜 Rule**\
-Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING/`generatedMaps` instead of issuing a follow-up `find` after an insert/upsert.
+Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).
 
 **✅ Check**\
 > Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?
@@ -2447,10 +2447,10 @@ Do not mock internal query-builder chains or implementation details.
 <a id="test-04"></a>
 ### `TEST-04` Cover security paths
 
-> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001`
 
 **📜 Rule**\
-Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads.
+Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition.
 
 **✅ Check**\
 > Are security and negative paths covered?
@@ -2595,10 +2595,10 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · ↩ `RL-20260602-005`
+> **general** · tests · ↩ `RL-20260602-005` · `RL-20260615-002`
 
 **📜 Rule**\
-Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int.
+Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
@@ -2608,10 +2608,10 @@ Test descriptions and generated data reflect the actual assertion: `it('should r
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002`
+> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched.
 
 **✅ Check**\
 > Do tests cover edge cases, side effects, and deterministic behavior?
@@ -3130,13 +3130,66 @@ and the bug only reproduces under cache-warm conditions.
 <a id="data-01"></a>
 ### `DATA-01` Aggregates match returned items and signed values
 
-> **general** · data · ↩ `RL-20260113-001`
+> **general** · data · 1 example · ↩ `RL-20260113-001` · `RL-20260612-002`
 
 **📜 Rule**\
-Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt.
+Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor.
 
 **✅ Check**\
-> Did this add filtering or aggregate totals? If yes, are totals based on returned items and are negative values handled by magnitude when appropriate?
+> Did this add filtering, aggregate totals, or pagination links? If yes, are totals and links based on the items/values actually returned or queried?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/repositories-and-pagination.md</code> § <em>data-01-build-page-links-from-clamped-pagination-values</em></summary>
+
+<br>
+
+**DATA-01 — Build page links from clamped pagination values**
+
+Source: PR #3163 (RL-20260612-002)
+
+### Avoid
+
+Clamping the query but building links from the raw route URL:
+
+```ts
+const limit = Math.min(args.paginationData.limit, MAX_LIMIT);
+const offset = Math.max(args.paginationData.offset, 0);
+const [rows, count] = await this.repository.findPage({ limit, offset });
+
+return {
+  count,
+  next: buildNextPageURL(args.routeUrl, count)?.toString() ?? null,
+  previous: buildPreviousPageURL(args.routeUrl)?.toString() ?? null,
+};
+```
+
+### Prefer
+
+Normalize the cursor to the values actually queried before building links:
+
+```ts
+const limit = Math.min(args.paginationData.limit, MAX_LIMIT);
+const offset = Math.max(args.paginationData.offset, 0);
+const [rows, count] = await this.repository.findPage({ limit, offset });
+
+const normalizedUrl = setCursor(args.routeUrl, new PaginationData(limit, offset));
+return {
+  count,
+  next: buildNextPageURL(normalizedUrl, count)?.toString() ?? null,
+  previous: buildPreviousPageURL(normalizedUrl)?.toString() ?? null,
+};
+```
+
+### Why
+
+`buildNextPageURL` re-reads `limit`/`offset` from the URL's cursor. With a
+raw `?cursor=limit=500` against a 250-row set, only 100 rows are returned
+but `500 + 0 < 250` is false, so `next` is `null` and the client silently
+stops paging. Links must describe the page that was actually served.
+
+<sub>Source: <a href="examples/repositories-and-pagination.md#data-01-build-page-links-from-clamped-pagination-values">examples/repositories-and-pagination.md#data-01-build-page-links-from-clamped-pagination-values</a></sub>
+
+</details>
 
 ---
 

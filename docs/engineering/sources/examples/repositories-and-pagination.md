@@ -188,3 +188,47 @@ Each awaited repository call is a database round trip. When the second
 lookup does not consume the first's result, sequencing them doubles the
 endpoint's latency floor for no benefit; `Promise.all` keeps the
 independent I/O concurrent and fails fast on the first rejection.
+
+## DATA-01 — Build page links from clamped pagination values
+
+Source: PR #3163 (RL-20260612-002)
+
+### Avoid
+
+Clamping the query but building links from the raw route URL:
+
+```ts
+const limit = Math.min(args.paginationData.limit, MAX_LIMIT);
+const offset = Math.max(args.paginationData.offset, 0);
+const [rows, count] = await this.repository.findPage({ limit, offset });
+
+return {
+  count,
+  next: buildNextPageURL(args.routeUrl, count)?.toString() ?? null,
+  previous: buildPreviousPageURL(args.routeUrl)?.toString() ?? null,
+};
+```
+
+### Prefer
+
+Normalize the cursor to the values actually queried before building links:
+
+```ts
+const limit = Math.min(args.paginationData.limit, MAX_LIMIT);
+const offset = Math.max(args.paginationData.offset, 0);
+const [rows, count] = await this.repository.findPage({ limit, offset });
+
+const normalizedUrl = setCursor(args.routeUrl, new PaginationData(limit, offset));
+return {
+  count,
+  next: buildNextPageURL(normalizedUrl, count)?.toString() ?? null,
+  previous: buildPreviousPageURL(normalizedUrl)?.toString() ?? null,
+};
+```
+
+### Why
+
+`buildNextPageURL` re-reads `limit`/`offset` from the URL's cursor. With a
+raw `?cursor=limit=500` against a 250-row set, only 100 rows are returned
+but `500 + 0 < 250` is false, so `next` is `null` and the client silently
+stops paging. Links must describe the page that was actually served.
