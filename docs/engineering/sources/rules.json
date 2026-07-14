@@ -28,10 +28,13 @@
     "project": "general",
     "area": "scope",
     "title": "Tooling parity preserved",
-    "rule": "Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs.",
+    "rule": "Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs. In CI, never cache linked `node_modules` — a cache hit skips `yarn install --immutable` and its hardened-mode supply-chain verification; cache the package-manager download cache and install unconditionally. PRs keep a whole-program type check (`tsc --noEmit -p tsconfig.build.json`; ts-jest only checks files tests import), and jobs that read `dist/` (migrations) need the full build.",
     "check": "If this is tooling work, did I preserve behavior, rule parity, and docs?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260622-001",
+      "RL-20260622-002"
+    ]
   },
   {
     "id": "CHANGE-04",
@@ -216,14 +219,15 @@
     "project": "general",
     "area": "types",
     "title": "Schemas in entity files",
-    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`.",
+    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const.",
     "check": "Are reusable schemas in entity/schema files?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
     ],
     "reviewLearningIds": [
       "RL-20260123-002",
-      "RL-20260116-002"
+      "RL-20260116-002",
+      "RL-20260619-003"
     ]
   },
   {
@@ -383,14 +387,15 @@
     "project": "general",
     "area": "routes",
     "title": "Stable empty shapes",
-    "rule": "Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403.",
+    "rule": "Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403. \"Server has not implemented this\" is 501, not 403; error-constructor params are typed with the enum callers pass, not `string`.",
     "check": "Do empty responses use stable empty shapes?",
     "exampleRefs": [
       "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default"
     ],
     "reviewLearningIds": [
       "RL-20260114-002",
-      "RL-20260615-003"
+      "RL-20260615-003",
+      "RL-20260619-004"
     ]
   },
   {
@@ -542,7 +547,7 @@
     "project": "general",
     "area": "config",
     "title": "Env metadata matches runtime",
-    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR.",
+    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR.",
     "check": "Do tool versions and env metadata match runtime behavior?",
     "exampleRefs": [
       "examples/configuration.md#change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release",
@@ -550,7 +555,8 @@
     ],
     "reviewLearningIds": [
       "RL-20260108-001",
-      "RL-20251215-003"
+      "RL-20251215-003",
+      "RL-20260619-002"
     ]
   },
   {
@@ -558,7 +564,7 @@
     "project": "general",
     "area": "performance",
     "title": "Batch and parallelize I/O",
-    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks.",
+    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request.",
     "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page",
@@ -566,7 +572,8 @@
     ],
     "reviewLearningIds": [
       "RL-20260506-006",
-      "RL-20260603-001"
+      "RL-20260603-001",
+      "RL-20260619-001"
     ]
   },
   {
@@ -574,14 +581,15 @@
     "project": "general",
     "area": "tests",
     "title": "Use builders and fakes",
-    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason.",
+    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test.",
     "check": "Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?",
     "exampleRefs": [
       "examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures"
     ],
     "reviewLearningIds": [
       "RL-20260506-002",
-      "RL-20260521-001"
+      "RL-20260521-001",
+      "RL-20260619-005"
     ]
   },
   {

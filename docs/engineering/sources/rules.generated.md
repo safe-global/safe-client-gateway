@@ -150,10 +150,10 @@ focused review of why the test was flaky to begin with.
 <a id="change-03"></a>
 ### `CHANGE-03` Tooling parity preserved
 
-> **general** · scope
+> **general** · scope · ↩ `RL-20260622-001` · `RL-20260622-002`
 
 **📜 Rule**\
-Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs.
+Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs. In CI, never cache linked `node_modules` — a cache hit skips `yarn install --immutable` and its hardened-mode supply-chain verification; cache the package-manager download cache and install unconditionally. PRs keep a whole-program type check (`tsc --noEmit -p tsconfig.build.json`; ts-jest only checks files tests import), and jobs that read `dist/` (migrations) need the full build.
 
 **✅ Check**\
 > If this is tooling work, did I preserve behavior, rule parity, and docs?
@@ -755,10 +755,10 @@ Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), 
 <a id="type-02"></a>
 ### `TYPE-02` Schemas in entity files
 
-> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002`
+> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003`
 
 **📜 Rule**\
-Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`.
+Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const.
 
 **✅ Check**\
 > Are reusable schemas in entity/schema files?
@@ -1474,10 +1474,10 @@ Validate params, query, and body at the controller via Zod schemas and `Validati
 <a id="route-03"></a>
 ### `ROUTE-03` Stable empty shapes
 
-> **general** · routes · 1 example · ↩ `RL-20260114-002` · `RL-20260615-003`
+> **general** · routes · 1 example · ↩ `RL-20260114-002` · `RL-20260615-003` · `RL-20260619-004`
 
 **📜 Rule**\
-Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403.
+Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403. "Server has not implemented this" is 501, not 403; error-constructor params are typed with the enum callers pass, not `string`.
 
 **✅ Check**\
 > Do empty responses use stable empty shapes?
@@ -2077,10 +2077,10 @@ Runtime dependency versions are pinned exactly; do not hardcode contract version
 <a id="config-05"></a>
 ### `CONFIG-05` Env metadata matches runtime
 
-> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003`
+> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002`
 
 **📜 Rule**\
-Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR.
+Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR.
 
 **✅ Check**\
 > Do tool versions and env metadata match runtime behavior?
@@ -2193,10 +2193,10 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001`
+> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001`
 
 **📜 Rule**\
-Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks.
+Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request.
 
 **✅ Check**\
 > Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?
@@ -2318,10 +2318,10 @@ independent I/O concurrent and fails fast on the first rejection.
 <a id="test-01"></a>
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 1 example · ↩ `RL-20260506-002` · `RL-20260521-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005`
 
 **📜 Rule**\
-Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason.
+Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test.
 
 **✅ Check**\
 > Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?

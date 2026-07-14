@@ -1399,15 +1399,17 @@
     "title": "ApiPropertyOptional used for an always-present nullable field",
     "sourceWindowId": "CLOSED-20260609-20260616",
     "prNumbers": [
-      3163
+      3163,
+      3105
     ],
     "prState": "merged",
     "reviewCommentIds": [
-      3403368538
+      3403368538,
+      3442038620
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`.",
+    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`. The same mistake recurred with a chain `relayer` field that is always present but nullable (#3105).",
     "ruleIds": [
       "TYPE-04"
     ]
@@ -1491,6 +1493,142 @@
     "ruleIds": [
       "REUSE-01",
       "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20260619-001",
+    "title": "Config-derived Zod schema rebuilt on every login request",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3173
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3442261345
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`buildSiweMessageSchema(this.clockSkewSeconds)` ran inside the verify method on every login although the config value never changes per instance; review moved the schema construction to the constructor. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request.",
+    "ruleIds": [
+      "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20260622-001",
+    "title": "CI node_modules cache silently skipped supply-chain integrity verification",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3140
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3435715399
+    ],
+    "reviewIds": [
+      4448333041
+    ],
+    "issueCommentIds": [
+      4751290466
+    ],
+    "learning": "A CI speed-up cached `node_modules` keyed on `yarn.lock` and skipped `yarn install --immutable` on a hit — which also skipped `enableHardenedMode` supply-chain verification in jobs holding secrets, and opened a cache-tampering surface. The fix removed the `node_modules` cache and kept `setup-node`'s `cache: 'yarn'` download cache with an unconditional `yarn install --immutable`: tarball downloads stay cached (the expensive part) while integrity verification runs on every job. Do not cache linked `node_modules` in CI; cache the package-manager download cache and always install.",
+    "ruleIds": [
+      "CHANGE-03"
+    ]
+  },
+  {
+    "id": "RL-20260622-002",
+    "title": "Dropping the build step removed PR-wide type checking and unloaded migrations",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3140
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4741845484,
+      4741948263,
+      4751290466
+    ],
+    "learning": "Replacing `yarn build` (`generate-abis && nest build`) with just `generate-abis` silently lost whole-program type checking on PRs — ts-jest only type-checks files transitively imported by tests — and broke integration tests, which load migrations from `dist/migrations/*.js`. The fix added `yarn tsc --noEmit -p tsconfig.build.json` to the lint job (same scope `nest build` covered) and restored `yarn build` for the integration-tests job only. When touching CI build steps, keep a whole-program type check on PRs and know which jobs consume `dist/`.",
+    "ruleIds": [
+      "CHANGE-03"
+    ]
+  },
+  {
+    "id": "RL-20260619-002",
+    "title": "Removed env vars left behind in .env.sample.json and devcontainer compose",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3105
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      4475988068
+    ],
+    "issueCommentIds": [
+      4680080720
+    ],
+    "learning": "Moving relayer selection from env vars into per-chain config left `RELAY_DAILY_LIMIT_CHAIN_IDS`, `RELAY_FEE_CHAIN_IDS`, and `RELAY_SIMULATION_CHAIN_IDS` behind in `.env.sample.json` and `.devcontainer/docker-compose.yml`. When removing env-driven behavior, sweep every env-metadata surface — `.env.sample`, `.env.sample.json`, devcontainer compose files — in the same PR.",
+    "ruleIds": [
+      "CONFIG-05"
+    ]
+  },
+  {
+    "id": "RL-20260619-003",
+    "title": "Redundant .default() stacked on .catch() and repeated fallback fragments",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3105
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3442014882
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A schema declared `z.boolean().catch(false).default(false)` on three fields; `.catch(false)` already handles undefined, null, and invalid values, so `.default(false)` is dead weight — and the repeated fragment was extracted to a shared `booleanWithFalseFallback` const. Do not stack `.default(x)` after `.catch(x)`, and extract repeated schema fallback fragments.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260619-004",
+    "title": "Not-implemented relayer type returned 403 instead of 501",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3105
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4659753272,
+      4669586810
+    ],
+    "learning": "`RelayerTypeNotImplementedError` extended `ForbiddenException` (403) although the state is \"the server has not implemented this relayer type yet\", not a permission denial; the fix maps it to 501 Not Implemented and narrows the constructor's `relayerType: string` parameter to the enum. Pick the status code by what the state actually is, and type error-constructor params with the enum callers pass.",
+    "ruleIds": [
+      "ROUTE-03"
+    ]
+  },
+  {
+    "id": "RL-20260619-005",
+    "title": "Builder default randomized across routing-relevant values, seeding flaky tests",
+    "sourceWindowId": "CLOSED-20260616-20260623",
+    "prNumbers": [
+      3105
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4659753272,
+      4669586810
+    ],
+    "learning": "`relayerBuilder` defaulted `type` to `faker.helpers.arrayElement([...Object.values(RelayerType), null])`, so any test using `chainBuilder().build()` without overriding the field randomly routed to different relayer branches (403 vs 501 vs happy path) — a flaky-test source. Builder defaults must not randomize across semantically different, behavior-routing values; pick one stable valid default and override explicitly per test case.",
+    "ruleIds": [
+      "TEST-01"
     ]
   }
 ]
