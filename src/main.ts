@@ -33,7 +33,12 @@ async function bootstrap(): Promise<void> {
     configurationService.getOrThrow('application.allowCors') &&
     configurationService.getOrThrow('application.isDevelopment')
   ) {
-    app.enableCors({ origin: true, credentials: true });
+    // @fastify/cors defaults `methods` to GET,HEAD,POST, rejecting PATCH/PUT/DELETE preflights.
+    app.enableCors({
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    });
   }
 
   await app.listen(applicationPort, applicationHost);
