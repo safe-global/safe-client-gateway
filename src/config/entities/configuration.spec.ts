@@ -33,7 +33,7 @@ describe('configuration - express.trustProxy', () => {
   });
 });
 
-describe('configuration - features.zerionEnabled', () => {
+describe('configuration - features.zerion', () => {
   const ENV_KEY = 'FF_ZERION_ENABLED';
   const original = process.env[ENV_KEY];
 
@@ -48,18 +48,18 @@ describe('configuration - features.zerionEnabled', () => {
   it('defaults to false when unset', () => {
     delete process.env[ENV_KEY];
 
-    expect(configuration().features.zerionEnabled).toBe(false);
+    expect(configuration().features.zerion).toBe(false);
   });
 
   it.each(['true', 'TRUE', 'True'])('is enabled when set to %s', (value) => {
     process.env[ENV_KEY] = value;
 
-    expect(configuration().features.zerionEnabled).toBe(true);
+    expect(configuration().features.zerion).toBe(true);
   });
 
   it.each(['false', '0', '1,10,137'])('is disabled when set to %s', (value) => {
     process.env[ENV_KEY] = value;
 
-    expect(configuration().features.zerionEnabled).toBe(false);
+    expect(configuration().features.zerion).toBe(false);
   });
 });

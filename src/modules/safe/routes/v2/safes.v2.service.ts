@@ -58,9 +58,8 @@ export class SafesV2Service {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
     );
-    this.zerionEnabled = configurationService.getOrThrow<boolean>(
-      'features.zerionEnabled',
-    );
+    this.zerionEnabled =
+      configurationService.getOrThrow<boolean>('features.zerion');
   }
 
   async getSafeOverview(args: {

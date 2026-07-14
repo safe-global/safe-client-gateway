@@ -211,7 +211,7 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     email: false,
     sesEmail: false,
-    zerionEnabled: false,
+    zerion: false,
     zerionPositions: false,
     debugLogs: false,
     configHooksDebugLogs: false,

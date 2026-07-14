@@ -14,8 +14,6 @@ export class PortfolioRouteGuard implements CanActivate {
   ) {}
 
   canActivate(): boolean {
-    return this.configurationService.getOrThrow<boolean>(
-      'features.zerionEnabled',
-    );
+    return this.configurationService.getOrThrow<boolean>('features.zerion');
   }
 }
