@@ -59,7 +59,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      issues: read
       actions: read
       id-token: write
     env:
@@ -105,23 +104,27 @@ jobs:
           --health-retries 5
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      # One PR per flaky test: collect the open flaky-fix/* PRs with their
-      # changed files so the fix stage can pick a test that doesn't already
-      # have a PR in flight, instead of opening duplicates.
-      - name: List open flaky-fix PRs
+      # One PR per flaky test: collect the open and recently merged
+      # flaky-fix/* PRs with their changed files so the fix stage can pick a
+      # test that isn't already covered, instead of opening duplicates.
+      - name: List flaky-fix PRs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/flaky-tests"
-          out="$RUNNER_TEMP/flaky-tests/open-fix-prs.json"
-          gh pr list --state open --json number,title,headRefName \
-            --jq '[.[] | select(.headRefName | startswith("flaky-fix/"))]' > "$out"
-          for num in $(jq -r '.[].number' "$out"); do
-            files=$(gh pr view "$num" --json files --jq '[.files[].path]')
-            jq --argjson files "$files" --argjson num "$num" \
-              'map(if .number == $num then . + {files: $files} else . end)' \
-              "$out" > "$out.tmp" && mv "$out.tmp" "$out"
-          done
+          list_prs() {
+            out="$RUNNER_TEMP/flaky-tests/$2"
+            gh pr list --state "$1" --limit 200 --json number,title,headRefName \
+              --jq '[.[] | select(.headRefName | startswith("flaky-fix/"))]' > "$out"
+            for num in $(jq -r '.[].number' "$out"); do
+              files=$(gh pr view "$num" --json files --jq '[.files[].path]')
+              jq --argjson files "$files" --argjson num "$num" \
+                'map(if .number == $num then . + {files: $files} else . end)' \
+                "$out" > "$out.tmp" && mv "$out.tmp" "$out"
+            done
+          }
+          list_prs open open-fix-prs.json
+          list_prs merged merged-fix-prs.json
       - name: Fetch flaky test data
         run: |
           git fetch --depth 1 origin reports/flaky-tests-baseline
@@ -138,7 +141,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-8 --max-turns 150 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model claude-fable-5 --max-turns 150 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             You are a daily automation that fixes flaky tests in this
             repository (safe-global/safe-client-gateway, NestJS + Vitest).
@@ -156,16 +159,17 @@ jobs:
             - ${{ runner.temp }}/flaky-tests/fix-prs.json — fix PRs opened so far
             - ${{ runner.temp }}/flaky-tests/open-fix-prs.json — currently open
               flaky-fix/* PRs, each with its changed files
+            - ${{ runner.temp }}/flaky-tests/merged-fix-prs.json — recently
+              merged flaky-fix/* PRs, each with its changed files
 
             Steps:
             1. Pick exactly ONE test file: status "open", is_cascade false,
-               fix_pr null, and not already covered by an in-flight fix —
-               i.e. not among the changed files of any PR in
-               open-fix-prs.json, and no recently merged PR already fixed it
-               (verify with `gh pr list`). Prefer the highest failure_count.
-               Multiple fix PRs may be open at once; one PR per test, never a
-               duplicate for the same test. If no file qualifies, print the
-               reason and stop — open no PR and push nothing.
+               fix_pr null, and not among the changed files of any PR in
+               open-fix-prs.json or merged-fix-prs.json. Prefer the highest
+               failure_count. Multiple fix PRs may be open at once; one PR
+               per test, never a duplicate for the same test. If no file
+               qualifies, print the reason and stop — open no PR and push
+               nothing.
             2. Diagnose the root cause from the error excerpts in ci-runs.json
                and by reading the test and the code under test. Recurring root
                causes in this repo: mock/shared state leaking between tests,
@@ -187,8 +191,11 @@ jobs:
                cause, and the fix, and a `## Verification` section stating how
                many consecutive local runs passed.
             6. Write the PR number (digits only, nothing else) to
-               ${{ runner.temp }}/pr-number. Later workflow steps run an
-               independent review of your PR — do not review it yourself.
+               ${{ runner.temp }}/pr-number, and the exact single-run command
+               for the fixed test (e.g. `yarn test:unit src/.../foo.spec.ts`)
+               as one line to ${{ runner.temp }}/verify-cmd. Later workflow
+               steps run an independent review of your PR — do not review it
+               yourself.
       - name: Get fix PR number
         id: fixpr
         run: |
@@ -199,10 +206,11 @@ jobs:
           echo "number=$n" >> "$GITHUB_OUTPUT"
 
       # Review loop: an independent Claude session (fresh context, same review
-      # prompt and model as claude-code-review.yml) reviews the PR and posts
-      # its findings as a PR comment; if it requests changes, another fresh
+      # prompt as claude-code-review.yml) reviews the PR and posts its
+      # findings as a PR comment; if it requests changes, another fresh
       # session addresses them. Unrolled to 3 rounds, stops early on approve.
-      # The verdict travels between steps via $RUNNER_TEMP/verdict; a missing
+      # Each Verdict step reads $RUNNER_TEMP/verdict and latches a cumulative
+      # `done` flag, so later steps check a single output; a missing verdict
       # file counts as request-changes so a failed review never ends the loop
       # with a silent approve.
       - name: Review round 1
@@ -210,7 +218,7 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-6 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          claude_args: '--model claude-opus-4-5 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
           prompt: |
             Review round 1 of 3. Follow the instructions in
             .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
@@ -220,68 +228,97 @@ jobs:
         run: |
           v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
           rm -f "$RUNNER_TEMP/verdict"
-          echo "verdict=$v" >> "$GITHUB_OUTPUT"
+          echo "done=$([ "$v" = "approve" ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
       - name: Address review 1
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.done != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-8 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model claude-fable-5 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             Follow the instructions in .github/prompts/flaky-fix-address.md
             for PR #${{ steps.fixpr.outputs.number }}.
 
       - name: Review round 2
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.done != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-6 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          claude_args: '--model claude-opus-4-5 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
           prompt: |
             Review round 2 of 3. Follow the instructions in
             .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
       - name: Verdict 2
         id: verdict2
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != ''
+        env:
+          PREV_DONE: ${{ steps.verdict1.outputs.done }}
         run: |
           v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
           rm -f "$RUNNER_TEMP/verdict"
-          echo "verdict=$v" >> "$GITHUB_OUTPUT"
+          if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "done=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Address review 2
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != '' && steps.verdict2.outputs.done != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-8 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model claude-fable-5 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             Follow the instructions in .github/prompts/flaky-fix-address.md
             for PR #${{ steps.fixpr.outputs.number }}.
 
       - name: Review round 3
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != '' && steps.verdict2.outputs.done != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-6 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+          claude_args: '--model claude-opus-4-5 --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
           prompt: |
             Review round 3 of 3 (final round). Follow the instructions in
             .github/prompts/flaky-fix-review.md for PR #${{ steps.fixpr.outputs.number }}.
       - name: Verdict 3
         id: verdict3
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != ''
+        env:
+          PREV_DONE: ${{ steps.verdict2.outputs.done }}
         run: |
           v=$(cat "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
           rm -f "$RUNNER_TEMP/verdict"
-          echo "verdict=$v" >> "$GITHUB_OUTPUT"
+          if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
+            echo "done=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "done=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Address review 3
-        if: steps.fixpr.outputs.number != '' && steps.verdict1.outputs.verdict != 'approve' && steps.verdict2.outputs.verdict != 'approve' && steps.verdict3.outputs.verdict != 'approve'
+        if: steps.fixpr.outputs.number != '' && steps.verdict3.outputs.done != 'true'
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--model claude-opus-4-8 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+          claude_args: '--model claude-fable-5 --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
           prompt: |
             Follow the instructions in .github/prompts/flaky-fix-address.md
             for PR #${{ steps.fixpr.outputs.number }}. This was the final
-            review round: after your reply, note in a short additional PR
-            comment that the automated review loop is exhausted and the
-            remaining findings await human review.
+            review round: end your reply comment with a note that the
+            automated review loop is exhausted and any remaining findings
+            await human review.
+      # The fix and address sessions claim >=10 clean runs; re-check
+      # mechanically so a skipped or hallucinated verification fails the job
+      # instead of leaving a broken PR open unnoticed.
+      - name: Verify fixed test mechanically
+        if: steps.fixpr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cmd=$(cat "$RUNNER_TEMP/verify-cmd")
+          gh pr checkout "${{ steps.fixpr.outputs.number }}"
+          case "$cmd" in
+            *test:integration*) yarn build ;;
+          esac
+          for i in $(seq 1 10); do
+            echo "Verification run $i/10: $cmd"
+            $cmd
+          done
