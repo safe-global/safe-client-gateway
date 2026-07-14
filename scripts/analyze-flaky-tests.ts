@@ -461,7 +461,8 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 	const prs: Array<FixPr> = [];
 	let page = 1;
 
-	// Fetch merged PRs that mention test/flaky/mock/spec in title
+	// Fetch PRs that mention test/flaky/mock/spec in the title, or carry a
+	// `Flaky-Test:` marker in the body
 	while (page <= 5) {
 		const data = gh("pulls", {
 			state: "all",
@@ -475,11 +476,16 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 			html_url: string;
 			merged_at: string | null;
 			state: string;
+			body: string | null;
 		}>;
 
 		if (data.length === 0) break;
 
-		const testPrs = data.filter((pr) => /test|flaky|mock|spec/i.test(pr.title));
+		const testPrs = data.filter(
+			(pr) =>
+				/test|flaky|mock|spec/i.test(pr.title) ||
+				/^Flaky-Test:/im.test(pr.body ?? ""),
+		);
 
 		for (const pr of testPrs) {
 			await sleep(DELAY_MS);
@@ -489,9 +495,21 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 					per_page: "100",
 				}) as Array<{ filename: string }>;
 
-				const testFiles = files
-					.map((f) => f.filename)
-					.filter((f) => f.match(/\.spec\.ts$/));
+				// Changed spec files are a heuristic that misses fixes made in
+				// source or shared helper files; `Flaky-Test:` body markers link
+				// a PR to its test regardless of which files it touches.
+				const markerFiles = Array.from(
+					(pr.body ?? "").matchAll(/^Flaky-Test:\s*(\S+)/gim),
+					(m) => m[1],
+				);
+				const testFiles = [
+					...new Set([
+						...files
+							.map((f) => f.filename)
+							.filter((f) => f.match(/\.spec\.ts$/)),
+						...markerFiles,
+					]),
+				];
 
 				if (testFiles.length > 0) {
 					prs.push({
