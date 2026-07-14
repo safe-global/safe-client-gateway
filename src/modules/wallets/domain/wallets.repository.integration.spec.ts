@@ -630,7 +630,7 @@ describe('WalletsRepository', () => {
           );
         }),
       ).rejects.toThrow(
-        'duplicate key value violates unique constraint "UQ_wallet_address"',
+        'duplicate key value violates unique constraint "UQ_wallet_address_plain"',
       );
     });
 
