@@ -6,6 +6,7 @@ import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { ChainApiManager } from '@/datasources/common/chain-api.manager';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -20,8 +21,10 @@ import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.sche
 import type { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
-export class BalancesApiManager implements IBalancesApiManager {
-  private safeBalancesApiMap: Record<string, SafeBalancesApi> = {};
+export class BalancesApiManager
+  extends ChainApiManager<SafeBalancesApi>
+  implements IBalancesApiManager
+{
   private readonly useVpcUrl: boolean;
 
   constructor(
@@ -34,6 +37,7 @@ export class BalancesApiManager implements IBalancesApiManager {
     @Inject(IPricesApi) private readonly coingeckoApi: IPricesApi,
     @Inject(NetworkService) private readonly networkService: INetworkService,
   ) {
+    super();
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
@@ -47,14 +51,16 @@ export class BalancesApiManager implements IBalancesApiManager {
     return this.coingeckoApi.getFiatCodes();
   }
 
-  private async _getSafeBalancesApi(chainId: string): Promise<SafeBalancesApi> {
-    const safeBalancesApi = this.safeBalancesApiMap[chainId];
-    if (safeBalancesApi !== undefined) return safeBalancesApi;
+  private _getSafeBalancesApi(chainId: string): Promise<SafeBalancesApi> {
+    return this.getOrCreateApi(chainId);
+  }
 
+  protected async createApi(chainId: string): Promise<SafeBalancesApi> {
     const chain = await this.configApi
       .getChain(chainId)
       .then(ChainSchema.parse);
-    this.safeBalancesApiMap[chainId] = new SafeBalancesApi(
+
+    return new SafeBalancesApi(
       chainId,
       this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
       this.dataSource,
@@ -64,12 +70,5 @@ export class BalancesApiManager implements IBalancesApiManager {
       this.coingeckoApi,
       this.networkService,
     );
-    return this.safeBalancesApiMap[chainId];
-  }
-
-  destroyApi(chainId: string): void {
-    if (this.safeBalancesApiMap[chainId] !== undefined) {
-      delete this.safeBalancesApiMap[chainId];
-    }
   }
 }
