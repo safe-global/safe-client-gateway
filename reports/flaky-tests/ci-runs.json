@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-07-14T13:56:32.157Z",
-  "last_checked_at": "2026-07-14T13:56:32.157Z",
+  "generated_at": "2026-07-14T14:29:12.297Z",
+  "last_checked_at": "2026-07-14T14:29:12.297Z",
   "period": {
     "from": "2026-01-16",
     "to": "2026-07-14"
@@ -156,9 +156,27 @@
     "1efc9d3",
     "47477af",
     "dc3acbd",
-    "ab8c16f"
+    "ab8c16f",
+    "9b8f387"
   ],
   "runs": [
+    {
+      "id": 29338034912,
+      "sha": "9b8f387",
+      "branch": "fix/cors-allow-mutation-methods",
+      "conclusion": "failure",
+      "created_at": "2026-07-14T13:48:17Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository > findOrCreateByWalletAddress > should return the existing user id on concurrent duplicate insert",
+          "error": "AssertionError: expected 28 to be 29 // Object.is equality"
+        }
+      ]
+    },
     {
       "id": 29012179026,
       "sha": "9ebe58e",

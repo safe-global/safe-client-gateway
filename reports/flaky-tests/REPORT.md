@@ -1,13 +1,13 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-07-14T13:56:32.165Z | Period: 2026-01-16 to 2026-07-14
+Generated: 2026-07-14T14:29:12.303Z | Period: 2026-01-16 to 2026-07-14
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 1791 |
-| Flaky commits (pass + fail on same SHA) | 125 |
+| Total unique commits | 1792 |
+| Flaky commits (pass + fail on same SHA) | 126 |
 | Flakiness rate | 7% |
 | Cascade baseline | 1 failures (7 tests) |
 
@@ -52,7 +52,7 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-06-29 | 81 | 3 | 3.7% |
 | 2026-07-05 | 6 | 0 | 0% |
 | 2026-07-06 | 95 | 2 | 2.1% |
-| 2026-07-13 | 62 | 0 | 0% |
+| 2026-07-13 | 63 | 1 | 1.6% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -82,12 +82,12 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 06-22   5.6%  n=71   ████████████
 06-29   3.7%  n=81   ████████
 07-06   2.1%  n=95   ████
-07-13   0.0%  n=62   ▏
+07-13   1.6%  n=63   ███
 ```
 
 ## Clean Streak
 
-62 commits without a flake since the last flaky week — rate is below 4.8% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (238 to go).
+Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-commit clean streak.
 
 ## Flaky Test Leaderboard (Non-Cascade)
 
@@ -106,8 +106,8 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 6 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
 | `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/users/domain/users.repository.integration.spec.ts` | 5 | Open | - |
 | `src/domain/common/entities/safe-signature.spec.ts` | 4 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
-| `src/modules/users/domain/users.repository.integration.spec.ts` | 4 | Open | - |
 | `src/modules/auth/utils/auth-redirect.helper.spec.ts` | 3 | Fixed | [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) |
 | `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 3 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
@@ -158,7 +158,7 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 - `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (10 failures)
 - `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (9 failures)
-- `src/modules/users/domain/users.repository.integration.spec.ts` (4 failures)
+- `src/modules/users/domain/users.repository.integration.spec.ts` (5 failures)
 - `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures)
 
 ---

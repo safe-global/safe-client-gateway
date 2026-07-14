@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-07-14T13:56:32.157Z",
+  "generated_at": "2026-07-14T14:29:12.297Z",
   "summary": {
-    "total_commits": 1791,
-    "flaky_commits": 125,
+    "total_commits": 1792,
+    "flaky_commits": 126,
     "flakiness_rate": 7,
     "period": {
       "from": "2026-01-16",
@@ -222,9 +222,9 @@
     },
     {
       "week": "2026-07-13",
-      "commits": 62,
-      "flaky": 0,
-      "rate": 0
+      "commits": 63,
+      "flaky": 1,
+      "rate": 1.6
     }
   ],
   "tests": [
@@ -356,6 +356,13 @@
       }
     },
     {
+      "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+      "failure_count": 5,
+      "is_cascade": false,
+      "status": "open",
+      "fix_pr": null
+    },
+    {
       "file": "src/domain/common/entities/safe-signature.spec.ts",
       "failure_count": 4,
       "is_cascade": false,
@@ -364,13 +371,6 @@
         "number": 3136,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3136"
       }
-    },
-    {
-      "file": "src/modules/users/domain/users.repository.integration.spec.ts",
-      "failure_count": 4,
-      "is_cascade": false,
-      "status": "open",
-      "fix_pr": null
     },
     {
       "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
