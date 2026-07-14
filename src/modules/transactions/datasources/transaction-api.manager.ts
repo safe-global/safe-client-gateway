@@ -6,6 +6,7 @@ import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { ChainApiManager } from '@/datasources/common/chain-api.manager';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -21,9 +22,10 @@ import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.sche
 import { TransactionApi } from '@/modules/transactions/datasources/transaction-api.service';
 
 @Injectable()
-export class TransactionApiManager implements ITransactionApiManager {
-  private transactionApiMap: Record<string, TransactionApi> = {};
-
+export class TransactionApiManager
+  extends ChainApiManager<TransactionApi>
+  implements ITransactionApiManager
+{
   private readonly useVpcUrl: boolean;
 
   constructor(
@@ -36,19 +38,22 @@ export class TransactionApiManager implements ITransactionApiManager {
     @Inject(NetworkService) private readonly networkService: INetworkService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
+    super();
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
   }
 
-  async getApi(chainId: string): Promise<TransactionApi> {
-    const transactionApi = this.transactionApiMap[chainId];
-    if (transactionApi !== undefined) return transactionApi;
+  getApi(chainId: string): Promise<TransactionApi> {
+    return this.getOrCreateApi(chainId);
+  }
 
+  protected async createApi(chainId: string): Promise<TransactionApi> {
     const chain = await this.configApi
       .getChain(chainId)
       .then(ChainSchema.parse);
-    this.transactionApiMap[chainId] = new TransactionApi(
+
+    return new TransactionApi(
       chainId,
       this.useVpcUrl ? chain.vpcTransactionService : chain.transactionService,
       this.dataSource,
@@ -58,12 +63,5 @@ export class TransactionApiManager implements ITransactionApiManager {
       this.networkService,
       this.loggingService,
     );
-    return this.transactionApiMap[chainId];
-  }
-
-  destroyApi(chainId: string): void {
-    if (this.transactionApiMap[chainId] !== undefined) {
-      delete this.transactionApiMap[chainId];
-    }
   }
 }
