@@ -20,11 +20,21 @@
  * everything else). Searchable address columns also get a blind index; blind
  * indexes cannot be computed in SQL, so this cannot be a pure SQL migration.
  *
- * Release choreography (2026-07-10 expansion spec): deploy the code with
- * encryption disabled, run both column migrations, enable
- * ENCRYPTION_ENABLED (new writes encrypt; plaintext rows still
- * read through the temporary passthrough and the dual-read lookups), then run
- * this script until --verify passes:
+ * Release choreography (2026-07-10 expansion spec): there is NO transitional
+ * read tolerance — while ENCRYPTION_ENABLED is on, a plaintext value read is a
+ * hard error (KmsEncryptionService.decrypt throws; the repositories match
+ * encrypted rows on the blind index alone). So the backfill MUST complete
+ * before the flag flips, not after:
+ *
+ *   1. Deploy the code with encryption disabled.
+ *   2. Run both column migrations.
+ *   3. Run this script until --verify exits 0. The fleet is still writing
+ *      plaintext at this point, so a single pass will leave stragglers behind;
+ *      re-run the same command until --verify passes (this script forces
+ *      encryption on for itself regardless of the fleet flag, so its output is
+ *      always ciphertext even while the fleet flag is off).
+ *   4. Flip ENCRYPTION_ENABLED on. From here new writes encrypt and every read
+ *      expects ciphertext.
  *
  *   ENCRYPTION_INDEX_KEY=... \
  *   AWS_KMS_ENCRYPTION_KEY_ID=... AWS_REGION=... \
@@ -35,18 +45,13 @@
  *   --verify   Assert no plaintext remains anywhere; exit non-zero if any
  *              table still has plaintext.
  *
- * This script always encrypts via KMS — it forces field encryption on for
- * itself regardless of ENCRYPTION_ENABLED, so the fleet's flag
- * state is irrelevant to it. Rows written by a still-disabled fleet after a
- * backfill pass remain plaintext: re-run this same command until --verify
- * passes; the dual-read lookups and the plaintext read passthrough keep such
- * stragglers working in the meantime.
- *
- * ONLY after --verify exits 0 (in the target environment) may the temporary
- * read tolerance be removed: the plaintext-passthrough `@todo` in
- * KmsEncryptionService.decrypt and the dual-read plaintext arms in the
- * repositories (each marked with a "throw-on-plaintext" comment). That flip
- * is deliberately NOT part of the rollout PRs.
+ * Race window between step 3 and step 4: because the still-disabled fleet keeps
+ * writing plaintext, a row can land AFTER --verify passes but BEFORE the flag
+ * flips, and that row would be an unreadable hard error the instant the flag is
+ * on. Close the window at flip time — freeze writes (or drain/deploy the
+ * encrypting build) across the flip, and run one more `--verify` immediately
+ * before flipping, rolling back the flag if it exits non-zero. Do NOT flip on
+ * the strength of an earlier --verify pass alone.
  *
  * Notes:
  * - Idempotent: values already in `kms:v1:` form are skipped. Matching the
@@ -502,8 +507,8 @@ async function main(): Promise<void> {
       console.info(`Total plaintext remaining: ${remaining}`);
       if (verify && remaining > 0) {
         throw new Error(
-          `${remaining} plaintext values remain; not safe to restore the ` +
-            `throw-on-plaintext guard or remove the dual-read arms`,
+          `${remaining} plaintext values remain; not safe to flip ` +
+            `ENCRYPTION_ENABLED on (plaintext reads become a hard error)`,
         );
       }
       return;

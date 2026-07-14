@@ -210,9 +210,18 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     const repository = args.entityManager.getRepository(DbAddressBookItem);
     // Enabled: match encrypted rows on their blind index. Disabled: no index
     // key, so match the stored plaintext (address_index IS NULL) directly.
-    const indexes = args.addressBookItems
-      .map((item) => this.spaceEncryptionService.itemAddressIndex(item.address))
-      .filter((index): index is string => index !== null);
+    // Compute each input item's blind index once (one HMAC per item) and key a
+    // lookup by it, so the per-row match below is O(1) rather than recomputing
+    // the HMAC for every candidate on every existing row.
+    const itemByIndex = new Map<string, AddressBookItem>();
+    for (const item of args.addressBookItems) {
+      const index = this.spaceEncryptionService.itemAddressIndex(item.address);
+      // Keep the first item for a given index, matching the prior `.find`.
+      if (index !== null && !itemByIndex.has(index)) {
+        itemByIndex.set(index, item);
+      }
+    }
+    const indexes = Array.from(itemByIndex.keys());
     const where: FindOptionsWhere<DbAddressBookItem> =
       indexes.length > 0
         ? { space: { id: args.space.id }, addressIndex: In(indexes) }
@@ -231,12 +240,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       // Encrypted rows match on the blind index; plaintext rows on the address.
       const patch =
         item.addressIndex != null
-          ? args.addressBookItems.find(
-              (addressBookItem) =>
-                this.spaceEncryptionService.itemAddressIndex(
-                  addressBookItem.address,
-                ) === item.addressIndex,
-            )
+          ? itemByIndex.get(item.addressIndex)
           : args.addressBookItems.find((addressBookItem) =>
               isAddressEqual(addressBookItem.address, item.address),
             );
