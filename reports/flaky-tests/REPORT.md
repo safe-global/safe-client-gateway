@@ -1,12 +1,12 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-07-14T13:17:42.265Z | Period: 2026-01-16 to 2026-07-14
+Generated: 2026-07-14T13:56:32.165Z | Period: 2026-01-16 to 2026-07-14
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 1785 |
+| Total unique commits | 1791 |
 | Flaky commits (pass + fail on same SHA) | 125 |
 | Flakiness rate | 7% |
 | Cascade baseline | 1 failures (7 tests) |
@@ -52,7 +52,7 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-06-29 | 81 | 3 | 3.7% |
 | 2026-07-05 | 6 | 0 | 0% |
 | 2026-07-06 | 95 | 2 | 2.1% |
-| 2026-07-13 | 56 | 0 | 0% |
+| 2026-07-13 | 62 | 0 | 0% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -82,8 +82,12 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 06-22   5.6%  n=71   ████████████
 06-29   3.7%  n=81   ████████
 07-06   2.1%  n=95   ████
-07-13   0.0%  n=56   ▏
+07-13   0.0%  n=62   ▏
 ```
+
+## Clean Streak
+
+62 commits without a flake since the last flaky week — rate is below 4.8% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (238 to go).
 
 ## Flaky Test Leaderboard (Non-Cascade)
 

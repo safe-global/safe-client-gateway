@@ -603,6 +603,35 @@ function generateReport(args: {
 		lines.push("");
 	}
 
+	// Clean-streak tracker: commits accumulated in fully-clean weeks after
+	// the last week that had a flake. Conservative — clean commits within
+	// the flake week itself are not counted. Rule of three: 0 flakes in n
+	// commits bounds the true rate below 3/n at 95% confidence; the agreed
+	// target (<1% at 95%) therefore needs a 300-commit streak.
+	let cleanStreak = 0;
+	for (let i = weeklyTrend.length - 1; i >= 0; i--) {
+		if (weeklyTrend[i].flaky > 0) break;
+		cleanStreak += weeklyTrend[i].commits;
+	}
+	lines.push("## Clean Streak");
+	lines.push("");
+	if (cleanStreak >= 300) {
+		lines.push(
+			`**Target met:** ${cleanStreak} commits without a flake — the flake rate is below ${(300 / cleanStreak).toFixed(2)}% at 95% confidence (target: <1%).`,
+		);
+	} else if (cleanStreak > 0) {
+		lines.push(
+			`${cleanStreak} commits without a flake since the last flaky week — ` +
+				`rate is below ${(300 / cleanStreak).toFixed(1)}% at 95% confidence. ` +
+				`Target <1% at 95% needs a **300-commit** streak (${300 - cleanStreak} to go).`,
+		);
+	} else {
+		lines.push(
+			"Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-commit clean streak.",
+		);
+	}
+	lines.push("");
+
 	// Flaky test leaderboard (above cascade baseline)
 	const nonCascade = tests
 		.filter((t) => !t.is_cascade)
