@@ -74,10 +74,10 @@
 <a id="change-01"></a>
 ### `CHANGE-01` Smallest correct change
 
-> **general** · scope · ↩ `RL-20260703-001`
+> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004`
 
 **📜 Rule**\
-A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance.
+A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance. Removing a provider sweeps every dependent surface (now-dead interface params, feature flags, `.env.sample.json`, devcontainer, launch.json, test overrides) and locks intentional behavior changes in with a test. Before refactoring a path, verify it is used — unused surfaces get removed, not improved.
 
 **✅ Check**\
 > Is this the smallest correct change for the behavior?
@@ -613,10 +613,10 @@ someone remembered to add the string.
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001`
+> **general** · naming · 2 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method.
 
 **✅ Check**\
 > Did I document public/non-trivial logic and remove dead code?
@@ -1299,10 +1299,10 @@ TypeORM treats an array `where` as OR. A clause that omits the `user: { id }` pr
 <a id="route-01"></a>
 ### `ROUTE-01` Controllers are HTTP boundary
 
-> **general** · routes · 3 examples · ↩ `RL-20260108-002` · `RL-20260108-003` · `RL-20251222-001`
+> **general** · routes · 3 examples · ↩ `RL-20260108-002` · `RL-20260108-003` · `RL-20251222-001` · `RL-20260713-003`
 
 **📜 Rule**\
-Controllers stay at the HTTP boundary: no Provider naming in user-facing copy, no false standards labels (e.g. CAIP-10) the implementation does not satisfy, no domain `Error` for "not found" — throw `NotFoundException`/`ForbiddenException` so the global filter maps to the right status. Wrap parsing/IO inside the adapter's wrap-and-throw boundary.
+Controllers stay at the HTTP boundary: no Provider naming in user-facing copy, no false standards labels (e.g. CAIP-10) the implementation does not satisfy, no domain `Error` for "not found" — throw `NotFoundException`/`ForbiddenException` so the global filter maps to the right status. Wrap parsing/IO inside the adapter's wrap-and-throw boundary. Fastify semantics: 204 sends no body; `null` returns go through `NullResponseInterceptor`; router options restore Express tolerance (`ignoreTrailingSlash`, `maxParamLength` ~2× the longest legitimate id); cookie `maxAge` is seconds (ms TTL config gets schema `.min(1_000)` + clamped conversion); unmatched-route logs use an `'unknown'` sentinel; the listen host is explicit (`0.0.0.0`) since Fastify defaults to localhost.
 
 **✅ Check**\
 > Are controllers only HTTP boundary code?
@@ -1596,10 +1596,10 @@ Map uniqueness/constraint errors to domain errors at the repository boundary; in
 <a id="db-05"></a>
 ### `DB-05` Migrations agree with code
 
-> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001` · `RL-20260601-001` · `RL-20260604-001`
+> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001` · `RL-20260601-001` · `RL-20260604-001` · `RL-20260713-002`
 
 **📜 Rule**\
-Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match.
+Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match. New product tables use a generated integer surrogate PK with a UNIQUE constraint on the natural key; column value conversion uses TypeORM transformers, not manual mapping in the repository.
 
 **✅ Check**\
 > Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?
@@ -1909,10 +1909,10 @@ Defaults remain conservative and OSS-generic. Dev-only feature flags require bot
 <a id="config-02"></a>
 ### `CONFIG-02` Config fails fast
 
-> **general** · config · 1 example · ↩ `RL-20260506-004` · `RL-20251219-002` · `RL-20260608-001`
+> **general** · config · 1 example · ↩ `RL-20260506-004` · `RL-20251219-002` · `RL-20260608-001` · `RL-20260713-002` · `RL-20260714-001`
 
 **📜 Rule**\
-Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read. Conditionally required env vars extend the shared deployed-env `superRefine` required-fields list with a `requiredWhen` condition — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow`.
+Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read. Conditionally required env vars extend the shared deployed-env `superRefine` required-fields list with a `requiredWhen` condition — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow`. Boolean `FF_*` flags parse strictly (`?.toLowerCase() === 'true'`, never `!!`), with a regression test that legacy carried-over values do not enable the flag.
 
 **✅ Check**\
 > Does config validation fail at startup?

@@ -3,18 +3,18 @@
   "state": "closed",
   "coveredClosedAtRange": {
     "start": "2025-12-11T00:00:00Z",
-    "end": "2026-07-11T00:00:00Z"
+    "end": "2026-07-14T16:20:42Z"
   },
   "overlapHours": 2,
   "lastRun": {
     "mode": "compound",
     "repo": "safe-global/safe-client-gateway",
-    "sourceWindowId": "CLOSED-20260707-20260711",
-    "since": "2026-07-06T22:00:00Z",
-    "until": "2026-07-11T00:00:00Z",
-    "prs": 9,
-    "comments": 164,
-    "learnings": 14,
-    "fetchedAt": "2026-07-14T16:15:47Z"
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "since": "2026-07-10T22:00:00Z",
+    "until": "2026-07-14T16:20:42Z",
+    "prs": 18,
+    "comments": 130,
+    "learnings": 6,
+    "fetchedAt": "2026-07-14T16:20:42Z"
   }
 }

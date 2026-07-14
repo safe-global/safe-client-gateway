@@ -1773,7 +1773,8 @@
     "title": "Vitest 4 semantics surfaced masked assertions and hoisting hazards",
     "sourceWindowId": "CLOSED-20260623-20260630",
     "prNumbers": [
-      3136
+      3136,
+      3202
     ],
     "prState": "merged",
     "reviewCommentIds": [],
@@ -1781,9 +1782,10 @@
     "issueCommentIds": [
       4777502574,
       4777680124,
-      4631519129
+      4631519129,
+      4924868092
     ],
-    "learning": "The Jest→Vitest migration surfaced durable facts for this repo: Vitest 4's `toThrow(errorInstance)` deep-compares enumerable props (Jest compared only `.message`), which exposed a real 422-vs-502 discrepancy that message-only assertions now deliberately paper over (tracked in-thread); `vi.mock` factories referencing outer consts belong in `vi.hoisted(...)`; `vi.resetAllMocks()` restores spy originals in Vitest 4 (unlike Jest, where it neutered them); and docs must not carry exact test counts that drift (removed from TESTING.md). Also: review replies claimed fixes that were never committed — verify the diff before saying \"fixed\".",
+    "learning": "The Jest→Vitest migration surfaced durable facts for this repo: Vitest 4's `toThrow(errorInstance)` deep-compares enumerable props (Jest compared only `.message`), which exposed a real 422-vs-502 discrepancy that message-only assertions now deliberately paper over (tracked in-thread); `vi.mock` factories referencing outer consts belong in `vi.hoisted(...)`; `vi.resetAllMocks()` restores spy originals in Vitest 4 (unlike Jest, where it neutered them); and docs must not carry exact test counts that drift (removed from TESTING.md). Also: review replies claimed fixes that were never committed — verify the diff before saying \"fixed\". The claimed-fixed-but-never-committed pattern recurred in #3202 — a review reply listed four fixes while the branch diff was empty.",
     "ruleIds": [
       "TEST-01",
       "PR-02"
@@ -1968,7 +1970,8 @@
     "prNumbers": [
       3241,
       3196,
-      3214
+      3214,
+      3247
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -1976,11 +1979,14 @@
       3557577185,
       3527453029,
       3506952776,
-      3506958656
+      3506958656,
+      3570889198,
+      3570893940,
+      3570897035
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API.",
+    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly).",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2209,6 +2215,141 @@
     "ruleIds": [
       "DB-01",
       "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20260713-001",
+    "title": "Module mixed errors, types, interfaces, and helpers into service files",
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "prNumbers": [
+      3078
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      3274960708,
+      3274961798,
+      3274962725,
+      3274964299,
+      3274966634,
+      3275248418,
+      3310410509,
+      3310414423
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20260713-002",
+    "title": "Natural-key PK, manual byte mapping, and unvalidated env vars in a new table module",
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "prNumbers": [
+      3078
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      3274888508,
+      3275140720,
+      3275128368,
+      3274917559,
+      3274897690,
+      3310409815,
+      3310413468,
+      3310413203,
+      3310410127
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new table used the natural key (`credential_id`) as PK, mapped `bytea` columns manually in the repository, re-selected after insert, and added `PASSKEYS_*` env vars without schema validation. Review aligned it with repo conventions: generated integer surrogate PK plus a UNIQUE constraint on the natural key (matching `users`/`wallets`/`counterfactual-safes`), TypeORM column transformers (`databaseBufferTransformer` mirroring `databaseAddressTransformer`) instead of manual conversion, reading the inserted row from `generatedMaps`, validating every new env var in `configuration.schema.ts`, and faker for config test values.",
+    "ruleIds": [
+      "DB-05",
+      "CONFIG-02"
+    ]
+  },
+  {
+    "id": "RL-20260713-003",
+    "title": "Fastify platform semantics that differ from Express",
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "prNumbers": [
+      3190,
+      3249
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3571129002,
+      3571140640
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4790047618,
+      4790192353
+    ],
+    "learning": "The Express→Fastify migration surfaced durable platform facts: a 204 response must send no body (`.send()` with no argument); `null` returns need the `NullResponseInterceptor` to preserve the empty-body contract; router options must restore Express tolerance (`ignoreTrailingSlash`, `maxParamLength` bounded to ~2× the longest legitimate composite id — 256, not 1024, to avoid a kilobyte-path DoS surface); cookie `maxAge` is seconds while config TTLs are ms (schema `.min(1_000)` plus a clamped conversion); unmatched-route logging returns an `'unknown'` sentinel instead of the raw URL to protect Datadog log cardinality; and the listen host must be set explicitly (`0.0.0.0`) because Fastify defaults to localhost-only, unlike Express.",
+    "ruleIds": [
+      "ROUTE-01"
+    ]
+  },
+  {
+    "id": "RL-20260714-001",
+    "title": "Boolean feature flag parsed with !! treated the string 'false' as enabled",
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "prNumbers": [
+      3157
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4924143834,
+      4934245315
+    ],
+    "learning": "`FF_ZERION_ENABLED` was parsed with `!!process.env.FF_ZERION_ENABLED`, so `\"false\"`, `\"0\"`, or a carried-over legacy chain-id list all enabled the flag. The fix parses strictly (`?.toLowerCase() === 'true'`, matching every sibling `FF_*` flag) and adds an `it.each(['false', '0', '1,10,137'])` regression test proving legacy values cannot re-enable the feature — with rollout ordering confirmed with ops (set the var to `true` in every env, then deploy). Boolean env flags parse strictly, never truthiness.",
+    "ruleIds": [
+      "CONFIG-02"
+    ]
+  },
+  {
+    "id": "RL-20260714-002",
+    "title": "Provider removal left dead params, a dead feature flag, and stale sample entries",
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "prNumbers": [
+      3202
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4904544011,
+      4924725250
+    ],
+    "learning": "Removing Zerion as a balances provider left a now-dead `safeAddress` parameter on `IBalancesApiManager.getApi` (every caller generated a fake address to satisfy it), a dead `features.counterfactualBalances` flag with entries in `.env.sample.json`, `.vscode/launch.json`, `.devcontainer/docker-compose.yml`, and test overrides, plus a redundant `rawify` wrap — all cleaned up after review, and the intentional counterfactual→404 behavior change got its own integration test. Removing a provider sweeps every dependent surface: interface params, feature flags, sample/devcontainer entries, test overrides, and locks in intentional behavior changes with a test.",
+    "ruleIds": [
+      "CHANGE-01"
+    ]
+  },
+  {
+    "id": "RL-20260713-004",
+    "title": "Cache-layer refactor of an endpoint that should have been removed instead",
+    "sourceWindowId": "CLOSED-20260711-20260714",
+    "prNumbers": [
+      2967
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      3152840316
+    ],
+    "reviewIds": [
+      4187278664
+    ],
+    "issueCommentIds": [
+      4967755205
+    ],
+    "learning": "A WIP refactor moved the Zerion balances API onto `CacheFirstDataSource`, hitting real design friction (cached-shape change would throw ZodError on existing entries; rate-limit counting moved onto cache hits) — but review pointed out the endpoint was unused and should be removed rather than refactored; the PR was closed as redundant once the removal landed. Before refactoring a code path, verify it is actually used — unused surfaces get removed, not improved.",
+    "ruleIds": [
+      "CHANGE-01"
     ]
   }
 ]
