@@ -2,7 +2,9 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
   type INestApplication,
   Post,
   Req,
@@ -25,6 +27,15 @@ class ProbeController {
   postBody(@Body() body: unknown): unknown {
     return body;
   }
+
+  @Post('body-echo')
+  @HttpCode(200)
+  echoBody(@Body() body: unknown): { parsed: unknown } {
+    return { parsed: body === undefined ? 'undefined' : body };
+  }
+
+  @Delete('resource')
+  deleteResource(): void {}
 }
 
 describe('createFastifyAdapter', () => {
@@ -101,6 +112,46 @@ describe('createFastifyAdapter', () => {
       .post('/body')
       .send({ value: 'too-large' })
       .expect(413);
+  });
+
+  it('accepts an empty body with a JSON content type', async () => {
+    app = await createApp('0');
+
+    await request(app.getHttpServer())
+      .delete('/resource')
+      .set('Content-Type', 'application/json')
+      .expect(200);
+  });
+
+  it('parses an empty JSON body as {} like Express body-parser did', async () => {
+    app = await createApp('0');
+
+    const { body } = await request(app.getHttpServer())
+      .post('/body-echo')
+      .set('Content-Type', 'application/json')
+      .expect(200);
+
+    expect(body).toEqual({ parsed: {} });
+  });
+
+  it('still rejects malformed JSON bodies', async () => {
+    app = await createApp('0');
+
+    await request(app.getHttpServer())
+      .post('/body-echo')
+      .set('Content-Type', 'application/json')
+      .send('{"broken":')
+      .expect(400);
+  });
+
+  it('still rejects prototype-poisoning payloads', async () => {
+    app = await createApp('0');
+
+    await request(app.getHttpServer())
+      .post('/body-echo')
+      .set('Content-Type', 'application/json')
+      .send('{"__proto__": {"polluted": true}}')
+      .expect(400);
   });
 });
 

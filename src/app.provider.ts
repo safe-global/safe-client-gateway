@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { parse as parseQuerystring } from 'node:querystring';
 import fastifyCookie from '@fastify/cookie';
 import type { INestApplication } from '@nestjs/common';
 import { VersioningType } from '@nestjs/common';
@@ -73,16 +74,62 @@ export function parseBodyLimit(value: string | undefined): number | undefined {
   return Math.floor(amount * BODY_LIMIT_UNITS[unit]);
 }
 
+// Fastify rejects empty JSON bodies with FST_ERR_CTP_EMPTY_JSON_BODY,
+// so restore the Express semantics while delegating non-empty bodies
+// to Fastify's default parser to keep its prototype-poisoning protection.
+export function configureFastifyBodyParsers(
+  adapter: FastifyAdapter,
+): FastifyAdapter {
+  const instance = adapter.getInstance();
+  const { bodyLimit, onConstructorPoisoning, onProtoPoisoning } =
+    instance.initialConfig;
+  const parseJson = instance.getDefaultJsonParser(
+    onProtoPoisoning || 'error',
+    onConstructorPoisoning || 'error',
+  );
+
+  adapter.useBodyParser(
+    'application/json',
+    false,
+    { bodyLimit },
+    (req, body, done) => {
+      if (body.length === 0) {
+        done(null, {});
+        return;
+      }
+      parseJson(req, body.toString(), done);
+    },
+  );
+
+  // `useBodyParser` marks parsers as registered so that Nest's `app.init()`
+  // does not stack its defaults on top (which throws
+  // FST_ERR_CTP_ALREADY_PRESENT) — but that also skips Nest's urlencoded
+  // parser, so replicate it here. `node:querystring` parses flat key/value
+  // pairs like the `fast-querystring` library Nest uses.
+  adapter.useBodyParser(
+    'application/x-www-form-urlencoded',
+    false,
+    { bodyLimit },
+    (_req, body, done) => {
+      done(null, parseQuerystring(body.toString()));
+    },
+  );
+
+  return adapter;
+}
+
 export function createFastifyAdapterFromConfiguration(
   config: FastifyAdapterConfiguration,
 ): FastifyAdapter {
   const bodyLimit = parseBodyLimit(config.jsonLimit);
 
-  return new FastifyAdapter({
-    trustProxy: parseTrustProxy(config.trustProxy),
-    routerOptions: FASTIFY_ROUTER_OPTIONS,
-    ...(bodyLimit === undefined ? {} : { bodyLimit }),
-  });
+  return configureFastifyBodyParsers(
+    new FastifyAdapter({
+      trustProxy: parseTrustProxy(config.trustProxy),
+      routerOptions: FASTIFY_ROUTER_OPTIONS,
+      ...(bodyLimit === undefined ? {} : { bodyLimit }),
+    }),
+  );
 }
 
 export function createFastifyAdapter(
