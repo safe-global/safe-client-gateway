@@ -32,6 +32,15 @@ export function createTestApplication(module: TestingModule): TestApplication {
   return app;
 }
 
+/**
+ * Initializes a test {@link INestApplication} and waits for the underlying
+ * Fastify instance to be ready.
+ *
+ * Always use this instead of a bare `app.init()`: Fastify attaches route
+ * lifecycle hooks only once `.ready()` resolves, so a request sent after
+ * `init()` alone races app boot and crashes inside Fastify's hook runner,
+ * hanging the test until timeout.
+ */
 export async function initTestApplication(
   app: INestApplication,
 ): Promise<void> {

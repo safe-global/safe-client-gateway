@@ -24,6 +24,15 @@ Each external API gets its own datasource:
 
 When adding constructor dependencies, update all spec files that instantiate the class.
 
+## Testing
+
+- **Never call bare `await app.init()` in tests.** The HTTP platform is Fastify: route contexts only get their lifecycle hooks attached once Fastify's `.ready()` resolves, so a supertest request sent after `init()` alone races app boot and crashes inside Fastify's hook runner (`Cannot read properties of undefined (reading 'length')`), hanging the test until timeout. Always initialize test apps with `initTestApplication(app)` from `@/__tests__/test-app.provider`, which awaits both `app.init()` and the Fastify instance's `.ready()`:
+
+  ```typescript
+  app = await new TestAppProvider().provide(moduleFixture);
+  await initTestApplication(app);
+  ```
+
 ## Pre-Commit Checklist
 
 Before creating **EACH** commit, you MUST run the following commands in sequence and fix any issues:
