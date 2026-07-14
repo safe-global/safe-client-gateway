@@ -106,25 +106,26 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       # One PR per flaky test: collect the open and recently merged
       # flaky-fix/* PRs with their changed files so the fix stage can pick a
-      # test that isn't already covered, instead of opening duplicates.
+      # test that isn't already covered, instead of opening duplicates. The
+      # merged window is deliberately short: the freshly updated report data
+      # already carries older merged fixes, and a test that starts flaking
+      # again months after a fix deserves a new PR.
       - name: List flaky-fix PRs
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$RUNNER_TEMP/flaky-tests"
           list_prs() {
-            out="$RUNNER_TEMP/flaky-tests/$2"
-            gh pr list --state "$1" --limit 200 --json number,title,headRefName,body \
-              --jq '[.[] | select(.headRefName | startswith("flaky-fix/"))]' > "$out"
-            for num in $(jq -r '.[].number' "$out"); do
-              files=$(gh pr view "$num" --json files --jq '[.files[].path]')
-              jq --argjson files "$files" --argjson num "$num" \
-                'map(if .number == $num then . + {files: $files} else . end)' \
-                "$out" > "$out.tmp" && mv "$out.tmp" "$out"
-            done
+            state=$1; out=$2; shift 2
+            gh pr list --state "$state" --limit 200 "$@" \
+              --json number,title,headRefName,body,files \
+              --jq '[.[] | select(.headRefName | startswith("flaky-fix/"))
+                     | . + {files: [.files[].path]}]' \
+              > "$RUNNER_TEMP/flaky-tests/$out"
           }
           list_prs open open-fix-prs.json
-          list_prs merged merged-fix-prs.json
+          list_prs merged merged-fix-prs.json \
+            --search "merged:>=$(date -u -d '30 days ago' +%Y-%m-%d)"
       - name: Fetch flaky test data
         run: |
           git fetch --depth 1 origin reports/flaky-tests-baseline
@@ -319,6 +320,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          if [ ! -s "$RUNNER_TEMP/verify-cmd" ]; then
+            echo "verify-cmd missing or empty — the fix session must write it"
+            exit 1
+          fi
           cmd=$(cat "$RUNNER_TEMP/verify-cmd")
           gh pr checkout "${{ steps.fixpr.outputs.number }}"
           case "$cmd" in
@@ -326,5 +331,5 @@ jobs:
           esac
           for i in $(seq 1 10); do
             echo "Verification run $i/10: $cmd"
-            $cmd
+            eval "$cmd"
           done
