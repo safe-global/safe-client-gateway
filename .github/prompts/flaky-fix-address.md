@@ -20,7 +20,10 @@ as CI.
 4. If you changed anything, re-verify: run the affected test file in a
    loop at least 10 times — every run must pass (unit:
    `yarn test:unit <file>`; integration: `yarn build` once, then
-   `yarn test:integration <file>`).
+   `yarn test:integration <file>`). If your changes moved, renamed, or
+   retargeted the flaky test file, rewrite `$RUNNER_TEMP/verify-cmd`
+   with the updated single-run command — a later workflow step executes
+   it, and a stale path would make that verification fail or no-op.
 5. Commit and push to the PR's head branch (never to main).
 6. Reply with a single PR comment addressing each finding: what you
    changed, or why you declined.
