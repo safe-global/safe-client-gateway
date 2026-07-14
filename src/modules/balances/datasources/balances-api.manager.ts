@@ -44,15 +44,11 @@ export class BalancesApiManager
   }
 
   getApi(chainId: string): Promise<IBalancesApi> {
-    return this._getSafeBalancesApi(chainId);
+    return this.getOrCreateApi(chainId);
   }
 
   getFiatCodes(): Promise<Raw<Array<string>>> {
     return this.coingeckoApi.getFiatCodes();
-  }
-
-  private _getSafeBalancesApi(chainId: string): Promise<SafeBalancesApi> {
-    return this.getOrCreateApi(chainId);
   }
 
   protected async createApi(chainId: string): Promise<SafeBalancesApi> {

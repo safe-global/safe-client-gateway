@@ -9,13 +9,33 @@
  * retrieval builds a fresh instance (e.g. after a chain update).
  */
 export abstract class ChainApiManager<T> {
-  private readonly apis: Record<string, T> = {};
+  private readonly apis: Record<string, Promise<T>> = {};
 
   protected abstract createApi(chainId: string): T | Promise<T>;
 
-  protected async getOrCreateApi(chainId: string): Promise<T> {
-    this.apis[chainId] ??= await this.createApi(chainId);
-    return this.apis[chainId];
+  protected getOrCreateApi(chainId: string): Promise<T> {
+    const cached = this.apis[chainId];
+    if (cached !== undefined) {
+      return cached;
+    }
+
+    // Cache the pending promise so concurrent retrievals share one creation.
+    // Deferring via Promise.resolve().then() turns a synchronous createApi
+    // throw into a rejection instead of letting it escape the caller.
+    const created = Promise.resolve()
+      .then(() => this.createApi(chainId))
+      .catch((error) => {
+        // Do not cache failures; let the next retrieval retry.
+        // Only evict the entry this creation cached, in case it was
+        // already replaced.
+        if (this.apis[chainId] === created) {
+          delete this.apis[chainId];
+        }
+        throw error;
+      });
+    this.apis[chainId] = created;
+
+    return created;
   }
 
   protected hasApi(chainId: string): boolean {
@@ -23,8 +43,6 @@ export abstract class ChainApiManager<T> {
   }
 
   destroyApi(chainId: string): void {
-    if (this.apis[chainId] !== undefined) {
-      delete this.apis[chainId];
-    }
+    delete this.apis[chainId];
   }
 }
