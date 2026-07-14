@@ -54,10 +54,11 @@
  * the strength of an earlier --verify pass alone.
  *
  * Notes:
- * - Idempotent: values already in `kms:v1:` form are skipped. Matching the
- *   exact prefix (rather than the looser 'kms:%') means a malformed
- *   'kms:'-prefixed value can't be mistaken for done: it stays visible to
- *   the batch SELECTs and --verify, and gets encrypted as an opaque string.
+ * - Idempotent: values already in the encrypted form (the `ENCRYPTED_PREFIX`
+ *   constant, `kms:v1:`) are skipped. Matching the exact prefix (rather than
+ *   the looser 'kms:%') means a malformed 'kms:'-prefixed value can't be
+ *   mistaken for done: it stays visible to the batch SELECTs and --verify, and
+ *   gets encrypted as an opaque string.
  * - Each value costs one KMS Encrypt call — budget KMS rate limits.
  * - `updated_at` is preserved by disabling user triggers within each batch
  *   transaction. This requires the connecting role to own the tables (or be

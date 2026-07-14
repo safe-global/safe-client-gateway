@@ -208,6 +208,13 @@ describe('KmsEncryptionService', () => {
       expect(kmsService.decrypt).not.toHaveBeenCalled();
     });
 
+    it('passes the empty string through unchanged when enabled', async () => {
+      const target = await buildTarget();
+
+      await expect(target.decrypt('', CONTEXT)).resolves.toBe('');
+      expect(kmsService.decrypt).not.toHaveBeenCalled();
+    });
+
     it('decrypts kms: values even when encryption is disabled (rollback reads)', async () => {
       const target = await buildTarget({ enabled: false });
       const value = faker.person.firstName();

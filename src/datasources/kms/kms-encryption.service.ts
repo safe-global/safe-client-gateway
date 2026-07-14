@@ -105,11 +105,20 @@ export class KmsEncryptionService implements OnModuleInit {
    * through unchanged only while encryption is disabled (rollback/off); while
    * enabled every row is expected to be encrypted, so plaintext is a hard
    * error rather than a silent passthrough.
+   *
+   * The empty string is exempt from that hard error and always passes through:
+   * KMS cannot encrypt zero-length plaintext, so `''` never has a ciphertext
+   * form to expect, and the backfill deliberately skips it (invalid data a
+   * `--verify` gate flags, never leaves encrypted). Short-circuiting here keeps
+   * a stray blank value from bricking a read path once the flag is on.
    */
   async decrypt(
     value: string,
     encryptionContext: Record<string, string>,
   ): Promise<string> {
+    if (value === '') {
+      return value;
+    }
     if (!this.isEncrypted(value)) {
       if (this.enabled) {
         throw new Error('Expected ciphertext but got a plaintext value');
