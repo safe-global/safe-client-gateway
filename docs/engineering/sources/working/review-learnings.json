@@ -1630,5 +1630,161 @@
     "ruleIds": [
       "TEST-01"
     ]
+  },
+  {
+    "id": "RL-20260629-001",
+    "title": "Same field validated at two layers gave inconsistent 400/422 error contracts",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3201
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3490916863
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4810367757,
+      4810657315
+    ],
+    "learning": "A new `nonce` field was validated both by a class-validator-style layer (`nonce=-12` → 400 with one message shape) and a Zod schema (`nonce=0x12` → 422 with another), so clients saw two different error contracts for the same field; manual testing caught it and the author unified the validation. Validate a field once, at one boundary. For simple shapes prefer `z.string().regex(/^\\d+$/)` over a custom `.refine(predicate)` — same behavior, less code.",
+    "ruleIds": [
+      "ROUTE-02"
+    ]
+  },
+  {
+    "id": "RL-20260626-001",
+    "title": "Portfolios fetched before Safe validation, spending shared rate-limit budget",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3199
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3475576320,
+      3475655283
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The overview flow prefetched Zerion portfolios before `safeRepository.getSafe` rejected invalid entries, so a request containing a non-Safe address spent a billed Zerion call and consumed the shared rate-limit budget for a result that was dropped. The fix validates every Safe up front and builds wallet identities only from validated entries. Validate/filter request entries before spending shared external-API budget on them — ordering matters once a global budget exists.",
+    "ruleIds": [
+      "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20260626-002",
+    "title": "New rate-limit error swallowed by a catch that only rethrew ZodError",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3199
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3475576328,
+      3475655474
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Moving the collectibles path onto the shared Zerion rate limiter placed `assertWithinBudget` inside an existing try/catch whose catch only rethrew `ZodError` and wrapped everything else via `httpErrorFactory.from(...)` — so an over-budget request surfaced as 503 instead of the intended 429 (balances/positions explicitly preserved `LimitReachedError`). When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors keep their status.",
+    "ruleIds": [
+      "RESILIENCE-01"
+    ]
+  },
+  {
+    "id": "RL-20260626-003",
+    "title": "Status union whose variants changed no reader behavior",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3199
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3477072951,
+      3481500480
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A `PortfolioResult` union (`{status:'ok',portfolio}` / `{status:'degraded'}`) was stored in a map although the only reader treated a degraded result and a missing key identically, and logging/metrics already happened at the failure site. The union was dropped for a plain `Map<string, Portfolio>` where a failed fetch is simply a missing key. Do not model states whose variants change no reader's behavior — absence can encode failure when nothing distinguishes them.",
+    "ruleIds": [
+      "PR-01"
+    ]
+  },
+  {
+    "id": "RL-20260624-001",
+    "title": "Chained refines recomputed values and scattered validation",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3178
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3460542721,
+      3467752269
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A name schema chained multiple `.refine(...)`s, each re-spreading the string to count grapheme length; review consolidated them into one `superRefine` with a shared `getNameLength` helper so all issues are collected in a single pass. Multi-condition validation uses one `superRefine`, not a chain of `.refine`s that duplicate computation and scatter messages.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260624-002",
+    "title": "Invisible-character stripping broke legitimate scripts and smart punctuation",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3178
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4770447030,
+      4770702863
+    ],
+    "learning": "A Trojan-Source-motivated sanitizer stripped all `\\p{Cf}` codepoints — including ZWJ/ZWNJ, which are required for correct Indic/Arabic/Persian name rendering — and the allowlist rejected the curly apostrophe (`O’Brien`) and en-dash that platform keyboards auto-insert; an all-invisibles input also got a misleading min-length message. The fixes: document (or narrow) the Cf stripping to the dangerous subset (bidi controls), fold smart punctuation to ASCII (`’`→`'`, `–`→`-`) before validation, and give \"empty after sanitization\" its own ordered message. Unicode sanitization must weigh legitimate-script collateral, not just the attack vector.",
+    "ruleIds": [
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20260624-003",
+    "title": "Builder invariant depended on faker locale behavior instead of construction",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3178
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4770711318,
+      4777213947
+    ],
+    "learning": "`nameBuilder`'s spec asserted `sanitizeName(name) === name` on `faker.person.fullName()` output — true for the default locale today, but a Faker/locale change would make it flaky. The fix runs `sanitizeName` inside the builder before padding/slicing, so the output satisfies the invariant by construction. Builders enforce their own invariants internally; tests must not depend on incidental properties of faker data.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20260623-001",
+    "title": "Vitest 4 semantics surfaced masked assertions and hoisting hazards",
+    "sourceWindowId": "CLOSED-20260623-20260630",
+    "prNumbers": [
+      3136
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4777502574,
+      4777680124,
+      4631519129
+    ],
+    "learning": "The Jest→Vitest migration surfaced durable facts for this repo: Vitest 4's `toThrow(errorInstance)` deep-compares enumerable props (Jest compared only `.message`), which exposed a real 422-vs-502 discrepancy that message-only assertions now deliberately paper over (tracked in-thread); `vi.mock` factories referencing outer consts belong in `vi.hoisted(...)`; `vi.resetAllMocks()` restores spy originals in Vitest 4 (unlike Jest, where it neutered them); and docs must not carry exact test counts that drift (removed from TESTING.md). Also: review replies claimed fixes that were never committed — verify the diff before saying \"fixed\".",
+    "ruleIds": [
+      "TEST-01",
+      "PR-02"
+    ]
   }
 ]

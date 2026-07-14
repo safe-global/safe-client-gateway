@@ -55,24 +55,27 @@
     "project": "general",
     "area": "scope",
     "title": "New abstractions justified",
-    "rule": "New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason.",
+    "rule": "New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys.",
     "check": "Can I justify every new abstraction or file?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260626-003"
+    ]
   },
   {
     "id": "PR-02",
     "project": "general",
     "area": "scope",
     "title": "Docs aligned with behavior",
-    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR.",
+    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR.",
     "check": "Are docs, samples, and runbooks aligned with the final behavior?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260128-002",
       "RL-20260116-001",
       "RL-20260108-002",
-      "RL-20260108-003"
+      "RL-20260108-003",
+      "RL-20260623-001"
     ]
   },
   {
@@ -219,7 +222,7 @@
     "project": "general",
     "area": "types",
     "title": "Schemas in entity files",
-    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const.",
+    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s.",
     "check": "Are reusable schemas in entity/schema files?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
@@ -227,7 +230,8 @@
     "reviewLearningIds": [
       "RL-20260123-002",
       "RL-20260116-002",
-      "RL-20260619-003"
+      "RL-20260619-003",
+      "RL-20260624-001"
     ]
   },
   {
@@ -235,7 +239,7 @@
     "project": "general",
     "area": "types",
     "title": "Validate external inputs",
-    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable.",
+    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give \"empty after sanitization\" its own message.",
     "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
@@ -245,7 +249,8 @@
       "RL-20260526-001",
       "RL-20260527-001",
       "RL-20260605-003",
-      "RL-20260612-001"
+      "RL-20260612-001",
+      "RL-20260624-002"
     ]
   },
   {
@@ -373,13 +378,14 @@
     "project": "general",
     "area": "routes",
     "title": "Inputs validated at controller",
-    "rule": "Validate params, query, and body at the controller via Zod schemas and `ValidationPipe`; do not duplicate presence checks in services. Cache-busting params should be booleans with server-generated keys, not unbounded client strings. Identifier-format validation lives in pipes/controllers with one shared error-message constant — repositories assume validated input and never throw HTTP exceptions for format errors. Comma-separated query params treat `''` like an omitted param (`.split(',').filter(Boolean)`).",
+    "rule": "Validate params, query, and body at the controller via Zod schemas and `ValidationPipe`; do not duplicate presence checks in services. Cache-busting params should be booleans with server-generated keys, not unbounded client strings. Identifier-format validation lives in pipes/controllers with one shared error-message constant — repositories assume validated input and never throw HTTP exceptions for format errors. Comma-separated query params treat `''` like an omitted param (`.split(',').filter(Boolean)`). A field is validated once at one boundary — parallel validation layers produce inconsistent 400/422 contracts for the same input. Simple string shapes use `.regex(...)` over a custom `.refine(predicate)`.",
     "check": "Are params, query, and bodies validated?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260123-002",
       "RL-20260609-003",
-      "RL-20260612-005"
+      "RL-20260612-005",
+      "RL-20260629-001"
     ]
   },
   {
@@ -564,7 +570,7 @@
     "project": "general",
     "area": "performance",
     "title": "Batch and parallelize I/O",
-    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request.",
+    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them.",
     "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page",
@@ -573,7 +579,8 @@
     "reviewLearningIds": [
       "RL-20260506-006",
       "RL-20260603-001",
-      "RL-20260619-001"
+      "RL-20260619-001",
+      "RL-20260626-001"
     ]
   },
   {
@@ -581,7 +588,7 @@
     "project": "general",
     "area": "tests",
     "title": "Use builders and fakes",
-    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test.",
+    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest).",
     "check": "Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?",
     "exampleRefs": [
       "examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures"
@@ -589,7 +596,9 @@
     "reviewLearningIds": [
       "RL-20260506-002",
       "RL-20260521-001",
-      "RL-20260619-005"
+      "RL-20260619-005",
+      "RL-20260624-003",
+      "RL-20260623-001"
     ]
   },
   {
@@ -817,7 +826,7 @@
     "id": "RESILIENCE-01",
     "area": "resilience",
     "title": "Resilience policy semantics",
-    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken.",
+    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx.",
     "check": "For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?",
     "exampleRefs": [
       "examples/resilience.md#resilience-01-classify-failures-and-scope-the-policy-key",
@@ -826,7 +835,8 @@
       "examples/resilience.md#resilience-01-error-type-stays-consistent-across-the-policy-boundary"
     ],
     "reviewLearningIds": [
-      "RL-20251215-002"
+      "RL-20251215-002",
+      "RL-20260626-002"
     ]
   }
 ]

@@ -463,3 +463,39 @@ Best for:
 
 Recommendation candidate: document all three as official examples, but route
 agents to the matching example based on feature shape.
+
+## OQ-SEC-01 CSV Formula Escaping: In-House Or Library
+
+Question: should CSV formula-injection escaping stay in-house
+(`src/modules/csv-export/csv-utils/escape-csv-formula.ts`) or move to
+`csv-stringify`'s built-in `escape_formulas` option?
+
+Raised in PR #3178 (post-merge comment by TimDaub,
+issue comment 4797008227).
+
+### Option A: Keep The In-House Escaper
+
+Existing example:
+
+- `src/modules/csv-export/csv-utils/escape-csv-formula.ts` (covers ASCII and
+  full-width trigger characters, paired with the `NUMERIC_COLUMNS` exemption
+  and `cast.string`/`cast.number` defense-in-depth added in #3178)
+
+Choose this when:
+
+- The trigger set must exceed what the library covers (full-width forms).
+- The exemption logic (numeric columns from internal data) should stay
+  explicit and tested locally.
+
+### Option B: Use `csv-stringify`'s `escape_formulas`
+
+Reference: https://csv.js.org/stringify/options/escape_formulas/
+
+Choose this when:
+
+- The library's implementation is verified to cover at least the current
+  trigger set (including full-width variants).
+- Less in-house security-sensitive code is preferred over local control.
+
+Open until someone compares the library's trigger set against the in-house
+one and the team picks a side.
