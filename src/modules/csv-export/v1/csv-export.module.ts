@@ -13,11 +13,11 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
+import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
 import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
 import { CsvExportController } from '@/modules/csv-export/v1/csv-export.controller';
 import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
 import { ExportApiManagerModule } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
-import { CsvService } from '../csv-utils/csv.service';
 
 @Module({
   imports: [
