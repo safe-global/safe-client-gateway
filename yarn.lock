@@ -1769,16 +1769,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/swagger@npm:11.4.4":
-  version: 11.4.4
-  resolution: "@nestjs/swagger@npm:11.4.4"
+"@nestjs/swagger@npm:11.4.5":
+  version: 11.4.5
+  resolution: "@nestjs/swagger@npm:11.4.5"
   dependencies:
     "@microsoft/tsdoc": "npm:0.16.0"
     "@nestjs/mapped-types": "npm:2.1.1"
-    js-yaml: "npm:4.1.1"
+    js-yaml: "npm:4.3.0"
     lodash: "npm:4.18.1"
     path-to-regexp: "npm:8.4.2"
-    swagger-ui-dist: "npm:5.32.6"
+    swagger-ui-dist: "npm:5.32.8"
   peerDependencies:
     "@fastify/static": ^8.0.0 || ^9.0.0
     "@nestjs/common": ^11.0.1
@@ -1793,7 +1793,7 @@ __metadata:
       optional: true
     class-validator:
       optional: true
-  checksum: 10/3dc6920a2e98704b926af825e66d4ada4bc5f22098db8469c32de2bdfbf6ac410f1f3c4e85b49f61f995085c6d7a1f2d29d3affa9e8860bdb0f7257c909e8c80
+  checksum: 10/f3b1626330d8cb84e83db245947eaeb7f72117650b8b5aaca4bf5bfddb91a66a3b4ecaf4ff7db5d49caf2d919da4cdb8217c1a3d815198858bd4aba18213b6f4
   languageName: node
   linkType: hard
 
@@ -4021,6 +4021,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"dayjs@npm:^1.11.7":
+  version: 1.11.21
+  resolution: "dayjs@npm:1.11.21"
+  checksum: 10/dd16f9f2706b61b90e3c346a3211ac3afd9e26193136ce0e87f70bf74d1c17a447bceb230a88b175467fc9f5e3243d8c1544b9897092a12d9c80ee44d338dcb6
+  languageName: node
+  linkType: hard
+
 "debug@npm:4, debug@npm:^4.3.4":
   version: 4.4.0
   resolution: "debug@npm:4.4.0"
@@ -5386,14 +5393,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-yaml@npm:4.1.1":
-  version: 4.1.1
-  resolution: "js-yaml@npm:4.1.1"
+"js-yaml@npm:4.3.0":
+  version: 4.3.0
+  resolution: "js-yaml@npm:4.3.0"
   dependencies:
     argparse: "npm:^2.0.1"
   bin:
     js-yaml: bin/js-yaml.js
-  checksum: 10/a52d0519f0f4ef5b4adc1cde466cb54c50d56e2b4a983b9d5c9c0f2f99462047007a6274d7e95617a21d3c91fde3ee6115536ed70991cd645ba8521058b78f77
+  checksum: 10/2bcec3a8118d7f744badeb04e14366578d234a736f353d41fe35d2305e4ce2409a8e041d277f07cd6bbc8aaa12128d650a68ce43247072519bede20962d2126f
   languageName: node
   linkType: hard
 
@@ -5533,6 +5540,15 @@ __metadata:
   version: 2.0.0
   resolution: "kuler@npm:2.0.0"
   checksum: 10/9e10b5a1659f9ed8761d38df3c35effabffbd19fc6107324095238e4ef0ff044392cae9ac64a1c2dda26e532426485342226b93806bd97504b174b0dcf04ed81
+  languageName: node
+  linkType: hard
+
+"launder@npm:^1.7.1":
+  version: 1.7.1
+  resolution: "launder@npm:1.7.1"
+  dependencies:
+    dayjs: "npm:^1.11.7"
+  checksum: 10/e0fbf7934728c9dd82eea3ccbebc31c021c9ffee225861cf6e2f219bdeb2be0d8585748eb700ec58a41a7dff5529e50ac84500657a7a927305685ec9f1cb3ab3
   languageName: node
   linkType: hard
 
@@ -6382,9 +6398,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ox@npm:0.14.27":
-  version: 0.14.27
-  resolution: "ox@npm:0.14.27"
+"ox@npm:0.14.30":
+  version: 0.14.30
+  resolution: "ox@npm:0.14.30"
   dependencies:
     "@adraffy/ens-normalize": "npm:^1.11.0"
     "@noble/ciphers": "npm:^1.3.0"
@@ -6399,7 +6415,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/eb022ccc101d35218457d9160ab9898463bc98959f5983086002380772ed5e4bbe1cd1aaf0c28c146950a20f1f02b7c2fd6d77fd945fcfebbe71afe20797cdbf
+  checksum: 10/c58e0f989f883963152f3cf7f9ee2b0d762bb5eb3a393eee4d2fed7ecd70e3eac70653ec21d7f351e5ad299a42840e827fc6ec1f07532b9280e178556b9449c8
   languageName: node
   linkType: hard
 
@@ -7025,7 +7041,7 @@ __metadata:
     "@nestjs/schedule": "npm:6.1.3"
     "@nestjs/schematics": "npm:11.1.0"
     "@nestjs/serve-static": "npm:5.0.5"
-    "@nestjs/swagger": "npm:11.4.4"
+    "@nestjs/swagger": "npm:11.4.5"
     "@nestjs/testing": "npm:11.1.27"
     "@nestjs/typeorm": "npm:11.0.3"
     "@safe-global/safe-deployments": "npm:1.37.58"
@@ -7057,7 +7073,7 @@ __metadata:
     redis: "npm:6.0.0"
     reflect-metadata: "npm:0.2.2"
     rxjs: "npm:7.8.2"
-    sanitize-html: "npm:2.17.3"
+    sanitize-html: "npm:2.17.5"
     semver: "npm:7.7.1"
     source-map-support: "npm:0.5.21"
     supertest: "npm:7.2.2"
@@ -7068,7 +7084,7 @@ __metadata:
     typescript: "npm:6.0.3"
     undici: "npm:8.5.0"
     unplugin-swc: "npm:1.5.9"
-    viem: "npm:2.52.0"
+    viem: "npm:2.54.6"
     vitest: "npm:4.1.9"
     winston: "npm:3.19.0"
     zod: "npm:4.4.3"
@@ -7100,17 +7116,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sanitize-html@npm:2.17.3":
-  version: 2.17.3
-  resolution: "sanitize-html@npm:2.17.3"
+"sanitize-html@npm:2.17.5":
+  version: 2.17.5
+  resolution: "sanitize-html@npm:2.17.5"
   dependencies:
     deepmerge: "npm:^4.2.2"
     escape-string-regexp: "npm:^4.0.0"
     htmlparser2: "npm:^10.1.0"
     is-plain-object: "npm:^5.0.0"
+    launder: "npm:^1.7.1"
     parse-srcset: "npm:^1.0.2"
     postcss: "npm:^8.3.11"
-  checksum: 10/adced2038708745c9cc2d079dd66f504c61ee232d30e205ee89e554bc5e6514626f8ffd01146abd637295d9910cf26e72511cf1e2937a448d722ee3ef6b813ce
+  checksum: 10/93c7ae236faa9bf281533394caebd5cbbc3e52349c1d82c32fb921826b65fcdab435238eee2931d70e9781f46be47c9e530909d258e239fa230f12496bfdc4f6
   languageName: node
   linkType: hard
 
@@ -7586,12 +7603,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"swagger-ui-dist@npm:5.32.6":
-  version: 5.32.6
-  resolution: "swagger-ui-dist@npm:5.32.6"
+"swagger-ui-dist@npm:5.32.8":
+  version: 5.32.8
+  resolution: "swagger-ui-dist@npm:5.32.8"
   dependencies:
     "@scarf/scarf": "npm:=1.4.0"
-  checksum: 10/cf1ef6c5c876576170f16bf58756f09c5b45a00b6e8006d25464b8b243e0f7e22e4d2e91d2260716a260c67f1a83f3606e02ddfe8a91332e1a5c3702ceec1789
+  checksum: 10/3521bfa261eb3ad377bec887b7be3cd711752ecc141a7fd0eb1e493682f473f0d3855dabfed8cb0d0f6f455a3794a1c7a5268cd6448e699b15af90a878a9bf7b
   languageName: node
   linkType: hard
 
@@ -8153,9 +8170,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:2.52.0":
-  version: 2.52.0
-  resolution: "viem@npm:2.52.0"
+"viem@npm:2.54.6":
+  version: 2.54.6
+  resolution: "viem@npm:2.54.6"
   dependencies:
     "@noble/curves": "npm:1.9.1"
     "@noble/hashes": "npm:1.8.0"
@@ -8163,14 +8180,14 @@ __metadata:
     "@scure/bip39": "npm:1.6.0"
     abitype: "npm:1.2.3"
     isows: "npm:1.0.7"
-    ox: "npm:0.14.27"
-    ws: "npm:8.20.1"
+    ox: "npm:0.14.30"
+    ws: "npm:8.21.0"
   peerDependencies:
     typescript: ">=5.0.4"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/9adc38ea2f93a57172eeae4d73c44e5bce7013cf9518beffd69dedd8ff1bb013cdcd953527b0c19e24539d4f85b1b89381f78444056ad7ff3b61493385ed5f6b
+  checksum: 10/e092d1e2448be73ed4848cb04cdc0bdcb0705afb7b9c3c915fb72d411032a32c16cd0d35707eee6d2bd038e80e7e563b7d307d4f88001764d1fff5aca80e7aee
   languageName: node
   linkType: hard
 
@@ -8519,9 +8536,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ws@npm:8.20.1":
-  version: 8.20.1
-  resolution: "ws@npm:8.20.1"
+"ws@npm:8.21.0":
+  version: 8.21.0
+  resolution: "ws@npm:8.21.0"
   peerDependencies:
     bufferutil: ^4.0.1
     utf-8-validate: ">=5.0.2"
@@ -8530,7 +8547,7 @@ __metadata:
       optional: true
     utf-8-validate:
       optional: true
-  checksum: 10/8c4d2b06dc65381b6bfab1f2e584275dabd30a99a5ce058b4dc76f3d03fad1921cef3a21d8f53127d30a808cfd1864aa2fe6890a5d43359f682457315baec873
+  checksum: 10/088411956432c8f876158409d5a285cb9ad1382f593391f51d3a599bd0a5b277f876609ebd00fc3596321c4a4c9064d6fffe1ebad960e8ea7fd9ae25324f35c2
   languageName: node
   linkType: hard
 
