@@ -57,12 +57,15 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockErc20Decoder = {
-  helpers: {
-    isTransfer: vi.fn(),
-    isTransferFrom: vi.fn(),
-  },
-} as MockedObject<Erc20Decoder>;
+const mockErc20Decoder = vi.mocked(
+  {
+    helpers: {
+      isTransfer: vi.fn(),
+      isTransferFrom: vi.fn(),
+    },
+  } as unknown as Erc20Decoder,
+  true,
+);
 
 describe('ContractAnalysisService', () => {
   let service: ContractAnalysisService;

@@ -169,7 +169,7 @@ export class NativeAssetDetailsDto extends BaseAssetDetailsDto {
 export class TokenAssetDetailsDto extends BaseAssetDetailsDto {
   @ApiProperty({
     description: 'Asset type',
-    enum: ['ERC20', 'ERC721', 'ERC1155'],
+    enum: ['ERC20', 'ERC721', 'ERC1155', 'NONERC'],
   })
   public readonly type!: Exclude<AssetType, 'NATIVE'>;
 

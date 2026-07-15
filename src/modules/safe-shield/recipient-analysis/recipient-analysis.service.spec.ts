@@ -44,12 +44,15 @@ describe('RecipientAnalysisService', () => {
     getApi: vi.fn().mockResolvedValue(mockTransactionApi),
   } as MockedObject<ITransactionApiManager>;
 
-  const mockErc20Decoder = {
-    helpers: {
-      isTransfer: vi.fn(),
-      isTransferFrom: vi.fn(),
-    },
-  } as MockedObject<Erc20Decoder>;
+  const mockErc20Decoder = vi.mocked(
+    {
+      helpers: {
+        isTransfer: vi.fn(),
+        isTransferFrom: vi.fn(),
+      },
+    } as unknown as Erc20Decoder,
+    true,
+  );
 
   const mockConfigurationService = {
     getOrThrow: vi.fn().mockReturnValue(3600), // Default cache expiration
