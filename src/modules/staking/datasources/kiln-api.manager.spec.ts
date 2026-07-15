@@ -78,36 +78,25 @@ describe('KilnApiManager', () => {
   });
 
   it.each([
-    ['staking', (): StakingApiManager => stakingApiManager],
-    ['earn', (): EarnApiManager => earnApiManager],
-  ] as const)('should create a KilnApi from the %s configuration', async (widget, getTarget) => {
-    const chain = chainBuilder().with('isTestnet', false).build();
+    ['staking', false],
+    ['staking', true],
+    ['earn', false],
+    ['earn', true],
+  ] as const)('should create a KilnApi from the %s configuration (testnet: %s)', async (widget, isTestnet) => {
+    const target = { staking: stakingApiManager, earn: earnApiManager }[widget];
+    const env = isTestnet ? 'testnet' : 'mainnet';
+    const chain = chainBuilder().with('isTestnet', isTestnet).build();
     configApi.getChain.mockResolvedValue(rawify(chain));
     mockConfig(widget);
 
-    const api = await getTarget().getApi(chain.chainId);
+    const api = await target.getApi(chain.chainId);
 
     expect(api).toBeInstanceOf(KilnApi);
     expect(configurationService.getOrThrow).toHaveBeenCalledWith(
-      `${widget}.mainnet.baseUri`,
+      `${widget}.${env}.baseUri`,
     );
     expect(configurationService.getOrThrow).toHaveBeenCalledWith(
-      `${widget}.mainnet.apiKey`,
-    );
-  });
-
-  it('should use the testnet configuration for testnet chains', async () => {
-    const chain = chainBuilder().with('isTestnet', true).build();
-    configApi.getChain.mockResolvedValue(rawify(chain));
-    mockConfig('staking');
-
-    await stakingApiManager.getApi(chain.chainId);
-
-    expect(configurationService.getOrThrow).toHaveBeenCalledWith(
-      'staking.testnet.baseUri',
-    );
-    expect(configurationService.getOrThrow).toHaveBeenCalledWith(
-      'staking.testnet.apiKey',
+      `${widget}.${env}.apiKey`,
     );
   });
 
