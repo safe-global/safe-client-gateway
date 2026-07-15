@@ -29,10 +29,11 @@ export const PaymentLinkLineItemSchema = z.object({
 
 export type PaymentLinkMetadata = z.infer<typeof PaymentLinkMetadataSchema>;
 
-export const PaymentLinkMetadataSchema = z.object({
-  customerGroup: z.string(),
-  upstreamCustomerId: z.string().optional(),
-});
+// Generic, like Stripe metadata itself: preserves arbitrary keys instead of a fixed subset.
+export const PaymentLinkMetadataSchema = z.record(
+  z.string(),
+  z.string().nullable(),
+);
 
 export type PaymentLink = z.infer<typeof PaymentLinkSchema>;
 
