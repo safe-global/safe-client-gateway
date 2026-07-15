@@ -38,7 +38,6 @@ function subscriptionEventArgs(
   return {
     id: faker.string.uuid(),
     spaceId: faker.number.int({ max: 1_000_000 }),
-    upstreamCustomerId: faker.string.uuid(),
     status: faker.helpers.arrayElement(SubscriptionStatuses),
     metadata: { price: faker.number.int().toString() },
     lastEventId: faker.string.uuid(),
@@ -161,7 +160,6 @@ describe('SubscriptionsRepository', () => {
 
       expect(subscription).toMatchObject({
         id: args.id,
-        upstreamCustomerId: args.upstreamCustomerId,
         status: args.status,
         metadata: args.metadata,
         lastEventId: args.lastEventId,

@@ -18,7 +18,6 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
   public async upsertFromEvent(args: {
     id: Subscription['id'];
     spaceId: Space['id'];
-    upstreamCustomerId: Subscription['upstreamCustomerId'];
     status: Subscription['status'];
     metadata: Subscription['metadata'];
     lastEventId: Subscription['lastEventId'];
@@ -34,7 +33,6 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       .values({
         id: args.id,
         space: { id: args.spaceId },
-        upstreamCustomerId: args.upstreamCustomerId,
         status: args.status,
         metadata: args.metadata,
         lastEventId: args.lastEventId,

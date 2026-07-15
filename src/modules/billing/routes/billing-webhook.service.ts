@@ -105,7 +105,6 @@ export class BillingWebhookService {
     await this.subscriptionsRepository.upsertFromEvent({
       id: subscription.id,
       spaceId,
-      upstreamCustomerId,
       status: mapBillingSubscriptionStatus(subscription.status),
       metadata: data.data.metadata ?? {},
       lastEventId: event.id,

@@ -8,7 +8,6 @@ export interface ISubscriptionsRepository {
   upsertFromEvent(args: {
     id: Subscription['id'];
     spaceId: Space['id'];
-    upstreamCustomerId: Subscription['upstreamCustomerId'];
     status: Subscription['status'];
     metadata: Subscription['metadata'];
     lastEventId: Subscription['lastEventId'];

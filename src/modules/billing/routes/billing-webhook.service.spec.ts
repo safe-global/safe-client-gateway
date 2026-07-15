@@ -210,7 +210,6 @@ describe('BillingWebhookService', () => {
     expect(mockSubscriptionsRepository.upsertFromEvent).toHaveBeenCalledWith({
       id: subscription.id,
       spaceId,
-      upstreamCustomerId,
       status: 'active',
       metadata,
       lastEventId: event.id,

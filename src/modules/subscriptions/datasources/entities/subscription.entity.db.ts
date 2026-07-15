@@ -12,9 +12,6 @@ export class Subscription implements DomainSubscription {
   @PrimaryColumn({ type: 'varchar', length: 255 })
   public readonly id!: string;
 
-  @Column({ name: 'upstream_customer_id', type: 'varchar', length: 255 })
-  public readonly upstreamCustomerId!: string;
-
   @Column({ type: 'varchar', length: 16 })
   public status!: SubscriptionStatus;
 

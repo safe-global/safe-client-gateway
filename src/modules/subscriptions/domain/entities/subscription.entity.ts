@@ -18,7 +18,6 @@ export type SubscriptionStatus = z.infer<typeof SubscriptionStatusSchema>;
 // Keyed by billing-service subscription id, not RowSchema's numeric id.
 export const SubscriptionSchema = z.object({
   id: z.string(),
-  upstreamCustomerId: z.string(),
   status: SubscriptionStatusSchema,
   metadata: SubscriptionMetadataSchema,
   lastEventId: z.string(),
