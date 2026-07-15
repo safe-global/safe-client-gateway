@@ -4,8 +4,10 @@ import { generateKeyPairSync } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
+import type { ObjectLiteral, Repository } from 'typeorm';
 import {
   initTestApplication,
   TestAppProvider,
@@ -14,18 +16,37 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
 import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
+import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
 import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
 import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
 import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
 import { BillingModule } from '@/modules/billing/billing.module';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import type { BillingWebhookEvent } from '@/modules/billing/domain/entities/billing-webhook-event.entity';
 import { BillingController } from '@/modules/billing/routes/billing.controller';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
+import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
 
 const ISSUER = faker.internet.domainName();
 const SUBJECT = faker.internet.domainWord();
 const PATH = '/v1/billing/webhooks';
+
+// Deliberately references no real Space — BillingWebhookService no-ops (and
+// still acks 202) when it can't resolve upstreamCustomerId, which is all this
+// suite needs since it's only testing the auth guard, not event processing.
+const webhookEventBody: BillingWebhookEvent = {
+  id: 'evt_test',
+  type: 'customer.subscription.created',
+  created: 1_700_000_000,
+  data: {
+    subscriptionId: 'sub_test',
+    status: 'active',
+    customer: { upstreamCustomerId: faker.string.uuid() },
+  },
+};
 
 describe('BillingWebhookAuthGuard', () => {
   let app: INestApplication<Server>;
@@ -80,6 +101,13 @@ describe('BillingWebhookAuthGuard', () => {
       },
     });
 
+    // BillingModule pulls in SubscriptionsModule (Postgres-backed) to resolve
+    // upstreamCustomerId to a Space — mocked here since this suite only cares
+    // about the auth guard, not real Space/subscription lookups.
+    mockPostgresDatabaseService.getRepository.mockResolvedValue({
+      findOne: vi.fn().mockResolvedValue(null),
+    } as unknown as Repository<ObjectLiteral>);
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         TestLoggingModule,
@@ -88,7 +116,11 @@ describe('BillingWebhookAuthGuard', () => {
         ConfigurationModule.register(testConfiguration),
         BillingModule,
       ],
-    }).compile();
+      providers: [{ provide: APP_FILTER, useClass: ZodErrorFilter }],
+    })
+      .overrideModule(PostgresDatabaseModuleV2)
+      .useModule(TestPostgresDatabaseModuleV2)
+      .compile();
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -168,6 +200,7 @@ describe('BillingWebhookAuthGuard', () => {
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
+      .send(webhookEventBody)
       .expect(202);
   });
 
@@ -216,6 +249,17 @@ describe('BillingWebhookAuthGuard', () => {
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
+      .send(webhookEventBody)
       .expect(202);
+  });
+
+  it('rejects a malformed webhook body once authenticated', async () => {
+    const token = signServiceToken();
+
+    await request(app.getHttpServer())
+      .post(PATH)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ type: 'customer.subscription.created' }) // missing id/created/data
+      .expect(422);
   });
 });
