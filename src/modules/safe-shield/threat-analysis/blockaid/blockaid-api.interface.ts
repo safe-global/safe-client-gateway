@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { AddressBulkScanResponse } from '@blockaid/client/resources/evm/address-bulk';
 import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
-import type { TransactionScanResponse } from '@blockaid/client/resources/index';
+import { JsonRpcScanResponse } from '@blockaid/client/resources/evm/json-rpc.js';
 import type { Address } from 'viem';
 import type { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
@@ -12,7 +12,7 @@ export const IBlockaidApi = Symbol('IBlockaidApi');
  * Extended TransactionScanResponse that includes the request_id from x-request-id header.
  */
 export interface TransactionScanResponseWithRequestId
-  extends TransactionScanResponse {
+  extends JsonRpcScanResponse {
   request_id: string | undefined;
 }
 

@@ -1,10 +1,18 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 /* Minimal types for fields actually used from simulation.assets_diffs (Blockaid) */
 
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
-export const AssetTypeSchema = z.enum(['NATIVE', 'ERC20', 'ERC721', 'ERC1155']);
+export const AssetTypeSchema = z.enum([
+  'NATIVE',
+  'ERC20',
+  'ERC721',
+  'ERC1155',
+  'NONERC',
+]);
 export type AssetType = z.infer<typeof AssetTypeSchema>;
 
 const BaseAssetDetailsSchema = z.object({
@@ -17,7 +25,7 @@ export const AssetDetailsSchema = z.discriminatedUnion('type', [
     type: z.literal('NATIVE'),
   }),
   BaseAssetDetailsSchema.extend({
-    type: z.enum(['ERC20', 'ERC721', 'ERC1155']),
+    type: z.enum(['ERC20', 'ERC721', 'ERC1155', 'NONERC']),
     address: AddressSchema,
   }),
 ]);
