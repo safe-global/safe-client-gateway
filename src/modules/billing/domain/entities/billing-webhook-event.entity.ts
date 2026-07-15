@@ -10,7 +10,6 @@ export const BillingWebhookCustomerSchema = z.object({
   customerGroup: z.literal(WALLET_WEB_CUSTOMER_GROUP).optional(),
   // Matches spaces.uuid.
   upstreamCustomerId: UuidSchema.optional(),
-  customerId: z.string().optional(),
 });
 
 // The payload is thin — plan/period/price details are not carried here and
@@ -22,10 +21,7 @@ export const BillingWebhookSubscriptionDataSchema = z.object({
   metadata: z.record(z.string(), z.string()).optional(),
 });
 
-// Only these are processed — see isRelevantSubscriptionEvent. invoice.* is
-// deliberately excluded: its data shape is unconfirmed (the reference
-// implementation never processes invoice events either), and a subscription
-// status change is re-delivered via customer.subscription.updated regardless.
+// Only these are processed — see isRelevantSubscriptionEvent.
 export const SubscriptionRelevantEventTypes = [
   'customer.subscription.created',
   'customer.subscription.updated',
@@ -45,12 +41,8 @@ export function isRelevantSubscriptionEvent(
   );
 }
 
-// billing-service's event catalog is wider than what CGW acts on — `type`
-// and `data` are intentionally unconstrained at this layer so an
-// unrecognized or irrelevant event is acknowledged (and ignored, see
-// isRelevantSubscriptionEvent) rather than rejected as an invalid payload.
-// The stricter subscription-data shape is only parsed once an event is
-// confirmed relevant.
+// type/data are unconstrained here so unrecognized events are acked, not
+// rejected; the stricter shape is parsed once relevance is confirmed.
 export const BillingWebhookEventSchema = z.object({
   id: z.string(),
   type: z.string(),

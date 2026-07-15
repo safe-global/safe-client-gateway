@@ -95,7 +95,9 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
-        ...(isBillingServiceFeatureEnabled ? [BillingModule] : []),
+        ...(isBillingServiceFeatureEnabled && isUsersFeatureEnabled
+          ? [BillingModule]
+          : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,

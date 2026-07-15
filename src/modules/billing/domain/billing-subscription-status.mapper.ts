@@ -2,9 +2,6 @@
 import type { SubscriptionStatus as BillingSubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 import type { SubscriptionStatus } from '@/modules/subscriptions/domain/entities/subscription.entity';
 
-// billing-service's status set is wider than CGW's persisted one; trialing
-// folds into active, unpaid/incomplete* fold into canceled, pending product
-// confirmation of the intended mapping.
 const BILLING_STATUS_MAP: Record<
   BillingSubscriptionStatus,
   SubscriptionStatus

@@ -36,6 +36,8 @@ export class BillingWebhookService {
   ) {}
 
   public async handle(event: BillingWebhookEvent): Promise<void> {
+    // Every guard below acks (returns, no retry): a subsequent event for the
+    // same subscription (e.g. the next update) will re-run this same lookup.
     if (!isRelevantSubscriptionEvent(event.type)) {
       this.loggingService.warn(
         `Ignoring billing webhook event ${event.id} of type ${event.type}: not relevant for subscription handling.`,
@@ -79,7 +81,6 @@ export class BillingWebhookService {
     }
     const spaceId = space.id;
 
-    // Invalidate first.
     await this.cacheService.deleteByKey(
       CacheRouter.getBillingSubscriptionsCacheDir({
         upstreamCustomerId,
@@ -87,7 +88,6 @@ export class BillingWebhookService {
       }).key,
     );
 
-    // Getting full subscription information.
     const subscriptions = await this.billingApi.getSubscriptionsByCustomerId({
       upstreamCustomerId,
       status: 'all',
@@ -96,13 +96,10 @@ export class BillingWebhookService {
       (candidate) => candidate.id === subscriptionId,
     );
     if (!subscription) {
-      // A newly created subscription may not yet be visible on
-      // billing-service's list endpoint when this event arrives. Throwing
-      // (rather than warning and returning) surfaces a 5xx so billing-service
-      // retries delivery until the subscription is created here.
-      throw new Error(
+      this.loggingService.warn(
         `Billing webhook event ${event.id} references an unknown subscription ${subscriptionId}`,
       );
+      return;
     }
 
     await this.subscriptionsRepository.upsertFromEvent({

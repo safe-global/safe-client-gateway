@@ -10,7 +10,6 @@ describe('BillingWebhookEventSchema', () => {
   const baseCustomer = {
     customerGroup: 'wallet_web',
     upstreamCustomerId: '4e2b6f2a-4f34-4b8a-9c8a-2f6a2e2f6a2e',
-    customerId: 'cus_test123',
   };
 
   it.each([

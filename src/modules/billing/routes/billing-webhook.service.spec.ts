@@ -154,7 +154,7 @@ describe('BillingWebhookService', () => {
     expect(mockLoggingService.error).toHaveBeenCalledOnce();
   });
 
-  it('throws when the subscription is not found upstream, so billing-service retries delivery', async () => {
+  it('no-ops when the subscription is not found upstream', async () => {
     const event = webhookEventBuilder();
     mockSpacesRepository.findOne.mockResolvedValue({
       id: faker.number.int(),
@@ -163,12 +163,13 @@ describe('BillingWebhookService', () => {
       subscriptionBuilder().build(),
     ]);
 
-    await expect(target.handle(event)).rejects.toThrow();
+    await target.handle(event);
 
     // The cache is invalidated before the lookup, since a fresh (but empty)
     // result is still more correct than a stale cached one.
     expect(mockCacheService.deleteByKey).toHaveBeenCalledOnce();
     expect(mockSubscriptionsRepository.upsertFromEvent).not.toHaveBeenCalled();
+    expect(mockLoggingService.warn).toHaveBeenCalledOnce();
   });
 
   it('upserts the subscription on a relevant event', async () => {
