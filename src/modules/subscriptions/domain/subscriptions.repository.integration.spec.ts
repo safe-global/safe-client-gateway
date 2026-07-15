@@ -11,11 +11,15 @@ import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service'
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { Subscription } from '@/modules/subscriptions/datasources/entities/subscription.entity.db';
 import { SubscriptionStatuses } from '@/modules/subscriptions/domain/entities/subscription.entity';
 import { SubscriptionsRepository } from '@/modules/subscriptions/domain/subscriptions.repository';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -62,7 +66,7 @@ describe('SubscriptionsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Space, Subscription],
+    entities: [Member, Space, SpaceSafe, Subscription, User, Wallet],
   });
 
   beforeAll(async () => {
