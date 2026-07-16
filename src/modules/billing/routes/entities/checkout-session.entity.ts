@@ -34,8 +34,8 @@ export class CheckoutSession {
   status!: string;
   @ApiProperty()
   successUrl!: string;
-  @ApiProperty()
-  url!: string;
+  @ApiPropertyOptional({ nullable: true })
+  url?: string | null;
   @ApiPropertyOptional({ nullable: true })
   subscription?: string | null;
   @ApiPropertyOptional({ nullable: true })

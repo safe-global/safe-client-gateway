@@ -35,6 +35,13 @@ import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 const ReturnUrlSchema = z.url();
+const opaqueIdPipe = new ValidationPipe(
+  z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[A-Za-z0-9_-]+$/),
+);
 
 @ApiTags('billing')
 @Controller({
@@ -86,7 +93,9 @@ export class BillingController {
   @ApiOkResponse({ type: Plan })
   @UseGuards(AuthGuard)
   @Get('/plans/:planId')
-  public async getPlan(@Param('planId') planId: string): Promise<Plan> {
+  public async getPlan(
+    @Param('planId', opaqueIdPipe) planId: string,
+  ): Promise<Plan> {
     return await this.billingService.getPlan(planId);
   }
 
@@ -158,7 +167,7 @@ export class BillingController {
   public async getCheckoutUrl(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
     @Param('spaceId') spaceUuid: Space['uuid'],
-    @Param('paymentLinkId') paymentLinkId: string,
+    @Param('paymentLinkId', opaqueIdPipe) paymentLinkId: string,
     @Auth() authPayload: AuthPayload,
     @Query('returnUrl', new ValidationPipe(ReturnUrlSchema)) returnUrl: string,
   ): Promise<CheckoutSessionResult> {
@@ -176,7 +185,7 @@ export class BillingController {
   @UseGuards(AuthGuard)
   @Get('/sessions/:sessionId')
   public async getCheckoutSession(
-    @Param('sessionId') sessionId: string,
+    @Param('sessionId', opaqueIdPipe) sessionId: string,
   ): Promise<CheckoutSession> {
     return await this.billingService.getCheckoutSession(sessionId);
   }

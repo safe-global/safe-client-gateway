@@ -22,7 +22,7 @@ export const CheckoutSessionSchema = z.object({
   payment_status: z.string(),
   status: z.string(),
   success_url: z.string(),
-  url: z.string(),
+  url: z.string().nullish(),
   subscription: z.string().nullish(),
   invoice: z.string().nullish(),
 });

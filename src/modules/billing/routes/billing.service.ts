@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import type {
@@ -9,6 +10,11 @@ import type {
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import {
+  getRedirectConfig,
+  type RedirectConfig,
+  resolveAndValidateRedirectUrl,
+} from '@/modules/auth/utils/auth-redirect.helper';
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
@@ -18,12 +24,18 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
 
 @Injectable()
 export class BillingService {
+  private readonly redirectConfig: RedirectConfig;
+
   public constructor(
     @Inject(IBillingApi)
     private readonly billingApi: IBillingApi,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.redirectConfig = getRedirectConfig(this.configurationService);
+  }
 
   public async getSubscriptions(args: {
     spaceId: Space['id'];
@@ -53,7 +65,7 @@ export class BillingService {
 
     const url = await this.billingApi.getCustomerSessionUrl({
       upstreamCustomerId: args.spaceUuid,
-      returnUrl: args.returnUrl,
+      returnUrl: this.validateReturnUrl(args.returnUrl),
     });
 
     return { url };
@@ -74,7 +86,7 @@ export class BillingService {
     ]);
 
     const byId = new Map(
-      [...spaceLinks, ...generalLinks].map((link) => [link.id, link]),
+      [...generalLinks, ...spaceLinks].map((link) => [link.id, link]),
     );
     return Array.from(byId.values());
   }
@@ -91,7 +103,7 @@ export class BillingService {
     return await this.billingApi.createCheckoutSession({
       paymentLinkId: args.paymentLinkId,
       upstreamCustomerId: args.spaceUuid,
-      returnUrl: args.returnUrl,
+      returnUrl: this.validateReturnUrl(args.returnUrl),
     });
   }
 
@@ -99,6 +111,10 @@ export class BillingService {
     const session = await this.billingApi.getCheckoutSession({ sessionId });
 
     return toCheckoutSessionDto(session);
+  }
+
+  private validateReturnUrl(returnUrl: string): string {
+    return resolveAndValidateRedirectUrl(this.redirectConfig, returnUrl);
   }
 
   private async assertSpaceMember(
