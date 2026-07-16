@@ -12,6 +12,7 @@ import {
   ApiExcludeEndpoint,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
@@ -53,13 +54,19 @@ export class BillingController {
   }
 
   @ApiOperation({ summary: 'Get a space subscriptions' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiOkResponse({ type: Subscription, isArray: true })
   @ApiQuery({ name: 'status', required: false })
   @UseGuards(AuthGuard)
-  @Get('/spaces/:id/subscriptions')
+  @Get('/spaces/:spaceId/subscriptions')
   public async getSubscriptions(
-    @Param('id', SpaceIdPipe) spaceId: Space['id'],
-    @Param('id') spaceUuid: Space['uuid'],
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Auth() authPayload: AuthPayload,
     @Query(
       'status',
@@ -84,13 +91,19 @@ export class BillingController {
   }
 
   @ApiOperation({ summary: 'Get the billing portal session URL for a space' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiOkResponse({ type: UrlResponse })
   @ApiQuery({ name: 'returnUrl', required: true })
   @UseGuards(AuthGuard)
-  @Get('/spaces/:id/session-url')
+  @Get('/spaces/:spaceId/session-url')
   public async getSessionUrl(
-    @Param('id', SpaceIdPipe) spaceId: Space['id'],
-    @Param('id') spaceUuid: Space['uuid'],
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Auth() authPayload: AuthPayload,
     @Query('returnUrl', new ValidationPipe(ReturnUrlSchema)) returnUrl: string,
   ): Promise<UrlResponse> {
@@ -105,12 +118,18 @@ export class BillingController {
   @ApiOperation({
     summary: 'Get payment links for a space, plus the general catalog',
   })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
   @ApiOkResponse({ type: PaymentLink, isArray: true })
   @UseGuards(AuthGuard)
-  @Get('/spaces/:id/payment-links')
+  @Get('/spaces/:spaceId/payment-links')
   public async getSpacePaymentLinks(
-    @Param('id', SpaceIdPipe) spaceId: Space['id'],
-    @Param('id') spaceUuid: Space['uuid'],
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<PaymentLink>> {
     return await this.billingService.getSpacePaymentLinks({
@@ -121,13 +140,24 @@ export class BillingController {
   }
 
   @ApiOperation({ summary: 'Create a checkout session for a payment link' })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiParam({
+    name: 'paymentLinkId',
+    type: 'string',
+    description: 'Payment link identifier',
+  })
   @ApiOkResponse({ type: CheckoutSessionResult })
   @ApiQuery({ name: 'returnUrl', required: true })
   @UseGuards(AuthGuard)
-  @Get('/spaces/:id/payment-links/:paymentLinkId/checkout-url')
+  @Get('/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url')
   public async getCheckoutUrl(
-    @Param('id', SpaceIdPipe) spaceId: Space['id'],
-    @Param('id') spaceUuid: Space['uuid'],
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Param('paymentLinkId') paymentLinkId: string,
     @Auth() authPayload: AuthPayload,
     @Query('returnUrl', new ValidationPipe(ReturnUrlSchema)) returnUrl: string,
