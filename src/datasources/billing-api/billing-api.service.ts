@@ -26,7 +26,6 @@ import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.sourc
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
 import {
   type INetworkService,
@@ -108,8 +107,8 @@ export class BillingApi implements IBillingApi {
     });
   }
 
-  /** Not cached. Bypasses {@link NetworkService}, whose response.json() parsing can't handle this endpoint's plain-text body. */
-  async getCustomerSessionUrl(args: {
+  /** Not cached: this endpoint returns a fresh, single-use portal session URL on every call. */
+  getCustomerSessionUrl(args: {
     upstreamCustomerId: string;
     returnUrl: string;
   }): Promise<string> {
@@ -118,24 +117,19 @@ export class BillingApi implements IBillingApi {
     );
     url.searchParams.set('returnUrl', args.returnUrl);
 
-    let response: Response;
-    try {
-      response = await fetch(url, {
-        headers: this.authHeaders,
-        signal: AbortSignal.timeout(this.requestTimeout),
-      });
-    } catch (error) {
-      throw this.httpErrorFactory.from(error);
-    }
-
-    if (!response.ok) {
-      const data = await response.text().catch(() => undefined);
-      throw this.httpErrorFactory.from(
-        new NetworkResponseError(url, response, data),
-      );
-    }
-
-    return response.text();
+    return this.parse(
+      this.networkService
+        .get<string>({
+          url: url.toString(),
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+            responseType: 'text',
+          },
+        })
+        .then(({ data }) => data),
+      z.string(),
+    );
   }
 
   /**

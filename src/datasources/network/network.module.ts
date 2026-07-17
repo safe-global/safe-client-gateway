@@ -31,6 +31,7 @@ export type FetchClient = <T>(
   options: RequestInit,
   timeout?: number,
   circuitBreaker?: NetworkRequest['circuitBreaker'],
+  responseType?: NetworkRequest['responseType'],
 ) => Promise<NetworkResponse<T>>;
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
@@ -69,6 +70,7 @@ function createRequestFunction(defaultTimeout: number) {
     url: string,
     options: RequestInit,
     customTimeout?: number,
+    responseType: NetworkRequest['responseType'] = 'json',
   ): Promise<NetworkResponse<T>> => {
     let urlObject: URL | null = null;
     let response: Response | null = null;
@@ -87,7 +89,11 @@ function createRequestFunction(defaultTimeout: number) {
     }
 
     // We validate data so don't need worry about casting `null` response
-    const data = (await response.json().catch(() => null)) as Raw<T>;
+    const data = (
+      responseType === 'text'
+        ? await response.text().catch(() => null)
+        : await response.json().catch(() => null)
+    ) as Raw<T>;
 
     if (!response.ok) {
       throw new NetworkResponseError(urlObject, response, data);
@@ -118,6 +124,7 @@ function createCircuitBreakerRequestFunction(
     url: string,
     options: RequestInit,
     timeout?: number,
+    responseType?: NetworkRequest['responseType'],
   ) => Promise<NetworkResponse<T>>,
   circuitBreakerService: CircuitBreakerService,
 ) {
@@ -126,15 +133,16 @@ function createCircuitBreakerRequestFunction(
     options: RequestInit,
     timeout?: number,
     circuitBreaker?: NetworkRequest['circuitBreaker'],
+    responseType?: NetworkRequest['responseType'],
   ): Promise<NetworkResponse<T>> => {
     if (!circuitBreaker?.key) {
-      return request(url, options, timeout);
+      return request(url, options, timeout, responseType);
     }
 
     circuitBreakerService.canProceedOrFail(circuitBreaker.key);
 
     try {
-      const response = await request(url, options, timeout);
+      const response = await request(url, options, timeout, responseType);
       circuitBreakerService.recordSuccess(circuitBreaker.key);
       return response;
     } catch (error) {
@@ -159,6 +167,7 @@ function createCachedRequestFunction(
     options: RequestInit,
     timeout?: number,
     circuitBreaker?: NetworkRequest['circuitBreaker'],
+    responseType?: NetworkRequest['responseType'],
   ) => Promise<NetworkResponse<T>>,
   loggingService: ILoggingService,
 ) {
@@ -167,8 +176,15 @@ function createCachedRequestFunction(
     options: RequestInit,
     timeout?: number,
     circuitBreaker?: NetworkRequest['circuitBreaker'],
+    responseType?: NetworkRequest['responseType'],
   ): Promise<NetworkResponse<T>> => {
-    const key = getCacheKey(url, options, timeout, circuitBreaker);
+    const key = getCacheKey(
+      url,
+      options,
+      timeout,
+      circuitBreaker,
+      responseType,
+    );
     if (key in cache) {
       loggingService.debug({
         type: LogType.ExternalRequestCacheHit,
@@ -182,7 +198,7 @@ function createCachedRequestFunction(
         key,
       });
 
-      cache[key] = request(url, options, timeout, circuitBreaker)
+      cache[key] = request(url, options, timeout, circuitBreaker, responseType)
         .catch((err) => {
           loggingService.debug({
             type: LogType.ExternalRequestCacheError,
@@ -205,8 +221,14 @@ function getCacheKey(
   requestInit?: RequestInit,
   timeout?: number,
   circuitBreaker?: NetworkRequest['circuitBreaker'],
+  responseType?: NetworkRequest['responseType'],
 ): string {
-  if (!requestInit && timeout === undefined && !circuitBreaker) {
+  if (
+    !requestInit &&
+    timeout === undefined &&
+    !circuitBreaker &&
+    !responseType
+  ) {
     return url;
   }
 
@@ -216,6 +238,7 @@ function getCacheKey(
   const circuitBreakerKey = circuitBreaker?.key || '';
   const key = JSON.stringify({
     url,
+    responseType,
     ...requestInit,
     timeout,
     circuitBreakerKey,

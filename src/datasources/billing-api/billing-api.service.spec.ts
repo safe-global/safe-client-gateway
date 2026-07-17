@@ -267,22 +267,14 @@ describe('BillingApi', () => {
   });
 
   describe('getCustomerSessionUrl', () => {
-    const originalFetch = global.fetch;
-
-    afterEach(() => {
-      global.fetch = originalFetch;
-    });
-
-    it('should call the billing service API with correct URL and headers, and return the plain-text body', async () => {
+    it('should call the billing service API with correct URL, headers and responseType, and return the plain-text body', async () => {
       const upstreamCustomerId = faker.string.uuid();
       const returnUrl = faker.internet.url();
       const sessionUrl = faker.internet.url();
-      const mockFetch = vi.fn().mockResolvedValueOnce(
-        new Response(sessionUrl, {
-          status: 200,
-        }),
-      );
-      global.fetch = mockFetch;
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: rawify(sessionUrl),
+        status: 200,
+      });
 
       const result = await target.getCustomerSessionUrl({
         upstreamCustomerId,
@@ -290,24 +282,28 @@ describe('BillingApi', () => {
       });
 
       expect(result).toEqual(sessionUrl);
-      expect(mockFetch).toHaveBeenCalledWith(
-        new URL(
-          `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/session-url?returnUrl=${encodeURIComponent(returnUrl)}`,
-        ),
-        expect.objectContaining({
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/session-url?returnUrl=${encodeURIComponent(returnUrl)}`,
+        networkRequest: {
           headers: { Authorization: `Bearer ${apiToken}` },
-        }),
-      );
+          timeout: requestTimeout,
+          responseType: 'text',
+        },
+      });
     });
 
     it('should forward a 404 as a DataSourceError', async () => {
       const upstreamCustomerId = faker.string.uuid();
-      const mockFetch = vi.fn().mockResolvedValueOnce(
-        new Response('Not found', {
-          status: 404,
-        }),
+      const url = new URL(
+        `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/session-url`,
       );
-      global.fetch = mockFetch;
+      mockNetworkService.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          url,
+          new Response('Not found', { status: 404 }),
+          'Not found',
+        ),
+      );
 
       await expect(
         target.getCustomerSessionUrl({
@@ -319,8 +315,7 @@ describe('BillingApi', () => {
 
     it('should forward network errors', async () => {
       const upstreamCustomerId = faker.string.uuid();
-      const mockFetch = vi.fn().mockRejectedValueOnce(new Error('Timeout'));
-      global.fetch = mockFetch;
+      mockNetworkService.get.mockRejectedValueOnce(new Error('Timeout'));
 
       await expect(
         target.getCustomerSessionUrl({

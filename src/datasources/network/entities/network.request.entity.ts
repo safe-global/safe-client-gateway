@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 type Primitive = string | number | bigint | boolean | undefined | symbol | null;
 
 export interface NetworkRequest {
@@ -5,4 +6,5 @@ export interface NetworkRequest {
   params?: Record<string, Primitive>;
   timeout?: number;
   circuitBreaker?: { key: string };
+  responseType?: 'json' | 'text';
 }
