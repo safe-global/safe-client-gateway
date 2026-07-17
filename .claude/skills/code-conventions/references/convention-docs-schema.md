@@ -462,3 +462,74 @@ Do not maintain this file by hand and do not commit it. Regenerate it from
 - only unresolved team choices, with concrete options and examples
 - when answered, convert the answer into a manual `RL-*` learning, promote the
   decision into active docs/rules/examples, then remove the open question
+
+## Eval Docs
+
+Verify mode (`workflows/verify.md`) stores its results as committed working
+docs so runs are resumable and rule edits can be regression-tested:
+
+- `working/eval/eval-result.schema.json` — machine contract for per-PR files
+- `working/eval/pr-<N>.json` — one file per evaluated PR
+- `working/eval/eval-ledger.json` — per-window summaries plus `lastRun`
+
+Per-PR file shape (see the schema for the strict contract):
+
+```json
+{
+  "pr": 3249,
+  "windowId": "CLOSED-20260711-20260714",
+  "rulesetRef": "d2436f4ab",
+  "reviewedState": { "commitId": "b89d58e26…", "anchor": "first_review" },
+  "mergeCommit": "8aebba1d7…",
+  "blind": true,
+  "evaluator": "subagent",
+  "groundTruth": [
+    {
+      "commentIds": [3571129002],
+      "author": "LucieFaire",
+      "summary": "why is host suddenly required?",
+      "mappable": false,
+      "category": "question"
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "CONFIG-05",
+      "file": ".env.sample.json",
+      "line": null,
+      "finding": "APPLICATION_HOST added without a .env.sample.json entry",
+      "verdict": "validated_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "fixed"
+    }
+  ],
+  "misses": [],
+  "ruleGapCandidates": [
+    { "file": "…", "observation": "…" }
+  ],
+  "evaluatedAt": "2026-07-14T17:20:00Z"
+}
+```
+
+Field intent:
+
+- `rulesetRef`: commit sha of the frozen (uncontaminated) convention docs the
+  self-review ran against. Coverage in that commit's review-learning ledger
+  must end before the PR closed.
+- `reviewedState.anchor`: how the pre-review commit was chosen —
+  `ready_for_review_head` (primary) or `first_review` (fallback: earliest
+  review of any round, bots included).
+- `blind`: `false` when the evaluator had already seen the review comments;
+  such entries are mechanics checks and are excluded from recall aggregates.
+- `findings[].verdict`: `hit` | `validated_candidate` |
+  `unconfirmed_candidate` | `disputed`. There is no noise/false-positive
+  verdict — reviewers are not an oracle; non-matching findings are triaged
+  via `mergeResolution` (`fixed` | `unchanged` | `n/a`).
+- `misses[]`: mappable ground-truth comments no finding matched — each cites
+  its comment ids and becomes compound-run input.
+- Store comment ids only, never comment bodies.
+
+`eval-ledger.json` mirrors the review-learning ledger's style: a `windows`
+array of per-window summaries (`windowId`, `rulesetRef`, `prsEvaluated`,
+`mappable`, `hits`, `misses`, `validatedCandidates`, `unconfirmedCandidates`,
+`disputed`, `recall`, `blindOnly`) plus a `lastRun` block.

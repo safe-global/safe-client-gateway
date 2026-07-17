@@ -1,7 +1,7 @@
 ---
 name: code-conventions
 description: Create and maintain repo-specific engineering convention docs. Supports setup from repository structure, forward compounding from closed PR review feedback, historical backfill, daily coding docs, JSON Schema-backed rules, structured review learnings, generated Markdown views, and PR self-review.
-argument-hint: '--setup | --compound [--backfill] | --review-pr [--repo owner/repo] [--since ISO-8601] [--until ISO-8601]'
+argument-hint: '--setup | --compound [--backfill] | --verify | --review-pr [--repo owner/repo] [--since ISO-8601] [--until ISO-8601]'
 allowed-tools:
   - Bash
   - Read
@@ -41,6 +41,7 @@ Use one mode per run. Always read `references/convention-docs-schema.md` first.
 | `--setup`               | Initial repo analysis or structured documentation refresh.                              | `workflows/setup.md`                                  | `workflows/compound.md`, `workflows/backfill.md`, `workflows/review-pr.md` |
 | `--compound`            | Forward maintenance from closed PR review comments after the covered range.             | `workflows/compound.md`                               | `workflows/setup.md`, `workflows/backfill.md`, `workflows/review-pr.md`    |
 | `--compound --backfill` | Historical compounding before the covered range.                                        | `workflows/compound.md`, then `workflows/backfill.md` | `workflows/setup.md`, `workflows/review-pr.md`                             |
+| `--verify`              | Score the frozen ruleset against a new closed-PR window before compounding it.           | `workflows/verify.md`                                 | `workflows/setup.md`, `workflows/backfill.md`, `workflows/review-pr.md`    |
 | `--review-pr`           | Apply the repo's current convention rules before opening, finishing, or reviewing a PR. | `workflows/review-pr.md`                              | `workflows/setup.md`, `workflows/compound.md`, `workflows/backfill.md`     |
 
 ## Validation
@@ -77,5 +78,7 @@ Tell the user:
 - working docs changed
 - open questions added or resolved
 - rule-mapping gaps found or closed
+- for `--verify`: window recall (hits/mappable), validated and unconfirmed
+  candidates, disputed items, and the misses queued for the compound run
 
 Keep it concise. Trust Git for the full diff.
