@@ -88,7 +88,7 @@
     "project": "general",
     "area": "modules",
     "title": "Behavior in the right module",
-    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables.",
+    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path.",
     "check": "Does new API/product behavior live in the right module?",
     "exampleRefs": [],
     "reviewLearningIds": [
@@ -96,7 +96,8 @@
       "RL-20260608-002",
       "RL-20260608-003",
       "RL-20260710-004",
-      "RL-20260707-003"
+      "RL-20260707-003",
+      "RL-20260717-003"
     ]
   },
   {
@@ -233,7 +234,7 @@
     "project": "general",
     "area": "types",
     "title": "Schemas in entity files",
-    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders.",
+    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it.",
     "check": "Are reusable schemas in entity/schema files?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence"
@@ -244,7 +245,8 @@
       "RL-20260619-003",
       "RL-20260624-001",
       "RL-20260703-003",
-      "RL-20260710-005"
+      "RL-20260710-005",
+      "RL-20260717-005"
     ]
   },
   {
@@ -361,14 +363,15 @@
     "project": "general",
     "area": "auth",
     "title": "Space routes enforce membership before data access",
-    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id.",
+    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR.",
     "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?",
     "exampleRefs": [
       "examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"
     ],
     "reviewLearningIds": [
       "RL-20260520-001",
-      "RL-20260602-001"
+      "RL-20260602-001",
+      "RL-20260717-002"
     ]
   },
   {
@@ -506,7 +509,7 @@
     "project": "general",
     "area": "cache",
     "title": "Cache keys cover all inputs",
-    "rule": "Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix.",
+    "rule": "Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix. In-memory get-or-create maps store the creation `Promise` so concurrent callers share in-flight work; failed creations self-evict behind an identity guard, synchronous factory throws become rejections, and the destroy-during-pending branch gets a test.",
     "check": "Are cache keys, bounded caches, and TTL semantics tested?",
     "exampleRefs": [
       "examples/cache.md#cache-02-bump-the-key-when-the-cached-payload-shape-changes",
@@ -518,7 +521,8 @@
       "RL-20260114-001",
       "RL-20251215-001",
       "RL-20260703-004",
-      "RL-20260710-008"
+      "RL-20260710-008",
+      "RL-20260715-001"
     ]
   },
   {
@@ -735,7 +739,7 @@
     "project": "general",
     "area": "tests",
     "title": "Cover edges and determinism",
-    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched.",
+    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence.",
     "check": "Do tests cover edge cases, side effects, and deterministic behavior?",
     "exampleRefs": [
       "examples/testing.md#test-09-cover-the-negative-paths-around-safety-critical-extraction"
@@ -744,7 +748,8 @@
       "RL-20260123-001",
       "RL-20260113-001",
       "RL-20251223-002",
-      "RL-20260615-004"
+      "RL-20260615-004",
+      "RL-20260717-004"
     ]
   },
   {
@@ -805,10 +810,12 @@
     "project": "general",
     "area": "security",
     "title": "Validate redirect targets",
-    "rule": "Redirect and callback targets are strictly validated for protocol, domain, credentials, and ports.",
+    "rule": "Redirect and callback targets are strictly validated for protocol, domain, credentials, and ports. URL parameters forwarded to third-party hosted flows (`returnUrl` on checkout/session endpoints) are redirect targets — validate through the shared redirect helper (`resolveAndValidateRedirectUrl`), never a bare `z.url()`.",
     "check": "Are redirect and callback targets strictly validated?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260717-001"
+    ]
   },
   {
     "id": "SEC-02",
@@ -849,14 +856,15 @@
     "project": "general",
     "area": "data",
     "title": "Aggregates match returned items and signed values",
-    "rule": "Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor.",
+    "rule": "Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor. Map-spread dedup keeps the LAST entry per key — when merging sources by id, put the preferred source last (or make precedence explicit).",
     "check": "Did this add filtering, aggregate totals, or pagination links? If yes, are totals and links based on the items/values actually returned or queried?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#data-01-build-page-links-from-clamped-pagination-values"
     ],
     "reviewLearningIds": [
       "RL-20260113-001",
-      "RL-20260612-002"
+      "RL-20260612-002",
+      "RL-20260717-004"
     ]
   },
   {

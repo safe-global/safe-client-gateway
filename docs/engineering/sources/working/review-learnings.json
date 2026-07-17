@@ -2351,5 +2351,122 @@
     "ruleIds": [
       "CHANGE-01"
     ]
+  },
+  {
+    "id": "RL-20260717-001",
+    "title": "returnUrl forwarded to a hosted payment flow validated as bare z.url()",
+    "sourceWindowId": "CLOSED-20260714-20260717",
+    "prNumbers": [
+      3269
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4990564183,
+      4992715984
+    ],
+    "learning": "Billing checkout/session endpoints accepted a `returnUrl` validated only as `z.url()` — any well-formed absolute URL, a classic open-redirect vector since the value is embedded in Stripe-hosted flows and served back to users. The fix reused the existing OIDC redirect helper (`resolveAndValidateRedirectUrl`) instead of introducing billing-specific config, restricting `returnUrl` to the same allowed origin as post-login redirects. Any URL parameter forwarded to a third-party hosted flow is a redirect target: validate it through the shared redirect helper, never a bare `z.url()`.",
+    "ruleIds": [
+      "SEC-01"
+    ]
+  },
+  {
+    "id": "RL-20260717-002",
+    "title": "Resource fetched by opaque upstream id alone bypassed space membership checks",
+    "sourceWindowId": "CLOSED-20260714-20260717",
+    "prNumbers": [
+      3269
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3596628304,
+      3601178373
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4992715984
+    ],
+    "learning": "`GET /billing/sessions/:sessionId` had no `assertSpaceMember` like its sibling routes — any authenticated user could fetch any checkout session (amounts, customer, subscription). Investigation showed the upstream contract cannot map a session back to a space (`client_reference_id` only set on customer creation; no reverse lookup for Stripe customer ids), so the gap was consciously accepted and documented in the PR. When a space-owned resource is fetched by an opaque upstream id with no space in the route, membership checks are structurally impossible — design the upstream contract to map back to the space, or document the accepted authorization gap explicitly.",
+    "ruleIds": [
+      "AUTH-05"
+    ]
+  },
+  {
+    "id": "RL-20260717-003",
+    "title": "Raw fetch bypassed NetworkService for a plain-text endpoint",
+    "sourceWindowId": "CLOSED-20260714-20260717",
+    "prNumbers": [
+      3269
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3596692934,
+      3601618152
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A billing datasource called global `fetch` directly because `NetworkService`'s `response.json()` could not handle a plain-text response body — silently dropping request logging and the circuit breaker for that call. Review asked to extend `NetworkService` instead, and the fix added plain-text body support to the shared client. Never stand up a parallel HTTP path around `NetworkService`; extend the shared client so logging and resilience policies stay in the path.",
+    "ruleIds": [
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20260717-004",
+    "title": "Map-spread dedup kept the wrong source and the test could not tell",
+    "sourceWindowId": "CLOSED-20260714-20260717",
+    "prNumbers": [
+      3269
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4990564183,
+      4992715984
+    ],
+    "learning": "`new Map([...spaceLinks, ...generalLinks].map(l => [l.id, l]))` deduped payment links with the general source last, so a duplicate id silently kept the general link and discarded the space-specific one — and the unit test used the same object in both lists, passing under either precedence. The fix swaps the order and rewrites the test with two distinct objects sharing an id but differing in a field. Map-spread dedup keeps the LAST entry per key: put the preferred source last, and lock precedence with distinct objects that share the key.",
+    "ruleIds": [
+      "DATA-01",
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20260717-005",
+    "title": "Same z.record metadata shape re-declared instead of generalizing the shared schema",
+    "sourceWindowId": "CLOSED-20260714-20260717",
+    "prNumbers": [
+      3269
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3596471193,
+      3601616084
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A plan entity re-declared `metadata: z.record(z.string(), z.string())` with a comment pointing at the identical `PaymentLinkMetadataSchema`; review asked to generalize that schema (rename) and reuse it across entities, which the author did. When a sibling entity already defines the same record/metadata shape, generalize and reuse it — a comment referencing the twin schema is the tell.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260715-001",
+    "title": "Get-or-create manager cache raced concurrent creations until it stored promises",
+    "sourceWindowId": "CLOSED-20260714-20260717",
+    "prNumbers": [
+      3268,
+      3264
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      4972076644
+    ],
+    "learning": "The consolidated `ChainApiManager` cached resolved instances, so two concurrent `getApi` calls for the same chain both invoked `createApi`. The follow-up stores the creation `Promise` in the map instead: concurrent callers share in-flight work, failed creations self-evict via `.catch` with an identity guard (`this.apis[chainId] === created`) so a late rejection cannot wipe a newer entry, and `Promise.resolve().then(...)` turns synchronous factory throws into rejections. The subtle destroy-during-pending-creation branch got its own test after review. In-memory get-or-create caches store promises, self-evict failures behind an identity guard, and test the destroy-during-pending branch.",
+    "ruleIds": [
+      "CACHE-02"
+    ]
   }
 ]

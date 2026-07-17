@@ -260,10 +260,10 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 <a id="mod-01"></a>
 ### `MOD-01` Behavior in the right module
 
-> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003`
+> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003`
 
 **📜 Rule**\
-New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables.
+New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path.
 
 **✅ Check**\
 > Does new API/product behavior live in the right module?
@@ -755,10 +755,10 @@ Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), 
 <a id="type-02"></a>
 ### `TYPE-02` Schemas in entity files
 
-> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005`
+> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005` · `RL-20260717-005`
 
 **📜 Rule**\
-Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders.
+Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it.
 
 **✅ Check**\
 > Are reusable schemas in entity/schema files?
@@ -1247,10 +1247,10 @@ User-email exposure in DTOs and Swagger is intentional and consistent.
 <a id="auth-05"></a>
 ### `AUTH-05` Space routes enforce membership before data access
 
-> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001`
+> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002`
 
 **📜 Rule**\
-Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id.
+Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR.
 
 **✅ Check**\
 > Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?
@@ -1723,10 +1723,10 @@ Redis pipelines and cache marker writes must validate every meaningful result. H
 <a id="cache-02"></a>
 ### `CACHE-02` Cache keys cover all inputs
 
-> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008`
+> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008` · `RL-20260715-001`
 
 **📜 Rule**\
-Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix.
+Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix. In-memory get-or-create maps store the creation `Promise` so concurrent callers share in-flight work; failed creations self-evict behind an identity guard, synchronous factory throws become rejections, and the destroy-during-pending branch gets a test.
 
 **✅ Check**\
 > Are cache keys, bounded caches, and TTL semantics tested?
@@ -2608,10 +2608,10 @@ Test descriptions and generated data reflect the actual assertion: `it('should r
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004`
+> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence.
 
 **✅ Check**\
 > Do tests cover edge cases, side effects, and deterministic behavior?
@@ -2880,10 +2880,10 @@ fields that do not include `Authorization` keeps the contract pinned.
 <a id="sec-01"></a>
 ### `SEC-01` Validate redirect targets
 
-> **general** · security
+> **general** · security · ↩ `RL-20260717-001`
 
 **📜 Rule**\
-Redirect and callback targets are strictly validated for protocol, domain, credentials, and ports.
+Redirect and callback targets are strictly validated for protocol, domain, credentials, and ports. URL parameters forwarded to third-party hosted flows (`returnUrl` on checkout/session endpoints) are redirect targets — validate through the shared redirect helper (`resolveAndValidateRedirectUrl`), never a bare `z.url()`.
 
 **✅ Check**\
 > Are redirect and callback targets strictly validated?
@@ -3130,10 +3130,10 @@ and the bug only reproduces under cache-warm conditions.
 <a id="data-01"></a>
 ### `DATA-01` Aggregates match returned items and signed values
 
-> **general** · data · 1 example · ↩ `RL-20260113-001` · `RL-20260612-002`
+> **general** · data · 1 example · ↩ `RL-20260113-001` · `RL-20260612-002` · `RL-20260717-004`
 
 **📜 Rule**\
-Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor.
+Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor. Map-spread dedup keeps the LAST entry per key — when merging sources by id, put the preferred source last (or make precedence explicit).
 
 **✅ Check**\
 > Did this add filtering, aggregate totals, or pagination links? If yes, are totals and links based on the items/values actually returned or queried?
