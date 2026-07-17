@@ -4,21 +4,17 @@ import { generateKeyPairSync } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
-import { Test, type TestingModule } from '@nestjs/testing';
+import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import {
   initTestApplication,
   TestAppProvider,
 } from '@/__tests__/test-app.provider';
+import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { ConfigurationModule } from '@/config/configuration.module';
 import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
 import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { BillingModule } from '@/modules/billing/billing.module';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
 import { BillingController } from '@/modules/billing/routes/billing.controller';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
@@ -70,6 +66,10 @@ describe('BillingWebhookAuthGuard', () => {
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
       ...baseConfiguration,
+      features: {
+        ...baseConfiguration.features,
+        billingService: true,
+      },
       billing: {
         ...baseConfiguration.billing,
         webhook: {
@@ -80,15 +80,9 @@ describe('BillingWebhookAuthGuard', () => {
       },
     });
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [
-        TestLoggingModule,
-        TestCacheModule,
-        TestNetworkModule,
-        ConfigurationModule.register(testConfiguration),
-        BillingModule,
-      ],
-    }).compile();
+    const moduleFixture: TestingModule = await createTestModule({
+      config: testConfiguration,
+    });
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
