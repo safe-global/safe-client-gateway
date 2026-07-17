@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
 import type {
   MarketingFeature as DomainMarketingFeature,
   Plan as DomainPlan,
@@ -27,7 +28,7 @@ export class Product implements DomainProduct {
   @ApiProperty({ type: MarketingFeature, isArray: true })
   marketingFeatures!: Array<MarketingFeature>;
   @ApiProperty({ type: Object })
-  metadata!: Record<string, string>;
+  metadata!: StripeMetadata;
   @ApiProperty()
   name!: string;
 }

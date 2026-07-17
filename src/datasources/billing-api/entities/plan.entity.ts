@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
 
 export const PlanCurrencies = ['usd', 'eur'] as const;
 
@@ -20,8 +21,7 @@ export const ProductSchema = z.object({
   active: z.boolean(),
   description: z.string(),
   marketingFeatures: z.array(MarketingFeatureSchema),
-  // Generic, like Stripe metadata itself: see PaymentLinkMetadataSchema.
-  metadata: z.record(z.string(), z.string()),
+  metadata: StripeMetadataSchema,
   name: z.string(),
 });
 
