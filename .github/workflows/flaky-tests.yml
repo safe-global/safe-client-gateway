@@ -266,6 +266,10 @@ jobs:
             *test:integration*|*test:e2e*) yarn build ;;
           esac
           read -ra cmd_arr <<< "$cmd"
+          if [ ${#cmd_arr[@]} -eq 0 ]; then
+            echo "verify-cmd contained no command words"
+            exit 1
+          fi
           for i in $(seq 1 10); do
             echo "Verification run $i/10: $cmd"
             "${cmd_arr[@]}"

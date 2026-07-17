@@ -52,7 +52,7 @@ runs:
       env:
         PREV_DONE: ${{ inputs.prev-done }}
       run: |
-        v=$(tr -d '\r\n' < "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
+        v=$(tr -d '[:space:]' < "$RUNNER_TEMP/verdict" 2>/dev/null || echo request-changes)
         rm -f "$RUNNER_TEMP/verdict"
         if [ "$PREV_DONE" = "true" ] || [ "$v" = "approve" ]; then
           echo "done=true" >> "$GITHUB_OUTPUT"
