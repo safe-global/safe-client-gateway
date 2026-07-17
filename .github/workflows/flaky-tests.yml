@@ -4,7 +4,9 @@ name: Flaky Tests
 
 on:
   schedule:
-    - cron: '15 5 * * *'
+    # Hourly while shaking out the automation; switch back to daily
+    # ('15 5 * * *') once it has proven itself.
+    - cron: '15 * * * *'
   workflow_dispatch:
 
 # The two jobs run sequentially and mutate shared state (the reports branch,
