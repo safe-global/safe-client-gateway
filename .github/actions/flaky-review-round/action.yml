@@ -36,10 +36,10 @@ runs:
     - name: Review
       if: inputs.prev-done != 'true'
       continue-on-error: true
-      uses: anthropics/claude-code-action@v1
+      uses: anthropics/claude-code-action@e90deca47693f9457b72f2b53c17d7c445a87342 # v1.0.171
       with:
         anthropic_api_key: ${{ inputs.anthropic-api-key }}
-        claude_args: '--model opus --max-turns 60 --allowedTools "Bash,Read,Glob,Grep"'
+        claude_args: '--model opus --max-turns 60 --allowedTools "Read,Glob,Grep,Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr checkout:*),Bash(yarn:*),Bash(cat:*),Bash(jq:*),Bash(ls:*),Bash(echo:*),Bash(tr:*)"'
         prompt: |
           Review round ${{ inputs.round }} of ${{ inputs.total-rounds }}.
           Follow the instructions in .github/prompts/flaky-fix-review.md
@@ -62,10 +62,10 @@ runs:
     - name: Address review
       if: steps.verdict.outputs.done != 'true'
       continue-on-error: true
-      uses: anthropics/claude-code-action@v1
+      uses: anthropics/claude-code-action@e90deca47693f9457b72f2b53c17d7c445a87342 # v1.0.171
       with:
         anthropic_api_key: ${{ inputs.anthropic-api-key }}
-        claude_args: '--model opus --max-turns 100 --allowedTools "Bash,Read,Edit,Write,Glob,Grep"'
+        claude_args: '--model opus --max-turns 100 --allowedTools "Read,Edit,Write,Glob,Grep,Bash(yarn:*),Bash(git:*),Bash(gh pr:*),Bash(cat:*),Bash(jq:*),Bash(echo:*),Bash(ls:*),Bash(grep:*),Bash(head:*),Bash(tail:*),Bash(tr:*)"'
         prompt: |
           Follow the instructions in .github/prompts/flaky-fix-address.md
           for PR #${{ inputs.pr-number }}.
