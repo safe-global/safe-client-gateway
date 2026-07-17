@@ -13,11 +13,25 @@
       "recall": 1.0,
       "blindOnly": false,
       "note": "Pilot run. Only pr-3249 was a blind subagent evaluation; pr-3247 and pr-3157 were scored inline by a contaminated evaluator (mechanics check, excluded from any blind aggregate). Anchoring used first_review throughout; ready_for_review_head is the standard going forward."
+    },
+    {
+      "windowId": "CLOSED-20260714-20260717",
+      "rulesetRef": "96a598a31",
+      "prsEvaluated": 2,
+      "mappable": 9,
+      "hits": 5,
+      "misses": 4,
+      "validatedCandidates": 1,
+      "unconfirmedCandidates": 5,
+      "disputed": 0,
+      "recall": 0.56,
+      "blindOnly": true,
+      "note": "First fully blind window (PRs 3269, 3268; 3264/3265/3266/3157 excluded as already-compounded overlap). All four misses on #3269 fed the compound run for this window. Validated candidate: bundled docker-compose refactor reverted before merge with no review comment."
     }
   ],
   "lastRun": {
-    "windowId": "CLOSED-20260711-20260714",
-    "rulesetRef": "d2436f4ab",
-    "evaluatedAt": "2026-07-14T17:30:00Z"
+    "windowId": "CLOSED-20260714-20260717",
+    "rulesetRef": "96a598a31",
+    "evaluatedAt": "2026-07-17T10:20:00Z"
   }
 }

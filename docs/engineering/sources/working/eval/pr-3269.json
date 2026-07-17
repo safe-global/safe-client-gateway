@@ -1,0 +1,207 @@
+{
+  "pr": 3269,
+  "windowId": "CLOSED-20260714-20260717",
+  "rulesetRef": "96a598a31",
+  "reviewedState": {
+    "commitId": "64c48dcb44aea703ebee084b3a116491e6da6cfa",
+    "anchor": "ready_for_review_head"
+  },
+  "mergeCommit": "857ff3faee659aa9a06bd4f5676e8ec73e38b231",
+  "blind": true,
+  "evaluator": "subagent",
+  "groundTruth": [
+    {
+      "commentIds": [3596471193, 3601616084],
+      "author": "tmjssz",
+      "summary": "Reuse a generalized PaymentLinkMetadataSchema instead of re-declaring z.record metadata in sibling entities (fixed).",
+      "mappable": true
+    },
+    {
+      "commentIds": [3596628304, 3601178373],
+      "author": "tmjssz",
+      "summary": "getCheckoutSession lacks the assertSpaceMember check its siblings have (accepted gap: upstream cannot map session customer back to a space).",
+      "mappable": true
+    },
+    {
+      "commentIds": [3596692934, 3601618152],
+      "author": "tmjssz",
+      "summary": "Bypassing NetworkService skips logging and circuit breaker; extend it to handle plain-text bodies instead (fixed).",
+      "mappable": true
+    },
+    {
+      "commentIds": [4989431812, 4989596297],
+      "author": "yagopv",
+      "summary": "PR description/Swagger mixed up workspace uuid naming; Swagger fixed.",
+      "mappable": false,
+      "category": "process"
+    },
+    {
+      "commentIds": [4990564183, 4992715984],
+      "author": "claude[bot] (accepted)",
+      "summary": "Open-redirect surface: returnUrl validated only as z.url(); fixed by reusing the OIDC resolveAndValidateRedirectUrl helper.",
+      "mappable": true
+    },
+    {
+      "commentIds": [4990564183, 4992715984],
+      "author": "claude[bot] (accepted)",
+      "summary": "De-dup precedence inverted in getSpacePaymentLinks — Map spread kept the general link over the space-specific one (fixed).",
+      "mappable": true
+    },
+    {
+      "commentIds": [4990564183, 4992715984],
+      "author": "claude[bot] (accepted)",
+      "summary": "No format validation on planId/paymentLinkId/sessionId path params interpolated into upstream URLs (fixed with regex ValidationPipe).",
+      "mappable": true
+    },
+    {
+      "commentIds": [4990564183, 4992715984],
+      "author": "claude[bot] (accepted)",
+      "summary": "No controller/e2e coverage for the six new authenticated routes (fixed: billing.controller.e2e-spec.ts).",
+      "mappable": true
+    },
+    {
+      "commentIds": [4990564183, 4992715984],
+      "author": "claude[bot] (accepted)",
+      "summary": "De-dup test used the same object in both lists so it could not lock precedence (fixed with distinct objects sharing the id).",
+      "mappable": true
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "MOD-01",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 111,
+      "finding": "getCustomerSessionUrl bypasses NetworkService with a raw global fetch instead of extending the shared client for plain-text bodies.",
+      "verdict": "hit",
+      "matchedCommentIds": [3596692934],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "SEC-01",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 39,
+      "finding": "returnUrl is a redirect target forwarded to the billing provider but validated only as a generic z.url() with no protocol/domain/credential/port restrictions.",
+      "verdict": "hit",
+      "matchedCommentIds": [4990564183],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "TYPE-01",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 39,
+      "finding": "A local inline ReturnUrlSchema is forked instead of reusing/tightening the shared RedirectUrlSchema.",
+      "verdict": "hit",
+      "matchedCommentIds": [4990564183],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "AUTH-05",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 98,
+      "finding": "getCheckoutSession returns space-owned billing data to any authenticated user with no membership/ownership assertion, unlike every other billing route.",
+      "verdict": "hit",
+      "matchedCommentIds": [3596628304],
+      "mergeResolution": "unchanged"
+    },
+    {
+      "ruleId": "TEST-02",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": null,
+      "finding": "Six new authenticated routes with no e2e spec proving wiring (route registration, AuthGuard 401, ValidationPipe 422).",
+      "verdict": "hit",
+      "matchedCommentIds": [4990564183],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "CHANGE-02",
+      "file": "docker-compose.yml",
+      "line": 62,
+      "finding": "Feature PR bundles an unrelated docker-compose refactor replacing the per-variable environment block with env_file.",
+      "verdict": "validated_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "MOD-05",
+      "file": "src/modules/billing/billing.module.ts",
+      "line": 17,
+      "finding": "AuthModule/UsersModule/SpacesModule wrapped in forwardRef() although nothing imports BillingModule back.",
+      "verdict": "unconfirmed_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "unchanged"
+    },
+    {
+      "ruleId": "MOD-06",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 23,
+      "finding": "Route service injects the external API datasource IBillingApi directly instead of going through a domain repository boundary.",
+      "verdict": "unconfirmed_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "unchanged"
+    },
+    {
+      "ruleId": "TEST-01",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 24,
+      "finding": "billingApiMock declares listPlans and getCustomer, methods BillingService never calls.",
+      "verdict": "unconfirmed_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "unchanged"
+    },
+    {
+      "ruleId": "TYPE-04",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 61,
+      "finding": "@ApiQuery({ name: 'status' }) omits the enum, so Swagger does not document the accepted SubscriptionStatusFilter values.",
+      "verdict": "unconfirmed_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "unchanged"
+    },
+    {
+      "ruleId": "STYLE-01",
+      "file": "src/modules/billing/routes/entities/checkout-session.entity.ts",
+      "line": 46,
+      "finding": "Entity file exports both the DTO class and the toCheckoutSessionDto mapping helper instead of keeping the helper in a dedicated file.",
+      "verdict": "unconfirmed_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "unchanged"
+    }
+  ],
+  "misses": [
+    {
+      "commentIds": [3596471193],
+      "summary": "Metadata z.record shape re-declared instead of reusing a generalized shared schema.",
+      "candidateRuleIds": ["TYPE-02", "REUSE-01"]
+    },
+    {
+      "commentIds": [4990564183],
+      "summary": "Map-spread de-dup precedence inverted (general link overwrote space-specific).",
+      "candidateRuleIds": ["DATA-01"]
+    },
+    {
+      "commentIds": [4990564183],
+      "summary": "planId/paymentLinkId/sessionId path params unvalidated despite ROUTE-02 covering route-param validation.",
+      "candidateRuleIds": ["ROUTE-02"]
+    },
+    {
+      "commentIds": [4990564183],
+      "summary": "De-dup test could not lock precedence (identical objects in both lists).",
+      "candidateRuleIds": ["TEST-09"]
+    }
+  ],
+  "ruleGapCandidates": [
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "observation": "checkout-url GET route creates a checkout session upstream (state-changing POST) — no rule covers HTTP method semantics for side-effecting endpoints."
+    },
+    {
+      "file": "src/datasources/billing-api/upstream-customer-id.util.ts",
+      "observation": "withDashes heuristically re-inserts dashes into 32-char hex ids to compensate for an upstream parsing bug — no rule addresses client-side workarounds vs fixing the upstream contract."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "observation": "getSessionUrl returns an anonymous { url: string } instead of the UrlResponse DTO the controller documents — no compile-time link between service output and Swagger contract."
+    }
+  ],
+  "evaluatedAt": "2026-07-17T10:20:00Z"
+}

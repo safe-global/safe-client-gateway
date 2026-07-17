@@ -1,0 +1,34 @@
+{
+  "pr": 3268,
+  "windowId": "CLOSED-20260714-20260717",
+  "rulesetRef": "96a598a31",
+  "reviewedState": {
+    "commitId": "642021fa6b148e203744f36002939031132578c9",
+    "anchor": "ready_for_review_head"
+  },
+  "mergeCommit": "e5839b43654f7ce55c962cde9d80114bb0608ea6",
+  "blind": true,
+  "evaluator": "subagent",
+  "groundTruth": [
+    {
+      "commentIds": [4972076644],
+      "author": "claude[bot] (accepted)",
+      "summary": "Identity-guarded eviction (destroy-during-pending-creation) untested, and hasApi semantics changed to resolved-or-in-flight; accepted via follow-up commit 84af88fd0 adding exactly the requested test.",
+      "mappable": true
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "TEST-09",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 31,
+      "finding": "The failure-path eviction guard and the changed destroy-during-pending-creation behavior (hasApi true while creation is in flight) are deliberate edge-case behavior with no test covering the replaced/evicted-entry branch.",
+      "verdict": "hit",
+      "matchedCommentIds": [4972076644],
+      "mergeResolution": "fixed"
+    }
+  ],
+  "misses": [],
+  "ruleGapCandidates": [],
+  "evaluatedAt": "2026-07-17T10:20:00Z"
+}
