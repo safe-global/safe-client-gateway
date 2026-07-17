@@ -1,0 +1,61 @@
+{
+  "pr": 3157,
+  "windowId": "CLOSED-20260711-20260714",
+  "rulesetRef": "d2436f4ab",
+  "reviewedState": {
+    "commitId": "d9c10856c86b478e33bdff154125b1e3d90b09df",
+    "anchor": "first_review"
+  },
+  "mergeCommit": "4adeb7e4724bf99d74a305339806fcb9c55f7b77",
+  "blind": false,
+  "evaluator": "inline",
+  "groundTruth": [
+    {
+      "commentIds": [3577477274, 3577488578],
+      "author": "LucieFaire",
+      "summary": "Flag key `zerionEnabled` reads oddly next to sibling flags — should be `zerion` without the Enabled suffix.",
+      "mappable": true
+    },
+    {
+      "commentIds": [3577481803],
+      "author": "LucieFaire",
+      "summary": "If the flag gates all of Zerion, the separate `zerionPositions` flag should be consolidated away (author agreed, deferred to a follow-up PR).",
+      "mappable": true
+    },
+    {
+      "commentIds": [3579321229, 3579544046],
+      "author": "LucieFaire",
+      "summary": "The new configuration.spec tests \"don't bring much value\" — reviewer opinion; author kept them.",
+      "mappable": false,
+      "category": "opinion"
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "NAME-01",
+      "file": "src/config/entities/configuration.ts",
+      "line": 102,
+      "finding": "`zerionEnabled` breaks the sibling feature-flag naming pattern — every other key is suffix-less (`email`, `sesEmail`, `zerionPositions`, `debugLogs`).",
+      "verdict": "hit",
+      "matchedCommentIds": [3577477274, 3577488578],
+      "mergeResolution": "unchanged"
+    },
+    {
+      "ruleId": "PR-01",
+      "file": "src/config/entities/configuration.ts",
+      "line": 103,
+      "finding": "Two Zerion feature gates still coexist after the rename (`zerionEnabled`, `zerionPositions`) — consolidation candidate per the multi-gated-path clause.",
+      "verdict": "hit",
+      "matchedCommentIds": [3577481803],
+      "mergeResolution": "unchanged"
+    }
+  ],
+  "misses": [],
+  "ruleGapCandidates": [
+    {
+      "file": "src/config/entities/configuration.spec.ts",
+      "observation": "Reviewer called the strict-parse regression tests low-value while the ruleset endorses them (carried-over legacy values must not enable the flag) — a ruleset-vs-reviewer disagreement worth noting; the author kept the tests."
+    }
+  ],
+  "evaluatedAt": "2026-07-14T17:30:00Z"
+}

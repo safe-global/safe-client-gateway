@@ -1,0 +1,40 @@
+{
+  "pr": 3249,
+  "windowId": "CLOSED-20260711-20260714",
+  "rulesetRef": "d2436f4ab",
+  "reviewedState": {
+    "commitId": "b89d58e26eca5b1162f5d100be1ff063d44cfc76",
+    "anchor": "first_review"
+  },
+  "mergeCommit": "c9d6bf759988d8a7db5d947ea399af70c26e8b7d",
+  "blind": true,
+  "evaluator": "subagent",
+  "groundTruth": [
+    {
+      "commentIds": [3571129002],
+      "author": "LucieFaire",
+      "summary": "Asked why the host config is suddenly required (answered: Fastify defaults to localhost, unlike Express).",
+      "mappable": false,
+      "category": "question"
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "CONFIG-05",
+      "file": ".env.sample.json",
+      "line": null,
+      "finding": "APPLICATION_HOST is read in configuration.ts but the reviewed state adds no .env.sample.json entry.",
+      "verdict": "validated_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "fixed"
+    }
+  ],
+  "misses": [],
+  "ruleGapCandidates": [
+    {
+      "file": "src/config/entities/__tests__/configuration.ts",
+      "observation": "Test configuration copies the production env read verbatim (process.env.APPLICATION_HOST || '0.0.0.0') instead of a stable literal/faker value, silently coupling test config to the developer's shell; no rule distinguishes genuine connection-target fallbacks (POSTGRES_TEST_HOST) from values tests do not need from the environment."
+    }
+  ],
+  "evaluatedAt": "2026-07-14T17:30:00Z"
+}

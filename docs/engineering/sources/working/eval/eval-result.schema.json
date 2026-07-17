@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "pr",
+    "windowId",
+    "rulesetRef",
+    "reviewedState",
+    "mergeCommit",
+    "blind",
+    "evaluator",
+    "groundTruth",
+    "findings",
+    "misses",
+    "ruleGapCandidates",
+    "evaluatedAt"
+  ],
+  "properties": {
+    "pr": { "type": "integer", "minimum": 1 },
+    "windowId": {
+      "type": "string",
+      "pattern": "^CLOSED-[0-9]{8}-[0-9]{8}$"
+    },
+    "rulesetRef": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "reviewedState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commitId", "anchor"],
+      "properties": {
+        "commitId": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "anchor": {
+          "type": "string",
+          "enum": ["ready_for_review_head", "first_review"]
+        }
+      }
+    },
+    "mergeCommit": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9a-f]{7,40}$"
+    },
+    "blind": { "type": "boolean" },
+    "evaluator": { "type": "string", "enum": ["subagent", "inline"] },
+    "groundTruth": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["commentIds", "author", "summary", "mappable"],
+        "properties": {
+          "commentIds": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "author": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "mappable": { "type": "boolean" },
+          "category": {
+            "type": "string",
+            "enum": ["question", "product-decision", "process", "praise", "opinion"]
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ruleId", "file", "finding", "verdict", "matchedCommentIds", "mergeResolution"],
+        "properties": {
+          "ruleId": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,9}-[0-9]{2}$" },
+          "file": { "type": "string", "minLength": 1 },
+          "line": { "type": ["integer", "null"], "minimum": 1 },
+          "finding": { "type": "string", "minLength": 1 },
+          "verdict": {
+            "type": "string",
+            "enum": ["hit", "validated_candidate", "unconfirmed_candidate", "disputed"]
+          },
+          "matchedCommentIds": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "mergeResolution": {
+            "type": "string",
+            "enum": ["fixed", "unchanged", "n/a"]
+          }
+        }
+      }
+    },
+    "misses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["commentIds", "summary"],
+        "properties": {
+          "commentIds": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "integer", "minimum": 1 }
+          },
+          "summary": { "type": "string", "minLength": 1 },
+          "candidateRuleIds": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9]{1,9}-[0-9]{2}$" }
+          }
+        }
+      }
+    },
+    "ruleGapCandidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["file", "observation"],
+        "properties": {
+          "file": { "type": "string", "minLength": 1 },
+          "observation": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "evaluatedAt": { "type": "string", "format": "date-time" }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "pr": 3247,
+  "windowId": "CLOSED-20260711-20260714",
+  "rulesetRef": "d2436f4ab",
+  "reviewedState": {
+    "commitId": "99f4b82329fd76c376395c43bd26047ca41b5547",
+    "anchor": "first_review"
+  },
+  "mergeCommit": "d22a8a41688928aaaa6d4d9a470efa8e2a4c40bc",
+  "blind": false,
+  "evaluator": "inline",
+  "groundTruth": [
+    {
+      "commentIds": [3570889198],
+      "author": "LucieFaire",
+      "summary": "Mocks cast as `as unknown as MockedObject<T>` — the unknown hop is redundant.",
+      "mappable": true
+    },
+    {
+      "commentIds": [3570893940, 3570897035],
+      "author": "LucieFaire",
+      "summary": "`as never` casts on mock resolved values and the spaceId argument — avoid.",
+      "mappable": true
+    }
+  ],
+  "findings": [
+    {
+      "ruleId": "TEST-01",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 41,
+      "finding": "Four mocks typed `as unknown as MockedObject<T>` instead of a direct `as MockedObject<T>` cast.",
+      "verdict": "hit",
+      "matchedCommentIds": [3570889198],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "TYPE-06",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 86,
+      "finding": "`as never` casts lie to the type system on mockResolvedValue arguments and on `spaceId as never` (root cause: spaceId is an untyped faker string instead of the nominal UUID type per TYPE-01).",
+      "verdict": "hit",
+      "matchedCommentIds": [3570893940, 3570897035],
+      "mergeResolution": "fixed"
+    },
+    {
+      "ruleId": "STYLE-01",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.ts",
+      "line": 248,
+      "finding": "filterUndeployed fails open (catch → treat as undeployed and keep the row); STYLE-01's safe-default clause arguably wants fail-closed, though a test documents the fail-open intent.",
+      "verdict": "unconfirmed_candidate",
+      "matchedCommentIds": [],
+      "mergeResolution": "unchanged"
+    }
+  ],
+  "misses": [],
+  "ruleGapCandidates": [],
+  "evaluatedAt": "2026-07-14T17:30:00Z"
+}

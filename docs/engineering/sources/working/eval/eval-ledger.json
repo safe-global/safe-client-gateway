@@ -1,0 +1,23 @@
+{
+  "windows": [
+    {
+      "windowId": "CLOSED-20260711-20260714",
+      "rulesetRef": "d2436f4ab",
+      "prsEvaluated": 3,
+      "mappable": 4,
+      "hits": 4,
+      "misses": 0,
+      "validatedCandidates": 1,
+      "unconfirmedCandidates": 1,
+      "disputed": 0,
+      "recall": 1.0,
+      "blindOnly": false,
+      "note": "Pilot run. Only pr-3249 was a blind subagent evaluation; pr-3247 and pr-3157 were scored inline by a contaminated evaluator (mechanics check, excluded from any blind aggregate). Anchoring used first_review throughout; ready_for_review_head is the standard going forward."
+    }
+  ],
+  "lastRun": {
+    "windowId": "CLOSED-20260711-20260714",
+    "rulesetRef": "d2436f4ab",
+    "evaluatedAt": "2026-07-14T17:30:00Z"
+  }
+}
