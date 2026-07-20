@@ -13,6 +13,7 @@ const configurationService = {
 const kmsService = {
   encrypt: vi.fn(),
   decrypt: vi.fn(),
+  generateDataKey: vi.fn(),
 } as MockedObject<IKmsService>;
 
 /** Random `length`-byte buffer — KMS blobs and index keys are opaque here. */
@@ -25,6 +26,26 @@ function randomBytes(length: number): Buffer {
     }),
     'hex',
   );
+}
+
+/**
+ * Stands in for KMS GenerateDataKey + Decrypt(wrapped key): hands out copies
+ * of a fixed data key (the service zeroes its copy after each use) so local
+ * AES-256-GCM round-trips are real.
+ */
+function stubDataKey(): { dataKey: Buffer; wrappedKey: Buffer } {
+  const dataKey = randomBytes(32);
+  const wrappedKey = randomBytes(64);
+  kmsService.generateDataKey.mockImplementation(() =>
+    Promise.resolve({
+      plaintextKey: Buffer.from(dataKey),
+      wrappedKey: Buffer.from(wrappedKey),
+    }),
+  );
+  kmsService.decrypt.mockImplementation(() =>
+    Promise.resolve(Buffer.from(dataKey)),
+  );
+  return { dataKey, wrappedKey };
 }
 
 // 32 is INDEX_KEY_LENGTH; the two keys only need to differ to prove the token
@@ -126,19 +147,24 @@ describe('KmsEncryptionService', () => {
   });
 
   describe('encrypt', () => {
-    it('encrypts via KMS with the caller-supplied context as AAD', async () => {
+    it('envelope-encrypts via a fresh KMS data key bound to the caller-supplied context', async () => {
       const target = await buildTarget();
       const value = faker.person.firstName();
-      const blob = randomBytes(4);
-      kmsService.encrypt.mockResolvedValue(blob);
+      const { wrappedKey } = stubDataKey();
 
       const stored = await target.encrypt(value, CONTEXT);
 
-      expect(stored).toBe(`kms:v1:${blob.toString('base64url')}`);
-      expect(kmsService.encrypt).toHaveBeenCalledExactlyOnceWith({
-        plaintext: Buffer.from(value, 'utf8'),
+      expect(stored.startsWith('kms:v1:')).toBe(true);
+      expect(kmsService.generateDataKey).toHaveBeenCalledExactlyOnceWith({
         encryptionContext: CONTEXT,
       });
+      // The blob leads with the length-prefixed wrapped key; the value only
+      // ever meets the data key locally, never KMS.
+      const blob = Buffer.from(stored.slice('kms:v1:'.length), 'base64url');
+      expect(blob.subarray(2, 2 + blob.readUInt16BE(0))).toStrictEqual(
+        wrappedKey,
+      );
+      expect(kmsService.encrypt).not.toHaveBeenCalled();
     });
 
     it('returns the plaintext unchanged when encryption is disabled', async () => {
@@ -146,48 +172,58 @@ describe('KmsEncryptionService', () => {
       const value = faker.person.firstName();
 
       await expect(target.encrypt(value, CONTEXT)).resolves.toBe(value);
-      expect(kmsService.encrypt).not.toHaveBeenCalled();
+      expect(kmsService.generateDataKey).not.toHaveBeenCalled();
     });
   });
 
   describe('decrypt', () => {
-    it('decrypts kms: values with the same context', async () => {
+    it('round-trips a value, unwrapping the stored data key via KMS with the same context', async () => {
       const target = await buildTarget();
       const value = faker.person.firstName();
-      const blob = randomBytes(3);
-      kmsService.decrypt.mockResolvedValue(Buffer.from(value, 'utf8'));
-
-      const plaintext = await target.decrypt(
-        `kms:v1:${blob.toString('base64url')}`,
-        CONTEXT,
-      );
-
-      expect(plaintext).toBe(value);
-      expect(kmsService.decrypt).toHaveBeenCalledExactlyOnceWith({
-        ciphertext: blob,
-        encryptionContext: CONTEXT,
-      });
-    });
-
-    it('round-trips a value through encrypt then decrypt with the same context', async () => {
-      const target = await buildTarget();
-      const value = faker.person.firstName();
-      const blob = randomBytes(3);
-      kmsService.encrypt.mockResolvedValue(blob);
-      kmsService.decrypt.mockResolvedValue(Buffer.from(value, 'utf8'));
+      const { wrappedKey } = stubDataKey();
 
       const stored = await target.encrypt(value, CONTEXT);
       const plaintext = await target.decrypt(stored, CONTEXT);
 
       expect(plaintext).toBe(value);
-      expect(kmsService.encrypt).toHaveBeenCalledExactlyOnceWith({
-        plaintext: Buffer.from(value, 'utf8'),
-        encryptionContext: CONTEXT,
-      });
       expect(kmsService.decrypt).toHaveBeenCalledExactlyOnceWith({
-        ciphertext: blob,
+        ciphertext: wrappedKey,
         encryptionContext: CONTEXT,
       });
+    });
+
+    it('round-trips values larger than the KMS direct-Encrypt limit (4096 bytes)', async () => {
+      const target = await buildTarget();
+      stubDataKey();
+      const value = faker.string.alpha(10_000);
+
+      const stored = await target.encrypt(value, CONTEXT);
+
+      await expect(target.decrypt(stored, CONTEXT)).resolves.toBe(value);
+    });
+
+    it('rejects decryption under a different context, even when the data key unwraps (GCM AAD binding)', async () => {
+      const target = await buildTarget();
+      // The stub ignores the context, as if KMS did not enforce it — the
+      // local AAD check must still reject.
+      stubDataKey();
+      const stored = await target.encrypt(faker.person.firstName(), CONTEXT);
+
+      await expect(
+        target.decrypt(stored, { owner: faker.string.numeric() }),
+      ).rejects.toThrow();
+    });
+
+    it('rejects a tampered value (GCM authentication)', async () => {
+      const target = await buildTarget();
+      stubDataKey();
+      const stored = await target.encrypt(faker.person.firstName(), CONTEXT);
+
+      const blob = Buffer.from(stored.slice('kms:v1:'.length), 'base64url');
+      blob[blob.length - 1] ^= 0xff;
+      const tampered = `kms:v1:${blob.toString('base64url')}`;
+
+      await expect(target.decrypt(tampered, CONTEXT)).rejects.toThrow();
     });
 
     it('passes plaintext through unchanged when disabled', async () => {
@@ -216,19 +252,21 @@ describe('KmsEncryptionService', () => {
     });
 
     it('decrypts kms: values even when encryption is disabled (rollback reads)', async () => {
-      const target = await buildTarget({ enabled: false });
+      const encryptingTarget = await buildTarget();
       const value = faker.person.firstName();
-      kmsService.decrypt.mockResolvedValue(Buffer.from(value, 'utf8'));
+      const { dataKey } = stubDataKey();
+      const stored = await encryptingTarget.encrypt(value, CONTEXT);
 
-      await expect(
-        target.decrypt(
-          `kms:v1:${randomBytes(1).toString('base64url')}`,
-          CONTEXT,
-        ),
-      ).resolves.toBe(value);
+      const target = await buildTarget({ enabled: false });
+      // buildTarget resets the decrypt stub after init — re-stub the unwrap.
+      kmsService.decrypt.mockImplementation(() =>
+        Promise.resolve(Buffer.from(dataKey)),
+      );
+
+      await expect(target.decrypt(stored, CONTEXT)).resolves.toBe(value);
     });
 
-    it('throws on malformed kms: ciphertext', async () => {
+    it('throws on malformed kms: ciphertext without touching KMS', async () => {
       const target = await buildTarget();
 
       await expect(target.decrypt('kms:v2:x', CONTEXT)).rejects.toThrow(
@@ -240,14 +278,26 @@ describe('KmsEncryptionService', () => {
       await expect(target.decrypt('kms:v1:a:b', CONTEXT)).rejects.toThrow(
         'Malformed ciphertext',
       );
+      // Envelope too short to hold a wrapped key + IV + tag.
+      await expect(
+        target.decrypt(
+          `kms:v1:${randomBytes(8).toString('base64url')}`,
+          CONTEXT,
+        ),
+      ).rejects.toThrow('Malformed ciphertext');
+      // Declared wrapped-key length runs past the end of the blob.
+      const overrun = Buffer.alloc(40);
+      overrun.writeUInt16BE(500, 0);
+      await expect(
+        target.decrypt(`kms:v1:${overrun.toString('base64url')}`, CONTEXT),
+      ).rejects.toThrow('Malformed ciphertext');
+      expect(kmsService.decrypt).not.toHaveBeenCalled();
     });
 
     it('calls KMS on every decrypt (results are not cached)', async () => {
       const target = await buildTarget();
-      kmsService.decrypt.mockResolvedValue(
-        Buffer.from(faker.person.firstName(), 'utf8'),
-      );
-      const stored = `kms:v1:${randomBytes(1).toString('base64url')}`;
+      stubDataKey();
+      const stored = await target.encrypt(faker.person.firstName(), CONTEXT);
 
       await target.decrypt(stored, CONTEXT);
       await target.decrypt(stored, CONTEXT);

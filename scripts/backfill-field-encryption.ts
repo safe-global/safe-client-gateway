@@ -15,9 +15,9 @@
  *   members.name, members.alias
  *   space_audit_log.payload           (whole payload as one blob)
  *
- * Each plaintext value is encrypted directly by KMS, bound to its owner via
- * the KMS encryption context ({ userId } for users/wallets, { spaceId } for
- * everything else). Searchable address columns also get a blind index; blind
+ * Each plaintext value is envelope-encrypted under a fresh KMS data key,
+ * bound to its owner via the KMS encryption context ({ userId } for
+ * users/wallets, { spaceId } for everything else). Searchable address columns also get a blind index; blind
  * indexes cannot be computed in SQL, so this cannot be a pure SQL migration.
  *
  * Release choreography (2026-07-10 expansion spec): there is NO transitional
@@ -59,7 +59,7 @@
  *   the looser 'kms:%') means a malformed 'kms:'-prefixed value can't be
  *   mistaken for done: it stays visible to the batch SELECTs and --verify, and
  *   gets encrypted as an opaque string.
- * - Each value costs one KMS Encrypt call — budget KMS rate limits.
+ * - Each value costs one KMS GenerateDataKey call — budget KMS rate limits.
  * - `updated_at` is preserved by disabling user triggers within each batch
  *   transaction. This requires the connecting role to own the tables (or be
  *   superuser). Always rehearse on a staging copy before production.
@@ -327,10 +327,9 @@ async function backfillTable(
     .join(' OR ');
 
   while (true) {
-    // Blank values can never be encrypted (KMS rejects zero-length
-    // plaintext) and are not values the app ever writes — invalid data,
-    // excluded per column so it can't crash the batch or get re-selected
-    // forever. They still show up in countPlaintext.
+    // Blank values are not values the app ever writes — invalid data the
+    // backfill deliberately leaves alone, excluded per column so it can't
+    // get re-selected forever. They still show up in countPlaintext.
     const rows = await dataSource.query<Array<BackfillRow>>(
       `SELECT ${selectColumns} FROM "${spec.table}"
        WHERE ${anyNeedsEncryption}
@@ -451,9 +450,9 @@ async function countTablePlaintext(
     console.info(`  ${label}: ${remaining} plaintext/unindexed remaining`);
   }
 
-  // Called out separately: blank values are skipped by backfillTable (KMS
-  // can't encrypt zero-length plaintext) and re-running will never clear
-  // them — they need a manual data fix (e.g. set to NULL) first.
+  // Called out separately: blank values are deliberately skipped by
+  // backfillTable (invalid data) and re-running will never clear them —
+  // they need a manual data fix (e.g. set to NULL) first.
   for (const columnSpec of spec.columns) {
     const [{ count: blankCount }] = await dataSource.query<
       Array<{ count: string }>
@@ -464,7 +463,7 @@ async function countTablePlaintext(
     if (blank > 0) {
       console.info(
         `  ${spec.table}.${columnSpec.column}: ${blank} row(s) are blank — ` +
-          `invalid data the backfill cannot encrypt; fix manually ` +
+          `invalid data the backfill will not encrypt; fix manually ` +
           `(e.g. set to NULL) before --verify can pass`,
       );
     }

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
+import {
+  DecryptCommand,
+  GenerateDataKeyCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
@@ -1380,11 +1384,17 @@ describe('UsersRepository', () => {
     it('round-trips the real kms:v1: on-disk value through create and decrypt', async () => {
       const encryptingUsersRepository = await buildEncryptingUsersRepository();
       const email = fakeEmailAddress();
-      const ciphertextBlob = Buffer.from(faker.string.alphanumeric(16));
-      kmsMock.on(EncryptCommand).resolves({ CiphertextBlob: ciphertextBlob });
+      const dataKey = Buffer.alloc(32, 9);
+      const wrappedKey = Buffer.from(faker.string.alphanumeric(64));
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: new Uint8Array(dataKey),
+        CiphertextBlob: new Uint8Array(wrappedKey),
+      });
+      // Unwrapping the stored data key hands back the same key material; the
+      // email itself is then decrypted locally (AES-256-GCM), for real.
       kmsMock
         .on(DecryptCommand)
-        .resolves({ Plaintext: Buffer.from(email, 'utf8') });
+        .resolves({ Plaintext: new Uint8Array(dataKey) });
 
       const userId = await encryptingUsersRepository.findOrCreateByEmail(email);
 
@@ -1392,8 +1402,14 @@ describe('UsersRepository', () => {
       const stored = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
-      expect(stored.email).toBe(
-        `kms:v1:${ciphertextBlob.toString('base64url')}`,
+      expect(stored.email).toMatch(/^kms:v1:/);
+      // The stored envelope embeds the KMS-wrapped data key, not the email.
+      const blob = Buffer.from(
+        String(stored.email).slice('kms:v1:'.length),
+        'base64url',
+      );
+      expect(blob.subarray(2, 2 + blob.readUInt16BE(0))).toStrictEqual(
+        wrappedKey,
       );
       await expect(
         encryptingUsersRepository.findEmailById(userId),

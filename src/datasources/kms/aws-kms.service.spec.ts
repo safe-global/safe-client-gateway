@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
+import {
+  DecryptCommand,
+  EncryptCommand,
+  GenerateDataKeyCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { mockClient } from 'aws-sdk-client-mock';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
@@ -181,6 +186,55 @@ describe('AwsKmsService', () => {
       await expect(
         target.decrypt({ ciphertext: Buffer.from(randomBytes(24)) }),
       ).rejects.toThrow('Could not decrypt data');
+    });
+  });
+
+  describe('generateDataKey', () => {
+    it('generates an AES-256 data key under the configured key, bound to the provided encryption context', async () => {
+      const target = buildTarget();
+      const plaintextKey = randomBytes(32);
+      const wrappedKey = randomBytes(64);
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: plaintextKey,
+        CiphertextBlob: wrappedKey,
+      });
+
+      const dataKey = await target.generateDataKey({ encryptionContext });
+
+      expect(dataKey.plaintextKey).toStrictEqual(Buffer.from(plaintextKey));
+      expect(dataKey.wrappedKey).toStrictEqual(Buffer.from(wrappedKey));
+      const calls = kmsMock.commandCalls(GenerateDataKeyCommand);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].args[0].input).toStrictEqual({
+        KeyId: keyId,
+        KeySpec: 'AES_256',
+        EncryptionContext: encryptionContext,
+      });
+    });
+
+    it('omits the encryption context when none is provided', async () => {
+      const target = buildTarget();
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: randomBytes(32),
+        CiphertextBlob: randomBytes(64),
+      });
+
+      await target.generateDataKey({});
+
+      expect(
+        kmsMock.commandCalls(GenerateDataKeyCommand)[0].args[0].input,
+      ).toStrictEqual({ KeyId: keyId, KeySpec: 'AES_256' });
+    });
+
+    it('throws when KMS returns an incomplete data key', async () => {
+      const target = buildTarget();
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: randomBytes(32),
+      });
+
+      await expect(target.generateDataKey({})).rejects.toThrow(
+        'Could not generate a data key',
+      );
     });
   });
 

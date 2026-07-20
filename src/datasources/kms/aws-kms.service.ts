@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
+import {
+  DecryptCommand,
+  EncryptCommand,
+  GenerateDataKeyCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
@@ -64,6 +69,28 @@ export class AwsKmsService implements IKmsService {
       throw new Error('Could not decrypt data');
     }
     return Buffer.from(response.Plaintext);
+  }
+
+  public async generateDataKey(args: {
+    encryptionContext?: Record<string, string>;
+  }): Promise<{ plaintextKey: Buffer; wrappedKey: Buffer }> {
+    const { client, keyId } = this.getConfiguredClient();
+    const response = await client.send(
+      new GenerateDataKeyCommand({
+        KeyId: keyId,
+        KeySpec: 'AES_256',
+        ...(args.encryptionContext && {
+          EncryptionContext: args.encryptionContext,
+        }),
+      }),
+    );
+    if (!(response.Plaintext && response.CiphertextBlob)) {
+      throw new Error('Could not generate a data key');
+    }
+    return {
+      plaintextKey: Buffer.from(response.Plaintext),
+      wrappedKey: Buffer.from(response.CiphertextBlob),
+    };
   }
 
   private getConfiguredClient(): { client: KMSClient; keyId: string } {

@@ -13,4 +13,13 @@ export interface IKmsService {
     ciphertext: Buffer;
     encryptionContext?: Record<string, string>;
   }): Promise<Buffer>;
+
+  /**
+   * Generates a fresh AES-256 data key under the configured KMS key:
+   * `plaintextKey` for immediate local use, `wrappedKey` (bound to
+   * `encryptionContext`, unwrappable via {@link decrypt}) for storage.
+   */
+  generateDataKey(args: {
+    encryptionContext?: Record<string, string>;
+  }): Promise<{ plaintextKey: Buffer; wrappedKey: Buffer }>;
 }
