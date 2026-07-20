@@ -277,9 +277,10 @@ function getByPath(obj: unknown, path: string): unknown {
  * ENCRYPTION_ENABLED: this script's whole job is to produce
  * ciphertext, including when run before the fleet-wide flag flip (see the
  * file docstring), so KmsEncryptionService.encrypt must never take the
- * disabled/passthrough branch here. This also means onModuleInit will
- * require ENCRYPTION_INDEX_KEY to be set, which the backfill
- * needs anyway to compute real blind indexes.
+ * disabled/passthrough branch here. Note onModuleInit does NOT enforce
+ * ENCRYPTION_INDEX_KEY (it silently skips key unwrapping when unset, and
+ * blindIndex() then returns null for everything), so main() asserts it
+ * explicitly before touching the database.
  */
 function buildConfigurationService(): IConfigurationService {
   const config = configuration();
@@ -492,6 +493,19 @@ async function main(): Promise<void> {
     new AwsKmsService(configurationService),
   );
   await fieldCrypto.onModuleInit();
+
+  // onModuleInit silently skips key unwrapping when ENCRYPTION_INDEX_KEY is
+  // unset, and blindIndex() then returns null: the backfill would encrypt
+  // every value while writing NULL blind indexes — a state --verify flags
+  // but a re-run can never repair, because the batch SELECTs only match
+  // rows whose value is still plaintext. Fail fast, before any DB write.
+  if (fieldCrypto.blindIndex('probe') === null) {
+    throw new Error(
+      'ENCRYPTION_INDEX_KEY is not set: the backfill would write NULL ' +
+        'blind indexes alongside encrypted values, which --verify rejects ' +
+        'and a re-run cannot repair. Set ENCRYPTION_INDEX_KEY and re-run.',
+    );
+  }
 
   const dataSource = new DataSource({
     ...postgresConfig({
