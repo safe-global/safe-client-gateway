@@ -42,12 +42,12 @@
     "backfill:user-email-encryption": "node --env-file=.env -r tsconfig-paths/register ./node_modules/.bin/ts-node scripts/backfill-user-email-encryption.ts"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.1080.0",
-    "@aws-sdk/client-s3": "3.1080.0",
-    "@aws-sdk/client-sesv2": "3.1080.0",
-    "@aws-sdk/credential-provider-web-identity": "3.972.60",
-    "@aws-sdk/lib-storage": "3.1080.0",
-    "@aws-sdk/s3-request-presigner": "3.1080.0",
+    "@aws-sdk/client-kms": "3.1086.0",
+    "@aws-sdk/client-s3": "3.1086.0",
+    "@aws-sdk/client-sesv2": "3.1086.0",
+    "@aws-sdk/credential-provider-web-identity": "3.972.63",
+    "@aws-sdk/lib-storage": "3.1086.0",
+    "@aws-sdk/s3-request-presigner": "3.1086.0",
     "@blockaid/client": "^1.5.0",
     "@fastify/cookie": "^11.1.1",
     "@fastify/static": "^10.1.0",
