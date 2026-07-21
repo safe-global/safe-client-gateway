@@ -35,7 +35,7 @@ import {
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { TestQueueServiceModule } from '@/modules/queue/__tests__/test.queue.module';
+import { TestQueueServiceModule } from '@/modules/queue/__tests__/test.queue-service.module';
 import { QueueServiceModule } from '@/modules/queue/queue.module';
 import {
   toJson as multisigToJson,

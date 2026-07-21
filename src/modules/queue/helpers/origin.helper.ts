@@ -20,11 +20,7 @@ export function parseOrigin(origin: string | null): {
     originName?: string;
     originUrl?: string;
     note?: string;
-  } = {
-    originName: undefined,
-    originUrl: undefined,
-    note: undefined,
-  };
+  } = {};
   if (!origin) {
     return parsedOrigin;
   }

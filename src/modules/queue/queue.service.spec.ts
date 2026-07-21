@@ -275,7 +275,7 @@ describe('QueueService', () => {
         )
         .build();
       networkService.post.mockResolvedValueOnce({
-        data: rawify({}),
+        data: rawify(queueMultisigTransactionBuilder().build()),
         status: 201,
       });
 
@@ -303,7 +303,7 @@ describe('QueueService', () => {
         )
         .build();
       networkService.post.mockResolvedValueOnce({
-        data: rawify({}),
+        data: rawify(queueMultisigTransactionBuilder().build()),
         status: 201,
       });
 
@@ -332,7 +332,7 @@ describe('QueueService', () => {
 
     it('proposeTransaction includes the queue circuit breaker key', async () => {
       networkService.post.mockResolvedValueOnce({
-        data: rawify({}),
+        data: rawify(queueMultisigTransactionBuilder().build()),
         status: 201,
       });
 
@@ -379,7 +379,7 @@ describe('QueueService', () => {
 
     it('postConfirmation includes the queue circuit breaker key', async () => {
       networkService.post.mockResolvedValueOnce({
-        data: rawify({}),
+        data: rawify(queueMultisigTransactionBuilder().build()),
         status: 200,
       });
 

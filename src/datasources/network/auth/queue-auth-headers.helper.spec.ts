@@ -1,40 +1,43 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Mocked } from 'vitest';
+import { get } from 'lodash';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import { getQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
 
-describe('getQueueAuthHeaders', () => {
-  let mockConfigService: Mocked<IConfigurationService>;
+const mockConfigurationService = vi.mocked({
+  getOrThrow: vi.fn(),
+  get: vi.fn(),
+} as MockedObject<IConfigurationService>);
 
+function initTarget(config: typeof configuration): void {
+  mockConfigurationService.getOrThrow.mockImplementation((key) => {
+    return get(config(), key);
+  });
+  mockConfigurationService.get.mockImplementation((key) => {
+    return get(config(), key);
+  });
+}
+
+describe('getQueueAuthHeaders', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockConfigService = {
-      getOrThrow: vi.fn(),
-      get: vi.fn(),
-    } as Mocked<IConfigurationService>;
+    initTarget(configuration);
   });
 
   it('should return Authorization header when Queue auth is enabled', () => {
     const apiKey = 'test-api-key-123';
-    mockConfigService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'application.isDevelopment') return true;
-      if (key === 'queueService.useVpcUrl') return false;
-      throw new Error(`Unexpected key: ${key}`);
-    });
-    mockConfigService.get.mockReturnValue(apiKey);
+    const config = configuration();
+    config.application.isDevelopment = true;
+    config.queueService.useVpcUrl = false;
+    config.queueService.apiKey = apiKey;
+    initTarget(() => config);
 
-    const result = getQueueAuthHeaders(mockConfigService);
+    const result = getQueueAuthHeaders(mockConfigurationService);
 
     expect(result).toEqual({
       Authorization: `Bearer ${apiKey}`,
     });
-    expect(mockConfigService.getOrThrow).toHaveBeenCalledWith(
-      'application.isDevelopment',
-    );
-    expect(mockConfigService.getOrThrow).toHaveBeenCalledWith(
-      'queueService.useVpcUrl',
-    );
-    expect(mockConfigService.get).toHaveBeenCalledWith('queueService.apiKey');
   });
 
   it.each([
@@ -73,14 +76,13 @@ describe('getQueueAuthHeaders', () => {
     useVpcUrl,
     apiKey,
   }) => {
-    mockConfigService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'application.isDevelopment') return isDevelopment;
-      if (key === 'queueService.useVpcUrl') return useVpcUrl;
-      throw new Error(`Unexpected key: ${key}`);
-    });
-    mockConfigService.get.mockReturnValue(apiKey);
+    const config = configuration();
+    config.application.isDevelopment = isDevelopment;
+    config.queueService.useVpcUrl = useVpcUrl;
+    config.queueService.apiKey = apiKey;
+    initTarget(() => config);
 
-    const result = getQueueAuthHeaders(mockConfigService);
+    const result = getQueueAuthHeaders(mockConfigurationService);
 
     expect(result).toBeUndefined();
   });

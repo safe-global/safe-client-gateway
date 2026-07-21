@@ -15,7 +15,7 @@ export interface IQueueService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
-  }): Promise<unknown>;
+  }): Promise<Raw<QueueMultisigTransactionEntity>>;
 
   getMultisigTransaction(args: {
     chainId: string;
@@ -41,7 +41,7 @@ export interface IQueueService {
     chainId: string;
     safeTxHash: string;
     signature: string;
-  }): Promise<unknown>;
+  }): Promise<Raw<QueueMultisigTransactionEntity>>;
 
   deleteTransaction(args: {
     chainId: string;

@@ -12,7 +12,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
-import type { QueueDelegate } from '@/modules/queue/entities/delegate.entity';
+import type { QueueServiceDelegate } from '@/modules/queue/entities/delegate.entity';
 import type { IQueueService } from '@/modules/queue/queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -194,8 +194,8 @@ describe('DelegatesV3Repository', () => {
           created: faker.date.recent().toISOString(),
           modified: faker.date.recent().toISOString(),
         };
-        const page = pageBuilder<QueueDelegate>()
-          .with('results', [queueDelegate as unknown as QueueDelegate])
+        const page = pageBuilder<QueueServiceDelegate>()
+          .with('results', [queueDelegate as unknown as QueueServiceDelegate])
           .with('count', 1)
           .build();
         mockQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
@@ -235,8 +235,8 @@ describe('DelegatesV3Repository', () => {
           created: faker.date.recent().toISOString(),
           modified: faker.date.recent().toISOString(),
         };
-        const page = pageBuilder<QueueDelegate>()
-          .with('results', [queueDelegate as unknown as QueueDelegate])
+        const page = pageBuilder<QueueServiceDelegate>()
+          .with('results', [queueDelegate as unknown as QueueServiceDelegate])
           .with('count', 1)
           .build();
         mockQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
