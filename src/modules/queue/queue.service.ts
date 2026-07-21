@@ -176,14 +176,27 @@ export class QueueService implements IQueueService {
         }),
       );
       const merged = responses.flatMap((response, index) => {
+        let error: unknown;
         if (response.status === 'fulfilled') {
-          return QueueMultisigTransactionListSchema.parse(response.value.data);
+          // safeParse rather than parse: a fulfilled chunk with a malformed
+          // body must be dropped like a rejected one, not thrown synchronously
+          // out of flatMap into the outer catch — that would discard the whole
+          // batch and defeat the partial-enrichment allSettled buys us above.
+          const parsed = QueueMultisigTransactionListSchema.safeParse(
+            response.value.data,
+          );
+          if (parsed.success) {
+            return parsed.data;
+          }
+          error = parsed.error;
+        } else {
+          error = response.reason;
         }
         this.loggingService.warn({
           type: LogType.QueueServiceBatchChunkError,
           chainId: args.chainId,
           safeTxHashes: chunks[index],
-          error: asError(response.reason),
+          error: asError(error),
         });
         return [];
       });
@@ -468,6 +481,9 @@ export class QueueService implements IQueueService {
     origin: string | null;
   }): Promise<unknown> {
     try {
+      // Deliberately drop `note`: it's a transaction-only concept, and the
+      // read path (message.mapper) omits it too, so messages keep their
+      // `{name, url}` origin shape on the way in and out.
       const { originName, originUrl } = parseOrigin(args.origin);
       const url = `${this.baseUri}/api/v1/safes/${encodeURIComponent(args.safeAddress)}/messages`;
       const { data } = await this.networkService.post<unknown>({
