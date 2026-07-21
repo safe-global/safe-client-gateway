@@ -9,6 +9,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
@@ -37,6 +38,14 @@ const networkService = vi.mocked({
   delete: vi.fn(),
 } as MockedObject<INetworkService>);
 
+const loggingService = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
+const mockLoggingService = vi.mocked(loggingService);
+
 describe('QueueService', () => {
   const chainId = faker.string.numeric();
   const baseUri = faker.internet.url({ appendSlash: false });
@@ -60,6 +69,7 @@ describe('QueueService', () => {
       mockCacheService,
       mockDataSource,
       new HttpErrorFactory(),
+      mockLoggingService,
     );
   });
 
@@ -258,6 +268,31 @@ describe('QueueService', () => {
 
       expect(networkService.get).not.toHaveBeenCalled();
       expect(result).toEqual([]);
+    });
+
+    it('logs and omits a chunk that fails, while still returning the other chunks', async () => {
+      const hashes = Array.from({ length: 60 }, () =>
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      const fulfilledTx = queueMultisigTransactionBuilder().build();
+      const error = new Error('chunk failed');
+      networkService.get
+        .mockResolvedValueOnce({ data: rawify([fulfilledTx]), status: 200 })
+        .mockRejectedValueOnce(error);
+
+      const result = await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(result).toEqual([fulfilledTx]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainId,
+          safeTxHashes: hashes.slice(50),
+          error,
+        }),
+      );
     });
   });
 

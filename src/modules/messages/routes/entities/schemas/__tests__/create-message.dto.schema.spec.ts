@@ -82,41 +82,27 @@ describe('CreateMessageDtoSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should not validate a negative safeAppId', () => {
+    it('should default a negative safeAppId to null instead of rejecting the request', () => {
+      // The field is deprecated and ignored downstream, so an out-of-range
+      // value from a legacy client falls back to null rather than failing
+      // validation for the whole request.
       const createMessageDto = createMessageDtoBuilder()
         .with('safeAppId', -1)
         .build();
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'too_small',
-          minimum: 0,
-          inclusive: true,
-          message: 'Too small: expected number to be >=0',
-          path: ['safeAppId'],
-          origin: 'number',
-        },
-      ]);
+      expect(result.success && result.data.safeAppId).toBe(null);
     });
 
-    it('should not validate a float safeAppId', () => {
+    it('should default a float safeAppId to null instead of rejecting the request', () => {
       const createMessageDto = createMessageDtoBuilder()
         .with('safeAppId', faker.number.float())
         .build();
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'invalid_type',
-          expected: 'int',
-          format: 'safeint',
-          message: 'Invalid input: expected int, received number',
-          path: ['safeAppId'],
-        },
-      ]);
+      expect(result.success && result.data.safeAppId).toBe(null);
     });
 
     it('should validate without safeAppId, defaulting to null', () => {
