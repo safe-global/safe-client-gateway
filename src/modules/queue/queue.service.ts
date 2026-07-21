@@ -17,6 +17,11 @@ import {
 } from '@/datasources/network/network.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Page } from '@/domain/entities/page.entity';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { QueueMessage } from '@/modules/queue/entities/message.entity';
 import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
@@ -29,11 +34,6 @@ import type { IQueueService } from '@/modules/queue/queue.interface';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { rawify } from '@/validation/entities/raw.entity';
-import { asError } from '@/logging/utils';
-import {
-  type ILoggingService,
-  LoggingService,
-} from '@/logging/logging.interface';
 
 @Injectable()
 export class QueueService implements IQueueService {
