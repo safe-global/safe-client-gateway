@@ -15,6 +15,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { QueueMessage } from '@/modules/queue/entities/message.entity';
@@ -28,6 +29,11 @@ import type { IQueueService } from '@/modules/queue/queue.interface';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { rawify } from '@/validation/entities/raw.entity';
+import { asError } from '@/logging/utils';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Injectable()
 export class QueueService implements IQueueService {
@@ -50,6 +56,8 @@ export class QueueService implements IQueueService {
     private readonly cacheService: ICacheService,
     private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'queueService.baseUri',
@@ -148,8 +156,8 @@ export class QueueService implements IQueueService {
       }
       // Use allSettled so a single failing chunk (e.g. a 5xx) doesn't discard
       // the transactions returned by the other chunks. Hashes belonging to a
-      // failed chunk simply won't appear in the merged result; the caller
-      // detects and logs those omissions, preserving partial enrichment.
+      // failed chunk simply won't appear in the merged result; we log those
+      // omissions below, preserving partial enrichment.
       const responses = await Promise.allSettled(
         chunks.map((chunk) => {
           const query = new URLSearchParams();
@@ -167,11 +175,18 @@ export class QueueService implements IQueueService {
           });
         }),
       );
-      const merged = responses.flatMap((response) =>
-        response.status === 'fulfilled'
-          ? QueueMultisigTransactionListSchema.parse(response.value.data)
-          : [],
-      );
+      const merged = responses.flatMap((response, index) => {
+        if (response.status === 'fulfilled') {
+          return QueueMultisigTransactionListSchema.parse(response.value.data);
+        }
+        this.loggingService.warn({
+          type: LogType.QueueServiceBatchChunkError,
+          chainId: args.chainId,
+          safeTxHashes: chunks[index],
+          error: asError(response.reason),
+        });
+        return [];
+      });
       return rawify(merged);
     } catch (error) {
       throw this.httpErrorFactory.from(error);

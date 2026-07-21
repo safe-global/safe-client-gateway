@@ -33,6 +33,7 @@ export enum LogType {
   NotificationSpamTokenDropped = 'NOTIFICATION_SPAM_TOKEN_DROPPED',
   PortfolioDegradedServe = 'PORTFOLIO_DEGRADED_SERVE',
   PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
+  QueueServiceBatchChunkError = 'QUEUE_SERVICE_BATCH_CHUNK_ERROR',
   RateLimit = 'RATE_LIMIT',
   TxRelayEligibility = 'TX_RELAY_ELIGIBILITY',
   TransactionPropose = 'TRANSACTION_PROPOSE',
