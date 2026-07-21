@@ -18,7 +18,7 @@ import {
   QueueMessagePageSchema,
   QueueMessageSchema,
 } from '@/modules/queue/entities/message.entity';
-import { mapQueueToMessage } from '@/modules/queue/mappers/message.mapper';
+import { mapQueueMessageToMessage } from '@/modules/queue/mappers/message.mapper';
 import { IQueueService } from '@/modules/queue/queue.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
@@ -65,7 +65,7 @@ export class MessagesRepository implements IMessagesRepository {
       );
       throw new HttpExceptionNoLog('Message not found', HttpStatus.NOT_FOUND);
     }
-    return mapQueueToMessage(parsed);
+    return mapQueueMessageToMessage(parsed);
   }
 
   async getMessagesBySafe(args: {
@@ -96,7 +96,7 @@ export class MessagesRepository implements IMessagesRepository {
         );
         continue;
       }
-      results.push(mapQueueToMessage(message));
+      results.push(mapQueueMessageToMessage(message));
     }
     // Best-effort: keep `count` consistent with what we actually return on
     // this page when wrong-chain messages are filtered out. This only corrects
