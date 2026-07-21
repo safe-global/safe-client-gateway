@@ -12,7 +12,7 @@ import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { createMockQueueService } from '@/modules/queue/__tests__/queue.mock';
+import { createMockQueueService } from '@/modules/queue/__tests__/queue-service.mock';
 import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
 import { buildOrigin } from '@/modules/queue/helpers/origin.helper';

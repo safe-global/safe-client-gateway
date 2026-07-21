@@ -68,13 +68,13 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
-  }): Promise<unknown> {
+  }): Promise<Raw<QueueMultisigTransactionEntity>> {
     try {
       const dto = args.proposeTransactionDto;
       const { originName, originUrl, note } = parseOrigin(dto.origin);
 
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
-      const { data } = await this.networkService.post<unknown>({
+      const { data } = await this.networkService.post({
         url,
         data: {
           chainId: Number(args.chainId),
@@ -100,7 +100,7 @@ export class QueueService implements IQueueService {
           },
         },
       });
-      return data;
+      return rawify(QueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -215,10 +215,10 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeTxHash: string;
     signature: string;
-  }): Promise<unknown> {
+  }): Promise<Raw<QueueMultisigTransactionEntity>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}/signatures`;
-      const { data } = await this.networkService.post<unknown>({
+      const { data } = await this.networkService.post({
         url,
         data: { signatures: [args.signature] },
         networkRequest: {
@@ -227,7 +227,7 @@ export class QueueService implements IQueueService {
           },
         },
       });
-      return data;
+      return rawify(QueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

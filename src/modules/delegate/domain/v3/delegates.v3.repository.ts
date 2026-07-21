@@ -9,7 +9,7 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { QueueDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
+import { QueueServiceDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
 import { IQueueService } from '@/modules/queue/queue.interface';
 
 @Injectable()
@@ -42,7 +42,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
   }): Promise<Page<Delegate>> {
     if (this.queueServiceEnabled) {
       const page = await this.queueService.getDelegates(args);
-      const parsed = QueueDelegatePageSchema.parse(page);
+      const parsed = QueueServiceDelegatePageSchema.parse(page);
       return {
         ...parsed,
         results: parsed.results.map((d) => ({
