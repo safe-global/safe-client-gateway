@@ -33,6 +33,7 @@ export enum LogType {
   NotificationSpamTokenDropped = 'NOTIFICATION_SPAM_TOKEN_DROPPED',
   PortfolioDegradedServe = 'PORTFOLIO_DEGRADED_SERVE',
   PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
+  QueueServiceBatchChunkError = 'QUEUE_SERVICE_BATCH_CHUNK_ERROR',
   QuotaExceeded = 'QUOTA_EXCEEDED',
   QuotaNotRefunded = 'QUOTA_NOT_REFUNDED',
   RateLimit = 'RATE_LIMIT',
