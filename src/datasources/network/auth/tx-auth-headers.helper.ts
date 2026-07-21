@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { getServiceAuthHeaders } from '@/datasources/network/auth/service-auth-headers.helper';
 
 /**
  * Returns Transaction Service auth headers when running in development
@@ -12,22 +13,8 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 export function getTxAuthHeaders(
   configurationService: IConfigurationService,
 ): Record<string, string> | undefined {
-  const isDevelopment = configurationService.getOrThrow<boolean>(
-    'application.isDevelopment',
-  );
-  const useVpcUrl = configurationService.getOrThrow<boolean>(
-    'safeTransaction.useVpcUrl',
-  );
-  const apiKey = configurationService.get<string | undefined>(
-    'safeTransaction.apiKey',
-  );
-
-  const isTxAuthEnabled = isDevelopment && !useVpcUrl;
-  if (!(isTxAuthEnabled && apiKey)) {
-    return undefined;
-  }
-
-  return {
-    Authorization: `Bearer ${apiKey}`,
-  };
+  return getServiceAuthHeaders(configurationService, {
+    useVpcUrlKey: 'safeTransaction.useVpcUrl',
+    apiKeyKey: 'safeTransaction.apiKey',
+  });
 }
