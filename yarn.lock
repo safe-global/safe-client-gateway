@@ -2602,13 +2602,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/lodash@npm:4.17.24":
-  version: 4.17.24
-  resolution: "@types/lodash@npm:4.17.24"
-  checksum: 10/0f2082565f60f9787eefc046edc38458054512be5a8b3584ef0bad5fd9e85d0ab55ec5a1fbfae1ed6ba015cf1f9e837d5fb4da1f99fc60b8f74b2a46146fb00f
-  languageName: node
-  linkType: hard
-
 "@types/luxon@npm:~3.7.0":
   version: 3.7.1
   resolution: "@types/luxon@npm:3.7.1"
@@ -5754,17 +5747,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:4.18.1":
+"lodash@npm:4.18.1, lodash@npm:^4.17.21":
   version: 4.18.1
   resolution: "lodash@npm:4.18.1"
   checksum: 10/306fea53dfd39dad1f03d45ba654a2405aebd35797b673077f401edb7df2543623dc44b9effbb98f69b32152295fff725a4cec99c684098947430600c6af0c3f
-  languageName: node
-  linkType: hard
-
-"lodash@npm:^4.17.21":
-  version: 4.17.21
-  resolution: "lodash@npm:4.17.21"
-  checksum: 10/c08619c038846ea6ac754abd6dd29d2568aa705feb69339e836dfa8d8b09abbb2f859371e86863eda41848221f9af43714491467b5b0299122431e202bb0c532
   languageName: node
   linkType: hard
 
@@ -7002,7 +6988,6 @@ __metadata:
     "@swc/core": "npm:1.15.43"
     "@types/amqplib": "npm:0"
     "@types/jsonwebtoken": "npm:9"
-    "@types/lodash": "npm:4.17.24"
     "@types/node": "npm:26.1.1"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.7.1"
@@ -7018,7 +7003,6 @@ __metadata:
     husky: "npm:9.1.7"
     jose: "npm:6.2.3"
     jsonwebtoken: "npm:9.0.3"
-    lodash: "npm:4.18.1"
     nestjs-cls: "npm:6.2.1"
     pg: "npm:8.22.0"
     postgres: "npm:3.4.9"
