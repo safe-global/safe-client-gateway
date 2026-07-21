@@ -1,18 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { getAddress, type Hash } from 'viem';
+import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
 import type { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import { createMockQueueService } from '@/modules/queue/__tests__/queue-service.mock';
 import type { QueueMessage } from '@/modules/queue/entities/message.entity';
 import type { IQueueService } from '@/modules/queue/queue.interface';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -38,6 +41,12 @@ function queueMessageBuilder(chainId: number): QueueMessage {
 const mockTransactionApiManager = {
   getApi: vi.fn(),
 } as MockedObject<ITransactionApiManager>;
+
+const mockTransactionApi = {
+  getMessageByHash: vi.fn(),
+  postMessage: vi.fn(),
+  postMessageSignature: vi.fn(),
+} as MockedObject<ITransactionApi>;
 
 const mockSafeRepository = {
   getSafe: vi.fn(),
@@ -202,6 +211,148 @@ describe('MessagesRepository (queue service enabled)', () => {
         }),
       ).rejects.toThrow(HttpExceptionNoLog);
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // Reconstructs the repository with the queue feature flag disabled — the flag
+  // is read once in the constructor, so the fallback branch needs its own target.
+  function buildTargetWithQueueDisabled(): MessagesRepository {
+    mockConfigurationService.getOrThrow.mockImplementation((key) => {
+      if (key === 'features.queueService') return false;
+      throw new Error(`Unexpected key: ${key}`);
+    });
+    mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
+    return new MessagesRepository(
+      mockTransactionApiManager,
+      mockSafeRepository,
+      queueService,
+      mockConfigurationService,
+      mockLoggingService,
+      mockMessageVerifier,
+    );
+  }
+
+  function createMessageArgs(): {
+    chainId: string;
+    safeAddress: Address;
+    message: string;
+    signature: Hex;
+    origin: string | null;
+  } {
+    return {
+      chainId: String(faker.number.int({ min: 1, max: 1000 })),
+      safeAddress: getAddress(faker.finance.ethereumAddress()),
+      message: faker.word.words(),
+      signature: faker.string.hexadecimal({ length: 130 }) as Hex,
+      origin: faker.datatype.boolean()
+        ? faker.internet.url({ protocol: 'https', appendSlash: false })
+        : null,
+    };
+  }
+
+  describe('createMessage write routing', () => {
+    it('verifies creation then forwards to the queue service when enabled', async () => {
+      const safe = safeBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      const posted = rawify({ id: faker.string.uuid() });
+      queueService.postMessage.mockResolvedValue(posted);
+      const args = createMessageArgs();
+
+      const result = await target.createMessage(args);
+
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledWith({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      });
+      expect(mockMessageVerifier.verifyCreation).toHaveBeenCalledWith({
+        chainId: args.chainId,
+        safe,
+        message: args.message,
+        signature: args.signature,
+      });
+      // Enabled path forwards the args verbatim — no safeAppId injected.
+      expect(queueService.postMessage).toHaveBeenCalledWith(args);
+      expect(mockTransactionApiManager.getApi).not.toHaveBeenCalled();
+      expect(result).toBe(posted);
+    });
+
+    it('forwards to the transaction service with safeAppId null when disabled', async () => {
+      const disabledTarget = buildTargetWithQueueDisabled();
+      const safe = safeBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      const posted = rawify({ id: faker.string.uuid() });
+      mockTransactionApi.postMessage.mockResolvedValue(posted);
+      const args = createMessageArgs();
+
+      const result = await disabledTarget.createMessage(args);
+
+      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
+        args.chainId,
+      );
+      expect(mockTransactionApi.postMessage).toHaveBeenCalledWith({
+        safeAddress: args.safeAddress,
+        message: args.message,
+        safeAppId: null,
+        signature: args.signature,
+        origin: args.origin,
+      });
+      expect(queueService.postMessage).not.toHaveBeenCalled();
+      expect(result).toBe(posted);
+    });
+  });
+
+  describe('updateMessageSignature write routing', () => {
+    it('forwards to the queue service when enabled', async () => {
+      const chainId = faker.number.int({ min: 1, max: 1000 });
+      const message = queueMessageBuilder(chainId);
+      queueService.getMessageByHash.mockResolvedValue(rawify(message));
+      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
+      const posted = rawify({ id: faker.string.uuid() });
+      queueService.postMessageSignature.mockResolvedValue(posted);
+      const args = {
+        chainId: String(chainId),
+        messageHash: message.messageHash,
+        signature: faker.string.hexadecimal({ length: 130 }) as Hex,
+      };
+
+      const result = await target.updateMessageSignature(args);
+
+      // The message is fetched (and its safe resolved) before verification.
+      expect(queueService.getMessageByHash).toHaveBeenCalledWith({
+        chainId: args.chainId,
+        messageHash: args.messageHash,
+      });
+      expect(mockMessageVerifier.verifyUpdate).toHaveBeenCalled();
+      expect(queueService.postMessageSignature).toHaveBeenCalledWith(args);
+      expect(result).toBe(posted);
+    });
+
+    it('resolves the message via the transaction service when disabled', async () => {
+      const chainId = faker.number.int({ min: 1, max: 1000 });
+      const disabledTarget = buildTargetWithQueueDisabled();
+      const message = messageBuilder().build();
+      mockTransactionApi.getMessageByHash.mockResolvedValue(rawify(message));
+      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
+      const posted = rawify({ id: faker.string.uuid() });
+      mockTransactionApi.postMessageSignature.mockResolvedValue(posted);
+      const args = {
+        chainId: String(chainId),
+        messageHash: message.messageHash,
+        signature: faker.string.hexadecimal({ length: 130 }) as Hex,
+      };
+
+      const result = await disabledTarget.updateMessageSignature(args);
+
+      // getMessageByHash is always called first, regardless of routing.
+      expect(mockTransactionApi.getMessageByHash).toHaveBeenCalledWith(
+        args.messageHash,
+      );
+      expect(mockTransactionApi.postMessageSignature).toHaveBeenCalledWith({
+        messageHash: args.messageHash,
+        signature: args.signature,
+      });
+      expect(queueService.postMessageSignature).not.toHaveBeenCalled();
+      expect(result).toBe(posted);
     });
   });
 });
