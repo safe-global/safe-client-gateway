@@ -18,9 +18,7 @@ export function getServiceAuthHeaders(
   const isDevelopment = configurationService.getOrThrow<boolean>(
     'application.isDevelopment',
   );
-  const useVpcUrl = configurationService.getOrThrow<boolean>(
-    keys.useVpcUrlKey,
-  );
+  const useVpcUrl = configurationService.getOrThrow<boolean>(keys.useVpcUrlKey);
   const apiKey = configurationService.get<string | undefined>(keys.apiKeyKey);
 
   const isAuthEnabled = isDevelopment && !useVpcUrl;
