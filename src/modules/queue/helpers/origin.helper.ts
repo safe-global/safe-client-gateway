@@ -26,14 +26,17 @@ export function parseOrigin(origin: string | null): {
   }
 
   try {
-    const parsed = JSON.parse(origin);
+    const parsed: unknown = JSON.parse(origin);
     // Guard against valid-but-non-object JSON (e.g. `"hello"` or `42`), which
     // would otherwise destructure into undefined name/url silently.
     if (typeof parsed === 'object' && parsed !== null) {
-      const { name, url, note } = parsed;
-      parsedOrigin.originName = name;
-      parsedOrigin.originUrl = url;
-      parsedOrigin.note = note;
+      const { name, url, note } = parsed as Record<string, unknown>;
+      // Only take fields that are actually strings — the declared return type
+      // promises `string | undefined`, so a non-string value (e.g. a number)
+      // must be dropped rather than passed through untyped.
+      parsedOrigin.originName = typeof name === 'string' ? name : undefined;
+      parsedOrigin.originUrl = typeof url === 'string' ? url : undefined;
+      parsedOrigin.note = typeof note === 'string' ? note : undefined;
     }
   } catch {
     // Ignore, no origin
