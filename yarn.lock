@@ -6985,7 +6985,7 @@ __metadata:
     tsconfig-paths: "npm:4.2.0"
     typeorm: "npm:0.3.28"
     typescript: "npm:6.0.3"
-    undici: "npm:8.5.0"
+    undici: "npm:8.7.0"
     unplugin-swc: "npm:1.5.9"
     viem: "npm:2.54.6"
     vitest: "npm:4.1.9"
@@ -7956,10 +7956,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici@npm:8.5.0":
-  version: 8.5.0
-  resolution: "undici@npm:8.5.0"
-  checksum: 10/e95913777afd47d76babfe62547bb4e9a94b93f44b50c84b4e0b6fa41c00364e31ff4f433a955b1592c3162f43e8757e2e0feae6eea195187730594523393568
+"undici@npm:8.7.0":
+  version: 8.7.0
+  resolution: "undici@npm:8.7.0"
+  checksum: 10/e9644903bda97f825228b4c7bee95b3586609f94df685b598c32bdaf3ac795928cbd25b0ed2690c3ea0b5abd324f5a9641b63b6c81c9b19f3ef4d5b3e402a48c
   languageName: node
   linkType: hard
 
