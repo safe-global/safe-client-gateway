@@ -102,9 +102,7 @@ describe('enum utils', () => {
       });
 
       it('should return null for a null database value without throwing', () => {
-        const result = databaseEnumTransformer(NumericEnum).from(
-          null as unknown as number,
-        );
+        const result = databaseEnumTransformer(NumericEnum).from(null);
 
         expect(result).toBeNull();
       });
