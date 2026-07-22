@@ -124,18 +124,9 @@ describe('SpaceSafesRepository', () => {
     vi.resetAllMocks();
 
     // Delete in dependency order to avoid deadlocks
-    await dbMembersRepository
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dbSpaceSafesRepository
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dbSpaceRepository
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    await dbMembersRepository.createQueryBuilder().delete().execute();
+    await dbSpaceSafesRepository.createQueryBuilder().delete().execute();
+    await dbSpaceRepository.createQueryBuilder().delete().execute();
     await dbWalletRepo.createQueryBuilder().delete().execute();
     await dbUserRepo.createQueryBuilder().delete().execute();
   });

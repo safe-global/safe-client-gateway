@@ -101,10 +101,7 @@ describe('WalletsRepository', () => {
     // Truncate tables
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
-    await dbWalletRepository
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    await dbWalletRepository.createQueryBuilder().delete().execute();
     await dbUserRepository.createQueryBuilder().delete().execute();
   });
 

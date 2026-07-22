@@ -192,15 +192,9 @@ describe('NotificationsRepositoryV2', () => {
     const notificationSubscriptionNotificationTypeRepository =
       dataSource.getRepository(NotificationSubscriptionNotificationType);
 
-    await notificationDeviceRepository
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    await notificationDeviceRepository.createQueryBuilder().delete().execute();
 
-    await subscriptionRepository
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    await subscriptionRepository.createQueryBuilder().delete().execute();
 
     await notificationSubscriptionNotificationTypeRepository
       .createQueryBuilder()
