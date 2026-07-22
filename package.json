@@ -81,7 +81,7 @@
     "rxjs": "7.8.2",
     "sanitize-html": "2.17.6",
     "semver": "7.8.5",
-    "typeorm": "0.3.28",
+    "typeorm": "1.1.0",
     "undici": "8.7.0",
     "viem": "2.54.6",
     "winston": "3.19.0",
