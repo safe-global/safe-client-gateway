@@ -100,6 +100,14 @@ describe('enum utils', () => {
 
         expect(result).toEqual('B');
       });
+
+      it('should return null for a null database value without throwing', () => {
+        const result = databaseEnumTransformer(NumericEnum).from(
+          null as unknown as number,
+        );
+
+        expect(result).toBeNull();
+      });
     });
   });
 
