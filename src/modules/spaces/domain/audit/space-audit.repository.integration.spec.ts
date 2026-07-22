@@ -149,15 +149,14 @@ describe('SpaceAuditRepository', () => {
   afterEach(async () => {
     // Audit rows are deliberately NOT deleted (the triggers forbid it):
     // every test works on a fresh space and scopes its reads by spaceId.
-    await dbMembersRepo.createQueryBuilder().delete().where('1=1').execute();
+    await dbMembersRepo.createQueryBuilder().delete().execute();
     await dataSource
       .getRepository(Space)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
-    await dbWalletRepo.createQueryBuilder().delete().where('1=1').execute();
-    await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    await dbWalletRepo.createQueryBuilder().delete().execute();
+    await dbUserRepo.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {

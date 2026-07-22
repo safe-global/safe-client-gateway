@@ -195,19 +195,16 @@ describe('NotificationsRepositoryV2', () => {
     await notificationDeviceRepository
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
 
     await subscriptionRepository
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
 
     await notificationSubscriptionNotificationTypeRepository
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
   }
 
@@ -433,7 +430,7 @@ describe('NotificationsRepositoryV2', () => {
               device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
             },
           },
-          relations: ['push_notification_device'],
+          relations: { push_notification_device: true },
         });
 
       expect(subscriptionBeforeRemoval).toHaveProperty('chain_id');
@@ -512,7 +509,10 @@ describe('NotificationsRepositoryV2', () => {
               id: In(subscriptionIds),
             },
           },
-          relations: ['notification_type', 'notification_subscription'],
+          relations: {
+            notification_type: true,
+            notification_subscription: true,
+          },
         });
 
       const upsertNotificationTypes: Array<string> = [];

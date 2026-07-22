@@ -104,9 +104,8 @@ describe('WalletsRepository', () => {
     await dbWalletRepository
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
-    await dbUserRepository.createQueryBuilder().delete().where('1=1').execute();
+    await dbUserRepository.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {
