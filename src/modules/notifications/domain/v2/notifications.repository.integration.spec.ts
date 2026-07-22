@@ -179,6 +179,11 @@ describe('NotificationsRepositoryV2', () => {
    * It uses query builders to perform the deletions without conditions,
    * effectively clearing all records for test or reset purposes.
    *
+   * No .where() call on any of the deletes below: TypeORM 1.1.0 rejects a
+   * WHERE clause that renders as an unfiltered '1=1' as a likely mistake —
+   * see counterfactual-safes.repository.integration.spec.ts for the full
+   * rationale.
+   *
    * @async
    * @function truncateTables
    * @returns {Promise<void>} Resolves when all specified tables are truncated.

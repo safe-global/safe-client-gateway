@@ -156,7 +156,10 @@ describe('MembersRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Delete in dependency order to avoid deadlocks
+    // Delete in dependency order to avoid deadlocks. No .where(): TypeORM
+    // 1.1.0 rejects a WHERE clause that renders as an unfiltered '1=1' as
+    // a likely mistake — see counterfactual-safes.repository.integration.spec.ts
+    // for the full rationale.
     await dataSource
       .getRepository(Member)
       .createQueryBuilder()
