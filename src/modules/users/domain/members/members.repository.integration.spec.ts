@@ -22,6 +22,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -32,17 +33,19 @@ import {
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import {
-  createEncryptingMockEmailEncryptionService,
-  createMockEmailEncryptionService,
-} from '@/modules/users/domain/__tests__/email-encryption.service.mock';
+  createEncryptingMockUserEncryptionService,
+  createMockUserEncryptionService,
+} from '@/modules/users/domain/__tests__/user-encryption.service.mock';
 import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
 
@@ -134,22 +137,30 @@ describe('MembersRepository', () => {
         return testConfiguration.spaces.maxSpaceCreationsPerUser;
       }
     });
-    const walletsRepo = new WalletsRepository(postgresDatabaseService);
+    const walletsRepo = new WalletsRepository(
+      postgresDatabaseService,
+      createMockWalletEncryptionService(),
+    );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       new UsersRepository(
         postgresDatabaseService,
         walletsRepo,
         createMockSpaceAuditRepository(),
-        createMockEmailEncryptionService(),
+        createMockUserEncryptionService(),
+        createMockWalletEncryptionService(),
       ),
       new SpacesRepository(
         postgresDatabaseService,
         mockConfigurationService,
         createMockSpaceAuditRepository(),
+        createMockSpaceEncryptionService(),
+        createMockMemberEncryptionService(),
       ),
       createMockSpaceAuditRepository(),
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
+      createMockWalletEncryptionService(),
+      createMockMemberEncryptionService(),
     );
   });
 
@@ -831,6 +842,7 @@ describe('MembersRepository', () => {
       ).resolves.toEqual([
         {
           address: memberWallet,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -3698,23 +3710,30 @@ describe('MembersRepository', () => {
     let encryptingMembersRepository: MembersRepository;
 
     beforeEach(() => {
-      const emailEncryptionService =
-        createEncryptingMockEmailEncryptionService();
+      const userEncryptionService = createEncryptingMockUserEncryptionService();
       encryptingMembersRepository = new MembersRepository(
         postgresDatabaseService,
         new UsersRepository(
           postgresDatabaseService,
-          new WalletsRepository(postgresDatabaseService),
+          new WalletsRepository(
+            postgresDatabaseService,
+            createMockWalletEncryptionService(),
+          ),
           createMockSpaceAuditRepository(),
-          emailEncryptionService,
+          userEncryptionService,
+          createMockWalletEncryptionService(),
         ),
         new SpacesRepository(
           postgresDatabaseService,
           mockConfigurationService,
           createMockSpaceAuditRepository(),
+          createMockSpaceEncryptionService(),
+          createMockMemberEncryptionService(),
         ),
         createMockSpaceAuditRepository(),
-        emailEncryptionService,
+        userEncryptionService,
+        createMockWalletEncryptionService(),
+        createMockMemberEncryptionService(),
       );
     });
 

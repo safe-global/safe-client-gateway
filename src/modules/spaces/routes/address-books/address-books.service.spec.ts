@@ -18,6 +18,7 @@ import { userBuilder } from '@/modules/users/datasources/entities/__tests__/user
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
@@ -58,6 +59,7 @@ describe('AddressBooksService', () => {
       new UserIdentityResolverService(
         usersRepositoryMock,
         walletsRepositoryMock,
+        createMockWalletEncryptionService(),
       ),
       configurationServiceMock,
       spacesRepositoryMock,

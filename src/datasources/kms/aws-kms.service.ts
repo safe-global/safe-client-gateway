@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
+import {
+  DecryptCommand,
+  EncryptCommand,
+  GenerateDataKeyCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
@@ -20,9 +25,7 @@ export class AwsKmsService implements IKmsService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
   ) {
-    this.keyId = this.configurationService.get<string>(
-      'spaces.fieldEncryption.kms.keyId',
-    );
+    this.keyId = this.configurationService.get<string>('encryption.kms.keyId');
     if (this.keyId) {
       this.client = this.createClient();
     }
@@ -55,8 +58,8 @@ export class AwsKmsService implements IKmsService {
     const { client, keyId } = this.getConfiguredClient();
     const response = await client.send(
       new DecryptCommand({
-        CiphertextBlob: new Uint8Array(args.ciphertext),
         KeyId: keyId,
+        CiphertextBlob: new Uint8Array(args.ciphertext),
         ...(args.encryptionContext && {
           EncryptionContext: args.encryptionContext,
         }),
@@ -68,10 +71,32 @@ export class AwsKmsService implements IKmsService {
     return Buffer.from(response.Plaintext);
   }
 
+  public async generateDataKey(args: {
+    encryptionContext?: Record<string, string>;
+  }): Promise<{ plaintextKey: Buffer; wrappedKey: Buffer }> {
+    const { client, keyId } = this.getConfiguredClient();
+    const response = await client.send(
+      new GenerateDataKeyCommand({
+        KeyId: keyId,
+        KeySpec: 'AES_256',
+        ...(args.encryptionContext && {
+          EncryptionContext: args.encryptionContext,
+        }),
+      }),
+    );
+    if (!(response.Plaintext && response.CiphertextBlob)) {
+      throw new Error('Could not generate a data key');
+    }
+    return {
+      plaintextKey: Buffer.from(response.Plaintext),
+      wrappedKey: Buffer.from(response.CiphertextBlob),
+    };
+  }
+
   private getConfiguredClient(): { client: KMSClient; keyId: string } {
     if (!(this.client && this.keyId)) {
       throw new Error(
-        'AWS KMS is not configured: spaces.fieldEncryption.kms.keyId is required',
+        'AWS KMS is not configured: encryption.kms.keyId is required',
       );
     }
     return { client: this.client, keyId: this.keyId };
@@ -82,14 +107,14 @@ export class AwsKmsService implements IKmsService {
     // the AWS SDK to resolve directly from the environment (AWS_REGION),
     // rather than piping it through IConfigurationService.
     const webIdentityTokenFile = this.configurationService.get<string>(
-      'spaces.fieldEncryption.kms.webIdentityTokenFile',
+      'encryption.kms.webIdentityTokenFile',
     );
     const credentials = resolveAwsCredentials(webIdentityTokenFile) ?? {
       accessKeyId: this.configurationService.getOrThrow<string>(
-        'spaces.fieldEncryption.kms.accessKeyId',
+        'encryption.kms.accessKeyId',
       ),
       secretAccessKey: this.configurationService.getOrThrow<string>(
-        'spaces.fieldEncryption.kms.secretAccessKey',
+        'encryption.kms.secretAccessKey',
       ),
     };
 

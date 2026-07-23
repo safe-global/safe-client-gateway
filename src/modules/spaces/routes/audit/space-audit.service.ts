@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
@@ -9,6 +14,7 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type {
   SpaceAuditLogActorDto,
   SpaceAuditLogEntryDto,
@@ -45,6 +51,10 @@ export class SpaceAuditService {
     private readonly membersRepository: IMembersRepository,
     @Inject(UserIdentityResolverService)
     private readonly identityResolver: UserIdentityResolverService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   public async getAuditLog(args: {
@@ -71,11 +81,18 @@ export class SpaceAuditService {
       ...args.filters,
     });
 
+    const decoded = await Promise.all(
+      rows.map(async (row) => ({
+        row,
+        payload: await this.decodePayload(args.spaceId, row),
+      })),
+    );
+
     const display = await this.buildDisplayResolver({
       spaceId: args.spaceId,
       viewerIsActiveAdmin,
-      subjectIds: rows.flatMap((row) => {
-        const targetUserId = getTargetUserId(row.payload);
+      subjectIds: decoded.flatMap(({ row, payload }) => {
+        const targetUserId = getTargetUserId(payload);
         return targetUserId === null
           ? [row.actorUserId]
           : [row.actorUserId, targetUserId];
@@ -86,7 +103,9 @@ export class SpaceAuditService {
       count,
       next: buildNextPageURL(normalizedUrl, count)?.toString() ?? null,
       previous: buildPreviousPageURL(normalizedUrl)?.toString() ?? null,
-      results: rows.map((row) => this.toEntryDto(row, display)),
+      results: decoded.map(({ row, payload }) =>
+        this.toEntryDto(row, payload, display),
+      ),
     };
   }
 
@@ -167,35 +186,64 @@ export class SpaceAuditService {
     return new Set(members.map((member) => member.user.id));
   }
 
+  /**
+   * Decrypts a row's payload blob, then re-parses it against the taxonomy.
+   * Rows that fail to decrypt, parse or validate degrade to an empty payload.
+   *
+   * A degrade is never silent: decrypt/parse throws (e.g. a KMS failure, or an
+   * un-backfilled plaintext row read while encryption is enabled — a hard error
+   * in {@link KmsEncryptionService.decrypt}) and schema-validation misses both
+   * emit a `warn` so ops has a signal instead of just an empty payload. The row
+   * id and event type are logged, never the (decrypted) payload contents.
+   */
+  private async decodePayload(
+    spaceId: Space['id'],
+    row: SpaceAuditLog,
+  ): Promise<Record<string, unknown>> {
+    try {
+      const payload = await this.spaceEncryptionService.decryptAuditPayload(
+        spaceId,
+        row.payload,
+      );
+      const result = SpaceAuditEventSchema.safeParse({
+        eventType: row.eventType,
+        payload,
+      });
+      if (result.success) {
+        return result.data.payload;
+      }
+      this.loggingService.warn(
+        `Audit payload failed schema validation; returning empty payload. spaceId=${spaceId} auditLogId=${row.id} eventType=${row.eventType}`,
+      );
+      return {};
+    } catch (error) {
+      this.loggingService.warn(
+        `Failed to decode audit payload; returning empty payload. spaceId=${spaceId} auditLogId=${row.id} eventType=${row.eventType}: ${asError(error).message}`,
+      );
+      return {};
+    }
+  }
+
   private toEntryDto(
     row: SpaceAuditLog,
+    payload: Record<string, unknown>,
     display: (userId: number) => string,
   ): SpaceAuditLogEntryDto {
-    const targetUserId = getTargetUserId(row.payload);
+    const targetUserId = getTargetUserId(payload);
     return {
       id: row.id,
       eventType: row.eventType,
       actorUserId: row.actorUserId,
       actor: display(row.actorUserId),
       targetUser: targetUserId === null ? null : display(targetUserId),
-      payload: allowlistPayload(row),
+      payload,
       createdAt: row.createdAt,
     };
   }
 }
 
-function getTargetUserId(payload: SpaceAuditLog['payload']): number | null {
+function getTargetUserId(payload: Record<string, unknown>): number | null {
   return 'targetUserId' in payload && typeof payload.targetUserId === 'number'
     ? payload.targetUserId
     : null;
-}
-
-// Payloads are re-parsed against the taxonomy at read time; rows that no
-// longer parse degrade to an empty payload.
-function allowlistPayload(row: SpaceAuditLog): Record<string, unknown> {
-  const result = SpaceAuditEventSchema.safeParse({
-    eventType: row.eventType,
-    payload: row.payload,
-  });
-  return result.success ? result.data.payload : {};
 }

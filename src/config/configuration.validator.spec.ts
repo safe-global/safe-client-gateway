@@ -365,6 +365,64 @@ describe('Configuration validator', () => {
     });
   });
 
+  describe('ENCRYPTION validation', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+    });
+
+    // A field-encryption-enabled config with every dependency satisfied:
+    // the blind-index key, the KMS key id, and KMS credentials.
+    const enabledConfiguration = (): Record<string, unknown> => ({
+      ...validConfiguration,
+      ENCRYPTION_ENABLED: 'true',
+      ENCRYPTION_INDEX_KEY: faker.string.alphanumeric(),
+      AWS_KMS_ENCRYPTION_KEY_ID: faker.string.uuid(),
+      KMS_AWS_ACCESS_KEY_ID: faker.string.uuid(),
+      KMS_AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
+    });
+
+    it('should not require the field-encryption dependencies when disabled', () => {
+      const config = {
+        ...validConfiguration,
+        ENCRYPTION_ENABLED: 'false',
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept an enabled configuration with all dependencies set', () => {
+      expect(() =>
+        configurationValidator(enabledConfiguration(), RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it.each([
+      { key: 'ENCRYPTION_INDEX_KEY' },
+      { key: 'AWS_KMS_ENCRYPTION_KEY_ID' },
+    ])('should require $key when ENCRYPTION_ENABLED is true', ({ key }) => {
+      const config = omit(enabledConfiguration(), key);
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        `Configuration is invalid: ${key} is required when ENCRYPTION_ENABLED is true`,
+      );
+    });
+
+    it('should require KMS credentials when ENCRYPTION_ENABLED is true', () => {
+      const config = omit(enabledConfiguration(), [
+        'AWS_WEB_IDENTITY_TOKEN_FILE',
+        'KMS_AWS_ACCESS_KEY_ID',
+        'KMS_AWS_SECRET_ACCESS_KEY',
+      ]);
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: AWS_WEB_IDENTITY_TOKEN_FILE AWS credentials are required when ENCRYPTION_ENABLED is true',
+      );
+    });
+  });
+
   describe('RELAY_NO_FEE_CAMPAIGN relay rules validation', () => {
     describe.each([
       'RELAY_NO_FEE_CAMPAIGN_MAINNET_RELAY_RULES',

@@ -8,12 +8,14 @@ import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.modu
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { MemberEncryptionModule } from '@/modules/users/domain/members/member-encryption.module';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { UsersRepositoryModule } from '@/modules/users/domain/users-repository.module';
 import { UsersController } from '@/modules/users/routes/users.controller';
 import { UsersService } from '@/modules/users/routes/users.service';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletsModule } from '@/modules/wallets/wallets.module';
 
 @Module({
   imports: [
@@ -23,6 +25,8 @@ import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db
     forwardRef(() => AuthModule),
     SiweModule,
     forwardRef(() => SpacesModule),
+    WalletsModule,
+    MemberEncryptionModule,
     SpaceAuditModule,
   ],
   providers: [

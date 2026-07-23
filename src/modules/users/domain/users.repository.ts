@@ -17,12 +17,13 @@ import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/spac
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
@@ -34,7 +35,8 @@ export class UsersRepository implements IUsersRepository {
     private readonly walletsRepository: IWalletsRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    private readonly emailEncryptionService: EmailEncryptionService,
+    private readonly userEncryptionService: UserEncryptionService,
+    private readonly walletEncryptionService: WalletEncryptionService,
   ) {}
 
   /**
@@ -45,7 +47,7 @@ export class UsersRepository implements IUsersRepository {
   private async decryptUserEmails(
     users: Array<DbUser>,
   ): Promise<Array<DbUser>> {
-    return await this.emailEncryptionService.decryptUserEmails(users);
+    return await this.userEncryptionService.decryptUserEmails(users);
   }
 
   public async findOneOrFail(
@@ -110,7 +112,7 @@ export class UsersRepository implements IUsersRepository {
     // insert (the email value is set once the id is known, below); otherwise
     // the plaintext email is stored directly.
     const emailIndex = email
-      ? this.emailEncryptionService.blindIndex(email)
+      ? this.userEncryptionService.blindIndex(email)
       : null;
     let emailColumns: { emailIndex?: string; email?: EmailAddress } = {};
     if (emailIndex) {
@@ -128,7 +130,7 @@ export class UsersRepository implements IUsersRepository {
 
     if (email && emailIndex) {
       await entityManager.update(DbUser, userId, {
-        email: (await this.emailEncryptionService.encrypt(
+        email: (await this.userEncryptionService.encrypt(
           userId,
           email,
         )) as EmailAddress,
@@ -229,12 +231,19 @@ export class UsersRepository implements IUsersRepository {
       args.authPayload.signer_address,
     );
 
-    const wallet = await this.walletsRepository.findOneOrFail({
-      address: args.walletAddress,
-      user: { id: user.id },
-    });
+    // Match encrypted rows on the blind index; with encryption disabled
+    // (no index key configured) the address is stored and matched as plaintext.
+    const addressIndex = this.walletEncryptionService.addressIndex(
+      args.walletAddress,
+    );
+    await this.walletsRepository.findOneOrFail(
+      addressIndex
+        ? { addressIndex, user: { id: user.id } }
+        : { address: args.walletAddress, user: { id: user.id } },
+    );
 
-    await this.walletsRepository.deleteByAddress(wallet.address);
+    // deleteByAddress resolves the same blind index (or plaintext) internally.
+    await this.walletsRepository.deleteByAddress(args.walletAddress);
   }
 
   public async findByWalletAddressOrFail(address: Address): Promise<User> {
@@ -269,21 +278,40 @@ export class UsersRepository implements IUsersRepository {
     const findOrCreate = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
+      // Match encrypted rows on the blind index; with encryption disabled
+      // (no index key configured) the address is stored and matched as
+      // plaintext.
+      const addressIndex = this.walletEncryptionService.addressIndex(address);
+      const where = addressIndex ? { addressIndex } : { address };
       const existing = await manager.findOne(Wallet, {
-        where: { address },
+        where,
         relations: { user: true },
       });
       if (existing) {
         return existing.user.id;
       }
 
-      // `status` only applies when creating a user for a new wallet.
+      // status only applies when creating a user for a new wallet.
       const userId = await this.create(status, manager);
+      // The owning userId is known before the wallet insert, so ciphertext
+      // and blind index are computed up front - no two-phase update. A
+      // concurrent insert of the same address collides on the blind-index
+      // unique constraint (ciphertext itself is non-deterministic).
+      const storedAddress = addressIndex
+        ? ((await this.walletEncryptionService.encryptAddress(
+            userId,
+            address,
+          )) as Address)
+        : address;
       const insert = await manager
         .createQueryBuilder()
         .insert()
         .into(Wallet)
-        .values({ user: { id: userId }, address })
+        .values({
+          user: { id: userId },
+          address: storedAddress,
+          ...(addressIndex && { addressIndex }),
+        })
         .orIgnore()
         .execute();
 
@@ -293,7 +321,7 @@ export class UsersRepository implements IUsersRepository {
 
       await manager.delete(DbUser, userId);
       const raced = await manager.findOne(Wallet, {
-        where: { address },
+        where,
         relations: { user: true },
       });
       if (!raced) {
@@ -324,7 +352,7 @@ export class UsersRepository implements IUsersRepository {
     const upsertThenSelect = async (
       manager: EntityManager,
     ): Promise<User['id']> => {
-      const emailIndex = this.emailEncryptionService.blindIndex(email);
+      const emailIndex = this.userEncryptionService.blindIndex(email);
 
       await manager
         .createQueryBuilder()
@@ -348,7 +376,7 @@ export class UsersRepository implements IUsersRepository {
       // set the encrypted email now that the id is known.
       if (emailIndex && !user.email) {
         await manager.update(DbUser, user.id, {
-          email: (await this.emailEncryptionService.encrypt(
+          email: (await this.userEncryptionService.encrypt(
             user.id,
             email,
           )) as EmailAddress,
@@ -441,7 +469,7 @@ export class UsersRepository implements IUsersRepository {
   ): Promise<User['id'] | null> {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
-    const emailIndex = this.emailEncryptionService.blindIndex(email);
+    const emailIndex = this.userEncryptionService.blindIndex(email);
     const candidate = await userRepository.findOne({
       where: emailIndex ? { emailIndex } : { email },
       select: { id: true, status: true, extUserId: true },
@@ -515,7 +543,7 @@ export class UsersRepository implements IUsersRepository {
     email: EmailAddress,
   ): Promise<void> {
     // Stored email is KMS ciphertext bound to this user; compare plaintext.
-    const storedEmail = await this.emailEncryptionService.decrypt(
+    const storedEmail = await this.userEncryptionService.decrypt(
       userId,
       storedValue,
     );
@@ -534,9 +562,9 @@ export class UsersRepository implements IUsersRepository {
     const userRepository =
       await this.postgresDatabaseService.getRepository(DbUser);
 
-    const emailIndex = this.emailEncryptionService.blindIndex(email);
+    const emailIndex = this.userEncryptionService.blindIndex(email);
     const emailValue = emailIndex
-      ? await this.emailEncryptionService.encrypt(userId, email)
+      ? await this.userEncryptionService.encrypt(userId, email)
       : email;
 
     try {

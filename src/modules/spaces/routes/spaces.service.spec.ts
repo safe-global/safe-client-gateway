@@ -15,14 +15,18 @@ import {
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
@@ -52,14 +56,28 @@ const walletsRepositoryMock = {
 
 describe('SpacesService', () => {
   let service: SpacesService;
+  let walletEncryptionServiceMock: MockedObject<WalletEncryptionService>;
+  let spaceEncryptionServiceMock: ReturnType<
+    typeof createMockSpaceEncryptionService
+  >;
+  let memberEncryptionServiceMock: ReturnType<
+    typeof createMockMemberEncryptionService
+  >;
 
   beforeEach(() => {
     vi.resetAllMocks();
+    // Created after resetAllMocks so the passthrough implementations survive.
+    walletEncryptionServiceMock = createMockWalletEncryptionService();
+    spaceEncryptionServiceMock = createMockSpaceEncryptionService();
+    memberEncryptionServiceMock = createMockMemberEncryptionService();
     service = new SpacesService(
       usersRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
       walletsRepositoryMock,
+      walletEncryptionServiceMock,
+      spaceEncryptionServiceMock,
+      memberEncryptionServiceMock,
     );
   });
 
@@ -315,6 +333,62 @@ describe('SpacesService', () => {
       );
     });
 
+    it('should decrypt an encrypted inviter wallet address for invitedByName', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerUserId = Number(authPayload.sub);
+      const inviterUserId = faker.number.int();
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+
+      const caller = userBuilder().with('id', callerUserId).build();
+      const inviter = userBuilder().with('id', inviterUserId).build();
+      const space = spaceBuilder().build();
+
+      const callerMember = memberBuilder()
+        .with('user', caller)
+        .with('space', space)
+        .with('status', 'INVITED')
+        .with('invitedBy', inviterUserId)
+        .build();
+      const inviterMember = memberBuilder()
+        .with('user', inviter)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('invitedBy', null)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([callerMember]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', space.name)
+          .with('members', [inviterMember, callerMember])
+          .with('safes', [])
+          .build(),
+      ]);
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
+      walletsRepositoryMock.find.mockResolvedValue([
+        {
+          address: encryptedAddress,
+          user: { id: inviterUserId },
+        } as Wallet,
+      ]);
+      walletEncryptionServiceMock.decryptAddress.mockResolvedValue(
+        walletAddress,
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(walletEncryptionServiceMock.decryptAddress).toHaveBeenCalledWith(
+        inviterUserId,
+        encryptedAddress,
+      );
+      const invitedMember = result[0].members.find(
+        (m) => m.status === 'INVITED',
+      );
+      expect(invitedMember).toEqual(
+        expect.objectContaining({ invitedByName: walletAddress }),
+      );
+    });
     it('should hide the member roster but expose counts to a pending member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const callerUserId = Number(authPayload.sub);
@@ -564,6 +638,52 @@ describe('SpacesService', () => {
       ).rejects.toThrow(UnauthorizedException);
 
       expect(membersRepositoryMock.find).not.toHaveBeenCalled();
+    });
+
+    it('should decrypt the space name and member display names before mapping the response', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const userId = Number(authPayload.sub);
+      const user = userBuilder().with('id', userId).build();
+      const space = spaceBuilder().build();
+      const encryptedMemberName = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const encryptedSpaceName = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const decryptedSpaceName = faker.lorem.words();
+      const decryptedMemberName = faker.person.fullName();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .with('status', 'ACTIVE')
+        .with('name', encryptedMemberName)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder()
+          .with('id', space.id)
+          .with('name', encryptedSpaceName)
+          .with('members', [member])
+          .with('safes', [])
+          .build(),
+      ]);
+      spaceEncryptionServiceMock.decryptSpaces.mockImplementation(
+        (spaces: Array<{ id: number; name: string }>) =>
+          Promise.resolve(
+            spaces.map((s) => ({ ...s, name: decryptedSpaceName })),
+          ),
+      );
+      memberEncryptionServiceMock.decryptName.mockResolvedValue(
+        decryptedMemberName,
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].name).toBe(decryptedSpaceName);
+      expect(result[0].members[0].name).toBe(decryptedMemberName);
+      expect(memberEncryptionServiceMock.decryptName).toHaveBeenCalledWith(
+        space.id,
+        encryptedMemberName,
+      );
+      expect(JSON.stringify(result)).not.toContain('kms:v1:');
     });
   });
 

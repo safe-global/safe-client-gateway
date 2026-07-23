@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { EntityManager, FindOptionsWhere, InsertResult } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -13,13 +13,18 @@ import type {
   AddressBookRequestStatus,
 } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 
 @Injectable()
 export class AddressBookRequestsRepository
   implements IAddressBookRequestsRepository
 {
-  constructor(private readonly db: PostgresDatabaseService) {}
+  constructor(
+    private readonly db: PostgresDatabaseService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
+  ) {}
 
   public async findBySpaceId(args: {
     spaceId: Space['id'];
@@ -32,11 +37,16 @@ export class AddressBookRequestsRepository
     if (args.status) {
       where.status = args.status;
     }
-    return repository.find({
+    const requests = await repository.find({
       where,
       relations: { requestedBy: true },
       order: { createdAt: 'DESC' },
     });
+    // Repository boundary: callers receive plaintext address + name.
+    return await this.spaceEncryptionService.decryptAddressBookRequests(
+      args.spaceId,
+      requests,
+    );
   }
 
   public async findBySpaceAndRequester(args: {
@@ -52,11 +62,16 @@ export class AddressBookRequestsRepository
     if (args.status) {
       where.status = args.status;
     }
-    return repository.find({
+    const requests = await repository.find({
       where,
       relations: { requestedBy: true },
       order: { createdAt: 'DESC' },
     });
+    // Repository boundary: callers receive plaintext address + name.
+    return await this.spaceEncryptionService.decryptAddressBookRequests(
+      args.spaceId,
+      requests,
+    );
   }
 
   public async findOneOrFail(args: {
@@ -74,7 +89,13 @@ export class AddressBookRequestsRepository
     if (!request) {
       throw new NotFoundException('Address book request not found.');
     }
-    return request;
+    // Repository boundary: callers receive plaintext address + name.
+    const [decrypted] =
+      await this.spaceEncryptionService.decryptAddressBookRequests(
+        args.spaceId,
+        [request],
+      );
+    return decrypted;
   }
 
   public async countPending(args: {
@@ -97,13 +118,21 @@ export class AddressBookRequestsRepository
     item: AddressBookItem;
   }): Promise<AddressBookRequest> {
     const repository = await this.db.getRepository(DbAddressBookRequest);
+    // The owning space id is known up front, so ciphertext + blind index are
+    // computed before insert — no two-phase dance.
+    const encrypted =
+      await this.spaceEncryptionService.encryptAddressBookRequest(
+        args.spaceId,
+        { address: args.item.address, name: args.item.name },
+      );
     let result: InsertResult;
     try {
       result = await repository.insert({
         space: { id: args.spaceId },
         requestedBy: { id: args.requestedById },
-        address: args.item.address,
-        name: args.item.name,
+        address: encrypted.address as DbAddressBookRequest['address'],
+        addressIndex: encrypted.addressIndex,
+        name: encrypted.name,
         chainIds: args.item.chainIds,
         status: 'PENDING',
       });

@@ -14,7 +14,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In } from 'typeorm';
+import { In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -31,14 +31,16 @@ import {
   type InviteUserInput,
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
 import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
+import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -50,7 +52,9 @@ export class MembersRepository implements IMembersRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
-    private readonly emailEncryptionService: EmailEncryptionService,
+    private readonly userEncryptionService: UserEncryptionService,
+    private readonly walletEncryptionService: WalletEncryptionService,
+    private readonly memberEncryptionService: MemberEncryptionService,
   ) {}
 
   /**
@@ -61,7 +65,7 @@ export class MembersRepository implements IMembersRepository {
   private async decryptMemberUserEmails(
     members: Array<DbMember>,
   ): Promise<Array<DbMember>> {
-    const decryptedUsers = await this.emailEncryptionService.decryptUserEmails(
+    const decryptedUsers = await this.userEncryptionService.decryptUserEmails(
       members.flatMap((member) => (member.user ? [member.user] : [])),
     );
     const usersById = new Map(decryptedUsers.map((user) => [user.id, user]));
@@ -174,16 +178,40 @@ export class MembersRepository implements IMembersRepository {
     );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      const walletUserIds = new Map<Address, User['id']>();
+      // Keyed by the raw address string (wallet rows store a plain string);
+      // lookups by the caller's `Address` inputs still match by value.
+      const walletUserIds = new Map<string, User['id']>();
       if (walletAddresses.length > 0) {
-        // Batch existing wallet lookups while keeping user creation atomic.
+        const indexByAddress = new Map<Address, string | null>(
+          walletAddresses.map((address) => [
+            address,
+            this.walletEncryptionService.addressIndex(address),
+          ]),
+        );
+        const indexes = [...indexByAddress.values()].filter(
+          (index): index is string => index !== null,
+        );
         const wallets = await entityManager.find(Wallet, {
-          where: { address: In(walletAddresses) },
+          where:
+            indexes.length > 0
+              ? { addressIndex: In(indexes) }
+              : { addressIndex: IsNull(), address: In(walletAddresses) },
           relations: { user: true },
         });
 
+        const addressByIndex = new Map<string, Address>();
+        for (const [address, index] of indexByAddress) {
+          if (index !== null) {
+            addressByIndex.set(index, address);
+          }
+        }
         for (const wallet of wallets) {
-          walletUserIds.set(wallet.address, wallet.user.id);
+          const address = wallet.addressIndex
+            ? addressByIndex.get(wallet.addressIndex)
+            : wallet.address;
+          if (address) {
+            walletUserIds.set(address, wallet.user.id);
+          }
         }
       }
 
@@ -264,6 +292,10 @@ export class MembersRepository implements IMembersRepository {
       inviteExpiresAt,
     } = args;
     const { name, role } = userToInvite;
+    const encryptedName = await this.memberEncryptionService.encryptName(
+      space.id,
+      name,
+    );
 
     const duplicateInviteError = (): UniqueConstraintError =>
       new UniqueConstraintError(
@@ -284,7 +316,7 @@ export class MembersRepository implements IMembersRepository {
         await entityManager.insert(DbMember, {
           user: { id: userId },
           space,
-          name,
+          name: encryptedName,
           role,
           status: 'INVITED',
           invitedBy,
@@ -301,7 +333,7 @@ export class MembersRepository implements IMembersRepository {
 
     if (existingMember.status === 'INVITED') {
       await entityManager.update(DbMember, existingMember.id, {
-        name,
+        name: encryptedName,
         role,
         invitedBy,
         inviteExpiresAt,
@@ -352,10 +384,15 @@ export class MembersRepository implements IMembersRepository {
     const member = space.members[0];
     this.assertInviteNotExpired(member);
 
+    const encryptedName = await this.memberEncryptionService.encryptName(
+      space.id,
+      args.payload.name,
+    );
+
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await entityManager.update(DbMember, member.id, {
         status: 'ACTIVE',
-        name: args.payload.name,
+        name: encryptedName,
         inviteExpiresAt: null,
       });
 
@@ -436,7 +473,11 @@ export class MembersRepository implements IMembersRepository {
       relations: { members: { user: true } },
     });
 
-    return await this.decryptMemberUserEmails(space.members);
+    const emailDecrypted = await this.decryptMemberUserEmails(space.members);
+    return await this.memberEncryptionService.decryptMembers(
+      args.spaceId,
+      emailDecrypted,
+    );
   }
 
   public async findSelfMembershipOrFail(args: {
@@ -522,7 +563,16 @@ export class MembersRepository implements IMembersRepository {
         );
       }
 
-      await entityManager.update(DbMember, member.id, { alias: args.alias });
+      const encryptedAlias =
+        args.alias === null
+          ? null
+          : await this.memberEncryptionService.encryptAlias(
+              args.spaceId,
+              args.alias,
+            );
+      await entityManager.update(DbMember, member.id, {
+        alias: encryptedAlias,
+      });
 
       const space = await this.findSpaceForAuditOrFail(
         entityManager,
@@ -672,7 +722,11 @@ export class MembersRepository implements IMembersRepository {
         'The user is not an active member of the workspace.',
       );
     }
-    const [decryptedMember] = await this.decryptMemberUserEmails([member]);
+    const [emailDecrypted] = await this.decryptMemberUserEmails([member]);
+    const [decryptedMember] = await this.memberEncryptionService.decryptMembers(
+      args.spaceId,
+      [emailDecrypted],
+    );
     return decryptedMember;
   }
 }

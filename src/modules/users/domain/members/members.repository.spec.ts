@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
-import { QueryFailedError } from 'typeorm';
+import { In, QueryFailedError } from 'typeorm';
 import type { Mocked, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -15,10 +15,15 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import { InviteType } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
+import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 
 describe('MembersRepository', () => {
   const usersRepository = {
@@ -33,7 +38,13 @@ describe('MembersRepository', () => {
   let entityManager: Mocked<
     Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
   >;
+  let dbMembersRepository: {
+    find: ReturnType<typeof vi.fn>;
+    findOne: ReturnType<typeof vi.fn>;
+  };
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
+  let walletEncryptionService: MockedObject<WalletEncryptionService>;
+  let memberEncryptionService: MockedObject<MemberEncryptionService>;
   let target: MembersRepository;
 
   const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -51,19 +62,27 @@ describe('MembersRepository', () => {
       insert: vi.fn(),
       update: vi.fn(),
     };
+    dbMembersRepository = { find: vi.fn(), findOne: vi.fn() };
     postgresDatabaseService = {
       transaction: vi
         .fn()
         .mockImplementation((callback) => callback(entityManager)),
+      getRepository: vi.fn().mockResolvedValue(dbMembersRepository),
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
+
+    // Created after resetAllMocks so the passthrough implementations survive.
+    walletEncryptionService = createMockWalletEncryptionService();
+    memberEncryptionService = createMockMemberEncryptionService();
 
     target = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
       createMockSpaceAuditRepository(),
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
+      walletEncryptionService,
+      memberEncryptionService,
     );
   });
 
@@ -259,6 +278,251 @@ describe('MembersRepository', () => {
         ),
       );
       expect(entityManager.insert).toHaveBeenCalled();
+    });
+    it('should resolve wallets found via the blind index back to the invited plaintext address', async () => {
+      const wallet = walletBuilder().build();
+      const encryptedRow = {
+        ...wallet,
+        address: 'kms:v1:ciphertext',
+        addressIndex: 'address-token',
+      } as Wallet;
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'MEMBER' as const,
+        name: nameBuilder(),
+      };
+      walletEncryptionService.addressIndex.mockReturnValue('address-token');
+      entityManager.find.mockResolvedValue([encryptedRow]);
+      entityManager.findOne.mockResolvedValue(null);
+
+      await target.inviteUsers({
+        authPayload,
+        spaceId: space.id,
+        users: [userToInvite],
+        inviteExpiresAt,
+      });
+
+      expect(entityManager.find).toHaveBeenCalledWith(Wallet, {
+        where: { addressIndex: In(['address-token']) },
+        relations: { user: true },
+      });
+      // The encrypted row resolved to the existing user: no new user/wallet.
+      expect(
+        usersRepository.findOrCreateByWalletAddress,
+      ).not.toHaveBeenCalled();
+      expect(entityManager.insert).toHaveBeenCalledWith(
+        DbMember,
+        expect.objectContaining({ user: { id: wallet.user.id } }),
+      );
+    });
+
+    it('should encrypt the member name before inserting an invite', async () => {
+      const wallet = walletBuilder().build();
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'MEMBER' as const,
+        name: nameBuilder(),
+      };
+      const ciphertext = `kms:v1:${faker.string.hexadecimal()}`;
+      memberEncryptionService.encryptName.mockResolvedValue(ciphertext);
+      entityManager.find.mockResolvedValue([wallet]);
+      entityManager.findOne.mockResolvedValue(null);
+
+      await target.inviteUsers({
+        authPayload,
+        spaceId: space.id,
+        users: [userToInvite],
+        inviteExpiresAt,
+      });
+
+      expect(memberEncryptionService.encryptName).toHaveBeenCalledWith(
+        space.id,
+        userToInvite.name,
+      );
+      expect(entityManager.insert).toHaveBeenCalledWith(
+        DbMember,
+        expect.objectContaining({ name: ciphertext }),
+      );
+    });
+
+    it('should encrypt the member name when overwriting an existing invite', async () => {
+      const existingMember = memberBuilder()
+        .with('space', space)
+        .with('status', 'INVITED')
+        .build();
+      const wallet = walletBuilder().with('user', existingMember.user).build();
+      const userToInvite = {
+        type: InviteType.Wallet,
+        address: wallet.address,
+        role: 'ADMIN' as const,
+        name: nameBuilder(),
+      };
+      const ciphertext = `kms:v1:${faker.string.hexadecimal()}`;
+      memberEncryptionService.encryptName.mockResolvedValue(ciphertext);
+      entityManager.find.mockResolvedValue([wallet]);
+      entityManager.findOne.mockResolvedValue(existingMember);
+
+      await target.inviteUsers({
+        authPayload,
+        spaceId: space.id,
+        users: [userToInvite],
+        inviteExpiresAt,
+      });
+
+      expect(memberEncryptionService.encryptName).toHaveBeenCalledWith(
+        space.id,
+        userToInvite.name,
+      );
+      expect(entityManager.update).toHaveBeenCalledWith(
+        DbMember,
+        existingMember.id,
+        expect.objectContaining({ name: ciphertext }),
+      );
+    });
+  });
+
+  describe('acceptInvite', () => {
+    it('should encrypt the accepted name before storing it', async () => {
+      const member = memberBuilder()
+        .with('status', 'INVITED')
+        .with('inviteExpiresAt', faker.date.future())
+        .build();
+      member.user.id = authenticatedUserId;
+      const acceptingSpace = spaceBuilder().with('members', [member]).build();
+      spacesRepository.findOneOrFail.mockResolvedValue(acceptingSpace);
+      const name = nameBuilder();
+      const ciphertext = `kms:v1:${faker.string.hexadecimal()}`;
+      memberEncryptionService.encryptName.mockResolvedValue(ciphertext);
+
+      await target.acceptInvite({
+        authPayload,
+        spaceId: acceptingSpace.id,
+        payload: { name },
+      });
+
+      expect(memberEncryptionService.encryptName).toHaveBeenCalledWith(
+        acceptingSpace.id,
+        name,
+      );
+      expect(entityManager.update).toHaveBeenCalledWith(
+        DbMember,
+        member.id,
+        expect.objectContaining({ name: ciphertext }),
+      );
+    });
+  });
+
+  describe('updateAlias', () => {
+    it('should encrypt the alias before storing it', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      entityManager.findOne.mockResolvedValue(member);
+      const alias = nameBuilder();
+      const ciphertext = `kms:v1:${faker.string.hexadecimal()}`;
+      memberEncryptionService.encryptAlias.mockResolvedValue(ciphertext);
+
+      await target.updateAlias({
+        authPayload,
+        spaceId: space.id,
+        alias,
+      });
+
+      expect(memberEncryptionService.encryptAlias).toHaveBeenCalledWith(
+        space.id,
+        alias,
+      );
+      expect(entityManager.update).toHaveBeenCalledWith(
+        DbMember,
+        member.id,
+        expect.objectContaining({ alias: ciphertext }),
+      );
+    });
+
+    it('should store a null alias without invoking encryption', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      entityManager.findOne.mockResolvedValue(member);
+
+      await target.updateAlias({
+        authPayload,
+        spaceId: space.id,
+        alias: null,
+      });
+
+      expect(memberEncryptionService.encryptAlias).not.toHaveBeenCalled();
+      expect(entityManager.update).toHaveBeenCalledWith(
+        DbMember,
+        member.id,
+        expect.objectContaining({ alias: null }),
+      );
+    });
+  });
+
+  describe('findSelfMembershipOrFail', () => {
+    it('should decrypt the member name and alias for the returned membership', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      dbMembersRepository.findOne.mockResolvedValue(member);
+      memberEncryptionService.decryptMembers.mockImplementation(
+        (_spaceId, members) =>
+          Promise.resolve(
+            members.map((m) => ({
+              ...m,
+              name: 'plain-name',
+              alias: 'plain-alias',
+            })),
+          ),
+      );
+
+      const result = await target.findSelfMembershipOrFail({
+        authPayload,
+        spaceId: space.id,
+      });
+
+      expect(memberEncryptionService.decryptMembers).toHaveBeenCalledWith(
+        space.id,
+        expect.arrayContaining([expect.objectContaining({ id: member.id })]),
+      );
+      expect(result).toMatchObject({
+        name: 'plain-name',
+        alias: 'plain-alias',
+      });
+    });
+  });
+
+  describe('findAuthorizedMembersOrFail', () => {
+    it('should decrypt the name and alias of every roster member', async () => {
+      const self = memberBuilder().with('status', 'ACTIVE').build();
+      self.user.id = authenticatedUserId;
+      const other = memberBuilder().with('status', 'ACTIVE').build();
+      dbMembersRepository.findOne.mockResolvedValue(self);
+      const rosterSpace = spaceBuilder().with('members', [self, other]).build();
+      spacesRepository.findOneOrFail.mockResolvedValue(rosterSpace);
+      memberEncryptionService.decryptMembers.mockImplementation(
+        (_spaceId, members) =>
+          Promise.resolve(
+            members.map((m) => ({ ...m, name: 'plain', alias: 'plain' })),
+          ),
+      );
+
+      const result = await target.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId: rosterSpace.id,
+      });
+
+      expect(memberEncryptionService.decryptMembers).toHaveBeenCalledWith(
+        rosterSpace.id,
+        expect.arrayContaining([
+          expect.objectContaining({ id: self.id }),
+          expect.objectContaining({ id: other.id }),
+        ]),
+      );
+      expect(result).toHaveLength(2);
+      expect(
+        result.every((m) => m.name === 'plain' && m.alias === 'plain'),
+      ).toBe(true);
     });
   });
 

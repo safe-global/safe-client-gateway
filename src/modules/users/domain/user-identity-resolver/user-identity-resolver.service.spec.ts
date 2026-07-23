@@ -2,10 +2,13 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet as DbWallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
@@ -32,12 +35,15 @@ const buildWallet = (overrides: Partial<DbWallet>): DbWallet =>
 
 describe('UserIdentityResolverService', () => {
   let service: UserIdentityResolverService;
+  let walletEncryptionService: MockedObject<WalletEncryptionService>;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    walletEncryptionService = createMockWalletEncryptionService();
     service = new UserIdentityResolverService(
       mockUsersRepository,
       mockWalletsRepository,
+      walletEncryptionService,
     );
   });
 
@@ -99,6 +105,28 @@ describe('UserIdentityResolverService', () => {
     expect(result.get(7)).toBe(earlierWallet);
   });
 
+  it('decrypts an encrypted wallet address via the owning user id', async () => {
+    const plaintext = getAddress(faker.finance.ethereumAddress());
+    mockUsersRepository.find.mockResolvedValue([
+      buildUser({ id: 4, email: null }),
+    ]);
+    mockWalletsRepository.find.mockResolvedValue([
+      buildWallet({
+        id: 1,
+        user: buildUser({ id: 4 }),
+        address: 'kms:v1:ciphertext',
+      }),
+    ]);
+    walletEncryptionService.decryptAddress.mockResolvedValue(plaintext);
+
+    const result = await service.resolveMany([4]);
+
+    expect(walletEncryptionService.decryptAddress).toHaveBeenCalledWith(
+      4,
+      'kms:v1:ciphertext',
+    );
+    expect(result.get(4)).toBe(plaintext);
+  });
   it('omits user IDs whose user no longer exists', async () => {
     mockUsersRepository.find.mockResolvedValue([]);
     mockWalletsRepository.find.mockResolvedValue([]);
