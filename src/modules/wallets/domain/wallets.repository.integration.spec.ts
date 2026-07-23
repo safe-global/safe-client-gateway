@@ -98,9 +98,6 @@ describe('WalletsRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Truncate tables. No .where(): TypeORM 1.1.0 rejects a WHERE clause
-    // that renders as an unfiltered '1=1' as a likely mistake — see
-    // counterfactual-safes.repository.integration.spec.ts for the full rationale.
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
     await dbWalletRepository.createQueryBuilder().delete().execute();

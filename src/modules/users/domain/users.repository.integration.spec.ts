@@ -124,9 +124,7 @@ describe('UsersRepository', () => {
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
-    // No .where(): TypeORM 1.1.0 rejects a WHERE clause that renders as
-    // an unfiltered '1=1' as a likely mistake — see
-    // counterfactual-safes.repository.integration.spec.ts for the full rationale.
+
     await dbWalletRepository.createQueryBuilder().delete().execute();
     await dbUserRepository.createQueryBuilder().delete().execute();
   });
