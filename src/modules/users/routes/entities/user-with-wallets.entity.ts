@@ -8,7 +8,7 @@ class UserWallet implements Pick<Wallet, 'id' | 'address'> {
   @ApiProperty()
   id!: number;
 
-  @ApiProperty()
+  @ApiProperty({ type: String })
   address!: Wallet['address'];
 }
 
