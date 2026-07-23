@@ -123,24 +123,12 @@ describe('SpaceSafesRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Delete in dependency order to avoid deadlocks
-    await dbMembersRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbSpaceSafesRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbSpaceRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbWalletRepo.createQueryBuilder().delete().where('1=1').execute();
-    await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    // Delete in dependency order to avoid deadlocks.
+    await dbMembersRepository.createQueryBuilder().delete().execute();
+    await dbSpaceSafesRepository.createQueryBuilder().delete().execute();
+    await dbSpaceRepository.createQueryBuilder().delete().execute();
+    await dbWalletRepo.createQueryBuilder().delete().execute();
+    await dbUserRepo.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {

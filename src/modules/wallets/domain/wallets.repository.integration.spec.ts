@@ -98,15 +98,10 @@ describe('WalletsRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Truncate tables
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
-    await dbWalletRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbUserRepository.createQueryBuilder().delete().where('1=1').execute();
+    await dbWalletRepository.createQueryBuilder().delete().execute();
+    await dbUserRepository.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {

@@ -134,7 +134,7 @@ describe('SpacesService', () => {
             inviteExpiresAt: MoreThan(expect.any(Date)),
           },
         ],
-        relations: ['space'],
+        relations: { space: true },
       });
     });
 

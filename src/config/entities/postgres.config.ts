@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { readFileSync } from 'node:fs';
-import type { PostgresConnectionOptions } from 'typeorm/driver/postgres/PostgresConnectionOptions';
+import type { PostgresDataSourceOptions } from 'typeorm/driver/postgres/PostgresDataSourceOptions';
 import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';
 import type { ILoggingService } from '@/logging/logging.interface';
 
@@ -32,7 +32,7 @@ interface IPostgresEnvConfig {
 export const postgresConfig = (
   postgresEnvConfig: IPostgresEnvConfig,
   logger?: ILoggingService,
-): PostgresConnectionOptions => {
+): PostgresDataSourceOptions => {
   const isCIContext = process.env.CI?.toLowerCase() === 'true';
   const isSslEnabled = !isCIContext && postgresEnvConfig.ssl.enabled;
   const postgresCa =

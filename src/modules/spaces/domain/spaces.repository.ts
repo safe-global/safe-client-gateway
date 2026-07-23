@@ -171,7 +171,7 @@ export class SpacesRepository implements ISpacesRepository {
 
     const members = await memberRepository.find({
       where: { user: { id: args.userId } },
-      relations: ['space'],
+      relations: { space: true },
     });
     const membersIds = members.map((member) => member.space.id);
 

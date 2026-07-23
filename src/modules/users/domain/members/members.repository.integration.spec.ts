@@ -156,30 +156,25 @@ describe('MembersRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Delete in dependency order to avoid deadlocks
     await dataSource
       .getRepository(Member)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
     await dataSource
       .getRepository(Space)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
     await dataSource
       .getRepository(Wallet)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
     await dataSource
       .getRepository(User)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
   });
 

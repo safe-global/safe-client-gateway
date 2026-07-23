@@ -149,15 +149,18 @@ describe('SpaceAuditRepository', () => {
   afterEach(async () => {
     // Audit rows are deliberately NOT deleted (the triggers forbid it):
     // every test works on a fresh space and scopes its reads by spaceId.
-    await dbMembersRepo.createQueryBuilder().delete().where('1=1').execute();
+    // No .where() on the deletes below: TypeORM 1.1.0 rejects a WHERE
+    // clause that renders as an unfiltered '1=1' as a likely mistake —
+    // see counterfactual-safes.repository.integration.spec.ts for the
+    // full rationale.
+    await dbMembersRepo.createQueryBuilder().delete().execute();
     await dataSource
       .getRepository(Space)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
-    await dbWalletRepo.createQueryBuilder().delete().where('1=1').execute();
-    await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    await dbWalletRepo.createQueryBuilder().delete().execute();
+    await dbUserRepo.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {

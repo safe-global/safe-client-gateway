@@ -72,7 +72,7 @@ export class SpacesService {
         user: { id: userId },
         ...spaceScope,
       })),
-      relations: ['space'],
+      relations: { space: true },
     });
     if (members.length === 0) {
       return [];
