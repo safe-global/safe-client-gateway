@@ -10,6 +10,8 @@ COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
 # Compiled by `yarn build` into dist/scripts/ so the image can mint billing
 # webhook tokens as a one-off workload (see src/modules/billing/README.md).
 COPY --chown=node:node scripts/generate-token.ts ./scripts/generate-token.ts
+COPY --chown=node:node scripts/generate-field-encryption-index-key.ts ./scripts/generate-field-encryption-index-key.ts
+COPY --chown=node:node scripts/backfill-field-encryption.ts ./scripts/backfill-field-encryption.ts
 COPY --chown=node:node assets ./assets
 COPY --chown=node:node migrations ./migrations
 COPY --chown=node:node src ./src
