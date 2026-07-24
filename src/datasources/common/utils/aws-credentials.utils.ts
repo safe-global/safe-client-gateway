@@ -14,5 +14,5 @@ import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 export function resolveAwsCredentials(
   webIdentityTokenFile: string | undefined,
 ): ReturnType<typeof fromTokenFile> | undefined {
-  return webIdentityTokenFile ? fromTokenFile() : undefined;
+  return webIdentityTokenFile ? fromTokenFile({ webIdentityTokenFile }) : undefined;
 }

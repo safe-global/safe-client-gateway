@@ -37,7 +37,7 @@ function validateFieldEncryptionConfig(
     ENCRYPTION_ENABLED?: string;
     ENCRYPTION_INDEX_KEY?: string;
     AWS_KMS_ENCRYPTION_KEY_ID?: string;
-    AWS_WEB_IDENTITY_TOKEN_FILE?: string;
+    KMS_AWS_WEB_IDENTITY_TOKEN_FILE?: string;
     KMS_AWS_ACCESS_KEY_ID?: string;
     KMS_AWS_SECRET_ACCESS_KEY?: string;
   },
@@ -64,15 +64,18 @@ function validateFieldEncryptionConfig(
   // pair, mirroring AwsKmsService's credential resolution. Dedicated
   // KMS_AWS_* keys (like SES_AWS_*/CSV_AWS_*) so enabling field encryption
   // doesn't silently repurpose the bare AWS_ACCESS_KEY_ID/SECRET_ACCESS_KEY
-  // credentials used by targeted messaging's S3 file storage.
+  // credentials used by targeted messaging's S3 file storage, and a
+  // KMS-specific web identity token file (rather than the shared
+  // AWS_WEB_IDENTITY_TOKEN_FILE) so configuring IRSA for SES doesn't
+  // implicitly make this client assume SES's role too.
   const hasStaticCredentials =
     !!config.KMS_AWS_ACCESS_KEY_ID && !!config.KMS_AWS_SECRET_ACCESS_KEY;
-  if (!(config.AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
+  if (!(config.KMS_AWS_WEB_IDENTITY_TOKEN_FILE || hasStaticCredentials)) {
     ctx.addIssue({
       code: 'custom',
       message:
-        'AWS credentials are required when ENCRYPTION_ENABLED is true: set AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID and KMS_AWS_SECRET_ACCESS_KEY',
-      path: ['AWS_WEB_IDENTITY_TOKEN_FILE'],
+        'AWS credentials are required when ENCRYPTION_ENABLED is true: set KMS_AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID and KMS_AWS_SECRET_ACCESS_KEY',
+      path: ['KMS_AWS_WEB_IDENTITY_TOKEN_FILE'],
     });
   }
 }
@@ -124,6 +127,7 @@ export const RootConfigurationSchema = z
     AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
     KMS_AWS_ACCESS_KEY_ID: z.string().optional(),
     KMS_AWS_SECRET_ACCESS_KEY: z.string().optional(),
+    KMS_AWS_WEB_IDENTITY_TOKEN_FILE: z.string().optional(),
     SES_AWS_ACCESS_KEY_ID: z.string().optional(),
     SES_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     FF_SES_EMAIL: z.string().optional(),
