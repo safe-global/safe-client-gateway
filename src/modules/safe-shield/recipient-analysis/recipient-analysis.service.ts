@@ -44,6 +44,7 @@ import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creat
 import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
 import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+import { extractRecipients } from '@/modules/safe-shield/utils/extraction.utils';
 import {
   type BridgeAndSwapTransactionInfo,
   isBridgeAndSwapTransactionInfo,
@@ -52,7 +53,6 @@ import {
 import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
 import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
 import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import { extractRecipients } from '../utils/extraction.utils';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,

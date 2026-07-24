@@ -16,8 +16,8 @@ import { OutreachDbMapper } from '@/modules/targeted-messaging/datasources/entit
 import { SubmissionDbMapper } from '@/modules/targeted-messaging/datasources/entities/submission.db.mapper';
 import { TargetedSafeDbMapper } from '@/modules/targeted-messaging/datasources/entities/targeted-safe.db.mapper';
 import { TargetedMessagingDatasource } from '@/modules/targeted-messaging/datasources/targeted-messaging.datasource';
-import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/entities/tests/create-outreach.dto.builder';
-import { createTargetedSafesDtoBuilder } from '@/modules/targeted-messaging/domain/entities/tests/create-target-safes.dto.builder';
+import { createOutreachDtoBuilder } from '@/modules/targeted-messaging/domain/entities/__tests__/create-outreach.dto.builder';
+import { createTargetedSafesDtoBuilder } from '@/modules/targeted-messaging/domain/entities/__tests__/create-target-safes.dto.builder';
 import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
 import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 

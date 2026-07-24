@@ -44,6 +44,7 @@ describe('FetchNetworkService', () => {
         },
         undefined,
         undefined,
+        undefined,
       );
       expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
@@ -74,6 +75,7 @@ describe('FetchNetworkService', () => {
             test: 'value',
           },
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -111,6 +113,7 @@ describe('FetchNetworkService', () => {
           method: 'GET',
           headers: {},
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -176,6 +179,7 @@ describe('FetchNetworkService', () => {
         },
         timeout,
         undefined,
+        undefined,
       );
     });
 
@@ -196,6 +200,7 @@ describe('FetchNetworkService', () => {
           method: 'GET',
           headers: {},
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -223,6 +228,7 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'application/json',
           },
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -258,6 +264,7 @@ describe('FetchNetworkService', () => {
           },
           body: JSON.stringify(data),
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -327,6 +334,7 @@ describe('FetchNetworkService', () => {
         },
         timeout,
         undefined,
+        undefined,
       );
     });
 
@@ -351,6 +359,7 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'application/json',
           },
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -378,6 +387,7 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -432,6 +442,7 @@ describe('FetchNetworkService', () => {
         },
         undefined,
         undefined,
+        undefined,
       );
       expect(loggingService.debug).toHaveBeenCalledTimes(1);
       expect(loggingService.debug).toHaveBeenCalledWith({
@@ -465,6 +476,7 @@ describe('FetchNetworkService', () => {
           },
           body: JSON.stringify(data),
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -534,6 +546,7 @@ describe('FetchNetworkService', () => {
         },
         timeout,
         undefined,
+        undefined,
       );
     });
 
@@ -554,6 +567,7 @@ describe('FetchNetworkService', () => {
           method: 'DELETE',
           headers: {},
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -598,6 +612,7 @@ describe('FetchNetworkService', () => {
         },
         undefined,
         undefined,
+        undefined,
       );
     });
 
@@ -625,6 +640,7 @@ describe('FetchNetworkService', () => {
             Authorization: 'Bearer default-token',
           },
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -659,6 +675,7 @@ describe('FetchNetworkService', () => {
         },
         undefined,
         undefined,
+        undefined,
       );
     });
 
@@ -691,6 +708,7 @@ describe('FetchNetworkService', () => {
         },
         undefined,
         undefined,
+        undefined,
       );
     });
 
@@ -720,6 +738,7 @@ describe('FetchNetworkService', () => {
             'X-Custom': 'value',
           },
         },
+        undefined,
         undefined,
         undefined,
       );
@@ -762,6 +781,7 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'text/plain', // request overrides method and default
           },
         },
+        undefined,
         undefined,
         undefined,
       );

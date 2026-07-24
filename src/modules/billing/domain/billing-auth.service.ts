@@ -33,7 +33,7 @@ import type { BillingTokenClaims } from '@/modules/billing/domain/entities/billi
  * - {@link verify} validates an incoming token against the CGW **public** key and
  *   the service-token authorization markers.
  *
- * Only instantiated when the `billingWebhook` feature is enabled (the module is
+ * Only instantiated when the `billingService` feature is enabled (the module is
  * gated in `AppModule`), so the public key is expected to be provisioned; a
  * missing key therefore fails fast at boot.
  */

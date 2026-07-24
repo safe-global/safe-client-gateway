@@ -2,7 +2,6 @@
 
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
-import type { MockedObject } from 'vitest';
 import type {
   DataDecoded,
   DataDecodedParameter,
@@ -15,12 +14,15 @@ import {
   extractRecipients,
 } from '@/modules/safe-shield/utils/extraction.utils';
 
-const mockErc20Decoder = {
-  helpers: {
-    isTransfer: vi.fn(),
-    isTransferFrom: vi.fn(),
-  },
-} as MockedObject<Erc20Decoder>;
+const mockErc20Decoder = vi.mocked(
+  {
+    helpers: {
+      isTransfer: vi.fn(),
+      isTransferFrom: vi.fn(),
+    },
+  } as unknown as Erc20Decoder,
+  true,
+);
 
 const createDataDecoded = (
   overrides: Partial<DataDecoded> = {},

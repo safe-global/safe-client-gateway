@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { ChainApiManager } from '@/datasources/common/chain-api.manager';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -11,36 +12,28 @@ import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
 import { CowSwapApi } from '@/modules/swaps/datasources/cowswap-api.service';
 
 @Injectable()
-export class SwapsApiFactory implements ISwapsApiFactory {
-  private readonly apis: Record<string, ISwapsApi> = {};
-
+export class SwapsApiFactory
+  extends ChainApiManager<ISwapsApi>
+  implements ISwapsApiFactory
+{
   constructor(
     @Inject(NetworkService) private readonly networkService: INetworkService,
     private readonly httpErrorFactory: HttpErrorFactory,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-  ) {}
+  ) {
+    super();
+  }
 
   getApi(chainId: string): Promise<ISwapsApi> {
-    if (this.apis[chainId]) {
-      return Promise.resolve(this.apis[chainId]);
-    }
+    return this.getOrCreateApi(chainId);
+  }
 
+  protected createApi(chainId: string): ISwapsApi {
     const baseUrl = this.configurationService.getOrThrow<string>(
       `swaps.api.${chainId}`,
     );
 
-    this.apis[chainId] = new CowSwapApi(
-      baseUrl,
-      this.networkService,
-      this.httpErrorFactory,
-    );
-    return Promise.resolve(this.apis[chainId]);
-  }
-
-  destroyApi(chainId: string): void {
-    if (this.apis[chainId] !== undefined) {
-      delete this.apis[chainId];
-    }
+    return new CowSwapApi(baseUrl, this.networkService, this.httpErrorFactory);
   }
 }

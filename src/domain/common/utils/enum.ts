@@ -33,14 +33,16 @@ export const databaseEnumTransformer = <T extends NumericEnum>(
 
       return value;
     },
-    from: (value: number): keyof T => {
-      const key = getEnumKey(enumObj, value);
-
-      if (key === undefined) {
-        throw new Error(`Invalid enum value: ${value}`);
+    from: (value: number | null): keyof T | null => {
+      // Only a genuinely absent (null) column value is treated as
+      // absent data. A non-null value that doesn't match a known enum
+      // member is corrupt/legacy data, not an absence, so it still
+      // throws via getEnumKey rather than silently becoming null.
+      if (value === null) {
+        return null;
       }
 
-      return key;
+      return getEnumKey(enumObj, value);
     },
   };
 };

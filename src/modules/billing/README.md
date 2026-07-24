@@ -101,18 +101,18 @@ The webhook is processed only if **both** layers pass:
 
 ## Deploying the receiver
 
-The webhook endpoint is **gated behind a feature flag** and reads its public key from config:
+The webhook endpoint is **gated behind a feature flag** — the same `FF_BILLING_SERVICE` flag that also enables the safe-billing-service API client — and reads its public key from config:
 
 | Variable | Description |
 |----------|-------------|
-| `FF_BILLING_WEBHOOK` | Set to `true` to enable the `POST /v1/billing/webhooks` endpoint and its auth guard. Off by default. |
+| `FF_BILLING_SERVICE` | Set to `true` to enable the billing-service integration: the `POST /v1/billing/webhooks` endpoint + its auth guard, and the safe-billing-service API client. Off by default. |
 | `BILLING_WEBHOOK_JWT_PUBLIC_KEY` | ES256 public key (PEM) used to verify incoming tokens. |
 | `BILLING_WEBHOOK_JWT_ISSUER` | Must match the issuer used at mint time (default `safe-client-gateway`). |
 
 End-to-end provisioning flow:
 
 1. Generate the EC P-256 keypair (above).
-2. Deploy the CGW with `FF_BILLING_WEBHOOK=true` and `BILLING_WEBHOOK_JWT_PUBLIC_KEY` set to the **public** key.
+2. Deploy the CGW with `FF_BILLING_SERVICE=true` and `BILLING_WEBHOOK_JWT_PUBLIC_KEY` set to the **public** key.
 3. Mint a token with the **private** key using this script.
 4. Provision the token to the billing service as the bearer credential for its webhook calls.
 
@@ -182,10 +182,10 @@ The token failed verification. Common causes:
 The CGW logs the specific reason at `warn` level (token-present failures only).
 
 ### Webhook calls return `404 Not Found`
-The feature is disabled — set `FF_BILLING_WEBHOOK=true` and redeploy.
+The feature is disabled — set `FF_BILLING_SERVICE=true` and redeploy.
 
 ### The app fails to boot with a missing-public-key error
-`FF_BILLING_WEBHOOK=true` was set but `BILLING_WEBHOOK_JWT_PUBLIC_KEY` was not provisioned. Either set the public key or disable the flag. (Fail-fast is intentional — enabling the feature asserts the key is provisioned.)
+`FF_BILLING_SERVICE=true` was set but `BILLING_WEBHOOK_JWT_PUBLIC_KEY` was not provisioned. Either set the public key or disable the flag. (Fail-fast is intentional — enabling the feature asserts the key is provisioned.)
 
 ## Key rotation
 

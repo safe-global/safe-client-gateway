@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOkResponse,
@@ -18,6 +19,7 @@ import type { Address } from 'viem';
 import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
 import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
+import { PortfolioRouteGuard } from '@/modules/portfolio/v1/guards/portfolio-route.guard';
 import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -27,6 +29,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
  * Exposes GET /v1/portfolio/:address and DELETE /v1/portfolio/:address endpoints.
  */
 @ApiTags('portfolio')
+@UseGuards(PortfolioRouteGuard)
 @Controller({
   path: '',
   version: '1',
@@ -101,7 +104,8 @@ export class PortfolioController {
 
   @ApiOperation({
     summary: 'Clear portfolio cache',
-    description: 'Clears the cached portfolio data for a specific address',
+    description:
+      'Clears all cached Zerion portfolio data (overview, portfolio, positions) for a specific address',
   })
   @ApiParam({
     name: 'address',
@@ -114,6 +118,6 @@ export class PortfolioController {
     @Param('address', new ValidationPipe(AddressSchema))
     address: Address,
   ): Promise<void> {
-    await this.portfolioService.clearPortfolio({ address });
+    await this.portfolioService.clearZerionCaches({ address });
   }
 }

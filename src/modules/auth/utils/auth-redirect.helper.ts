@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 
 const AUTH0_LOGOUT_PATH = '/v2/logout';
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
 /**
  * Builds the Auth0 {@link https://auth0.com/docs/api/authentication/logout/auth-0-logout}
  * base URL from {@link IConfigurationService}.
@@ -108,35 +109,41 @@ export function resolveAndValidateRedirectUrl(
  * match {@link RedirectConfig.postLoginRedirectUri}'s origin.
  *
  * **Non-production with {@link RedirectConfig.allowedRedirectDomain}** —
- * the target's hostname must equal or be a subdomain of the configured
- * domain. Additionally rejects:
+ * URLs with {@link URL.username} or {@link URL.password} are always
+ * rejected (prevents credential-based open-redirect attacks, e.g.
+ * `https://attacker.com@allowed.dev`); beyond that, two hostname classes
+ * are allowed:
  *
- * - Non-HTTPS schemes (prevents protocol downgrades).
- * - URLs with {@link URL.username} or {@link URL.password} (prevents
- *   credential-based open-redirect attacks, e.g.
- *   `https://attacker.com@allowed.dev`).
- * - URLs with an explicit {@link URL.port} (restricts redirects to
- *   standard HTTPS endpoints).
+ * - **Loopback** (`localhost`, `127.0.0.1`, `[::1]`, matched exactly) over
+ *   `http:` or `https:` with any port. This is the loopback exception of
+ *   {@link https://datatracker.ietf.org/doc/html/rfc8252#section-7.3 RFC 8252},
+ *   letting local frontends authenticate against deployed environments.
+ * - **The configured domain or a subdomain of it**, over `https:` only
+ *   (prevents protocol downgrades) and without an explicit
+ *   {@link URL.port} (restricts redirects to standard HTTPS endpoints).
  *
  * @param target - The resolved redirect {@link URL} to validate.
  * @param config - Pre-loaded redirect configuration.
  * @returns `true` if the redirect target is allowed, `false` otherwise.
  */
 function isAllowedRedirectUrl(target: URL, config: RedirectConfig): boolean {
-  if (!config.isProduction && config.allowedRedirectDomain) {
-    if (
-      target.protocol !== 'https:' ||
-      target.username ||
-      target.password ||
-      target.port
-    ) {
-      return false;
-    }
-    const suffix = `.${config.allowedRedirectDomain}`;
-    return (
-      target.hostname === config.allowedRedirectDomain ||
-      target.hostname.endsWith(suffix)
-    );
+  if (config.isProduction || !config.allowedRedirectDomain) {
+    return target.origin === new URL(config.postLoginRedirectUri).origin;
   }
-  return target.origin === new URL(config.postLoginRedirectUri).origin;
+
+  if (target.username || target.password) {
+    return false;
+  }
+
+  const isHttps = target.protocol === 'https:';
+  if (LOOPBACK_HOSTNAMES.has(target.hostname)) {
+    return target.protocol === 'http:' || isHttps;
+  }
+
+  return (
+    isHttps &&
+    !target.port &&
+    (target.hostname === config.allowedRedirectDomain ||
+      target.hostname.endsWith(`.${config.allowedRedirectDomain}`))
+  );
 }

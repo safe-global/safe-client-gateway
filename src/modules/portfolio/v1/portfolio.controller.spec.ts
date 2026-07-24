@@ -10,7 +10,7 @@ import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.servi
 
 const service = {
   getPortfolio: vi.fn(),
-  clearPortfolio: vi.fn(),
+  clearZerionCaches: vi.fn(),
 } as MockedObject<PortfolioApiService>;
 
 describe('PortfolioController', () => {
@@ -204,11 +204,11 @@ describe('PortfolioController', () => {
     it('should call service with address', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      service.clearPortfolio.mockResolvedValue(undefined);
+      service.clearZerionCaches.mockResolvedValue(undefined);
 
       await controller.clearPortfolio(address);
 
-      expect(service.clearPortfolio).toHaveBeenCalledWith({
+      expect(service.clearZerionCaches).toHaveBeenCalledWith({
         address,
       });
     });
@@ -216,7 +216,7 @@ describe('PortfolioController', () => {
     it('should return void', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
-      service.clearPortfolio.mockResolvedValue(undefined);
+      service.clearZerionCaches.mockResolvedValue(undefined);
 
       const result = await controller.clearPortfolio(address);
 

@@ -6,10 +6,16 @@ import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import type { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
+import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
 import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
@@ -22,7 +28,21 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 }
 
 describe('UsersRepository', () => {
-  const walletsRepository = {} as MockedObject<IWalletsRepository>;
+  const walletsRepository = {
+    findOneByAddress: vi.fn(),
+    findOneOrFail: vi.fn(),
+    deleteByAddress: vi.fn(),
+  } as MockedObject<IWalletsRepository>;
+  // Passthrough crypto (disabled-like): blind index null, values unchanged, so
+  // existing plaintext assertions hold. Encryption + blind-index lookups are
+  // covered by integration tests.
+  const userEncryptionService = {
+    encrypt: vi.fn(),
+    decrypt: vi.fn(),
+    isEncrypted: vi.fn(),
+    blindIndex: vi.fn(),
+    decryptUserEmails: vi.fn(),
+  } as MockedObject<UserEncryptionService>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let userRepository: {
@@ -33,13 +53,14 @@ describe('UsersRepository', () => {
     createQueryBuilder: Mock;
   };
   let emailUpdateExecute: Mock;
+  let walletEncryptionService: MockedObject<WalletEncryptionService>;
   let target: UsersRepository;
 
   beforeEach(() => {
     vi.resetAllMocks();
 
     // Chainable stub for persistEmail's UPDATE ... WHERE email IS NULL query.
-    emailUpdateExecute = vi.fn().mockResolvedValue(undefined);
+    emailUpdateExecute = vi.fn().mockResolvedValue({ affected: 1 });
     const queryBuilder = {
       update: vi.fn().mockReturnThis(),
       set: vi.fn().mockReturnThis(),
@@ -61,10 +82,37 @@ describe('UsersRepository', () => {
       transaction: vi.fn(),
     } as MockedObject<PostgresDatabaseService>;
 
+    userEncryptionService.encrypt.mockImplementation((_userId, email) =>
+      Promise.resolve(email),
+    );
+    userEncryptionService.decrypt.mockImplementation((_userId, value) =>
+      Promise.resolve(value),
+    );
+    userEncryptionService.isEncrypted.mockReturnValue(false);
+    userEncryptionService.blindIndex.mockReturnValue(null);
+    // Mirrors the real batch helper, driven by the decrypt mock.
+    userEncryptionService.decryptUserEmails.mockImplementation(async (users) =>
+      Promise.all(
+        users.map(async (user) =>
+          user.email
+            ? {
+                ...user,
+                email: await userEncryptionService.decrypt(user.id, user.email),
+              }
+            : user,
+        ),
+      ),
+    );
+
+    // Created after resetAllMocks so the passthrough implementations survive.
+    walletEncryptionService = createMockWalletEncryptionService();
+
     target = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       createMockSpaceAuditRepository(),
+      userEncryptionService,
+      walletEncryptionService,
     );
   });
 
@@ -80,7 +128,9 @@ describe('UsersRepository', () => {
         values: vi.fn().mockReturnThis(),
         orIgnore: vi.fn().mockReturnThis(),
         execute: vi.fn().mockResolvedValue({
-          identifiers: args?.walletInsertIdentifiers ?? [{ id: 1 }],
+          identifiers: args?.walletInsertIdentifiers ?? [
+            { id: faker.number.int() },
+          ],
         }),
       };
 
@@ -98,7 +148,9 @@ describe('UsersRepository', () => {
               : null,
           ),
         insert: vi.fn().mockResolvedValue({
-          identifiers: [{ id: args?.createdUserId ?? 1 }],
+          identifiers: [
+            { id: args?.createdUserId ?? faker.number.int({ min: 1 }) },
+          ],
         }),
         createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
         delete: vi.fn(),
@@ -146,8 +198,69 @@ describe('UsersRepository', () => {
 
       expect(entityManager.delete).toHaveBeenCalledWith(DbUser, createdUserId);
     });
+    it('should look up by the blind index and insert ciphertext with its blind index when an index key is configured', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const createdUserId = faker.number.int({ min: 1 });
+      const addressIndex = faker.string.alphanumeric(24);
+      const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
+      const entityManager = mockEntityManager({ createdUserId });
+      walletEncryptionService.addressIndex.mockReturnValue(addressIndex);
+      walletEncryptionService.encryptAddress.mockResolvedValue(ciphertext);
+
+      await expect(
+        target.findOrCreateByWalletAddress(
+          address,
+          'PENDING',
+          entityManager as never,
+        ),
+      ).resolves.toBe(createdUserId);
+
+      expect(entityManager.findOne).toHaveBeenCalledWith(Wallet, {
+        where: { addressIndex },
+        relations: { user: true },
+      });
+      expect(walletEncryptionService.encryptAddress).toHaveBeenCalledWith(
+        createdUserId,
+        address,
+      );
+      const queryBuilder = entityManager.createQueryBuilder.mock.results[0]
+        .value as { values: Mock };
+      expect(queryBuilder.values).toHaveBeenCalledWith({
+        user: { id: createdUserId },
+        address: ciphertext,
+        addressIndex,
+      });
+    });
   });
 
+  describe('deleteWalletFromUser', () => {
+    it('should look up ownership by the blind index and delete by the caller plaintext address', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const userId = faker.number.int({ min: 1 });
+      const addressIndex = faker.string.alphanumeric(24);
+      walletsRepository.findOneByAddress.mockResolvedValue({
+        user: { id: userId, email: null },
+      } as never);
+      walletsRepository.findOneOrFail.mockResolvedValue({
+        id: faker.number.int({ min: 1 }),
+        address: `kms:v1:${faker.string.alphanumeric(24)}`,
+      } as never);
+      walletEncryptionService.addressIndex.mockReturnValue(addressIndex);
+
+      await target.deleteWalletFromUser({ walletAddress, authPayload });
+
+      expect(walletsRepository.findOneOrFail).toHaveBeenCalledWith({
+        addressIndex,
+        user: { id: userId },
+      });
+      // deleteByAddress resolves the blind index internally from the plaintext;
+      // the stored row value (possibly ciphertext) must NOT be passed back in.
+      expect(walletsRepository.deleteByAddress).toHaveBeenCalledWith(
+        walletAddress,
+      );
+    });
+  });
   describe('findOrCreateByExtUserIdAndEmail', () => {
     it('should return an existing user id without re-persisting when the stored email matches', async () => {
       const userId = faker.number.int({ min: 1 });
@@ -188,6 +301,41 @@ describe('UsersRepository', () => {
       expect(emailUpdateExecute).toHaveBeenCalledTimes(1);
     });
 
+    it('should reconcile against the row a concurrent backfill wrote when persistEmail loses the race', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      const email = fakeEmailAddress();
+      // Initial read sees no stored email, but another request backfills it
+      // first: our UPDATE ... WHERE email IS NULL affects zero rows.
+      userRepository.findOne.mockResolvedValue({ id: userId, email: null });
+      emailUpdateExecute.mockResolvedValue({ affected: 0 });
+      userRepository.findOneOrFail.mockResolvedValue({ id: userId, email });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, email),
+      ).resolves.toBe(userId);
+
+      expect(userRepository.findOneOrFail).toHaveBeenCalledWith({
+        where: { id: userId },
+        select: { id: true, email: true },
+      });
+    });
+
+    it('should reject when the row a concurrent backfill wrote has a conflicting email', async () => {
+      const userId = faker.number.int({ min: 1 });
+      const extUserId = faker.string.uuid();
+      userRepository.findOne.mockResolvedValue({ id: userId, email: null });
+      emailUpdateExecute.mockResolvedValue({ affected: 0 });
+      userRepository.findOneOrFail.mockResolvedValue({
+        id: userId,
+        email: fakeEmailAddress(),
+      });
+
+      await expect(
+        target.findOrCreateByExtUserIdAndEmail(extUserId, fakeEmailAddress()),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
     it('should create a new user and store the email when none exists', async () => {
       const userId = faker.number.int({ min: 1 });
       const extUserId = faker.string.uuid();
@@ -207,7 +355,7 @@ describe('UsersRepository', () => {
       const extUserId = faker.string.uuid();
       userRepository.findOne.mockResolvedValue(null);
       postgresDatabaseService.transaction.mockRejectedValue(
-        uniqueConstraintError('idx_users_email'),
+        uniqueConstraintError('idx_users_email_index'),
       );
 
       await expect(
@@ -304,7 +452,7 @@ describe('UsersRepository', () => {
       });
       userRepository.update.mockResolvedValue({ affected: 0 });
       postgresDatabaseService.transaction.mockRejectedValue(
-        uniqueConstraintError('idx_users_email'),
+        uniqueConstraintError('idx_users_email_index'),
       );
 
       await expect(
@@ -323,7 +471,7 @@ describe('UsersRepository', () => {
       await expect(target.findEmailById(userId)).resolves.toBe(email);
       expect(userRepository.findOne).toHaveBeenCalledWith({
         where: { id: userId },
-        select: { email: true },
+        select: { id: true, email: true },
       });
     });
 
@@ -344,28 +492,30 @@ describe('UsersRepository', () => {
 
   describe('find', () => {
     it('should return users matching the where clause', async () => {
+      const userId = faker.number.int({ min: 1 });
       const users = [
-        { id: 1, email: 'a@test.com' },
-        { id: 2, email: 'b@test.com' },
+        { id: userId, email: fakeEmailAddress() },
+        { id: faker.number.int({ min: 1 }), email: fakeEmailAddress() },
       ];
       userRepository.find.mockResolvedValue(users);
 
-      const result = await target.find({ id: 1 as never });
+      const result = await target.find({ id: userId as never });
 
       expect(result).toEqual(users);
       expect(userRepository.find).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: userId },
         relations: undefined,
       });
     });
 
     it('should pass relations to the query', async () => {
+      const userId = faker.number.int({ min: 1 });
       userRepository.find.mockResolvedValue([]);
 
-      await target.find({ id: 1 as never }, { wallets: true });
+      await target.find({ id: userId as never }, { wallets: true });
 
       expect(userRepository.find).toHaveBeenCalledWith({
-        where: { id: 1 },
+        where: { id: userId },
         relations: { wallets: true },
       });
     });
@@ -373,9 +523,35 @@ describe('UsersRepository', () => {
     it('should return an empty array when no users match', async () => {
       userRepository.find.mockResolvedValue([]);
 
-      const result = await target.find({ id: 999 as never });
+      const result = await target.find({
+        id: faker.number.int({ min: 1 }) as never,
+      });
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('findByWalletAddress', () => {
+    it('should decrypt an encrypted email on the wallet owner', async () => {
+      const email = fakeEmailAddress();
+      const encrypted = `kms:v1:${Buffer.from(email, 'utf8').toString('base64url')}`;
+      const user = { id: faker.number.int({ min: 1 }), email: encrypted };
+      walletsRepository.findOneByAddress.mockResolvedValue({ user } as never);
+      userEncryptionService.decrypt.mockResolvedValue(email);
+
+      const result = await target.findByWalletAddress(
+        getAddress(faker.finance.ethereumAddress()),
+      );
+
+      expect(result?.email).toBe(email);
+    });
+
+    it('should return undefined when no wallet matches', async () => {
+      walletsRepository.findOneByAddress.mockResolvedValue(null as never);
+
+      await expect(
+        target.findByWalletAddress(getAddress(faker.finance.ethereumAddress())),
+      ).resolves.toBeUndefined();
     });
   });
 });

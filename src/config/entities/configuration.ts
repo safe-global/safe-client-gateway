@@ -37,6 +37,7 @@ export default () => ({
     // Defaults to true.
     runMigrations: process.env.RUN_MIGRATIONS?.toLowerCase() !== 'false',
     port: process.env.APPLICATION_PORT || '3000',
+    host: process.env.APPLICATION_HOST || '0.0.0.0',
     allowCors: process.env.ALLOW_CORS?.toLowerCase() === 'true',
   },
   auth: {
@@ -384,6 +385,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_POSITIONS_SECONDS ?? `${300}`,
       10,
     ),
+    billing: Number.parseInt(
+      process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -400,10 +405,13 @@ export default () => ({
     },
   },
   express: {
-    // Controls the maximum request body size. If this is a number, then the value
-    // specifies the number of bytes; if it is a string, the value is passed to the
-    // bytes library for parsing. Defaults to '100kb'.
-    // https://expressjs.com/en/resources/middleware/body-parser.html
+    // Controls the maximum request body size for the Fastify JSON parser. A
+    // bare number is interpreted as bytes; a string accepts an optional unit
+    // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
+    // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
+    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
+    // are retained for backwards compatibility after the Express->Fastify
+    // migration; rename deferred to avoid a breaking configuration change.
     jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
     // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
     // header set by upstream proxies instead of the direct socket address.
@@ -416,10 +424,7 @@ export default () => ({
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
-    // Support both new (FF_ZERION_ENABLED) and legacy (FF_ZERION_BALANCES_CHAIN_IDS) env vars
-    zerionBalancesEnabled:
-      !!process.env.FF_ZERION_ENABLED ||
-      !!process.env.FF_ZERION_BALANCES_CHAIN_IDS,
+    zerion: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
@@ -427,9 +432,7 @@ export default () => ({
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
-    billingWebhook: process.env.FF_BILLING_WEBHOOK?.toLowerCase() === 'true',
-    counterfactualBalances:
-      process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
+    billingService: process.env.FF_BILLING_SERVICE?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
@@ -533,6 +536,14 @@ export default () => ({
     secret: process.env.JWT_SECRET,
   },
   billing: {
+    baseUri:
+      process.env.SAFE_BILLING_SERVICE_BASE_URI ||
+      'https://safe-billing-service.staging.5afe.dev',
+    apiToken: process.env.SAFE_BILLING_SERVICE_API_TOKEN,
+    requestTimeout: Number.parseInt(
+      process.env.SAFE_BILLING_SERVICE_REQUEST_TIMEOUT_MILLISECONDS ?? '5000',
+      10,
+    ),
     // ES256 service-to-service auth for incoming billing-service webhooks.
     // The CGW verifies tokens against its own public key (no JWKS); the
     // private key lives only in the provisioning CLI, not the running app.
@@ -843,6 +854,20 @@ export default () => ({
           10,
         ),
       },
+    },
+  },
+  // Field-level encryption via AWS KMS. Values are encrypted directly by
+  // KMS, bound to their owner via the KMS encryption context; a KMS-wrapped
+  // HMAC key computes blind indexes for lookups/uniqueness. Domain-free:
+  // callers supply the context + field-id label (see KmsEncryptionService).
+  encryption: {
+    enabled: process.env.ENCRYPTION_ENABLED?.toLowerCase() === 'true',
+    indexKey: process.env.ENCRYPTION_INDEX_KEY,
+    kms: {
+      keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+      accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
+      webIdentityTokenFile: process.env.KMS_AWS_WEB_IDENTITY_TOKEN_FILE,
     },
   },
   staking: {

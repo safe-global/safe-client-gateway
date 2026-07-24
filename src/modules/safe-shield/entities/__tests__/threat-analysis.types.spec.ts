@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import {
@@ -105,6 +107,23 @@ describe('ThreatAnalysis Types', () => {
         in: [{ value: blockaidResponse.in[0].value }],
         out: [{ value: blockaidResponse.out[0].value }],
       });
+    });
+
+    it('should parse balance change with NONERC asset', () => {
+      const nonErcBalanceChange = {
+        asset: {
+          type: 'NONERC',
+          address: getAddress(faker.finance.ethereumAddress()),
+          symbol: 'UNKNOWN',
+          logo_url: faker.internet.url(),
+        },
+        in: [{ value: faker.string.numeric(7) }],
+        out: [],
+      };
+
+      const result = BalanceChangeSchema.parse(nonErcBalanceChange);
+
+      expect(result).toEqual(nonErcBalanceChange);
     });
 
     it('should reject invalid asset type', () => {

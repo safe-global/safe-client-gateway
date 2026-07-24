@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
-  Check,
   Column,
   Entity,
   Index,
@@ -17,10 +16,6 @@ import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db
 import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
 
 @Entity('users')
-@Check(
-  'users_email_lowercase_check',
-  '"email" IS NULL OR "email" = lower("email")',
-)
 export class User implements DomainUser {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_id' })
   id!: number;
@@ -47,15 +42,25 @@ export class User implements DomainUser {
 
   @Index('idx_users_email', {
     unique: true,
-    where: '"email" IS NOT NULL',
+    where: '"email_index" IS NULL',
   })
   @Column({
     name: 'email',
-    type: 'varchar',
-    length: 255,
+    type: 'text',
     nullable: true,
   })
   email!: EmailAddress | null;
+
+  @Index('idx_users_email_index', {
+    unique: true,
+    where: '"email_index" IS NOT NULL',
+  })
+  @Column({
+    name: 'email_index',
+    type: 'text',
+    nullable: true,
+  })
+  emailIndex?: string | null;
 
   @OneToMany(
     () => Wallet,

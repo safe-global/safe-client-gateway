@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { CanActivate, ExecutionContext } from '@nestjs/common';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
-import type { Request } from 'express';
 import { z } from 'zod';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
+import {
+  getRoutePath,
+  type HttpRequest,
+} from '@/routes/common/http/http-request.utils';
 
 /**
  * RateLimitGuard is a guard that limits the number of requests
@@ -24,7 +27,7 @@ export class RateLimitGuard implements CanActivate {
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const req: Request = context.switchToHttp().getRequest();
+    const req = context.switchToHttp().getRequest<HttpRequest>();
     const { success: isValidIp } = z
       .union([z.ipv4(), z.ipv6()])
       .safeParse(req.ip);
@@ -34,7 +37,7 @@ export class RateLimitGuard implements CanActivate {
     }
     const currentRequest = await this.cacheService.increment(
       CacheRouter.getRateLimitCacheKey(
-        `${req.route.path}_${req.method}_${req.ip}`,
+        `${getRoutePath(req)}_${req.method}_${req.ip}`,
       ),
       this.rateLimit.windowSeconds,
     );
@@ -48,23 +51,23 @@ export class RateLimitGuard implements CanActivate {
     return true;
   }
 
-  private logInvalidIp(req: Request): void {
+  private logInvalidIp(req: HttpRequest): void {
     this.loggingService.warn({
       type: LogType.InvalidIp,
       method: req.method,
-      route: req.route.path,
+      route: getRoutePath(req),
       clientIp: req.ip,
     });
   }
 
   private logRateLimitHit(args: {
-    req: Request;
+    req: HttpRequest;
     currentRequest: number;
   }): void {
     this.loggingService.warn({
       type: LogType.RateLimit,
       method: args.req.method,
-      route: args.req.route.path,
+      route: getRoutePath(args.req),
       clientIp: args.req.ip,
       maxRequests: this.rateLimit.max,
       windowSeconds: this.rateLimit.windowSeconds,

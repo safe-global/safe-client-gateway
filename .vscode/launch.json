@@ -15,7 +15,6 @@
       "outputCapture": "std",
       "env": {
         "FF_AUTH": "true",
-        "FF_COUNTERFACTUAL_BALANCES": "true",
         "FF_DELEGATES_V2": "true",
         "FF_EMAIL": "true",
         "FF_ETH_SIGN": "true",

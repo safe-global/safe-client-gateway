@@ -6,9 +6,9 @@ import {
   encodeFunctionData,
   formatUnits,
   getAddress,
+  type Hex,
   parseAbi,
 } from 'viem';
-import type { Hex } from 'viem/types/misc';
 import type { MockedObject } from 'vitest';
 import { truncateAddress } from '@/domain/common/utils/utils';
 import type { ILoggingService } from '@/logging/logging.interface';

@@ -7,8 +7,7 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
-import type { ThreatAnalysisResponse } from '../analysis-responses.entity';
+import type { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CommonStatus,
   type FailedThreatAnalysisResult,
@@ -17,14 +16,15 @@ import {
   type ThreatAnalysisResult,
   type ThreatIssue,
   type ThreatIssues,
-} from '../analysis-result.entity';
+} from '@/modules/safe-shield/entities/analysis-result.entity';
+import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
 import type {
   AssetType,
   BalanceChange,
   FungibleDiffSchema,
   NFTDiffSchema,
-} from '../threat-analysis.types';
-import { ThreatStatus } from '../threat-status.entity';
+} from '@/modules/safe-shield/entities/threat-analysis.types';
+import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
 
 /**
@@ -169,7 +169,7 @@ export class NativeAssetDetailsDto extends BaseAssetDetailsDto {
 export class TokenAssetDetailsDto extends BaseAssetDetailsDto {
   @ApiProperty({
     description: 'Asset type',
-    enum: ['ERC20', 'ERC721', 'ERC1155'],
+    enum: ['ERC20', 'ERC721', 'ERC1155', 'NONERC'],
   })
   public readonly type!: Exclude<AssetType, 'NATIVE'>;
 

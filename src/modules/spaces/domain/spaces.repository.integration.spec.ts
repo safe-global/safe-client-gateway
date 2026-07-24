@@ -15,12 +15,14 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
@@ -113,36 +115,34 @@ describe('SpacesRepository', () => {
       postgresDatabaseService,
       mockConfigurationService,
       createMockSpaceAuditRepository(),
+      createMockSpaceEncryptionService(),
+      createMockMemberEncryptionService(),
     );
   });
 
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Delete in dependency order to avoid deadlocks
+    // Delete in dependency order to avoid deadlocks.
     await dataSource
       .getRepository(Member)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
     await dataSource
       .getRepository(Space)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
     await dataSource
       .getRepository(Wallet)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
     await dataSource
       .getRepository(User)
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
   });
 
@@ -246,6 +246,7 @@ describe('SpacesRepository', () => {
         user: {
           id: userId,
           email: null,
+          emailIndex: null,
           extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),
@@ -273,6 +274,8 @@ describe('SpacesRepository', () => {
         postgresDatabaseService,
         config,
         createMockSpaceAuditRepository(),
+        createMockSpaceEncryptionService(),
+        createMockMemberEncryptionService(),
       );
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const name = faker.word.noun();
@@ -314,6 +317,8 @@ describe('SpacesRepository', () => {
         postgresDatabaseService,
         config,
         createMockSpaceAuditRepository(),
+        createMockSpaceEncryptionService(),
+        createMockMemberEncryptionService(),
       );
 
       const invitee = await dbUserRepo.insert({ status: 'ACTIVE' });
@@ -391,6 +396,7 @@ describe('SpacesRepository', () => {
         user: {
           id: userId,
           email: null,
+          emailIndex: null,
           extUserId: null,
           status: userStatus,
           createdAt: expect.any(Date),

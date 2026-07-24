@@ -226,10 +226,12 @@ export class CounterfactualSafesRepository
         );
       }
 
-      await manager.delete(
-        CounterfactualSafeUser,
-        targets.map((t) => t.id),
-      );
+      await manager
+        .createQueryBuilder()
+        .delete()
+        .from(CounterfactualSafeUser)
+        .whereInIds(targets.map((t) => t.id))
+        .execute();
     });
   }
 }

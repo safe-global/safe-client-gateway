@@ -144,16 +144,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     }
   }
 
-  async clearPositions(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void> {
-    const key = CacheRouter.getZerionPositionsCacheKey({
-      safeAddress: args.safeAddress,
-    });
-    await this.cacheService.deleteByKey(key);
-  }
-
   getFiatCodes(): Promise<Raw<Array<string>>> {
     return Promise.resolve(rawify(this.fiatCodes));
   }

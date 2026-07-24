@@ -6,22 +6,22 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { Request } from 'express';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 /**
  * Protects the billing-service webhook endpoint with a service-to-service JWT.
  *
  * Extracts the `Authorization: Bearer <token>` credential (an HTTP concern) and
  * delegates verification to {@link BillingAuthService}. Only instantiated
- * when the `billingWebhook` feature is enabled.
+ * when the `billingService` feature is enabled.
  */
 @Injectable()
 export class BillingWebhookAuthGuard implements CanActivate {
   constructor(private readonly tokenService: BillingAuthService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request: Request = context.switchToHttp().getRequest();
+    const request = context.switchToHttp().getRequest<HttpRequest>();
 
     const token = this.getBearerToken(request);
     if (!token) {
@@ -35,7 +35,7 @@ export class BillingWebhookAuthGuard implements CanActivate {
     return true;
   }
 
-  private getBearerToken(request: Request): string | null {
+  private getBearerToken(request: HttpRequest): string | null {
     const header = request.headers.authorization;
     if (!header?.startsWith('Bearer ')) {
       return null;

@@ -6,7 +6,10 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { TestAppProvider } from '@/__tests__/test-app.provider';
+import {
+  initTestApplication,
+  TestAppProvider,
+} from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -47,8 +50,7 @@ describe('Safes V2 Controller Overview', () => {
       },
       features: {
         ...configuration().features,
-        counterfactualBalances: true,
-        zerionBalancesEnabled: true,
+        zerion: true,
       },
     });
 
@@ -69,11 +71,11 @@ describe('Safes V2 Controller Overview', () => {
     networkService = moduleFixture.get(NetworkService);
 
     app = await new TestAppProvider().provide(moduleFixture);
-    await app.init();
+    await initTestApplication(app);
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   describe('GET /v2/safes', () => {
@@ -400,21 +402,20 @@ describe('Safes V2 Controller Overview', () => {
       expect(portfolioCallCount).toBe(1);
     });
 
-    it('should use Safe balances API when zerionBalancesEnabled is false, even for chains with Zerion chain name', async () => {
+    it('should use Safe balances API when the zerion flag is false, even for chains with Zerion chain name', async () => {
       const moduleFixture = await createTestModule({
         config: () => ({
           ...configuration(),
           mappings: { ...configuration().mappings, safe: { maxOverviews: 3 } },
           features: {
             ...configuration().features,
-            counterfactualBalances: true,
-            zerionBalancesEnabled: false,
+            zerion: false,
           },
         }),
       });
       const testApp: INestApplication<Server> =
         await new TestAppProvider().provide(moduleFixture);
-      await testApp.init();
+      await initTestApplication(testApp);
 
       const testSafeConfigUrl = moduleFixture
         .get<IConfigurationService>(IConfigurationService)

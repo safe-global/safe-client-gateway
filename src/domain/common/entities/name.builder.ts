@@ -23,5 +23,7 @@ export function nameBuilder(): string {
   // Pad to the min and trim to the max to respect the default bounds.
   const padded =
     pick.length < NAME_MIN_LENGTH ? pick.padEnd(NAME_MIN_LENGTH, 'x') : pick;
-  return [...padded].slice(0, NAME_MAX_LENGTH).join('');
+  // Truncating to the max can cut right after a space and re-introduce trailing
+  // whitespace, so sanitize again to keep the result a fixed point of sanitizeName.
+  return sanitizeName([...padded].slice(0, NAME_MAX_LENGTH).join(''));
 }

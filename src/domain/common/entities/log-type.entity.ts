@@ -39,4 +39,5 @@ export enum LogType {
   TransactionValidity = 'TRANSACTION_VALIDITY',
   TxnExportFetchRequest = 'TRANSACTION_EXPORT_FETCH_REQUEST',
   TxnExportFetchRequestError = 'TRANSACTION_EXPORT_FETCH_REQUEST_ERROR',
+  ZerionCacheInvalidated = 'ZERION_CACHE_INVALIDATED',
 }

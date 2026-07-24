@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type Blockaid from '@blockaid/client';
+import type { JsonRpcScanResponse } from '@blockaid/client/resources/evm/json-rpc';
 // import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import type { TransactionScanResponse } from '@blockaid/client/resources/evm/evm';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import type { MockedObject } from 'vitest';
@@ -13,7 +13,7 @@ import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/bloc
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 const createMockWithResponse = (
-  data: TransactionScanResponse,
+  data: JsonRpcScanResponse,
   requestId: string | null,
 ): ReturnType<typeof mockBlockaidClient.evm.jsonRpc.scan> =>
   ({
@@ -35,16 +35,16 @@ const createMockWithResponse = (
 const mockBlockaidClient = {
   evm: {
     jsonRpc: {
-      scan: vi.fn(),
+      scan: vi.fn<Blockaid['evm']['jsonRpc']['scan']>(),
     },
     transaction: {
-      report: vi.fn(),
+      report: vi.fn<Blockaid['evm']['transaction']['report']>(),
     },
     addressBulk: {
-      scan: vi.fn(),
+      scan: vi.fn<Blockaid['evm']['addressBulk']['scan']>(),
     },
   },
-} as MockedObject<Blockaid>;
+};
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -127,7 +127,7 @@ describe('BlockaidApi', () => {
           description: 'No issues detected',
           features: [],
         },
-      } as TransactionScanResponse;
+      } as JsonRpcScanResponse;
 
       const expectedResponse: BlockaidScanResponse = {
         validation: {
@@ -185,7 +185,7 @@ describe('BlockaidApi', () => {
       const mockScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
-      } as TransactionScanResponse;
+      } as JsonRpcScanResponse;
 
       const expectedResponse: BlockaidScanResponse = {
         request_id,
@@ -218,10 +218,10 @@ describe('BlockaidApi', () => {
     });
 
     it('should return null request_id when header is not present', async () => {
-      const mockScanResponse: TransactionScanResponse = {
+      const mockScanResponse = {
         block: faker.string.numeric(),
         chain: `0x${chainId}`,
-      } as TransactionScanResponse;
+      } as JsonRpcScanResponse;
 
       mockBlockaidClient.evm.jsonRpc.scan.mockReturnValue(
         createMockWithResponse(mockScanResponse, null),

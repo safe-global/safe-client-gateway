@@ -14,10 +14,5 @@ export interface IPositionsRepository {
     sync?: boolean;
   }): Promise<Array<Position>>;
 
-  clearPositions(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<void>;
-
   getFiatCodes(): Promise<Array<string>>;
 }

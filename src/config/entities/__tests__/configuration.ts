@@ -21,6 +21,7 @@ export default (): ReturnType<typeof configuration> => ({
     isDevelopment: faker.datatype.boolean(),
     runMigrations: true,
     port: faker.internet.port().toString(),
+    host: process.env.APPLICATION_HOST || '0.0.0.0',
     allowCors: faker.datatype.boolean(),
   },
   auth: {
@@ -199,6 +200,7 @@ export default (): ReturnType<typeof configuration> => ({
     indexing: faker.number.int(),
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
+    billing: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
@@ -209,14 +211,13 @@ export default (): ReturnType<typeof configuration> => ({
   features: {
     email: false,
     sesEmail: false,
-    zerionBalancesEnabled: false,
+    zerion: false,
     zerionPositions: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
     oidc_auth: false,
-    billingWebhook: false,
-    counterfactualBalances: false,
+    billingService: false,
     users: false,
     hookHttpPostEvent: false,
     improvedAddressPoisoning: false,
@@ -272,6 +273,9 @@ export default (): ReturnType<typeof configuration> => ({
     secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
   },
   billing: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    apiToken: faker.string.alphanumeric(32),
+    requestTimeout: faker.number.int({ min: 1000, max: 10_000 }),
     webhook: {
       // PEM keys provided via env often arrive with escaped newlines.
       publicKey: process.env.BILLING_WEBHOOK_JWT_PUBLIC_KEY?.replace(
@@ -469,6 +473,16 @@ export default (): ReturnType<typeof configuration> => ({
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
+    },
+  },
+  encryption: {
+    enabled: false,
+    indexKey: undefined,
+    kms: {
+      keyId: undefined,
+      accessKeyId: undefined,
+      secretAccessKey: undefined,
+      webIdentityTokenFile: undefined,
     },
   },
   staking: {
