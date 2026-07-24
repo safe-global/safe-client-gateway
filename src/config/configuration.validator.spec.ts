@@ -411,15 +411,28 @@ describe('Configuration validator', () => {
 
     it('should require KMS credentials when ENCRYPTION_ENABLED is true', () => {
       const config = omit(enabledConfiguration(), [
-        'AWS_WEB_IDENTITY_TOKEN_FILE',
+        'KMS_AWS_WEB_IDENTITY_TOKEN_FILE',
         'KMS_AWS_ACCESS_KEY_ID',
         'KMS_AWS_SECRET_ACCESS_KEY',
       ]);
       expect(() =>
         configurationValidator(config, RootConfigurationSchema),
       ).toThrow(
-        'Configuration is invalid: AWS_WEB_IDENTITY_TOKEN_FILE AWS credentials are required when ENCRYPTION_ENABLED is true',
+        'Configuration is invalid: KMS_AWS_WEB_IDENTITY_TOKEN_FILE AWS credentials are required when ENCRYPTION_ENABLED is true',
       );
+    });
+
+    it('should accept KMS credentials via the KMS-specific web identity token file', () => {
+      const config = omit(
+        {
+          ...enabledConfiguration(),
+          KMS_AWS_WEB_IDENTITY_TOKEN_FILE: `/var/run/secrets/${faker.string.alphanumeric(8)}/token`,
+        },
+        ['KMS_AWS_ACCESS_KEY_ID', 'KMS_AWS_SECRET_ACCESS_KEY'],
+      );
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
     });
   });
 

@@ -892,7 +892,7 @@ export default () => ({
       keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
       accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
       secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
-      webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      webIdentityTokenFile: process.env.KMS_AWS_WEB_IDENTITY_TOKEN_FILE,
     },
   },
   staking: {
