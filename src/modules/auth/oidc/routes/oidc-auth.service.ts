@@ -167,13 +167,25 @@ export class OidcAuthService {
     const methods = await this.auth0Repository.listUserAuthenticationMethods(
       user.extUserId,
     );
-    const totpMethods = methods
-      .filter((method) => method.type === TOTP_AUTHENTICATION_METHOD_TYPE)
-      .sort(
-        (a, b) =>
-          new Date(a.created_at ?? 0).getTime() -
-          new Date(b.created_at ?? 0).getTime(),
+    const totpMethods = methods.filter(
+      (method) => method.type === TOTP_AUTHENTICATION_METHOD_TYPE,
+    );
+
+    if (totpMethods.length <= 1) {
+      return;
+    }
+
+    if (totpMethods.some((method) => !method.created_at)) {
+      throw new Error(
+        'Cannot clean up TOTP authentication methods without created_at',
       );
+    }
+
+    totpMethods.sort(
+      (a, b) =>
+        Date.parse(a.created_at as string) -
+        Date.parse(b.created_at as string),
+    );
 
     for (const method of totpMethods.slice(0, -1)) {
       await this.auth0Repository.deleteUserAuthenticationMethod(

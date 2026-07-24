@@ -791,6 +791,32 @@ describe('OidcAuthService', () => {
           auth0RepositoryMock.deleteUserAuthenticationMethod,
         ).not.toHaveBeenCalled();
       });
+
+      it('should abort cleanup when a TOTP created_at is missing', async () => {
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          {
+            id: 'totp|dated',
+            type: 'totp',
+            created_at: '2026-07-01T10:00:00.000Z',
+          },
+          {
+            id: 'totp|missing-created-at',
+            type: 'totp',
+          },
+          recoveryMethod,
+        ]);
+
+        await expect(
+          target.cleanupSupersededAuthenticators(
+            Number(authPayload.getUserId()),
+          ),
+        ).rejects.toThrow(
+          'Cannot clean up TOTP authentication methods without created_at',
+        );
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).not.toHaveBeenCalled();
+      });
     });
   });
 });
