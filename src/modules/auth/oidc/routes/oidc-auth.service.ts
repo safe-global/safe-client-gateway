@@ -129,6 +129,10 @@ export class OidcAuthService {
    * Lists the MFA authentication methods of the authenticated user, for the
    * self-service authenticator management UI (Auth0's recommended flow for
    * factor replacement).
+   *
+   * Security invariant: the Auth0 user ID must always be resolved from the
+   * authenticated gateway payload. Never accept a local or Auth0 user ID from
+   * request input here, as the Management API token has tenant-wide access.
    */
   public async listAuthenticators(
     authPayload: AuthPayload,
@@ -149,6 +153,10 @@ export class OidcAuthService {
    * Removes authenticator (TOTP) enrollments superseded by a hosted
    * enrollment round-trip: every TOTP method except the most recently
    * created one. The recovery code is untouched.
+   *
+   * Security invariant: {@link userId} must come from the verified OIDC
+   * callback result, never from request input. Authentication method IDs must
+   * likewise come from Auth0's response for that resolved user.
    */
   public async cleanupSupersededAuthenticators(userId: number): Promise<void> {
     const user = await this.usersRepository.findOneOrFail({ id: userId });
