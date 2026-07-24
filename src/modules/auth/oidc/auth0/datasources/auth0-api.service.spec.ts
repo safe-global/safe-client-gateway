@@ -3,6 +3,8 @@
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -10,11 +12,14 @@ import { Auth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.servic
 import { rawify } from '@/validation/entities/raw.entity';
 
 const networkService = {
+  delete: vi.fn(),
+  get: vi.fn(),
   postForm: vi.fn(),
 } as MockedObject<INetworkService>;
 
 describe('Auth0Api', () => {
   let target: Auth0Api;
+  let fakeCacheService: FakeCacheService;
   let baseUri: string;
   let clientId: string;
   let clientSecret: string;
@@ -41,8 +46,10 @@ describe('Auth0Api', () => {
     fakeConfigurationService.set('auth.auth0.audience', audience);
     fakeConfigurationService.set('auth.auth0.scope', scope);
 
+    fakeCacheService = new FakeCacheService();
     target = new Auth0Api(
       networkService,
+      fakeCacheService,
       fakeConfigurationService,
       new HttpErrorFactory(),
     );
@@ -118,6 +125,120 @@ describe('Auth0Api', () => {
       await expect(
         target.exchangeAuthorizationCode(faker.string.alphanumeric(32)),
       ).rejects.toThrow('Unauthorized');
+    });
+  });
+
+  describe('Management API token caching', () => {
+    beforeEach(() => {
+      networkService.get.mockResolvedValue({
+        status: 200,
+        data: rawify([]),
+      });
+      networkService.delete.mockResolvedValue({
+        status: 204,
+        data: rawify(undefined),
+      });
+    });
+
+    it('should use a cached token for Management API requests', async () => {
+      const accessToken = faker.string.alphanumeric();
+      const extUserId = faker.string.uuid();
+      await fakeCacheService.hSet(
+        new CacheDir('auth0_management_api_token', ''),
+        accessToken,
+        3_600,
+      );
+
+      await target.listUserAuthenticationMethods(extUserId);
+      await target.deleteUserAuthenticationMethod(
+        extUserId,
+        faker.string.uuid(),
+      );
+
+      expect(networkService.postForm).not.toHaveBeenCalled();
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          networkRequest: {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        }),
+      );
+      expect(networkService.delete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          networkRequest: {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        }),
+      );
+    });
+
+    it('should cache a new token until one minute before expiry', async () => {
+      const accessToken = faker.string.alphanumeric();
+      const extUserId = faker.string.uuid();
+      const cacheSetSpy = vi.spyOn(fakeCacheService, 'hSet');
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: accessToken,
+          expires_in: 3_600,
+        }),
+      });
+
+      await target.listUserAuthenticationMethods(extUserId);
+
+      expect(cacheSetSpy).toHaveBeenCalledWith(
+        new CacheDir('auth0_management_api_token', ''),
+        accessToken,
+        3_540,
+        0,
+      );
+      await expect(
+        fakeCacheService.hGet(
+          new CacheDir('auth0_management_api_token', ''),
+        ),
+      ).resolves.toBe(accessToken);
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          networkRequest: {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        }),
+      );
+    });
+
+    it('should share a token request between concurrent callers', async () => {
+      const accessToken = faker.string.alphanumeric();
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: accessToken,
+          expires_in: 3_600,
+        }),
+      });
+
+      await Promise.all([
+        target.listUserAuthenticationMethods(faker.string.uuid()),
+        target.listUserAuthenticationMethods(faker.string.uuid()),
+      ]);
+
+      expect(networkService.postForm).toHaveBeenCalledTimes(1);
+      expect(networkService.get).toHaveBeenCalledTimes(2);
+      expect(networkService.get).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          networkRequest: {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        }),
+      );
+      expect(networkService.get).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          networkRequest: {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          },
+        }),
+      );
     });
   });
 });

@@ -3,6 +3,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -18,22 +23,27 @@ import type { Raw } from '@/validation/entities/raw.entity';
 
 const ManagementApiTokenResponseSchema = z.object({
   access_token: z.string(),
+  expires_in: z.number().int().positive(),
 });
 
 @Injectable()
 export class Auth0Api implements IAuth0Api {
   private static readonly AUTHORIZATION_CODE_GRANT_TYPE = 'authorization_code';
   private static readonly CLIENT_CREDENTIALS_GRANT_TYPE = 'client_credentials';
+  private static readonly MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60;
   private readonly baseUri: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly redirectUri: string;
   private readonly audience: string;
   private readonly scope: string;
+  private inFlightManagementApiTokenRequest: Promise<string> | undefined;
 
   constructor(
     @Inject(NetworkService)
     private readonly networkService: INetworkService,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
@@ -125,7 +135,6 @@ export class Auth0Api implements IAuth0Api {
     }
   }
 
-
   public async deleteUserAuthenticationMethod(
     extUserId: string,
     methodId: string,
@@ -150,17 +159,33 @@ export class Auth0Api implements IAuth0Api {
     ).toString();
   }
 
+  private async getManagementApiToken(): Promise<string> {
+    const cacheDir = CacheRouter.getAuth0ManagementApiTokenCacheDir();
+    const cachedToken = await this.cacheService.hGet(cacheDir);
+
+    if (cachedToken) {
+      return cachedToken;
+    }
+
+    if (!this.inFlightManagementApiTokenRequest) {
+      this.inFlightManagementApiTokenRequest =
+        this.fetchManagementApiToken().finally(() => {
+          this.inFlightManagementApiTokenRequest = undefined;
+        });
+    }
+
+    return this.inFlightManagementApiTokenRequest;
+  }
+
   /**
-   * Fetches a Management API access token via the Client Credentials grant.
+   * Fetches and caches a Management API access token via the Client Credentials
+   * grant.
    *
    * Requires the Auth0 application to be authorized for the Management API
    * (audience `https://{domain}/api/v2/`) with at least the
    * `read:authentication_methods` and `delete:authentication_methods` scopes.
-   *
-   * Note: the token is fetched per request (no caching) — acceptable for a
-   * spike, should be cached before production use.
    */
-  private async getManagementApiToken(): Promise<string> {
+  private async fetchManagementApiToken(): Promise<string> {
     const response = await this.networkService.postForm({
       url: new URL('/oauth/token', this.baseUri).toString(),
       data: {
@@ -171,6 +196,16 @@ export class Auth0Api implements IAuth0Api {
       },
     });
 
-    return ManagementApiTokenResponseSchema.parse(response.data).access_token;
+    const { access_token, expires_in } =
+      ManagementApiTokenResponseSchema.parse(response.data);
+
+    await this.cacheService.hSet(
+      CacheRouter.getAuth0ManagementApiTokenCacheDir(),
+      access_token,
+      expires_in - Auth0Api.MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS,
+      0,
+    );
+
+    return access_token;
   }
 }
