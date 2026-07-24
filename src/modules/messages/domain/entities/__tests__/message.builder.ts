@@ -7,7 +7,6 @@ import {
   type PrivateKeyAccount,
 } from 'viem';
 import { Builder } from '@/__tests__/builder';
-import { fakeJson } from '@/__tests__/faker';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
 import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
@@ -78,7 +77,6 @@ export function messageBuilder(): BuilderWithConfirmations<Message> {
     .with('message', faker.word.words({ count: { min: 1, max: 5 } }))
     .with('messageHash', faker.string.hexadecimal({ length: 32 }) as Hash)
     .with('proposedBy', getAddress(faker.finance.ethereumAddress()))
-    .with('safeAppId', faker.number.int())
     .with(
       'confirmations',
       faker.helpers.multiple(() => messageConfirmationBuilder().build(), {
@@ -89,7 +87,13 @@ export function messageBuilder(): BuilderWithConfirmations<Message> {
       'preparedSignature',
       faker.string.hexadecimal({ length: 32 }) as Address,
     )
-    .with('origin', fakeJson());
+    .with(
+      'origin',
+      JSON.stringify({
+        name: faker.word.words(),
+        url: faker.internet.url({ appendSlash: false }),
+      }),
+    );
 }
 
 export function toJson(message: Message): unknown {
