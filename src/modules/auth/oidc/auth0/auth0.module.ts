@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
+import { CacheModule } from '@/datasources/cache/cache.module';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkModule } from '@/datasources/network/network.module';
 import { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
@@ -9,7 +10,7 @@ import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.reposit
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 
 @Module({
-  imports: [NetworkModule],
+  imports: [CacheModule, NetworkModule],
   providers: [
     HttpErrorFactory,
     {

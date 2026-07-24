@@ -9,7 +9,10 @@ import {
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+import {
+  AuthMethod,
+  AuthPayload,
+} from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -23,11 +26,15 @@ const authRepositoryMock = {
 
 const usersRepositoryMock = {
   findOrCreateByExtUserIdAndEmail: vi.fn(),
+  findOneOrFail: vi.fn(),
+  findEmailById: vi.fn(),
 } as MockedObject<IUsersRepository>;
 
 const auth0RepositoryMock = {
   getAuthorizationUrl: vi.fn(),
   authenticateWithAuthorizationCode: vi.fn(),
+  listUserAuthenticationMethods: vi.fn(),
+  deleteUserAuthenticationMethod: vi.fn(),
 } as MockedObject<IAuth0Repository>;
 
 describe('OidcAuthService', () => {
@@ -102,10 +109,10 @@ describe('OidcAuthService', () => {
 
       expect(result).toEqual(expect.objectContaining({ accessToken }));
       expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           auth_method: AuthMethod.Oidc,
           sub: userId.toString(),
-        },
+        }),
         {
           nbf,
           exp,
@@ -149,10 +156,10 @@ describe('OidcAuthService', () => {
 
       expect(result).toEqual(expect.objectContaining({ accessToken }));
       expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
-        {
+        expect.objectContaining({
           auth_method: AuthMethod.Oidc,
           sub: userId.toString(),
-        },
+        }),
         {
           nbf: undefined,
           exp: maxExpiration,
@@ -405,8 +412,10 @@ describe('OidcAuthService', () => {
       );
       expect(decoded.csrf).toHaveLength(64); // 32 bytes hex-encoded
       expect(decoded.redirectUrl).toBeUndefined();
+      expect(decoded.enroll).toBeUndefined();
       expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
         result.state,
+        undefined,
         undefined,
       );
     });
@@ -424,6 +433,7 @@ describe('OidcAuthService', () => {
       expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
         result.state,
         'google-oauth2',
+        undefined,
       );
     });
 
@@ -661,6 +671,152 @@ describe('OidcAuthService', () => {
       expect(() => target.getPostLoginRedirectUri('not-valid-base64!')).toThrow(
         UnauthorizedException,
       );
+    });
+  });
+  describe('MFA switch', () => {
+    const authPayload = new AuthPayload({
+      auth_method: AuthMethod.Oidc,
+      sub: faker.number.int().toString(),
+    });
+    const extUserId = `auth0|${faker.string.uuid()}`;
+    const totpMethod = { id: `totp|${faker.string.uuid()}`, type: 'totp' };
+    const recoveryMethod = {
+      id: `recovery-code|${faker.string.uuid()}`,
+      type: 'recovery-code',
+    };
+
+    beforeEach(() => {
+      usersRepositoryMock.findOneOrFail.mockResolvedValue({
+        extUserId,
+      } as Awaited<ReturnType<IUsersRepository['findOneOrFail']>>);
+    });
+
+    describe('listAuthenticators', () => {
+      it('should map the Auth0 authentication methods', async () => {
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          totpMethod,
+          recoveryMethod,
+        ]);
+
+        await expect(target.listAuthenticators(authPayload)).resolves.toEqual([
+          expect.objectContaining({ id: totpMethod.id, type: 'totp' }),
+          expect.objectContaining({
+            id: recoveryMethod.id,
+            type: 'recovery-code',
+          }),
+        ]);
+      });
+
+      it('should reject users without a linked OIDC identity', async () => {
+        usersRepositoryMock.findOneOrFail.mockResolvedValue({
+          extUserId: null,
+        } as Awaited<ReturnType<IUsersRepository['findOneOrFail']>>);
+
+        await expect(target.listAuthenticators(authPayload)).rejects.toThrow(
+          new UnauthorizedException('User is not linked to an OIDC identity'),
+        );
+      });
+    });
+
+    describe('deleteAuthenticator', () => {
+      it('should delete a TOTP enrollment', async () => {
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          totpMethod,
+          recoveryMethod,
+        ]);
+
+        await target.deleteAuthenticator(authPayload, totpMethod.id);
+
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).toHaveBeenCalledWith(extUserId, totpMethod.id);
+      });
+
+      it('should refuse to delete the recovery code', async () => {
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          totpMethod,
+          recoveryMethod,
+        ]);
+
+        await expect(
+          target.deleteAuthenticator(authPayload, recoveryMethod.id),
+        ).rejects.toThrow(new BadRequestException('Unknown authenticator'));
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('cleanupSupersededAuthenticators', () => {
+      it('should delete all TOTP enrollments except the newest', async () => {
+        const oldMethod = {
+          id: 'totp|old',
+          type: 'totp',
+          created_at: '2026-07-01T10:00:00.000Z',
+        };
+        const newMethod = {
+          id: 'totp|new',
+          type: 'totp',
+          created_at: '2026-07-17T10:00:00.000Z',
+        };
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          newMethod,
+          oldMethod,
+          recoveryMethod,
+        ]);
+
+        await target.cleanupSupersededAuthenticators(
+          Number(authPayload.getUserId()),
+        );
+
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).toHaveBeenCalledTimes(1);
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).toHaveBeenCalledWith(extUserId, oldMethod.id);
+      });
+
+      it('should not delete anything when a single TOTP enrollment exists', async () => {
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          totpMethod,
+          recoveryMethod,
+        ]);
+
+        await target.cleanupSupersededAuthenticators(
+          Number(authPayload.getUserId()),
+        );
+
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).not.toHaveBeenCalled();
+      });
+
+      it('should abort cleanup when a TOTP created_at is missing', async () => {
+        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
+          {
+            id: 'totp|dated',
+            type: 'totp',
+            created_at: '2026-07-01T10:00:00.000Z',
+          },
+          {
+            id: 'totp|missing-created-at',
+            type: 'totp',
+          },
+          recoveryMethod,
+        ]);
+
+        await expect(
+          target.cleanupSupersededAuthenticators(
+            Number(authPayload.getUserId()),
+          ),
+        ).rejects.toThrow(
+          'Cannot clean up TOTP authentication methods without created_at',
+        );
+        expect(
+          auth0RepositoryMock.deleteUserAuthenticationMethod,
+        ).not.toHaveBeenCalled();
+      });
     });
   });
 });
