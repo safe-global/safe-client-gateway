@@ -183,8 +183,7 @@ export class OidcAuthService {
 
     totpMethods.sort(
       (a, b) =>
-        Date.parse(a.created_at as string) -
-        Date.parse(b.created_at as string),
+        Date.parse(a.created_at as string) - Date.parse(b.created_at as string),
     );
 
     for (const method of totpMethods.slice(0, -1)) {

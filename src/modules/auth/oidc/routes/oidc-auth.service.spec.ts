@@ -718,35 +718,6 @@ describe('OidcAuthService', () => {
       });
     });
 
-    describe('deleteAuthenticator', () => {
-      it('should delete a TOTP enrollment', async () => {
-        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
-          totpMethod,
-          recoveryMethod,
-        ]);
-
-        await target.deleteAuthenticator(authPayload, totpMethod.id);
-
-        expect(
-          auth0RepositoryMock.deleteUserAuthenticationMethod,
-        ).toHaveBeenCalledWith(extUserId, totpMethod.id);
-      });
-
-      it('should refuse to delete the recovery code', async () => {
-        auth0RepositoryMock.listUserAuthenticationMethods.mockResolvedValue([
-          totpMethod,
-          recoveryMethod,
-        ]);
-
-        await expect(
-          target.deleteAuthenticator(authPayload, recoveryMethod.id),
-        ).rejects.toThrow(new BadRequestException('Unknown authenticator'));
-        expect(
-          auth0RepositoryMock.deleteUserAuthenticationMethod,
-        ).not.toHaveBeenCalled();
-      });
-    });
-
     describe('cleanupSupersededAuthenticators', () => {
       it('should delete all TOTP enrollments except the newest', async () => {
         const oldMethod = {

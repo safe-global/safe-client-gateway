@@ -193,9 +193,7 @@ describe('Auth0Api', () => {
         0,
       );
       await expect(
-        fakeCacheService.hGet(
-          new CacheDir('auth0_management_api_token', ''),
-        ),
+        fakeCacheService.hGet(new CacheDir('auth0_management_api_token', '')),
       ).resolves.toBe(accessToken);
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({

@@ -196,8 +196,9 @@ export class Auth0Api implements IAuth0Api {
       },
     });
 
-    const { access_token, expires_in } =
-      ManagementApiTokenResponseSchema.parse(response.data);
+    const { access_token, expires_in } = ManagementApiTokenResponseSchema.parse(
+      response.data,
+    );
 
     await this.cacheService.hSet(
       CacheRouter.getAuth0ManagementApiTokenCacheDir(),
