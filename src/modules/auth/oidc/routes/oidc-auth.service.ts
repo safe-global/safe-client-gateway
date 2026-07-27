@@ -10,6 +10,7 @@ import {
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { TOTP_AUTHENTICATION_METHOD_TYPE } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
 import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import type { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
 import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import {
   type OidcState,
@@ -32,12 +33,6 @@ type OidcAuthTokenResponse = {
   userId: number;
 };
 
-export type Authenticator = {
-  id: string;
-  type: string;
-  name?: string;
-  createdAt?: string;
-};
 
 @Injectable()
 export class OidcAuthService {

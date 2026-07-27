@@ -27,11 +27,9 @@ import {
   type OidcConnection,
   OidcConnectionSchema,
 } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
+import { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
 import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
-import {
-  type Authenticator,
-  OidcAuthService,
-} from '@/modules/auth/oidc/routes/oidc-auth.service';
+import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
@@ -259,7 +257,11 @@ export class OidcAuthController {
       'Lists the MFA authentication methods of the authenticated user for the self-service authenticator ' +
       'management UI.',
   })
-  @ApiOkResponse({ description: 'MFA authentication methods' })
+  @ApiOkResponse({
+    description: 'MFA authentication methods',
+    type: Authenticator,
+    isArray: true,
+  })
   @ApiForbiddenResponse({ description: 'Not authenticated' })
   @UseGuards(AuthGuard)
   @Get('oidc/mfa/authenticators')
