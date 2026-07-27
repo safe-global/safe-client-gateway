@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -51,5 +52,30 @@ describe('mapSafeQueueToMultisigTransaction', () => {
     const result = mapSafeQueueToMultisigTransaction(tx, safe);
 
     expect(result.origin).toBeNull();
+  });
+
+  it('does not leak queue-only fields onto the mapped MultisigTransaction', () => {
+    const tx = safeQueueMultisigTransactionBuilder()
+      .with('confirmations', [
+        {
+          owner: faker.finance.ethereumAddress() as `0x${string}`,
+          signature: faker.string.hexadecimal({ length: 130 }) as `0x${string}`,
+          signatureType: SignatureType.Eoa,
+          created: faker.date.recent(),
+          modified: faker.date.recent(),
+        },
+      ])
+      .build();
+    const safe = safeBuilder().build();
+
+    const result = mapSafeQueueToMultisigTransaction(tx, safe);
+
+    expect(result).not.toHaveProperty('chainId');
+    expect(result).not.toHaveProperty('notes');
+    expect(result).not.toHaveProperty('originName');
+    expect(result).not.toHaveProperty('originUrl');
+    expect(result).not.toHaveProperty('txHash');
+    expect(result.confirmations?.[0]).not.toHaveProperty('created');
+    expect(result.confirmations?.[0]).not.toHaveProperty('modified');
   });
 });
