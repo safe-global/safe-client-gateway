@@ -6,7 +6,7 @@ import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import {
   OriginNameSchema,
   OriginUrlSchema,
-} from '@/modules/queue/entities/schemas/origin.schema';
+} from '@/modules/safe-queue/entities/schemas/origin.schema';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
@@ -19,13 +19,13 @@ import {
 } from '@/validation/entities/schemas/nullable.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
-export type QueueConfirmation = z.infer<typeof QueueConfirmationSchema>;
+export type SafeQueueConfirmation = z.infer<typeof SafeQueueConfirmationSchema>;
 
-export type QueueMultisigTransactionEntity = z.infer<
-  typeof QueueMultisigTransactionSchema
+export type SafeQueueMultisigTransactionEntity = z.infer<
+  typeof SafeQueueMultisigTransactionSchema
 >;
 
-export const QueueConfirmationSchema = z.object({
+export const SafeQueueConfirmationSchema = z.object({
   owner: AddressSchema,
   signature: HexBytesSchema,
   signatureType: z.enum(SignatureType),
@@ -33,7 +33,7 @@ export const QueueConfirmationSchema = z.object({
   modified: z.coerce.date(),
 });
 
-export const QueueMultisigTransactionSchema = z.object({
+export const SafeQueueMultisigTransactionSchema = z.object({
   safeTxHash: HexSchema,
   chainId: NumericStringSchema,
   safe: AddressSchema,
@@ -56,13 +56,13 @@ export const QueueMultisigTransactionSchema = z.object({
   txHash: NullableHexSchema,
   created: z.coerce.date(),
   modified: z.coerce.date(),
-  confirmations: z.array(QueueConfirmationSchema),
+  confirmations: z.array(SafeQueueConfirmationSchema),
 });
 
-export const QueueMultisigTransactionPageSchema = buildPageSchema(
-  QueueMultisigTransactionSchema,
+export const SafeQueueMultisigTransactionPageSchema = buildPageSchema(
+  SafeQueueMultisigTransactionSchema,
 );
 
-export const QueueMultisigTransactionListSchema = z.array(
-  QueueMultisigTransactionSchema,
+export const SafeQueueMultisigTransactionListSchema = z.array(
+  SafeQueueMultisigTransactionSchema,
 );

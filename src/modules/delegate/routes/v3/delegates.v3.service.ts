@@ -88,12 +88,12 @@ export class DelegatesV3Service {
     chainId: string;
     delegateAddress: Address;
     deleteDelegateV3Dto: DeleteDelegateV3Dto;
-  }): Promise<unknown> {
-    const { deleteDelegateV3Dto } = args;
-    let { delegator } = deleteDelegateV3Dto;
+  }): Promise<void> {
+    const { safe, signature } = args.deleteDelegateV3Dto;
+    let { delegator } = args.deleteDelegateV3Dto;
 
     if (!delegator) {
-      if (!deleteDelegateV3Dto.safe) {
+      if (!safe) {
         // Note: this point shouldn't be reached, schema validation should cover it
         throw Error(
           'Either safe or delegator should be non-null when deleting a delegate',
@@ -102,16 +102,16 @@ export class DelegatesV3Service {
       delegator = await this._getDelegatorForDelegateAndSafe(
         args.chainId,
         args.delegateAddress,
-        deleteDelegateV3Dto.safe,
+        safe,
       );
     }
 
-    return await this.repository.deleteDelegate({
+    await this.repository.deleteDelegate({
       chainId: args.chainId,
       delegate: args.delegateAddress,
       delegator,
-      safeAddress: deleteDelegateV3Dto.safe,
-      signature: deleteDelegateV3Dto.signature,
+      safeAddress: safe,
+      signature,
     });
   }
 

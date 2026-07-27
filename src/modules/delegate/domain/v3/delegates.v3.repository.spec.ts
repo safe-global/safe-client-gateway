@@ -12,8 +12,8 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
-import type { QueueServiceDelegate } from '@/modules/queue/entities/delegate.entity';
-import type { IQueueService } from '@/modules/queue/queue.interface';
+import type { SafeQueueDelegate } from '@/modules/safe-queue/entities/delegate.entity';
+import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
@@ -28,13 +28,13 @@ const mockTransactionApi = {
   clearDelegates: vi.fn(),
 } as MockedObject<ITransactionApi>;
 
-const mockQueueService = {
+const mockSafeQueueService = {
   getDelegates: vi.fn(),
   postDelegate: vi.fn(),
   updateDelegate: vi.fn(),
   deleteDelegate: vi.fn(),
   clearDelegates: vi.fn(),
-} as MockedObject<IQueueService>;
+} as MockedObject<ISafeQueueService>;
 
 const mockConfigurationService = {
   getOrThrow: vi.fn(),
@@ -51,17 +51,17 @@ describe('DelegatesV3Repository', () => {
   let repository: DelegatesV3Repository;
 
   function createRepository(opts: {
-    queueServiceEnabled: boolean;
+    safeQueueEnabled: boolean;
   }): DelegatesV3Repository {
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'features.queueService') {
-        return opts.queueServiceEnabled;
+      if (key === 'features.safeQueueService') {
+        return opts.safeQueueEnabled;
       }
       throw new Error(`Unexpected key: ${key}`);
     });
     return new DelegatesV3Repository(
       mockTransactionApiManager,
-      mockQueueService,
+      mockSafeQueueService,
       mockConfigurationService,
       mockLoggingService,
     );
@@ -70,11 +70,13 @@ describe('DelegatesV3Repository', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
+    mockTransactionApi.clearDelegates.mockResolvedValue(undefined);
+    mockSafeQueueService.clearDelegates.mockResolvedValue(undefined);
   });
 
-  describe('queueService disabled (flag OFF)', () => {
+  describe('safeQueueService disabled (flag OFF)', () => {
     beforeEach(() => {
-      repository = createRepository({ queueServiceEnabled: false });
+      repository = createRepository({ safeQueueEnabled: false });
     });
 
     describe('getDelegates', () => {
@@ -95,7 +97,7 @@ describe('DelegatesV3Repository', () => {
 
         expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
         expect(mockTransactionApi.getDelegatesV2).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.getDelegates).not.toHaveBeenCalled();
+        expect(mockSafeQueueService.getDelegates).not.toHaveBeenCalled();
         expect(result).toStrictEqual(DelegatePageSchema.parse(page));
       });
     });
@@ -121,7 +123,7 @@ describe('DelegatesV3Repository', () => {
           signature: args.signature,
           label: args.label,
         });
-        expect(mockQueueService.postDelegate).not.toHaveBeenCalled();
+        expect(mockSafeQueueService.postDelegate).not.toHaveBeenCalled();
       });
     });
 
@@ -146,7 +148,7 @@ describe('DelegatesV3Repository', () => {
           signature: args.signature,
           label: args.label,
         });
-        expect(mockQueueService.updateDelegate).not.toHaveBeenCalled();
+        expect(mockSafeQueueService.updateDelegate).not.toHaveBeenCalled();
       });
     });
 
@@ -169,14 +171,14 @@ describe('DelegatesV3Repository', () => {
           safeAddress: args.safeAddress,
           signature: args.signature,
         });
-        expect(mockQueueService.deleteDelegate).not.toHaveBeenCalled();
+        expect(mockSafeQueueService.deleteDelegate).not.toHaveBeenCalled();
       });
     });
   });
 
-  describe('queueService enabled (flag ON)', () => {
+  describe('safeQueueService enabled (flag ON)', () => {
     beforeEach(() => {
-      repository = createRepository({ queueServiceEnabled: true });
+      repository = createRepository({ safeQueueEnabled: true });
     });
 
     describe('getDelegates', () => {
@@ -194,19 +196,19 @@ describe('DelegatesV3Repository', () => {
           created: faker.date.recent().toISOString(),
           modified: faker.date.recent().toISOString(),
         };
-        const page = pageBuilder<QueueServiceDelegate>()
-          .with('results', [queueDelegate as unknown as QueueServiceDelegate])
+        const page = pageBuilder<SafeQueueDelegate>()
+          .with('results', [queueDelegate as unknown as SafeQueueDelegate])
           .with('count', 1)
           .build();
-        mockQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
+        mockSafeQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
 
         const result = await repository.getDelegates({
           chainId,
           safeAddress: safe,
         });
 
-        expect(mockQueueService.getDelegates).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.getDelegates).toHaveBeenCalledWith({
+        expect(mockSafeQueueService.getDelegates).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.getDelegates).toHaveBeenCalledWith({
           chainId,
           safeAddress: safe,
         });
@@ -235,11 +237,11 @@ describe('DelegatesV3Repository', () => {
           created: faker.date.recent().toISOString(),
           modified: faker.date.recent().toISOString(),
         };
-        const page = pageBuilder<QueueServiceDelegate>()
-          .with('results', [queueDelegate as unknown as QueueServiceDelegate])
+        const page = pageBuilder<SafeQueueDelegate>()
+          .with('results', [queueDelegate as unknown as SafeQueueDelegate])
           .with('count', 1)
           .build();
-        mockQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
+        mockSafeQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
 
         const result = await repository.getDelegates({ chainId });
 
@@ -261,22 +263,27 @@ describe('DelegatesV3Repository', () => {
 
         await repository.postDelegate(args);
 
-        expect(mockQueueService.postDelegate).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.postDelegate).toHaveBeenCalledWith(args);
+        expect(mockSafeQueueService.postDelegate).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.postDelegate).toHaveBeenCalledWith(args);
         expect(mockTransactionApi.postDelegateV2).not.toHaveBeenCalled();
 
-        // fire-and-forget cache invalidation
+        // fire-and-forget cache invalidation — both layers are cleared since
+        // they are independent caches (see DelegatesV3Repository.clearDelegates)
         await new Promise(setImmediate);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledWith({
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
         });
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+          args.safeAddress,
+        );
       });
     });
 
     describe('updateDelegate', () => {
-      it('uses the queue service, not the tx-service, and invalidates cache', async () => {
+      it('uses the queue service, not the tx-service, and invalidates both cache layers', async () => {
         const args = {
           chainId: faker.string.numeric(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
@@ -288,21 +295,25 @@ describe('DelegatesV3Repository', () => {
 
         await repository.updateDelegate(args);
 
-        expect(mockQueueService.updateDelegate).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.updateDelegate).toHaveBeenCalledWith(args);
+        expect(mockSafeQueueService.updateDelegate).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.updateDelegate).toHaveBeenCalledWith(args);
         expect(mockTransactionApi.updateDelegateV2).not.toHaveBeenCalled();
 
         await new Promise(setImmediate);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledWith({
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
         });
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+          args.safeAddress,
+        );
       });
     });
 
     describe('deleteDelegate', () => {
-      it('uses the queue service, not the tx-service, and invalidates cache', async () => {
+      it('uses the queue service, not the tx-service, and invalidates both cache layers', async () => {
         const args = {
           chainId: faker.string.numeric(),
           safeAddress: getAddress(faker.finance.ethereumAddress()),
@@ -313,16 +324,20 @@ describe('DelegatesV3Repository', () => {
 
         await repository.deleteDelegate(args);
 
-        expect(mockQueueService.deleteDelegate).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.deleteDelegate).toHaveBeenCalledWith(args);
+        expect(mockSafeQueueService.deleteDelegate).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.deleteDelegate).toHaveBeenCalledWith(args);
         expect(mockTransactionApi.deleteDelegateV2).not.toHaveBeenCalled();
 
         await new Promise(setImmediate);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledTimes(1);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledWith({
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
         });
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledTimes(1);
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+          args.safeAddress,
+        );
       });
 
       it('handles a null safeAddress when invalidating cache', async () => {
@@ -337,11 +352,52 @@ describe('DelegatesV3Repository', () => {
         await repository.deleteDelegate(args);
 
         await new Promise(setImmediate);
-        expect(mockQueueService.clearDelegates).toHaveBeenCalledWith({
+        expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
           chainId: args.chainId,
           safeAddress: undefined,
         });
+        expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+          undefined,
+        );
       });
+    });
+  });
+
+  describe('clearDelegates', () => {
+    it('clears both the tx-service and queue caches, independent of the flag', async () => {
+      repository = createRepository({ safeQueueEnabled: false });
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await repository.clearDelegates({ chainId, safeAddress });
+
+      expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+        safeAddress,
+      );
+      expect(mockSafeQueueService.clearDelegates).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+      });
+    });
+
+    it('swallows a failure in either layer, clears the other, and logs a warning', async () => {
+      repository = createRepository({ safeQueueEnabled: false });
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      mockSafeQueueService.clearDelegates.mockRejectedValueOnce(
+        new Error('queue unavailable'),
+      );
+
+      await expect(
+        repository.clearDelegates({ chainId, safeAddress }),
+      ).resolves.toBeUndefined();
+
+      expect(mockTransactionApi.clearDelegates).toHaveBeenCalledWith(
+        safeAddress,
+      );
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to clear queue delegates cache'),
+      );
     });
   });
 });

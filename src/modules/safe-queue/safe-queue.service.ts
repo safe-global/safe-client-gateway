@@ -23,20 +23,20 @@ import {
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { QueueMessage } from '@/modules/queue/entities/message.entity';
-import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import {
-  QueueMultisigTransactionListSchema,
-  QueueMultisigTransactionSchema,
-} from '@/modules/queue/entities/multisig-transaction.entity';
-import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
-import type { IQueueService } from '@/modules/queue/queue.interface';
+  SafeQueueMultisigTransactionListSchema,
+  SafeQueueMultisigTransactionSchema,
+} from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
+import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
-export class QueueService implements IQueueService {
+export class SafeQueueService implements ISafeQueueService {
   // Chunk size for multisig batch fetches. Each `safe_tx_hash=0x<64 hex>&`
   // pair is ~81 bytes; nginx's default `large_client_header_buffers 4 8k`
   // and many WAFs reject request lines beyond 8KB, so we cap each call at
@@ -60,7 +60,7 @@ export class QueueService implements IQueueService {
     private readonly loggingService: ILoggingService,
   ) {
     this.baseUri = this.configurationService.getOrThrow<string>(
-      'queueService.baseUri',
+      'safeQueueService.baseUri',
     );
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
@@ -76,7 +76,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
-  }): Promise<Raw<QueueMultisigTransactionEntity>> {
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
     try {
       const dto = args.proposeTransactionDto;
       const { originName, originUrl, note } = parseOrigin(dto.origin);
@@ -104,11 +104,11 @@ export class QueueService implements IQueueService {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
-      return rawify(QueueMultisigTransactionSchema.parse(data));
+      return rawify(SafeQueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -117,9 +117,9 @@ export class QueueService implements IQueueService {
   async getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<Raw<QueueMultisigTransactionEntity>> {
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
     try {
-      const cacheDir = CacheRouter.getQueueMultisigTransactionCacheDir({
+      const cacheDir = CacheRouter.getSafeQueueMultisigTransactionCacheDir({
         chainId: args.chainId,
         safeTransactionHash: args.safeTxHash,
       });
@@ -131,11 +131,11 @@ export class QueueService implements IQueueService {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
-      return rawify(QueueMultisigTransactionSchema.parse(data));
+      return rawify(SafeQueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -144,12 +144,12 @@ export class QueueService implements IQueueService {
   async getMultisigTransactionsBatch(args: {
     chainId: string;
     safeTxHashes: ReadonlyArray<string>;
-  }): Promise<Raw<Array<QueueMultisigTransactionEntity>>> {
+  }): Promise<Raw<Array<SafeQueueMultisigTransactionEntity>>> {
     try {
       if (args.safeTxHashes.length === 0) {
         return rawify([]);
       }
-      const chunkSize = QueueService.MAX_BATCH_HASHES_PER_CALL;
+      const chunkSize = SafeQueueService.MAX_BATCH_HASHES_PER_CALL;
       const chunks: Array<ReadonlyArray<string>> = [];
       for (let i = 0; i < args.safeTxHashes.length; i += chunkSize) {
         chunks.push(args.safeTxHashes.slice(i, i + chunkSize));
@@ -169,7 +169,7 @@ export class QueueService implements IQueueService {
             url,
             networkRequest: {
               circuitBreaker: {
-                key: CircuitBreakerKeys.getQueueServiceKey(),
+                key: CircuitBreakerKeys.getSafeQueueServiceKey(),
               },
             },
           });
@@ -182,7 +182,7 @@ export class QueueService implements IQueueService {
           // body must be dropped like a rejected one, not thrown synchronously
           // out of flatMap into the outer catch — that would discard the whole
           // batch and defeat the partial-enrichment allSettled buys us above.
-          const parsed = QueueMultisigTransactionListSchema.safeParse(
+          const parsed = SafeQueueMultisigTransactionListSchema.safeParse(
             response.value.data,
           );
           if (parsed.success) {
@@ -193,7 +193,7 @@ export class QueueService implements IQueueService {
           error = response.reason;
         }
         this.loggingService.warn({
-          type: LogType.QueueServiceBatchChunkError,
+          type: LogType.SafeQueueServiceBatchChunkError,
           chainId: args.chainId,
           safeTxHashes: chunks[index],
           error: asError(error),
@@ -212,12 +212,12 @@ export class QueueService implements IQueueService {
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<QueueMultisigTransactionEntity>>> {
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
     try {
-      const cacheDir = CacheRouter.getQueuedTransactionsCacheDir(args);
+      const cacheDir = CacheRouter.getSafeQueuedTransactionsCacheDir(args);
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       const nonceOrder = args.nonceOrder ?? 'asc';
-      return await this.dataSource.get<Page<QueueMultisigTransactionEntity>>({
+      return await this.dataSource.get<Page<SafeQueueMultisigTransactionEntity>>({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -230,7 +230,7 @@ export class QueueService implements IQueueService {
             offset: args.offset,
           },
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -243,7 +243,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeTxHash: string;
     signature: string;
-  }): Promise<Raw<QueueMultisigTransactionEntity>> {
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}/signatures`;
       const { data } = await this.networkService.post({
@@ -251,11 +251,11 @@ export class QueueService implements IQueueService {
         data: { signatures: [args.signature] },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
-      return rawify(QueueMultisigTransactionSchema.parse(data));
+      return rawify(SafeQueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -273,7 +273,7 @@ export class QueueService implements IQueueService {
         data: { signature: args.signature },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -292,7 +292,7 @@ export class QueueService implements IQueueService {
     offset?: number;
   }): Promise<Raw<Page<Delegate>>> {
     try {
-      const cacheDir = CacheRouter.getQueueDelegatesCacheDir(args);
+      const cacheDir = CacheRouter.getSafeQueueDelegatesCacheDir(args);
       const url = `${this.baseUri}/api/v1/delegates`;
       const data = await this.dataSource.get({
         cacheDir,
@@ -309,7 +309,7 @@ export class QueueService implements IQueueService {
             offset: args.offset,
           },
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -341,7 +341,7 @@ export class QueueService implements IQueueService {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -372,7 +372,7 @@ export class QueueService implements IQueueService {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -401,7 +401,7 @@ export class QueueService implements IQueueService {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -413,9 +413,9 @@ export class QueueService implements IQueueService {
   async getMessageByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<Raw<QueueMessage>> {
+  }): Promise<Raw<SafeQueueMessage>> {
     try {
-      const cacheDir = CacheRouter.getQueueMessageByHashCacheDir({
+      const cacheDir = CacheRouter.getSafeQueueMessageByHashCacheDir({
         chainId: args.chainId,
         messageHash: args.messageHash,
       });
@@ -427,7 +427,7 @@ export class QueueService implements IQueueService {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -442,9 +442,9 @@ export class QueueService implements IQueueService {
     safeAddress: Address;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<QueueMessage>>> {
+  }): Promise<Raw<Page<SafeQueueMessage>>> {
     try {
-      const cacheDir = CacheRouter.getQueueMessagesBySafeCacheDir({
+      const cacheDir = CacheRouter.getSafeQueueMessagesBySafeCacheDir({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         limit: args.limit,
@@ -463,7 +463,7 @@ export class QueueService implements IQueueService {
             offset: args.offset,
           },
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -497,7 +497,7 @@ export class QueueService implements IQueueService {
         },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -519,7 +519,7 @@ export class QueueService implements IQueueService {
         data: { signatures: [args.signature] },
         networkRequest: {
           circuitBreaker: {
-            key: CircuitBreakerKeys.getQueueServiceKey(),
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
@@ -533,7 +533,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeTxHash: string;
   }): Promise<void> {
-    const key = CacheRouter.getQueueMultisigTransactionCacheKey({
+    const key = CacheRouter.getSafeQueueMultisigTransactionCacheKey({
       chainId: args.chainId,
       safeTransactionHash: args.safeTxHash,
     });
@@ -544,7 +544,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getQueueMultisigTransactionsCacheKey({
+    const key = CacheRouter.getSafeQueueMultisigTransactionsCacheKey({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
@@ -555,7 +555,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const key = CacheRouter.getQueueMessagesBySafeCacheKey({
+    const key = CacheRouter.getSafeQueueMessagesBySafeCacheKey({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
@@ -566,7 +566,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     messageHash: string;
   }): Promise<void> {
-    const key = CacheRouter.getQueueMessageByHashCacheKey({
+    const key = CacheRouter.getSafeQueueMessageByHashCacheKey({
       chainId: args.chainId,
       messageHash: args.messageHash,
     });
@@ -577,7 +577,7 @@ export class QueueService implements IQueueService {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    const key = CacheRouter.getQueueDelegatesCacheKey({
+    const key = CacheRouter.getSafeQueueDelegatesCacheKey({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });

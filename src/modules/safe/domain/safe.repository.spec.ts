@@ -12,10 +12,10 @@ import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { createMockQueueService } from '@/modules/queue/__tests__/queue-service.mock';
-import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
+import { createMockSafeQueueService } from '@/modules/safe-queue/__tests__/safe-queue-service.mock';
+import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
@@ -73,21 +73,21 @@ const mockConfigurationService = {
   getOrThrow: vi.fn(),
 } as MockedObject<IConfigurationService>;
 
-const mockQueueService = createMockQueueService();
+const mockSafeQueueService = createMockSafeQueueService();
 
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
 
   function createRepository(opts: {
-    queueServiceEnabled: boolean;
+    safeQueueEnabled: boolean;
   }): SafeRepository {
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeConfig.safes.maxSequentialPages') {
         return maxSequentialPages;
       }
-      if (key === 'features.queueService') {
-        return opts.queueServiceEnabled;
+      if (key === 'features.safeQueueService') {
+        return opts.safeQueueEnabled;
       }
       throw new Error(`Unexpected key: ${key}`);
     });
@@ -97,14 +97,14 @@ describe('SafeRepository', () => {
       mockChainsRepository,
       mockTransactionVerifier,
       mockConfigurationService,
-      mockQueueService,
+      mockSafeQueueService,
     );
   }
 
   beforeEach(() => {
     vi.resetAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
-    repository = createRepository({ queueServiceEnabled: true });
+    repository = createRepository({ safeQueueEnabled: true });
   });
 
   describe('getSafesByOwnerV2', () => {
@@ -491,8 +491,8 @@ describe('SafeRepository', () => {
       originName: string | null;
       originUrl: string | null;
       notes?: string | null;
-    }): QueueMultisigTransactionEntity =>
-      queueMultisigTransactionBuilder()
+    }): SafeQueueMultisigTransactionEntity =>
+      safeQueueMultisigTransactionBuilder()
         .with('chainId', chainId)
         .with('safe', safeAddress)
         .with('safeTxHash', overrides.safeTxHash)
@@ -532,7 +532,7 @@ describe('SafeRepository', () => {
       });
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([queueA, queueB]),
       );
 
@@ -548,10 +548,10 @@ describe('SafeRepository', () => {
         queued: false,
       });
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).toHaveBeenCalledTimes(1);
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).toHaveBeenCalledWith({
         chainId,
         safeTxHashes: [multisigA.safeTxHash, multisigB.safeTxHash],
@@ -580,7 +580,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
           buildQueueEntityForSafe({
             safeTxHash: multisig.safeTxHash,
@@ -615,7 +615,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
           buildQueueEntityForSafe({
             safeTxHash: multisig.safeTxHash,
@@ -658,7 +658,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
           buildQueueEntityForSafe({
             safeTxHash: multisig.safeTxHash,
@@ -674,10 +674,10 @@ describe('SafeRepository', () => {
       });
 
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).toHaveBeenCalledTimes(1);
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).toHaveBeenCalledWith({
         chainId,
         safeTxHashes: [multisig.safeTxHash],
@@ -718,7 +718,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
           buildQueueEntityForSafe({
             safeTxHash: multisigOk.safeTxHash,
@@ -759,7 +759,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockRejectedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockRejectedValue(
         new Error('queue unreachable'),
       );
 
@@ -791,7 +791,7 @@ describe('SafeRepository', () => {
       await repository.getTransactionHistory({ chainId, safeAddress });
 
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).not.toHaveBeenCalled();
     });
 
@@ -808,7 +808,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
           buildQueueEntityForSafe({
             safeTxHash: multisig.safeTxHash,
@@ -844,7 +844,7 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
           buildQueueEntityForSafe({
             safeTxHash: multisig.safeTxHash,
@@ -879,9 +879,9 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', `${Number(chainId) + 1}`)
             .with('safe', safeAddress)
             .with('safeTxHash', multisig.safeTxHash)
@@ -915,9 +915,9 @@ describe('SafeRepository', () => {
         .build();
 
       mockTransactionApi.getAllTransactions.mockResolvedValue(rawify(page));
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', getAddress(faker.finance.ethereumAddress()))
             .with('safeTxHash', multisig.safeTxHash)
@@ -951,9 +951,9 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
         rawify(multisigTransactionToJson(tx)),
       );
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', safeAddress)
             .with('safeTxHash', tx.safeTxHash)
@@ -969,7 +969,7 @@ describe('SafeRepository', () => {
       });
 
       expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
-      expect(mockQueueService.getMultisigTransaction).toHaveBeenCalledWith({
+      expect(mockSafeQueueService.getMultisigTransaction).toHaveBeenCalledWith({
         chainId,
         safeTxHash: tx.safeTxHash,
       });
@@ -983,9 +983,9 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
         rawify(multisigTransactionToJson(tx)),
       );
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', safeAddress)
             .with('safeTxHash', tx.safeTxHash)
@@ -1014,7 +1014,7 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
         rawify(multisigTransactionToJson(tx)),
       );
-      mockQueueService.getMultisigTransaction.mockRejectedValue(
+      mockSafeQueueService.getMultisigTransaction.mockRejectedValue(
         new Error('queue unreachable'),
       );
 
@@ -1037,9 +1037,9 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
         rawify(multisigTransactionToJson(tx)),
       );
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', `${Number(chainId) + 1}`)
             .with('safe', getAddress(faker.finance.ethereumAddress()))
             .with('safeTxHash', tx.safeTxHash)
@@ -1060,8 +1060,8 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
-      const repo = createRepository({ queueServiceEnabled: false });
+    it('should skip the queue call entirely when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -1076,19 +1076,19 @@ describe('SafeRepository', () => {
       });
 
       expect(result.origin).toBe('tx-service-origin');
-      expect(mockQueueService.getMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.getMultisigTransaction).not.toHaveBeenCalled();
     });
 
     it('should use the queue transaction as the source of truth when it is not executed', async () => {
       const safe = safeBuilder().with('address', safeAddress).build();
-      const queueTx = queueMultisigTransactionBuilder()
+      const queueTx = safeQueueMultisigTransactionBuilder()
         .with('chainId', chainId)
         .with('safe', safeAddress)
         .with('txHash', null)
         .with('originName', 'App')
         .with('originUrl', 'https://app.example')
         .build();
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(queueTx),
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
@@ -1120,9 +1120,9 @@ describe('SafeRepository', () => {
         rawify(multisigTransactionToJson(tx)),
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', safeAddress)
             .with('safeTxHash', tx.safeTxHash)
@@ -1140,8 +1140,8 @@ describe('SafeRepository', () => {
       expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
     });
 
-    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
-      const repo = createRepository({ queueServiceEnabled: false });
+    it('should skip the queue call entirely when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -1157,18 +1157,18 @@ describe('SafeRepository', () => {
       });
 
       expect(result.origin).toBe('tx-service-origin');
-      expect(mockQueueService.getMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.getMultisigTransaction).not.toHaveBeenCalled();
     });
 
     it('should use the queue transaction as the source of truth and verify it when not executed', async () => {
-      const queueTx = queueMultisigTransactionBuilder()
+      const queueTx = safeQueueMultisigTransactionBuilder()
         .with('chainId', chainId)
         .with('safe', safeAddress)
         .with('txHash', null)
         .with('originName', 'App')
         .with('originUrl', 'https://app.example')
         .build();
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(queueTx),
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
@@ -1218,16 +1218,16 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
         rawify(page),
       );
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', safeAddress)
             .with('safeTxHash', txA.safeTxHash)
             .with('originName', 'AppA')
             .with('originUrl', 'https://a.example')
             .build(),
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', safeAddress)
             .with('safeTxHash', txB.safeTxHash)
@@ -1249,7 +1249,7 @@ describe('SafeRepository', () => {
         buildOrigin('AppB', 'https://b.example'),
       );
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).toHaveBeenCalledWith({
         chainId,
         safeTxHashes: [txA.safeTxHash, txB.safeTxHash],
@@ -1277,9 +1277,9 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
         rawify(page),
       );
-      mockQueueService.getMultisigTransactionsBatch.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue(
         rawify([
-          queueMultisigTransactionBuilder()
+          safeQueueMultisigTransactionBuilder()
             .with('chainId', chainId)
             .with('safe', safeAddress)
             .with('safeTxHash', txKept.safeTxHash)
@@ -1303,8 +1303,8 @@ describe('SafeRepository', () => {
       );
     });
 
-    it('should skip the queue call entirely when FF_QUEUE_SERVICE is off', async () => {
-      const repo = createRepository({ queueServiceEnabled: false });
+    it('should skip the queue call entirely when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
       const tx = multisigTransactionBuilder()
         .with('safe', safeAddress)
         .with('origin', 'tx-service-origin')
@@ -1326,7 +1326,7 @@ describe('SafeRepository', () => {
 
       expect(result.results[0].origin).toBe('tx-service-origin');
       expect(
-        mockQueueService.getMultisigTransactionsBatch,
+        mockSafeQueueService.getMultisigTransactionsBatch,
       ).not.toHaveBeenCalled();
     });
   });
@@ -1335,13 +1335,13 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should clear both tx-service and queue caches when FF_QUEUE_SERVICE is on', async () => {
+    it('should clear both tx-service and queue caches when FF_SAFE_QUEUE_SERVICE is on', async () => {
       const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       const signature = faker.string.hexadecimal({ length: 16 });
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
         rawify(multisigTransactionToJson(tx)),
       );
-      mockQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockSafeQueueService.deleteTransaction.mockResolvedValue(undefined);
 
       await repository.deleteTransaction({
         chainId,
@@ -1349,7 +1349,7 @@ describe('SafeRepository', () => {
         signature,
       });
 
-      expect(mockQueueService.deleteTransaction).toHaveBeenCalledWith({
+      expect(mockSafeQueueService.deleteTransaction).toHaveBeenCalledWith({
         chainId,
         safeTxHash: tx.safeTxHash,
         signature,
@@ -1361,18 +1361,18 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
         tx.safe,
       );
-      expect(mockQueueService.clearMultisigTransaction).toHaveBeenCalledWith({
+      expect(mockSafeQueueService.clearMultisigTransaction).toHaveBeenCalledWith({
         chainId,
         safeTxHash: tx.safeTxHash,
       });
-      expect(mockQueueService.clearAllTransactions).toHaveBeenCalledWith({
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledWith({
         chainId,
         safeAddress: tx.safe,
       });
     });
 
-    it('should only clear tx-service cache when FF_QUEUE_SERVICE is off', async () => {
-      const repo = createRepository({ queueServiceEnabled: false });
+    it('should only clear tx-service cache when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
       const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       const signature = faker.string.hexadecimal({ length: 16 });
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
@@ -1391,15 +1391,15 @@ describe('SafeRepository', () => {
         safeTxHash: tx.safeTxHash,
         signature,
       });
-      expect(mockQueueService.deleteTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.deleteTransaction).not.toHaveBeenCalled();
       expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
         tx.safeTxHash,
       );
       expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
         tx.safe,
       );
-      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
-      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
     });
 
     it('should invalidate the queue cache so executed/deleted transactions disappear from the queue', async () => {
@@ -1410,14 +1410,14 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
         safeAddress,
       );
-      expect(mockQueueService.clearAllTransactions).toHaveBeenCalledWith({
+      expect(mockSafeQueueService.clearAllTransactions).toHaveBeenCalledWith({
         chainId,
         safeAddress,
       });
     });
 
-    it('should only clear the tx-service cache when FF_QUEUE_SERVICE is off (clearMultisigTransactions)', async () => {
-      const repo = createRepository({ queueServiceEnabled: false });
+    it('should only clear the tx-service cache when FF_SAFE_QUEUE_SERVICE is off (clearMultisigTransactions)', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
       const safeAddress = getAddress(faker.finance.ethereumAddress());
 
       await repo.clearMultisigTransactions({ chainId, safeAddress });
@@ -1425,7 +1425,7 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.clearMultisigTransactions).toHaveBeenCalledWith(
         safeAddress,
       );
-      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
     });
 
     it('should warn with chainId, safeTxHash and error when fire-and-forget cache clear fails', async () => {
@@ -1434,8 +1434,8 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
         rawify(multisigTransactionToJson(tx)),
       );
-      mockQueueService.deleteTransaction.mockResolvedValue(undefined);
-      mockQueueService.clearMultisigTransaction.mockRejectedValue(
+      mockSafeQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockSafeQueueService.clearMultisigTransaction.mockRejectedValue(
         new Error('cache down'),
       );
 
@@ -1464,7 +1464,7 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
         new Error('not found'),
       );
-      mockQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
 
       await repository.proposeTransaction({
         chainId,
@@ -1472,17 +1472,17 @@ describe('SafeRepository', () => {
         proposeTransactionDto,
       });
 
-      expect(mockQueueService.proposeTransaction).toHaveBeenCalledWith({
+      expect(mockSafeQueueService.proposeTransaction).toHaveBeenCalledWith({
         chainId,
         safeAddress,
         proposeTransactionDto,
       });
-      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
-      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
     });
 
-    it('should not touch the queue cache when FF_QUEUE_SERVICE is off', async () => {
-      const repo = createRepository({ queueServiceEnabled: false });
+    it('should not touch the queue cache when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
       const safe = safeBuilder().with('address', safeAddress).build();
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
@@ -1497,9 +1497,9 @@ describe('SafeRepository', () => {
         proposeTransactionDto,
       });
 
-      expect(mockQueueService.proposeTransaction).not.toHaveBeenCalled();
-      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
-      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.proposeTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
     });
   });
 
@@ -1507,18 +1507,18 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should post the confirmation to the queue service without explicitly clearing the queue cache (relies on TTL/upstream)', async () => {
+    it('should post the confirmation to the queue service and clear the transaction cache it primed', async () => {
       const safe = safeBuilder().with('address', safeAddress).build();
-      const queueTx = queueMultisigTransactionBuilder()
+      const queueTx = safeQueueMultisigTransactionBuilder()
         .with('chainId', chainId)
         .with('safe', safeAddress)
         .with('txHash', null)
         .build();
-      mockQueueService.getMultisigTransaction.mockResolvedValue(
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
         rawify(queueTx),
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
-      mockQueueService.postConfirmation.mockResolvedValue(rawify({}));
+      mockSafeQueueService.postConfirmation.mockResolvedValue(rawify({}));
 
       await repository.addConfirmation({
         chainId,
@@ -1528,9 +1528,14 @@ describe('SafeRepository', () => {
         },
       });
 
-      expect(mockQueueService.postConfirmation).toHaveBeenCalled();
-      expect(mockQueueService.clearMultisigTransaction).not.toHaveBeenCalled();
-      expect(mockQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.postConfirmation).toHaveBeenCalled();
+      expect(mockSafeQueueService.clearMultisigTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash: queueTx.safeTxHash,
+      });
+      expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
+        queueTx.safeTxHash,
+      );
     });
   });
 });

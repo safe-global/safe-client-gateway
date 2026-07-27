@@ -10,11 +10,11 @@ import { getServiceAuthHeaders } from '@/datasources/network/auth/service-auth-h
  * @returns An object containing the `Authorization` header (`{ Authorization: `Bearer ${apiKey}` }`)
  *          when Queue auth is enabled and an API key is configured; otherwise `undefined`.
  */
-export function getQueueAuthHeaders(
+export function getSafeQueueAuthHeaders(
   configurationService: IConfigurationService,
 ): Record<string, string> | undefined {
   return getServiceAuthHeaders(configurationService, {
-    useVpcUrlKey: 'queueService.useVpcUrl',
-    apiKeyKey: 'queueService.apiKey',
+    useVpcUrlKey: 'safeQueueService.useVpcUrl',
+    apiKeyKey: 'safeQueueService.apiKey',
   });
 }

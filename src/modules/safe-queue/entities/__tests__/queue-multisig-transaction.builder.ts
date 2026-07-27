@@ -4,11 +4,11 @@ import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
-export function queueMultisigTransactionBuilder(): IBuilder<QueueMultisigTransactionEntity> {
-  return new Builder<QueueMultisigTransactionEntity>()
+export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisigTransactionEntity> {
+  return new Builder<SafeQueueMultisigTransactionEntity>()
     .with('safeTxHash', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('chainId', faker.string.numeric())
     .with('safe', getAddress(faker.finance.ethereumAddress()))

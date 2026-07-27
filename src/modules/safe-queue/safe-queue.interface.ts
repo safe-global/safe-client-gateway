@@ -3,29 +3,29 @@
 import type { Address, Hex } from 'viem';
 import type { Page } from '@/domain/entities/page.entity';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { QueueMessage } from '@/modules/queue/entities/message.entity';
-import type { QueueMultisigTransactionEntity } from '@/modules/queue/entities/multisig-transaction.entity';
+import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
 
-export const IQueueService = Symbol('IQueueService');
+export const ISafeQueueService = Symbol('ISafeQueueService');
 
-export interface IQueueService {
+export interface ISafeQueueService {
   proposeTransaction(args: {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
-  }): Promise<Raw<QueueMultisigTransactionEntity>>;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
   getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
-  }): Promise<Raw<QueueMultisigTransactionEntity>>;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
   getMultisigTransactionsBatch(args: {
     chainId: string;
     safeTxHashes: ReadonlyArray<string>;
-  }): Promise<Raw<Array<QueueMultisigTransactionEntity>>>;
+  }): Promise<Raw<Array<SafeQueueMultisigTransactionEntity>>>;
 
   getTransactionQueue(args: {
     chainId: string;
@@ -35,13 +35,13 @@ export interface IQueueService {
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<QueueMultisigTransactionEntity>>>;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
   postConfirmation(args: {
     chainId: string;
     safeTxHash: string;
     signature: string;
-  }): Promise<Raw<QueueMultisigTransactionEntity>>;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
   deleteTransaction(args: {
     chainId: string;
@@ -88,14 +88,14 @@ export interface IQueueService {
   getMessageByHash(args: {
     chainId: string;
     messageHash: string;
-  }): Promise<Raw<QueueMessage>>;
+  }): Promise<Raw<SafeQueueMessage>>;
 
   getMessagesBySafe(args: {
     chainId: string;
     safeAddress: Address;
     limit?: number;
     offset?: number;
-  }): Promise<Raw<Page<QueueMessage>>>;
+  }): Promise<Raw<Page<SafeQueueMessage>>>;
 
   postMessage(args: {
     chainId: string;

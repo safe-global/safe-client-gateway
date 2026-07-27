@@ -4,7 +4,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
+import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';

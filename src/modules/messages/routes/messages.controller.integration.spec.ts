@@ -36,7 +36,7 @@ import type { Message as DomainMessage } from '@/modules/messages/domain/entitie
 import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
 import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
 import { MessageStatus } from '@/modules/messages/routes/entities/message.entity';
-import { parseOrigin } from '@/modules/queue/helpers/origin.helper';
+import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
@@ -93,7 +93,7 @@ describe('Messages controller', () => {
       IConfigurationService,
     );
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
-    queueBaseUri = configurationService.getOrThrow('queueService.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
     blocklistService = moduleFixture.get(IBlocklistService);
@@ -109,11 +109,11 @@ describe('Messages controller', () => {
     vi.resetAllMocks();
 
     // This spec exercises the queue-service read path; the rest of the
-    // integration suite still defaults to features.queueService=false until
+    // integration suite still defaults to features.safeQueueService=false until
     // each suite is migrated alongside its own queue-URL mocks.
     const queueEnabledConfig: typeof configuration = () => {
       const cfg = configuration();
-      return { ...cfg, features: { ...cfg.features, queueService: true } };
+      return { ...cfg, features: { ...cfg.features, safeQueueService: true } };
     };
     await initApp(queueEnabledConfig);
   });
@@ -1232,7 +1232,7 @@ describe('Messages controller', () => {
             ...defaultConfiguration,
             features: {
               ...defaultConfiguration.features,
-              queueService: true,
+              safeQueueService: true,
             },
           };
         };
@@ -1299,7 +1299,7 @@ describe('Messages controller', () => {
             features: {
               ...defaultConfiguration.features,
               ethSign: false,
-              queueService: true,
+              safeQueueService: true,
             },
           };
         };
@@ -1797,7 +1797,7 @@ describe('Messages controller', () => {
             ...defaultConfiguration,
             features: {
               ...defaultConfiguration.features,
-              queueService: true,
+              safeQueueService: true,
             },
           };
         };
@@ -1871,7 +1871,7 @@ describe('Messages controller', () => {
             features: {
               ...defaultConfiguration.features,
               ethSign: false,
-              queueService: true,
+              safeQueueService: true,
             },
           };
         };

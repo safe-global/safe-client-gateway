@@ -203,7 +203,7 @@ export class DelegatesV3Controller {
     @Param('delegateAddress') delegateAddress: Address,
     @Body(new ValidationPipe(DeleteDelegateV3DtoSchema))
     deleteDelegateV3Dto: DeleteDelegateV3Dto,
-  ): Promise<unknown> {
+  ): Promise<void> {
     return this.service.deleteDelegate({
       chainId,
       delegateAddress,

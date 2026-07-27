@@ -7,7 +7,7 @@ import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.e
 import {
   OriginNameSchema,
   OriginUrlSchema,
-} from '@/modules/queue/entities/schemas/origin.schema';
+} from '@/modules/safe-queue/entities/schemas/origin.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
@@ -17,7 +17,7 @@ export type QueueMessageConfirmation = z.infer<
   typeof QueueMessageConfirmationSchema
 >;
 
-export type QueueMessage = z.infer<typeof QueueMessageSchema>;
+export type SafeQueueMessage = z.infer<typeof SafeQueueMessageSchema>;
 
 export const QueueMessageConfirmationSchema = z.object({
   owner: AddressSchema,
@@ -27,7 +27,7 @@ export const QueueMessageConfirmationSchema = z.object({
   modified: z.coerce.date(),
 });
 
-export const QueueMessageSchema = z.object({
+export const SafeQueueMessageSchema = z.object({
   messageHash: HexSchema,
   chainId: z.coerce.number(),
   safe: AddressSchema,
@@ -41,4 +41,4 @@ export const QueueMessageSchema = z.object({
   confirmations: z.array(QueueMessageConfirmationSchema),
 });
 
-export const QueueMessagePageSchema = buildPageSchema(QueueMessageSchema);
+export const SafeQueueMessagePageSchema = buildPageSchema(SafeQueueMessageSchema);

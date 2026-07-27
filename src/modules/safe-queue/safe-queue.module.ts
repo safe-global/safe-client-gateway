@@ -3,17 +3,17 @@ import { Module } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { getQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
+import { getSafeQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
 import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
 import type { FetchClient } from '@/datasources/network/network.module';
 import { FetchClientToken } from '@/datasources/network/network.module';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IQueueService } from '@/modules/queue/queue.interface';
-import { QueueService } from '@/modules/queue/queue.service';
+import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
+import { SafeQueueService } from '@/modules/safe-queue/safe-queue.service';
 
 /**
- * Provides the QueueService backed by a {@link NetworkService} pre-configured
+ * Provides the SafeQueueService backed by a {@link NetworkService} pre-configured
  * with Queue Service authentication headers and a local {@link CacheFirstDataSource}
  * that uses the same authenticated NetworkService.
  */
@@ -26,15 +26,15 @@ import { QueueService } from '@/modules/queue/queue.service';
         loggingService: ILoggingService,
         configService: IConfigurationService,
       ): FetchNetworkService => {
-        const queueHeaders = getQueueAuthHeaders(configService);
+        const queueHeaders = getSafeQueueAuthHeaders(configService);
         return new FetchNetworkService(client, loggingService, queueHeaders);
       },
       inject: [FetchClientToken, LoggingService, IConfigurationService],
     },
     CacheFirstDataSource,
     HttpErrorFactory,
-    { provide: IQueueService, useClass: QueueService },
+    { provide: ISafeQueueService, useClass: SafeQueueService },
   ],
-  exports: [IQueueService],
+  exports: [ISafeQueueService],
 })
-export class QueueServiceModule {}
+export class SafeQueueModule {}

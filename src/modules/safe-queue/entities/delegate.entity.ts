@@ -9,7 +9,7 @@ import {
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
 
-export type QueueServiceDelegate = z.infer<typeof QueueServiceDelegateSchema>;
+export type SafeQueueDelegate = z.infer<typeof QueueServiceDelegateSchema>;
 
 export const QueueServiceDelegateSchema = z.object({
   delegate: AddressSchema,
@@ -21,6 +21,6 @@ export const QueueServiceDelegateSchema = z.object({
   modified: z.coerce.date(),
 });
 
-export const QueueServiceDelegatePageSchema = buildPageSchema(
+export const SafeQueueDelegatePageSchema = buildPageSchema(
   QueueServiceDelegateSchema,
 );

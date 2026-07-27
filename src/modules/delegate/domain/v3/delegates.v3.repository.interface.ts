@@ -6,7 +6,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
-import { QueueServiceModule } from '@/modules/queue/queue.module';
+import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 
 export const IDelegatesV3Repository = Symbol('IDelegatesV3Repository');
 
@@ -50,11 +50,11 @@ export interface IDelegatesV3Repository {
     delegator: Address;
     safeAddress: Address | null;
     signature: string;
-  }): Promise<unknown>;
+  }): Promise<void>;
 }
 
 @Module({
-  imports: [TransactionApiManagerModule, QueueServiceModule],
+  imports: [TransactionApiManagerModule, SafeQueueModule],
   providers: [
     {
       provide: IDelegatesV3Repository,
