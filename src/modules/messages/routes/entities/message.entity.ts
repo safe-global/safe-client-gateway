@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  ApiExtraModels,
-  ApiProperty,
-  ApiPropertyOptional,
-  getSchemaPath,
-} from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Hash, Hex } from 'viem';
 import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
@@ -23,10 +18,10 @@ export class Message {
   @ApiProperty({ enum: MessageStatus })
   status: MessageStatus;
   /** @deprecated Read `safeAppInfo.logoUri` instead. */
-  @ApiPropertyOptional({ type: String, nullable: true, deprecated: true })
+  @ApiProperty({ type: String, nullable: true, deprecated: true })
   logoUri: string | null;
   /** @deprecated Read `safeAppInfo.name` instead. */
-  @ApiPropertyOptional({ type: String, nullable: true, deprecated: true })
+  @ApiProperty({ type: String, nullable: true, deprecated: true })
   name: string | null;
   @ApiProperty({
     oneOf: [{ type: 'string' }, { $ref: getSchemaPath(TypedData) }],
@@ -44,14 +39,14 @@ export class Message {
   proposedBy: AddressInfo;
   @ApiProperty({ type: MessageConfirmation, isArray: true })
   confirmations: Array<MessageConfirmation>;
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiProperty({ type: String, nullable: true })
   preparedSignature: Hex | null;
-  @ApiPropertyOptional({ type: String, nullable: true })
+  @ApiProperty({ type: String, nullable: true })
   origin: string | null;
-  @ApiPropertyOptional({ type: SafeAppInfo, nullable: true })
+  @ApiProperty({ type: SafeAppInfo, nullable: true })
   safeAppInfo: SafeAppInfo | null;
   /** @deprecated Read `safeAppInfo.id` instead. */
-  @ApiPropertyOptional({ type: Number, nullable: true, deprecated: true })
+  @ApiProperty({ type: Number, nullable: true, deprecated: true })
   safeAppId: number | null;
 
   constructor(

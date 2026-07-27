@@ -8,11 +8,11 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { IQueueService } from '@/modules/queue/queue.interface';
-import { QueueService } from '@/modules/queue/queue.service';
+import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
+import { SafeQueueService } from '@/modules/safe-queue/safe-queue.service';
 
 /**
- * Test module that overrides {@link QueueServiceModule} with mocked dependencies.
+ * Test module that overrides {@link SafeQueueModule} with mocked dependencies.
  *
  * Key points:
  * - Reuses the same NetworkService mock instance from {@link TestNetworkModule}
@@ -28,8 +28,8 @@ import { QueueService } from '@/modules/queue/queue.service';
     },
     CacheFirstDataSource,
     HttpErrorFactory,
-    { provide: IQueueService, useClass: QueueService },
+    { provide: ISafeQueueService, useClass: SafeQueueService },
   ],
-  exports: [IQueueService],
+  exports: [ISafeQueueService],
 })
-export class TestQueueServiceModule {}
+export class TestSafeQueueModule {}

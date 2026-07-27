@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { queueMultisigTransactionBuilder } from '@/modules/queue/entities/__tests__/queue-multisig-transaction.builder';
-import { QueueMultisigTransactionListSchema } from '@/modules/queue/entities/multisig-transaction.entity';
+import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { SafeQueueMultisigTransactionListSchema } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import {
   OriginNameSchema,
   OriginUrlSchema,
-} from '@/modules/queue/entities/schemas/origin.schema';
+} from '@/modules/safe-queue/entities/schemas/origin.schema';
 
 describe('OriginNameSchema', () => {
   it('accepts a normal string', () => {
@@ -51,28 +51,47 @@ describe('OriginUrlSchema', () => {
     expect(OriginUrlSchema.parse('not a url')).toBeNull();
   });
 
-  it('coerces an http URL to null', () => {
-    expect(OriginUrlSchema.parse('http://app.example.com')).toBeNull();
+  it('accepts an http URL', () => {
+    expect(OriginUrlSchema.parse('http://app.example.com')).toBe(
+      'http://app.example.com',
+    );
   });
 
   it('coerces an oversized URL to null', () => {
     const oversized = `https://example.com/${'a'.repeat(2048)}`;
     expect(OriginUrlSchema.parse(oversized)).toBeNull();
   });
+
+  describe('in development (CGW_ENV=development)', () => {
+    it('skips the protocol allowlist entirely', async () => {
+      vi.stubEnv('CGW_ENV', 'development');
+      vi.resetModules();
+      const { OriginUrlSchema: DevOriginUrlSchema } = await import(
+        '@/modules/safe-queue/entities/schemas/origin.schema'
+      );
+
+      expect(DevOriginUrlSchema.parse('javascript:alert(1)')).toBe(
+        'javascript:alert(1)',
+      );
+
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    });
+  });
 });
 
 describe('queue entity parsing with bad origin fields', () => {
   it('keeps a row but coerces its bad origin URL to null without poisoning the batch', () => {
-    const good = queueMultisigTransactionBuilder()
+    const good = safeQueueMultisigTransactionBuilder()
       .with('originName', 'AppOk')
       .with('originUrl', 'https://ok.example')
       .build();
-    const bad = queueMultisigTransactionBuilder()
+    const bad = safeQueueMultisigTransactionBuilder()
       .with('originName', 'AppBad')
       .with('originUrl', 'javascript:alert(1)' as unknown as string)
       .build();
 
-    const parsed = QueueMultisigTransactionListSchema.parse([good, bad]);
+    const parsed = SafeQueueMultisigTransactionListSchema.parse([good, bad]);
 
     expect(parsed).toHaveLength(2);
     expect(parsed[0].originUrl).toBe('https://ok.example');

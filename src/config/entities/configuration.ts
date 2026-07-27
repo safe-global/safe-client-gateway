@@ -492,7 +492,7 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
-    queueService: process.env.FF_QUEUE_SERVICE?.toLowerCase() === 'true',
+    safeQueueService: process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -790,11 +790,11 @@ export default () => ({
       ),
     },
   },
-  queueService: {
+  safeQueueService: {
     baseUri:
-      process.env.QUEUE_SERVICE_BASE_URI || 'https://api.safe.global/queue',
-    useVpcUrl: process.env.USE_QUEUE_SERVICE_VPC_URL?.toLowerCase() === 'true',
-    apiKey: process.env.QUEUE_SERVICE_API_KEY,
+      process.env.SAFE_QUEUE_SERVICE_BASE_URI || 'https://api.safe.global/queue',
+    useVpcUrl: process.env.USE_SAFE_QUEUE_SERVICE_VPC_URL?.toLowerCase() === 'true',
+    apiKey: process.env.SAFE_QUEUE_SERVICE_API_KEY,
   },
   safeConfig: {
     baseUri:
