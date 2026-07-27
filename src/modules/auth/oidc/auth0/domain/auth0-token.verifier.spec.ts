@@ -94,6 +94,28 @@ describe('Auth0TokenVerifier', () => {
       );
     });
 
+    it('should verify a token against an explicitly provided audience', async () => {
+      const managementApiAudience = `https://${faker.internet.domainName()}/api/v2/`;
+      const sub = faker.string.uuid();
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: managementApiAudience,
+        kid,
+        privateKey,
+        payload: { sub },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(
+        target.verifyAndDecode(token, { audience: managementApiAudience }),
+      ).resolves.toMatchObject({ sub, aud: managementApiAudience });
+
+      await expect(
+        target.verifyAndDecode(token, { audience: faker.string.uuid() }),
+      ).rejects.toThrow(new UnauthorizedException('Invalid token'));
+    });
+
     it('should cache the remote JWKS', async () => {
       const sub = faker.string.uuid();
       const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
@@ -150,10 +172,10 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Auth0: ID token verification failed:'),
+        expect.stringContaining('Auth0: token verification failed:'),
       );
     });
 
@@ -173,10 +195,10 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Auth0: ID token verification failed:'),
+        expect.stringContaining('Auth0: token verification failed:'),
       );
     });
 
@@ -196,10 +218,10 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Auth0: ID token verification failed:'),
+        expect.stringContaining('Auth0: token verification failed:'),
       );
     });
 
@@ -218,7 +240,7 @@ describe('Auth0TokenVerifier', () => {
       );
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
     });
 
@@ -231,7 +253,7 @@ describe('Auth0TokenVerifier', () => {
       });
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
     });
 
@@ -247,7 +269,7 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
     });
 
@@ -263,7 +285,7 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
     });
 
@@ -282,7 +304,7 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
     });
 
@@ -298,7 +320,7 @@ describe('Auth0TokenVerifier', () => {
       fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
     });
 
@@ -343,10 +365,10 @@ describe('Auth0TokenVerifier', () => {
       );
 
       await expect(target.verifyAndDecode(token)).rejects.toThrow(
-        new UnauthorizedException('Invalid ID token'),
+        new UnauthorizedException('Invalid token'),
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
-        expect.stringContaining('Auth0: ID token verification failed:'),
+        expect.stringContaining('Auth0: token verification failed:'),
       );
     });
   });

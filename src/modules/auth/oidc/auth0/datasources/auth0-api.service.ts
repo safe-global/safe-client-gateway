@@ -19,6 +19,7 @@ import {
   Auth0AuthenticationMethodsSchema,
 } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
 import type { Auth0TokenResponse } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
+import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import type { Raw } from '@/validation/entities/raw.entity';
 
 const ManagementApiTokenResponseSchema = z.object({
@@ -36,6 +37,7 @@ export class Auth0Api implements IAuth0Api {
   private readonly redirectUri: string;
   private readonly audience: string;
   private readonly scope: string;
+  private readonly managementApiAudience: string;
   private readonly managementApiTokenTtlBufferInSeconds: number;
   private inFlightManagementApiTokenRequest: Promise<string> | undefined;
 
@@ -47,6 +49,7 @@ export class Auth0Api implements IAuth0Api {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    private readonly auth0TokenVerifier: Auth0TokenVerifier,
   ) {
     const prefix = 'auth.auth0';
     const domain = this.configurationService.getOrThrow<string>(
@@ -68,6 +71,7 @@ export class Auth0Api implements IAuth0Api {
     this.scope = this.configurationService.getOrThrow<string>(
       `${prefix}.scope`,
     );
+    this.managementApiAudience = new URL('/api/v2/', this.baseUri).toString();
     this.managementApiTokenTtlBufferInSeconds =
       this.configurationService.getOrThrow<number>(
         `${prefix}.managementApiTokenTtlBufferInSeconds`,
@@ -196,13 +200,17 @@ export class Auth0Api implements IAuth0Api {
         grant_type: Auth0Api.CLIENT_CREDENTIALS_GRANT_TYPE,
         client_id: this.clientId,
         client_secret: this.clientSecret,
-        audience: new URL('/api/v2/', this.baseUri).toString(),
+        audience: this.managementApiAudience,
       },
     });
 
     const { access_token, expires_in } = ManagementApiTokenResponseSchema.parse(
       response.data,
     );
+
+    await this.auth0TokenVerifier.verifyAndDecode(access_token, {
+      audience: this.managementApiAudience,
+    });
 
     await this.cacheService.hSet(
       CacheRouter.getAuth0ManagementApiTokenCacheDir(),

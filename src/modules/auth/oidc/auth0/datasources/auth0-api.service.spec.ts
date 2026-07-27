@@ -1,14 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject, MockInstance } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import {
+  type Auth0JwksFixture,
+  getAuth0JwksFixture,
+  mockAuth0Jwks,
+  signAuth0Jwt,
+} from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
 import { Auth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.service';
+import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const networkService = {
@@ -17,21 +25,44 @@ const networkService = {
   postForm: vi.fn(),
 } as MockedObject<INetworkService>;
 
+const loggingService = {
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 describe('Auth0Api', () => {
   let target: Auth0Api;
   let fakeCacheService: FakeCacheService;
+  let fetchMock: MockInstance<typeof fetch>;
+  let auth0JwksFixture: Auth0JwksFixture;
   let baseUri: string;
+  let issuer: string;
+  let managementApiAudience: string;
   let clientId: string;
   let clientSecret: string;
   let redirectUri: string;
   let audience: string;
   let scope: string;
 
+  function signManagementApiToken(
+    overrides?: Partial<Parameters<typeof signAuth0Jwt>[0]>,
+  ): string {
+    return signAuth0Jwt({
+      issuer,
+      audience: managementApiAudience,
+      kid: auth0JwksFixture.kid,
+      privateKey: auth0JwksFixture.privateKey,
+      payload: { sub: `${clientId}@clients` },
+      ...overrides,
+    });
+  }
+
   beforeEach(() => {
     vi.resetAllMocks();
 
     const domain = faker.internet.domainName();
     baseUri = `https://${domain}`;
+    issuer = `${baseUri}/`;
+    managementApiAudience = `${baseUri}/api/v2/`;
     clientId = faker.string.uuid();
     clientSecret = faker.string.uuid();
     redirectUri = faker.internet.url();
@@ -49,6 +80,17 @@ describe('Auth0Api', () => {
       'auth.auth0.managementApiTokenTtlBufferInSeconds',
       60,
     );
+    fakeConfigurationService.set('auth.auth0.jwksCacheMaxAgeMs', 60 * 60_000);
+    fakeConfigurationService.set('auth.auth0.jwksCooldownMs', 30_000);
+
+    auth0JwksFixture = getAuth0JwksFixture();
+    fetchMock = vi.spyOn(global, 'fetch');
+    mockAuth0Jwks({
+      fetchMock,
+      issuer,
+      publicJwk: auth0JwksFixture.publicJwk,
+      kid: auth0JwksFixture.kid,
+    });
 
     fakeCacheService = new FakeCacheService();
     target = new Auth0Api(
@@ -56,7 +98,12 @@ describe('Auth0Api', () => {
       fakeCacheService,
       fakeConfigurationService,
       new HttpErrorFactory(),
+      new Auth0TokenVerifier(fakeConfigurationService, loggingService),
     );
+  });
+
+  afterEach(() => {
+    fetchMock.mockRestore();
   });
 
   describe('getAuthorizationUrl', () => {
@@ -177,7 +224,7 @@ describe('Auth0Api', () => {
     });
 
     it('should cache a new token until one minute before expiry', async () => {
-      const accessToken = faker.string.alphanumeric();
+      const accessToken = signManagementApiToken();
       const extUserId = faker.string.uuid();
       const cacheSetSpy = vi.spyOn(fakeCacheService, 'hSet');
       networkService.postForm.mockResolvedValueOnce({
@@ -209,7 +256,7 @@ describe('Auth0Api', () => {
     });
 
     it('should share a token request between concurrent callers', async () => {
-      const accessToken = faker.string.alphanumeric();
+      const accessToken = signManagementApiToken();
       networkService.postForm.mockResolvedValueOnce({
         status: 200,
         data: rawify({
@@ -241,6 +288,58 @@ describe('Auth0Api', () => {
           },
         }),
       );
+    });
+
+    it('should throw and not cache a token not signed by the tenant', async () => {
+      const untrustedKeyPair = getAuth0JwksFixture();
+      const accessToken = signManagementApiToken({
+        privateKey: untrustedKeyPair.privateKey,
+      });
+      const cacheSetSpy = vi.spyOn(fakeCacheService, 'hSet');
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: accessToken,
+          expires_in: 3_600,
+        }),
+      });
+
+      await expect(
+        target.listUserAuthenticationMethods(faker.string.uuid()),
+      ).rejects.toThrow('Service unavailable');
+
+      expect(cacheSetSpy).not.toHaveBeenCalled();
+      await expect(
+        fakeCacheService.hGet(new CacheDir('auth0_management_api_token', '')),
+      ).resolves.toBeNull();
+      expect(networkService.get).not.toHaveBeenCalled();
+    });
+
+    it('should throw and not cache a token issued for another audience', async () => {
+      const accessToken = signManagementApiToken({
+        audience: clientId,
+      });
+      const cacheSetSpy = vi.spyOn(fakeCacheService, 'hSet');
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: accessToken,
+          expires_in: 3_600,
+        }),
+      });
+
+      await expect(
+        target.deleteUserAuthenticationMethod(
+          faker.string.uuid(),
+          faker.string.uuid(),
+        ),
+      ).rejects.toThrow('Service unavailable');
+
+      expect(cacheSetSpy).not.toHaveBeenCalled();
+      await expect(
+        fakeCacheService.hGet(new CacheDir('auth0_management_api_token', '')),
+      ).resolves.toBeNull();
+      expect(networkService.delete).not.toHaveBeenCalled();
     });
   });
 });

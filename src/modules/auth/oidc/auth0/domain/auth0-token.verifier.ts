@@ -46,24 +46,30 @@ export class Auth0TokenVerifier {
   /**
    * Verifies an Auth0 JWT against the tenant JWKS and returns validated token claims.
    *
-   * @param idToken - The raw ID token string to verify.
+   * @param token - The raw token string to verify.
+   * @param options.audience - The audience the token must be issued for.
+   * Defaults to the client ID, i.e. an ID token. Access tokens are addressed
+   * to an API instead, so their audience must be passed explicitly.
    * @returns The decoded and validated {@link Auth0Token} claims.
-   * @throws {UnauthorizedException} If the ID token is invalid, expired, or fails verification.
+   * @throws {UnauthorizedException} If the token is invalid, expired, or fails verification.
    */
-  public async verifyAndDecode(idToken: string): Promise<Auth0Token> {
+  public async verifyAndDecode(
+    token: string,
+    options?: { audience?: string },
+  ): Promise<Auth0Token> {
     try {
-      const { payload } = await jwtVerify(idToken, this.jwks, {
+      const { payload } = await jwtVerify(token, this.jwks, {
         issuer: this.issuer,
-        audience: this.audience,
+        audience: options?.audience ?? this.audience,
         algorithms: [JWT_RS_ALGORITHM],
       });
       return Auth0TokenSchema.parse(payload);
     } catch (error) {
       if (error instanceof errors.JOSEError || error instanceof z.ZodError) {
         this.loggingService.debug(
-          `Auth0: ID token verification failed: ${error.message}`,
+          `Auth0: token verification failed: ${error.message}`,
         );
-        throw new UnauthorizedException('Invalid ID token');
+        throw new UnauthorizedException('Invalid token');
       }
 
       throw error;
