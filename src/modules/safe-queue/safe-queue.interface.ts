@@ -22,10 +22,11 @@ export interface ISafeQueueService {
     safeTxHash: string;
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
+  // Already validated internally (each chunk is safeParse'd) — not Raw<T>.
   getMultisigTransactionsBatch(args: {
     chainId: string;
     safeTxHashes: ReadonlyArray<string>;
-  }): Promise<Raw<Array<SafeQueueMultisigTransactionEntity>>>;
+  }): Promise<Array<SafeQueueMultisigTransactionEntity>>;
 
   getTransactionQueue(args: {
     chainId: string;

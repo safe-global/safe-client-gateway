@@ -12,7 +12,6 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
-  SafeQueueMultisigTransactionListSchema,
   SafeQueueMultisigTransactionPageSchema,
   SafeQueueMultisigTransactionSchema,
 } from '@/modules/safe-queue/entities/multisig-transaction.entity';
@@ -395,11 +394,12 @@ export class SafeRepository implements ISafeRepository {
     const byHash = new Map<string, SafeQueueMultisigTransactionEntity>();
     if (safeTxHashes.length === 0) return byHash;
     try {
-      const raw = await this.safeQueueService.getMultisigTransactionsBatch({
+      // Already validated by getMultisigTransactionsBatch (per-chunk
+      // safeParse) — not Raw<T>, re-parsing here would be redundant.
+      const transactions = await this.safeQueueService.getMultisigTransactionsBatch({
         chainId,
         safeTxHashes,
       });
-      const transactions = SafeQueueMultisigTransactionListSchema.parse(raw);
       for (const queue of transactions) byHash.set(queue.safeTxHash, queue);
       const missing = safeTxHashes.filter((hash) => !byHash.has(hash));
       if (missing.length > 0) {
@@ -543,32 +543,28 @@ export class SafeRepository implements ISafeRepository {
     chainId: string;
     safeTransactionHash: string;
   }): Promise<MultisigTransaction> {
-    return await this.resolveMultisigTransaction(args, { noCache: false });
+    return await this.resolveMultisigTransaction(args);
   }
 
-  private async fetchTxServiceMultisig(
-    args: { chainId: string; safeTransactionHash: string },
-    opts: { noCache: boolean },
-  ): Promise<MultisigTransaction> {
+  private async fetchTxServiceMultisig(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): Promise<MultisigTransaction> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const raw = opts.noCache
-      ? await transactionService.getMultisigTransactionWithNoCache(
-          args.safeTransactionHash,
-        )
-      : await transactionService.getMultisigTransaction(
-          args.safeTransactionHash,
-        );
+    const raw = await transactionService.getMultisigTransaction(
+      args.safeTransactionHash,
+    );
     return MultisigTransactionSchema.parse(raw);
   }
 
-  private async resolveMultisigTransaction(
-    args: { chainId: string; safeTransactionHash: string },
-    opts: { noCache: boolean },
-  ): Promise<MultisigTransaction> {
+  private async resolveMultisigTransaction(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): Promise<MultisigTransaction> {
     if (!this.safeQueueEnabled) {
-      return this.fetchTxServiceMultisig(args, opts);
+      return this.fetchTxServiceMultisig(args);
     }
 
     let queue: SafeQueueMultisigTransactionEntity;
@@ -582,13 +578,13 @@ export class SafeRepository implements ISafeRepository {
       this.loggingService.warn(
         `Failed to fetch transaction from queue service. chainId=${args.chainId}, safeTxHash=${args.safeTransactionHash}, error=${error}`,
       );
-      return this.fetchTxServiceMultisig(args, opts);
+      return this.fetchTxServiceMultisig(args);
     }
 
     if (queue.txHash !== null) {
       // Executed: the tx service is the source of truth. Overlay the origin
       // from the queue entity we already fetched (no second queue call).
-      const tx = await this.fetchTxServiceMultisig(args, opts);
+      const tx = await this.fetchTxServiceMultisig(args);
       if (
         this.isQueueOriginAuthoritative(queue, {
           chainId: args.chainId,
@@ -608,26 +604,6 @@ export class SafeRepository implements ISafeRepository {
     return mapSafeQueueToMultisigTransaction(queue, safe);
   }
 
-  async getMultiSigTransactionWithNoCache(args: {
-    chainId: string;
-    safeTransactionHash: string;
-  }): Promise<MultisigTransaction> {
-    const tx = await this.resolveMultisigTransaction(args, { noCache: true });
-
-    const safe = await this.getSafe({
-      chainId: args.chainId,
-      address: tx.safe,
-    });
-
-    this.transactionVerifier.verifyApiTransaction({
-      chainId: args.chainId,
-      transaction: tx,
-      safe: safe,
-    });
-
-    return tx;
-  }
-
   async deleteTransaction(args: {
     chainId: string;
     safeTxHash: string;
@@ -640,10 +616,10 @@ export class SafeRepository implements ISafeRepository {
     // FF_SAFE_QUEUE_SERVICE is on only exists in the queue service, so resolving
     // exclusively via the tx-service would 404 before the queue-delete branch
     // below is ever reached.
-    const transaction = await this.resolveMultisigTransaction(
-      { chainId: args.chainId, safeTransactionHash: args.safeTxHash },
-      { noCache: false },
-    );
+    const transaction = await this.resolveMultisigTransaction({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
     const safe = transaction.safe;
 
     if (this.safeQueueEnabled) {
