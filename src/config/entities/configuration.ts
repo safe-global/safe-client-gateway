@@ -76,6 +76,10 @@ export default () => ({
         process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`,
         10, // 30 seconds
       ),
+      managementApiTokenTtlBufferInSeconds: Number.parseInt(
+        process.env.AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS ?? `${60}`,
+        10, // 60 seconds
+      ),
     },
     rateLimit: {
       max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`, 10),

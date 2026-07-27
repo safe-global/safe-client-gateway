@@ -30,13 +30,13 @@ const ManagementApiTokenResponseSchema = z.object({
 export class Auth0Api implements IAuth0Api {
   private static readonly AUTHORIZATION_CODE_GRANT_TYPE = 'authorization_code';
   private static readonly CLIENT_CREDENTIALS_GRANT_TYPE = 'client_credentials';
-  private static readonly MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60;
   private readonly baseUri: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly redirectUri: string;
   private readonly audience: string;
   private readonly scope: string;
+  private readonly managementApiTokenTtlBufferInSeconds: number;
   private inFlightManagementApiTokenRequest: Promise<string> | undefined;
 
   constructor(
@@ -68,6 +68,10 @@ export class Auth0Api implements IAuth0Api {
     this.scope = this.configurationService.getOrThrow<string>(
       `${prefix}.scope`,
     );
+    this.managementApiTokenTtlBufferInSeconds =
+      this.configurationService.getOrThrow<number>(
+        `${prefix}.managementApiTokenTtlBufferInSeconds`,
+      );
   }
 
   public getAuthorizationUrl(
@@ -203,7 +207,7 @@ export class Auth0Api implements IAuth0Api {
     await this.cacheService.hSet(
       CacheRouter.getAuth0ManagementApiTokenCacheDir(),
       access_token,
-      expires_in - Auth0Api.MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS,
+      expires_in - this.managementApiTokenTtlBufferInSeconds,
       0,
     );
 

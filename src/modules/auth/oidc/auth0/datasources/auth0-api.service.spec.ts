@@ -45,6 +45,10 @@ describe('Auth0Api', () => {
     fakeConfigurationService.set('auth.auth0.redirectUri', redirectUri);
     fakeConfigurationService.set('auth.auth0.audience', audience);
     fakeConfigurationService.set('auth.auth0.scope', scope);
+    fakeConfigurationService.set(
+      'auth.auth0.managementApiTokenTtlBufferInSeconds',
+      60,
+    );
 
     fakeCacheService = new FakeCacheService();
     target = new Auth0Api(
