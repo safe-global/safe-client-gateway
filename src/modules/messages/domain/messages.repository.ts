@@ -14,6 +14,7 @@ import {
 import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
 import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import {
   SafeQueueMessagePageSchema,
   SafeQueueMessageSchema,
@@ -21,7 +22,6 @@ import {
 import { clearBothCacheLayers } from '@/modules/safe-queue/helpers/clear-cache-layers.helper';
 import { mapSafeQueueMessageToMessage } from '@/modules/safe-queue/mappers/message.mapper';
 import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
@@ -143,7 +143,7 @@ export class MessagesRepository implements IMessagesRepository {
     } else {
       result = await this.safeQueueService.postMessage(args);
     }
-    void this.clearMessagesBySafe({
+    this.clearMessagesBySafe({
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
@@ -180,11 +180,11 @@ export class MessagesRepository implements IMessagesRepository {
     } else {
       result = await this.safeQueueService.postMessageSignature(args);
     }
-    void this.clearMessagesByHash({
+    this.clearMessagesByHash({
       chainId: args.chainId,
       messageHash: args.messageHash,
     });
-    void this.clearMessagesBySafe({
+    this.clearMessagesBySafe({
       chainId: args.chainId,
       safeAddress: message.safe,
     });
