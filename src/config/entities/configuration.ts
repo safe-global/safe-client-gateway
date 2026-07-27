@@ -821,6 +821,19 @@ export default () => ({
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
+  policies: {
+    /**
+     * Per-chain policy-engine deployments, overriding the built-in map so a new
+     * chain can be enabled without a release. JSON, keyed by chain ID:
+     *
+     * {"11155111":{"safePolicyGuard":"0x…","policyContracts":{"ERC20TransferPolicy":"0x…"},"moduleAddresses":{"recovery":"0x…"}}}
+     *
+     * Validated by `PolicyDeploymentsService`; an invalid value is logged and
+     * ignored rather than failing startup.
+     * TODO: Source from safe-deployments
+     */
+    deployments: process.env.POLICY_ENGINE_DEPLOYMENTS,
+  },
   spaces: {
     addressBooks: {
       maxItems: Number.parseInt(

@@ -29,6 +29,7 @@ import {
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { PolicyCacheService } from '@/modules/policies/domain/policy-cache.service';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
@@ -73,6 +74,7 @@ export class EventCacheHelper {
     private readonly cacheService: ICacheService,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
+    private readonly policyCacheService: PolicyCacheService,
   ) {
     this.isSupportedChainMemo = memoize(
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
@@ -285,6 +287,12 @@ export class EventCacheHelper {
         chainId: event.chainId,
         address: event.address,
       }),
+      // - the policies of the safe: a module transaction can configure the
+      //   policy guard, and policy events have no hook of their own
+      this.policyCacheService.clearPolicies({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
     ];
   }
 
@@ -334,6 +342,12 @@ export class EventCacheHelper {
         safeAddress: event.address,
       }),
       this.earnRepository.clearStakes({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
+      // - the policies of the safe: configuring a policy or setting the guard is
+      //   a multisig transaction, and policy events have no hook of their own
+      this.policyCacheService.clearPolicies({
         chainId: event.chainId,
         safeAddress: event.address,
       }),

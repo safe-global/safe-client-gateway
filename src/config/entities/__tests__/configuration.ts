@@ -461,6 +461,10 @@ export default (): ReturnType<typeof configuration> => ({
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  policies: {
+    // Tests exercise the built-in deployments; the override is opt-in per test.
+    deployments: undefined,
+  },
   spaces: {
     addressBooks: {
       maxItems: faker.number.int({ min: 10, max: 20 }),

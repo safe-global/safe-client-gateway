@@ -16,9 +16,12 @@ import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
 import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
+import type { PolicyCacheService } from '@/modules/policies/domain/policy-cache.service';
 import type { QueuesRepository } from '@/modules/queues/domain/queues-repository';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
@@ -75,11 +78,13 @@ const mockSafeRepository = vi.mocked({
 
 const mockStakingRepository = vi.mocked({
   clearApi: vi.fn(),
-} as MockedObject<StakingRepository>);
+  clearStakes: vi.fn(),
+} as unknown as MockedObject<StakingRepository>);
 
 const mockEarnRepository = vi.mocked({
   clearApi: vi.fn(),
-} as MockedObject<EarnRepository>);
+  clearStakes: vi.fn(),
+} as unknown as MockedObject<EarnRepository>);
 
 const mockTransactionsRepository = vi.mocked({
   clearApi: vi.fn(),
@@ -103,6 +108,10 @@ const mockConfigurationService = vi.mocked({
 const mockPushNotificationService = vi.mocked({
   enqueueEvent: vi.fn(),
 } as MockedObject<IPushNotificationService>);
+
+const mockPolicyCacheService = {
+  clearPolicies: vi.fn(),
+} as MockedObject<PolicyCacheService>;
 
 describe('HooksRepository (Unit)', () => {
   let hooksRepository: HooksRepository;
@@ -130,8 +139,10 @@ describe('HooksRepository (Unit)', () => {
       fakeCacheService,
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),
+      mockPolicyCacheService,
     );
     mockPushNotificationService.enqueueEvent.mockResolvedValue();
+    mockPolicyCacheService.clearPolicies.mockResolvedValue();
     hooksRepository = new HooksRepository(
       mockLoggingService,
       mockQueuesRepository,
@@ -172,6 +183,23 @@ describe('HooksRepository (Unit)', () => {
     );
     expect(mockSafeRepository.clearTransfers).toHaveBeenCalledTimes(3);
     expect(mockSafeRepository.clearIncomingTransfers).toHaveBeenCalledTimes(3);
+  });
+
+  // Policy events are not published to the events queue, so a Safe transaction
+  // is the only invalidation signal the policy endpoints get.
+  it.each([
+    ['EXECUTED_MULTISIG_TRANSACTION', executedTransactionEventBuilder],
+    ['MODULE_TRANSACTION', moduleTransactionEventBuilder],
+  ])('should clear the policy caches on a %s event', async (_, builder) => {
+    const event = builder().build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+    await hooksRepository.onEvent(event);
+
+    expect(mockPolicyCacheService.clearPolicies).toHaveBeenCalledWith({
+      chainId: event.chainId,
+      safeAddress: event.address,
+    });
   });
 
   it('should process CHAIN_UPDATE events for unsupported chains', async () => {

@@ -21,6 +21,8 @@ import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/sin
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v1/entities/__tests__/data-decoded.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
+import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import { creationTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
@@ -1547,6 +1549,177 @@ describe('TransactionApi', () => {
       expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         `${chainId}_module_transactions_${safeAddress}`,
+      );
+    });
+  });
+
+  describe('getPolicyConfirmations', () => {
+    it('should return the policy confirmations retrieved', async () => {
+      const confirmation = policyConfirmationBuilder().build();
+      const confirmationsPage = pageBuilder()
+        .with('results', [confirmation])
+        .build();
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const url = `${baseUrl}/api/v2/safes/${confirmation.safe}/policy-confirmations/`;
+      const cacheDir = new CacheDir(
+        `${chainId}_policy_confirmations_${confirmation.safe}`,
+        `${confirmation.target}_${confirmation.selector}_${confirmation.operation}_${confirmation.policy}_undefined_undefined_undefined_${limit}_${offset}`,
+      );
+      mockDataSource.get.mockResolvedValueOnce(rawify(confirmationsPage));
+
+      const actual = await service.getPolicyConfirmations({
+        safeAddress: confirmation.safe,
+        target: confirmation.target,
+        selector: confirmation.selector,
+        operation: confirmation.operation,
+        policy: confirmation.policy,
+        limit,
+        offset,
+      });
+
+      expect(actual).toBe(confirmationsPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+          params: {
+            target: confirmation.target,
+            selector: confirmation.selector,
+            operation: confirmation.operation,
+            policy: confirmation.policy,
+            removed: undefined,
+            fallback: undefined,
+            ordering: undefined,
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    const errorMessage = faker.word.words();
+    it.each([
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
+      ['standard', new Error(errorMessage)],
+    ])('should forward a %s error', async (_, error) => {
+      const confirmation = policyConfirmationBuilder().build();
+      const url = `${baseUrl}/api/v2/safes/${confirmation.safe}/policy-confirmations/`;
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      mockDataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(url),
+          { status: statusCode } as Response,
+          error,
+        ),
+      );
+
+      await expect(
+        service.getPolicyConfirmations({ safeAddress: confirmation.safe }),
+      ).rejects.toThrow(expected);
+    });
+  });
+
+  describe('clearPolicyConfirmations', () => {
+    it('should clear the policy confirmations cache', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await service.clearPolicyConfirmations(safeAddress);
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_policy_confirmations_${safeAddress}`,
+      );
+    });
+  });
+
+  describe('getPolicyRootRequests', () => {
+    it('should return the policy root requests retrieved', async () => {
+      const rootRequest = policyRootRequestBuilder().build();
+      const rootRequestsPage = pageBuilder()
+        .with('results', [rootRequest])
+        .build();
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const url = `${baseUrl}/api/v2/safes/${rootRequest.safe}/policy-root-requests/`;
+      const cacheDir = new CacheDir(
+        `${chainId}_policy_root_requests_${rootRequest.safe}`,
+        `${rootRequest.root}_${rootRequest.status}_${limit}_${offset}`,
+      );
+      mockDataSource.get.mockResolvedValueOnce(rawify(rootRequestsPage));
+
+      const actual = await service.getPolicyRootRequests({
+        safeAddress: rootRequest.safe,
+        root: rootRequest.root,
+        status: rootRequest.status,
+        limit,
+        offset,
+      });
+
+      expect(actual).toBe(rootRequestsPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+          params: {
+            root: rootRequest.root,
+            status: rootRequest.status,
+            limit,
+            offset,
+          },
+        },
+      });
+    });
+
+    const errorMessage = faker.word.words();
+    it.each([
+      ['Transaction Service', { nonFieldErrors: [errorMessage] }],
+      ['standard', new Error(errorMessage)],
+    ])('should forward a %s error', async (_, error) => {
+      const rootRequest = policyRootRequestBuilder().build();
+      const url = `${baseUrl}/api/v2/safes/${rootRequest.safe}/policy-root-requests/`;
+      const statusCode = faker.internet.httpStatusCode({
+        types: ['clientError', 'serverError'],
+      });
+      const expected = new DataSourceError(errorMessage, statusCode);
+      mockDataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(url),
+          { status: statusCode } as Response,
+          error,
+        ),
+      );
+
+      await expect(
+        service.getPolicyRootRequests({ safeAddress: rootRequest.safe }),
+      ).rejects.toThrow(expected);
+    });
+  });
+
+  describe('clearPolicyRootRequests', () => {
+    it('should clear the policy root requests cache', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      await service.clearPolicyRootRequests(safeAddress);
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        `${chainId}_policy_root_requests_${safeAddress}`,
       );
     });
   });

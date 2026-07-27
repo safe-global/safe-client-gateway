@@ -72,6 +72,7 @@ import { BlocklistGuard } from '@/routes/common/guards/blocklist.guard';
 import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
 import { NullResponseInterceptor } from '@/routes/common/interceptors/null-response.interceptor';
 import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
+import { PoliciesModule } from '@/modules/policies/policies.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -117,6 +118,7 @@ export class AppModule implements NestModule {
           ? [
               UsersModule,
               SpacesModule,
+              PoliciesModule,
               CounterfactualSafesModule,
               SurveysModule,
             ]
