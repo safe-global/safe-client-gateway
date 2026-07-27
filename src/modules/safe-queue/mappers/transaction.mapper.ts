@@ -2,15 +2,15 @@
 
 import type { Hex } from 'viem';
 import type {
-  SafeQueueConfirmation,
-  SafeQueueMultisigTransactionEntity,
-} from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import type {
   Confirmation,
   MultisigTransaction,
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type {
+  SafeQueueConfirmation,
+  SafeQueueMultisigTransactionEntity,
+} from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 
 // Pick only domain fields explicitly. Spreading the queue entity would leak
 // queue-only fields (e.g. `created`/`modified` on confirmations, `chainId`/

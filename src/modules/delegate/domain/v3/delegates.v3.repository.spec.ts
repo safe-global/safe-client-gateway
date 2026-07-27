@@ -200,7 +200,9 @@ describe('DelegatesV3Repository', () => {
           .with('results', [queueDelegate as unknown as SafeQueueDelegate])
           .with('count', 1)
           .build();
-        mockSafeQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
+        mockSafeQueueService.getDelegates.mockResolvedValue(
+          rawify(page) as never,
+        );
 
         const result = await repository.getDelegates({
           chainId,
@@ -241,7 +243,9 @@ describe('DelegatesV3Repository', () => {
           .with('results', [queueDelegate as unknown as SafeQueueDelegate])
           .with('count', 1)
           .build();
-        mockSafeQueueService.getDelegates.mockResolvedValue(rawify(page) as never);
+        mockSafeQueueService.getDelegates.mockResolvedValue(
+          rawify(page) as never,
+        );
 
         const result = await repository.getDelegates({ chainId });
 

@@ -170,13 +170,16 @@ export class SafeQueueService implements ISafeQueueService {
             query.append('safe_tx_hash', hash);
           }
           const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
-          const cacheDir = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir(
-            { chainId: args.chainId, safeTxHashes: chunk },
-          );
+          const cacheDir =
+            CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+              chainId: args.chainId,
+              safeTxHashes: chunk,
+            });
           return this.dataSource.get({
             cacheDir,
             url,
-            notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+            notFoundExpireTimeSeconds:
+              this.defaultNotFoundExpirationTimeSeconds,
             expireTimeSeconds: this.defaultExpirationTimeInSeconds,
             networkRequest: {
               circuitBreaker: {
@@ -233,7 +236,9 @@ export class SafeQueueService implements ISafeQueueService {
         nonceOrder,
       });
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
-      return await this.dataSource.get<Page<SafeQueueMultisigTransactionEntity>>({
+      return await this.dataSource.get<
+        Page<SafeQueueMultisigTransactionEntity>
+      >({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,

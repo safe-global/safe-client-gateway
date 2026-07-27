@@ -35,8 +35,6 @@ import {
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { TestSafeQueueModule } from '@/modules/safe-queue/__tests__/test.safe-queue.module';
-import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
@@ -44,6 +42,8 @@ import {
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { TestSafeQueueModule } from '@/modules/safe-queue/__tests__/test.safe-queue.module';
+import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import { addConfirmationDtoBuilder } from '@/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';

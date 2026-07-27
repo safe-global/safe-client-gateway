@@ -36,10 +36,10 @@ import type { Message as DomainMessage } from '@/modules/messages/domain/entitie
 import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
 import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
 import { MessageStatus } from '@/modules/messages/routes/entities/message.entity';
-import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
+import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { rawify } from '@/validation/entities/raw.entity';
 

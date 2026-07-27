@@ -641,7 +641,10 @@ export class CacheRouter {
     chainId: string;
     messageHash: string;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getSafeQueueMessageByHashCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getSafeQueueMessageByHashCacheKey(args),
+      '',
+    );
   }
 
   static getMessagesBySafeCacheKey(args: {
