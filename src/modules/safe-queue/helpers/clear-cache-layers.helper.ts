@@ -12,7 +12,9 @@ export async function clearBothCacheLayers(
 ): Promise<void> {
   await Promise.all([
     txServiceClear.catch((error) => {
-      loggingService.warn(`Failed to clear tx-service ${context}, error=${error}`);
+      loggingService.warn(
+        `Failed to clear tx-service ${context}, error=${error}`,
+      );
     }),
     queueServiceClear.catch((error) => {
       loggingService.warn(`Failed to clear queue ${context}, error=${error}`);

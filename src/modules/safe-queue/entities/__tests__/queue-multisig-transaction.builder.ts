@@ -4,8 +4,8 @@ import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 
 export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisigTransactionEntity> {
   return new Builder<SafeQueueMultisigTransactionEntity>()

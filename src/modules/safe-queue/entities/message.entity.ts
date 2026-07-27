@@ -41,4 +41,6 @@ export const SafeQueueMessageSchema = z.object({
   confirmations: z.array(QueueMessageConfirmationSchema),
 });
 
-export const SafeQueueMessagePageSchema = buildPageSchema(SafeQueueMessageSchema);
+export const SafeQueueMessagePageSchema = buildPageSchema(
+  SafeQueueMessageSchema,
+);

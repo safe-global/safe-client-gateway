@@ -3,11 +3,11 @@
 import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import {
   OriginNameSchema,
   OriginUrlSchema,
 } from '@/modules/safe-queue/entities/schemas/origin.schema';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';

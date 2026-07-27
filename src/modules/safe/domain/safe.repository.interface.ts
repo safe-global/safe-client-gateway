@@ -7,7 +7,6 @@ import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
 import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -17,6 +16,7 @@ import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id
 import { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
+import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';

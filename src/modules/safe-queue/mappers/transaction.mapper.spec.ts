@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 
 describe('mapSafeQueueToMultisigTransaction', () => {
   it('embeds the note into the origin JSON so it can be extracted downstream', () => {

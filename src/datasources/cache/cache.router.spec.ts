@@ -321,10 +321,12 @@ describe('CacheRouter', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
     it('Should produce a key under the safe_queue_multisig_transactions namespace, distinct from the tx-service key', () => {
-      const queueListKey = CacheRouter.getSafeQueueMultisigTransactionsCacheKey({
-        chainId,
-        safeAddress,
-      });
+      const queueListKey = CacheRouter.getSafeQueueMultisigTransactionsCacheKey(
+        {
+          chainId,
+          safeAddress,
+        },
+      );
       const txListKey = CacheRouter.getMultisigTransactionsCacheKey({
         chainId,
         safeAddress,
@@ -395,7 +397,9 @@ describe('CacheRouter', () => {
       });
 
       expect(queueDir.key).not.toBe(txDir.key);
-      expect(queueDir.key).toBe(`${chainId}_safe_queue_messages_${safeAddress}`);
+      expect(queueDir.key).toBe(
+        `${chainId}_safe_queue_messages_${safeAddress}`,
+      );
       expect(queueDir.field).toBe('5_0');
     });
   });

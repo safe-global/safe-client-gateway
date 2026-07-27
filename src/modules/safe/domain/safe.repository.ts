@@ -10,14 +10,6 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import {
-  type SafeQueueMultisigTransactionEntity,
-  SafeQueueMultisigTransactionPageSchema,
-  SafeQueueMultisigTransactionSchema,
-} from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
-import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import {
   ModuleTransaction,
@@ -49,6 +41,14 @@ import {
   TransferSchema,
 } from '@/modules/safe/domain/entities/transfer.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import {
+  type SafeQueueMultisigTransactionEntity,
+  SafeQueueMultisigTransactionPageSchema,
+  SafeQueueMultisigTransactionSchema,
+} from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
+import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
+import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
@@ -396,10 +396,11 @@ export class SafeRepository implements ISafeRepository {
     try {
       // Already validated by getMultisigTransactionsBatch (per-chunk
       // safeParse) — not Raw<T>, re-parsing here would be redundant.
-      const transactions = await this.safeQueueService.getMultisigTransactionsBatch({
-        chainId,
-        safeTxHashes,
-      });
+      const transactions =
+        await this.safeQueueService.getMultisigTransactionsBatch({
+          chainId,
+          safeTxHashes,
+        });
       for (const queue of transactions) byHash.set(queue.safeTxHash, queue);
       const missing = safeTxHashes.filter((hash) => !byHash.has(hash));
       if (missing.length > 0) {

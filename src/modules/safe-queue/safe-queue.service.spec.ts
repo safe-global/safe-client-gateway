@@ -157,7 +157,9 @@ describe('SafeQueueService', () => {
       const cacheDir = (
         mockDataSource.get.mock.calls[0][0] as { cacheDir: CacheDir }
       ).cacheDir;
-      expect(cacheDir.key).toBe(`${chainId}_safe_queue_messages_${safeAddress}`);
+      expect(cacheDir.key).toBe(
+        `${chainId}_safe_queue_messages_${safeAddress}`,
+      );
       expect(cacheDir.key).not.toBe(`${chainId}_messages_${safeAddress}`);
     });
   });
@@ -174,7 +176,9 @@ describe('SafeQueueService', () => {
       const cacheDir = (
         mockDataSource.get.mock.calls[0][0] as { cacheDir: CacheDir }
       ).cacheDir;
-      expect(cacheDir.key).toBe(`${chainId}_safe_queue_delegates_${safeAddress}`);
+      expect(cacheDir.key).toBe(
+        `${chainId}_safe_queue_delegates_${safeAddress}`,
+      );
       expect(cacheDir.key).not.toBe(`${chainId}_delegates_${safeAddress}`);
     });
   });

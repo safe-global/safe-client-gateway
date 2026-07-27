@@ -12,11 +12,11 @@ import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/mes
 import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
 import type { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
 import { MessagesRepository } from '@/modules/messages/domain/messages.repository';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { createMockSafeQueueService } from '@/modules/safe-queue/__tests__/safe-queue-service.mock';
 import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
 import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
 function safeQueueMessageBuilder(chainId: number): SafeQueueMessage {
