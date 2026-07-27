@@ -35,8 +35,8 @@ import {
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { TestQueueServiceModule } from '@/modules/queue/__tests__/test.queue-service.module';
-import { QueueServiceModule } from '@/modules/queue/queue.module';
+import { TestSafeQueueModule } from '@/modules/safe-queue/__tests__/test.safe-queue.module';
+import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
@@ -82,8 +82,8 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     })
       .overrideModule(TxAuthNetworkModule)
       .useModule(TestTxAuthNetworkModule)
-      .overrideModule(QueueServiceModule)
-      .useModule(TestQueueServiceModule)
+      .overrideModule(SafeQueueModule)
+      .useModule(TestSafeQueueModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

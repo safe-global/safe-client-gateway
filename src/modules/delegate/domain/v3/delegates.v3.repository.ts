@@ -9,25 +9,26 @@ import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { QueueServiceDelegatePageSchema } from '@/modules/queue/entities/delegate.entity';
-import { IQueueService } from '@/modules/queue/queue.interface';
+import { SafeQueueDelegatePageSchema } from '@/modules/safe-queue/entities/delegate.entity';
+import { clearBothCacheLayers } from '@/modules/safe-queue/helpers/clear-cache-layers.helper';
+import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 
 @Injectable()
 export class DelegatesV3Repository implements IDelegatesV3Repository {
-  private readonly queueServiceEnabled: boolean;
+  private readonly safeQueueEnabled: boolean;
 
   constructor(
     @Inject(ITransactionApiManager)
     private readonly transactionApiManager: ITransactionApiManager,
-    @Inject(IQueueService)
-    private readonly queueService: IQueueService,
+    @Inject(ISafeQueueService)
+    private readonly safeQueueService: ISafeQueueService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    this.queueServiceEnabled = this.configurationService.getOrThrow<boolean>(
-      'features.queueService',
+    this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.safeQueueService',
     );
   }
 
@@ -40,9 +41,9 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     limit?: number;
     offset?: number;
   }): Promise<Page<Delegate>> {
-    if (this.queueServiceEnabled) {
-      const page = await this.queueService.getDelegates(args);
-      const parsed = QueueServiceDelegatePageSchema.parse(page);
+    if (this.safeQueueEnabled) {
+      const page = await this.safeQueueService.getDelegates(args);
+      const parsed = SafeQueueDelegatePageSchema.parse(page);
       return {
         ...parsed,
         results: parsed.results.map((d) => ({
@@ -74,14 +75,15 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    if (this.queueServiceEnabled) {
-      await this.queueService.clearDelegates(args);
-      return;
-    }
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.clearDelegates(args.safeAddress);
+    await clearBothCacheLayers(
+      this.loggingService,
+      transactionService.clearDelegates(args.safeAddress),
+      this.safeQueueService.clearDelegates(args),
+      `delegates cache. chainId=${args.chainId}, safeAddress=${args.safeAddress}`,
+    );
   }
 
   async postDelegate(args: {
@@ -92,9 +94,12 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    if (this.queueServiceEnabled) {
-      await this.queueService.postDelegate(args);
-      this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+    if (this.safeQueueEnabled) {
+      await this.safeQueueService.postDelegate(args);
+      void this.clearDelegates({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress ?? undefined,
+      });
       return;
     }
     const transactionService = await this.transactionApiManager.getApi(
@@ -107,7 +112,10 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
       signature: args.signature,
       label: args.label,
     });
-    this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+    void this.clearDelegates({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress ?? undefined,
+    });
   }
 
   async updateDelegate(args: {
@@ -118,9 +126,12 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     signature: string;
     label: string;
   }): Promise<void> {
-    if (this.queueServiceEnabled) {
-      await this.queueService.updateDelegate(args);
-      this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+    if (this.safeQueueEnabled) {
+      await this.safeQueueService.updateDelegate(args);
+      void this.clearDelegates({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress ?? undefined,
+      });
       return;
     }
     const transactionService = await this.transactionApiManager.getApi(
@@ -133,7 +144,10 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
       signature: args.signature,
       label: args.label,
     });
-    this._invalidateDelegatesCache(args.chainId, args.safeAddress);
+    void this.clearDelegates({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress ?? undefined,
+    });
   }
 
   async deleteDelegate(args: {
@@ -142,36 +156,27 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     delegator: Address;
     safeAddress: Address | null;
     signature: string;
-  }): Promise<unknown> {
-    if (this.queueServiceEnabled) {
-      const result = await this.queueService.deleteDelegate(args);
-      this._invalidateDelegatesCache(args.chainId, args.safeAddress);
-      return result;
+  }): Promise<void> {
+    if (this.safeQueueEnabled) {
+      await this.safeQueueService.deleteDelegate(args);
+      void this.clearDelegates({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress ?? undefined,
+      });
+      return;
     }
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const result = await transactionService.deleteDelegateV2({
+    await transactionService.deleteDelegateV2({
       delegate: args.delegate,
       delegator: args.delegator,
       safeAddress: args.safeAddress,
       signature: args.signature,
     });
-    this._invalidateDelegatesCache(args.chainId, args.safeAddress);
-    return result;
-  }
-
-  private _invalidateDelegatesCache(
-    chainId: string,
-    safeAddress: Address | null,
-  ): void {
-    this.clearDelegates({
-      chainId,
-      safeAddress: safeAddress ?? undefined,
-    }).catch((error) => {
-      this.loggingService.warn(
-        `Failed to clear delegates cache. chainId=${chainId}, safeAddress=${safeAddress}, error=${error}`,
-      );
+    void this.clearDelegates({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress ?? undefined,
     });
   }
 }

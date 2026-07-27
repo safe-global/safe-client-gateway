@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { QueueMessage } from '@/modules/queue/entities/message.entity';
-import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
+import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
+import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 
-export function mapQueueMessageToMessage(msg: QueueMessage): Message {
+export function mapSafeQueueMessageToMessage(msg: SafeQueueMessage): Message {
   // Pick only domain fields explicitly. Spreading `msg` would leak queue-only
   // fields (chainId, originName, originUrl) onto an object typed as `Message`
   // — TypeScript does not flag them because object spread bypasses excess

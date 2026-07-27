@@ -21,7 +21,7 @@ import { IChainsRepository } from '@/modules/chains/domain/chains.repository.int
 import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
 import {
@@ -52,8 +52,8 @@ export class EventCacheHelper {
     private readonly chainsRepository: IChainsRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
-    @Inject(IDelegatesV2Repository)
-    private readonly delegatesRepository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesRepository: IDelegatesV3Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
     private readonly zerionCache: ZerionCacheService,

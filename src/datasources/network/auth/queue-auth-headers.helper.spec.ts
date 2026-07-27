@@ -3,7 +3,7 @@ import { get } from 'lodash';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { getQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
+import { getSafeQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
 
 const mockConfigurationService = vi.mocked({
   getOrThrow: vi.fn(),
@@ -19,7 +19,7 @@ function initTarget(config: typeof configuration): void {
   });
 }
 
-describe('getQueueAuthHeaders', () => {
+describe('getSafeQueueAuthHeaders', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     initTarget(configuration);
@@ -29,11 +29,11 @@ describe('getQueueAuthHeaders', () => {
     const apiKey = 'test-api-key-123';
     const config = configuration();
     config.application.isDevelopment = true;
-    config.queueService.useVpcUrl = false;
-    config.queueService.apiKey = apiKey;
+    config.safeQueueService.useVpcUrl = false;
+    config.safeQueueService.apiKey = apiKey;
     initTarget(() => config);
 
-    const result = getQueueAuthHeaders(mockConfigurationService);
+    const result = getSafeQueueAuthHeaders(mockConfigurationService);
 
     expect(result).toEqual({
       Authorization: `Bearer ${apiKey}`,
@@ -78,11 +78,11 @@ describe('getQueueAuthHeaders', () => {
   }) => {
     const config = configuration();
     config.application.isDevelopment = isDevelopment;
-    config.queueService.useVpcUrl = useVpcUrl;
-    config.queueService.apiKey = apiKey;
+    config.safeQueueService.useVpcUrl = useVpcUrl;
+    config.safeQueueService.apiKey = apiKey;
     initTarget(() => config);
 
-    const result = getQueueAuthHeaders(mockConfigurationService);
+    const result = getSafeQueueAuthHeaders(mockConfigurationService);
 
     expect(result).toBeUndefined();
   });

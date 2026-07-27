@@ -2,10 +2,10 @@
 
 import type { Hex } from 'viem';
 import type {
-  QueueConfirmation,
-  QueueMultisigTransactionEntity,
-} from '@/modules/queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/queue/helpers/origin.helper';
+  SafeQueueConfirmation,
+  SafeQueueMultisigTransactionEntity,
+} from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 import type {
   Confirmation,
   MultisigTransaction,
@@ -13,7 +13,7 @@ import type {
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 
 function mapConfirmation(
-  c: QueueConfirmation,
+  c: SafeQueueConfirmation,
   transactionHash: Hex | null,
 ): Confirmation {
   return {
@@ -23,8 +23,8 @@ function mapConfirmation(
   };
 }
 
-export function mapQueueToMultisigTransaction(
-  tx: QueueMultisigTransactionEntity,
+export function mapSafeQueueToMultisigTransaction(
+  tx: SafeQueueMultisigTransactionEntity,
   safe: Safe,
 ): MultisigTransaction {
   return {
@@ -34,7 +34,7 @@ export function mapQueueToMultisigTransaction(
     submissionDate: tx.created,
     transactionHash: tx.txHash,
     isExecuted: tx.txHash !== null,
-    isSuccessful: !tx.failed,
+    isSuccessful: tx.failed === null ? null : !tx.failed,
     origin: buildOrigin(tx.originName, tx.originUrl, tx.notes),
     executionDate: null,
     blockNumber: null,
