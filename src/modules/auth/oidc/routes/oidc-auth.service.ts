@@ -33,7 +33,6 @@ type OidcAuthTokenResponse = {
   userId: number;
 };
 
-
 @Injectable()
 export class OidcAuthService {
   private readonly maxValidityPeriodInSeconds: number;

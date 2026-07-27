@@ -23,11 +23,11 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
 import {
   type OidcConnection,
   OidcConnectionSchema,
 } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
-import { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
 import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
