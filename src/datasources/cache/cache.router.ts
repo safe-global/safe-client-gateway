@@ -469,6 +469,18 @@ export class CacheRouter {
     );
   }
 
+  static getSafeQueueMultisigTransactionsBatchCacheDir(args: {
+    chainId: string;
+    safeTxHashes: ReadonlyArray<string>;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(args.safeTxHashes.join('_'));
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTION_KEY}_batch`,
+      hash.digest('hex'),
+    );
+  }
+
   static getCreationTransactionCacheDir(args: {
     chainId: string;
     safeAddress: Address;

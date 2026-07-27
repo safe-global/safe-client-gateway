@@ -274,6 +274,48 @@ describe('CacheRouter', () => {
     });
   });
 
+  describe('getSafeQueueMultisigTransactionsBatchCacheDir', () => {
+    const chainId = '1';
+
+    it('produces distinct fields for distinct sets of hashes under the same key', () => {
+      const hashesA = [
+        faker.string.hexadecimal({ length: 64 }),
+        faker.string.hexadecimal({ length: 64 }),
+      ];
+      const hashesB = [faker.string.hexadecimal({ length: 64 })];
+
+      const dirA = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashesA,
+      });
+      const dirB = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashesB,
+      });
+
+      expect(dirA.key).toBe(dirB.key);
+      expect(dirA.field).not.toBe(dirB.field);
+    });
+
+    it('is deterministic for the same set of hashes', () => {
+      const hashes = [
+        faker.string.hexadecimal({ length: 64 }),
+        faker.string.hexadecimal({ length: 64 }),
+      ];
+
+      const dir1 = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashes,
+      });
+      const dir2 = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(dir1.field).toBe(dir2.field);
+    });
+  });
+
   describe('getSafeQueueMultisigTransactionsCacheKey', () => {
     const chainId = '1';
     const safeAddress = getAddress(faker.finance.ethereumAddress());

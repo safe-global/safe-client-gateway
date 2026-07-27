@@ -12,12 +12,19 @@ import type {
 } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 
+// Pick only domain fields explicitly. Spreading the queue entity would leak
+// queue-only fields (e.g. `created`/`modified` on confirmations, `chainId`/
+// `notes`/`originName`/`originUrl` on the transaction) onto objects typed as
+// `Confirmation`/`MultisigTransaction` — TypeScript does not flag them
+// because object spread bypasses excess property checks.
 function mapConfirmation(
   c: SafeQueueConfirmation,
   transactionHash: Hex | null,
 ): Confirmation {
   return {
-    ...c,
+    owner: c.owner,
+    signature: c.signature,
+    signatureType: c.signatureType,
     submissionDate: c.created,
     transactionHash,
   };
@@ -28,7 +35,19 @@ export function mapSafeQueueToMultisigTransaction(
   safe: Safe,
 ): MultisigTransaction {
   return {
-    ...tx,
+    safe: tx.safe,
+    to: tx.to,
+    value: tx.value,
+    data: tx.data,
+    operation: tx.operation,
+    gasToken: tx.gasToken,
+    gasPrice: tx.gasPrice,
+    refundReceiver: tx.refundReceiver,
+    proposer: tx.proposer,
+    proposedByDelegate: tx.proposedByDelegate,
+    nonce: tx.nonce,
+    modified: tx.modified,
+    safeTxHash: tx.safeTxHash,
     safeTxGas: tx.safeTxGas ? Number(tx.safeTxGas) : null,
     baseGas: tx.baseGas ? Number(tx.baseGas) : null,
     submissionDate: tx.created,

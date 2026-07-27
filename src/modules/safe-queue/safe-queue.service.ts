@@ -124,7 +124,9 @@ export class SafeQueueService implements ISafeQueueService {
         safeTransactionHash: args.safeTxHash,
       });
       const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
-      const data = await this.dataSource.get({
+      // Left unvalidated (Raw) — the caller is the single parse point, per the
+      // Raw<T> convention. Parsing here too would silently double-validate.
+      return await this.dataSource.get({
         cacheDir,
         url,
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
@@ -135,19 +137,22 @@ export class SafeQueueService implements ISafeQueueService {
           },
         },
       });
-      return rawify(SafeQueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
   }
 
+  // Note: unlike its siblings, this returns an already-validated array (each
+  // chunk is safeParse'd below), not a Raw<T> — re-parsing an already-parsed
+  // chunk at the call site would be a pointless double validation, and would
+  // reject the entire merged array over rows other chunks already vetted.
   async getMultisigTransactionsBatch(args: {
     chainId: string;
     safeTxHashes: ReadonlyArray<string>;
-  }): Promise<Raw<Array<SafeQueueMultisigTransactionEntity>>> {
+  }): Promise<Array<SafeQueueMultisigTransactionEntity>> {
     try {
       if (args.safeTxHashes.length === 0) {
-        return rawify([]);
+        return [];
       }
       const chunkSize = SafeQueueService.MAX_BATCH_HASHES_PER_CALL;
       const chunks: Array<ReadonlyArray<string>> = [];
@@ -165,8 +170,14 @@ export class SafeQueueService implements ISafeQueueService {
             query.append('safe_tx_hash', hash);
           }
           const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
-          return this.networkService.get({
+          const cacheDir = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir(
+            { chainId: args.chainId, safeTxHashes: chunk },
+          );
+          return this.dataSource.get({
+            cacheDir,
             url,
+            notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+            expireTimeSeconds: this.defaultExpirationTimeInSeconds,
             networkRequest: {
               circuitBreaker: {
                 key: CircuitBreakerKeys.getSafeQueueServiceKey(),
@@ -183,7 +194,7 @@ export class SafeQueueService implements ISafeQueueService {
           // out of flatMap into the outer catch — that would discard the whole
           // batch and defeat the partial-enrichment allSettled buys us above.
           const parsed = SafeQueueMultisigTransactionListSchema.safeParse(
-            response.value.data,
+            response.value,
           );
           if (parsed.success) {
             return parsed.data;
@@ -200,7 +211,7 @@ export class SafeQueueService implements ISafeQueueService {
         });
         return [];
       });
-      return rawify(merged);
+      return merged;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -214,9 +225,14 @@ export class SafeQueueService implements ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
     try {
-      const cacheDir = CacheRouter.getSafeQueuedTransactionsCacheDir(args);
-      const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
+      // Normalize before building the cache key, so an omitted nonceOrder
+      // and an explicit 'asc' (the same effective request) share one entry.
       const nonceOrder = args.nonceOrder ?? 'asc';
+      const cacheDir = CacheRouter.getSafeQueuedTransactionsCacheDir({
+        ...args,
+        nonceOrder,
+      });
+      const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       return await this.dataSource.get<Page<SafeQueueMultisigTransactionEntity>>({
         cacheDir,
         url,

@@ -112,6 +112,22 @@ describe('SafeQueueService', () => {
         `${chainId}_multisig_transactions_${safeAddress}`,
       );
     });
+
+    it('caches an omitted nonceOrder under the same field as an explicit "asc"', async () => {
+      mockDataSource.get.mockResolvedValue(rawify({ results: [] }));
+
+      await service.getTransactionQueue({ chainId, safeAddress });
+      await service.getTransactionQueue({
+        chainId,
+        safeAddress,
+        nonceOrder: 'asc',
+      });
+
+      const [omittedDir, explicitDir] = mockDataSource.get.mock.calls.map(
+        (call) => (call[0] as { cacheDir: CacheDir }).cacheDir,
+      );
+      expect(omittedDir.field).toBe(explicitDir.field);
+    });
   });
 
   describe('getMessageByHash', () => {
@@ -233,31 +249,28 @@ describe('SafeQueueService', () => {
       const hashes = Array.from({ length: 200 }, () =>
         faker.string.hexadecimal({ length: 64 }),
       );
-      networkService.get.mockResolvedValue({ data: rawify([]), status: 200 });
+      mockDataSource.get.mockResolvedValue(rawify([]));
 
       await service.getMultisigTransactionsBatch({
         chainId,
         safeTxHashes: hashes,
       });
 
-      expect(networkService.get).toHaveBeenCalledTimes(4);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(4);
     });
 
     it('issues a single call when input fits within one chunk', async () => {
       const hashes = Array.from({ length: 30 }, () =>
         faker.string.hexadecimal({ length: 64 }),
       );
-      networkService.get.mockResolvedValueOnce({
-        data: rawify([]),
-        status: 200,
-      });
+      mockDataSource.get.mockResolvedValueOnce(rawify([]));
 
       await service.getMultisigTransactionsBatch({
         chainId,
         safeTxHashes: hashes,
       });
 
-      expect(networkService.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
     });
 
     it('returns empty without hitting the network when input is empty', async () => {
@@ -266,8 +279,26 @@ describe('SafeQueueService', () => {
         safeTxHashes: [],
       });
 
-      expect(networkService.get).not.toHaveBeenCalled();
+      expect(mockDataSource.get).not.toHaveBeenCalled();
       expect(result).toEqual([]);
+    });
+
+    it('caches each chunk under a hash of its safeTxHashes, distinct per chunk', async () => {
+      const hashes = Array.from({ length: 60 }, () =>
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      mockDataSource.get.mockResolvedValue(rawify([]));
+
+      await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      const cacheDirs = mockDataSource.get.mock.calls.map(
+        (call) => (call[0] as { cacheDir: CacheDir }).cacheDir,
+      );
+      expect(cacheDirs[0].field).not.toBe(cacheDirs[1].field);
+      expect(cacheDirs[0].key).toBe(cacheDirs[1].key);
     });
 
     it('logs and omits a chunk that fails, while still returning the other chunks', async () => {
@@ -276,8 +307,8 @@ describe('SafeQueueService', () => {
       );
       const fulfilledTx = safeQueueMultisigTransactionBuilder().build();
       const error = new Error('chunk failed');
-      networkService.get
-        .mockResolvedValueOnce({ data: rawify([fulfilledTx]), status: 200 })
+      mockDataSource.get
+        .mockResolvedValueOnce(rawify([fulfilledTx]))
         .mockRejectedValueOnce(error);
 
       const result = await service.getMultisigTransactionsBatch({
@@ -293,6 +324,23 @@ describe('SafeQueueService', () => {
           error,
         }),
       );
+    });
+
+    it('sanitizes a malicious originUrl protocol to null without dropping the row', async () => {
+      const tx = safeQueueMultisigTransactionBuilder()
+        .with('originName', 'Evil')
+        .with('originUrl', 'javascript:alert(1)' as unknown as string)
+        .build();
+      mockDataSource.get.mockResolvedValueOnce(rawify([tx]));
+
+      const result = await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: [tx.safeTxHash],
+      });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].originUrl).toBeNull();
+      expect(result[0].originName).toBe('Evil');
     });
   });
 
@@ -391,17 +439,14 @@ describe('SafeQueueService', () => {
     });
 
     it('getMultisigTransactionsBatch includes the queue circuit breaker key', async () => {
-      networkService.get.mockResolvedValueOnce({
-        data: rawify([]),
-        status: 200,
-      });
+      mockDataSource.get.mockResolvedValueOnce(rawify([]));
 
       await service.getMultisigTransactionsBatch({
         chainId,
         safeTxHashes: [safeTxHash],
       });
 
-      expect(networkService.get).toHaveBeenCalledWith(withCircuitBreakerKey);
+      expect(mockDataSource.get).toHaveBeenCalledWith(withCircuitBreakerKey);
     });
 
     it('getTransactionQueue includes the queue circuit breaker key', async () => {
