@@ -60,14 +60,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const page = await transactionService.getDelegatesV2({
-      safeAddress: args.safeAddress,
-      delegate: args.delegate,
-      delegator: args.delegator,
-      label: args.label,
-      limit: args.limit,
-      offset: args.offset,
-    });
+    const page = await transactionService.getDelegatesV2(args);
     return DelegatePageSchema.parse(page);
   }
 
@@ -105,13 +98,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.postDelegateV2({
-      safeAddress: args.safeAddress,
-      delegate: args.delegate,
-      delegator: args.delegator,
-      signature: args.signature,
-      label: args.label,
-    });
+    await transactionService.postDelegateV2(args);
     this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
@@ -137,13 +124,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.updateDelegateV2({
-      safeAddress: args.safeAddress,
-      delegate: args.delegate,
-      delegator: args.delegator,
-      signature: args.signature,
-      label: args.label,
-    });
+    await transactionService.updateDelegateV2(args);
     this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
@@ -168,12 +149,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    await transactionService.deleteDelegateV2({
-      delegate: args.delegate,
-      delegator: args.delegator,
-      safeAddress: args.safeAddress,
-      signature: args.signature,
-    });
+    await transactionService.deleteDelegateV2(args);
     this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
