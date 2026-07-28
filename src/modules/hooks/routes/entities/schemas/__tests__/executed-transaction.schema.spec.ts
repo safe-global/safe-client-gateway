@@ -85,6 +85,7 @@ describe('ExecutedTransactionEventSchema', () => {
     'chainId' as const,
     'safeTxHash' as const,
     'txHash' as const,
+    'isFailed' as const,
   ])('should not allow a missing %s', (field) => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
     delete executedTransactionEvent[field];
@@ -149,20 +150,6 @@ describe('ExecutedTransactionEventSchema', () => {
     ])('should validate a payload with isFailed=%s', (isFailed) => {
       const executedTransactionEvent = executedTransactionEventBuilder()
         .with('isFailed', isFailed)
-        .build();
-
-      const result = ExecutedTransactionEventSchema.safeParse(
-        executedTransactionEvent,
-      );
-
-      expect(result.success).toBe(true);
-    });
-
-    // Nothing in cache invalidation reads the flag, so a missing one must not
-    // reject the event: that would drop it and leave the Safe's caches stale
-    it('should validate a payload without isFailed', () => {
-      const executedTransactionEvent = executedTransactionEventBuilder()
-        .with('isFailed', undefined)
         .build();
 
       const result = ExecutedTransactionEventSchema.safeParse(

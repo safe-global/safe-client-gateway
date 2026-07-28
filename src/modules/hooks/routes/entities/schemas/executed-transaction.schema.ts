@@ -10,11 +10,7 @@ export const ExecutedTransactionEventSchema = HookEventBaseSchema.extend({
   to: AddressSchema,
   safeTxHash: HexSchema,
   txHash: HexSchema,
-  // Optional on purpose: nothing in cache invalidation reads the execution
-  // status, so a missing flag must never reject the event. The queue consumer
-  // discards whatever fails validation, which leaves every cache for this Safe,
-  // its nonce included, stale until it expires on its own TTL.
-  isFailed: z.boolean().optional(),
+  isFailed: z.boolean(),
   // FirebaseNotification['data'] does not accept null values
   data: z.preprocess((val) => val ?? undefined, HexSchema.optional()),
 });

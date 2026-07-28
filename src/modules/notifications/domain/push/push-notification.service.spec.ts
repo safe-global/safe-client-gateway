@@ -1013,7 +1013,6 @@ describe('PushNotificationService (Unit)', () => {
     it.each([
       { isFailed: true, expected: 'true' },
       { isFailed: false, expected: 'false' },
-      { isFailed: undefined, expected: 'false' },
     ])('should send failed=$expected for isFailed=$isFailed', async ({
       isFailed,
       expected,

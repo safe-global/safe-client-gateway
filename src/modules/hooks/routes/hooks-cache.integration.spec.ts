@@ -371,7 +371,6 @@ describe('Hook Events for Cache', () => {
     it.each([
       { name: 'isFailed false', status: { isFailed: false } },
       { name: 'isFailed true', status: { isFailed: true } },
-      { name: 'no isFailed', status: {} },
     ])('clears the Safe and its queue for a payload with $name', async ({
       status,
     }) => {
