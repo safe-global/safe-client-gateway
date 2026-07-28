@@ -123,7 +123,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -173,7 +173,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -218,7 +218,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -259,7 +259,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -307,7 +307,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -432,7 +432,7 @@ describe('Events queue processing e2e tests', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {

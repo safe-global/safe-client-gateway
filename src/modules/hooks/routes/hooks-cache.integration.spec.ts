@@ -123,7 +123,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -259,7 +259,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -317,7 +317,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -364,17 +364,14 @@ describe('Hook Events for Cache', () => {
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
   });
 
-  // The Transaction Service moved the execution status from the stringified
-  // `failed` to the boolean `isFailed`. A payload the consumer cannot parse is
-  // dropped, so a Safe's caches — its nonce above all — would stay stale until
-  // they expire on their own TTL and users could not build a new transaction.
-  describe('EXECUTED_MULTISIG_TRANSACTION execution status compatibility', () => {
+  // A payload the consumer cannot parse is dropped, so the Safe's caches, its
+  // nonce above all, would stay stale until they expire on their own TTL and
+  // users could not build a new transaction.
+  describe('EXECUTED_MULTISIG_TRANSACTION execution status', () => {
     it.each([
-      { name: 'isFailed only (current)', status: { isFailed: false } },
+      { name: 'isFailed false', status: { isFailed: false } },
       { name: 'isFailed true', status: { isFailed: true } },
-      { name: 'failed only (legacy)', status: { failed: 'false' } },
-      { name: 'both fields', status: { isFailed: false, failed: 'false' } },
-      { name: 'neither field', status: {} },
+      { name: 'no isFailed', status: {} },
     ])('clears the Safe and its queue for a payload with $name', async ({
       status,
     }) => {
@@ -484,7 +481,7 @@ describe('Hook Events for Cache', () => {
         to: childSafe, // approveHash is executed on the child Safe
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: approveHashData(childTxHash),
       };
 
@@ -562,7 +559,7 @@ describe('Hook Events for Cache', () => {
         to: multiSendAddress,
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: encodeFunctionData({
           abi: [
             {
@@ -610,7 +607,7 @@ describe('Hook Events for Cache', () => {
         to: getAddress(faker.finance.ethereumAddress()),
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: '0xaaaaaaaa', // not approveHash, not multiSend
       };
 
@@ -649,7 +646,7 @@ describe('Hook Events for Cache', () => {
         to: getAddress(faker.finance.ethereumAddress()),
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         // data omitted — schema preprocesses null/undefined to undefined
       };
 
@@ -722,7 +719,7 @@ describe('Hook Events for Cache', () => {
         to: multiSendAddress,
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: encodeFunctionData({
           abi: [
             {
@@ -831,7 +828,7 @@ describe('Hook Events for Cache', () => {
         to: outerMultiSendAddress,
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: outerData,
       };
 
@@ -853,7 +850,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -902,7 +899,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -957,7 +954,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -1015,7 +1012,7 @@ describe('Hook Events for Cache', () => {
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
       to: faker.finance.ethereumAddress(),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       data: faker.string.hexadecimal({ length: 32 }),
@@ -1164,7 +1161,7 @@ describe('Hook Events for Cache', () => {
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
       to: faker.finance.ethereumAddress(),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       data: faker.string.hexadecimal({ length: 32 }),

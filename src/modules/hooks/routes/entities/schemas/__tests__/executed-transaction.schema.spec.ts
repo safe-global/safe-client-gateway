@@ -3,10 +3,7 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import {
-  ExecutedTransactionEventSchema,
-  isExecutedTransactionFailed,
-} from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
+import { ExecutedTransactionEventSchema } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 
 describe('ExecutedTransactionEventSchema', () => {
   it('should validate an execution event', () => {
@@ -147,30 +144,25 @@ describe('ExecutedTransactionEventSchema', () => {
 
   describe('execution status', () => {
     it.each([
-      {
-        name: 'only isFailed (current Transaction Service)',
-        isFailed: false,
-        failed: undefined,
-      },
-      {
-        name: 'only the stringified failed (legacy)',
-        isFailed: undefined,
-        failed: 'true' as const,
-      },
-      {
-        name: 'both status fields',
-        isFailed: true,
-        failed: 'true' as const,
-      },
-      {
-        name: 'neither status field',
-        isFailed: undefined,
-        failed: undefined,
-      },
-    ])('should validate a payload carrying $name', ({ isFailed, failed }) => {
+      true,
+      false,
+    ])('should validate a payload with isFailed=%s', (isFailed) => {
       const executedTransactionEvent = executedTransactionEventBuilder()
         .with('isFailed', isFailed)
-        .with('failed', failed)
+        .build();
+
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    // Nothing in cache invalidation reads the flag, so a missing one must not
+    // reject the event: that would drop it and leave the Safe's caches stale
+    it('should validate a payload without isFailed', () => {
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with('isFailed', undefined)
         .build();
 
       const result = ExecutedTransactionEventSchema.safeParse(
@@ -193,22 +185,6 @@ describe('ExecutedTransactionEventSchema', () => {
       expect(!result.success && result.error.issues).toEqual([
         expect.objectContaining({ path: ['isFailed'] }),
       ]);
-    });
-
-    it.each([
-      { isFailed: true, failed: undefined, expected: true },
-      { isFailed: false, failed: undefined, expected: false },
-      { isFailed: undefined, failed: 'true' as const, expected: true },
-      { isFailed: undefined, failed: 'false' as const, expected: false },
-      { isFailed: undefined, failed: undefined, expected: false },
-      // The boolean field wins: it is the current Transaction Service field
-      { isFailed: false, failed: 'true' as const, expected: false },
-    ])('should resolve isFailed=$isFailed / failed=$failed to $expected', ({
-      isFailed,
-      failed,
-      expected,
-    }) => {
-      expect(isExecutedTransactionFailed({ isFailed, failed })).toBe(expected);
     });
   });
 });

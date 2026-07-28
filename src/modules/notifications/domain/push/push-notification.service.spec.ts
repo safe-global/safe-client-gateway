@@ -1011,19 +1011,15 @@ describe('PushNotificationService (Unit)', () => {
     });
 
     it.each([
-      { isFailed: true, failed: undefined, expected: 'true' },
-      { isFailed: false, failed: undefined, expected: 'false' },
-      { isFailed: undefined, failed: 'true' as const, expected: 'true' },
-      { isFailed: undefined, failed: 'false' as const, expected: 'false' },
-      { isFailed: undefined, failed: undefined, expected: 'false' },
-    ])('should send failed=$expected for isFailed=$isFailed / failed=$failed', async ({
+      { isFailed: true, expected: 'true' },
+      { isFailed: false, expected: 'false' },
+      { isFailed: undefined, expected: 'false' },
+    ])('should send failed=$expected for isFailed=$isFailed', async ({
       isFailed,
-      failed,
       expected,
     }) => {
       const event = executedTransactionEventBuilder()
         .with('isFailed', isFailed)
-        .with('failed', failed)
         .build();
       const sub = createSubscriber();
 
