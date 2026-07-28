@@ -1002,9 +1002,41 @@ describe('PushNotificationService (Unit)', () => {
               to: event.to,
               safeTxHash: event.safeTxHash,
               txHash: event.txHash,
-              failed: event.failed,
+              failed: event.isFailed ? 'true' : 'false',
               data: event.data,
             },
+          },
+        }),
+      );
+    });
+
+    it.each([
+      { isFailed: true, failed: undefined, expected: 'true' },
+      { isFailed: false, failed: undefined, expected: 'false' },
+      { isFailed: undefined, failed: 'true' as const, expected: 'true' },
+      { isFailed: undefined, failed: 'false' as const, expected: 'false' },
+      { isFailed: undefined, failed: undefined, expected: 'false' },
+    ])('should send failed=$expected for isFailed=$isFailed / failed=$failed', async ({
+      isFailed,
+      failed,
+      expected,
+    }) => {
+      const event = executedTransactionEventBuilder()
+        .with('isFailed', isFailed)
+        .with('failed', failed)
+        .build();
+      const sub = createSubscriber();
+
+      mockNotificationsRepository.getSubscribersBySafe.mockResolvedValue([sub]);
+      mockJobQueueService.addJob.mockResolvedValue({} as Job);
+
+      await service.processEvent(event);
+
+      expect(mockJobQueueService.addJob).toHaveBeenCalledWith(
+        JobType.PUSH_NOTIFICATION_DELIVERY,
+        expect.objectContaining({
+          notification: {
+            data: expect.objectContaining({ failed: expected }),
           },
         }),
       );

@@ -14,6 +14,6 @@ export function executedTransactionEventBuilder(): IBuilder<ExecutedTransaction>
     .with('chainId', faker.string.numeric())
     .with('safeTxHash', faker.string.hexadecimal({ length: 32 }) as Hash)
     .with('txHash', faker.string.hexadecimal({ length: 32 }) as Hash)
-    .with('failed', faker.helpers.arrayElement(['true', 'false']))
+    .with('isFailed', faker.datatype.boolean())
     .with('data', faker.string.hexadecimal() as Hex);
 }

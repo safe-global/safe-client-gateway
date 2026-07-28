@@ -14,6 +14,7 @@ import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entit
 import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import { isExecutedTransactionFailed } from '@/modules/hooks/routes/entities/schemas/executed-transaction.schema';
 import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
 import type { IncomingTokenEvent } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
 import type { MessageCreatedEvent } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
@@ -379,7 +380,10 @@ export class PushNotificationService implements IPushNotificationService {
         to: event.to,
         safeTxHash: event.safeTxHash,
         txHash: event.txHash,
-        failed: event.failed,
+        // Sent stringified regardless of which field the event carried:
+        // FirebaseNotification['data'] only accepts strings and deployed clients
+        // read `failed`.
+        failed: isExecutedTransactionFailed(event) ? 'true' : 'false',
         data: event.data,
       };
     }

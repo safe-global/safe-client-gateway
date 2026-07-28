@@ -10,7 +10,14 @@ export const ExecutedTransactionEventSchema = HookEventBaseSchema.extend({
   to: AddressSchema,
   safeTxHash: HexSchema,
   txHash: HexSchema,
-  failed: z.enum(['true', 'false']),
+  // The Transaction Service moved the execution status from the stringified
+  // `failed` to the boolean `isFailed`. Both are optional so that an event from
+  // either version parses: the queue consumer discards any event that fails
+  // validation, which would leave every cache for this Safe — including its
+  // nonce — stale until it expires on its own TTL. Read via
+  // `isExecutedTransactionFailed`.
+  isFailed: z.boolean().optional(),
+  failed: z.enum(['true', 'false']).optional(),
   // FirebaseNotification['data'] does not accept null values
   data: z.preprocess((val) => val ?? undefined, HexSchema.optional()),
 });
@@ -18,3 +25,19 @@ export const ExecutedTransactionEventSchema = HookEventBaseSchema.extend({
 export type ExecutedTransactionEvent = z.infer<
   typeof ExecutedTransactionEventSchema
 >;
+
+/**
+ * Resolves the execution status of an executed transaction event across both
+ * Transaction Service payload versions.
+ *
+ * Falls back to `false` when neither field is present: an executed transaction
+ * that reports no status is a successful one.
+ *
+ * @param event - the executed transaction event to read the status from
+ * @returns whether the on-chain execution reverted
+ */
+export function isExecutedTransactionFailed(
+  event: Pick<ExecutedTransactionEvent, 'isFailed' | 'failed'>,
+): boolean {
+  return event.isFailed ?? event.failed === 'true';
+}
