@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+type ParsedOrigin = {
+  originName?: string;
+  originUrl?: string;
+  note?: string;
+};
+
 /**
  * Parses a TX-service-style origin JSON string into separate name/url/note fields.
  *
@@ -11,16 +17,8 @@
  *
  * @returns An object with the extracted originName, originUrl and note fields if present.
  */
-export function parseOrigin(origin: string | null): {
-  originName?: string;
-  originUrl?: string;
-  note?: string;
-} {
-  const parsedOrigin: {
-    originName?: string;
-    originUrl?: string;
-    note?: string;
-  } = {};
+export function parseOrigin(origin: string | null): ParsedOrigin {
+  const parsedOrigin: ParsedOrigin = {};
   if (!origin) {
     return parsedOrigin;
   }

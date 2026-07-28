@@ -1348,11 +1348,15 @@ describe('SafeRepository', () => {
         safeTxHash: tx.safeTxHash,
         signature,
       });
-      // Yield one microtask tick so the fire-and-forget Promise.all .catch runs
-      await Promise.resolve();
+      // Flush microtasks so the fire-and-forget cache-clear chain runs
+      await new Promise((resolve) => setImmediate(resolve));
 
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        `Failed to immediately clear deleted transaction from cache. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=Error: cache down`,
+        `Failed to immediately clear deleted transaction from cache. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=Error: Failed to clear multisig transaction`,
+      );
+      // The underlying cause is preserved in the repository-level debug log
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        `Failed to clear multisig transaction from one or more caches. errors=Error: cache down`,
       );
     });
   });

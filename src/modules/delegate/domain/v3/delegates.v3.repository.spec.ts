@@ -116,13 +116,7 @@ describe('DelegatesV3Repository', () => {
         await repository.postDelegate(args);
 
         expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledTimes(1);
-        expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledWith({
-          safeAddress: args.safeAddress,
-          delegate: args.delegate,
-          delegator: args.delegator,
-          signature: args.signature,
-          label: args.label,
-        });
+        expect(mockTransactionApi.postDelegateV2).toHaveBeenCalledWith(args);
         expect(mockSafeQueueService.postDelegate).not.toHaveBeenCalled();
       });
     });
@@ -141,13 +135,7 @@ describe('DelegatesV3Repository', () => {
         await repository.updateDelegate(args);
 
         expect(mockTransactionApi.updateDelegateV2).toHaveBeenCalledTimes(1);
-        expect(mockTransactionApi.updateDelegateV2).toHaveBeenCalledWith({
-          safeAddress: args.safeAddress,
-          delegate: args.delegate,
-          delegator: args.delegator,
-          signature: args.signature,
-          label: args.label,
-        });
+        expect(mockTransactionApi.updateDelegateV2).toHaveBeenCalledWith(args);
         expect(mockSafeQueueService.updateDelegate).not.toHaveBeenCalled();
       });
     });
@@ -165,12 +153,7 @@ describe('DelegatesV3Repository', () => {
         await repository.deleteDelegate(args);
 
         expect(mockTransactionApi.deleteDelegateV2).toHaveBeenCalledTimes(1);
-        expect(mockTransactionApi.deleteDelegateV2).toHaveBeenCalledWith({
-          delegate: args.delegate,
-          delegator: args.delegator,
-          safeAddress: args.safeAddress,
-          signature: args.signature,
-        });
+        expect(mockTransactionApi.deleteDelegateV2).toHaveBeenCalledWith(args);
         expect(mockSafeQueueService.deleteDelegate).not.toHaveBeenCalled();
       });
     });
