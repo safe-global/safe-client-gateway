@@ -629,24 +629,21 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.deleteTransaction(args);
     }
 
-    // Ensure transaction is removed from cache in case event is not received
-    const cacheClears: Array<Promise<void>> = [
-      transactionService.clearMultisigTransaction(args.safeTxHash),
-      transactionService.clearMultisigTransactions(safe),
-    ];
-    if (this.safeQueueEnabled) {
-      cacheClears.push(
-        this.safeQueueService.clearMultisigTransaction({
-          chainId: args.chainId,
-          safeTxHash: args.safeTxHash,
-        }),
-        this.safeQueueService.clearAllTransactions({
-          chainId: args.chainId,
-          safeAddress: safe,
-        }),
-      );
-    }
-    Promise.all(cacheClears).catch((error) => {
+    // Ensure transaction is removed from cache in case event is not received.
+    // Reuse the repository-level clears: they invalidate both the tx-service
+    // and queue cache layers and settle every layer before failing.
+    // Each reused method settles all its cache layers before rejecting, so a
+    // failure here cannot have skipped clearing the other layers.
+    Promise.all([
+      this.clearMultisigTransaction({
+        chainId: args.chainId,
+        safeTransactionHash: args.safeTxHash,
+      }),
+      this.clearMultisigTransactions({
+        chainId: args.chainId,
+        safeAddress: safe,
+      }),
+    ]).catch((error) => {
       this.loggingService.warn(
         `Failed to immediately clear deleted transaction from cache. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, error=${error}`,
       );
