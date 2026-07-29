@@ -379,7 +379,9 @@ export class PushNotificationService implements IPushNotificationService {
         to: event.to,
         safeTxHash: event.safeTxHash,
         txHash: event.txHash,
-        failed: event.failed,
+        // Stringified: FirebaseNotification['data'] only accepts strings and
+        // deployed clients read `failed`.
+        failed: event.isFailed ? 'true' : 'false',
         data: event.data,
       };
     }
