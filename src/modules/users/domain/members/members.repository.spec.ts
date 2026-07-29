@@ -4,11 +4,14 @@ import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
 import { In, QueryFailedError } from 'typeorm';
 import type { Mocked, MockedObject } from 'vitest';
+import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IEntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository.interface';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -45,6 +48,9 @@ describe('MembersRepository', () => {
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let walletEncryptionService: MockedObject<WalletEncryptionService>;
   let memberEncryptionService: MockedObject<MemberEncryptionService>;
+  let entitlementsRepository: MockedObject<IEntitlementsRepository>;
+  let cacheService: MockedObject<ICacheService>;
+  let configurationService: MockedObject<IConfigurationService>;
   let target: MembersRepository;
 
   const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -63,6 +69,21 @@ describe('MembersRepository', () => {
       update: vi.fn(),
     };
     dbMembersRepository = { find: vi.fn(), findOne: vi.fn() };
+    entitlementsRepository = {
+      checkQuotaOrFail: vi.fn(),
+    } as unknown as MockedObject<IEntitlementsRepository>;
+    cacheService = {
+      deleteByKey: vi.fn(),
+    } as unknown as MockedObject<ICacheService>;
+    configurationService = {
+      getOrThrow: vi.fn(),
+      get: vi.fn(),
+    } as MockedObject<IConfigurationService>;
+    // Entitlements enforcement off: these tests cover the legacy path.
+    configurationService.getOrThrow.mockImplementation((key: string) => {
+      if (key === 'features.billingService') return false;
+      throw new Error(`Unexpected config key: ${key}`);
+    });
     postgresDatabaseService = {
       transaction: vi
         .fn()
@@ -83,6 +104,9 @@ describe('MembersRepository', () => {
       createMockUserEncryptionService(),
       walletEncryptionService,
       memberEncryptionService,
+      entitlementsRepository,
+      cacheService,
+      configurationService,
     );
   });
 

@@ -7,12 +7,19 @@ import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
+import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { EntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository';
 import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -63,7 +70,19 @@ describe('SpaceAuditRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceAuditLog, SpaceSafe, User, Wallet],
+    entities: [
+      Member,
+      Space,
+      SpaceAuditLog,
+      SpaceSafe,
+      User,
+      Wallet,
+      Feature,
+      SpaceSubscription,
+      SubscriptionEntitlement,
+      SpaceFeatureUsage,
+      SpaceSeatSelection,
+    ],
   });
 
   const dbUserRepo = dataSource.getRepository(User);
@@ -122,6 +141,10 @@ describe('SpaceAuditRepository', () => {
       if (key === 'spaces.maxSpaceCreationsPerUser') {
         return testConfiguration.spaces.maxSpaceCreationsPerUser;
       }
+      // Entitlements enforcement off: not under test here.
+      if (key === 'features.billingService') {
+        return false;
+      }
     });
 
     spaceAuditRepository = new SpaceAuditRepository(
@@ -155,6 +178,9 @@ describe('SpaceAuditRepository', () => {
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
+      new EntitlementsRepository(postgresDatabaseService),
+      new FakeCacheService(),
+      mockConfigurationService,
     );
   });
 

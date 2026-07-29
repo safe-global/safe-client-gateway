@@ -63,3 +63,6 @@ data
 
 # Local docs
 /docs
+
+# Claude Code local state (session worktrees, plans)
+.claude/

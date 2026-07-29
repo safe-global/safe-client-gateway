@@ -23,6 +23,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
+import type { SubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
@@ -40,6 +41,10 @@ const billingApiMock = {
 const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+const subscriptionSyncServiceMock = {
+  handleWebhook: vi.fn(),
+} as unknown as MockedObject<SubscriptionSyncService>;
 
 describe('BillingService', () => {
   let service: BillingService;
@@ -63,6 +68,7 @@ describe('BillingService', () => {
       billingApiMock,
       membersRepositoryMock,
       fakeConfigurationService,
+      subscriptionSyncServiceMock,
     );
   });
 

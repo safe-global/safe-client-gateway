@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -21,6 +22,7 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -28,6 +30,8 @@ import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
+import { QuotaExceededErrorResponse } from '@/modules/entitlements/routes/entities/quota-exceeded-error-response.entity';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
@@ -92,6 +96,12 @@ export class MembersController {
       'Authentication required or user not admin or member not active',
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @ApiResponse({
+    status: 402,
+    type: QuotaExceededErrorResponse,
+    description: "Inviting the users would exceed the workspace's member quota",
+  })
+  @UseFilters(QuotaExceededExceptionFilter)
   @Post('/:spaceId/members/invite')
   @UseGuards(AuthGuard)
   public async inviteUser(
