@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import { ConflictException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
@@ -19,6 +20,13 @@ const mockCounterfactualSafesRepository = vi.mocked({
 const mockSafeRepository = vi.mocked({
   isSafe: vi.fn(),
 } as MockedObject<ISafeRepository>);
+
+const mockLoggingService = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
 
 function createDto(
   overrides?: Partial<CreateCounterfactualSafeDto>,
@@ -51,6 +59,7 @@ describe('CounterfactualSafesService', () => {
     target = new CounterfactualSafesService(
       mockCounterfactualSafesRepository,
       mockSafeRepository,
+      mockLoggingService,
     );
   });
 
@@ -83,13 +92,21 @@ describe('CounterfactualSafesService', () => {
       expect(mockCounterfactualSafesRepository.create).not.toHaveBeenCalled();
     });
 
-    it('persists (fail open) when the deployment check errors', async () => {
+    it('persists (fail open) and logs when the deployment check errors', async () => {
       const payload = [createDto()];
       mockSafeRepository.isSafe.mockRejectedValue(new Error('tx service down'));
 
       await target.create({ authPayload, payload });
 
       expect(mockCounterfactualSafesRepository.create).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainId: payload[0].chainId,
+          address: payload[0].address,
+          error: 'tx service down',
+        }),
+      );
     });
   });
 });

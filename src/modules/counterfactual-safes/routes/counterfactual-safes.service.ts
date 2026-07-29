@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
@@ -17,6 +22,8 @@ export class CounterfactualSafesService {
     private readonly counterfactualSafesRepository: ICounterfactualSafesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   public async create(args: {
@@ -87,7 +94,15 @@ export class CounterfactualSafesService {
             chainId: item.chainId,
             address: item.address,
           });
-        } catch {
+        } catch (error) {
+          // Fail open: treat the Safe as undeployed so a degraded deployment
+          // check can't block saves, but log so ops can see the guard is off.
+          this.loggingService.warn({
+            message: 'Failed to check Safe deployment; assuming undeployed',
+            chainId: item.chainId,
+            address: item.address,
+            error: asError(error).message,
+          });
           return false;
         }
       }),
