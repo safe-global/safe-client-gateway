@@ -60,13 +60,15 @@ export class DelegatesV3Service {
     chainId: string;
     createDelegateDto: CreateDelegateDto;
   }): Promise<void> {
+    const { safe, delegate, delegator, signature, label } =
+      args.createDelegateDto;
     await this.repository.postDelegate({
       chainId: args.chainId,
-      safeAddress: args.createDelegateDto.safe,
-      delegate: args.createDelegateDto.delegate,
-      delegator: args.createDelegateDto.delegator,
-      signature: args.createDelegateDto.signature,
-      label: args.createDelegateDto.label,
+      safeAddress: safe,
+      delegate,
+      delegator,
+      signature,
+      label,
     });
   }
 
@@ -74,13 +76,15 @@ export class DelegatesV3Service {
     chainId: string;
     updateDelegateV3Dto: UpdateDelegateV3Dto;
   }): Promise<void> {
+    const { safe, delegate, delegator, signature, label } =
+      args.updateDelegateV3Dto;
     await this.repository.updateDelegate({
       chainId: args.chainId,
-      safeAddress: args.updateDelegateV3Dto.safe,
-      delegate: args.updateDelegateV3Dto.delegate,
-      delegator: args.updateDelegateV3Dto.delegator,
-      signature: args.updateDelegateV3Dto.signature,
-      label: args.updateDelegateV3Dto.label,
+      safeAddress: safe,
+      delegate,
+      delegator,
+      signature,
+      label,
     });
   }
 
