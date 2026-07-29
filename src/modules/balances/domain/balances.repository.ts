@@ -25,10 +25,7 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Array<Balance>> {
-    const api = await this.balancesApiManager.getApi(
-      args.chain.chainId,
-      args.safeAddress,
-    );
+    const api = await this.balancesApiManager.getApi(args.chain.chainId);
     const balances = await api.getBalances(args);
     return BalancesSchema.parse(balances);
   }
@@ -41,10 +38,7 @@ export class BalancesRepository implements IBalancesRepository {
     trusted?: boolean;
     excludeSpam?: boolean;
   }): Promise<Balance | null> {
-    const api = await this.balancesApiManager.getApi(
-      args.chain.chainId,
-      args.safeAddress,
-    );
+    const api = await this.balancesApiManager.getApi(args.chain.chainId);
     const balance = await api.getBalance(args);
     return BalanceSchema.parse(balance);
   }
@@ -53,10 +47,7 @@ export class BalancesRepository implements IBalancesRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
-    const api = await this.balancesApiManager.getApi(
-      args.chainId,
-      args.safeAddress,
-    );
+    const api = await this.balancesApiManager.getApi(args.chainId);
     await api.clearBalances({ safeAddress: args.safeAddress });
   }
 

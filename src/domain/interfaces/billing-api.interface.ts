@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
+import type {
+  CheckoutSession,
+  CheckoutSessionResult,
+} from '@/datasources/billing-api/entities/checkout-session.entity';
 import type { Customer } from '@/datasources/billing-api/entities/customer.entity';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
@@ -16,6 +19,12 @@ export interface IBillingApi {
   getPlan(args: { planId: string }): Promise<Plan>;
 
   getCustomer(args: { upstreamCustomerId: string }): Promise<Customer>;
+
+  /** Not cached: returns a fresh, single-use Stripe Billing Portal URL. */
+  getCustomerSessionUrl(args: {
+    upstreamCustomerId: string;
+    returnUrl: string;
+  }): Promise<string>;
 
   getSubscriptionsByCustomerId(args: {
     upstreamCustomerId: string;
@@ -36,7 +45,7 @@ export interface IBillingApi {
     paymentLinkId: string;
     upstreamCustomerId: string;
     returnUrl: string;
-  }): Promise<CheckoutSession>;
+  }): Promise<CheckoutSessionResult>;
 
   /** Not cached: always fetches a fresh session (e.g. for post-payment polling). */
   getCheckoutSession(args: { sessionId: string }): Promise<CheckoutSession>;

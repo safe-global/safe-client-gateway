@@ -113,17 +113,13 @@ describe('BlockchainApiManager', () => {
       const rpcUrl = new URL(chain.rpcUri.value).toString();
 
       fetchSpy.mockImplementation((_: unknown) => {
-        return Promise.resolve({
-          headers: new Headers({ 'Content-Type': 'application/json' }),
-          ok: true,
-          status: 200,
-          json: () => {
-            // Return chain ID
-            return Promise.resolve({
-              result: chainId,
-            });
-          },
-        } as Response);
+        // Return chain ID
+        return Promise.resolve(
+          new Response(JSON.stringify({ result: chainId }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
       });
       const body = {
         jsonrpc: '2.0',
@@ -174,17 +170,13 @@ describe('BlockchainApiManager', () => {
       const rpcUrl = new URL(chain.rpcUri.value).toString();
 
       fetchSpy.mockImplementation((_: unknown) => {
-        return Promise.resolve({
-          headers: new Headers({ 'Content-Type': 'application/json' }),
-          ok: true,
-          status: 200,
-          json: () => {
-            // Return chain ID
-            return Promise.resolve({
-              result: blockByNumber,
-            });
-          },
-        } as Response);
+        // Return block
+        return Promise.resolve(
+          new Response(JSON.stringify({ result: blockByNumber }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
       });
       const body = {
         jsonrpc: '2.0',

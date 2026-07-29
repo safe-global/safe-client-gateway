@@ -2,7 +2,16 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { CheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
+import type {
+  CheckoutSession,
+  CheckoutSessionResult,
+} from '@/datasources/billing-api/entities/checkout-session.entity';
+
+export function checkoutSessionResultBuilder(): IBuilder<CheckoutSessionResult> {
+  return new Builder<CheckoutSessionResult>()
+    .with('sessionId', faker.string.uuid())
+    .with('url', faker.internet.url());
+}
 
 export function checkoutSessionBuilder(): IBuilder<CheckoutSession> {
   return new Builder<CheckoutSession>()

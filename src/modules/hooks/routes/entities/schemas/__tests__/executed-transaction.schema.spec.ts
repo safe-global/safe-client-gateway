@@ -85,6 +85,7 @@ describe('ExecutedTransactionEventSchema', () => {
     'chainId' as const,
     'safeTxHash' as const,
     'txHash' as const,
+    'isFailed' as const,
   ])('should not allow a missing %s', (field) => {
     const executedTransactionEvent = executedTransactionEventBuilder().build();
     delete executedTransactionEvent[field];
@@ -140,5 +141,37 @@ describe('ExecutedTransactionEventSchema', () => {
     );
 
     expect(result.success && result.data.data).toBe(undefined);
+  });
+
+  describe('execution status', () => {
+    it.each([
+      true,
+      false,
+    ])('should validate a payload with isFailed=%s', (isFailed) => {
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        .with('isFailed', isFailed)
+        .build();
+
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should not allow a non-boolean isFailed', () => {
+      const executedTransactionEvent = executedTransactionEventBuilder()
+        // @ts-expect-error - isFailed is a boolean
+        .with('isFailed', 'true')
+        .build();
+
+      const result = ExecutedTransactionEventSchema.safeParse(
+        executedTransactionEvent,
+      );
+
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({ path: ['isFailed'] }),
+      ]);
+    });
   });
 });

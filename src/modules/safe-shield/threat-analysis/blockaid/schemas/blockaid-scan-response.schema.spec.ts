@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { BlockaidScanResponseSchema } from './blockaid-scan-response.schema';
@@ -41,6 +43,33 @@ describe('BlockaidScanResponseSchema', () => {
               type: 'PROXY_UPGRADE',
               before: { address: safeAddress },
               after: { address: safeAddress },
+            },
+          ],
+        },
+      },
+    };
+
+    const result = BlockaidScanResponseSchema.safeParse(response);
+
+    expect(result.success).toBe(true);
+    expect(result.data).toEqual(response);
+  });
+
+  it('parses a simulation with a NONERC asset diff', () => {
+    const response = {
+      request_id: faker.string.uuid(),
+      simulation: {
+        status: 'Success',
+        assets_diffs: {
+          [safeAddress]: [
+            {
+              asset: {
+                type: 'NONERC',
+                address: getAddress(faker.finance.ethereumAddress()),
+                symbol: faker.finance.currencyCode(),
+              },
+              in: [{ value: faker.string.numeric(7) }],
+              out: [],
             },
           ],
         },

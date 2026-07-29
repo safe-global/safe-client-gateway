@@ -14,8 +14,11 @@ export function spaceAuditLogBuilder(): IBuilder<SpaceAuditLog> {
     .with('spaceUuid', fakeUuid())
     .with('eventType', 'MEMBER_INVITE_ACCEPTED')
     .with('actorUserId', faker.number.int({ max: DB_MAX_SAFE_INTEGER }))
-    .with('payload', {
-      targetUserId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-    })
+    .with(
+      'payload',
+      JSON.stringify({
+        targetUserId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+      }),
+    )
     .with('createdAt', new Date());
 }

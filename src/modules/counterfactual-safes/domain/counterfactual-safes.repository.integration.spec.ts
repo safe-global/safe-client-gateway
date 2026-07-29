@@ -157,19 +157,13 @@ describe('CounterfactualSafesRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Delete in dependency order
-    await dbCounterfactualSafeUserRepo
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbCounterfactualSafeRepo
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbWalletRepo.createQueryBuilder().delete().where('1=1').execute();
-    await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    // Delete in dependency order. No .where() is intentional: these clear
+    // every row to reset state between tests, and TypeORM rejects a
+    // WHERE clause that renders as an unfiltered '1=1' as a likely mistake.
+    await dbCounterfactualSafeUserRepo.createQueryBuilder().delete().execute();
+    await dbCounterfactualSafeRepo.createQueryBuilder().delete().execute();
+    await dbWalletRepo.createQueryBuilder().delete().execute();
+    await dbUserRepo.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {

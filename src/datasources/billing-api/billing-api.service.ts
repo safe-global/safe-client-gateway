@@ -2,8 +2,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ZodError, z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
-import { CheckoutSessionSchema } from '@/datasources/billing-api/entities/checkout-session.entity';
+import type {
+  CheckoutSession,
+  CheckoutSessionResult,
+} from '@/datasources/billing-api/entities/checkout-session.entity';
+import {
+  CheckoutSessionResultSchema,
+  CheckoutSessionSchema,
+} from '@/datasources/billing-api/entities/checkout-session.entity';
 import type { Customer } from '@/datasources/billing-api/entities/customer.entity';
 import { CustomerSchema } from '@/datasources/billing-api/entities/customer.entity';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
@@ -15,6 +21,7 @@ import type {
   SubscriptionStatusFilter,
 } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionSchema } from '@/datasources/billing-api/entities/subscription.entity';
+import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
@@ -92,12 +99,37 @@ export class BillingApi implements IBillingApi {
   getCustomer(args: { upstreamCustomerId: string }): Promise<Customer> {
     return this.request({
       cacheDir: CacheRouter.getBillingCustomerCacheDir(args.upstreamCustomerId),
-      url: `${this.baseUri}/api/v1/customers/${args.upstreamCustomerId}`,
+      url: `${this.baseUri}/api/v1/customers/${stripDashes(args.upstreamCustomerId)}`,
       schema: z
         .object({ customer: CustomerSchema })
         .transform((body) => body.customer),
       expireTimeSeconds: this.billingExpireTimeSeconds,
     });
+  }
+
+  /** Not cached: this endpoint returns a fresh, single-use portal session URL on every call. */
+  getCustomerSessionUrl(args: {
+    upstreamCustomerId: string;
+    returnUrl: string;
+  }): Promise<string> {
+    const url = new URL(
+      `${this.baseUri}/api/v1/customers/${stripDashes(args.upstreamCustomerId)}/session-url`,
+    );
+    url.searchParams.set('returnUrl', args.returnUrl);
+
+    return this.parse(
+      this.networkService
+        .get<string>({
+          url: url.toString(),
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+            responseType: 'text',
+          },
+        })
+        .then(({ data }) => data),
+      z.string(),
+    );
   }
 
   /**
@@ -114,7 +146,7 @@ export class BillingApi implements IBillingApi {
         upstreamCustomerId: args.upstreamCustomerId,
         status: args.status ?? 'all',
       }),
-      url: `${this.baseUri}/api/v1/customers/${args.upstreamCustomerId}/subscriptions`,
+      url: `${this.baseUri}/api/v1/customers/${stripDashes(args.upstreamCustomerId)}/subscriptions`,
       params: args.status ? { status: args.status } : undefined,
       schema: z
         .object({ subscriptions: z.array(SubscriptionSchema) })
@@ -132,7 +164,7 @@ export class BillingApi implements IBillingApi {
       ),
       url: `${this.baseUri}/api/v1/payment-links`,
       params: args.upstreamCustomerId
-        ? { customerId: args.upstreamCustomerId }
+        ? { customerId: stripDashes(args.upstreamCustomerId) }
         : undefined,
       schema: z
         .object({ paymentLinks: z.array(PaymentLinkSchema) })
@@ -145,13 +177,13 @@ export class BillingApi implements IBillingApi {
     paymentLinkId: string;
     upstreamCustomerId: string;
     returnUrl: string;
-  }): Promise<CheckoutSession> {
+  }): Promise<CheckoutSessionResult> {
     return this.parse(
       this.networkService
-        .post<CheckoutSession>({
+        .post<CheckoutSessionResult>({
           url: `${this.baseUri}/api/v1/payment-links/${args.paymentLinkId}/checkout`,
           data: {
-            upstreamCustomerId: args.upstreamCustomerId,
+            upstreamCustomerId: stripDashes(args.upstreamCustomerId),
             returnUrl: args.returnUrl,
           },
           networkRequest: {
@@ -160,7 +192,7 @@ export class BillingApi implements IBillingApi {
           },
         })
         .then(({ data }) => data),
-      CheckoutSessionSchema,
+      CheckoutSessionResultSchema,
     );
   }
 

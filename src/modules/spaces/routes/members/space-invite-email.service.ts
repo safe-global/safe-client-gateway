@@ -8,6 +8,7 @@ import {
 import { asError } from '@/logging/utils';
 import { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   type EmailInviteUserInput,
@@ -41,6 +42,8 @@ export class SpaceInviteEmailService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
     @Optional()
     private readonly sesEmailQueueService?: SesEmailQueueService,
   ) {
@@ -101,11 +104,13 @@ export class SpaceInviteEmailService {
     }
 
     try {
-      const { name: workspaceName } = await this.spacesRepository.findOneOrFail(
-        {
-          where: { id: spaceId },
-          select: { name: true },
-        },
+      const space = await this.spacesRepository.findOneOrFail({
+        where: { id: spaceId },
+        select: { name: true },
+      });
+      const workspaceName = await this.spaceEncryptionService.decryptSpaceName(
+        spaceId,
+        space.name,
       );
 
       const jobs = recipients.map((recipient) => {

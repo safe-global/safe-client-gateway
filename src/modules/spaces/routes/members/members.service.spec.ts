@@ -23,6 +23,8 @@ import { MembersService } from '@/modules/spaces/routes/members/members.service'
 import type { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
@@ -49,9 +51,11 @@ const spaceInviteEmailServiceMock = {
 
 describe('MembersService', () => {
   let service: MembersService;
+  let memberEncryptionServiceMock: MockedObject<MemberEncryptionService>;
 
   beforeEach(() => {
     vi.resetAllMocks();
+    memberEncryptionServiceMock = createMockMemberEncryptionService();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
       switch (key) {
         case 'spaces.maxInvites':
@@ -66,6 +70,7 @@ describe('MembersService', () => {
       membersRepositoryMock,
       configurationServiceMock,
       spaceInviteEmailServiceMock,
+      memberEncryptionServiceMock,
     );
   });
 
@@ -442,6 +447,49 @@ describe('MembersService', () => {
         spaceInviteEmailServiceMock.enqueueRenewalEmail,
       ).toHaveBeenCalledWith({
         name: targetMember.name,
+        email,
+        spaceId,
+      });
+    });
+
+    it('should decrypt the stored member name for the email and returned invitation', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const email = fakeEmailAddress();
+      const ciphertextName = `kms:v1:${faker.string.hexadecimal()}`;
+      const plaintextName = faker.person.fullName();
+      const targetMember = memberBuilder()
+        .with('status', 'INVITED')
+        .with('role', 'MEMBER')
+        .with('name', ciphertextName)
+        .with('user', userBuilder().with('email', email).build())
+        .with('space', { id: spaceId, uuid: fakeUuid() } as Space)
+        .build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+      memberEncryptionServiceMock.decryptName.mockResolvedValue(plaintextName);
+
+      const result = await service.renewInvite({
+        authPayload,
+        spaceId,
+        userId,
+      });
+
+      expect(memberEncryptionServiceMock.decryptName).toHaveBeenCalledWith(
+        spaceId,
+        ciphertextName,
+      );
+      expect(result.name).toBe(plaintextName);
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).toHaveBeenCalledWith({
+        name: plaintextName,
         email,
         spaceId,
       });

@@ -2,7 +2,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
-import type { ThreatAnalysisRequest } from '../analysis-requests.entity';
+import type { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 /**
  * DTO for threat analysis request.
  *

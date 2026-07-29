@@ -123,7 +123,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -259,7 +259,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -317,7 +317,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -362,6 +362,67 @@ describe('Hook Events for Cache', () => {
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
     await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+  });
+
+  // A payload the consumer cannot parse is dropped, so the Safe's caches, its
+  // nonce above all, would stay stale until they expire on their own TTL and
+  // users could not build a new transaction.
+  describe('EXECUTED_MULTISIG_TRANSACTION execution status', () => {
+    it.each([
+      { name: 'isFailed false', status: { isFailed: false } },
+      { name: 'isFailed true', status: { isFailed: true } },
+    ])('clears the Safe and its queue for a payload with $name', async ({
+      status,
+    }) => {
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const safeTxHash = faker.string.hexadecimal({ length: 32 });
+      // Safe info holds the nonce the wallet needs to build the next transaction
+      const safeCacheDir = new CacheDir(
+        `${chainId}_safe_${safeAddress}`,
+        faker.string.alpha(),
+      );
+      const multisigTxsCacheDir = new CacheDir(
+        `${chainId}_multisig_transactions_${safeAddress}`,
+        faker.string.alpha(),
+      );
+      for (const cacheDir of [safeCacheDir, multisigTxsCacheDir]) {
+        await fakeCacheService.hSet(
+          cacheDir,
+          faker.string.alpha(),
+          faker.number.int({ min: 1 }),
+        );
+      }
+      const data = {
+        type: 'EXECUTED_MULTISIG_TRANSACTION',
+        address: safeAddress,
+        chainId,
+        to: faker.finance.ethereumAddress(),
+        safeTxHash,
+        txHash: faker.string.hexadecimal({ length: 32 }),
+        data: faker.string.hexadecimal({ length: 32 }),
+        ...status,
+      };
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+          return Promise.resolve({
+            data: rawify(chainBuilder().with('chainId', chainId).build()),
+            status: 200,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+
+      const cb = getSubscriptionCallback(queuesApiService);
+      await cb({
+        content: Buffer.from(JSON.stringify(data)),
+      } as ConsumeMessage);
+
+      await expect(fakeCacheService.hGet(safeCacheDir)).resolves.toBeNull();
+      await expect(
+        fakeCacheService.hGet(multisigTxsCacheDir),
+      ).resolves.toBeNull();
+    });
   });
 
   describe('nested Safe approveHash invalidation', () => {
@@ -419,7 +480,7 @@ describe('Hook Events for Cache', () => {
         to: childSafe, // approveHash is executed on the child Safe
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: approveHashData(childTxHash),
       };
 
@@ -497,7 +558,7 @@ describe('Hook Events for Cache', () => {
         to: multiSendAddress,
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: encodeFunctionData({
           abi: [
             {
@@ -545,7 +606,7 @@ describe('Hook Events for Cache', () => {
         to: getAddress(faker.finance.ethereumAddress()),
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: '0xaaaaaaaa', // not approveHash, not multiSend
       };
 
@@ -584,7 +645,7 @@ describe('Hook Events for Cache', () => {
         to: getAddress(faker.finance.ethereumAddress()),
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         // data omitted — schema preprocesses null/undefined to undefined
       };
 
@@ -657,7 +718,7 @@ describe('Hook Events for Cache', () => {
         to: multiSendAddress,
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: encodeFunctionData({
           abi: [
             {
@@ -766,7 +827,7 @@ describe('Hook Events for Cache', () => {
         to: outerMultiSendAddress,
         safeTxHash: faker.string.hexadecimal({ length: 64 }),
         txHash: faker.string.hexadecimal({ length: 64 }),
-        failed: 'false',
+        isFailed: false,
         data: outerData,
       };
 
@@ -788,7 +849,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -837,7 +898,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -892,7 +953,7 @@ describe('Hook Events for Cache', () => {
       to: faker.finance.ethereumAddress(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       data: faker.string.hexadecimal({ length: 32 }),
     },
     {
@@ -950,7 +1011,7 @@ describe('Hook Events for Cache', () => {
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
       to: faker.finance.ethereumAddress(),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       data: faker.string.hexadecimal({ length: 32 }),
@@ -1099,7 +1160,7 @@ describe('Hook Events for Cache', () => {
     {
       type: 'EXECUTED_MULTISIG_TRANSACTION',
       to: faker.finance.ethereumAddress(),
-      failed: faker.helpers.arrayElement(['true', 'false']),
+      isFailed: faker.datatype.boolean(),
       safeTxHash: faker.string.hexadecimal({ length: 32 }),
       txHash: faker.string.hexadecimal({ length: 32 }),
       data: faker.string.hexadecimal({ length: 32 }),
@@ -1443,7 +1504,6 @@ describe('Hook Events for Cache', () => {
     },
   ])('$type clears the balances API', async (payload) => {
     const chainId = faker.string.numeric();
-    const safeAddress = getAddress(faker.finance.ethereumAddress());
     const data = {
       chainId: chainId,
       ...payload,
@@ -1459,12 +1519,12 @@ describe('Hook Events for Cache', () => {
           return Promise.reject(new Error(`Could not match ${url}`));
       }
     });
-    const api = await balancesApiManager.getApi(chainId, safeAddress);
+    const api = await balancesApiManager.getApi(chainId);
 
     const cb = getSubscriptionCallback(queuesApiService);
     await cb({ content: Buffer.from(JSON.stringify(data)) } as ConsumeMessage);
 
-    const newApi = await balancesApiManager.getApi(chainId, safeAddress);
+    const newApi = await balancesApiManager.getApi(chainId);
     expect(api).not.toBe(newApi);
   });
 

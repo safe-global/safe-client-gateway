@@ -179,6 +179,11 @@ describe('NotificationsRepositoryV2', () => {
    * It uses query builders to perform the deletions without conditions,
    * effectively clearing all records for test or reset purposes.
    *
+   * No .where() call on any of the deletes below: TypeORM 1.1.0 rejects a
+   * WHERE clause that renders as an unfiltered '1=1' as a likely mistake —
+   * see counterfactual-safes.repository.integration.spec.ts for the full
+   * rationale.
+   *
    * @async
    * @function truncateTables
    * @returns {Promise<void>} Resolves when all specified tables are truncated.
@@ -192,22 +197,13 @@ describe('NotificationsRepositoryV2', () => {
     const notificationSubscriptionNotificationTypeRepository =
       dataSource.getRepository(NotificationSubscriptionNotificationType);
 
-    await notificationDeviceRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
+    await notificationDeviceRepository.createQueryBuilder().delete().execute();
 
-    await subscriptionRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
+    await subscriptionRepository.createQueryBuilder().delete().execute();
 
     await notificationSubscriptionNotificationTypeRepository
       .createQueryBuilder()
       .delete()
-      .where('1=1')
       .execute();
   }
 
@@ -433,7 +429,7 @@ describe('NotificationsRepositoryV2', () => {
               device_uuid: upsertSubscriptionsDto.deviceUuid as UUID,
             },
           },
-          relations: ['push_notification_device'],
+          relations: { push_notification_device: true },
         });
 
       expect(subscriptionBeforeRemoval).toHaveProperty('chain_id');
@@ -512,7 +508,10 @@ describe('NotificationsRepositoryV2', () => {
               id: In(subscriptionIds),
             },
           },
-          relations: ['notification_type', 'notification_subscription'],
+          relations: {
+            notification_type: true,
+            notification_subscription: true,
+          },
         });
 
       const upsertNotificationTypes: Array<string> = [];

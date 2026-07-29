@@ -12,7 +12,7 @@ import type { Address, Hex } from 'viem';
 import {
   databaseAddressTransformer,
   databaseNullableAddressTransformer,
-} from '@/domain/common/transformers/databaseAddress.transformer';
+} from '@/domain/common/transformers/database-address.transformer';
 import type { CounterfactualSafe as DomainCounterfactualSafe } from '@/modules/counterfactual-safes/domain/entities/counterfactual-safe.entity';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';

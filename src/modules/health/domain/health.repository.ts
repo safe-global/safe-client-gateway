@@ -13,7 +13,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
-import { HealthCheckError } from '@/modules/health/domain/entities/healthError.entity';
+import { HealthCheckError } from '@/modules/health/domain/entities/health-error.entity';
 import type { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
 
 @Injectable()

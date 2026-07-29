@@ -7,6 +7,64 @@ import {
 } from 'node:crypto';
 
 /**
+ * Low-level AES-256-GCM encryption over a caller-supplied raw 32-byte key,
+ * with optional additional authenticated data (AAD). The key is used as
+ * given (no derivation); callers own the storage framing of the returned
+ * pieces. A fresh random IV is generated per call.
+ */
+export function aesGcmEncrypt(args: {
+  plaintext: Buffer;
+  key: Buffer;
+  aad?: Buffer;
+  /** IV length in bytes; 12 is the GCM standard. `encryptData` predates it with 16. */
+  ivLength?: number;
+}): { iv: Buffer; ciphertext: Buffer; tag: Buffer } {
+  const iv = randomBytes(args.ivLength ?? 12);
+  const cipher = createCipheriv('aes-256-gcm', args.key, iv);
+  if (args.aad) {
+    cipher.setAAD(args.aad);
+  }
+  const ciphertext = Buffer.concat([
+    cipher.update(args.plaintext),
+    cipher.final(),
+  ]);
+  return { iv, ciphertext, tag: cipher.getAuthTag() };
+}
+
+/**
+ * Reverse of {@link aesGcmEncrypt}. Throws when authentication fails —
+ * i.e. on a tampered ciphertext/tag or a mismatched key or AAD.
+ */
+export function aesGcmDecrypt(args: {
+  ciphertext: Buffer;
+  key: Buffer;
+  iv: Buffer;
+  tag: Buffer;
+  aad?: Buffer;
+}): Buffer {
+  const decipher = createDecipheriv('aes-256-gcm', args.key, args.iv);
+  if (args.aad) {
+    decipher.setAAD(args.aad);
+  }
+  decipher.setAuthTag(args.tag);
+  return Buffer.concat([decipher.update(args.ciphertext), decipher.final()]);
+}
+
+/**
+ * Stable byte serialisation of a string-to-string context map (entries
+ * sorted by key, JSON encoded), for binding a context as GCM AAD.
+ */
+export function canonicalContext(context: Record<string, string>): Buffer {
+  const entries = Object.entries(context).sort(([a], [b]) => {
+    if (a < b) {
+      return -1;
+    }
+    return a > b ? 1 : 0;
+  });
+  return Buffer.from(JSON.stringify(entries), 'utf8');
+}
+
+/**
  * Encrypts data using AES-256-GCM encryption.
  *
  * @param data - Data to encrypt (will be JSON stringified)
@@ -28,15 +86,12 @@ export function encryptData<T>(
   try {
     const saltBuffer = Buffer.from(salt, 'utf8');
     const key = scryptSync(encryptionKey, saltBuffer, 32);
-    const iv = randomBytes(16);
-    const cipher = createCipheriv('aes-256-gcm', key, iv);
-    const dataString = JSON.stringify(data);
-    const encrypted = Buffer.concat([
-      cipher.update(dataString, 'utf8'),
-      cipher.final(),
-    ]);
-    const authTag = cipher.getAuthTag();
-    return Buffer.concat([iv, authTag, encrypted]).toString('base64');
+    const { iv, ciphertext, tag } = aesGcmEncrypt({
+      plaintext: Buffer.from(JSON.stringify(data), 'utf8'),
+      key,
+      ivLength: 16,
+    });
+    return Buffer.concat([iv, tag, ciphertext]).toString('base64');
   } catch (error) {
     throw new Error(
       `Failed to encrypt data: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -67,15 +122,12 @@ export function decryptData<T>(
     const saltBuffer = Buffer.from(salt, 'utf8');
     const key = scryptSync(encryptionKey, saltBuffer, 32);
     const buffer = Buffer.from(encryptedData, 'base64');
-    const iv = buffer.subarray(0, 16);
-    const authTag = buffer.subarray(16, 32);
-    const encrypted = buffer.subarray(32);
-    const decipher = createDecipheriv('aes-256-gcm', key, iv);
-    decipher.setAuthTag(authTag);
-    const decrypted = Buffer.concat([
-      decipher.update(encrypted),
-      decipher.final(),
-    ]);
+    const decrypted = aesGcmDecrypt({
+      ciphertext: buffer.subarray(32),
+      key,
+      iv: buffer.subarray(0, 16),
+      tag: buffer.subarray(16, 32),
+    });
 
     return JSON.parse(decrypted.toString('utf8'));
   } catch (error) {

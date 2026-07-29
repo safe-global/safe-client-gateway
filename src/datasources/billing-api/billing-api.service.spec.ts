@@ -4,11 +4,15 @@ import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BillingApi } from '@/datasources/billing-api/billing-api.service';
-import { checkoutSessionBuilder } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
+import {
+  checkoutSessionBuilder,
+  checkoutSessionResultBuilder,
+} from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
 import { customerBuilder } from '@/datasources/billing-api/entities/__tests__/customer.builder';
 import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
@@ -208,10 +212,28 @@ describe('BillingApi', () => {
             `${customer.upstreamCustomerId}_billing_customer`,
             '',
           ),
-          url: `${baseUri}/api/v1/customers/${customer.upstreamCustomerId}`,
+          url: `${baseUri}/api/v1/customers/${stripDashes(customer.upstreamCustomerId)}`,
           expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
+    });
+
+    it('should restore dashes in a hex-only upstreamCustomerId from the response', async () => {
+      const customer = customerBuilder().build();
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify({
+          customer: {
+            ...customer,
+            upstreamCustomerId: stripDashes(customer.upstreamCustomerId),
+          },
+        }),
+      );
+
+      const result = await target.getCustomer({
+        upstreamCustomerId: customer.upstreamCustomerId,
+      });
+
+      expect(result).toEqual(customer);
     });
 
     it('should forward a 401 as a DataSourceError', async () => {
@@ -244,6 +266,66 @@ describe('BillingApi', () => {
     });
   });
 
+  describe('getCustomerSessionUrl', () => {
+    it('should call the billing service API with correct URL, headers and responseType, and return the plain-text body', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      const returnUrl = faker.internet.url();
+      const sessionUrl = faker.internet.url();
+      mockNetworkService.get.mockResolvedValueOnce({
+        data: rawify(sessionUrl),
+        status: 200,
+      });
+
+      const result = await target.getCustomerSessionUrl({
+        upstreamCustomerId,
+        returnUrl,
+      });
+
+      expect(result).toEqual(sessionUrl);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/session-url?returnUrl=${encodeURIComponent(returnUrl)}`,
+        networkRequest: {
+          headers: { Authorization: `Bearer ${apiToken}` },
+          timeout: requestTimeout,
+          responseType: 'text',
+        },
+      });
+    });
+
+    it('should forward a 404 as a DataSourceError', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      const url = new URL(
+        `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/session-url`,
+      );
+      mockNetworkService.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          url,
+          new Response('Not found', { status: 404 }),
+          'Not found',
+        ),
+      );
+
+      await expect(
+        target.getCustomerSessionUrl({
+          upstreamCustomerId,
+          returnUrl: faker.internet.url(),
+        }),
+      ).rejects.toThrow(new DataSourceError('An error occurred', 404));
+    });
+
+    it('should forward network errors', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      mockNetworkService.get.mockRejectedValueOnce(new Error('Timeout'));
+
+      await expect(
+        target.getCustomerSessionUrl({
+          upstreamCustomerId,
+          returnUrl: faker.internet.url(),
+        }),
+      ).rejects.toThrow(new DataSourceError('Service unavailable', 503));
+    });
+  });
+
   describe('getSubscriptionsByCustomerId', () => {
     it('should call the billing service API with correct URL, headers and cache dir', async () => {
       const upstreamCustomerId = faker.string.uuid();
@@ -264,10 +346,56 @@ describe('BillingApi', () => {
             `${upstreamCustomerId}_billing_subscriptions`,
             'all',
           ),
-          url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
+          url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/subscriptions`,
           expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
+    });
+
+    it('should restore dashes in a hex-only upstreamCustomerId from the response', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      const subscription = subscriptionBuilder().build();
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify({
+          subscriptions: [
+            {
+              ...subscription,
+              upstreamCustomerId: stripDashes(subscription.upstreamCustomerId),
+            },
+          ],
+        }),
+      );
+
+      const result = await target.getSubscriptionsByCustomerId({
+        upstreamCustomerId,
+      });
+
+      expect(result).toEqual([subscription]);
+    });
+
+    it('should accept a plan with absent name/description/billingCycle and a null originalPrice', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      const subscription = subscriptionBuilder().build();
+      const { name, description, billingCycle, ...planWithoutOptionals } =
+        subscription.plan;
+      const rawSubscription = {
+        ...subscription,
+        plan: { ...planWithoutOptionals, originalPrice: null },
+      };
+      mockDataSource.get.mockResolvedValueOnce(
+        rawify({ subscriptions: [rawSubscription] }),
+      );
+
+      const result = await target.getSubscriptionsByCustomerId({
+        upstreamCustomerId,
+      });
+
+      expect(result).toEqual([
+        {
+          ...subscription,
+          plan: { ...planWithoutOptionals, originalPrice: null },
+        },
+      ]);
     });
 
     it('should forward the status filter as a query param and cache field', async () => {
@@ -285,7 +413,7 @@ describe('BillingApi', () => {
             `${upstreamCustomerId}_billing_subscriptions`,
             'active',
           ),
-          url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
+          url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/subscriptions`,
           params: { status: 'active' },
           expireTimeSeconds: billingExpireTimeSeconds,
         }),
@@ -307,7 +435,7 @@ describe('BillingApi', () => {
             `${upstreamCustomerId}_billing_subscriptions`,
             'all',
           ),
-          url: `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
+          url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/subscriptions`,
           params: { status: 'all' },
           expireTimeSeconds: billingExpireTimeSeconds,
         }),
@@ -319,7 +447,7 @@ describe('BillingApi', () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const error = new NetworkResponseError(
         new URL(
-          `${baseUri}/api/v1/customers/${upstreamCustomerId}/subscriptions`,
+          `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/subscriptions`,
         ),
         { status } as Response,
         { message: 'Internal server error' },
@@ -363,7 +491,7 @@ describe('BillingApi', () => {
         expectedGetCall({
           cacheDir: new CacheDir('billing_payment_links', upstreamCustomerId),
           url: `${baseUri}/api/v1/payment-links`,
-          params: { customerId: upstreamCustomerId },
+          params: { customerId: stripDashes(upstreamCustomerId) },
         }),
       );
     });
@@ -396,10 +524,10 @@ describe('BillingApi', () => {
       const paymentLinkId = faker.string.uuid();
       const upstreamCustomerId = faker.string.uuid();
       const returnUrl = faker.internet.url();
-      const checkoutSession = checkoutSessionBuilder().build();
+      const checkoutSessionResult = checkoutSessionResultBuilder().build();
       mockNetworkService.post.mockResolvedValueOnce({
         status: 201,
-        data: rawify(checkoutSession),
+        data: rawify(checkoutSessionResult),
       });
 
       const result = await target.createCheckoutSession({
@@ -408,10 +536,13 @@ describe('BillingApi', () => {
         returnUrl,
       });
 
-      expect(result).toEqual(checkoutSession);
+      expect(result).toEqual(checkoutSessionResult);
       expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: `${baseUri}/api/v1/payment-links/${paymentLinkId}/checkout`,
-        data: { upstreamCustomerId, returnUrl },
+        data: {
+          upstreamCustomerId: stripDashes(upstreamCustomerId),
+          returnUrl,
+        },
         networkRequest: {
           headers: { Authorization: `Bearer ${apiToken}` },
           timeout: requestTimeout,
@@ -475,6 +606,32 @@ describe('BillingApi', () => {
         },
       });
       expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+
+    it('should accept null client_reference_id, subscription, invoice and customer', async () => {
+      const sessionId = faker.string.alphanumeric(32);
+      const checkoutSession = checkoutSessionBuilder().build();
+      const rawSession = {
+        ...checkoutSession,
+        client_reference_id: null,
+        customer: null,
+        subscription: null,
+        invoice: null,
+      };
+      mockNetworkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(rawSession),
+      });
+
+      const result = await target.getCheckoutSession({ sessionId });
+
+      expect(result).toEqual({
+        ...checkoutSession,
+        client_reference_id: null,
+        customer: null,
+        subscription: null,
+        invoice: null,
+      });
     });
 
     it('should throw a ZodError on a malformed response', async () => {

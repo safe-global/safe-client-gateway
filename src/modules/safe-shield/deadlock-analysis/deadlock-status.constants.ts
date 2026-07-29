@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { CommonStatus } from '../entities/analysis-result.entity';
+import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
-} from '../entities/common-status.constants';
-import { DeadlockStatus } from '../entities/deadlock-status.entity';
-import type { Severity } from '../entities/severity.entity';
+} from '@/modules/safe-shield/entities/common-status.constants';
+import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
+import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
 
 export const DEADLOCK_SEVERITY_MAPPING: Record<
   DeadlockStatus | CommonStatus,

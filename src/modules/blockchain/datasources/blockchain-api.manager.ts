@@ -14,6 +14,7 @@ import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { ChainApiManager } from '@/datasources/common/chain-api.manager';
 import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import type { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
@@ -21,9 +22,11 @@ import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-a
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 
 @Injectable()
-export class BlockchainApiManager implements IBlockchainApiManager {
+export class BlockchainApiManager
+  extends ChainApiManager<PublicClient>
+  implements IBlockchainApiManager
+{
   private static readonly INFURA_URL_PATTERN = 'infura';
-  private readonly blockchainApiMap: Record<string, PublicClient> = {};
   private readonly infuraApiKey: string;
   private readonly rpcExpirationTimeInSeconds: number;
 
@@ -33,6 +36,7 @@ export class BlockchainApiManager implements IBlockchainApiManager {
     @Inject(IConfigApi) private readonly configApi: IConfigApi,
     @Inject(CacheService) private readonly cacheService: ICacheService,
   ) {
+    super();
     this.infuraApiKey = this.configurationService.getOrThrow<string>(
       'blockchain.infura.apiKey',
     );
@@ -42,26 +46,24 @@ export class BlockchainApiManager implements IBlockchainApiManager {
       );
   }
 
-  async getApi(chainId: string): Promise<PublicClient> {
-    const blockchainApi = this.blockchainApiMap[chainId];
-    if (blockchainApi) {
-      return blockchainApi;
-    }
+  getApi(chainId: string): Promise<PublicClient> {
+    return this.getOrCreateApi(chainId);
+  }
 
+  protected async createApi(chainId: string): Promise<PublicClient> {
     const chain = await this.configApi
       .getChain(chainId)
       .then(ChainSchema.parse);
-    this.blockchainApiMap[chainId] = this._createCachedRpcClient(chain);
 
-    return this.blockchainApiMap[chainId];
+    return this._createCachedRpcClient(chain);
   }
 
-  destroyApi(chainId: string): void {
-    if (!this.blockchainApiMap?.[chainId]) {
+  override destroyApi(chainId: string): void {
+    if (!this.hasApi(chainId)) {
       return;
     }
 
-    delete this.blockchainApiMap[chainId];
+    super.destroyApi(chainId);
 
     const key = CacheRouter.getRpcRequestsKey(chainId);
     this.cacheService.deleteByKey(key).catch(() => {

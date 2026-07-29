@@ -17,6 +17,7 @@ import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
@@ -111,6 +112,7 @@ describe('SpaceSafesRepository', () => {
       postgresDatabaseService,
       mockConfigService,
       createMockSpaceAuditRepository(),
+      createMockSpaceEncryptionService(),
     );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
@@ -123,24 +125,12 @@ describe('SpaceSafesRepository', () => {
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Delete in dependency order to avoid deadlocks
-    await dbMembersRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbSpaceSafesRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbSpaceRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbWalletRepo.createQueryBuilder().delete().where('1=1').execute();
-    await dbUserRepo.createQueryBuilder().delete().where('1=1').execute();
+    // Delete in dependency order to avoid deadlocks.
+    await dbMembersRepository.createQueryBuilder().delete().execute();
+    await dbSpaceSafesRepository.createQueryBuilder().delete().execute();
+    await dbSpaceRepository.createQueryBuilder().delete().execute();
+    await dbWalletRepo.createQueryBuilder().delete().execute();
+    await dbUserRepo.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {
@@ -328,6 +318,7 @@ describe('SpaceSafesRepository', () => {
           id: expect.any(Number),
           chainId,
           address,
+          addressIndex: null,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
@@ -374,6 +365,7 @@ describe('SpaceSafesRepository', () => {
           id: expect.any(Number),
           chainId,
           address,
+          addressIndex: null,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         })),
@@ -619,6 +611,7 @@ describe('SpaceSafesRepository', () => {
             id: expect.any(Number),
             chainId,
             address,
+            addressIndex: null,
             createdAt: expect.any(Date),
             updatedAt: expect.any(Date),
           })),
@@ -671,6 +664,7 @@ describe('SpaceSafesRepository', () => {
           id: expect.any(Number),
           chainId,
           address,
+          addressIndex: null,
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         })),

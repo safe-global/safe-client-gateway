@@ -17,6 +17,7 @@ import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
@@ -92,21 +93,19 @@ describe('WalletsRepository', () => {
     );
     await migrator.migrate();
 
-    walletsRepository = new WalletsRepository(postgresDatabaseService);
+    walletsRepository = new WalletsRepository(
+      postgresDatabaseService,
+      createMockWalletEncryptionService(),
+    );
   });
 
   afterEach(async () => {
     vi.resetAllMocks();
 
-    // Truncate tables
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
-    await dbWalletRepository
-      .createQueryBuilder()
-      .delete()
-      .where('1=1')
-      .execute();
-    await dbUserRepository.createQueryBuilder().delete().where('1=1').execute();
+    await dbWalletRepository.createQueryBuilder().delete().execute();
+    await dbUserRepository.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {
@@ -203,6 +202,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -244,6 +244,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -285,12 +286,14 @@ describe('WalletsRepository', () => {
       expect(wallets).toEqual([
         {
           address: address1,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
         },
         {
           address: address2,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -329,12 +332,14 @@ describe('WalletsRepository', () => {
       expect(wallets).toEqual([
         {
           address: address1,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
         },
         {
           address: address2,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -366,6 +371,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -394,6 +400,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address: getAddress(nonChecksummedAddress),
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -428,6 +435,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -456,6 +464,7 @@ describe('WalletsRepository', () => {
 
       expect(wallet).toEqual({
         address: getAddress(nonChecksummedAddress),
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: expect.any(Number),
         updatedAt: expect.any(Date),
@@ -495,12 +504,14 @@ describe('WalletsRepository', () => {
       expect(wallets).toEqual([
         {
           address: address1,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
         },
         {
           address: address2,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -553,6 +564,7 @@ describe('WalletsRepository', () => {
       ).resolves.toEqual([
         {
           address: walletAddress,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -582,6 +594,7 @@ describe('WalletsRepository', () => {
       await expect(dbWalletRepository.find()).resolves.toEqual([
         {
           address: getAddress(nonChecksummedAddress),
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: expect.any(Number),
           updatedAt: expect.any(Date),
@@ -617,7 +630,7 @@ describe('WalletsRepository', () => {
           );
         }),
       ).rejects.toThrow(
-        'duplicate key value violates unique constraint "UQ_wallet_address"',
+        'duplicate key value violates unique constraint "UQ_wallet_address_plain"',
       );
     });
 

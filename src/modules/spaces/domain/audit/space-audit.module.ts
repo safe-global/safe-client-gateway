@@ -2,9 +2,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import { SpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 /**
  * Leaf module of the append-only space audit log, consumed by both
@@ -15,8 +17,10 @@ import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit
   imports: [
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([SpaceAuditLog]),
+    KmsEncryptionModule,
   ],
   providers: [
+    SpaceEncryptionService,
     {
       provide: ISpaceAuditRepository,
       useClass: SpaceAuditRepository,

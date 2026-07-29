@@ -76,6 +76,10 @@ export default () => ({
         process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`,
         10, // 30 seconds
       ),
+      managementApiTokenTtlBufferInSeconds: Number.parseInt(
+        process.env.AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS ?? `${60}`,
+        10, // 60 seconds
+      ),
     },
     rateLimit: {
       max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`, 10),
@@ -424,10 +428,7 @@ export default () => ({
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
-    // Support both new (FF_ZERION_ENABLED) and legacy (FF_ZERION_BALANCES_CHAIN_IDS) env vars
-    zerionBalancesEnabled:
-      !!process.env.FF_ZERION_ENABLED ||
-      !!process.env.FF_ZERION_BALANCES_CHAIN_IDS,
+    zerion: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
@@ -436,8 +437,6 @@ export default () => ({
     auth: process.env.FF_AUTH?.toLowerCase() === 'true',
     oidc_auth: process.env.FF_OIDC_AUTH?.toLowerCase() === 'true',
     billingService: process.env.FF_BILLING_SERVICE?.toLowerCase() === 'true',
-    counterfactualBalances:
-      process.env.FF_COUNTERFACTUAL_BALANCES?.toLowerCase() === 'true',
     users: process.env.FF_USERS?.toLowerCase() === 'true',
     hookHttpPostEvent:
       process.env.FF_HOOK_HTTP_POST_EVENT?.toLowerCase() === 'true',
@@ -849,38 +848,6 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
-    // Field-level encryption of user email addresses. The email value is
-    // encrypted directly by AWS KMS, bound to its owning user via the KMS
-    // encryption context; a KMS-wrapped HMAC key computes the email blind
-    // index for lookups/uniqueness.
-    fieldEncryption: {
-      // When true, the users repository encrypts emails before writing and
-      // requires every stored email to be ciphertext on read — enable only
-      // after the backfill has encrypted all existing rows
-      // (scripts/backfill-user-email-encryption).
-      enabled:
-        process.env.SPACES_FIELD_ENCRYPTION_ENABLED?.toLowerCase() === 'true',
-      // Base64 KMS-encrypted 32-byte key for the users.email blind index.
-      // Produced by scripts/generate-field-encryption-index-key. Required
-      // when field encryption is enabled.
-      emailIndexKey: process.env.SPACES_FIELD_ENCRYPTION_INDEX_KEY,
-      kms: {
-        // Undefined when encryption is off; the schema validator requires real
-        // values whenever SPACES_FIELD_ENCRYPTION_ENABLED is true, and the KMS
-        // service only resolves them once a KMS call is actually made.
-        // Region is intentionally not read here: the AWS SDK resolves
-        // AWS_REGION from the environment directly, as it does for SES.
-        keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
-        // Dedicated KMS credentials (like SES_AWS_*/CSV_AWS_*) so enabling
-        // field encryption doesn't reuse the bare AWS_ACCESS_KEY_ID/
-        // SECRET_ACCESS_KEY credentials scoped for targeted messaging's S3
-        // file storage.
-        accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
-        // Set in EKS via IRSA; takes precedence over static credentials.
-        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
-      },
-    },
     invite: {
       ttlMs: Number.parseInt(
         process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,
@@ -916,6 +883,20 @@ export default () => ({
           10,
         ),
       },
+    },
+  },
+  // Field-level encryption via AWS KMS. Values are encrypted directly by
+  // KMS, bound to their owner via the KMS encryption context; a KMS-wrapped
+  // HMAC key computes blind indexes for lookups/uniqueness. Domain-free:
+  // callers supply the context + field-id label (see KmsEncryptionService).
+  encryption: {
+    enabled: process.env.ENCRYPTION_ENABLED?.toLowerCase() === 'true',
+    indexKey: process.env.ENCRYPTION_INDEX_KEY,
+    kms: {
+      keyId: process.env.AWS_KMS_ENCRYPTION_KEY_ID,
+      accessKeyId: process.env.KMS_AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.KMS_AWS_SECRET_ACCESS_KEY,
+      webIdentityTokenFile: process.env.KMS_AWS_WEB_IDENTITY_TOKEN_FILE,
     },
   },
   staking: {

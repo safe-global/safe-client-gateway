@@ -15,6 +15,7 @@ import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/members/entit
 import type { UpdateRoleDto } from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
+import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 export class MembersService {
@@ -27,6 +28,8 @@ export class MembersService {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly spaceInviteEmailService: SpaceInviteEmailService,
+    @Inject(MemberEncryptionService)
+    private readonly memberEncryptionService: MemberEncryptionService,
   ) {
     this.maxInvites =
       this.configurationService.getOrThrow<number>('spaces.maxInvites');
@@ -90,6 +93,12 @@ export class MembersService {
     if (status !== 'INVITED') {
       throw new ConflictException('Only a pending invitation can be renewed.');
     }
+    // Egress path: the stored member name may be KMS ciphertext — decrypt
+    // before it is rendered into an inbox-bound email and the response.
+    const decryptedName = await this.memberEncryptionService.decryptName(
+      args.spaceId,
+      name,
+    );
     await this.membersRepository.renewInvite({
       memberId: id,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
@@ -101,7 +110,7 @@ export class MembersService {
 
     if (user.email) {
       await this.spaceInviteEmailService.enqueueRenewalEmail({
-        name: name,
+        name: decryptedName,
         email: user.email,
         spaceId: args.spaceId,
       });
@@ -110,7 +119,7 @@ export class MembersService {
     return {
       userId: args.userId,
       spaceUuid: space.uuid,
-      name,
+      name: decryptedName,
       role,
       status,
       invitedBy,

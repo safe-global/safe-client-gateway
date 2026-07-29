@@ -38,6 +38,7 @@ describe('Auth0Repository', () => {
       expect(auth0ApiMock.getAuthorizationUrl).toHaveBeenCalledWith(
         state,
         undefined,
+        undefined,
       );
     });
 
@@ -52,6 +53,22 @@ describe('Auth0Repository', () => {
       expect(auth0ApiMock.getAuthorizationUrl).toHaveBeenCalledWith(
         state,
         'google-oauth2',
+        undefined,
+      );
+    });
+
+    it('should pass enroll through to the Auth0 API', () => {
+      const state = faker.string.alphanumeric(32);
+      const expectedUrl = faker.internet.url();
+      auth0ApiMock.getAuthorizationUrl.mockReturnValue(expectedUrl);
+
+      const result = target.getAuthorizationUrl(state, 'google-oauth2', true);
+
+      expect(result).toBe(expectedUrl);
+      expect(auth0ApiMock.getAuthorizationUrl).toHaveBeenCalledWith(
+        state,
+        'google-oauth2',
+        true,
       );
     });
   });

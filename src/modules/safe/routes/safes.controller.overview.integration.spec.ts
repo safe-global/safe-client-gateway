@@ -46,10 +46,6 @@ describe('Safes Controller Overview', () => {
           maxOverviews: 3,
         },
       },
-      features: {
-        ...configuration().features,
-        counterfactualBalances: true,
-      },
     });
 
     const moduleFixture = await createTestModule({
@@ -192,7 +188,7 @@ describe('Safes Controller Overview', () => {
           ]),
         );
 
-      expect(networkService.get.mock.calls.length).toBe(7);
+      expect(networkService.get.mock.calls.length).toBe(6);
 
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -201,18 +197,15 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
-      );
-      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -223,10 +216,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -234,7 +227,7 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
@@ -362,7 +355,7 @@ describe('Safes Controller Overview', () => {
           ]),
         );
 
-      expect(networkService.get.mock.calls.length).toBe(7);
+      expect(networkService.get.mock.calls.length).toBe(6);
 
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -371,18 +364,15 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
-      );
-      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -393,10 +383,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -404,7 +394,7 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
@@ -959,7 +949,7 @@ describe('Safes Controller Overview', () => {
           },
         ]);
 
-      expect(networkService.get.mock.calls.length).toBe(7);
+      expect(networkService.get.mock.calls.length).toBe(6);
 
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -968,18 +958,15 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
-      );
-      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         params: { trusted: false, exclude_spam: true },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -990,10 +977,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -1001,7 +988,7 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });
@@ -1111,7 +1098,7 @@ describe('Safes Controller Overview', () => {
           },
         ]);
 
-      expect(networkService.get.mock.calls.length).toBe(7);
+      expect(networkService.get.mock.calls.length).toBe(6);
 
       expect(networkService.get.mock.calls[0][0].url).toBe(
         `${safeConfigUrl}/api/v1/chains/${chain.chainId}`,
@@ -1120,19 +1107,16 @@ describe('Safes Controller Overview', () => {
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
       );
       expect(networkService.get.mock.calls[2][0].url).toBe(
-        `${chain.transactionService}/api/v1/safes/${safeInfo.address}`,
-      );
-      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,
       );
-      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[2][0].networkRequest).toStrictEqual({
         // Forwarded params
         params: { trusted: true, exclude_spam: false },
       });
-      expect(networkService.get.mock.calls[4][0].url).toBe(
+      expect(networkService.get.mock.calls[3][0].url).toBe(
         `${pricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`,
       );
-      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[3][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           vs_currencies: currency.toLowerCase(),
@@ -1143,10 +1127,10 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[5][0].url).toBe(
+      expect(networkService.get.mock.calls[4][0].url).toBe(
         `${pricesProviderUrl}/simple/price`,
       );
-      expect(networkService.get.mock.calls[5][0].networkRequest).toStrictEqual({
+      expect(networkService.get.mock.calls[4][0].networkRequest).toStrictEqual({
         headers: { 'x-cg-pro-api-key': pricesApiKey },
         params: {
           ids: chain.pricesProvider.nativeCoin,
@@ -1154,7 +1138,7 @@ describe('Safes Controller Overview', () => {
           include_24hr_change: true,
         },
       });
-      expect(networkService.get.mock.calls[6][0].url).toBe(
+      expect(networkService.get.mock.calls[5][0].url).toBe(
         `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`,
       );
     });

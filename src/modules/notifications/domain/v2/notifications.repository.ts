@@ -379,7 +379,7 @@ export class NotificationsRepositoryV2 implements INotificationsRepositoryV2 {
         chain_id: args.chainId,
         safe_address: args.safeAddress,
       },
-      relations: ['push_notification_device'],
+      relations: { push_notification_device: true },
       cache: {
         id: subscriptionsCacheKey,
         milliseconds: cacheTtl,

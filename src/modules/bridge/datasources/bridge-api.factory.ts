@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { ChainApiManager } from '@/datasources/common/chain-api.manager';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -12,9 +13,10 @@ import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
 import { LifiBridgeApi } from '@/modules/bridge/datasources/lifi-api.service';
 
 @Injectable()
-export class BridgeApiFactory implements IBridgeApiFactory {
-  private readonly apis: Record<string, IBridgeApi> = {};
-
+export class BridgeApiFactory
+  extends ChainApiManager<IBridgeApi>
+  implements IBridgeApiFactory
+{
   private readonly baseUrl: string;
   private readonly apiKey: string;
 
@@ -26,17 +28,18 @@ export class BridgeApiFactory implements IBridgeApiFactory {
     @Inject(CacheFirstDataSource)
     private readonly cacheFirstDataSource: CacheFirstDataSource,
   ) {
+    super();
     this.baseUrl =
       this.configurationService.getOrThrow<string>('bridge.baseUri');
     this.apiKey = this.configurationService.getOrThrow<string>('bridge.apiKey');
   }
 
   getApi(chainId: string): Promise<IBridgeApi> {
-    if (this.apis[chainId]) {
-      return Promise.resolve(this.apis[chainId]);
-    }
+    return this.getOrCreateApi(chainId);
+  }
 
-    this.apis[chainId] = new LifiBridgeApi(
+  protected createApi(chainId: string): IBridgeApi {
+    return new LifiBridgeApi(
       chainId,
       this.baseUrl,
       this.apiKey,
@@ -45,13 +48,5 @@ export class BridgeApiFactory implements IBridgeApiFactory {
       this.httpErrorFactory,
       this.configurationService,
     );
-
-    return Promise.resolve(this.apis[chainId]);
-  }
-
-  destroyApi(chainId: string): void {
-    if (this.apis[chainId] !== undefined) {
-      delete this.apis[chainId];
-    }
   }
 }

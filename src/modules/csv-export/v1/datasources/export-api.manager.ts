@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { ChainApiManager } from '@/datasources/common/chain-api.manager';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
@@ -10,8 +11,10 @@ import type { IExportApi } from './export-api.interface';
 import { ExportApi } from './export-api.service';
 
 @Injectable()
-export class ExportApiManager implements IExportApiManager {
-  private readonly exportApiMap: Record<string, ExportApi> = {};
+export class ExportApiManager
+  extends ChainApiManager<IExportApi>
+  implements IExportApiManager
+{
   private readonly useVpcUrl: boolean;
 
   constructor(
@@ -21,34 +24,30 @@ export class ExportApiManager implements IExportApiManager {
     private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
   ) {
+    super();
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
   }
 
-  async getApi(chainId: string): Promise<IExportApi> {
-    const api = this.exportApiMap[chainId];
-    if (api) return api;
+  getApi(chainId: string): Promise<IExportApi> {
+    return this.getOrCreateApi(chainId);
+  }
 
+  protected async createApi(chainId: string): Promise<IExportApi> {
     const chain = await this.configApi
       .getChain(chainId)
       .then(ChainSchema.parse);
     const baseUrl = this.useVpcUrl
       ? chain.vpcTransactionService
       : chain.transactionService;
-    this.exportApiMap[chainId] = new ExportApi(
+
+    return new ExportApi(
       chainId,
       baseUrl,
       this.dataSource,
       this.configurationService,
       this.httpErrorFactory,
     );
-    return this.exportApiMap[chainId];
-  }
-
-  destroyApi(chainId: string): void {
-    if (this.exportApiMap[chainId]) {
-      delete this.exportApiMap[chainId];
-    }
   }
 }
