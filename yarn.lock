@@ -2108,16 +2108,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/core@npm:^3.28.0":
-  version: 3.28.0
-  resolution: "@smithy/core@npm:3.28.0"
-  dependencies:
-    "@smithy/types": "npm:^4.15.0"
-    tslib: "npm:^2.6.2"
-  checksum: 10/b8fe9db961112b8dd36b48c9d692d0cbe83be3a5962b51874f52079a22595674a9bc30c01bb3868da74e0c9ab328cac1f71405982432434be3e5d9d57777b5d7
-  languageName: node
-  linkType: hard
-
 "@smithy/core@npm:^3.29.4, @smithy/core@npm:^3.29.6":
   version: 3.29.6
   resolution: "@smithy/core@npm:3.29.6"
@@ -2125,6 +2115,16 @@ __metadata:
     "@smithy/types": "npm:^4.16.1"
     tslib: "npm:^2.6.2"
   checksum: 10/12c3021c0bda41e6201dc53c975e9a6d8b8635209004230795d11d9db96d787f593db7d8673a7b2584f143e98c3c0ba4743c698d2844a114a5e2d0fdb8382444
+  languageName: node
+  linkType: hard
+
+"@smithy/core@npm:^3.29.7":
+  version: 3.29.7
+  resolution: "@smithy/core@npm:3.29.7"
+  dependencies:
+    "@smithy/types": "npm:^4.16.1"
+    tslib: "npm:^2.6.2"
+  checksum: 10/a21fcf6d08574d798a438ad1e2ea0be4bb1c22fe29bdf13ed13e030f9a0658e69f9ecc35eb3d43673d4ef3620fc9bd8396dcd877ebf9a054a6720454ec3488a6
   languageName: node
   linkType: hard
 
@@ -2172,15 +2172,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/types@npm:^4.15.0":
-  version: 4.15.0
-  resolution: "@smithy/types@npm:4.15.0"
-  dependencies:
-    tslib: "npm:^2.6.2"
-  checksum: 10/e41a84ec3eb9feb45040ccd541b1cacf0fc2375297802886459cb9311ff361080978c08ef98e9ad69f41d80ad212279d682a8fe30a993381b2f1dd376c1006c3
-  languageName: node
-  linkType: hard
-
 "@smithy/types@npm:^4.16.1":
   version: 4.16.1
   resolution: "@smithy/types@npm:4.16.1"
@@ -2190,13 +2181,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/util-stream@npm:4.7.4":
-  version: 4.7.4
-  resolution: "@smithy/util-stream@npm:4.7.4"
+"@smithy/util-stream@npm:4.7.12":
+  version: 4.7.12
+  resolution: "@smithy/util-stream@npm:4.7.12"
   dependencies:
-    "@smithy/core": "npm:^3.28.0"
+    "@smithy/core": "npm:^3.29.7"
     tslib: "npm:^2.6.2"
-  checksum: 10/d04e5e84c270e6436f639a08de16769cce9c0001a415648deefc7deb91fa5fab88e4f5b9278e4390ee1815c0cec8a46ba132d5dbedbf6f25cf58ba5b27483a2f
+  checksum: 10/6c588ba020192576b54b97c193c7dc3b61b8bf032256a11cbae76ea2f35aa00f343536b9ed1c9894615d2927adc7f4155966bcb98de3a555aca933d023ce65a6
   languageName: node
   linkType: hard
 
@@ -6312,7 +6303,7 @@ __metadata:
     "@nestjs/typeorm": "npm:11.0.3"
     "@safe-global/safe-deployments": "npm:1.37.58"
     "@safe-global/safe-modules-deployments": "npm:3.0.3"
-    "@smithy/util-stream": "npm:4.7.4"
+    "@smithy/util-stream": "npm:4.7.12"
     "@swc/core": "npm:1.15.43"
     "@types/amqplib": "npm:0"
     "@types/jsonwebtoken": "npm:9"
