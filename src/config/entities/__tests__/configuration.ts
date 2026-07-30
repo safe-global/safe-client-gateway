@@ -465,6 +465,7 @@ export default (): ReturnType<typeof configuration> => ({
     // CGW hardcodes no addresses, so a test needing the `/policies` catalogue to
     // report a policy as available must configure them itself.
     deployments: undefined,
+    maxConfigurationRequestsPerSafe: faker.number.int({ min: 5, max: 20 }),
   },
   spaces: {
     addressBooks: {

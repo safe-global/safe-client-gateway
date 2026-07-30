@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress, zeroAddress } from 'viem';
+import { getAddress, type Hex, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -18,15 +18,19 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import {
+  hexBuilder,
   policyConfirmationBuilder,
   rawPolicyConfirmation,
   TRANSFER_SELECTOR,
 } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyRootRequestStatus } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import { FF_POLICIES } from '@/modules/policies/domain/policy-catalogue.constants';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -511,6 +515,168 @@ describe('PoliciesController (e2e)', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect({ items: [] });
+    });
+  });
+
+  describe('POST /v1/spaces/:spaceId/safes/:safeId/policies/requests', () => {
+    /** A payload whose root is the hash of its configurations. */
+    function payload(): {
+      root: Hex;
+      configurations: Array<PolicyConfiguration>;
+    } {
+      const configurations = [policyConfigurationBuilder().build()];
+      return { root: configurationRoot(configurations), configurations };
+    }
+
+    it('should store the configurations of an open root', async () => {
+      const body = payload();
+      mockTransactionService({});
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ configureRoot: body.root });
+    });
+
+    it('should accept the same root twice', async () => {
+      const body = payload();
+      mockTransactionService({});
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const url = `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`;
+
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+    });
+
+    it('should return 422 when the configurations do not hash to the root', async () => {
+      const body = payload();
+      const claimedRoot = hexBuilder(32);
+      mockTransactionService({});
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ ...body, root: claimedRoot })
+        .expect(422);
+    });
+
+    it('should store a root that is not on-chain yet', async () => {
+      // The wallet stores the configurations first and requests them on-chain
+      // afterwards, so an unknown root must be accepted.
+      const body = payload();
+      mockTransactionService({ rootRequests: [] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ configureRoot: body.root });
+    });
+
+    it.each([
+      ['an empty configuration list', { configurations: [] }],
+      ['a malformed selector', { selector: '0xa9059c' }],
+      ['an unknown operation', { operation: 2 }],
+      ['a malformed address', { target: '0x123' }],
+    ])('should return 422 for %s', async (_, override) => {
+      const body = payload();
+      mockTransactionService({});
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const invalid =
+        'configurations' in override
+          ? { ...body, ...override }
+          : {
+              ...body,
+              configurations: [{ ...body.configurations[0], ...override }],
+            };
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(invalid)
+        .expect(422);
+    });
+
+    it('should return 403 for a user who is not a member of the space', async () => {
+      const body = payload();
+      mockTransactionService({});
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+      const outsiderToken = jwtService.sign(
+        siweAuthPayloadDtoBuilder().build(),
+      );
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${outsiderToken}`]);
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${outsiderToken}`])
+        .send(body)
+        .expect(403);
+    });
+
+    it('should return 404 for a Safe that is not in the space', async () => {
+      const body = payload();
+      mockTransactionService({});
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: false,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(404);
+    });
+
+    it('should return 403 without authentication', async () => {
+      const body = payload();
+      mockTransactionService({});
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .send(body)
+        .expect(403);
     });
   });
 

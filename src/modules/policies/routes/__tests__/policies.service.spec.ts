@@ -1,28 +1,40 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
-import { getAddress } from 'viem';
+import {
+  BadRequestException,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import {
+  hexBuilder,
+  policyConfirmationBuilder,
+} from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyGroupBuilder } from '@/modules/policies/domain/entities/__tests__/policy-group.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import type { Erc20TransferPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
+import type { PolicyCacheService } from '@/modules/policies/domain/policy-cache.service';
 import type { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
+import type { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import type {
   PolicyResolver,
   PolicyResolverContext,
   ResolvedPolicy,
 } from '@/modules/policies/domain/resolvers/policy-resolver.interface';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -64,6 +76,15 @@ const mockMembersRepository = {
 const mockPolicyCatalogueService = {
   get: vi.fn(),
 } as MockedObject<PolicyCatalogueService>;
+
+const mockConfigurationRequestsRepository = {
+  create: vi.fn(),
+  findByRoots: vi.fn(),
+} as MockedObject<IPolicyConfigurationRequestsRepository>;
+
+const mockPolicyCacheService = {
+  clearPolicies: vi.fn(),
+} as MockedObject<PolicyCacheService>;
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -115,7 +136,9 @@ describe('PoliciesService', () => {
       mockSpaceSafesRepository,
       mockAddressBookItemsRepository,
       mockMembersRepository,
+      mockConfigurationRequestsRepository,
       mockPolicyCatalogueService,
+      mockPolicyCacheService,
       [erc20Resolver, cosignerResolver],
       mockLoggingService,
     );
@@ -130,6 +153,8 @@ describe('PoliciesService', () => {
     mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([]);
     mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
     mockPolicyCatalogueService.get.mockResolvedValue([]);
+    mockConfigurationRequestsRepository.create.mockResolvedValue();
+    mockPolicyCacheService.clearPolicies.mockResolvedValue();
   });
 
   describe('authorisation', () => {
@@ -439,6 +464,137 @@ describe('PoliciesService', () => {
       await expect(
         service.getAvailablePolicies(request),
       ).resolves.toStrictEqual({ items });
+    });
+  });
+
+  describe('createConfigurationRequest', () => {
+    /** A payload whose root is the hash of its configurations. */
+    function validPayload(): {
+      root: Hex;
+      configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>];
+    } {
+      const configurations: [PolicyConfiguration] = [
+        policyConfigurationBuilder().build(),
+      ];
+      return { root: configurationRoot(configurations), configurations };
+    }
+
+    it('should store the configurations of an open root', async () => {
+      const payload = validPayload();
+
+      const result = await service.createConfigurationRequest({
+        ...request,
+        payload,
+      });
+
+      expect(result).toStrictEqual({ configureRoot: payload.root });
+      expect(mockConfigurationRequestsRepository.create).toHaveBeenCalledWith({
+        chainId: SEPOLIA_CHAIN_ID,
+        safeAddress,
+        root: payload.root,
+        configurations: payload.configurations,
+        spaceId,
+        createdBy: userId,
+      });
+    });
+
+    it('should clear the policy caches of the Safe', async () => {
+      const payload = validPayload();
+
+      await service.createConfigurationRequest({ ...request, payload });
+
+      expect(mockPolicyCacheService.clearPolicies).toHaveBeenCalledWith({
+        chainId: SEPOLIA_CHAIN_ID,
+        safeAddress,
+      });
+    });
+
+    it('should reject configurations that do not hash to the given root', async () => {
+      const payload = validPayload();
+      const claimedRoot = hexBuilder(32);
+
+      await expect(
+        service.createConfigurationRequest({
+          ...request,
+          payload: { ...payload, root: claimedRoot },
+        }),
+      ).rejects.toThrow(
+        new UnprocessableEntityException(
+          'The configurations do not hash to the given root',
+        ),
+      );
+      expect(mockConfigurationRequestsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should store a root that is not on-chain yet', async () => {
+      // The wallet stores the configurations before requesting them on-chain, so
+      // an unknown root is the normal case rather than an error.
+      const payload = validPayload();
+      mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([]);
+
+      await expect(
+        service.createConfigurationRequest({ ...request, payload }),
+      ).resolves.toStrictEqual({ configureRoot: payload.root });
+      expect(mockPoliciesRepository.getOpenRootRequests).not.toHaveBeenCalled();
+    });
+
+    it('should accept a root in any hex casing', async () => {
+      const payload = validPayload();
+
+      await expect(
+        service.createConfigurationRequest({
+          ...request,
+          payload: {
+            ...payload,
+            root: payload.root.toUpperCase().replace('0X', '0x') as Hex,
+          },
+        }),
+      ).resolves.toStrictEqual({
+        configureRoot: payload.root.toUpperCase().replace('0X', '0x'),
+      });
+    });
+
+    it('should reject a non member', async () => {
+      const payload = validPayload();
+      mockMembersRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.createConfigurationRequest({ ...request, payload }),
+      ).rejects.toThrow('User is not a member of this workspace');
+      expect(mockConfigurationRequestsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject a Safe that is not in the space', async () => {
+      const payload = validPayload();
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
+
+      await expect(
+        service.createConfigurationRequest({ ...request, payload }),
+      ).rejects.toThrow(new NotFoundException('Safe not found in this space'));
+    });
+
+    it('should reject an unauthenticated caller', async () => {
+      const payload = validPayload();
+
+      await expect(
+        service.createConfigurationRequest({
+          ...request,
+          authPayload: new AuthPayload(undefined),
+          payload,
+        }),
+      ).rejects.toThrow('Not authenticated');
+    });
+
+    it('should propagate a storage failure', async () => {
+      const payload = validPayload();
+      mockConfigurationRequestsRepository.create.mockRejectedValue(
+        new BadRequestException('This Safe only allows a maximum of 20'),
+      );
+
+      await expect(
+        service.createConfigurationRequest({ ...request, payload }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockPolicyCacheService.clearPolicies).not.toHaveBeenCalled();
     });
   });
 

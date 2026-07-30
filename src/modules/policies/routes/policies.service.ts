@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import type { Address } from 'viem';
 import {
   type ILoggingService,
@@ -20,13 +25,20 @@ import {
   policyTypeFromContractName,
 } from '@/modules/policies/domain/entities/policy-type.entity';
 import { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
+import { PolicyCacheService } from '@/modules/policies/domain/policy-cache.service';
 import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
+import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import {
   type AddressNames,
   type PolicyResolver,
   type ResolvedPolicy,
 } from '@/modules/policies/domain/resolvers/policy-resolver.interface';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { POLICY_RESOLVERS } from '@/modules/policies/policies.constants';
+import type {
+  CreatePolicyConfigurationRequestPayload,
+  CreatePolicyConfigurationRequestResponse,
+} from '@/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
 import type { SafeId } from '@/modules/policies/routes/entities/safe-id.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -57,12 +69,66 @@ export class PoliciesService {
     private readonly addressBookItemsRepository: IAddressBookItemsRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IPolicyConfigurationRequestsRepository)
+    private readonly configurationRequestsRepository: IPolicyConfigurationRequestsRepository,
     private readonly policyCatalogueService: PolicyCatalogueService,
+    private readonly policyCacheService: PolicyCacheService,
     @Inject(POLICY_RESOLVERS)
     private readonly resolvers: ReadonlyArray<PolicyResolver>,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {}
+
+  /**
+   * Stores the `Configuration[]` of a delayed configuration request, so a later
+   * `pending` read can say what the request changes.
+   *
+   * `requestConfiguration(bytes32 root)` publishes only the hash, so the payload
+   * has to be kept off-chain. The wallet stores it *before* requesting the
+   * configuration on-chain - the root does not exist on-chain yet at this point -
+   * so a row is deliberately accepted for a root the Safe has not requested.
+   *
+   * What keeps that safe is the one check that does not depend on chain state:
+   * the root is recomputed from the submitted configurations and has to match.
+   * A row therefore always describes the configurations that hash to its own
+   * root, and `pending` only ever joins rows onto roots the events report - so a
+   * row for a root that never materialises is inert, and no row can misdescribe
+   * a real request.
+   *
+   * Idempotent, so a client retry cannot duplicate.
+   */
+  public async createConfigurationRequest(
+    request: PolicyRequest & {
+      payload: CreatePolicyConfigurationRequestPayload;
+    },
+  ): Promise<CreatePolicyConfigurationRequestResponse> {
+    const userId = getAuthenticatedUserIdOrFail(request.authPayload);
+    await this.assertSafeInSpace(request);
+
+    const { chainId, address: safeAddress } = request.safeId;
+    const { root, configurations } = request.payload;
+
+    if (configurationRoot(configurations) !== root.toLowerCase()) {
+      throw new UnprocessableEntityException(
+        'The configurations do not hash to the given root',
+      );
+    }
+
+    await this.configurationRequestsRepository.create({
+      chainId,
+      safeAddress,
+      root,
+      configurations,
+      spaceId: request.spaceId,
+      createdBy: userId,
+    });
+
+    // The stored row changes what `pending` can report, so the cached policy
+    // reads of the Safe must not outlive it.
+    await this.policyCacheService.clearPolicies({ chainId, safeAddress });
+
+    return { configureRoot: root };
+  }
 
   /**
    * The policy types the Safe can configure, with the deployment addresses that

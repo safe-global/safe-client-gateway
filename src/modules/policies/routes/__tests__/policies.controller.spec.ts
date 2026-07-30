@@ -6,6 +6,9 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import { hexBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import { PoliciesController } from '@/modules/policies/routes/policies.controller';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 
@@ -13,6 +16,7 @@ const mockPoliciesService = {
   getAvailablePolicies: vi.fn(),
   getActivePolicies: vi.fn(),
   getPendingPolicies: vi.fn(),
+  createConfigurationRequest: vi.fn(),
 } as MockedObject<PoliciesService>;
 
 describe('PoliciesController', () => {
@@ -37,6 +41,29 @@ describe('PoliciesController', () => {
     for (const endpoint of endpoints) {
       checkGuardIsApplied(AuthGuard, endpoint);
     }
+  });
+
+  it('createConfigurationRequest should delegate to the service', async () => {
+    const payload = {
+      root: hexBuilder(32),
+      configurations: [policyConfigurationBuilder().build()] as [
+        PolicyConfiguration,
+      ],
+    };
+    const response = { configureRoot: payload.root };
+    mockPoliciesService.createConfigurationRequest.mockResolvedValue(response);
+
+    const result = await controller.createConfigurationRequest(
+      spaceId,
+      safeId,
+      payload,
+      authPayload,
+    );
+
+    expect(result).toBe(response);
+    expect(mockPoliciesService.createConfigurationRequest).toHaveBeenCalledWith(
+      { spaceId, safeId, authPayload, payload },
+    );
   });
 
   it.each([

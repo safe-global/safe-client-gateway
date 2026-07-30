@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
+import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { PoliciesRepository } from '@/modules/policies/domain/policies.repository';
 import { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
+import { PolicyCacheModule } from '@/modules/policies/domain/policy-cache.module';
 import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
+import { PolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository';
+import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 import { PolicyTokenService } from '@/modules/policies/domain/policy-token.service';
 import { AllowPolicyResolver } from '@/modules/policies/domain/resolvers/allow-policy.resolver';
@@ -22,7 +28,10 @@ import { UsersModule } from '@/modules/users/users.module';
 
 @Module({
   imports: [
+    PostgresDatabaseModuleV2,
+    TypeOrmModule.forFeature([PolicyConfigurationRequest]),
     TransactionApiManagerModule,
+    PolicyCacheModule,
     SafeRepositoryModule,
     TokensModule,
     FeatureFlagsModule,
@@ -45,6 +54,10 @@ import { UsersModule } from '@/modules/users/users.module';
       useClass: PoliciesRepository,
     },
     {
+      provide: IPolicyConfigurationRequestsRepository,
+      useClass: PolicyConfigurationRequestsRepository,
+    },
+    {
       // Registering a resolver here is all it takes to support a new
       // guard-enforced policy type.
       provide: POLICY_RESOLVERS,
@@ -60,6 +73,6 @@ import { UsersModule } from '@/modules/users/users.module';
       ],
     },
   ],
-  exports: [IPoliciesRepository],
+  exports: [IPoliciesRepository, IPolicyConfigurationRequestsRepository],
 })
 export class PoliciesModule {}
