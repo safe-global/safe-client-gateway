@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { TestAppProvider } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
@@ -21,6 +21,7 @@ import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/dom
 import {
   policyConfirmationBuilder,
   rawPolicyConfirmation,
+  TRANSFER_SELECTOR,
 } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import { PolicyRootRequestStatus } from '@/modules/policies/domain/entities/policy-root-request.entity';
@@ -316,6 +317,94 @@ describe('PoliciesController (e2e)', () => {
           },
         ],
       });
+    });
+
+    it('should accumulate the recipients configured over several transactions', async () => {
+      // Regression, from a real Safe: the allowlist was built up by three
+      // `configure` calls on the same access, each allowing one recipient, next
+      // to four grants of the fallback AllowPolicy. Only the last configure call
+      // used to be reported, so the response carried one recipient of three.
+      const token = getAddress(faker.finance.ethereumAddress());
+      const recipients = [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ];
+      const allowPolicy = getAddress(faker.finance.ethereumAddress());
+      const blocks = [465, 469, 473];
+
+      const transfers = recipients.map((recipient, index) =>
+        policyConfirmationBuilder()
+          .with('safe', safeAddress)
+          .with('guard', getAddress(SAFE_POLICY_GUARD))
+          .with('target', token)
+          .with('selector', TRANSFER_SELECTOR)
+          .with('policy', ERC20_TRANSFER_POLICY)
+          .with('policyType', 'ERC20TransferPolicy')
+          .with('blockNumber', blocks[index])
+          .with('logIndex', 1)
+          .with('dataDecoded', {
+            policyName: 'ERC20TransferPolicy',
+            parameters: { recipients: [{ recipient, allowed: true }] },
+          })
+          .build(),
+      );
+      const fallbacks = [443, ...blocks].map((blockNumber) =>
+        policyConfirmationBuilder()
+          .with('safe', safeAddress)
+          .with('guard', getAddress(SAFE_POLICY_GUARD))
+          .with('target', zeroAddress)
+          .with('selector', '0x00000000')
+          .with('fallback', true)
+          .with('policy', allowPolicy)
+          .with('policyType', 'AllowPolicy')
+          .with('blockNumber', blockNumber)
+          .with('logIndex', 2)
+          .with('data', '0x')
+          .with('dataDecoded', null)
+          .build(),
+      );
+
+      mockTransactionService({
+        // newest first, as the Transaction Service returns them
+        confirmations: [...transfers, ...fallbacks]
+          .sort(
+            (first, second) =>
+              second.blockNumber - first.blockNumber ||
+              second.logIndex - first.logIndex,
+          )
+          .map(rawPolicyConfirmation),
+      });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/active`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      const items = (body as { items: Array<Record<string, unknown>> }).items;
+      const allowlistItem = items.find(
+        (item) => item.type === PolicyType.Erc20Transfer,
+      );
+      expect(allowlistItem).toMatchObject({
+        data: {
+          allowlist: [
+            {
+              token: { address: token },
+              recipients: recipients.map((address) => ({ address })),
+            },
+          ],
+        },
+      });
+      // the four fallback grants are one access, so one item
+      expect(items).toHaveLength(2);
+      expect(
+        items.filter((item) => item.type === PolicyType.AllowPolicy),
+      ).toHaveLength(1);
     });
 
     it('should report a policy as disabled when the guard is not set on the Safe', async () => {

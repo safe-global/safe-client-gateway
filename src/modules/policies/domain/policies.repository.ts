@@ -7,17 +7,15 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import {
-  type PolicyConfirmation,
-  PolicyConfirmationPageSchema,
-} from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import { PolicyConfirmationPageSchema } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import {
   type PolicyRootRequest,
   PolicyRootRequestPageSchema,
   PolicyRootRequestStatus,
 } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import type { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
-import { activeConfirmations } from '@/modules/policies/domain/utils/policy-state.utils';
+import { policyGroups } from '@/modules/policies/domain/utils/policy-state.utils';
 
 @Injectable()
 export class PoliciesRepository implements IPoliciesRepository {
@@ -46,10 +44,10 @@ export class PoliciesRepository implements IPoliciesRepository {
     private readonly loggingService: ILoggingService,
   ) {}
 
-  public async getActiveConfirmations(args: {
+  public async getPolicyGroups(args: {
     chainId: string;
     safeAddress: Address;
-  }): Promise<Array<PolicyConfirmation>> {
+  }): Promise<Array<PolicyGroup>> {
     const api = await this.transactionApiManager.getApi(args.chainId);
 
     const confirmations = await this.getAllPages({
@@ -65,7 +63,7 @@ export class PoliciesRepository implements IPoliciesRepository {
           .then((page) => PolicyConfirmationPageSchema.parse(page)),
     });
 
-    return activeConfirmations(confirmations);
+    return policyGroups(confirmations);
   }
 
   public async getOpenRootRequests(args: {

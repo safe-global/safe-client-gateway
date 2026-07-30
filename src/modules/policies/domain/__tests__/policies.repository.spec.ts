@@ -10,6 +10,7 @@ import {
   policyConfirmationBuilder,
   rawPolicyConfirmation,
 } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import { policyGroupBuilder } from '@/modules/policies/domain/entities/__tests__/policy-group.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import { PolicyRootRequestStatus } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import { PoliciesRepository } from '@/modules/policies/domain/policies.repository';
@@ -46,8 +47,8 @@ describe('PoliciesRepository', () => {
     );
   });
 
-  describe('getActiveConfirmations', () => {
-    it('should return the validated active confirmations', async () => {
+  describe('getPolicyGroups', () => {
+    it('should return one validated group per access', async () => {
       const confirmation = policyConfirmationBuilder()
         .with('safe', safeAddress)
         .build();
@@ -55,16 +56,17 @@ describe('PoliciesRepository', () => {
         rawify(
           pageBuilder()
             .with('results', [rawPolicyConfirmation(confirmation)])
+            .with('next', null)
             .build(),
         ),
       );
 
-      const result = await repository.getActiveConfirmations({
+      const result = await repository.getPolicyGroups({
         chainId,
         safeAddress,
       });
 
-      expect(result).toStrictEqual([confirmation]);
+      expect(result).toStrictEqual([policyGroupBuilder([confirmation])]);
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
       expect(mockTransactionApi.getPolicyConfirmations).toHaveBeenCalledWith({
         safeAddress,
@@ -80,6 +82,7 @@ describe('PoliciesRepository', () => {
         .with('blockNumber', 1)
         .build();
       const removed = policyConfirmationBuilder()
+        .with('guard', added.guard)
         .with('target', target)
         .with('selector', added.selector)
         .with('operation', added.operation)
@@ -94,16 +97,51 @@ describe('PoliciesRepository', () => {
               rawPolicyConfirmation(removed),
               rawPolicyConfirmation(added),
             ])
+            .with('next', null)
             .build(),
         ),
       );
 
-      const result = await repository.getActiveConfirmations({
+      const result = await repository.getPolicyGroups({
         chainId,
         safeAddress,
       });
 
       expect(result).toStrictEqual([]);
+    });
+
+    it('should group every configure call of an access, oldest first', async () => {
+      // Regression: collapsing an access to its newest event dropped the earlier
+      // configure calls, so an allowlist built up over three transactions was
+      // reported with only the recipient of the last one.
+      const target = getAddress(faker.finance.ethereumAddress());
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const history = [465, 469, 473].map((blockNumber) =>
+        policyConfirmationBuilder()
+          .with('target', target)
+          .with('policy', policy)
+          .with('blockNumber', blockNumber)
+          .with('logIndex', 1)
+          .build(),
+      );
+      mockTransactionApi.getPolicyConfirmations.mockResolvedValue(
+        rawify(
+          pageBuilder()
+            // newest first, as the Transaction Service returns them
+            .with('results', [...history].reverse().map(rawPolicyConfirmation))
+            .with('next', null)
+            .build(),
+        ),
+      );
+
+      const result = await repository.getPolicyGroups({
+        chainId,
+        safeAddress,
+      });
+
+      expect(result).toStrictEqual([
+        policyGroupBuilder([history[0], history[1], history[2]]),
+      ]);
     });
 
     it('should drop invalid events instead of failing', async () => {
@@ -115,16 +153,17 @@ describe('PoliciesRepository', () => {
               rawPolicyConfirmation(confirmation),
               { safe: 'not-an-address' },
             ])
+            .with('next', null)
             .build(),
         ),
       );
 
-      const result = await repository.getActiveConfirmations({
+      const result = await repository.getPolicyGroups({
         chainId,
         safeAddress,
       });
 
-      expect(result).toStrictEqual([confirmation]);
+      expect(result).toStrictEqual([policyGroupBuilder([confirmation])]);
     });
 
     it('should follow pagination until the last page', async () => {
@@ -148,7 +187,7 @@ describe('PoliciesRepository', () => {
           ),
         );
 
-      const result = await repository.getActiveConfirmations({
+      const result = await repository.getPolicyGroups({
         chainId,
         safeAddress,
       });
@@ -174,7 +213,7 @@ describe('PoliciesRepository', () => {
         ),
       );
 
-      await repository.getActiveConfirmations({ chainId, safeAddress });
+      await repository.getPolicyGroups({ chainId, safeAddress });
 
       expect(mockTransactionApi.getPolicyConfirmations).toHaveBeenCalledTimes(
         10,
@@ -195,7 +234,7 @@ describe('PoliciesRepository', () => {
       );
 
       await expect(
-        repository.getActiveConfirmations({ chainId, safeAddress }),
+        repository.getPolicyGroups({ chainId, safeAddress }),
       ).resolves.toStrictEqual([]);
     });
 
@@ -205,7 +244,7 @@ describe('PoliciesRepository', () => {
       );
 
       await expect(
-        repository.getActiveConfirmations({ chainId, safeAddress }),
+        repository.getPolicyGroups({ chainId, safeAddress }),
       ).rejects.toThrow('Service unavailable');
     });
   });

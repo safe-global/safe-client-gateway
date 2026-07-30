@@ -10,10 +10,7 @@ import {
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
 } from '@safe-global/safe-deployments';
-import {
-  _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
-  _SAFE_DEPLOYMENTS,
-} from '@safe-global/safe-deployments/dist/deployments';
+import { _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
 import {
   getAllowanceModuleDeployment,
   getSafeWebAuthnSignerFactoryDeployment,

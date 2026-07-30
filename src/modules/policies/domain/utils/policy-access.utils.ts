@@ -40,21 +40,17 @@ export function operationValue(operation: PolicyOperation): number {
 /**
  * Identifier of a policy item, opaque to the wallet but stable across requests.
  *
- * A single access is identified by its access word. An item combining several
- * accesses (e.g. an allowlist covering more than one selector of a token) is
- * identified by the hash of its sorted access words, so the identifier does not
- * depend on the order the events came back in.
+ * An item covering a single access is identified by its access word. One covering
+ * several (e.g. an allowlist spanning more than one selector of a token) is
+ * identified by the hash of the sorted words, so the identifier does not depend
+ * on the order the groups came in.
  */
-export function policyId(
-  confirmations: ReadonlyArray<
-    Pick<PolicyConfirmation, 'target' | 'selector' | 'operation'>
-  >,
-): Hex {
-  const accesses = confirmations.map(accessSelector).sort();
+export function policyId(accesses: ReadonlyArray<Hex>): Hex {
+  const sorted = [...new Set(accesses)].sort();
 
-  if (accesses.length === 1) {
-    return accesses[0];
+  if (sorted.length === 1) {
+    return sorted[0];
   }
 
-  return keccak256(concat(accesses));
+  return keccak256(concat(sorted));
 }

@@ -8,9 +8,10 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import { policyGroupBuilder } from '@/modules/policies/domain/entities/__tests__/policy-group.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import type { Erc20TransferPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
@@ -40,7 +41,7 @@ const SEPOLIA_CHAIN_ID = '11155111';
 const ERC20_TRANSFER_POLICY_TYPE = 'ERC20TransferPolicy';
 
 const mockPoliciesRepository = {
-  getActiveConfirmations: vi.fn(),
+  getPolicyGroups: vi.fn(),
   getOpenRootRequests: vi.fn(),
 } as MockedObject<IPoliciesRepository>;
 
@@ -72,19 +73,19 @@ const mockLoggingService = {
 } as MockedObject<ILoggingService>;
 
 /**
- * Resolver double that echoes the confirmations it was given, so the service's
- * grouping and Safe-level enrichment can be asserted in isolation.
+ * Resolver double that echoes the groups it was given, so the service's routing
+ * and Safe-level enrichment can be asserted in isolation.
  */
 function resolverStub(type: PolicyType): MockedObject<PolicyResolver> {
   return {
     type,
-    resolve: vi.fn(async ({ confirmations }: PolicyResolverContext) =>
-      confirmations.map(
-        (confirmation: PolicyConfirmation): ResolvedPolicy => ({
-          id: `0x${type.length.toString(16).padStart(2, '0')}${confirmation.logIndex}`,
+    resolve: vi.fn(async ({ groups }: PolicyResolverContext) =>
+      groups.map(
+        (group: PolicyGroup): ResolvedPolicy => ({
+          id: group.access,
           type,
           data: { allowlist: [] } as Erc20TransferPolicyData,
-          sources: [confirmation],
+          groups: [group],
         }),
       ),
     ),
@@ -125,7 +126,7 @@ describe('PoliciesService', () => {
       { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
     ] as never);
     mockAddressBookItemsRepository.findAllBySpaceId.mockResolvedValue([]);
-    mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([]);
+    mockPoliciesRepository.getPolicyGroups.mockResolvedValue([]);
     mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([]);
     mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
     mockPolicyCatalogueService.get.mockResolvedValue([]);
@@ -186,24 +187,24 @@ describe('PoliciesService', () => {
   });
 
   describe('getActivePolicies', () => {
-    it('should route confirmations to the resolver of their policy type', async () => {
+    it('should route each group to the resolver of its policy type', async () => {
       const confirmation = policyConfirmationBuilder()
         .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
 
       const result = await service.getActivePolicies(request);
 
       expect(erc20Resolver.resolve).toHaveBeenCalledWith({
         chainId: SEPOLIA_CHAIN_ID,
-        confirmations: [confirmation],
+        groups: [policyGroupBuilder([confirmation])],
         names: new Map(),
       });
       expect(cosignerResolver.resolve).toHaveBeenCalledWith({
         chainId: SEPOLIA_CHAIN_ID,
-        confirmations: [],
+        groups: [],
         names: new Map(),
       });
       expect(result.items).toHaveLength(1);
@@ -214,8 +215,8 @@ describe('PoliciesService', () => {
       const confirmation = policyConfirmationBuilder()
         .with('policy', getAddress(faker.finance.ethereumAddress()))
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
 
       const result = await service.getActivePolicies(request);
@@ -236,15 +237,15 @@ describe('PoliciesService', () => {
         .with('policy', getAddress(faker.finance.ethereumAddress()))
         .with('policyType', 'ERC20TransferPolicy')
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
 
       const result = await service.getActivePolicies(request);
 
       expect(erc20Resolver.resolve).toHaveBeenCalledWith({
         chainId: SEPOLIA_CHAIN_ID,
-        confirmations: [confirmation],
+        groups: [policyGroupBuilder([confirmation])],
         names: new Map(),
       });
       expect(result.items).toHaveLength(1);
@@ -256,8 +257,8 @@ describe('PoliciesService', () => {
         .with('policy', getAddress(faker.finance.ethereumAddress()))
         .with('policyType', 'DenyPolicy')
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
 
       const result = await service.getActivePolicies(request);
@@ -280,18 +281,18 @@ describe('PoliciesService', () => {
         .with('policyType', 'CoSignerPolicy')
         .with('selector', '0x23b872dd')
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        erc20,
-        cosigner,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([erc20]),
+        policyGroupBuilder([cosigner]),
       ]);
 
       await service.getActivePolicies(request);
 
       expect(erc20Resolver.resolve).toHaveBeenCalledWith(
-        expect.objectContaining({ confirmations: [erc20] }),
+        expect.objectContaining({ groups: [policyGroupBuilder([erc20])] }),
       );
       expect(cosignerResolver.resolve).toHaveBeenCalledWith(
-        expect.objectContaining({ confirmations: [cosigner] }),
+        expect.objectContaining({ groups: [policyGroupBuilder([cosigner])] }),
       );
     });
 
@@ -299,8 +300,8 @@ describe('PoliciesService', () => {
       const confirmation = policyConfirmationBuilder()
         .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
       mockSafeRepository.getSafe.mockResolvedValue(
         safeBuilder().with('guard', confirmation.guard).build(),
@@ -323,8 +324,8 @@ describe('PoliciesService', () => {
       const confirmation = policyConfirmationBuilder()
         .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
       mockSafeRepository.getSafe.mockResolvedValue(
         safeBuilder()
@@ -344,8 +345,8 @@ describe('PoliciesService', () => {
       const confirmation = policyConfirmationBuilder()
         .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        confirmation,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([confirmation]),
       ]);
       mockSafeRepository.getSafe.mockResolvedValue(
         safeBuilder().with('guard', guard).build(),
@@ -380,7 +381,7 @@ describe('PoliciesService', () => {
     });
 
     it('should propagate a Transaction Service failure', async () => {
-      mockPoliciesRepository.getActiveConfirmations.mockRejectedValue(
+      mockPoliciesRepository.getPolicyGroups.mockRejectedValue(
         new Error('Service unavailable'),
       );
 
@@ -400,9 +401,9 @@ describe('PoliciesService', () => {
         .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .with('logIndex', 2)
         .build();
-      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
-        first,
-        second,
+      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
+        policyGroupBuilder([first]),
+        policyGroupBuilder([second]),
       ]);
 
       await service.getAvailablePolicies(request);

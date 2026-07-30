@@ -4,7 +4,7 @@ import type {
   ActivePolicyData,
   NamedAddress,
 } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 
 /**
@@ -16,30 +16,33 @@ export type AddressNames = ReadonlyMap<string, string>;
  * A policy shaped for the wallet, before the Safe-level facts (which guard slot
  * enforces it, and whether that guard is enabled) are attached.
  *
- * `sources` are the confirmations the item was built from; the caller derives
- * `enforcement` and `enabled` from them, since only it knows the Safe.
+ * `groups` are the accesses the item covers; the caller reads their newest event
+ * for those facts, since only it knows the Safe.
  */
 export type ResolvedPolicy = {
   id: Hex;
   type: PolicyType;
   data: ActivePolicyData;
-  sources: Array<PolicyConfirmation>;
+  groups: Array<PolicyGroup>;
 };
 
 export type PolicyResolverContext = {
   chainId: string;
-  /** Only the confirmations whose policy address implements `type`. */
-  confirmations: Array<PolicyConfirmation>;
+  /** Only the groups whose bound policy is of the resolver's type. */
+  groups: Array<PolicyGroup>;
   names: AddressNames;
 };
 
 /**
- * Turns the indexed confirmations of one policy type into wallet-facing
- * policies.
+ * Aggregates the groups of one policy type into wallet-facing policies.
  *
- * One implementation per guard-enforced policy type: each owns the schema of
- * its `data` payload and how several confirmations combine into one item.
- * Adding a policy type means adding a resolver, not changing the service.
+ * Grouping the events by access and picking the bound policy is done once, for
+ * every type, by `policyGroups`. A resolver only decides what its type's events
+ * mean: whether the payloads accumulate or the newest replaces the rest, and
+ * whether several accesses fold into one item.
+ *
+ * One implementation per policy type; adding a type means adding a resolver, not
+ * changing the service.
  */
 export interface PolicyResolver {
   readonly type: PolicyType;

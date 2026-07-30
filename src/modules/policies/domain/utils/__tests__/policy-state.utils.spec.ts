@@ -4,30 +4,31 @@ import { getAddress } from 'viem';
 import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { PolicyOperation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import { accessSelector } from '@/modules/policies/domain/utils/policy-access.utils';
 import {
-  activeConfirmations,
-  currentConfirmations,
   isRemoval,
+  policyGroups,
 } from '@/modules/policies/domain/utils/policy-state.utils';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
 /**
- * Two confirmations for the same access, differing only in chain position and
- * policy address.
+ * A history of events on one `(target, selector, operation)` tuple, oldest first.
  */
-function accessHistory(args: {
-  policies: Array<{
+function accessHistory(
+  events: Array<{
     policy: PolicyConfirmation['policy'];
+    policyType?: string;
     blockNumber: number;
     logIndex?: number;
-  }>;
-}): Array<PolicyConfirmation> {
+  }>,
+): Array<PolicyConfirmation> {
   const target = getAddress(faker.finance.ethereumAddress());
 
-  return args.policies.map(({ policy, blockNumber, logIndex = 0 }) =>
+  return events.map(({ policy, policyType, blockNumber, logIndex = 0 }) =>
     policyConfirmationBuilder()
       .with('target', target)
       .with('policy', policy)
+      .with('policyType', policyType ?? 'ERC20TransferPolicy')
       .with('removed', policy === NULL_ADDRESS)
       .with('blockNumber', blockNumber)
       .with('logIndex', logIndex)
@@ -62,148 +63,197 @@ describe('isRemoval', () => {
   });
 });
 
-describe('currentConfirmations', () => {
-  it('should keep the newest confirmation per access', () => {
-    const older = 100;
-    const newer = 200;
-    const [first, second] = accessHistory({
-      policies: [
-        {
-          policy: getAddress(faker.finance.ethereumAddress()),
-          blockNumber: older,
-        },
-        {
-          policy: getAddress(faker.finance.ethereumAddress()),
-          blockNumber: newer,
-        },
-      ],
-    });
+describe('policyGroups', () => {
+  it('should group the events of a tuple, keyed by its access word', () => {
+    // The reported case: three `configure` calls on one access. They are one
+    // group, so a resolver can fold their payloads.
+    const policy = getAddress(faker.finance.ethereumAddress());
+    const history = accessHistory([
+      { policy, blockNumber: 465, logIndex: 1 },
+      { policy, blockNumber: 469, logIndex: 1 },
+      { policy, blockNumber: 473, logIndex: 1 },
+    ]);
 
-    const result = currentConfirmations([first, second]);
+    const result = policyGroups(history);
 
-    expect(result).toStrictEqual([second]);
+    expect(result).toStrictEqual([
+      {
+        access: accessSelector(history[0]),
+        latest: history[2],
+        confirmations: history,
+      },
+    ]);
   });
 
-  it('should break a tie within a block on the log index', () => {
-    const [first, second] = accessHistory({
-      policies: [
-        {
-          policy: getAddress(faker.finance.ethereumAddress()),
-          blockNumber: 100,
-          logIndex: 1,
-        },
-        {
-          policy: getAddress(faker.finance.ethereumAddress()),
-          blockNumber: 100,
-          logIndex: 4,
-        },
-      ],
-    });
+  it('should order a group oldest first, whatever order the events arrive in', () => {
+    const policy = getAddress(faker.finance.ethereumAddress());
+    const history = accessHistory([
+      { policy, blockNumber: 1, logIndex: 2 },
+      { policy, blockNumber: 1, logIndex: 5 },
+      { policy, blockNumber: 2, logIndex: 0 },
+    ]);
 
-    expect(currentConfirmations([first, second])).toStrictEqual([second]);
+    const [group] = policyGroups([...history].reverse());
+
+    expect(group.confirmations).toStrictEqual(history);
+    expect(group.latest).toStrictEqual(history[2]);
   });
 
-  it('should be independent of input order', () => {
-    const [older, newer] = accessHistory({
-      policies: [
-        { policy: getAddress(faker.finance.ethereumAddress()), blockNumber: 1 },
-        { policy: getAddress(faker.finance.ethereumAddress()), blockNumber: 2 },
-      ],
-    });
-
-    expect(currentConfirmations([older, newer])).toStrictEqual(
-      currentConfirmations([newer, older]),
-    );
-  });
-
-  it('should keep one entry per access', () => {
+  it('should keep one group per tuple', () => {
     const first = policyConfirmationBuilder().build();
     const second = policyConfirmationBuilder().build();
 
-    const result = currentConfirmations([first, second]);
-
-    expect(result).toHaveLength(2);
+    expect(policyGroups([first, second])).toHaveLength(2);
   });
 
-  it('should treat the same target and selector under a different operation as another access', () => {
+  it('should treat the same target and selector under another operation as another tuple', () => {
     const call = policyConfirmationBuilder()
       .with('operation', PolicyOperation.Call)
       .build();
     const delegateCall = {
       ...call,
       operation: PolicyOperation.DelegateCall,
-      blockNumber: call.blockNumber + 1,
+      transactionHash: `0x${'ab'.repeat(32)}` as const,
     };
 
-    expect(currentConfirmations([call, delegateCall])).toHaveLength(2);
+    expect(policyGroups([call, delegateCall])).toHaveLength(2);
   });
 
-  it('should return the newest access first', () => {
-    const first = policyConfirmationBuilder().with('blockNumber', 1).build();
-    const second = policyConfirmationBuilder().with('blockNumber', 5).build();
+  it('should return the most recently configured tuple first', () => {
+    const older = policyConfirmationBuilder().with('blockNumber', 1).build();
+    const newer = policyConfirmationBuilder().with('blockNumber', 5).build();
 
-    expect(currentConfirmations([first, second])).toStrictEqual([
-      second,
-      first,
-    ]);
+    expect(
+      policyGroups([older, newer]).map((group) => group.latest),
+    ).toStrictEqual([newer, older]);
   });
 
-  it('should return an empty list for no confirmations', () => {
-    expect(currentConfirmations([])).toStrictEqual([]);
-  });
-});
-
-describe('activeConfirmations', () => {
-  it('should drop an access whose latest confirmation is a removal', () => {
-    const policy = getAddress(faker.finance.ethereumAddress());
-    const [added, removed] = accessHistory({
-      policies: [
+  describe('the bound policy', () => {
+    it('should drop a tuple whose newest event is a removal', () => {
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const history = accessHistory([
         { policy, blockNumber: 100 },
         { policy: NULL_ADDRESS, blockNumber: 200 },
-      ],
+      ]);
+
+      expect(policyGroups(history)).toStrictEqual([]);
     });
 
-    expect(activeConfirmations([added, removed])).toStrictEqual([]);
-  });
+    it('should keep a tuple whose removal is not the newest event', () => {
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const [removed, added] = accessHistory([
+        { policy: NULL_ADDRESS, blockNumber: 100 },
+        { policy, blockNumber: 200 },
+      ]);
 
-  it('should restore an access that was removed and re-added', () => {
-    const policy = getAddress(faker.finance.ethereumAddress());
-    const [added, removed, readded] = accessHistory({
-      policies: [
+      const [group] = policyGroups([removed, added]);
+
+      expect(group.confirmations).toStrictEqual([added]);
+    });
+
+    it('should ignore the events of a policy that has been replaced', () => {
+      // Only the events of the bound policy describe its storage.
+      const replaced = getAddress(faker.finance.ethereumAddress());
+      const bound = getAddress(faker.finance.ethereumAddress());
+      const history = accessHistory([
+        { policy: replaced, blockNumber: 100 },
+        { policy: replaced, blockNumber: 200 },
+        { policy: bound, blockNumber: 300 },
+      ]);
+
+      const [group] = policyGroups(history);
+
+      expect(group.confirmations).toStrictEqual([history[2]]);
+    });
+
+    it('should ignore the events of another policy type on the same tuple', () => {
+      // A tuple that used to hold an ERC20TransferPolicy and now holds an
+      // AllowPolicy is an AllowPolicy: the allowlist events must not leak into
+      // it, nor into the allowlist resolver.
+      const history = accessHistory([
+        {
+          policy: getAddress(faker.finance.ethereumAddress()),
+          policyType: 'ERC20TransferPolicy',
+          blockNumber: 100,
+        },
+        {
+          policy: getAddress(faker.finance.ethereumAddress()),
+          policyType: 'AllowPolicy',
+          blockNumber: 200,
+        },
+      ]);
+
+      const [group] = policyGroups(history);
+
+      expect(group.latest.policyType).toBe('AllowPolicy');
+      expect(group.confirmations).toStrictEqual([history[1]]);
+    });
+
+    it('should keep the events of a policy re-bound after a removal', () => {
+      // The policy contract keeps its own storage across a removal of the guard
+      // mapping, so its earlier configure calls still describe what it enforces.
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const history = accessHistory([
         { policy, blockNumber: 100 },
         { policy: NULL_ADDRESS, blockNumber: 200 },
         { policy, blockNumber: 300 },
-      ],
+      ]);
+
+      const [group] = policyGroups(history);
+
+      expect(group.confirmations).toStrictEqual([history[0], history[2]]);
     });
 
-    expect(activeConfirmations([added, removed, readded])).toStrictEqual([
-      readded,
-    ]);
-  });
-
-  it('should keep an access whose removal is not the latest event', () => {
-    const policy = getAddress(faker.finance.ethereumAddress());
-    const [removed, added] = accessHistory({
-      policies: [
-        { policy: NULL_ADDRESS, blockNumber: 100 },
-        { policy, blockNumber: 200 },
-      ],
-    });
-
-    expect(activeConfirmations([removed, added])).toStrictEqual([added]);
-  });
-
-  it('should not let a removal of one access affect another', () => {
-    const active = policyConfirmationBuilder().build();
-    const [added, removed] = accessHistory({
-      policies: [
+    it('should not let a removal on one tuple affect another', () => {
+      const active = policyConfirmationBuilder().build();
+      const history = accessHistory([
         { policy: getAddress(faker.finance.ethereumAddress()), blockNumber: 1 },
         { policy: NULL_ADDRESS, blockNumber: 2 },
-      ],
+      ]);
+
+      expect(
+        policyGroups([active, ...history]).map((group) => group.latest),
+      ).toStrictEqual([active]);
+    });
+  });
+
+  describe('overlapping pages', () => {
+    it('should keep one entry per log', () => {
+      // Offset pagination over a growing history can return the same log twice;
+      // folding a cumulative payload twice would count it twice.
+      const confirmation = policyConfirmationBuilder().build();
+
+      const [group] = policyGroups([confirmation, { ...confirmation }]);
+
+      expect(group.confirmations).toStrictEqual([confirmation]);
     });
 
-    expect(activeConfirmations([active, added, removed])).toStrictEqual([
-      active,
-    ]);
+    it('should keep two logs of the same transaction apart', () => {
+      const policy = getAddress(faker.finance.ethereumAddress());
+      const transactionHash = `0x${'cd'.repeat(32)}` as const;
+      const target = getAddress(faker.finance.ethereumAddress());
+      const first = policyConfirmationBuilder()
+        .with('target', target)
+        .with('policy', policy)
+        .with('transactionHash', transactionHash)
+        .with('blockNumber', 1)
+        .with('logIndex', 1)
+        .build();
+      const second = policyConfirmationBuilder()
+        .with('target', target)
+        .with('policy', policy)
+        .with('transactionHash', transactionHash)
+        .with('blockNumber', 1)
+        .with('logIndex', 2)
+        .build();
+
+      const [group] = policyGroups([first, second]);
+
+      expect(group.confirmations).toStrictEqual([first, second]);
+    });
+  });
+
+  it('should return an empty list for no confirmations', () => {
+    expect(policyGroups([])).toStrictEqual([]);
   });
 });

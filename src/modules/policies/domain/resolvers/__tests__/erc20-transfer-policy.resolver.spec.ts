@@ -3,13 +3,20 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import {
+  policyConfirmationBuilder,
+  TRANSFER_SELECTOR,
+} from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import { policyGroupBuilder } from '@/modules/policies/domain/entities/__tests__/policy-group.builder';
 import type { Erc20TransferPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { PolicyTokenService } from '@/modules/policies/domain/policy-token.service';
 import { Erc20TransferPolicyResolver } from '@/modules/policies/domain/resolvers/erc20-transfer-policy.resolver';
-import { policyId } from '@/modules/policies/domain/utils/policy-access.utils';
+import {
+  accessSelector,
+  policyId,
+} from '@/modules/policies/domain/utils/policy-access.utils';
 
 const mockPolicyTokenService = {
   getTokenInfo: vi.fn(),
@@ -29,6 +36,23 @@ function recipientsData(
     policyName: 'ERC20TransferPolicy',
     parameters: { recipients },
   };
+}
+
+/**
+ * One `configure` call on `token`, allowing or revoking `recipients`.
+ */
+function configureCall(args: {
+  token: `0x${string}`;
+  recipients: Array<{ recipient: string; allowed: boolean }>;
+  selector?: `0x${string}`;
+  blockNumber?: number;
+}): PolicyConfirmation {
+  return policyConfirmationBuilder()
+    .with('target', args.token)
+    .with('selector', args.selector ?? TRANSFER_SELECTOR)
+    .with('blockNumber', args.blockNumber ?? 1)
+    .with('dataDecoded', recipientsData(args.recipients))
+    .build();
 }
 
 describe('Erc20TransferPolicyResolver', () => {
@@ -52,26 +76,27 @@ describe('Erc20TransferPolicyResolver', () => {
   });
 
   it('should build one allowlist entry per token', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
     const recipient = getAddress(faker.finance.ethereumAddress());
-    const confirmation = policyConfirmationBuilder()
-      .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
-      .build();
+    const group = policyGroupBuilder([
+      configureCall({ token, recipients: [{ recipient, allowed: true }] }),
+    ]);
 
     const result = await resolver.resolve({
       chainId,
-      confirmations: [confirmation],
+      groups: [group],
       names: new Map(),
     });
 
     expect(result).toStrictEqual([
       {
-        id: policyId([confirmation]),
+        id: group.access,
         type: PolicyType.Erc20Transfer,
         data: {
           allowlist: [
             {
               token: {
-                address: confirmation.target,
+                address: token,
                 symbol: 'TKN',
                 decimals: 18,
                 logoUri: null,
@@ -80,35 +105,127 @@ describe('Erc20TransferPolicyResolver', () => {
             },
           ],
         },
-        sources: [confirmation],
+        groups: [group],
       },
     ]);
   });
 
-  it('should merge confirmations of the same token', async () => {
-    const target = getAddress(faker.finance.ethereumAddress());
-    const first = getAddress(faker.finance.ethereumAddress());
-    const second = getAddress(faker.finance.ethereumAddress());
-    const transfer = policyConfirmationBuilder()
-      .with('target', target)
-      .with('selector', '0xa9059cbb')
-      .with(
-        'dataDecoded',
-        recipientsData([{ recipient: first, allowed: true }]),
-      )
-      .build();
-    const transferFrom = policyConfirmationBuilder()
-      .with('target', target)
-      .with('selector', '0x23b872dd')
-      .with(
-        'dataDecoded',
-        recipientsData([{ recipient: second, allowed: true }]),
-      )
-      .build();
+  it('should accumulate the recipients configured over several transactions', async () => {
+    // The reported case: the policy contract upserts recipients, so three
+    // configure calls on one access each allowing one recipient add up to a
+    // three-recipient allowlist.
+    const token = getAddress(faker.finance.ethereumAddress());
+    const recipients = [
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+      getAddress(faker.finance.ethereumAddress()),
+    ];
+    const group = policyGroupBuilder([
+      configureCall({
+        token,
+        blockNumber: 465,
+        recipients: [{ recipient: recipients[0], allowed: true }],
+      }),
+      configureCall({
+        token,
+        blockNumber: 469,
+        recipients: [{ recipient: recipients[1], allowed: true }],
+      }),
+      configureCall({
+        token,
+        blockNumber: 473,
+        recipients: [{ recipient: recipients[2], allowed: true }],
+      }),
+    ]);
 
     const result = await resolver.resolve({
       chainId,
-      confirmations: [transfer, transferFrom],
+      groups: [group],
+      names: new Map(),
+    });
+
+    expect(result).toHaveLength(1);
+    const { allowlist } = result[0].data as Erc20TransferPolicyData;
+    expect(allowlist[0].recipients.map((entry) => entry.address)).toStrictEqual(
+      recipients,
+    );
+    // one access, however many configure calls it received
+    expect(result[0].id).toBe(group.access);
+  });
+
+  it('should let a later configure call revoke a recipient', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
+    const kept = getAddress(faker.finance.ethereumAddress());
+    const revoked = getAddress(faker.finance.ethereumAddress());
+    const group = policyGroupBuilder([
+      configureCall({
+        token,
+        blockNumber: 1,
+        recipients: [
+          { recipient: kept, allowed: true },
+          { recipient: revoked, allowed: true },
+        ],
+      }),
+      configureCall({
+        token,
+        blockNumber: 2,
+        recipients: [{ recipient: revoked, allowed: false }],
+      }),
+    ]);
+
+    const result = await resolver.resolve({
+      chainId,
+      groups: [group],
+      names: new Map(),
+    });
+
+    const { allowlist } = result[0].data as Erc20TransferPolicyData;
+    expect(allowlist[0].recipients).toStrictEqual([{ address: kept }]);
+  });
+
+  it('should drop a token whose recipients were all revoked', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
+    const recipient = getAddress(faker.finance.ethereumAddress());
+    const group = policyGroupBuilder([
+      configureCall({
+        token,
+        blockNumber: 1,
+        recipients: [{ recipient, allowed: true }],
+      }),
+      configureCall({
+        token,
+        blockNumber: 2,
+        recipients: [{ recipient, allowed: false }],
+      }),
+    ]);
+
+    await expect(
+      resolver.resolve({ chainId, groups: [group], names: new Map() }),
+    ).resolves.toStrictEqual([]);
+  });
+
+  it('should fold the accesses of one token into a single entry', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
+    const first = getAddress(faker.finance.ethereumAddress());
+    const second = getAddress(faker.finance.ethereumAddress());
+    const transfer = policyGroupBuilder([
+      configureCall({
+        token,
+        selector: TRANSFER_SELECTOR,
+        recipients: [{ recipient: first, allowed: true }],
+      }),
+    ]);
+    const transferFrom = policyGroupBuilder([
+      configureCall({
+        token,
+        selector: '0x23b872dd',
+        recipients: [{ recipient: second, allowed: true }],
+      }),
+    ]);
+
+    const result = await resolver.resolve({
+      chainId,
+      groups: [transfer, transferFrom],
       names: new Map(),
     });
 
@@ -118,105 +235,64 @@ describe('Erc20TransferPolicyResolver', () => {
     expect(allowlist[0].recipients.map((entry) => entry.address)).toStrictEqual(
       [first, second],
     );
-    expect(result[0].id).toBe(policyId([transfer, transferFrom]));
+    expect(result[0].id).toBe(policyId([transfer.access, transferFrom.access]));
+    expect(result[0].groups).toStrictEqual([transfer, transferFrom]);
   });
 
   it('should keep tokens apart', async () => {
-    const first = policyConfirmationBuilder()
-      .with(
-        'dataDecoded',
-        recipientsData([
-          {
-            recipient: getAddress(faker.finance.ethereumAddress()),
-            allowed: true,
-          },
-        ]),
-      )
-      .build();
-    const second = policyConfirmationBuilder()
-      .with(
-        'dataDecoded',
-        recipientsData([
-          {
-            recipient: getAddress(faker.finance.ethereumAddress()),
-            allowed: true,
-          },
-        ]),
-      )
-      .build();
+    const groups = [
+      policyGroupBuilder([
+        configureCall({
+          token: getAddress(faker.finance.ethereumAddress()),
+          recipients: [
+            {
+              recipient: getAddress(faker.finance.ethereumAddress()),
+              allowed: true,
+            },
+          ],
+        }),
+      ]),
+      policyGroupBuilder([
+        configureCall({
+          token: getAddress(faker.finance.ethereumAddress()),
+          recipients: [
+            {
+              recipient: getAddress(faker.finance.ethereumAddress()),
+              allowed: true,
+            },
+          ],
+        }),
+      ]),
+    ];
 
-    const result = await resolver.resolve({
-      chainId,
-      confirmations: [first, second],
-      names: new Map(),
-    });
-
-    expect(result).toHaveLength(2);
-  });
-
-  it('should exclude recipients that are not allowed', async () => {
-    const allowed = getAddress(faker.finance.ethereumAddress());
-    const denied = getAddress(faker.finance.ethereumAddress());
-    const confirmation = policyConfirmationBuilder()
-      .with(
-        'dataDecoded',
-        recipientsData([
-          { recipient: allowed, allowed: true },
-          { recipient: denied, allowed: false },
-        ]),
-      )
-      .build();
-
-    const result = await resolver.resolve({
-      chainId,
-      confirmations: [confirmation],
-      names: new Map(),
-    });
-
-    const { allowlist } = result[0].data as Erc20TransferPolicyData;
-    expect(allowlist[0].recipients).toStrictEqual([{ address: allowed }]);
-  });
-
-  it('should let a later confirmation revoke a recipient', async () => {
-    const target = getAddress(faker.finance.ethereumAddress());
-    const recipient = getAddress(faker.finance.ethereumAddress());
-    const granted = policyConfirmationBuilder()
-      .with('target', target)
-      .with('selector', '0xa9059cbb')
-      .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
-      .build();
-    const revoked = policyConfirmationBuilder()
-      .with('target', target)
-      .with('selector', '0x23b872dd')
-      .with('dataDecoded', recipientsData([{ recipient, allowed: false }]))
-      .build();
-
-    const result = await resolver.resolve({
-      chainId,
-      confirmations: [granted, revoked],
-      names: new Map(),
-    });
-
-    expect(result).toStrictEqual([]);
+    await expect(
+      resolver.resolve({ chainId, groups, names: new Map() }),
+    ).resolves.toHaveLength(2);
   });
 
   it('should de-duplicate a recipient allowed by several accesses', async () => {
-    const target = getAddress(faker.finance.ethereumAddress());
+    const token = getAddress(faker.finance.ethereumAddress());
     const recipient = getAddress(faker.finance.ethereumAddress());
-    const first = policyConfirmationBuilder()
-      .with('target', target)
-      .with('selector', '0xa9059cbb')
-      .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
-      .build();
-    const second = policyConfirmationBuilder()
-      .with('target', target)
-      .with('selector', '0x23b872dd')
-      .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
-      .build();
+    const groups = [
+      policyGroupBuilder([
+        configureCall({
+          token,
+          selector: TRANSFER_SELECTOR,
+          recipients: [{ recipient, allowed: true }],
+        }),
+      ]),
+      policyGroupBuilder([
+        configureCall({
+          token,
+          selector: '0x23b872dd',
+          recipients: [{ recipient, allowed: true }],
+        }),
+      ]),
+    ];
 
     const result = await resolver.resolve({
       chainId,
-      confirmations: [first, second],
+      groups,
       names: new Map(),
     });
 
@@ -224,18 +300,26 @@ describe('Erc20TransferPolicyResolver', () => {
     expect(allowlist[0].recipients).toHaveLength(1);
   });
 
-  it('should report recipients as address-only, ignoring the address book', async () => {
-    // Recipients carry no name: the wallet resolves display names itself, so an
-    // address book entry must not add a field to the payload.
+  it('should fold recipients case insensitively and report them checksummed', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
     const recipient = getAddress(faker.finance.ethereumAddress());
-    const confirmation = policyConfirmationBuilder()
-      .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
-      .build();
+    const group = policyGroupBuilder([
+      configureCall({
+        token,
+        blockNumber: 1,
+        recipients: [{ recipient: recipient.toLowerCase(), allowed: true }],
+      }),
+      configureCall({
+        token,
+        blockNumber: 2,
+        recipients: [{ recipient, allowed: true }],
+      }),
+    ]);
 
     const result = await resolver.resolve({
       chainId,
-      confirmations: [confirmation],
-      names: new Map([[recipient.toLowerCase(), 'Payroll']]),
+      groups: [group],
+      names: new Map(),
     });
 
     const { allowlist } = result[0].data as Erc20TransferPolicyData;
@@ -243,12 +327,20 @@ describe('Erc20TransferPolicyResolver', () => {
   });
 
   it('should keep the policy when token metadata is unavailable', async () => {
-    const recipient = getAddress(faker.finance.ethereumAddress());
-    const confirmation = policyConfirmationBuilder()
-      .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
-      .build();
+    const token = getAddress(faker.finance.ethereumAddress());
+    const group = policyGroupBuilder([
+      configureCall({
+        token,
+        recipients: [
+          {
+            recipient: getAddress(faker.finance.ethereumAddress()),
+            allowed: true,
+          },
+        ],
+      }),
+    ]);
     mockPolicyTokenService.getTokenInfo.mockResolvedValue({
-      address: confirmation.target,
+      address: token,
       symbol: null,
       decimals: null,
       logoUri: null,
@@ -256,13 +348,13 @@ describe('Erc20TransferPolicyResolver', () => {
 
     const result = await resolver.resolve({
       chainId,
-      confirmations: [confirmation],
+      groups: [group],
       names: new Map(),
     });
 
     const { allowlist } = result[0].data as Erc20TransferPolicyData;
     expect(allowlist[0].token).toStrictEqual({
-      address: confirmation.target,
+      address: token,
       symbol: null,
       decimals: null,
       logoUri: null,
@@ -279,14 +371,16 @@ describe('Erc20TransferPolicyResolver', () => {
       'of another policy',
       { policyName: 'CoSignerPolicy', parameters: { cosigner: '0x1' } },
     ],
-  ])('should skip a policy with %s dataDecoded and log it', async (_, dataDecoded) => {
-    const confirmation = policyConfirmationBuilder()
-      .with('dataDecoded', dataDecoded as PolicyConfirmation['dataDecoded'])
-      .build();
+  ])('should skip an event with %s dataDecoded and log it', async (_, dataDecoded) => {
+    const group = policyGroupBuilder([
+      policyConfirmationBuilder()
+        .with('dataDecoded', dataDecoded as PolicyConfirmation['dataDecoded'])
+        .build(),
+    ]);
 
     const result = await resolver.resolve({
       chainId,
-      confirmations: [confirmation],
+      groups: [group],
       names: new Map(),
     });
 
@@ -298,9 +392,56 @@ describe('Erc20TransferPolicyResolver', () => {
     );
   });
 
-  it('should return an empty list without confirmations', async () => {
+  it('should keep the recipients of the readable events when one is undecodable', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
+    const recipient = getAddress(faker.finance.ethereumAddress());
+    const group = policyGroupBuilder([
+      configureCall({
+        token,
+        blockNumber: 1,
+        recipients: [{ recipient, allowed: true }],
+      }),
+      policyConfirmationBuilder()
+        .with('target', token)
+        .with('blockNumber', 2)
+        .with('dataDecoded', null)
+        .build(),
+    ]);
+
+    const result = await resolver.resolve({
+      chainId,
+      groups: [group],
+      names: new Map(),
+    });
+
+    const { allowlist } = result[0].data as Erc20TransferPolicyData;
+    expect(allowlist[0].recipients).toStrictEqual([{ address: recipient }]);
+  });
+
+  it('should identify an item by the access word of its only group', async () => {
+    const token = getAddress(faker.finance.ethereumAddress());
+    const confirmation = configureCall({
+      token,
+      recipients: [
+        {
+          recipient: getAddress(faker.finance.ethereumAddress()),
+          allowed: true,
+        },
+      ],
+    });
+
+    const result = await resolver.resolve({
+      chainId,
+      groups: [policyGroupBuilder([confirmation])],
+      names: new Map(),
+    });
+
+    expect(result[0].id).toBe(accessSelector(confirmation));
+  });
+
+  it('should return an empty list without groups', async () => {
     await expect(
-      resolver.resolve({ chainId, confirmations: [], names: new Map() }),
+      resolver.resolve({ chainId, groups: [], names: new Map() }),
     ).resolves.toStrictEqual([]);
   });
 });

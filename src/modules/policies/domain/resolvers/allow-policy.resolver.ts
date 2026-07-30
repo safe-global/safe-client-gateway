@@ -12,16 +12,17 @@ import { policyId } from '@/modules/policies/domain/utils/policy-access.utils';
 /**
  * Surfaces the `AllowPolicy` grants of a Safe.
  *
- * One item per access: an `AllowPolicy` permits the calls its access word
- * matches - the catch-all fallback (`target` and `selector` zeroed) or a
- * specific `(target, selector, operation)` - and accesses do not combine into a
- * single grant the way an allowlist's do.
+ * Aggregation of this policy type: none to speak of. An `AllowPolicy` permits the
+ * calls its access word matches - the catch-all fallback (`target` and `selector`
+ * zeroed) or one `(target, selector, operation)` - and accesses do not combine
+ * into a single grant the way an allowlist's do. So it is one item per group, and
+ * re-granting the same access is idempotent rather than cumulative.
  *
  * `data` is intentionally empty: the confirmation carries `0x` with no
- * `dataDecoded`, and which calls the policy covers is already in the item's
- * `id` (the access word) and `enforcement`. No `data` parsing means no
- * confirmation can be dropped here, so unlike the other resolvers this one
- * needs neither a schema nor a logger.
+ * `dataDecoded`, and which calls the policy covers is already in the item's `id`
+ * (the access word) and `enforcement`. No `data` parsing means no group can be
+ * dropped here, so unlike the other resolvers this one needs neither a schema nor
+ * a logger.
  */
 @Injectable()
 export class AllowPolicyResolver implements PolicyResolver {
@@ -33,11 +34,11 @@ export class AllowPolicyResolver implements PolicyResolver {
     const data: AllowPolicyData = {};
 
     return Promise.resolve(
-      context.confirmations.map((confirmation) => ({
-        id: policyId([confirmation]),
+      context.groups.map((group) => ({
+        id: policyId([group.access]),
         type: this.type,
         data,
-        sources: [confirmation],
+        groups: [group],
       })),
     );
   }

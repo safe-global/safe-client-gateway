@@ -14,6 +14,7 @@ import type {
 import type { AvailablePolicy } from '@/modules/policies/domain/entities/available-policy.entity';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { guardEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import {
   type PolicyType,
   policyTypeFromContractName,
@@ -126,19 +127,19 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const { chainId, address: safeAddress } = request.safeId;
 
-    const [confirmations, safe, names] = await Promise.all([
-      this.policiesRepository.getActiveConfirmations({ chainId, safeAddress }),
+    const [groups, safe, names] = await Promise.all([
+      this.policiesRepository.getPolicyGroups({ chainId, safeAddress }),
       this.safeRepository.getSafe({ chainId, address: safeAddress }),
       this.getAddressNames(request),
     ]);
 
-    const byType = this.groupByPolicyType({ chainId, confirmations });
+    const byType = this.groupByPolicyType({ chainId, groups });
 
     const resolved = await Promise.all(
       this.resolvers.map((resolver) =>
         resolver.resolve({
           chainId,
-          confirmations: byType.get(resolver.type) ?? [],
+          groups: byType.get(resolver.type) ?? [],
           names,
         }),
       ),
@@ -150,12 +151,16 @@ export class PoliciesService {
   }
 
   /**
-   * Splits the confirmations by policy type.
+   * Routes each group to the resolver of its policy type.
    *
-   * The type comes from the `policyType` the Transaction Service resolved for
-   * the policy address through its `PolicyContract` registry - the single source
-   * of truth. CGW keeps no address map to type against, so a chain cannot be
-   * missing an entry and there is nothing to drift.
+   * The type is the one of the group's newest event, i.e. of the policy currently
+   * bound to the access - which is why a tuple that used to hold another type
+   * contributes nothing to that other type's resolver.
+   *
+   * It comes from the `policyType` the Transaction Service resolved for the
+   * policy address through its `PolicyContract` registry - the single source of
+   * truth. CGW keeps no address map to type against, so a chain cannot be missing
+   * an entry and there is nothing to drift.
    *
    * A policy CGW does not model (`DenyPolicy`, `MultiSendPolicy`, …) or that the
    * registry could not name is skipped and logged: rendering an unknown
@@ -163,25 +168,25 @@ export class PoliciesService {
    */
   private groupByPolicyType(args: {
     chainId: string;
-    confirmations: Array<PolicyConfirmation>;
-  }): Map<PolicyType, Array<PolicyConfirmation>> {
-    const byType = new Map<PolicyType, Array<PolicyConfirmation>>();
+    groups: Array<PolicyGroup>;
+  }): Map<PolicyType, Array<PolicyGroup>> {
+    const byType = new Map<PolicyType, Array<PolicyGroup>>();
 
-    for (const confirmation of args.confirmations) {
-      const type = policyTypeFromContractName(confirmation.policyType);
+    for (const group of args.groups) {
+      const type = policyTypeFromContractName(group.latest.policyType);
 
       if (!type) {
         this.loggingService.warn({
           message: 'Unmodelled policy type, skipping the policy',
           chainId: args.chainId,
-          safe: confirmation.safe,
-          policy: confirmation.policy,
-          policyType: confirmation.policyType,
+          safe: group.latest.safe,
+          policy: group.latest.policy,
+          policyType: group.latest.policyType,
         });
         continue;
       }
 
-      byType.set(type, [...(byType.get(type) ?? []), confirmation]);
+      byType.set(type, [...(byType.get(type) ?? []), group]);
     }
 
     return byType;
@@ -199,9 +204,10 @@ export class PoliciesService {
     policy: ResolvedPolicy;
     safe: Safe;
   }): ActivePolicy {
-    // Every source of one item shares the guard and policy contract; they only
-    // differ in the access they cover.
-    const [source] = args.policy.sources;
+    // Every group of one item holds the same policy contract and guard; they
+    // differ in the access they cover. Reading the newest of them keeps the
+    // reported addresses those of the most recent configuration.
+    const source = newestOf(args.policy.groups);
     const isTransactionGuard = isSameAddress(args.safe.guard, source.guard);
 
     return {
@@ -277,6 +283,19 @@ export class PoliciesService {
 
 function isSameAddress(first: Address, second: Address): boolean {
   return first.toLowerCase() === second.toLowerCase();
+}
+
+/**
+ * The most recently configured group of an item.
+ */
+function newestOf(groups: Array<PolicyGroup>): PolicyConfirmation {
+  return groups.reduce((newest, group) =>
+    group.latest.blockNumber > newest.latest.blockNumber ||
+    (group.latest.blockNumber === newest.latest.blockNumber &&
+      group.latest.logIndex > newest.latest.logIndex)
+      ? group
+      : newest,
+  ).latest;
 }
 
 function toUnixSeconds(date: Date): number {

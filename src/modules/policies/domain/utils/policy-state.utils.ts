@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Hex } from 'viem';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import { accessSelector } from '@/modules/policies/domain/utils/policy-access.utils';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
 /**
- * Whether a confirmation removes the policy for its access rather than setting
+ * Whether a confirmation removes the policy of its access rather than setting
  * one. `PolicyConfirmed` is emitted for both; a zero policy address is a
  * removal.
  */
@@ -16,50 +18,91 @@ export function isRemoval(confirmation: PolicyConfirmation): boolean {
 }
 
 /**
- * Reduces the full event history to the latest confirmation per
- * `(target, selector, operation)`, newest first.
+ * Turns the raw `PolicyConfirmed` stream of a Safe into one {@link PolicyGroup}
+ * per access that currently has a policy, newest access first.
  *
- * Mirrors the Transaction Service's `PolicyConfirmation.objects.current()`.
- * Implemented here because the API exposes the raw event stream only.
+ * The whole reduction lives here, in three steps per
+ * `(target, selector, operation)` tuple:
+ *
+ * 1. the tuple's events are ordered by chain position, and the newest one wins:
+ *    the guard stores a single policy per access, so that event is the bound
+ *    policy - and its type;
+ * 2. a tuple whose newest event is a removal has no policy and is dropped;
+ * 3. the remaining events are filtered to those of the bound policy. Events of a
+ *    policy that has since been replaced describe another contract's storage, so
+ *    a tuple only ever yields events of one policy - and one policy type.
+ *
+ * What the surviving events *mean* is left to the resolver of that type, because
+ * only it knows whether its `data` accumulates (`ERC20TransferPolicy` upserts
+ * recipients, so a three-transaction allowlist needs all three events) or is
+ * replaced (`CoSignerPolicy` sets one cosigner, so only the newest counts).
  */
-export function currentConfirmations(
+export function policyGroups(
   confirmations: ReadonlyArray<PolicyConfirmation>,
-): Array<PolicyConfirmation> {
-  const latestPerAccess = new Map<string, PolicyConfirmation>();
+): Array<PolicyGroup> {
+  const groups: Array<PolicyGroup> = [];
 
-  for (const confirmation of confirmations) {
-    const key = accessSelector(confirmation);
-    const known = latestPerAccess.get(key);
+  for (const [access, tuple] of groupByAccess(confirmations)) {
+    const ordered = [...tuple].sort(compareLogOrder);
+    const latest = ordered[ordered.length - 1];
 
-    if (!known || isNewer(confirmation, known)) {
-      latestPerAccess.set(key, confirmation);
+    if (isRemoval(latest)) {
+      continue;
     }
+
+    groups.push({
+      access,
+      latest,
+      confirmations: ordered.filter((confirmation) =>
+        isSamePolicy(confirmation, latest),
+      ),
+    });
   }
 
-  return [...latestPerAccess.values()].sort(
-    (first, second) => -compareLogOrder(first, second),
+  return groups.sort(
+    (first, second) => -compareLogOrder(first.latest, second.latest),
   );
 }
 
 /**
- * The policies currently in effect: the latest confirmation per access, minus
- * the accesses whose latest confirmation is a removal.
+ * The events of each access, keyed by its access word.
  *
- * Mirrors the Transaction Service's `PolicyConfirmation.objects.active()`.
+ * A log is unique by `(transactionHash, logIndex)`, but the history is read over
+ * several offset-paginated requests, so an event indexed between two of them can
+ * shift the window and repeat a row. Repeats are dropped here: folding a
+ * cumulative payload twice would count it twice.
  */
-export function activeConfirmations(
+function groupByAccess(
   confirmations: ReadonlyArray<PolicyConfirmation>,
-): Array<PolicyConfirmation> {
-  return currentConfirmations(confirmations).filter(
-    (confirmation) => !isRemoval(confirmation),
-  );
+): Map<Hex, Array<PolicyConfirmation>> {
+  const seenLogs = new Set<string>();
+  const perAccess = new Map<Hex, Array<PolicyConfirmation>>();
+
+  for (const confirmation of confirmations) {
+    const log = `${confirmation.transactionHash}_${confirmation.logIndex}`;
+
+    if (seenLogs.has(log)) {
+      continue;
+    }
+    seenLogs.add(log);
+
+    const access = accessSelector(confirmation);
+    perAccess.set(access, [...(perAccess.get(access) ?? []), confirmation]);
+  }
+
+  return perAccess;
 }
 
-function isNewer(
-  candidate: PolicyConfirmation,
-  known: PolicyConfirmation,
+/**
+ * Whether two events configured the same policy contract. Equal addresses imply
+ * an equal policy type; a redeployment of the same type is a different contract
+ * with its own storage, so it does not continue the previous one's history.
+ */
+function isSamePolicy(
+  confirmation: PolicyConfirmation,
+  other: PolicyConfirmation,
 ): boolean {
-  return compareLogOrder(candidate, known) > 0;
+  return confirmation.policy.toLowerCase() === other.policy.toLowerCase();
 }
 
 /**

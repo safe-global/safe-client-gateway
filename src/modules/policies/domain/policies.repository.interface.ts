@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import type { PolicyRootRequest } from '@/modules/policies/domain/entities/policy-root-request.entity';
 
 export const IPoliciesRepository = Symbol('IPoliciesRepository');
 
 export interface IPoliciesRepository {
   /**
-   * The policies currently set on the Safe: the latest `PolicyConfirmed` event
-   * per `(target, selector, operation)`, removals excluded.
+   * The `PolicyConfirmed` stream of the Safe, reduced to one {@link PolicyGroup}
+   * per access that currently has a policy, newest access first.
    *
-   * Note: "set" is not "enforced" - a policy can be configured before the guard
-   * is enabled on the Safe. Resolving that is the caller's job, which has the
-   * Safe at hand.
+   * Note: "has a policy" is not "enforced" - a policy can be configured before
+   * the guard is enabled on the Safe. Resolving that is the caller's job, which
+   * has the Safe at hand.
    */
-  getActiveConfirmations(args: {
+  getPolicyGroups(args: {
     chainId: string;
     safeAddress: Address;
-  }): Promise<Array<PolicyConfirmation>>;
+  }): Promise<Array<PolicyGroup>>;
 
   /**
    * Delayed configuration requests that have neither been invalidated nor

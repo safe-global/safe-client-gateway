@@ -6,7 +6,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import type { CosignerPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import { PolicyTokenService } from '@/modules/policies/domain/policy-token.service';
 import {
@@ -29,9 +29,12 @@ const CosignerPolicyParametersSchema = z.object({
 /**
  * Builds the cosigner rules of a Safe.
  *
- * One rule per access: the token is the access target and the cosigner comes
- * from the decoded `data`. Read-only for now - the wallet has no builder for
- * this policy yet.
+ * Aggregation of this policy type: the payload holds a single cosigner, so a
+ * later configure call **replaces** the rule of its access instead of adding to
+ * it - only the group's newest event is read, and re-configuring a cosigner does
+ * not produce a second rule. One rule per access, the token being its target.
+ *
+ * Read-only for now: the wallet has no builder for this policy yet.
  */
 @Injectable()
 export class CosignerPolicyResolver implements PolicyResolver {
@@ -47,9 +50,7 @@ export class CosignerPolicyResolver implements PolicyResolver {
     context: PolicyResolverContext,
   ): Promise<Array<ResolvedPolicy>> {
     const resolved = await Promise.all(
-      context.confirmations.map((confirmation) =>
-        this.resolveOne(confirmation, context),
-      ),
+      context.groups.map((group) => this.resolveGroup(group, context)),
     );
 
     return resolved.filter(
@@ -57,12 +58,12 @@ export class CosignerPolicyResolver implements PolicyResolver {
     );
   }
 
-  private async resolveOne(
-    confirmation: PolicyConfirmation,
+  private async resolveGroup(
+    group: PolicyGroup,
     context: PolicyResolverContext,
   ): Promise<ResolvedPolicy | null> {
     const parameters = CosignerPolicyParametersSchema.safeParse(
-      confirmation.dataDecoded?.parameters,
+      group.latest.dataDecoded?.parameters,
     );
 
     if (!parameters.success) {
@@ -70,9 +71,9 @@ export class CosignerPolicyResolver implements PolicyResolver {
       // item is dropped rather than rendered empty.
       this.loggingService.warn({
         message: 'Could not read CoSignerPolicy cosigner',
-        safe: confirmation.safe,
-        policy: confirmation.policy,
-        transactionHash: confirmation.transactionHash,
+        safe: group.latest.safe,
+        policy: group.latest.policy,
+        transactionHash: group.latest.transactionHash,
       });
       return null;
     }
@@ -82,7 +83,7 @@ export class CosignerPolicyResolver implements PolicyResolver {
         {
           token: await this.policyTokenService.getTokenInfo({
             chainId: context.chainId,
-            address: confirmation.target,
+            address: group.latest.target,
           }),
           cosigner: namedAddress(parameters.data.cosigner, context.names),
           thresholdAmount: null,
@@ -91,10 +92,10 @@ export class CosignerPolicyResolver implements PolicyResolver {
     };
 
     return {
-      id: policyId([confirmation]),
+      id: policyId([group.access]),
       type: this.type,
       data,
-      sources: [confirmation],
+      groups: [group],
     };
   }
 }
