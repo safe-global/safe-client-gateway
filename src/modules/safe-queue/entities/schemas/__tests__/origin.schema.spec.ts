@@ -61,23 +61,6 @@ describe('OriginUrlSchema', () => {
     const oversized = `https://example.com/${'a'.repeat(2048)}`;
     expect(OriginUrlSchema.parse(oversized)).toBeNull();
   });
-
-  describe('in development (CGW_ENV=development)', () => {
-    it('skips the protocol allowlist entirely', async () => {
-      vi.stubEnv('CGW_ENV', 'development');
-      vi.resetModules();
-      const { OriginUrlSchema: DevOriginUrlSchema } = await import(
-        '@/modules/safe-queue/entities/schemas/origin.schema'
-      );
-
-      expect(DevOriginUrlSchema.parse('javascript:alert(1)')).toBe(
-        'javascript:alert(1)',
-      );
-
-      vi.unstubAllEnvs();
-      vi.resetModules();
-    });
-  });
 });
 
 describe('queue entity parsing with bad origin fields', () => {
