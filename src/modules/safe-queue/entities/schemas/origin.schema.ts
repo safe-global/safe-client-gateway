@@ -4,7 +4,6 @@ import { z } from 'zod';
 const MAX_ORIGIN_NAME_LENGTH = 256;
 const MAX_ORIGIN_URL_LENGTH = 2048;
 const ALLOWED_ORIGIN_URL_PROTOCOLS = new Set(['https:', 'http:']);
-const isDevelopment = process.env.CGW_ENV === 'development';
 
 export const OriginNameSchema = z
   .string()
@@ -21,7 +20,6 @@ export const OriginUrlSchema = z
   .max(MAX_ORIGIN_URL_LENGTH)
   .refine(
     (value) => {
-      if (isDevelopment) return true;
       try {
         return ALLOWED_ORIGIN_URL_PROTOCOLS.has(new URL(value).protocol);
       } catch {
