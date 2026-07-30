@@ -3886,8 +3886,17 @@ describe('MembersRepository', () => {
   });
 
   describe('member quota enforcement (FF_BILLING_SERVICE on)', () => {
-    // Seeded Free-tier default of `members` (see seed-features migration).
-    const FREE_MEMBERS = 5;
+    // Seeded Free-tier quota of `members`, read from the catalog so the
+    // suite stays valid whatever the seed-features migration ships.
+    let FREE_MEMBERS: number;
+
+    beforeAll(async () => {
+      const membersRow: Array<{ free_quota: number }> = await dataSource.query(
+        `SELECT free_quota FROM features WHERE key = 'members'`,
+      );
+      FREE_MEMBERS = membersRow[0].free_quota;
+    });
+
     let enforcedMembersRepository: MembersRepository;
 
     beforeEach(() => {

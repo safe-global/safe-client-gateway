@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Check,
   Column,
   Entity,
   Index,
@@ -7,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
@@ -24,6 +26,12 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
   unique: true,
   where: `status IN ('active','trialing','past_due','paused','unpaid')`,
 })
+// The 8 Stripe statuses (see SubscriptionStatuses in the billing-api entity).
+@Check(
+  'CHK_subscriptions_status',
+  `"status" IN ('active','canceled','incomplete','incomplete_expired','past_due','paused','trialing','unpaid')`,
+)
+@Unique('UQ_subscriptions_upstream_id', ['upstreamSubscriptionId'])
 export class SpaceSubscription implements DomainSpaceSubscription {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_subscriptions_id' })
   public readonly id!: number;
@@ -32,7 +40,6 @@ export class SpaceSubscription implements DomainSpaceSubscription {
     name: 'upstream_subscription_id',
     type: 'varchar',
     length: 255,
-    unique: true,
   })
   public readonly upstreamSubscriptionId!: string;
 

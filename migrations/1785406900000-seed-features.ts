@@ -15,17 +15,17 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * consumption only), anchored at the workspace's creation date. Stock-type
  * metered features (seats, members) have no window: usage is a live COUNT.
  */
-export class SeedFeatures1781810000000 implements MigrationInterface {
+export class SeedFeatures1785406900000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
       INSERT INTO "features" ("key", "type", "description", "free_enabled", "free_quota", "free_value", "free_period") VALUES
         ('security_hub',           'binary',  'Security Hub for workspace Safes',                        FALSE, NULL, NULL,   NULL),
-        ('safe_seats',             'metered', 'Number of Safe Accounts in the workspace',                TRUE,  10,   NULL,   NULL),
-        ('members',                'metered', 'Number of workspace members (active or invited)',         TRUE,  5,    NULL,   NULL),
+        ('safe_seats',             'metered', 'Number of Safe Accounts in the workspace',                TRUE,  2,   NULL,   NULL),
+        ('members',                'metered', 'Number of workspace members (active or invited)',         TRUE,  2,    NULL,   NULL),
         ('copilot_scans',          'binary',  'Copilot full-report scans per cycle',                     FALSE, NULL, NULL,   NULL),
         ('sponsored_transactions', 'metered', 'Gas-sponsored transactions per cycle',                    FALSE, 0,    NULL,   30),
         ('swap_fee_tier',          'value',   'Swap/earn fee tier',                                      TRUE,  NULL, 'free', NULL),
-        ('shared_address_book',    'binary',  'Workspace-shared address book',                           TRUE,  NULL, NULL,   NULL),
+        ('shared_address_book',    'binary',  'Workspace-shared address book',                           FALSE,  NULL, NULL,   NULL),
         ('pay_from_safe',          'binary',  'Pay for the subscription from a Safe',                    FALSE, NULL, NULL,   NULL),
         ('sso',                    'binary',  'Single sign-on for workspace members',                    FALSE, NULL, NULL,   NULL);
     `);

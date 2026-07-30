@@ -22,9 +22,9 @@ import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
-// Seeded Free-tier defaults (see the seed-features migration).
-const FREE_SAFE_SEATS = 10;
-const FREE_MEMBERS = 5;
+// The Free-tier quotas are read from the endpoint itself (they come from the
+// seed-features migration and are pending product sign-off), so the suite
+// stays valid whatever values the seed ships.
 
 describe('EntitlementsController', () => {
   let app: INestApplication<Server>;
@@ -117,6 +117,20 @@ describe('EntitlementsController', () => {
     }));
   }
 
+  async function getFreeQuota(
+    accessToken: string,
+    spaceId: string,
+    feature: 'safe_seats' | 'members',
+  ): Promise<number> {
+    const response = await request(app.getHttpServer())
+      .get(`/v1/spaces/${spaceId}/entitlements`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200);
+    return response.body.entitlements.find(
+      (entitlement: { feature: string }) => entitlement.feature === feature,
+    ).quota;
+  }
+
   it('applies the AuthGuard to every endpoint', () => {
     checkGuardIsApplied(AuthGuard, EntitlementsController);
   });
@@ -148,7 +162,7 @@ describe('EntitlementsController', () => {
             feature: 'safe_seats',
             type: 'metered',
             enabled: true,
-            quota: FREE_SAFE_SEATS,
+            quota: expect.any(Number),
             used: 0,
             resetsAt: null,
             grandfathered: false,
@@ -158,16 +172,18 @@ describe('EntitlementsController', () => {
               entitlement.feature === 'members',
           );
           // The creating admin holds a seat.
-          expect(members).toMatchObject({ quota: FREE_MEMBERS, used: 1 });
+          expect(members).toMatchObject({ quota: expect.any(Number), used: 1 });
         });
     });
 
     it('reflects Safe additions in the seat usage', async () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
+      // Fill up to the Free quota so the additions always fit.
+      const seatQuota = await getFreeQuota(accessToken, spaceId, 'safe_seats');
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ safes: buildSafes(3) })
+        .send({ safes: buildSafes(seatQuota) })
         .expect(201);
 
       await request(app.getHttpServer())
@@ -179,7 +195,7 @@ describe('EntitlementsController', () => {
             (entitlement: { feature: string }) =>
               entitlement.feature === 'safe_seats',
           );
-          expect(seats).toMatchObject({ used: 3 });
+          expect(seats).toMatchObject({ used: seatQuota });
         });
     });
 
@@ -214,11 +230,12 @@ describe('EntitlementsController', () => {
   describe('402 QUOTA_EXCEEDED enforcement', () => {
     it('rejects adding Safes past the seat quota with the typed error body', async () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
+      const seatQuota = await getFreeQuota(accessToken, spaceId, 'safe_seats');
 
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/safes`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ safes: buildSafes(FREE_SAFE_SEATS + 1) })
+        .send({ safes: buildSafes(seatQuota + 1) })
         .expect(402)
         .expect(({ body }) => {
           expect(body).toStrictEqual({
@@ -226,7 +243,7 @@ describe('EntitlementsController', () => {
             message: expect.stringContaining('safe_seats'),
             statusCode: 402,
             feature: 'safe_seats',
-            quota: FREE_SAFE_SEATS,
+            quota: seatQuota,
             used: 0,
             resetsAt: null,
           });
@@ -235,14 +252,15 @@ describe('EntitlementsController', () => {
 
     it('rejects inviting members past the member quota with the typed error body', async () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
-      const invites = Array.from({ length: FREE_MEMBERS }, () => ({
+      const memberQuota = await getFreeQuota(accessToken, spaceId, 'members');
+      const invites = Array.from({ length: memberQuota }, () => ({
         type: 'wallet',
         address: getAddress(faker.finance.ethereumAddress()),
         role: 'MEMBER',
         name: nameBuilder(),
       }));
 
-      // The creating admin already holds a seat → 5 more exceed the quota.
+      // The creating admin already holds a seat → `quota` more exceed it.
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
@@ -252,7 +270,7 @@ describe('EntitlementsController', () => {
           expect(body).toMatchObject({
             code: 'QUOTA_EXCEEDED',
             feature: 'members',
-            quota: FREE_MEMBERS,
+            quota: memberQuota,
           });
         });
 
@@ -260,7 +278,7 @@ describe('EntitlementsController', () => {
       await request(app.getHttpServer())
         .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ users: invites.slice(0, FREE_MEMBERS - 1) })
+        .send({ users: invites.slice(0, memberQuota - 1) })
         .expect(201);
     });
   });

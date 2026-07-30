@@ -36,9 +36,10 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-// Seeded Free-tier defaults (see the seed-features migration).
-const FREE_SAFE_SEATS = 10;
-const FREE_MEMBERS = 5;
+// Seeded Free-tier quotas, read from the catalog in beforeAll so the tests
+// stay valid whatever values the seed-features migration ships.
+let FREE_SAFE_SEATS: number;
+let FREE_MEMBERS: number;
 
 const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 // Space creation dates on either side of the enforcement launch, so the
@@ -114,6 +115,12 @@ describe('EntitlementsRepository', () => {
       mockConfigService,
     );
     await migrator.migrate();
+
+    const features = await dataSource.getRepository(Feature).find();
+    FREE_SAFE_SEATS = features.find((f) => f.key === 'safe_seats')!
+      .freeQuota as number;
+    FREE_MEMBERS = features.find((f) => f.key === 'members')!
+      .freeQuota as number;
 
     target = new EntitlementsRepository(postgresDatabaseService);
   });

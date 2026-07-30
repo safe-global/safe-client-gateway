@@ -901,11 +901,16 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('entitlements enforcement (FF_BILLING_SERVICE on)', () => {
-    // Seeded Free-tier default of `safe_seats` (see seed-features migration).
-    const FREE_SAFE_SEATS = 10;
+    // Seeded Free-tier quota of `safe_seats`, read from the catalog so the
+    // suite stays valid whatever the seed-features migration ships.
+    let FREE_SAFE_SEATS: number;
     let enforcedRepo: SpaceSafesRepository;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+      const seatsRow: Array<{ free_quota: number }> = await dataSource.query(
+        `SELECT free_quota FROM features WHERE key = 'safe_seats'`,
+      );
+      FREE_SAFE_SEATS = seatsRow[0].free_quota;
       const enforcedConfigService = {
         getOrThrow: vi.fn().mockImplementation((key: string) => {
           if (key === 'spaces.maxSafesPerSpace') {
@@ -948,8 +953,9 @@ describe('SpaceSafesRepository', () => {
       const spaceId = await createSpace();
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
 
-      // More than the static maxSafesPerSpace (5) but within the Free quota:
-      // the entitlements path is authoritative, not the static config.
+      // The catalog quota is authoritative, not the static maxSafesPerSpace
+      // config: filling up to it succeeds and the next addition 402s,
+      // regardless of where the static limit sits.
       await expect(
         enforcedRepo.create({
           spaceId,

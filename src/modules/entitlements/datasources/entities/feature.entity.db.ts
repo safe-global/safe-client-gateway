@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Check, Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type {
   Feature as DomainFeature,
   FeatureKey,
@@ -7,11 +7,13 @@ import type {
 } from '@/modules/entitlements/domain/entities/feature.entity';
 
 @Entity('features')
+@Unique('UQ_features_key', ['key'])
+@Check('CHK_features_type', `"type" IN ('binary','metered','value')`)
 export class Feature implements DomainFeature {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_features_id' })
   public readonly id!: number;
 
-  @Column({ type: 'varchar', length: 64, unique: true })
+  @Column({ type: 'varchar', length: 64 })
   public readonly key!: FeatureKey;
 
   @Column({ type: 'varchar', length: 16 })

@@ -5,8 +5,8 @@ import {
   Index,
   JoinColumn,
   ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from 'typeorm';
 import type { SpaceSeatSelection as DomainSpaceSeatSelection } from '@/modules/entitlements/domain/entities/space-seat-selection.entity';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
@@ -17,6 +17,7 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 // coverage (oldest Safes first) is computed at read time, never stored.
 // `created_at` doubles as the selection time (selections are replace-only).
 @Entity('space_seat_selection')
+@Unique('UQ_SSSEL_space_safe_id', ['spaceSafe'])
 export class SpaceSeatSelection implements DomainSpaceSeatSelection {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_SSSEL_id' })
   public readonly id!: number;
@@ -53,7 +54,9 @@ export class SpaceSeatSelection implements DomainSpaceSeatSelection {
   public readonly space?: Space;
 
   // Removing the Safe from the workspace clears its selection (CASCADE).
-  @OneToOne(() => SpaceSafe, {
+  // ManyToOne + class-level named @Unique instead of OneToOne: same schema,
+  // but the unique constraint gets a stable name in generated migrations.
+  @ManyToOne(() => SpaceSafe, {
     onDelete: 'CASCADE',
     nullable: false,
   })
