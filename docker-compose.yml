@@ -61,55 +61,18 @@ services:
     tty: true
     environment:
       REDIS_HOST: redis
-      # The in-network Postgres (the `db` service requires SSL; the image has
-      # no CA bundle, so the self-signed cert is accepted explicitly).
-      # Hardcoded like REDIS_HOST: a host-side POSTGRES_HOST (e.g. from .env)
-      # must not leak into the container, where only `db` is reachable.
-      POSTGRES_HOST: db
-      POSTGRES_SSL_ENABLED: 'true'
-      POSTGRES_SSL_REJECT_UNAUTHORIZED: 'false'
-      AMQP_URL: ${AMQP_URL-amqp://rabbitmq:5672}
       PRICES_PROVIDER_API_KEY: ${PRICES_PROVIDER_API_KEY-example_api_key}
       APPLICATION_PORT: ${APPLICATION_PORT-3000}
-      # Pure passthrough from the host env (e.g. op run/1Password): compose
-      # only forwards the variables listed here. CORS needs BOTH set
-      # (CGW_ENV=development + ALLOW_CORS=true, see src/main.ts).
-      CGW_ENV: ${CGW_ENV-}
-      ALLOW_CORS: ${ALLOW_CORS-}
       AUTH_TOKEN: ${AUTH_TOKEN-example_auth_token}
-      AUTH_POST_LOGIN_REDIRECT_URI: ${AUTH_POST_LOGIN_REDIRECT_URI-http://localhost:3000}
-      # Without this, returnUrl validation is strict same-origin against
-      # AUTH_POST_LOGIN_REDIRECT_URI (see auth-redirect.helper.ts).
-      AUTH_ALLOWED_REDIRECT_DOMAIN: ${AUTH_ALLOWED_REDIRECT_DOMAIN-}
       BLOCKLIST_ENCRYPTED_DATA: ${BLOCKLIST_ENCRYPTED_DATA-fake-encrypted-data}
       BLOCKLIST_SECRET_KEY: ${BLOCKLIST_SECRET_KEY-fake-secret-key}
       BLOCKLIST_SECRET_SALT: ${BLOCKLIST_SECRET_SALT-fake-secret-salt}
-      BRIDGE_API_KEY: ${BRIDGE_API_KEY-example_api_key}
-      CSV_AWS_ACCESS_KEY_ID: ${CSV_AWS_ACCESS_KEY_ID-example_key_id}
-      CSV_AWS_SECRET_ACCESS_KEY: ${CSV_AWS_SECRET_ACCESS_KEY-example_secret}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID-example_key_id}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY-example_secret}
-      AWS_REGION: ${AWS_REGION-eu-west-1}
       EMAIL_API_APPLICATION_CODE: ${EMAIL_API_APPLICATION_CODE-example_application_code}
       EMAIL_API_FROM_EMAIL: ${EMAIL_API_FROM_EMAIL-changeme@example.com}
       EMAIL_API_KEY: ${EMAIL_API_KEY-example_api_key}
-      FINGERPRINT_ENCRYPTION_KEY: ${FINGERPRINT_ENCRYPTION_KEY-example_encryption_key}
       INFURA_API_KEY: ${INFURA_API_KEY-example_api_key}
       JWT_ISSUER: ${JWT_ISSUER-example_issuer}
-      JWT_SECRET: ${JWT_SECRET-example_secret}
-      PUSH_NOTIFICATIONS_API_PROJECT: ${PUSH_NOTIFICATIONS_API_PROJECT-example_project}
-      PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL: ${PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_CLIENT_EMAIL-fake@example.com}
-      PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY: ${PUSH_NOTIFICATIONS_API_SERVICE_ACCOUNT_PRIVATE_KEY-example_private_key}
-      STAKING_API_KEY: ${STAKING_API_KEY-example_api_key}
-      STAKING_TESTNET_API_KEY: ${STAKING_TESTNET_API_KEY-example_api_key}
-      # Entitlements / billing (see src/modules/billing/README.md). The
-      # billing-service token is only needed when FF_BILLING_SERVICE=true.
-      FF_AUTH: ${FF_AUTH-false}
-      FF_USERS: ${FF_USERS-false}
-      FF_BILLING_SERVICE: ${FF_BILLING_SERVICE-false}
-      BILLING_WEBHOOK_JWT_PUBLIC_KEY: ${BILLING_WEBHOOK_JWT_PUBLIC_KEY-}
-      SAFE_BILLING_SERVICE_BASE_URI: ${SAFE_BILLING_SERVICE_BASE_URI-}
-      SAFE_BILLING_SERVICE_API_TOKEN: ${SAFE_BILLING_SERVICE_API_TOKEN-example_api_token}
+      JWT_TOKEN: ${JWT_TOKEN-example_token}
       RELAY_PROVIDER_API_KEY_OPTIMISM: ${RELAY_PROVIDER_API_KEY_OPTIMISM-example_api_key}
       RELAY_PROVIDER_API_KEY_BSC: ${RELAY_PROVIDER_API_KEY_BSC-example_api_key}
       RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN: ${RELAY_PROVIDER_API_KEY_GNOSIS_CHAIN-example_api_key}
@@ -125,7 +88,6 @@ services:
     depends_on:
       - redis
       - db
-      - rabbitmq
 
   pgadmin:
     image: dpage/pgadmin4
