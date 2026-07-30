@@ -2611,13 +2611,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/supertest@npm:7.2.0":
-  version: 7.2.0
-  resolution: "@types/supertest@npm:7.2.0"
+"@types/supertest@npm:7.2.1":
+  version: 7.2.1
+  resolution: "@types/supertest@npm:7.2.1"
   dependencies:
     "@types/methods": "npm:^1.1.4"
     "@types/superagent": "npm:^8.1.0"
-  checksum: 10/5a322e29b81033e90ac50ab315d49559b21809ee39b5681ab7386819463e30d68e29c63c946023a1c353e7f13fb3f20d64dcb89d3d8a0fff569450501aff786c
+  checksum: 10/d2b505d4c21ebaea360b71cfcbdcb2d36f00551ee5ef1df947eb888d3929156327cef58f8e004c2c8a6af6763dbc21fb22edc3b34496862b2cdeae8db40d43fa
   languageName: node
   linkType: hard
 
@@ -6320,7 +6320,7 @@ __metadata:
     "@types/node": "npm:26.1.1"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.7.1"
-    "@types/supertest": "npm:7.2.0"
+    "@types/supertest": "npm:7.2.1"
     "@vitest/coverage-v8": "npm:4.1.10"
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:2.0.1"
