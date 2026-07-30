@@ -30,6 +30,7 @@ import type {
   PolicyRootRequest,
   PolicyRootRequestStatus,
 } from '@/modules/policies/domain/entities/policy-root-request.entity';
+import { operationValue } from '@/modules/policies/domain/utils/policy-access.utils';
 import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -730,7 +731,11 @@ export class TransactionApi implements ITransactionApi {
           params: {
             target: args.target,
             selector: args.selector,
-            operation: args.operation,
+            // The filter is on the numeric model field, so the name would never
+            // match.
+            operation: args.operation
+              ? operationValue(args.operation)
+              : undefined,
             policy: args.policy,
             removed: args.removed,
             fallback: args.fallback,

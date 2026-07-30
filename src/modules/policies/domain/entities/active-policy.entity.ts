@@ -18,18 +18,32 @@ export type PolicyTokenInfo = {
 };
 
 /**
- * An address plus its name from the space address book, when known.
+ * An address plus its name from the space address book.
+ *
+ * `name` is omitted rather than `null` when the address has no address book
+ * entry: the wallet falls back to rendering the address either way, so an
+ * explicit null carries no extra information.
  */
 export type NamedAddress = {
   address: Address;
-  name: string | null;
+  name?: string;
+};
+
+/**
+ * A recipient of an `ERC20TransferPolicy` allowlist.
+ *
+ * Address only, deliberately not a {@link NamedAddress}: the wallet resolves
+ * display names itself, so the space address book is not consulted here.
+ */
+export type PolicyRecipient = {
+  address: Address;
 };
 
 /** `ERC20TransferPolicy`: per token, the recipients the Safe may send to. */
 export type Erc20TransferPolicyData = {
   allowlist: Array<{
     token: PolicyTokenInfo;
-    recipients: Array<NamedAddress>;
+    recipients: Array<PolicyRecipient>;
   }>;
 };
 
@@ -65,11 +79,22 @@ export type RecoveryPolicyData = {
   expirySec: string;
 };
 
+/**
+ * `AllowPolicy`: the access it covers is already carried by the item's `id` and
+ * `enforcement`, and the confirmation's `data` is empty (`0x`, with no
+ * `dataDecoded`), so there is nothing left to report.
+ *
+ * Kept as a distinct type rather than reusing an existing one so the `data`
+ * union stays exhaustive per policy type.
+ */
+export type AllowPolicyData = Record<string, never>;
+
 export type ActivePolicyData =
   | Erc20TransferPolicyData
   | CosignerPolicyData
   | SpendingLimitPolicyData
-  | RecoveryPolicyData;
+  | RecoveryPolicyData
+  | AllowPolicyData;
 
 /**
  * A policy currently set on a Safe.

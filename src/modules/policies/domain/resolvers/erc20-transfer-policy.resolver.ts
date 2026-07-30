@@ -8,16 +8,15 @@ import {
 } from '@/logging/logging.interface';
 import type {
   Erc20TransferPolicyData,
-  NamedAddress,
+  PolicyRecipient,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import { PolicyTokenService } from '@/modules/policies/domain/policy-token.service';
-import {
-  namedAddress,
-  type PolicyResolver,
-  type PolicyResolverContext,
-  type ResolvedPolicy,
+import type {
+  PolicyResolver,
+  PolicyResolverContext,
+  ResolvedPolicy,
 } from '@/modules/policies/domain/resolvers/policy-resolver.interface';
 import { policyId } from '@/modules/policies/domain/utils/policy-access.utils';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
@@ -70,7 +69,7 @@ export class Erc20TransferPolicyResolver implements PolicyResolver {
           chainId: context.chainId,
           address: confirmations[0].target,
         }),
-        recipients: this.recipientsOf(confirmations, context),
+        recipients: this.recipientsOf(confirmations),
       })),
     );
 
@@ -110,8 +109,7 @@ export class Erc20TransferPolicyResolver implements PolicyResolver {
    */
   private recipientsOf(
     confirmations: Array<PolicyConfirmation>,
-    context: PolicyResolverContext,
-  ): Array<NamedAddress> {
+  ): Array<PolicyRecipient> {
     const allowed = new Map<string, Address>();
 
     for (const confirmation of confirmations) {
@@ -126,9 +124,7 @@ export class Erc20TransferPolicyResolver implements PolicyResolver {
       }
     }
 
-    return [...allowed.values()].map((recipient) =>
-      namedAddress(recipient, context.names),
-    );
+    return [...allowed.values()].map((address) => ({ address }));
   }
 
   private parameters(

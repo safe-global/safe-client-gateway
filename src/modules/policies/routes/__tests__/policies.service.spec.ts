@@ -4,7 +4,6 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -18,8 +17,6 @@ import {
 } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
 import type { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
-import { POLICY_DEPLOYMENTS } from '@/modules/policies/domain/policy-deployments.constants';
-import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 import type {
   PolicyResolver,
   PolicyResolverContext,
@@ -34,10 +31,13 @@ import type { IMembersRepository } from '@/modules/users/domain/members/members.
 import { NULL_ADDRESS } from '@/routes/common/constants';
 
 const SEPOLIA_CHAIN_ID = '11155111';
-const ERC20_TRANSFER_POLICY =
-  POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].policyContracts[
-    PolicyType.Erc20Transfer
-  ]!;
+
+/**
+ * The Transaction Service's contract name for the ERC20 allowlist policy. A
+ * policy is typed from this, never by matching its address against a CGW-held
+ * map, so a confirmation's `policy` address is irrelevant to routing.
+ */
+const ERC20_TRANSFER_POLICY_TYPE = 'ERC20TransferPolicy';
 
 const mockPoliciesRepository = {
   getActiveConfirmations: vi.fn(),
@@ -63,11 +63,6 @@ const mockMembersRepository = {
 const mockPolicyCatalogueService = {
   get: vi.fn(),
 } as MockedObject<PolicyCatalogueService>;
-
-const mockConfigurationService = {
-  get: vi.fn(),
-  getOrThrow: vi.fn(),
-} as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -111,7 +106,6 @@ describe('PoliciesService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mockConfigurationService.get.mockReturnValue(undefined);
     erc20Resolver = resolverStub(PolicyType.Erc20Transfer);
     cosignerResolver = resolverStub(PolicyType.Cosigner);
     service = new PoliciesService(
@@ -121,10 +115,6 @@ describe('PoliciesService', () => {
       mockAddressBookItemsRepository,
       mockMembersRepository,
       mockPolicyCatalogueService,
-      new PolicyDeploymentsService(
-        mockConfigurationService,
-        mockLoggingService,
-      ),
       [erc20Resolver, cosignerResolver],
       mockLoggingService,
     );
@@ -198,7 +188,7 @@ describe('PoliciesService', () => {
   describe('getActivePolicies', () => {
     it('should route confirmations to the resolver of their policy type', async () => {
       const confirmation = policyConfirmationBuilder()
-        .with('policy', ERC20_TRANSFER_POLICY)
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
       mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
         confirmation,
@@ -220,7 +210,7 @@ describe('PoliciesService', () => {
       expect(result.items[0].type).toBe(PolicyType.Erc20Transfer);
     });
 
-    it('should skip a policy whose deployment is unknown, and log it', async () => {
+    it('should skip a policy the Transaction Service could not type, and log it', async () => {
       const confirmation = policyConfirmationBuilder()
         .with('policy', getAddress(faker.finance.ethereumAddress()))
         .build();
@@ -233,15 +223,81 @@ describe('PoliciesService', () => {
       expect(result.items).toStrictEqual([]);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: 'Unknown policy deployment, skipping the policy',
+          message: 'Unmodelled policy type, skipping the policy',
           policy: confirmation.policy,
         }),
       );
     });
 
+    it('should type a policy from the policyType whatever its address', async () => {
+      // CGW holds no address map, so an address it has never seen - which is
+      // every address - still types and routes correctly.
+      const confirmation = policyConfirmationBuilder()
+        .with('policy', getAddress(faker.finance.ethereumAddress()))
+        .with('policyType', 'ERC20TransferPolicy')
+        .build();
+      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
+        confirmation,
+      ]);
+
+      const result = await service.getActivePolicies(request);
+
+      expect(erc20Resolver.resolve).toHaveBeenCalledWith({
+        chainId: SEPOLIA_CHAIN_ID,
+        confirmations: [confirmation],
+        names: new Map(),
+      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].type).toBe(PolicyType.Erc20Transfer);
+    });
+
+    it('should skip a policy the Transaction Service types as one CGW does not model', async () => {
+      const confirmation = policyConfirmationBuilder()
+        .with('policy', getAddress(faker.finance.ethereumAddress()))
+        .with('policyType', 'DenyPolicy')
+        .build();
+      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
+        confirmation,
+      ]);
+
+      const result = await service.getActivePolicies(request);
+
+      expect(result.items).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Unmodelled policy type, skipping the policy',
+          policyType: 'DenyPolicy',
+        }),
+      );
+    });
+
+    it('should route each policy type to its own resolver', async () => {
+      const erc20 = policyConfirmationBuilder()
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
+        .with('selector', '0xa9059cbb')
+        .build();
+      const cosigner = policyConfirmationBuilder()
+        .with('policyType', 'CoSignerPolicy')
+        .with('selector', '0x23b872dd')
+        .build();
+      mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
+        erc20,
+        cosigner,
+      ]);
+
+      await service.getActivePolicies(request);
+
+      expect(erc20Resolver.resolve).toHaveBeenCalledWith(
+        expect.objectContaining({ confirmations: [erc20] }),
+      );
+      expect(cosignerResolver.resolve).toHaveBeenCalledWith(
+        expect.objectContaining({ confirmations: [cosigner] }),
+      );
+    });
+
     it('should report the guard and policy contract of the event as enforcement', async () => {
       const confirmation = policyConfirmationBuilder()
-        .with('policy', ERC20_TRANSFER_POLICY)
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
       mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
         confirmation,
@@ -265,7 +321,7 @@ describe('PoliciesService', () => {
 
     it('should mark a policy enabled when its guard is the Safe transaction guard', async () => {
       const confirmation = policyConfirmationBuilder()
-        .with('policy', ERC20_TRANSFER_POLICY)
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
       mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
         confirmation,
@@ -286,7 +342,7 @@ describe('PoliciesService', () => {
       ['no guard', getAddress(NULL_ADDRESS)],
     ])('should mark a configured policy disabled when the Safe has %s', async (_, guard) => {
       const confirmation = policyConfirmationBuilder()
-        .with('policy', ERC20_TRANSFER_POLICY)
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .build();
       mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([
         confirmation,
@@ -337,11 +393,11 @@ describe('PoliciesService', () => {
   describe('getAvailablePolicies', () => {
     it('should count the active policies per type', async () => {
       const first = policyConfirmationBuilder()
-        .with('policy', ERC20_TRANSFER_POLICY)
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .with('logIndex', 1)
         .build();
       const second = policyConfirmationBuilder()
-        .with('policy', ERC20_TRANSFER_POLICY)
+        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
         .with('logIndex', 2)
         .build();
       mockPoliciesRepository.getActiveConfirmations.mockResolvedValue([

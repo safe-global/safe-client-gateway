@@ -6,7 +6,10 @@ import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import {
+  policyConfirmationBuilder,
+  rawPolicyConfirmation,
+} from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import { PolicyRootRequestStatus } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import { PoliciesRepository } from '@/modules/policies/domain/policies.repository';
@@ -49,7 +52,11 @@ describe('PoliciesRepository', () => {
         .with('safe', safeAddress)
         .build();
       mockTransactionApi.getPolicyConfirmations.mockResolvedValue(
-        rawify(pageBuilder().with('results', [confirmation]).build()),
+        rawify(
+          pageBuilder()
+            .with('results', [rawPolicyConfirmation(confirmation)])
+            .build(),
+        ),
       );
 
       const result = await repository.getActiveConfirmations({
@@ -81,7 +88,14 @@ describe('PoliciesRepository', () => {
         .with('blockNumber', 2)
         .build();
       mockTransactionApi.getPolicyConfirmations.mockResolvedValue(
-        rawify(pageBuilder().with('results', [removed, added]).build()),
+        rawify(
+          pageBuilder()
+            .with('results', [
+              rawPolicyConfirmation(removed),
+              rawPolicyConfirmation(added),
+            ])
+            .build(),
+        ),
       );
 
       const result = await repository.getActiveConfirmations({
@@ -97,7 +111,10 @@ describe('PoliciesRepository', () => {
       mockTransactionApi.getPolicyConfirmations.mockResolvedValue(
         rawify(
           pageBuilder()
-            .with('results', [confirmation, { safe: 'not-an-address' }])
+            .with('results', [
+              rawPolicyConfirmation(confirmation),
+              { safe: 'not-an-address' },
+            ])
             .build(),
         ),
       );
@@ -117,14 +134,17 @@ describe('PoliciesRepository', () => {
         .mockResolvedValueOnce(
           rawify(
             pageBuilder()
-              .with('results', [first])
+              .with('results', [rawPolicyConfirmation(first)])
               .with('next', faker.internet.url())
               .build(),
           ),
         )
         .mockResolvedValueOnce(
           rawify(
-            pageBuilder().with('results', [second]).with('next', null).build(),
+            pageBuilder()
+              .with('results', [rawPolicyConfirmation(second)])
+              .with('next', null)
+              .build(),
           ),
         );
 
@@ -146,7 +166,9 @@ describe('PoliciesRepository', () => {
       mockTransactionApi.getPolicyConfirmations.mockResolvedValue(
         rawify(
           pageBuilder()
-            .with('results', [policyConfirmationBuilder().build()])
+            .with('results', [
+              rawPolicyConfirmation(policyConfirmationBuilder().build()),
+            ])
             .with('next', faker.internet.url())
             .build(),
         ),

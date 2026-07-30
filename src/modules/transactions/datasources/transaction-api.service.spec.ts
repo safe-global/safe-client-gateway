@@ -23,6 +23,7 @@ import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/de
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
+import { operationValue } from '@/modules/policies/domain/utils/policy-access.utils';
 import { creationTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/creation-transaction.builder';
 import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
@@ -1592,7 +1593,8 @@ describe('TransactionApi', () => {
           params: {
             target: confirmation.target,
             selector: confirmation.selector,
-            operation: confirmation.operation,
+            // Sent as the numeric value the Transaction Service filters on.
+            operation: operationValue(confirmation.operation),
             policy: confirmation.policy,
             removed: undefined,
             fallback: undefined,

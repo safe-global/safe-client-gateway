@@ -20,6 +20,7 @@ export const PolicyDeploymentSchema = z.object({
     .object({
       [PolicyType.Erc20Transfer]: AddressSchema.optional(),
       [PolicyType.Cosigner]: AddressSchema.optional(),
+      [PolicyType.AllowPolicy]: AddressSchema.optional(),
     })
     .default({}),
   moduleAddresses: z

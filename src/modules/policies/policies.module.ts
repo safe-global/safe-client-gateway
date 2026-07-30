@@ -8,6 +8,7 @@ import { IPoliciesRepository } from '@/modules/policies/domain/policies.reposito
 import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 import { PolicyTokenService } from '@/modules/policies/domain/policy-token.service';
+import { AllowPolicyResolver } from '@/modules/policies/domain/resolvers/allow-policy.resolver';
 import { CosignerPolicyResolver } from '@/modules/policies/domain/resolvers/cosigner-policy.resolver';
 import { Erc20TransferPolicyResolver } from '@/modules/policies/domain/resolvers/erc20-transfer-policy.resolver';
 import type { PolicyResolver } from '@/modules/policies/domain/resolvers/policy-resolver.interface';
@@ -37,6 +38,7 @@ import { UsersModule } from '@/modules/users/users.module';
     PolicyDeploymentsService,
     PolicyTokenService,
     Erc20TransferPolicyResolver,
+    AllowPolicyResolver,
     CosignerPolicyResolver,
     {
       provide: IPoliciesRepository,
@@ -49,8 +51,13 @@ import { UsersModule } from '@/modules/users/users.module';
       useFactory: (
         erc20Transfer: Erc20TransferPolicyResolver,
         cosigner: CosignerPolicyResolver,
-      ): ReadonlyArray<PolicyResolver> => [erc20Transfer, cosigner],
-      inject: [Erc20TransferPolicyResolver, CosignerPolicyResolver],
+        allow: AllowPolicyResolver,
+      ): ReadonlyArray<PolicyResolver> => [erc20Transfer, cosigner, allow],
+      inject: [
+        Erc20TransferPolicyResolver,
+        CosignerPolicyResolver,
+        AllowPolicyResolver,
+      ],
     },
   ],
   exports: [IPoliciesRepository],

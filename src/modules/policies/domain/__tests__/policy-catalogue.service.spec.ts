@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -10,7 +11,6 @@ import {
 } from '@/modules/policies/domain/entities/policy-type.entity';
 import { POLICY_CATALOGUE } from '@/modules/policies/domain/policy-catalogue.constants';
 import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
-import { POLICY_DEPLOYMENTS } from '@/modules/policies/domain/policy-deployments.constants';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -32,17 +32,38 @@ const mockFeatureFlagService = {
   isFeatureEnabled: vi.fn(),
 } as MockedObject<IFeatureFlagService>;
 
-function createService(): PolicyCatalogueService {
+const SEPOLIA_GUARD = getAddress(faker.finance.ethereumAddress());
+const SEPOLIA_ERC20_POLICY = getAddress(faker.finance.ethereumAddress());
+
+function createService(override?: string): PolicyCatalogueService {
+  mockConfigurationService.get.mockImplementation((key: string) =>
+    key === 'policies.deployments' ? override : undefined,
+  );
   return new PolicyCatalogueService(
     new PolicyDeploymentsService(mockConfigurationService, mockLoggingService),
     mockFeatureFlagService,
   );
 }
 
+/**
+ * Guard-enforced entries are only available once the chain's addresses are
+ * configured: CGW ships none, deferring to the Transaction Service for the
+ * addresses of policies that are already configured on a Safe.
+ */
+function createConfiguredService(): PolicyCatalogueService {
+  return createService(
+    JSON.stringify({
+      [SEPOLIA_CHAIN_ID]: {
+        safePolicyGuard: SEPOLIA_GUARD,
+        policyContracts: { [PolicyType.Erc20Transfer]: SEPOLIA_ERC20_POLICY },
+      },
+    }),
+  );
+}
+
 describe('PolicyCatalogueService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockConfigurationService.get.mockReturnValue(undefined);
     mockFeatureFlagService.isFeatureEnabled.mockResolvedValue(true);
   });
 
@@ -92,7 +113,7 @@ describe('PolicyCatalogueService', () => {
   });
 
   it('should carry the guard and policy contract inline for a guard-enforced policy', async () => {
-    const result = await createService().get({
+    const result = await createConfiguredService().get({
       chainId: SEPOLIA_CHAIN_ID,
       configuredCounts: {},
     });
@@ -107,20 +128,29 @@ describe('PolicyCatalogueService', () => {
         via: PolicyEnforcementKind.Guard,
         guards: {
           transactionGuard: {
-            policyContract:
-              POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].policyContracts[
-                PolicyType.Erc20Transfer
-              ],
-            safePolicyGuard:
-              POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].safePolicyGuard,
+            policyContract: SEPOLIA_ERC20_POLICY,
+            safePolicyGuard: SEPOLIA_GUARD,
           },
         },
       },
     });
   });
 
-  it('should report a policy without a deployment as unavailable', async () => {
+  it('should report guard-enforced policies as unavailable when no addresses are configured', async () => {
+    // CGW ships no addresses, so an unconfigured deployment leaves the
+    // guard-enforced entries unavailable even on a supported chain.
     const result = await createService().get({
+      chainId: SEPOLIA_CHAIN_ID,
+      configuredCounts: {},
+    });
+
+    expect(
+      result.find((policy) => policy.type === PolicyType.Erc20Transfer),
+    ).toMatchObject({ available: false, enforcement: null });
+  });
+
+  it('should report a policy without a deployment as unavailable', async () => {
+    const result = await createConfiguredService().get({
       chainId: SEPOLIA_CHAIN_ID,
       configuredCounts: {},
     });
@@ -148,7 +178,7 @@ describe('PolicyCatalogueService', () => {
   it('should report every policy as unavailable when the feature flag is off', async () => {
     mockFeatureFlagService.isFeatureEnabled.mockResolvedValue(false);
 
-    const result = await createService().get({
+    const result = await createConfiguredService().get({
       chainId: SEPOLIA_CHAIN_ID,
       configuredCounts: {},
     });

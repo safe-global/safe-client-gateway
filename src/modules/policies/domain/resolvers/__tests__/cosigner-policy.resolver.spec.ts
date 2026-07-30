@@ -71,7 +71,7 @@ describe('CosignerPolicyResolver', () => {
                 decimals: 6,
                 logoUri: null,
               },
-              cosigner: { address: cosigner, name: null },
+              cosigner: { address: cosigner },
               thresholdAmount: null,
             },
           ],

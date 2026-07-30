@@ -5,7 +5,6 @@ import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { POLICY_DEPLOYMENTS } from '@/modules/policies/domain/policy-deployments.constants';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -33,100 +32,99 @@ function createService(override?: string): PolicyDeploymentsService {
   );
 }
 
+const SEPOLIA_GUARD = getAddress(faker.finance.ethereumAddress());
+const SEPOLIA_ERC20_POLICY = getAddress(faker.finance.ethereumAddress());
+
+/**
+ * A service configured through `POLICY_ENGINE_DEPLOYMENTS`, the only source of
+ * deployment addresses.
+ */
+function createConfiguredService(): PolicyDeploymentsService {
+  return createService(
+    JSON.stringify({
+      [SEPOLIA_CHAIN_ID]: {
+        safePolicyGuard: SEPOLIA_GUARD,
+        policyContracts: { [PolicyType.Erc20Transfer]: SEPOLIA_ERC20_POLICY },
+      },
+    }),
+  );
+}
+
 describe('PolicyDeploymentsService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
+  it('should know no chain until one is configured', () => {
+    // CGW hardcodes no addresses: configured policies are typed and addressed
+    // from the Transaction Service's indexed events, so a transcribed map would
+    // only be a second source able to drift.
+    expect(createService().getDeployment(SEPOLIA_CHAIN_ID)).toBeNull();
+  });
+
   describe('isSupportedChain', () => {
-    it('should support a chain with a SafePolicyGuard deployment', () => {
-      expect(createService().isSupportedChain(SEPOLIA_CHAIN_ID)).toBe(true);
+    it('should support a chain configured with a SafePolicyGuard', () => {
+      expect(createConfiguredService().isSupportedChain(SEPOLIA_CHAIN_ID)).toBe(
+        true,
+      );
     });
 
-    it('should not support a chain without a deployment', () => {
+    it('should not support a chain without configuration', () => {
       expect(
         createService().isSupportedChain(faker.string.numeric({ length: 18 })),
       ).toBe(false);
     });
+
+    it('should support no chain when nothing is configured', () => {
+      expect(createService().isSupportedChain(SEPOLIA_CHAIN_ID)).toBe(false);
+    });
   });
 
   describe('getSafePolicyGuard', () => {
-    it('should return the guard address', () => {
-      expect(createService().getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBe(
-        POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].safePolicyGuard,
-      );
+    it('should return the configured guard address', () => {
+      expect(
+        createConfiguredService().getSafePolicyGuard(SEPOLIA_CHAIN_ID),
+      ).toBe(SEPOLIA_GUARD);
     });
 
-    it('should return null for an unsupported chain', () => {
-      expect(createService().getSafePolicyGuard('1')).toBeNull();
+    it('should return null for an unconfigured chain', () => {
+      expect(createConfiguredService().getSafePolicyGuard('1')).toBeNull();
     });
   });
 
   describe('getPolicyContract', () => {
-    it('should return the ERC20TransferPolicy address', () => {
+    it('should return the configured ERC20TransferPolicy address', () => {
       expect(
-        createService().getPolicyContract(
+        createConfiguredService().getPolicyContract(
           SEPOLIA_CHAIN_ID,
           PolicyType.Erc20Transfer,
         ),
-      ).toBe(
-        POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].policyContracts[
-          PolicyType.Erc20Transfer
-        ],
-      );
+      ).toBe(SEPOLIA_ERC20_POLICY);
     });
 
     it('should return null for a module-enforced type', () => {
       expect(
-        createService().getPolicyContract(
+        createConfiguredService().getPolicyContract(
           SEPOLIA_CHAIN_ID,
           PolicyType.SpendingLimit,
         ),
       ).toBeNull();
     });
 
-    it('should return null for a policy without a deployment', () => {
-      // CoSignerPolicy is not deployed yet
+    it('should return null for a policy type without a configured address', () => {
       expect(
-        createService().getPolicyContract(
+        createConfiguredService().getPolicyContract(
           SEPOLIA_CHAIN_ID,
           PolicyType.Cosigner,
         ),
       ).toBeNull();
     });
-  });
 
-  describe('getPolicyType', () => {
-    it('should resolve a policy address to its type', () => {
-      const policy =
-        POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].policyContracts[
-          PolicyType.Erc20Transfer
-        ]!;
-
-      expect(createService().getPolicyType(SEPOLIA_CHAIN_ID, policy)).toBe(
-        PolicyType.Erc20Transfer,
-      );
-    });
-
-    it('should be case insensitive', () => {
-      const policy =
-        POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].policyContracts[
-          PolicyType.Erc20Transfer
-        ]!;
-
+    it('should return null when nothing is configured for the chain', () => {
       expect(
-        createService().getPolicyType(
+        createService().getPolicyContract(
           SEPOLIA_CHAIN_ID,
-          policy.toLowerCase() as `0x${string}`,
-        ),
-      ).toBe(PolicyType.Erc20Transfer);
-    });
-
-    it('should return null for an unknown policy address', () => {
-      expect(
-        createService().getPolicyType(
-          SEPOLIA_CHAIN_ID,
-          getAddress(faker.finance.ethereumAddress()),
+          PolicyType.Erc20Transfer,
         ),
       ).toBeNull();
     });
@@ -183,8 +181,8 @@ describe('PolicyDeploymentsService', () => {
     });
   });
 
-  describe('configuration override', () => {
-    it('should add a chain that is not built in', () => {
+  describe('configuration', () => {
+    it('should add a chain', () => {
       const chainId = faker.string.numeric({ length: 6 });
       const safePolicyGuard = getAddress(faker.finance.ethereumAddress());
       const service = createService(
@@ -192,30 +190,28 @@ describe('PolicyDeploymentsService', () => {
       );
 
       expect(service.getSafePolicyGuard(chainId)).toBe(safePolicyGuard);
-      // built-in chains stay available
-      expect(service.isSupportedChain(SEPOLIA_CHAIN_ID)).toBe(true);
     });
 
-    it('should replace, not merge, a built-in chain entry', () => {
-      const safePolicyGuard = getAddress(faker.finance.ethereumAddress());
+    it('should configure several chains independently', () => {
+      const other = faker.string.numeric({ length: 6 });
+      const otherGuard = getAddress(faker.finance.ethereumAddress());
       const service = createService(
-        JSON.stringify({ [SEPOLIA_CHAIN_ID]: { safePolicyGuard } }),
+        JSON.stringify({
+          [SEPOLIA_CHAIN_ID]: { safePolicyGuard: SEPOLIA_GUARD },
+          [other]: { safePolicyGuard: otherGuard },
+        }),
       );
 
-      expect(service.getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBe(
-        safePolicyGuard,
-      );
-      expect(
-        service.getPolicyContract(SEPOLIA_CHAIN_ID, PolicyType.Erc20Transfer),
-      ).toBeNull();
+      expect(service.getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBe(SEPOLIA_GUARD);
+      expect(service.getSafePolicyGuard(other)).toBe(otherGuard);
     });
 
-    it('should ignore and log a malformed override', () => {
+    it('should ignore and log a malformed configuration', () => {
       const service = createService('{not json');
 
-      expect(service.getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBe(
-        POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].safePolicyGuard,
-      );
+      // Nothing to fall back to, so every chain is simply unsupported - but the
+      // service must still come up rather than take the app down.
+      expect(service.getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBeNull();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Invalid POLICY_ENGINE_DEPLOYMENTS, ignoring the override',

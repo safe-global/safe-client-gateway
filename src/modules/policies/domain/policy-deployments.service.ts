@@ -13,20 +13,27 @@ import {
   PolicyDeploymentsSchema,
 } from '@/modules/policies/domain/entities/policy-deployment.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { POLICY_DEPLOYMENTS } from '@/modules/policies/domain/policy-deployments.constants';
 
 /**
- * Single accessor for the policy-engine contract deployments.
+ * Single accessor for the policy-engine contract deployments, read entirely from
+ * the `POLICY_ENGINE_DEPLOYMENTS` configuration. CGW hardcodes no addresses.
  *
- * Resolution order per chain:
- * 1. the `POLICY_ENGINE_DEPLOYMENTS` configuration override, if it holds an
- *    entry for the chain (an override *replaces* the built-in entry, it is not
- *    merged into it, so a partial override cannot leave a stale address behind)
- * 2. {@link POLICY_DEPLOYMENTS}
+ * Only the catalogue (`/policies`) needs them: it names the contract that *would*
+ * enforce a policy type the Safe has not configured yet, which no indexed event
+ * can answer for. The addresses of policies already configured on a Safe are
+ * never read from here - they come from the Transaction Service, which indexes
+ * `PolicyConfirmed` and is the source of truth for both the address and the
+ * `policyType` behind it.
  *
- * Module-enforced deployments that a Safe deployments package can answer for
- * are resolved from the package instead of from either source, so they cannot
- * drift.
+ * A chain without configuration therefore reports its guard-enforced policies as
+ * unavailable, and never mis-reports an address CGW guessed at.
+ *
+ * Module-enforced deployments that a Safe deployments package can answer for are
+ * resolved from the package instead, so they cannot drift.
+ *
+ * TODO(WA-2914): drop this too once the Transaction Service exposes its
+ * `PolicyContract` registry, or safe-research/policy-engine publishes deployments
+ * to a package CGW can read.
  */
 @Injectable()
 export class PolicyDeploymentsService {
@@ -64,26 +71,14 @@ export class PolicyDeploymentsService {
   public getPolicyContract(chainId: string, type: PolicyType): Address | null {
     const deployment = this.getDeployment(chainId);
     if (!deployment) return null;
-    if (type === PolicyType.Erc20Transfer || type === PolicyType.Cosigner) {
+    if (
+      type === PolicyType.Erc20Transfer ||
+      type === PolicyType.Cosigner ||
+      type === PolicyType.AllowPolicy
+    ) {
       return deployment.policyContracts[type] ?? null;
     }
     return null;
-  }
-
-  /**
-   * Reverse lookup of {@link getPolicyContract}: which policy type a policy
-   * address implements. `null` for an unknown deployment, which is how a policy
-   * CGW cannot type is detected.
-   */
-  public getPolicyType(chainId: string, policy: Address): PolicyType | null {
-    const deployment = this.getDeployment(chainId);
-    if (!deployment) return null;
-
-    const entry = Object.entries(deployment.policyContracts).find(
-      ([, address]) => address?.toLowerCase() === policy.toLowerCase(),
-    );
-
-    return entry ? (entry[0] as PolicyType) : null;
   }
 
   /**
@@ -108,27 +103,30 @@ export class PolicyDeploymentsService {
   }
 
   private buildDeployments(): PolicyDeployments {
-    const override = this.configurationService.get<string>(
+    const configured = this.configurationService.get<string>(
       'policies.deployments',
     );
 
-    if (!override) {
-      return POLICY_DEPLOYMENTS;
+    if (!configured) {
+      return {};
     }
 
-    const parsed = PolicyDeploymentsSchema.safeParse(this.parseJson(override));
+    const parsed = PolicyDeploymentsSchema.safeParse(
+      this.parseJson(configured),
+    );
 
     if (!parsed.success) {
-      // A malformed override must not take the service down: fall back to the
-      // built-in deployments and make the misconfiguration visible.
+      // A malformed value must not take the service down. There is nothing to
+      // fall back to, so every chain reports its guard-enforced policies as
+      // unavailable - which is why the misconfiguration is logged as an error.
       this.loggingService.error({
         message: 'Invalid POLICY_ENGINE_DEPLOYMENTS, ignoring the override',
         error: parsed.error.message,
       });
-      return POLICY_DEPLOYMENTS;
+      return {};
     }
 
-    return { ...POLICY_DEPLOYMENTS, ...parsed.data };
+    return parsed.data;
   }
 
   private parseJson(value: string): unknown {

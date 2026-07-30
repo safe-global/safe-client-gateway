@@ -7,6 +7,7 @@ import {
   type PolicyConfirmation,
   PolicyOperation,
 } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import { operationValue } from '@/modules/policies/domain/utils/policy-access.utils';
 
 /** `transfer(address,uint256)` - the selector guarded by ERC20TransferPolicy. */
 export const TRANSFER_SELECTOR = '0xa9059cbb';
@@ -23,6 +24,7 @@ export function policyConfirmationBuilder(): IBuilder<PolicyConfirmation> {
     .with('selector', TRANSFER_SELECTOR)
     .with('operation', PolicyOperation.Call)
     .with('policy', getAddress(faker.finance.ethereumAddress()))
+    .with('policyType', null)
     .with('removed', false)
     .with('fallback', false)
     .with('data', hexBuilder(32))
@@ -31,4 +33,21 @@ export function policyConfirmationBuilder(): IBuilder<PolicyConfirmation> {
     .with('blockNumber', faker.number.int({ min: 1, max: 1_000_000 }))
     .with('logIndex', faker.number.int({ min: 0, max: 10 }))
     .with('timestamp', faker.date.recent());
+}
+
+/**
+ * The Transaction Service payload of a confirmation, i.e. the input
+ * `PolicyConfirmationSchema` parses.
+ *
+ * It differs from the domain entity in `operation`: the API serializes the
+ * on-chain numeric value, which the schema maps to {@link PolicyOperation}.
+ * Use this wherever a spec stands in for the API rather than for the domain.
+ */
+export function rawPolicyConfirmation(
+  confirmation: PolicyConfirmation,
+): Record<string, unknown> {
+  return {
+    ...confirmation,
+    operation: operationValue(confirmation.operation),
+  };
 }

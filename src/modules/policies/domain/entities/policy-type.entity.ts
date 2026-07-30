@@ -16,9 +16,39 @@ export const PolicyType = {
   Recovery: 'recovery',
   Erc20Transfer: 'ERC20TransferPolicy',
   Cosigner: 'cosigner',
+  AllowPolicy: 'AllowPolicy',
 } as const;
 
 export type PolicyType = (typeof PolicyType)[keyof typeof PolicyType];
+
+/**
+ * The Transaction Service's `policyType` (the policy contract name from its
+ * `PolicyContract` registry) for the guard-enforced types CGW models.
+ *
+ * Only the two guard-enforced types appear: `spending-limit` and `recovery` are
+ * module-enforced and never carried by a `PolicyConfirmed` event.
+ */
+const POLICY_TYPE_BY_CONTRACT_NAME: Readonly<Record<string, PolicyType>> = {
+  ERC20TransferPolicy: PolicyType.Erc20Transfer,
+  CoSignerPolicy: PolicyType.Cosigner,
+  AllowPolicy: PolicyType.AllowPolicy,
+};
+
+/**
+ * Maps a Transaction Service `policyType` to the type CGW renders.
+ *
+ * `null` for an absent name, and for the policies the registry knows but CGW
+ * does not model (`AllowPolicy`, `DenyPolicy`, `MultiSendPolicy`, …) - those
+ * are skipped rather than rendered as an unknown restriction.
+ */
+export function policyTypeFromContractName(
+  name: string | null | undefined,
+): PolicyType | null {
+  if (!name) {
+    return null;
+  }
+  return POLICY_TYPE_BY_CONTRACT_NAME[name] ?? null;
+}
 
 /**
  * How a policy is enforced on a Safe.

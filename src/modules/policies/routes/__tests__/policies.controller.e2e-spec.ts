@@ -18,22 +18,35 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { policyConfirmationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
+import {
+  policyConfirmationBuilder,
+  rawPolicyConfirmation,
+} from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import { PolicyRootRequestStatus } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import { FF_POLICIES } from '@/modules/policies/domain/policy-catalogue.constants';
-import { POLICY_DEPLOYMENTS } from '@/modules/policies/domain/policy-deployments.constants';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
-const ERC20_TRANSFER_POLICY =
-  POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].policyContracts[
-    PolicyType.Erc20Transfer
-  ]!;
-const SAFE_POLICY_GUARD = POLICY_DEPLOYMENTS[SEPOLIA_CHAIN_ID].safePolicyGuard;
+/**
+ * CGW ships no deployment addresses, so the catalogue only reports a
+ * guard-enforced policy as available once the chain is configured. These are fed
+ * in through `policies.deployments` below.
+ *
+ * `/policies/active` does not depend on them: it takes the addresses from the
+ * Transaction Service's indexed events.
+ */
+const ERC20_TRANSFER_POLICY = getAddress(faker.finance.ethereumAddress());
+const SAFE_POLICY_GUARD = getAddress(faker.finance.ethereumAddress());
+const POLICY_ENGINE_DEPLOYMENTS = JSON.stringify({
+  [SEPOLIA_CHAIN_ID]: {
+    safePolicyGuard: SAFE_POLICY_GUARD,
+    policyContracts: { [PolicyType.Erc20Transfer]: ERC20_TRANSFER_POLICY },
+  },
+});
 
 describe('PoliciesController (e2e)', () => {
   let app: INestApplication<Server>;
@@ -143,6 +156,10 @@ describe('PoliciesController (e2e)', () => {
         auth: true,
         users: true,
       },
+      policies: {
+        ...defaultConfiguration.policies,
+        deployments: POLICY_ENGINE_DEPLOYMENTS,
+      },
     });
 
     const moduleFixture = await createTestModule({
@@ -226,7 +243,9 @@ describe('PoliciesController (e2e)', () => {
           },
         })
         .build();
-      mockTransactionService({ confirmations: [confirmation] });
+      mockTransactionService({
+        confirmations: [rawPolicyConfirmation(confirmation)],
+      });
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -258,7 +277,9 @@ describe('PoliciesController (e2e)', () => {
           parameters: { recipients: [{ recipient, allowed: true }] },
         })
         .build();
-      mockTransactionService({ confirmations: [confirmation] });
+      mockTransactionService({
+        confirmations: [rawPolicyConfirmation(confirmation)],
+      });
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -288,7 +309,7 @@ describe('PoliciesController (e2e)', () => {
               allowlist: [
                 {
                   token: { address: confirmation.target },
-                  recipients: [{ address: recipient, name: null }],
+                  recipients: [{ address: recipient }],
                 },
               ],
             },
@@ -315,7 +336,7 @@ describe('PoliciesController (e2e)', () => {
         })
         .build();
       mockTransactionService({
-        confirmations: [confirmation],
+        confirmations: [rawPolicyConfirmation(confirmation)],
         guard: getAddress(faker.finance.ethereumAddress()),
       });
       const { accessToken, spaceId } = await createSpaceWithSafe({

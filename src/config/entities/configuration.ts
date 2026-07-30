@@ -823,13 +823,21 @@ export default () => ({
   },
   policies: {
     /**
-     * Per-chain policy-engine deployments, overriding the built-in map so a new
-     * chain can be enabled without a release. JSON, keyed by chain ID:
+     * Per-chain policy-engine deployments. JSON, keyed by chain ID:
      *
      * {"11155111":{"safePolicyGuard":"0x…","policyContracts":{"ERC20TransferPolicy":"0x…"},"moduleAddresses":{"recovery":"0x…"}}}
      *
-     * Validated by `PolicyDeploymentsService`; an invalid value is logged and
-     * ignored rather than failing startup.
+     * The only source of these addresses - CGW hardcodes none. They are needed
+     * solely for the `/policies` catalogue, which names the contract that would
+     * enforce a policy type a Safe has not configured yet. Policies already
+     * configured on a Safe are typed and addressed from the Transaction
+     * Service's indexed events instead, so `/policies/active` works on any chain
+     * with or without this set.
+     *
+     * A chain left out reports its guard-enforced policies as
+     * `available: false`. Validated by `PolicyDeploymentsService`; an invalid
+     * value is logged and ignored rather than failing startup.
+     *
      * TODO: Source from safe-deployments
      */
     deployments: process.env.POLICY_ENGINE_DEPLOYMENTS,

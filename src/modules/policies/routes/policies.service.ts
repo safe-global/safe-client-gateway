@@ -14,10 +14,12 @@ import type {
 import type { AvailablePolicy } from '@/modules/policies/domain/entities/available-policy.entity';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { guardEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import {
+  type PolicyType,
+  policyTypeFromContractName,
+} from '@/modules/policies/domain/entities/policy-type.entity';
 import { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
 import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
-import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 import {
   type AddressNames,
   type PolicyResolver,
@@ -55,7 +57,6 @@ export class PoliciesService {
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
     private readonly policyCatalogueService: PolicyCatalogueService,
-    private readonly policyDeploymentsService: PolicyDeploymentsService,
     @Inject(POLICY_RESOLVERS)
     private readonly resolvers: ReadonlyArray<PolicyResolver>,
     @Inject(LoggingService)
@@ -149,10 +150,16 @@ export class PoliciesService {
   }
 
   /**
-   * Splits the confirmations by the policy type their policy address implements.
-   * A policy CGW cannot type is skipped: rendering an unknown restriction is
-   * worse than omitting it, and the deployment maps of CGW and the Transaction
-   * Service are expected to match.
+   * Splits the confirmations by policy type.
+   *
+   * The type comes from the `policyType` the Transaction Service resolved for
+   * the policy address through its `PolicyContract` registry - the single source
+   * of truth. CGW keeps no address map to type against, so a chain cannot be
+   * missing an entry and there is nothing to drift.
+   *
+   * A policy CGW does not model (`DenyPolicy`, `MultiSendPolicy`, …) or that the
+   * registry could not name is skipped and logged: rendering an unknown
+   * restriction is worse than omitting it.
    */
   private groupByPolicyType(args: {
     chainId: string;
@@ -161,17 +168,15 @@ export class PoliciesService {
     const byType = new Map<PolicyType, Array<PolicyConfirmation>>();
 
     for (const confirmation of args.confirmations) {
-      const type = this.policyDeploymentsService.getPolicyType(
-        args.chainId,
-        confirmation.policy,
-      );
+      const type = policyTypeFromContractName(confirmation.policyType);
 
       if (!type) {
         this.loggingService.warn({
-          message: 'Unknown policy deployment, skipping the policy',
+          message: 'Unmodelled policy type, skipping the policy',
           chainId: args.chainId,
           safe: confirmation.safe,
           policy: confirmation.policy,
+          policyType: confirmation.policyType,
         });
         continue;
       }

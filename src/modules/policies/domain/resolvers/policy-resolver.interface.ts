@@ -49,10 +49,14 @@ export interface PolicyResolver {
 
 /**
  * Builds a {@link NamedAddress} from the space address book.
+ *
+ * An address the book does not name yields no `name` key at all, rather than a
+ * null one.
  */
 export function namedAddress(
   address: Address,
   names: AddressNames,
 ): NamedAddress {
-  return { address, name: names.get(address.toLowerCase()) ?? null };
+  const name = names.get(address.toLowerCase());
+  return name === undefined ? { address } : { address, name };
 }

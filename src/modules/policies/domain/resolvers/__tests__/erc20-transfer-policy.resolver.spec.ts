@@ -76,7 +76,7 @@ describe('Erc20TransferPolicyResolver', () => {
                 decimals: 18,
                 logoUri: null,
               },
-              recipients: [{ address: recipient, name: null }],
+              recipients: [{ address: recipient }],
             },
           ],
         },
@@ -174,9 +174,7 @@ describe('Erc20TransferPolicyResolver', () => {
     });
 
     const { allowlist } = result[0].data as Erc20TransferPolicyData;
-    expect(allowlist[0].recipients).toStrictEqual([
-      { address: allowed, name: null },
-    ]);
+    expect(allowlist[0].recipients).toStrictEqual([{ address: allowed }]);
   });
 
   it('should let a later confirmation revoke a recipient', async () => {
@@ -226,7 +224,9 @@ describe('Erc20TransferPolicyResolver', () => {
     expect(allowlist[0].recipients).toHaveLength(1);
   });
 
-  it('should resolve recipient names from the space address book', async () => {
+  it('should report recipients as address-only, ignoring the address book', async () => {
+    // Recipients carry no name: the wallet resolves display names itself, so an
+    // address book entry must not add a field to the payload.
     const recipient = getAddress(faker.finance.ethereumAddress());
     const confirmation = policyConfirmationBuilder()
       .with('dataDecoded', recipientsData([{ recipient, allowed: true }]))
@@ -239,9 +239,7 @@ describe('Erc20TransferPolicyResolver', () => {
     });
 
     const { allowlist } = result[0].data as Erc20TransferPolicyData;
-    expect(allowlist[0].recipients).toStrictEqual([
-      { address: recipient, name: 'Payroll' },
-    ]);
+    expect(allowlist[0].recipients).toStrictEqual([{ address: recipient }]);
   });
 
   it('should keep the policy when token metadata is unavailable', async () => {

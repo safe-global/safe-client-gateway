@@ -4,10 +4,12 @@ import type { Address, Hex } from 'viem';
 import type {
   ActivePolicy,
   ActivePolicyData,
+  AllowPolicyData,
   CosignerPolicyData,
   Erc20TransferPolicyData,
   NamedAddress,
   PendingPolicy,
+  PolicyRecipient,
   PolicyTokenInfo,
   RecoveryPolicyData,
   SpendingLimitPolicyData,
@@ -44,12 +46,6 @@ export class PolicyTokenInfoDto implements PolicyTokenInfo {
 export class NamedAddressDto implements NamedAddress {
   @ApiProperty()
   public readonly address!: Address;
-  @ApiProperty({
-    type: String,
-    nullable: true,
-    description: 'Name from the space address book, when known',
-  })
-  public readonly name!: string | null;
 }
 
 export class PolicyContractsDto implements PolicyContracts {
@@ -121,11 +117,16 @@ export class GetAvailablePoliciesResponse {
   public readonly items!: Array<AvailablePolicy>;
 }
 
+export class PolicyRecipientDto implements PolicyRecipient {
+  @ApiProperty()
+  public readonly address!: Address;
+}
+
 export class Erc20TransferPolicyAllowlistEntryDto {
   @ApiProperty({ type: PolicyTokenInfoDto })
   public readonly token!: PolicyTokenInfo;
-  @ApiProperty({ type: NamedAddressDto, isArray: true })
-  public readonly recipients!: Array<NamedAddress>;
+  @ApiProperty({ type: PolicyRecipientDto, isArray: true })
+  public readonly recipients!: Array<PolicyRecipient>;
 }
 
 export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
@@ -179,12 +180,23 @@ export class RecoveryPolicyDataDto implements RecoveryPolicyData {
   public readonly expirySec!: string;
 }
 
+/**
+ * `AllowPolicy` reports no payload: the access it grants is already carried by
+ * the item's `id` and `enforcement`.
+ */
+export class AllowPolicyDataDto implements AllowPolicyData {
+  // Mirrors `AllowPolicyData`'s `Record<string, never>`: the payload carries no
+  // properties, and adding one here would have to be modelled there first.
+  [key: string]: never;
+}
+
 const PolicyDataSchema = {
   oneOf: [
     { $ref: getSchemaPath(Erc20TransferPolicyDataDto) },
     { $ref: getSchemaPath(CosignerPolicyDataDto) },
     { $ref: getSchemaPath(SpendingLimitPolicyDataDto) },
     { $ref: getSchemaPath(RecoveryPolicyDataDto) },
+    { $ref: getSchemaPath(AllowPolicyDataDto) },
   ],
 };
 
@@ -195,6 +207,7 @@ const PolicyDataSchema = {
   CosignerPolicyDataDto,
   SpendingLimitPolicyDataDto,
   RecoveryPolicyDataDto,
+  AllowPolicyDataDto,
 )
 export class ActivePolicyDto implements ActivePolicy {
   @ApiProperty({

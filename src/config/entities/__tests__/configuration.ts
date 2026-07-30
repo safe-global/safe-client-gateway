@@ -462,7 +462,8 @@ export default (): ReturnType<typeof configuration> => ({
     baseUri: faker.internet.url({ appendSlash: false }),
   },
   policies: {
-    // Tests exercise the built-in deployments; the override is opt-in per test.
+    // CGW hardcodes no addresses, so a test needing the `/policies` catalogue to
+    // report a policy as available must configure them itself.
     deployments: undefined,
   },
   spaces: {
