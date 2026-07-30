@@ -612,13 +612,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@cacheable/utils@npm:^2.3.3":
-  version: 2.4.1
-  resolution: "@cacheable/utils@npm:2.4.1"
+"@cacheable/utils@npm:^2.5.0":
+  version: 2.5.0
+  resolution: "@cacheable/utils@npm:2.5.0"
   dependencies:
     hashery: "npm:^1.5.1"
     keyv: "npm:^5.6.0"
-  checksum: 10/5fbea553fd53c8ffe4f3a2e746ce6ecf76f3d90f599b49f2c677c3922e4f643a40f3e90a13727b6e866b7ab3c8e267368d98b54d88d08181050a8d066997cfe7
+  checksum: 10/a77a7e682926b984cb28b6993f4595638ce8799de3223dbdcdb796a077a02de763687bdc5669779019aba44d27693260ef92d860a19330d7eaa4dfcca3433c3b
   languageName: node
   linkType: hard
 
@@ -3393,13 +3393,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cache-manager@npm:7.2.8":
-  version: 7.2.8
-  resolution: "cache-manager@npm:7.2.8"
+"cache-manager@npm:7.2.9":
+  version: 7.2.9
+  resolution: "cache-manager@npm:7.2.9"
   dependencies:
-    "@cacheable/utils": "npm:^2.3.3"
-    keyv: "npm:^5.5.5"
-  checksum: 10/e0abab85d9f6e68eccc6eefe5818119bddb1df4cf83abbf6b3e54023e4fd88184e9df4ce9a7e3b7d121ad32c76187549cbd471f57cb4577140fc2509b164e1b9
+    "@cacheable/utils": "npm:^2.5.0"
+    keyv: "npm:^5.6.0"
+  checksum: 10/fb611f7adb44b87bc8cce888ff7749e93a9e8501fb28bdfc260742b26f661d85856685123540dc925e2870c77d67ad6f39a20fcb4a645151b2c83b4fd48ea858
   languageName: node
   linkType: hard
 
@@ -5052,7 +5052,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"keyv@npm:^5.5.5, keyv@npm:^5.6.0":
+"keyv@npm:^5.6.0":
   version: 5.6.0
   resolution: "keyv@npm:5.6.0"
   dependencies:
@@ -6337,7 +6337,7 @@ __metadata:
     amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
     bullmq: "npm:^5.79.2"
-    cache-manager: "npm:7.2.8"
+    cache-manager: "npm:7.2.9"
     csv-stringify: "npm:^6.8.1"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
