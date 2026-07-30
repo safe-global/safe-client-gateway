@@ -3,7 +3,6 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -96,47 +95,16 @@ describe('MessagesRepository (queue service enabled)', () => {
     );
   });
 
-  describe('getMessagesBySafe cross-chain filtering', () => {
-    it('drops rows whose chainId differs from the request and adjusts count', async () => {
+  describe('getMessagesBySafe', () => {
+    it('maps every row returned by the queue service and preserves count', async () => {
       const chainId = faker.number.int({ min: 1, max: 1000 });
-      const otherChainId = chainId + 1;
-      const matching = [
-        safeQueueMessageBuilder(chainId),
-        safeQueueMessageBuilder(chainId),
-      ];
-      const wrongChain = [safeQueueMessageBuilder(otherChainId)];
-      const rawCount = matching.length + wrongChain.length;
-      const page = pageBuilder()
-        .with('count', rawCount)
-        .with('results', [...matching, ...wrongChain])
-        .build();
-      safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
-
-      const result = await target.getMessagesBySafe({
-        chainId: String(chainId),
-        safeAddress: getAddress(faker.finance.ethereumAddress()),
-      });
-
-      expect(result.results).toHaveLength(matching.length);
-      expect(result.results.map((m) => m.messageHash)).toEqual(
-        matching.map((m) => m.messageHash),
+      const messages = faker.helpers.multiple(
+        () => safeQueueMessageBuilder(chainId),
+        { count: { min: 2, max: 4 } },
       );
-      // count is decremented by the number of dropped rows
-      expect(result.count).toBe(rawCount - wrongChain.length);
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(wrongChain.length);
-    });
-
-    it('does not let an adjusted count fall below zero', async () => {
-      const chainId = faker.number.int({ min: 1, max: 1000 });
-      const otherChainId = chainId + 1;
-      const wrongChain = [
-        safeQueueMessageBuilder(otherChainId),
-        safeQueueMessageBuilder(otherChainId),
-      ];
-      // count under-reports relative to dropped rows on this page
       const page = pageBuilder()
-        .with('count', 1)
-        .with('results', wrongChain)
+        .with('count', messages.length)
+        .with('results', messages)
         .build();
       safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
 
@@ -145,18 +113,17 @@ describe('MessagesRepository (queue service enabled)', () => {
         safeAddress: getAddress(faker.finance.ethereumAddress()),
       });
 
-      expect(result.results).toHaveLength(0);
-      expect(result.count).toBe(0);
+      expect(result.results.map((m) => m.messageHash)).toEqual(
+        messages.map((m) => m.messageHash),
+      );
+      expect(result.count).toBe(messages.length);
     });
 
     it('preserves a null count without coercing it to a number', async () => {
       const chainId = faker.number.int({ min: 1, max: 1000 });
       const page = pageBuilder()
         .with('count', null)
-        .with('results', [
-          safeQueueMessageBuilder(chainId),
-          safeQueueMessageBuilder(chainId + 1),
-        ])
+        .with('results', [safeQueueMessageBuilder(chainId)])
         .build();
       safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
 
@@ -166,34 +133,11 @@ describe('MessagesRepository (queue service enabled)', () => {
       });
 
       expect(result.count).toBeNull();
-      expect(result.results).toHaveLength(1);
-    });
-
-    it('keeps all rows and count when every row matches the chain', async () => {
-      const chainId = faker.number.int({ min: 1, max: 1000 });
-      const matching = faker.helpers.multiple(
-        () => safeQueueMessageBuilder(chainId),
-        { count: { min: 2, max: 4 } },
-      );
-      const page = pageBuilder()
-        .with('count', matching.length)
-        .with('results', matching)
-        .build();
-      safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
-
-      const result = await target.getMessagesBySafe({
-        chainId: String(chainId),
-        safeAddress: getAddress(faker.finance.ethereumAddress()),
-      });
-
-      expect(result.results).toHaveLength(matching.length);
-      expect(result.count).toBe(matching.length);
-      expect(mockLoggingService.warn).not.toHaveBeenCalled();
     });
   });
 
-  describe('getMessageByHash cross-chain guard', () => {
-    it('returns the message when the chainId matches', async () => {
+  describe('getMessageByHash', () => {
+    it('returns the message from the queue service', async () => {
       const chainId = faker.number.int({ min: 1, max: 1000 });
       const message = safeQueueMessageBuilder(chainId);
       safeQueueService.getMessageByHash.mockResolvedValue(rawify(message));
@@ -204,20 +148,6 @@ describe('MessagesRepository (queue service enabled)', () => {
       });
 
       expect(result.messageHash).toBe(message.messageHash);
-    });
-
-    it('throws a not-found error when the chainId differs', async () => {
-      const chainId = faker.number.int({ min: 1, max: 1000 });
-      const message = safeQueueMessageBuilder(chainId + 1);
-      safeQueueService.getMessageByHash.mockResolvedValue(rawify(message));
-
-      await expect(
-        target.getMessageByHash({
-          chainId: String(chainId),
-          messageHash: message.messageHash,
-        }),
-      ).rejects.toThrow(HttpExceptionNoLog);
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
     });
   });
 
