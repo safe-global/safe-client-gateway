@@ -107,12 +107,14 @@ export class Auth0Api implements IAuth0Api {
     }
 
     if (options.elevate) {
-      // Step-up authentication. Auth0 does not act on `acr_values` by itself:
-      // it only surfaces the value to the post-login Action as
-      // `event.transaction.acr_values`, and the tenant's Action is what forces
-      // the challenge. Without that Action deployed this parameter is inert,
-      // which is why the callback additionally requires `amr` to prove a
-      // challenge really happened.
+      // Step-up authentication. Measured on a dev tenant with
+      // `mfa_policy = "all-applications"`: Auth0 honours this value on its own,
+      // forcing a challenge even on a remembered browser, with no post-login
+      // Action deployed. The Action in terraform-auth0-module is defence in
+      // depth for the case where that policy is relaxed, since Auth0 otherwise
+      // only surfaces the value to Actions as `event.transaction.acr_values`.
+      // Either way the callback requires `amr` to prove a challenge really
+      // happened, so a tenant that ignores this parameter fails closed.
       // https://auth0.com/docs/secure/multi-factor-authentication/step-up-authentication/configure-step-up-authentication-for-web-apps
       url.searchParams.set('acr_values', Auth0Api.MULTI_FACTOR_ACR_VALUE);
     }

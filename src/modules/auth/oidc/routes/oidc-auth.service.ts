@@ -104,8 +104,8 @@ export class OidcAuthService {
 
     // Auth0 injects `amr` only for a transaction in which the user actually
     // passed a challenge, so this both proves the step-up happened and guards
-    // against `acr_values` being silently ignored by a tenant whose post-login
-    // Action is missing or misconfigured.
+    // against a tenant whose configuration silently ignores `acr_values`,
+    // whatever the reason — the challenge is never taken on trust.
     const hasMultiFactor =
       amr?.includes(OidcAuthService.MFA_AMR_VALUE) === true;
 
