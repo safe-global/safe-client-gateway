@@ -23,6 +23,8 @@ import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/dom
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
+// Deliberately not the production default (30 minutes), so that a guard which
+// ignored configuration and hardcoded the default would fail these tests.
 const ELEVATION_WINDOW_SECONDS = 5 * 60;
 
 type Method = 'post' | 'put' | 'patch' | 'delete' | 'get';

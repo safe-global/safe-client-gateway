@@ -59,8 +59,8 @@ export default () => ({
       10, // 5 minutes
     ),
     elevationWindowSeconds: Number.parseInt(
-      process.env.AUTH_ELEVATION_WINDOW_SECONDS ?? `${5 * 60}`,
-      10, // 5 minutes
+      process.env.AUTH_ELEVATION_WINDOW_SECONDS ?? `${30 * 60}`,
+      10, // 30 minutes
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
     allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,

@@ -12,6 +12,9 @@ import {
   ElevationGuard,
 } from '@/modules/auth/routes/guards/elevation.guard';
 
+// Deliberately not the production default (30 minutes): a test window that
+// matched it would still pass if the guard hardcoded the constant instead of
+// reading `auth.elevationWindowSeconds` from configuration.
 const ELEVATION_WINDOW_SECONDS = 5 * 60;
 
 describe('ElevationGuard', () => {
