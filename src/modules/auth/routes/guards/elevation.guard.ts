@@ -49,6 +49,12 @@ export class ElevationGuard implements CanActivate {
       request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY],
     );
 
+    // Safe only because an account is either OIDC or wallet, never both:
+    // linking a wallet requires an already-wallet-authenticated session
+    // (`assertSignerAddress`), and the one path that attaches an OIDC identity
+    // to an existing row demands `extUserId IS NULL` on a PENDING row. If that
+    // ever changes, an OIDC admin could sign in by wallet and reach every
+    // gated action with no second factor.
     if (payload.isSiwe()) {
       return true;
     }
