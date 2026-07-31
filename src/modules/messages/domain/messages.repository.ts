@@ -169,6 +169,9 @@ export class MessagesRepository implements IMessagesRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void> {
+    // Cleared on the tx service too, even when the queue FF is on: the two
+    // caches are independent layers, and toggling the flag doesn't clear
+    // whatever was cached under the other one.
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
