@@ -30,6 +30,7 @@ export default (): ReturnType<typeof configuration> => ({
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
     clockSkewSeconds: faker.number.int({ min: 1, max: 30 }),
     stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
+    elevationWindowSeconds: faker.number.int({ min: 60, max: 1_800 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,
     auth0: {

@@ -28,6 +28,7 @@ import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { ElevationGuard } from '@/modules/auth/routes/guards/elevation.guard';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
@@ -93,7 +94,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/invite')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -139,7 +140,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/accept')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -179,7 +180,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/decline')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -347,7 +348,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Patch('/:spaceId/members/:userId/role')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -431,7 +432,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Delete('/:spaceId/members/:userId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

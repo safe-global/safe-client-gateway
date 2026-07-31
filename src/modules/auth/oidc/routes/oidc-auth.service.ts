@@ -35,6 +35,8 @@ type OidcAuthTokenResponse = {
 
 @Injectable()
 export class OidcAuthService {
+  /** RFC 8176 method reference Auth0 sets once a second factor was presented. */
+  private static readonly MFA_AMR_VALUE = 'mfa';
   private readonly maxValidityPeriodInSeconds: number;
   private readonly stateTtlMs: number;
   private readonly redirectConfig: RedirectConfig;
@@ -65,8 +67,24 @@ export class OidcAuthService {
     return this.decodeState(state).enroll === true;
   }
 
+  /**
+   * Whether the given state payload marks a step-up (elevation) round-trip.
+   *
+   * Callers must only pass a state that has already been matched against the
+   * state cookie, otherwise the flag is attacker-controlled.
+   */
+  public isElevationState(state: string): boolean {
+    return this.decodeState(state).elevate === true;
+  }
+
+  /**
+   * @param elevate - Whether this callback completes a step-up round-trip. When
+   *   true the provider must have performed a multi-factor challenge, and the
+   *   request is rejected if it did not.
+   */
   public async authenticateWithOidc(
     code: string,
+    { elevate = false }: { elevate?: boolean } = {},
   ): Promise<OidcAuthTokenResponse> {
     const {
       sub: extUserId,
@@ -75,11 +93,25 @@ export class OidcAuthService {
       exp: expirationTime,
       nbf,
       iat,
+      amr,
     } = await this.auth0Repository.authenticateWithAuthorizationCode(code);
 
     if (!(email && emailVerified)) {
       throw new UnauthorizedException(
         'A verified email is required to sign in',
+      );
+    }
+
+    // Auth0 injects `amr` only for a transaction in which the user actually
+    // passed a challenge, so this both proves the step-up happened and guards
+    // against `acr_values` being silently ignored by a tenant whose post-login
+    // Action is missing or misconfigured.
+    const hasMultiFactor =
+      amr?.includes(OidcAuthService.MFA_AMR_VALUE) === true;
+
+    if (elevate && !hasMultiFactor) {
+      throw new UnauthorizedException(
+        'Multi-factor authentication was not performed',
       );
     }
 
@@ -103,6 +135,14 @@ export class OidcAuthService {
       {
         auth_method: AuthMethod.Oidc,
         sub: userId.toString(),
+        // Stamped from the gateway's clock whenever a challenge was actually
+        // passed — on a step-up and equally on a first login, which is itself
+        // multi-factor. Auth0's `auth_time` is unusable here: it records when
+        // the SSO session started, and a step-up inside that session does not
+        // advance it.
+        mfa_verified_at: hasMultiFactor
+          ? Math.floor(Date.now() / 1_000)
+          : undefined,
       },
       {
         nbf,
@@ -208,19 +248,29 @@ export class OidcAuthService {
    *
    * @param redirectUrl - Optional post-login redirect URL. Must be
    *   same-origin as the configured {@link postLoginRedirectUri}.
-   * @param connection - Optional OIDC connection name to route directly
-   *   to a specific identity provider.
-   * @param enroll - When true, requests hosted enrollment of a new
+   * @param options.connection - Optional OIDC connection name to route
+   *   directly to a specific identity provider.
+   * @param options.enroll - When true, requests hosted enrollment of a new
    *   authenticator: the provider challenges an existing factor, then walks
    *   the user through enrolling the new one; the callback removes
    *   superseded enrollments.
+   * @param options.elevate - When true, requests step-up authentication: the
+   *   provider re-challenges a second factor even though the session is
+   *   already established, and the callback elevates the session.
    * @returns The OIDC authorization URL, the encoded state, and its TTL.
    * @throws {BadRequestException} If {@link redirectUrl} is not same-origin.
    */
   public createOidcAuthorizationRequest(
     redirectUrl?: string,
-    connection?: OidcConnection,
-    enroll?: boolean,
+    {
+      connection,
+      enroll,
+      elevate,
+    }: {
+      connection?: OidcConnection;
+      enroll?: boolean;
+      elevate?: boolean;
+    } = {},
   ): {
     authorizationUrl: string;
     state: string;
@@ -234,6 +284,7 @@ export class OidcAuthService {
       csrf: randomBytes(32).toString('hex'),
       redirectUrl: resolvedRedirectUrl,
       enroll: enroll || undefined,
+      elevate: elevate || undefined,
     };
 
     const state = Buffer.from(JSON.stringify(statePayload)).toString(
@@ -241,11 +292,11 @@ export class OidcAuthService {
     );
 
     return {
-      authorizationUrl: this.auth0Repository.getAuthorizationUrl(
-        state,
+      authorizationUrl: this.auth0Repository.getAuthorizationUrl(state, {
         connection,
         enroll,
-      ),
+        elevate,
+      }),
       state,
       stateMaxAge: this.stateTtlMs,
     };

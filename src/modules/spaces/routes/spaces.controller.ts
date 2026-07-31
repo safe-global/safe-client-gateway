@@ -28,6 +28,7 @@ import { getEnumKey } from '@/domain/common/utils/enum';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { ElevationGuard } from '@/modules/auth/routes/guards/elevation.guard';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import {
   CreateSpaceDto,
@@ -175,7 +176,7 @@ export class SpacesController {
     description: 'Space not found',
   })
   @Patch('/:id')
-  @UseGuards(SpacesCreationRateLimitGuard)
+  @UseGuards(SpacesCreationRateLimitGuard, ElevationGuard)
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
@@ -218,6 +219,7 @@ export class SpacesController {
     description: 'Space not found',
   })
   @Delete('/:id')
+  @UseGuards(ElevationGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
     @Param('id', SpaceIdPipe) id: number,

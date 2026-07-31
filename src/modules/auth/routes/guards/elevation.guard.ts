@@ -1,0 +1,62 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import {
+  type CanActivate,
+  type ExecutionContext,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+
+/**
+ * Message returned when a sensitive action needs a fresh second factor.
+ * Clients match on it to tell "redo MFA" apart from a plain authorisation
+ * failure and start the step-up flow at
+ * `GET /v1/auth/oidc/authorize?elevate=true&redirect_url=...`.
+ */
+export const ELEVATION_REQUIRED_ERROR = 'elevation_required';
+
+/**
+ * Allows a sensitive action only when the session presented a second factor
+ * recently — either at login (which is itself multi-factor) or through a
+ * step-up round-trip. Must be listed after {@link AuthGuard}, which is what
+ * attaches the session payload to the request.
+ *
+ * Sign-In-with-Ethereum sessions are exempt: they never pass through the OIDC
+ * provider, so they carry no MFA proof and would otherwise be locked out of
+ * Workspace administration entirely. Extending step-up to them is Milestone 3
+ * (WA-2852), at which point the exemption below is what gets removed.
+ */
+@Injectable()
+export class ElevationGuard implements CanActivate {
+  private readonly elevationWindowSeconds: number;
+
+  constructor(
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
+  ) {
+    this.elevationWindowSeconds = configurationService.getOrThrow<number>(
+      'auth.elevationWindowSeconds',
+    );
+  }
+
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<HttpRequest>();
+    const payload = new AuthPayload(
+      request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY],
+    );
+
+    if (payload.isSiwe()) {
+      return true;
+    }
+
+    if (!payload.hasFreshMfa(this.elevationWindowSeconds)) {
+      throw new ForbiddenException(ELEVATION_REQUIRED_ERROR);
+    }
+
+    return true;
+  }
+}

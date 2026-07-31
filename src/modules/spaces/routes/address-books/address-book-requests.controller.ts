@@ -29,6 +29,7 @@ import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { ElevationGuard } from '@/modules/auth/routes/guards/elevation.guard';
 import { AddressBookRequestsService } from '@/modules/spaces/routes/address-books/address-book-requests.service';
 import {
   AddressBookRequestItemDto,
@@ -142,7 +143,7 @@ export class AddressBookRequestsController {
     description: 'User is not an admin of this space',
   })
   @Put('/:spaceId/address-book/requests/:requestId/approve')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async approveRequest(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

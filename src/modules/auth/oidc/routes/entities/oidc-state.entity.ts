@@ -8,6 +8,9 @@ export const OidcStateSchema = z.object({
   // existing factor and enrolls a new authenticator; the callback then
   // removes superseded ones.
   enroll: z.boolean().optional(),
+  // Marks a step-up round-trip: the callback must verify that the returned
+  // token proves a fresh multi-factor challenge before elevating the session.
+  elevate: z.boolean().optional(),
 });
 
 export type OidcState = z.infer<typeof OidcStateSchema>;
