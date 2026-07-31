@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
@@ -24,6 +29,8 @@ export class SpaceCounterfactualSafesService {
     private readonly counterfactualSafesRepository: ICounterfactualSafesRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   public async get(
@@ -67,7 +74,15 @@ export class SpaceCounterfactualSafesService {
             chainId: safe.chainId,
             address: safe.address,
           });
-        } catch {
+        } catch (error) {
+          // Fail open: keep the Safe in the response when the deployment check
+          // is degraded, but log so ops can see the filter isn't working.
+          this.loggingService.warn({
+            message: 'Failed to check Safe deployment; keeping in response',
+            chainId: safe.chainId,
+            address: safe.address,
+            error: asError(error).message,
+          });
           return false;
         }
       }),
