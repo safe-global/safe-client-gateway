@@ -13,7 +13,6 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import type { ILoggingService } from '@/logging/logging.interface';
 import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
-import { hexBuilder } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository';
 import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
@@ -232,32 +231,50 @@ describe('PolicyConfigurationRequestsRepository', () => {
     });
   });
 
-  describe('findByRoots', () => {
-    it('should return the stored requests among the given roots', async () => {
+  describe('findBySafe', () => {
+    it('should return the stored requests of the Safe', async () => {
       const request = storableRequest();
       await repository.create(request);
 
-      const result = await repository.findByRoots({
+      const result = await repository.findBySafe({
         chainId: request.chainId,
         safeAddress: request.safeAddress,
-        roots: [request.root, hexBuilder(32)],
       });
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
         root: request.root,
         configurations: request.configurations,
+        spaceId: request.spaceId,
       });
+    });
+
+    it('should return every stored request of the Safe', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const requests = Array.from({ length: maxPerSafe }, () =>
+        storableRequest({ safeAddress }),
+      );
+      for (const request of requests) {
+        await repository.create(request);
+      }
+
+      const result = await repository.findBySafe({
+        chainId: requests[0].chainId,
+        safeAddress,
+      });
+
+      expect(result.map((row) => row.root).sort()).toStrictEqual(
+        requests.map((request) => request.root).sort(),
+      );
     });
 
     it('should not return the request of another Safe', async () => {
       const request = storableRequest();
       await repository.create(request);
 
-      const result = await repository.findByRoots({
+      const result = await repository.findBySafe({
         chainId: request.chainId,
         safeAddress: getAddress(faker.finance.ethereumAddress()),
-        roots: [request.root],
       });
 
       expect(result).toStrictEqual([]);
@@ -267,34 +284,19 @@ describe('PolicyConfigurationRequestsRepository', () => {
       const request = storableRequest();
       await repository.create(request);
 
-      const result = await repository.findByRoots({
+      const result = await repository.findBySafe({
         chainId: '1',
         safeAddress: request.safeAddress,
-        roots: [request.root],
       });
 
       expect(result).toStrictEqual([]);
     });
 
-    it('should return an empty list without roots', async () => {
-      const request = storableRequest();
-      await repository.create(request);
-
+    it('should return an empty list for a Safe without stored requests', async () => {
       await expect(
-        repository.findByRoots({
-          chainId: request.chainId,
-          safeAddress: request.safeAddress,
-          roots: [],
-        }),
-      ).resolves.toStrictEqual([]);
-    });
-
-    it('should return an empty list for unknown roots', async () => {
-      await expect(
-        repository.findByRoots({
+        repository.findBySafe({
           chainId: '11155111',
           safeAddress: getAddress(faker.finance.ethereumAddress()),
-          roots: [hexBuilder(32)],
         }),
       ).resolves.toStrictEqual([]);
     });

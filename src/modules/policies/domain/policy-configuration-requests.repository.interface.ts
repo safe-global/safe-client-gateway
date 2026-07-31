@@ -29,13 +29,16 @@ export interface IPolicyConfigurationRequestsRepository {
   }): Promise<void>;
 
   /**
-   * The stored requests of a Safe among {@link roots}, for explaining pending
-   * requests. Returns only the roots that are stored, so a caller learns which
-   * ones it cannot explain.
+   * Every stored request of a Safe, newest first.
+   *
+   * Not scoped to a space: a root requested on-chain is public, and which space
+   * it was stored through must not decide whether CGW can explain it. Rows the
+   * chain does not know about are the caller's to scope - see `spaceId`.
+   *
+   * Bounded by the per-Safe cap, so this is a small read.
    */
-  findByRoots(args: {
+  findBySafe(args: {
     chainId: string;
     safeAddress: Address;
-    roots: ReadonlyArray<Hex>;
   }): Promise<Array<PolicyConfigurationRequest>>;
 }

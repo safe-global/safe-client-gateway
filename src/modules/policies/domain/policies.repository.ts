@@ -12,7 +12,6 @@ import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-grou
 import {
   type PolicyRootRequest,
   PolicyRootRequestPageSchema,
-  PolicyRootRequestStatus,
 } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import type { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
 import { policyGroups } from '@/modules/policies/domain/utils/policy-state.utils';
@@ -66,7 +65,7 @@ export class PoliciesRepository implements IPoliciesRepository {
     return policyGroups(confirmations);
   }
 
-  public async getOpenRootRequests(args: {
+  public async getRootRequests(args: {
     chainId: string;
     safeAddress: Address;
   }): Promise<Array<PolicyRootRequest>> {
@@ -85,17 +84,9 @@ export class PoliciesRepository implements IPoliciesRepository {
           .then((page) => PolicyRootRequestPageSchema.parse(page)),
     });
 
-    // An invalidated request is history, not a pending change. Filtered here
-    // rather than through the API because `status` only accepts one value.
-    // TODO(WA-2914): use a `status__in` filter once WA-2911 provides one.
-    return rootRequests
-      .filter(
-        (request) => request.status !== PolicyRootRequestStatus.Invalidated,
-      )
-      .sort(
-        (first, second) =>
-          second.timestamp.getTime() - first.timestamp.getTime(),
-      );
+    return rootRequests.sort(
+      (first, second) => second.timestamp.getTime() - first.timestamp.getTime(),
+    );
   }
 
   /**

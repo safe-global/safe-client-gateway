@@ -104,19 +104,28 @@ describe('PolicyCatalogueService', () => {
     ]);
   });
 
-  it('should carry the module address inline for a module-enforced policy', () => {
+  it('should carry the module address inline for a module-enforced entry', () => {
+    // Vacuous while the catalogue ships only guard-enforced entries; the
+    // resolution itself is covered by `PolicyDeploymentsService.getModuleAddress`.
+    const moduleTypes = POLICY_CATALOGUE.filter(
+      (entry) => entry.enforcementKind === PolicyEnforcementKind.Module,
+    ).map((entry) => entry.type);
     const result = createService().get(SEPOLIA_CHAIN_ID);
 
-    const spendingLimit = result.find(
-      (policy) => policy.type === PolicyType.SpendingLimit,
-    );
+    for (const type of moduleTypes) {
+      const policy = result.find((policy) => policy.type === type);
 
-    expect(spendingLimit).toMatchObject({
-      enforcement: {
-        via: PolicyEnforcementKind.Module,
-        moduleAddress: SEPOLIA_ALLOWANCE_MODULE,
-      },
-    });
+      expect(policy?.enforcement).toStrictEqual(
+        type === PolicyType.SpendingLimit
+          ? {
+              via: PolicyEnforcementKind.Module,
+              moduleAddress: SEPOLIA_ALLOWANCE_MODULE,
+            }
+          : // No module address is configured for the chain, so there is none
+            // to report - the entry is still offered.
+            null,
+      );
+    }
   });
 
   it('should carry the default guard and policy contract for an unconfigured chain', () => {
@@ -188,27 +197,18 @@ describe('PolicyCatalogueService', () => {
     ).toMatchObject({ available: true, enforcement: null });
   });
 
-  it('should report no enforcement for recovery until a Delay Modifier is configured', () => {
-    const result = createService().get(SEPOLIA_CHAIN_ID);
-
-    expect(
-      result.find((policy) => policy.type === PolicyType.Recovery),
-    ).toMatchObject({ available: true, enforcement: null });
-  });
-
-  it('should report no module enforcement on a chain without an AllowanceModule', () => {
+  it('should resolve every guard-enforced entry on a chain of its own', () => {
+    // The guard-enforced addresses are deterministic, so they resolve on any
+    // chain - unlike the module-enforced ones, which depend on a deployment.
     const result = createService().get(faker.string.numeric({ length: 18 }));
 
     expect(result).toHaveLength(POLICY_CATALOGUE.length);
-    expect(
-      result.find((policy) => policy.type === PolicyType.SpendingLimit)
-        ?.enforcement,
-    ).toBeNull();
-    // The guard-enforced entries are deterministic addresses, so they resolve
-    // on any chain.
-    expect(
-      result.find((policy) => policy.type === PolicyType.Erc20Transfer)
-        ?.enforcement,
-    ).not.toBeNull();
+    for (const entry of POLICY_CATALOGUE.filter(
+      (entry) => entry.enforcementKind === PolicyEnforcementKind.Guard,
+    )) {
+      expect(
+        result.find((policy) => policy.type === entry.type)?.enforcement,
+      ).not.toBeNull();
+    }
   });
 });

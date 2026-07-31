@@ -114,16 +114,32 @@ export type ActivePolicy = {
 };
 
 /**
- * A configuration change requested through the guard's delayed path, not yet
- * applied.
+ * A configuration change on its way to being applied: requested through the
+ * guard's delayed path, or prepared in CGW and not yet requested on-chain.
  */
 export type PendingPolicy = {
-  /** `keccak256(abi.encode(Configuration[]))`, as requested on-chain. */
+  /** `keccak256(abi.encode(Configuration[]))` of the configurations. */
   configureRoot: Hex;
-  /** Unix seconds of the `RootConfigured` event. */
+  /**
+   * Whether a `RootConfigured` event carries this root.
+   *
+   * `false` for configurations stored through CGW whose
+   * `requestConfiguration(configureRoot)` transaction has not executed - a space
+   * admin can prepare a change without being able to sign for the Safe, and
+   * nothing on-chain would otherwise show it. There is then no delay running and
+   * nothing to apply or cancel: the next step is executing the request.
+   */
+  isRootConfigured: boolean;
+  /**
+   * Unix seconds the change came into being: the `RootConfigured` event when the
+   * root is configured, otherwise when CGW stored the configurations.
+   */
   requestedAt: number;
-  /** Unix seconds at which `applyConfiguration` becomes valid. */
-  readyAt: number;
+  /**
+   * Unix seconds at which `applyConfiguration` becomes valid, `null` while the
+   * root is not configured - the delay only starts with the on-chain request.
+   */
+  readyAt: number | null;
   isReady: boolean;
   /**
    * One entry per `Configuration` of the request, in the order they were
@@ -134,7 +150,8 @@ export type PendingPolicy = {
    * root)` publishes only the hash, so an unexplained root is a normal state -
    * and one the wallet has to tell apart from a known request, hence `null`
    * rather than an empty list. A stored request always has at least one
-   * configuration, so an empty list never occurs.
+   * configuration, so an empty list never occurs, and an item with
+   * `isRootConfigured: false` always carries its configurations.
    */
   policies: Array<PolicyInfo> | null;
 };

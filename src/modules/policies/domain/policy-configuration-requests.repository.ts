@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { In } from 'typeorm';
 import type { Address, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -54,23 +53,15 @@ export class PolicyConfigurationRequestsRepository
       .execute();
   }
 
-  public async findByRoots(args: {
+  public async findBySafe(args: {
     chainId: string;
     safeAddress: Address;
-    roots: ReadonlyArray<Hex>;
   }): Promise<Array<PolicyConfigurationRequest>> {
-    if (args.roots.length === 0) {
-      return [];
-    }
-
     const repository = await this.db.getRepository(PolicyConfigurationRequest);
 
     return await repository.find({
-      where: {
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        root: In([...args.roots]),
-      },
+      where: { chainId: args.chainId, safeAddress: args.safeAddress },
+      order: { createdAt: 'DESC', id: 'DESC' },
     });
   }
 

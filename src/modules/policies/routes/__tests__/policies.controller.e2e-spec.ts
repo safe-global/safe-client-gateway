@@ -477,6 +477,7 @@ describe('PoliciesController (e2e)', () => {
         items: [
           {
             configureRoot: rootRequest.root,
+            isRootConfigured: true,
             requestedAt: new Date('2026-07-27T10:00:00Z').getTime() / 1000,
             readyAt: new Date('2036-07-27T11:00:00Z').getTime() / 1000,
             isReady: false,
@@ -632,6 +633,129 @@ describe('PoliciesController (e2e)', () => {
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/pending`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect({ items: [] });
+    });
+
+    it('should report a stored configuration whose root was never requested', async () => {
+      // What a space admin leaves behind: the configurations are stored, but
+      // nobody has executed `requestConfiguration` yet, so no event carries the
+      // root. Without this the change would be invisible to the Safe's owners.
+      const configurations = [policyConfigurationBuilder().build()];
+      const root = configurationRoot(configurations);
+      mockTransactionService({ rootRequests: [] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root, configurations })
+        .expect(201);
+
+      const { body } = await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/pending`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toMatchObject({
+        items: [
+          {
+            configureRoot: root,
+            isRootConfigured: false,
+            readyAt: null,
+            isReady: false,
+            policies: [
+              {
+                target: configurations[0].target,
+                selector: configurations[0].selector,
+                policyContract: configurations[0].policy,
+              },
+            ],
+          },
+        ],
+      });
+      // stored just now, so the timestamp is the row's creation time
+      expect(
+        (body as { items: Array<{ requestedAt: number }> }).items[0]
+          .requestedAt,
+      ).toBeGreaterThan(Date.now() / 1000 - 60);
+    });
+
+    it('should stop reporting a stored configuration once its root is requested', async () => {
+      const configurations = [policyConfigurationBuilder().build()];
+      const root = configurationRoot(configurations);
+      mockTransactionService({
+        rootRequests: [
+          policyRootRequestBuilder()
+            .with('safe', safeAddress)
+            .with('status', PolicyRootRequestStatus.Pending)
+            .with('root', root)
+            .build(),
+        ],
+      });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root, configurations })
+        .expect(201);
+
+      const { body } = await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/pending`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      // one item, not the request plus its own draft
+      const items = (body as { items: Array<{ isRootConfigured: boolean }> })
+        .items;
+      expect(items).toHaveLength(1);
+      expect(items[0].isRootConfigured).toBe(true);
+    });
+
+    it('should not report a stored configuration whose root was invalidated', async () => {
+      // Cancelled on-chain is not the same as never requested: the row must not
+      // come back as awaiting execution.
+      const configurations = [policyConfigurationBuilder().build()];
+      const root = configurationRoot(configurations);
+      mockTransactionService({
+        rootRequests: [
+          policyRootRequestBuilder()
+            .with('safe', safeAddress)
+            .with('status', PolicyRootRequestStatus.Invalidated)
+            .with('root', root)
+            .build(),
+        ],
+      });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root, configurations })
+        .expect(201);
 
       await request(app.getHttpServer())
         .get(

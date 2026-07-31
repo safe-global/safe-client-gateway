@@ -20,10 +20,14 @@ export interface IPoliciesRepository {
   }): Promise<Array<PolicyGroup>>;
 
   /**
-   * Delayed configuration requests that have neither been invalidated nor
-   * (as far as the events show) superseded, newest first.
+   * Every delayed configuration request the events report, newest first,
+   * invalidated ones included.
+   *
+   * The caller filters by status: an invalidated request is history rather than
+   * a pending change, but knowing that a root *was* requested is what tells a
+   * cancelled request apart from one that was never requested at all.
    */
-  getOpenRootRequests(args: {
+  getRootRequests(args: {
     chainId: string;
     safeAddress: Address;
   }): Promise<Array<PolicyRootRequest>>;

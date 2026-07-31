@@ -12,15 +12,19 @@ import {
 } from '@/logging/logging.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type {
   ActivePolicy,
   PendingPolicy,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { AvailablePolicy } from '@/modules/policies/domain/entities/available-policy.entity';
-import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { guardEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
+import {
+  type PolicyRootRequest,
+  PolicyRootRequestStatus,
+} from '@/modules/policies/domain/entities/policy-root-request.entity';
 import {
   type PolicyType,
   policyTypeFromContractName,
@@ -93,9 +97,12 @@ export class PoliciesService {
    * What keeps that safe is the one check that does not depend on chain state:
    * the root is recomputed from the submitted configurations and has to match.
    * A row therefore always describes the configurations that hash to its own
-   * root, and `pending` only ever joins rows onto roots the events report - so a
-   * row for a root that never materialises is inert, and no row can misdescribe
-   * a real request.
+   * root, so no row can misdescribe a real request.
+   *
+   * A row whose root is never requested is not inert, though: `pending` reports
+   * it to the space it was stored through, marked `isRootConfigured: false`, so
+   * a change an admin prepared but cannot sign for stays visible to the owners
+   * who can.
    *
    * Idempotent, so a client retry cannot duplicate.
    */
@@ -161,8 +168,15 @@ export class PoliciesService {
   }
 
   /**
-   * Configuration changes requested through the guard's delayed path that are
-   * still waiting out the delay (or ready to be applied).
+   * Configuration changes on their way to being applied: those requested
+   * on-chain and still waiting out the delay (or ready to be applied), and those
+   * stored through CGW whose request transaction has not executed yet.
+   *
+   * The second kind exists because storing the configurations and requesting the
+   * root are separate steps by different people: a space admin can prepare a
+   * change without being able to sign for the Safe. Reporting only the on-chain
+   * requests would leave such a change invisible to the very owners who have to
+   * execute it.
    */
   public async getPendingPolicies(
     request: PolicyRequest,
@@ -170,20 +184,55 @@ export class PoliciesService {
     await this.assertSafeInSpace(request);
 
     const { chainId, address: safeAddress } = request.safeId;
-    const rootRequests = await this.policiesRepository.getOpenRootRequests({
-      chainId,
-      safeAddress,
-    });
-    const configurations = await this.getStoredConfigurations({
-      chainId,
-      safeAddress,
-      roots: rootRequests.map((rootRequest) => rootRequest.root),
-    });
-    const now = Date.now();
+    const [rootRequests, stored] = await Promise.all([
+      this.policiesRepository.getRootRequests({ chainId, safeAddress }),
+      this.configurationRequestsRepository.findBySafe({ chainId, safeAddress }),
+    ]);
+
+    const items = [
+      ...this.toRequestedPolicies({ rootRequests, stored }),
+      ...this.toUnrequestedPolicies({
+        spaceId: request.spaceId,
+        rootRequests,
+        stored,
+      }),
+    ];
 
     return {
-      items: rootRequests.map((rootRequest) => ({
+      items: items.sort(
+        (first, second) => second.requestedAt - first.requestedAt,
+      ),
+    };
+  }
+
+  /**
+   * The requests the events report, explained by their stored configurations
+   * where CGW holds them.
+   *
+   * An invalidated request is history rather than a pending change, so it is
+   * dropped here - but it stays a *known* root, which is what keeps a cancelled
+   * request from reappearing as one that was never requested.
+   */
+  private toRequestedPolicies(args: {
+    rootRequests: Array<PolicyRootRequest>;
+    stored: Array<PolicyConfigurationRequest>;
+  }): Array<PendingPolicy> {
+    const configurations = new Map(
+      args.stored.map((request) => [
+        rootKey(request.root),
+        request.configurations,
+      ]),
+    );
+    const now = Date.now();
+
+    return args.rootRequests
+      .filter(
+        (rootRequest) =>
+          rootRequest.status !== PolicyRootRequestStatus.Invalidated,
+      )
+      .map((rootRequest) => ({
         configureRoot: rootRequest.root,
+        isRootConfigured: true,
         requestedAt: toUnixSeconds(rootRequest.timestamp),
         // The `RootConfigured` event carries `block.timestamp + DELAY`, so the
         // ready time is authoritative and needs no `DELAY()` read.
@@ -192,27 +241,41 @@ export class PoliciesService {
         policies:
           configurations.get(rootKey(rootRequest.root))?.map(toPolicyInfo) ??
           null,
-      })),
-    };
+      }));
   }
 
   /**
-   * The stored configurations of {@link roots}, keyed by root.
+   * Stored configurations no `RootConfigured` event carries yet: prepared in
+   * CGW, waiting for someone to execute `requestConfiguration`.
    *
-   * One query for every root of the Safe: a request lists as many pending roots
-   * as the Safe has, and a lookup per root would make the response cost scale
-   * with that.
+   * Scoped to the space the caller reads through, unlike the explanations above:
+   * a root that exists on-chain is public, whereas one that exists only in CGW
+   * is a draft of the space it was created in, and another space holding the
+   * same Safe has no business seeing it.
    */
-  private async getStoredConfigurations(args: {
-    chainId: string;
-    safeAddress: Address;
-    roots: Array<Hex>;
-  }): Promise<Map<string, Array<PolicyConfiguration>>> {
-    const stored = await this.configurationRequestsRepository.findByRoots(args);
-
-    return new Map(
-      stored.map((request) => [rootKey(request.root), request.configurations]),
+  private toUnrequestedPolicies(args: {
+    spaceId: Space['id'];
+    rootRequests: Array<PolicyRootRequest>;
+    stored: Array<PolicyConfigurationRequest>;
+  }): Array<PendingPolicy> {
+    const requestedRoots = new Set(
+      args.rootRequests.map((rootRequest) => rootKey(rootRequest.root)),
     );
+
+    return args.stored
+      .filter(
+        (request) =>
+          request.spaceId === args.spaceId &&
+          !requestedRoots.has(rootKey(request.root)),
+      )
+      .map((request) => ({
+        configureRoot: request.root,
+        isRootConfigured: false,
+        requestedAt: toUnixSeconds(request.createdAt),
+        readyAt: null,
+        isReady: false,
+        policies: request.configurations.map(toPolicyInfo),
+      }));
   }
 
   private async resolveActivePolicies(

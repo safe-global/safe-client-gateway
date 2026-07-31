@@ -264,12 +264,23 @@ export class PendingPolicyDto implements PendingPolicy {
       'keccak256(abi.encode(Configuration[])) of the requested configuration',
   })
   public readonly configureRoot!: Hex;
-  @ApiProperty({ description: 'Unix seconds of the request' })
+  @ApiProperty({
+    description:
+      'False when the configurations are stored in CGW but no RootConfigured event carries the root yet, i.e. requestConfiguration has not been executed. No delay is running and there is nothing to apply or cancel until it is.',
+  })
+  public readonly isRootConfigured!: boolean;
+  @ApiProperty({
+    description:
+      'Unix seconds of the on-chain request, or of when the configurations were stored while the root is not configured',
+  })
   public readonly requestedAt!: number;
   @ApiProperty({
-    description: 'Unix seconds from which applyConfiguration is valid',
+    type: Number,
+    nullable: true,
+    description:
+      'Unix seconds from which applyConfiguration is valid. Null while the root is not configured, as the delay only starts with the on-chain request.',
   })
-  public readonly readyAt!: number;
+  public readonly readyAt!: number | null;
   @ApiProperty()
   public readonly isReady!: boolean;
   @ApiProperty({

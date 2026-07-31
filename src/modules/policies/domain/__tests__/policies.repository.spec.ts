@@ -249,14 +249,18 @@ describe('PoliciesRepository', () => {
     });
   });
 
-  describe('getOpenRootRequests', () => {
-    it('should exclude invalidated requests', async () => {
+  describe('getRootRequests', () => {
+    it('should keep invalidated requests, which the caller filters', async () => {
+      // A cancelled root is history, but it is still a root that *was*
+      // requested - which is what tells it apart from one that never was.
       const pending = policyRootRequestBuilder()
         .with('status', PolicyRootRequestStatus.Pending)
+        .with('timestamp', new Date('2026-02-01T00:00:00Z'))
         .build();
       const invalidated = policyRootRequestBuilder()
         .with('status', PolicyRootRequestStatus.Invalidated)
         .with('invalidatedAt', faker.date.recent())
+        .with('timestamp', new Date('2026-01-01T00:00:00Z'))
         .build();
       mockTransactionApi.getPolicyRootRequests.mockResolvedValue(
         rawify(
@@ -267,12 +271,12 @@ describe('PoliciesRepository', () => {
         ),
       );
 
-      const result = await repository.getOpenRootRequests({
+      const result = await repository.getRootRequests({
         chainId,
         safeAddress,
       });
 
-      expect(result).toStrictEqual([pending]);
+      expect(result).toStrictEqual([pending, invalidated]);
     });
 
     it.each([
@@ -286,7 +290,7 @@ describe('PoliciesRepository', () => {
         ),
       );
 
-      const result = await repository.getOpenRootRequests({
+      const result = await repository.getRootRequests({
         chainId,
         safeAddress,
       });
@@ -310,7 +314,7 @@ describe('PoliciesRepository', () => {
         ),
       );
 
-      const result = await repository.getOpenRootRequests({
+      const result = await repository.getRootRequests({
         chainId,
         safeAddress,
       });
@@ -337,7 +341,7 @@ describe('PoliciesRepository', () => {
           ),
         );
 
-      const result = await repository.getOpenRootRequests({
+      const result = await repository.getRootRequests({
         chainId,
         safeAddress,
       });
