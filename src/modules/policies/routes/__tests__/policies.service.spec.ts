@@ -11,6 +11,7 @@ import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import {
   hexBuilder,
@@ -34,6 +35,7 @@ import type {
   PolicyResolverContext,
   ResolvedPolicy,
 } from '@/modules/policies/domain/resolvers/policy-resolver.interface';
+import { toPolicyInfo } from '@/modules/policies/domain/utils/policy-configuration.utils';
 import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -152,8 +154,9 @@ describe('PoliciesService', () => {
     mockPoliciesRepository.getPolicyGroups.mockResolvedValue([]);
     mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([]);
     mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
-    mockPolicyCatalogueService.get.mockResolvedValue([]);
+    mockPolicyCatalogueService.get.mockReturnValue([]);
     mockConfigurationRequestsRepository.create.mockResolvedValue();
+    mockConfigurationRequestsRepository.findByRoots.mockResolvedValue([]);
     mockPolicyCacheService.clearPolicies.mockResolvedValue();
   });
 
@@ -417,53 +420,37 @@ describe('PoliciesService', () => {
   });
 
   describe('getAvailablePolicies', () => {
-    it('should count the active policies per type', async () => {
-      const first = policyConfirmationBuilder()
-        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
-        .with('logIndex', 1)
-        .build();
-      const second = policyConfirmationBuilder()
-        .with('policyType', ERC20_TRANSFER_POLICY_TYPE)
-        .with('logIndex', 2)
-        .build();
-      mockPoliciesRepository.getPolicyGroups.mockResolvedValue([
-        policyGroupBuilder([first]),
-        policyGroupBuilder([second]),
-      ]);
-
-      await service.getAvailablePolicies(request);
-
-      expect(mockPolicyCatalogueService.get).toHaveBeenCalledWith({
-        chainId: SEPOLIA_CHAIN_ID,
-        configuredCounts: { [PolicyType.Erc20Transfer]: 2 },
-      });
-    });
-
-    it('should count nothing for a Safe without policies', async () => {
-      await service.getAvailablePolicies(request);
-
-      expect(mockPolicyCatalogueService.get).toHaveBeenCalledWith({
-        chainId: SEPOLIA_CHAIN_ID,
-        configuredCounts: {},
-      });
-    });
-
-    it('should return the catalogue', async () => {
+    it('should return the catalogue of the chain', async () => {
       const items = [
         {
           type: PolicyType.Cosigner,
           title: 'Cosigner',
           description: 'description',
-          available: false,
-          configuredCount: 0,
+          available: true,
+          isFallback: false,
           enforcement: null,
         },
       ];
-      mockPolicyCatalogueService.get.mockResolvedValue(items);
+      mockPolicyCatalogueService.get.mockReturnValue(items);
 
       await expect(
         service.getAvailablePolicies(request),
       ).resolves.toStrictEqual({ items });
+      expect(mockPolicyCatalogueService.get).toHaveBeenCalledWith(
+        SEPOLIA_CHAIN_ID,
+      );
+    });
+
+    it('should not resolve the policies of the Safe to serve it', async () => {
+      // The catalogue depends on nothing per Safe, so counting what is already
+      // configured would make a static response cost a fan-out.
+      await service.getAvailablePolicies(request);
+
+      expect(mockPoliciesRepository.getPolicyGroups).not.toHaveBeenCalled();
+      expect(mockSafeRepository.getSafe).not.toHaveBeenCalled();
+      expect(
+        mockAddressBookItemsRepository.findAllBySpaceId,
+      ).not.toHaveBeenCalled();
     });
   });
 
@@ -608,6 +595,19 @@ describe('PoliciesService', () => {
       vi.useRealTimers();
     });
 
+    /** A stored row for `root`, holding `configurations`. */
+    function storedRow(
+      root: Hex,
+      configurations: Array<PolicyConfiguration>,
+    ): PolicyConfigurationRequest {
+      return {
+        chainId: SEPOLIA_CHAIN_ID,
+        safeAddress,
+        root,
+        configurations,
+      } as PolicyConfigurationRequest;
+    }
+
     it('should map a root request to a pending policy', async () => {
       const requestedAt = new Date('2026-07-27T10:00:00Z');
       const readyAt = new Date('2026-07-27T11:00:00Z');
@@ -629,7 +629,7 @@ describe('PoliciesService', () => {
             requestedAt: requestedAt.getTime() / 1000,
             readyAt: readyAt.getTime() / 1000,
             isReady: false,
-            policy: null,
+            policies: null,
           },
         ],
       });
@@ -647,6 +647,111 @@ describe('PoliciesService', () => {
       const result = await service.getPendingPolicies(request);
 
       expect(result.items[0].isReady).toBe(true);
+    });
+
+    it('should report the stored configurations of a root', async () => {
+      const rootRequest = policyRootRequestBuilder().build();
+      const configurations = [
+        policyConfigurationBuilder().build(),
+        policyConfigurationBuilder().build(),
+      ];
+      mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([
+        rootRequest,
+      ]);
+      mockConfigurationRequestsRepository.findByRoots.mockResolvedValue([
+        storedRow(rootRequest.root, configurations),
+      ]);
+
+      const result = await service.getPendingPolicies(request);
+
+      // one entry per configuration, in the order they were submitted
+      expect(result.items[0].policies).toStrictEqual(
+        configurations.map(toPolicyInfo),
+      );
+      expect(
+        mockConfigurationRequestsRepository.findByRoots,
+      ).toHaveBeenCalledWith({
+        chainId: SEPOLIA_CHAIN_ID,
+        safeAddress,
+        roots: [rootRequest.root],
+      });
+    });
+
+    it('should report null policies for a root without a stored row', async () => {
+      // Null rather than an empty list, so the wallet can tell "requested,
+      // contents unknown to CGW" apart from a request CGW can explain.
+      const rootRequest = policyRootRequestBuilder().build();
+      mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([
+        rootRequest,
+      ]);
+      mockConfigurationRequestsRepository.findByRoots.mockResolvedValue([]);
+
+      const result = await service.getPendingPolicies(request);
+
+      expect(result.items[0].policies).toBeNull();
+    });
+
+    it('should resolve each root independently', async () => {
+      const stored = policyRootRequestBuilder().build();
+      const unknown = policyRootRequestBuilder().build();
+      const configurations = [policyConfigurationBuilder().build()];
+      mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([
+        stored,
+        unknown,
+      ]);
+      mockConfigurationRequestsRepository.findByRoots.mockResolvedValue([
+        storedRow(stored.root, configurations),
+      ]);
+
+      const result = await service.getPendingPolicies(request);
+
+      expect(result.items[0].policies).toStrictEqual(
+        configurations.map(toPolicyInfo),
+      );
+      expect(result.items[1].policies).toBeNull();
+    });
+
+    it('should match a stored root in any hex casing', async () => {
+      const rootRequest = policyRootRequestBuilder().build();
+      const configurations = [policyConfigurationBuilder().build()];
+      mockPoliciesRepository.getOpenRootRequests.mockResolvedValue([
+        rootRequest,
+      ]);
+      mockConfigurationRequestsRepository.findByRoots.mockResolvedValue([
+        storedRow(
+          rootRequest.root.toUpperCase().replace('0X', '0x') as Hex,
+          configurations,
+        ),
+      ]);
+
+      const result = await service.getPendingPolicies(request);
+
+      expect(result.items[0].policies).toHaveLength(1);
+    });
+
+    it('should look the roots up in a single query', async () => {
+      const rootRequests = [
+        policyRootRequestBuilder().build(),
+        policyRootRequestBuilder().build(),
+        policyRootRequestBuilder().build(),
+      ];
+      mockPoliciesRepository.getOpenRootRequests.mockResolvedValue(
+        rootRequests,
+      );
+      mockConfigurationRequestsRepository.findByRoots.mockResolvedValue([]);
+
+      await service.getPendingPolicies(request);
+
+      expect(
+        mockConfigurationRequestsRepository.findByRoots,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockConfigurationRequestsRepository.findByRoots,
+      ).toHaveBeenCalledWith({
+        chainId: SEPOLIA_CHAIN_ID,
+        safeAddress,
+        roots: rootRequests.map((rootRequest) => rootRequest.root),
+      });
     });
 
     it('should return an empty list without pending requests', async () => {

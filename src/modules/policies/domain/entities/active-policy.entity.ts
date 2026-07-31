@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
+import type { PolicyOperation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 
@@ -125,13 +126,32 @@ export type PendingPolicy = {
   readyAt: number;
   isReady: boolean;
   /**
-   * The requested change, when CGW can reconstruct it.
+   * One entry per `Configuration` of the request, in the order they were
+   * submitted - the order the signers approved.
    *
-   * TODO(WA-2914): `requestConfiguration(bytes32 root)` puts only the hash
-   * on-chain - the `Configuration[]` is first revealed by `applyConfiguration` -
-   * so nothing indexable describes a pending change. Populating this requires
-   * persisting the submitted configurations at request time (pending product
-   * decision); until then the pending change is reported untyped.
+   * `null` when CGW holds no configurations for this root: the request predates
+   * the store, or was made outside the wallet. `requestConfiguration(bytes32
+   * root)` publishes only the hash, so an unexplained root is a normal state -
+   * and one the wallet has to tell apart from a known request, hence `null`
+   * rather than an empty list. A stored request always has at least one
+   * configuration, so an empty list never occurs.
    */
-  policy: ActivePolicy | null;
+  policies: Array<PolicyInfo> | null;
+};
+
+/**
+ * One policy binding of a request: which access it covers and which policy
+ * contract it binds to it.
+ *
+ * Reports the binding, not the policy's payload - decoding `data` into
+ * recipients, cosigners and the like is a separate step.
+ */
+export type PolicyInfo = {
+  /** The access word, as used for a policy `id` in `/policies/active`. */
+  id: Hex;
+  target: Address;
+  selector: Hex;
+  operation: PolicyOperation;
+  /** The policy contract the request binds, `null` for a removal. */
+  policyContract: Address | null;
 };

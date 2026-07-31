@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { PoliciesRepository } from '@/modules/policies/domain/policies.repository';
 import { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
@@ -34,7 +33,6 @@ import { UsersModule } from '@/modules/users/users.module';
     PolicyCacheModule,
     SafeRepositoryModule,
     TokensModule,
-    FeatureFlagsModule,
     // Space membership, the Safe-in-space check and address book names
     forwardRef(() => SpacesModule),
     forwardRef(() => UsersModule),

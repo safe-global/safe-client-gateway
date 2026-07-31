@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
-import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
+import { Injectable } from '@nestjs/common';
 import type {
   AvailablePolicy,
   PolicyCatalogueEntry,
@@ -10,58 +9,31 @@ import {
   moduleEnforcement,
   type PolicyEnforcement,
 } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import {
-  PolicyEnforcementKind,
-  type PolicyType,
-} from '@/modules/policies/domain/entities/policy-type.entity';
-import {
-  FF_POLICIES,
-  POLICY_CATALOGUE,
-} from '@/modules/policies/domain/policy-catalogue.constants';
+import { PolicyEnforcementKind } from '@/modules/policies/domain/entities/policy-type.entity';
+import { POLICY_CATALOGUE } from '@/modules/policies/domain/policy-catalogue.constants';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 
 /**
  * Builds the policy catalogue for a chain.
  *
  * The catalogue itself is static ({@link POLICY_CATALOGUE}); this service only
- * resolves what depends on the chain (deployment addresses, availability) and
- * on the Safe (`configuredCount`).
+ * resolves what depends on the chain, which is the deployment addresses. It
+ * depends on nothing per Safe, so the response is the same for every Safe of a
+ * chain.
  */
 @Injectable()
 export class PolicyCatalogueService {
-  constructor(
-    private readonly deployments: PolicyDeploymentsService,
-    @Inject(IFeatureFlagService)
-    private readonly featureFlagService: IFeatureFlagService,
-  ) {}
+  constructor(private readonly deployments: PolicyDeploymentsService) {}
 
-  /**
-   * @param args.configuredCounts - active policies per type for the Safe. A
-   * missing type counts as `0`, so callers may pass a partial map.
-   */
-  public async get(args: {
-    chainId: string;
-    configuredCounts: Partial<Record<PolicyType, number>>;
-  }): Promise<Array<AvailablePolicy>> {
-    const isFeatureEnabled = await this.featureFlagService.isFeatureEnabled(
-      args.chainId,
-      FF_POLICIES,
-    );
-
-    return POLICY_CATALOGUE.map((entry) => {
-      const enforcement = this.resolveEnforcement(args.chainId, entry);
-
-      return {
-        type: entry.type,
-        title: entry.title,
-        description: entry.description,
-        // A policy is only offered when the feature is on for the chain *and*
-        // CGW can name the contracts that would enforce it.
-        available: isFeatureEnabled && enforcement !== null,
-        configuredCount: args.configuredCounts[entry.type] ?? 0,
-        enforcement,
-      };
-    });
+  public get(chainId: string): Array<AvailablePolicy> {
+    return POLICY_CATALOGUE.map((entry) => ({
+      type: entry.type,
+      title: entry.title,
+      description: entry.description,
+      available: entry.available,
+      isFallback: entry.isFallback,
+      enforcement: this.resolveEnforcement(chainId, entry),
+    }));
   }
 
   private resolveEnforcement(
@@ -76,13 +48,12 @@ export class PolicyCatalogueService {
       return moduleAddress ? moduleEnforcement(moduleAddress) : null;
     }
 
-    const safePolicyGuard = this.deployments.getSafePolicyGuard(chainId);
     const policyContract = this.deployments.getPolicyContract(
       chainId,
       entry.type,
     );
 
-    if (!(safePolicyGuard && policyContract)) {
+    if (!policyContract) {
       return null;
     }
 
@@ -91,7 +62,10 @@ export class PolicyCatalogueService {
     // the module guard slot; the slot a *configured* policy occupies is
     // resolved per Safe in `PoliciesService`.
     return guardEnforcement({
-      transactionGuard: { policyContract, safePolicyGuard },
+      transactionGuard: {
+        policyContract,
+        safePolicyGuard: this.deployments.getSafePolicyGuard(chainId),
+      },
     });
   }
 }

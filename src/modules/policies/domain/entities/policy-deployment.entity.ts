@@ -9,7 +9,8 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  * - `safePolicyGuard`: the `SafePolicyGuard` deployment. Its presence is what
  *   makes guard-enforced policies available on the chain.
  * - `policyContracts`: the guard-enforced policy implementations, keyed by the
- *   {@link PolicyType} they implement.
+ *   {@link PolicyType} they implement. The keys are `GUARD_POLICY_TYPES`,
+ *   enumerated here because the schema needs them statically.
  * - `moduleAddresses`: the module-enforced policy deployments. Only used for
  *   types whose deployment cannot be resolved from a Safe deployments package
  *   (see `PolicyDeploymentsService`).
@@ -21,6 +22,8 @@ export const PolicyDeploymentSchema = z.object({
       [PolicyType.Erc20Transfer]: AddressSchema.optional(),
       [PolicyType.Cosigner]: AddressSchema.optional(),
       [PolicyType.AllowPolicy]: AddressSchema.optional(),
+      [PolicyType.NativeTransfer]: AddressSchema.optional(),
+      [PolicyType.Deny]: AddressSchema.optional(),
     })
     .default({}),
   moduleAddresses: z

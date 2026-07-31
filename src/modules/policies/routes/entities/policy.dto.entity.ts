@@ -9,12 +9,14 @@ import type {
   Erc20TransferPolicyData,
   NamedAddress,
   PendingPolicy,
+  PolicyInfo,
   PolicyRecipient,
   PolicyTokenInfo,
   RecoveryPolicyData,
   SpendingLimitPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { AvailablePolicy } from '@/modules/policies/domain/entities/available-policy.entity';
+import { PolicyOperation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import type {
   GuardSlots,
   PolicyContracts,
@@ -95,19 +97,19 @@ export class AvailablePolicyDto implements AvailablePolicy {
   @ApiProperty()
   public readonly description!: string;
   @ApiProperty({
-    description:
-      'Whether the policy can be configured on this chain, i.e. its contracts are deployed and the feature is enabled',
+    description: 'Whether the wallet may offer this policy type',
   })
   public readonly available!: boolean;
   @ApiProperty({
-    description: 'Policies of this type currently active on this Safe',
+    description:
+      'Whether the policy binds the fallback access - target and selector zeroed - which covers every call no other policy matches',
   })
-  public readonly configuredCount!: number;
+  public readonly isFallback!: boolean;
   @ApiProperty({
     ...EnforcementSchema,
     nullable: true,
     description:
-      'Carries the deployment addresses inline. Null when the policy is not available on this chain.',
+      'Carries the deployment addresses inline. Null when no deployment is known for this type on this chain, so the type is offered but cannot be configured.',
   })
   public readonly enforcement!: PolicyEnforcement | null;
 }
@@ -233,7 +235,29 @@ export class GetActivePoliciesResponse {
   public readonly items!: Array<ActivePolicy>;
 }
 
-@ApiExtraModels(ActivePolicyDto)
+export class PolicyInfoDto implements PolicyInfo {
+  @ApiProperty({
+    description:
+      'The access word of the binding, equal to the `id` of the policy it will replace in `/policies/active`',
+  })
+  public readonly id!: Hex;
+  @ApiProperty({ description: 'Contract the guarded call targets' })
+  public readonly target!: Address;
+  @ApiProperty({
+    description: '4-byte function selector',
+    example: '0xa9059cbb',
+  })
+  public readonly selector!: Hex;
+  @ApiProperty({ enum: Object.values(PolicyOperation) })
+  public readonly operation!: PolicyOperation;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The policy contract the request binds, null for a removal',
+  })
+  public readonly policyContract!: Address | null;
+}
+
 export class PendingPolicyDto implements PendingPolicy {
   @ApiProperty({
     description:
@@ -249,12 +273,13 @@ export class PendingPolicyDto implements PendingPolicy {
   @ApiProperty()
   public readonly isReady!: boolean;
   @ApiProperty({
-    type: ActivePolicyDto,
+    type: PolicyInfoDto,
+    isArray: true,
     nullable: true,
     description:
-      'The requested change. Always null for now: requestConfiguration only publishes the configuration hash on-chain.',
+      'One entry per configuration of the request, in the order they were submitted. Null when CGW holds no configurations for this root, so an unexplained request is distinguishable from a known one.',
   })
-  public readonly policy!: ActivePolicy | null;
+  public readonly policies!: Array<PolicyInfo> | null;
 }
 
 export class GetPendingPoliciesResponse {

@@ -27,9 +27,11 @@ import {
 } from '@/modules/policies/domain/entities/__tests__/policy-confirmation.builder';
 import { policyRootRequestBuilder } from '@/modules/policies/domain/entities/__tests__/policy-root-request.builder';
 import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
+import { PolicyOperation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { PolicyRootRequestStatus } from '@/modules/policies/domain/entities/policy-root-request.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { FF_POLICIES } from '@/modules/policies/domain/policy-catalogue.constants';
+import { POLICY_CATALOGUE } from '@/modules/policies/domain/policy-catalogue.constants';
+import { accessSelector } from '@/modules/policies/domain/utils/policy-access.utils';
 import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
@@ -37,9 +39,9 @@ import { rawify } from '@/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
 /**
- * CGW ships no deployment addresses, so the catalogue only reports a
- * guard-enforced policy as available once the chain is configured. These are fed
- * in through `policies.deployments` below.
+ * The addresses the catalogue reports for Sepolia, pinned through
+ * `policies.deployments` below rather than left to the default deployment so the
+ * assertions do not depend on the shipped constants.
  *
  * `/policies/active` does not depend on them: it takes the addresses from the
  * Transaction Service's indexed events.
@@ -59,10 +61,7 @@ describe('PoliciesController (e2e)', () => {
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
 
-  const chain = chainBuilder()
-    .with('chainId', SEPOLIA_CHAIN_ID)
-    .with('features', [FF_POLICIES])
-    .build();
+  const chain = chainBuilder().with('chainId', SEPOLIA_CHAIN_ID).build();
   const safeAddress = getAddress(faker.finance.ethereumAddress());
   const txServiceUrl = chain.transactionService;
 
@@ -213,12 +212,12 @@ describe('PoliciesController (e2e)', () => {
         .expect(200);
 
       const items = (body as { items: Array<Record<string, unknown>> }).items;
-      expect(items).toHaveLength(4);
+      expect(items).toHaveLength(POLICY_CATALOGUE.length);
       expect(
         items.find((item) => item.type === PolicyType.Erc20Transfer),
       ).toMatchObject({
         available: true,
-        configuredCount: 0,
+        isFallback: false,
         enforcement: {
           via: 'guard',
           guards: {
@@ -229,28 +228,14 @@ describe('PoliciesController (e2e)', () => {
           },
         },
       });
+      expect(items.every((item) => item.available)).toBe(true);
+      expect(items.some((item) => item.configuredCount !== undefined)).toBe(
+        false,
+      );
     });
 
-    it('should count the active policies of the Safe', async () => {
-      const confirmation = policyConfirmationBuilder()
-        .with('safe', safeAddress)
-        .with('guard', getAddress(SAFE_POLICY_GUARD))
-        .with('policy', ERC20_TRANSFER_POLICY)
-        .with('dataDecoded', {
-          policyName: 'ERC20TransferPolicy',
-          parameters: {
-            recipients: [
-              {
-                recipient: getAddress(faker.finance.ethereumAddress()),
-                allowed: true,
-              },
-            ],
-          },
-        })
-        .build();
-      mockTransactionService({
-        confirmations: [rawPolicyConfirmation(confirmation)],
-      });
+    it('should flag the fallback policies', async () => {
+      mockTransactionService({});
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -264,9 +249,12 @@ describe('PoliciesController (e2e)', () => {
 
       const items = (body as { items: Array<Record<string, unknown>> }).items;
       expect(
-        items.find((item) => item.type === PolicyType.Erc20Transfer)
-          ?.configuredCount,
-      ).toBe(1);
+        items.filter((item) => item.isFallback).map((item) => item.type),
+      ).toStrictEqual([
+        PolicyType.AllowPolicy,
+        PolicyType.NativeTransfer,
+        PolicyType.Deny,
+      ]);
     });
   });
 
@@ -492,9 +480,146 @@ describe('PoliciesController (e2e)', () => {
             requestedAt: new Date('2026-07-27T10:00:00Z').getTime() / 1000,
             readyAt: new Date('2036-07-27T11:00:00Z').getTime() / 1000,
             isReady: false,
-            policy: null,
+            // no configurations stored for this root
+            policies: null,
           },
         ],
+      });
+    });
+
+    it('should report the stored configurations of a pending root', async () => {
+      // The full loop: store the configurations, then read them back as the
+      // policy bindings of the pending request.
+      const configurations = [policyConfigurationBuilder().build()];
+      const root = configurationRoot(configurations);
+      const rootRequest = policyRootRequestBuilder()
+        .with('safe', safeAddress)
+        .with('guard', getAddress(SAFE_POLICY_GUARD))
+        .with('status', PolicyRootRequestStatus.Pending)
+        .with('root', root)
+        .build();
+      mockTransactionService({ rootRequests: [rootRequest] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root, configurations })
+        .expect(201);
+
+      const { body } = await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/pending`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toMatchObject({
+        items: [
+          {
+            configureRoot: root,
+            policies: [
+              {
+                id: accessSelector({
+                  target: configurations[0].target,
+                  selector: configurations[0].selector,
+                  operation: PolicyOperation.Call,
+                }),
+                target: configurations[0].target,
+                selector: configurations[0].selector,
+                operation: PolicyOperation.Call,
+                policyContract: configurations[0].policy,
+              },
+            ],
+          },
+        ],
+      });
+    });
+
+    it('should report one entry per configuration of a root', async () => {
+      const configurations = [
+        policyConfigurationBuilder().build(),
+        policyConfigurationBuilder().build(),
+        policyConfigurationBuilder().build(),
+      ];
+      const root = configurationRoot(configurations);
+      mockTransactionService({
+        rootRequests: [
+          policyRootRequestBuilder()
+            .with('safe', safeAddress)
+            .with('status', PolicyRootRequestStatus.Pending)
+            .with('root', root)
+            .build(),
+        ],
+      });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root, configurations })
+        .expect(201);
+
+      const { body } = await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/pending`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      const [item] = (body as { items: Array<{ policies: Array<unknown> }> })
+        .items;
+      expect(item.policies).toHaveLength(3);
+      expect(
+        (item.policies as Array<{ target: string }>).map(
+          (policy) => policy.target,
+        ),
+      ).toStrictEqual(configurations.map((entry) => entry.target));
+    });
+
+    it('should report a removal as a null policy contract', async () => {
+      const configurations = [
+        policyConfigurationBuilder().with('policy', zeroAddress).build(),
+      ];
+      const root = configurationRoot(configurations);
+      mockTransactionService({
+        rootRequests: [
+          policyRootRequestBuilder()
+            .with('safe', safeAddress)
+            .with('status', PolicyRootRequestStatus.Pending)
+            .with('root', root)
+            .build(),
+        ],
+      });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root, configurations })
+        .expect(201);
+
+      const { body } = await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/pending`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toMatchObject({
+        items: [{ policies: [{ policyContract: null }] }],
       });
     });
 
@@ -754,56 +879,6 @@ describe('PoliciesController (e2e)', () => {
         .get(`/v1/spaces/${spaceId}/safes/${safeId()}/policies`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(422);
-    });
-  });
-
-  describe('chain support', () => {
-    it('should report the policies as unavailable when the chain feature is off', async () => {
-      const chainWithoutPolicies = chainBuilder()
-        .with('chainId', SEPOLIA_CHAIN_ID)
-        .with('features', [])
-        .build();
-      const safe = safeBuilder()
-        .with('address', safeAddress)
-        .with('guard', getAddress(SAFE_POLICY_GUARD))
-        .build();
-      networkService.get.mockImplementation(({ url }) => {
-        if (url.startsWith(`${safeConfigUrl}/api/v1/chains`)) {
-          return Promise.resolve({
-            data: rawify(chainWithoutPolicies),
-            status: 200,
-          });
-        }
-        if (url.startsWith(`${safeConfigUrl}/api/v2/chains`)) {
-          return Promise.resolve({
-            data: rawify(chainWithoutPolicies),
-            status: 200,
-          });
-        }
-        if (
-          url ===
-          `${chainWithoutPolicies.transactionService}/api/v1/safes/${safeAddress}`
-        ) {
-          return Promise.resolve({ data: rawify(safe), status: 200 });
-        }
-        return Promise.resolve({
-          data: rawify({ count: 0, next: null, previous: null, results: [] }),
-          status: 200,
-        });
-      });
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-
-      const { body } = await request(app.getHttpServer())
-        .get(
-          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies`,
-        )
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(200);
-
-      const items = (body as { items: Array<{ available: boolean }> }).items;
-      expect(items.every((item) => !item.available)).toBe(true);
     });
   });
 });

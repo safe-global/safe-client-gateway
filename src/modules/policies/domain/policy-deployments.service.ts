@@ -12,11 +12,16 @@ import {
   type PolicyDeployments,
   PolicyDeploymentsSchema,
 } from '@/modules/policies/domain/entities/policy-deployment.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import {
+  isGuardPolicyType,
+  PolicyType,
+} from '@/modules/policies/domain/entities/policy-type.entity';
+import { DEFAULT_POLICY_DEPLOYMENT } from '@/modules/policies/domain/policy-deployments.constants';
 
 /**
- * Single accessor for the policy-engine contract deployments, read entirely from
- * the `POLICY_ENGINE_DEPLOYMENTS` configuration. CGW hardcodes no addresses.
+ * Single accessor for the policy-engine contract deployments: the
+ * `POLICY_ENGINE_DEPLOYMENTS` configuration, falling back to
+ * {@link DEFAULT_POLICY_DEPLOYMENT} for a chain it does not list.
  *
  * Only the catalogue (`/policies`) needs them: it names the contract that *would*
  * enforce a policy type the Safe has not configured yet, which no indexed event
@@ -24,9 +29,6 @@ import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entit
  * never read from here - they come from the Transaction Service, which indexes
  * `PolicyConfirmed` and is the source of truth for both the address and the
  * `policyType` behind it.
- *
- * A chain without configuration therefore reports its guard-enforced policies as
- * unavailable, and never mis-reports an address CGW guessed at.
  *
  * Module-enforced deployments that a Safe deployments package can answer for are
  * resolved from the package instead, so they cannot drift.
@@ -49,41 +51,35 @@ export class PolicyDeploymentsService {
   }
 
   /**
-   * Whether guard-enforced policies can be configured on the chain, i.e.
-   * whether a `SafePolicyGuard` deployment is known for it.
+   * The deployment of {@link chainId}: its configured entry, or the default one.
+   *
+   * A configured chain is described by its entry alone rather than merged field
+   * by field with the default, so "which address will CGW report" is answerable
+   * from a single place.
    */
-  public isSupportedChain(chainId: string): boolean {
-    return this.getDeployment(chainId) !== null;
+  public getDeployment(chainId: string): PolicyDeployment {
+    return this.deployments[chainId] ?? DEFAULT_POLICY_DEPLOYMENT;
   }
 
-  public getDeployment(chainId: string): PolicyDeployment | null {
-    return this.deployments[chainId] ?? null;
-  }
-
-  public getSafePolicyGuard(chainId: string): Address | null {
-    return this.getDeployment(chainId)?.safePolicyGuard ?? null;
+  public getSafePolicyGuard(chainId: string): Address {
+    return this.getDeployment(chainId).safePolicyGuard;
   }
 
   /**
    * Address of the policy contract implementing {@link type} on {@link chainId},
-   * or `null` when the chain has no such deployment.
+   * `null` for a module-enforced type and for a guard-enforced one the chain's
+   * deployment does not name.
    */
   public getPolicyContract(chainId: string, type: PolicyType): Address | null {
-    const deployment = this.getDeployment(chainId);
-    if (!deployment) return null;
-    if (
-      type === PolicyType.Erc20Transfer ||
-      type === PolicyType.Cosigner ||
-      type === PolicyType.AllowPolicy
-    ) {
-      return deployment.policyContracts[type] ?? null;
+    if (!isGuardPolicyType(type)) {
+      return null;
     }
-    return null;
+    return this.getDeployment(chainId).policyContracts[type] ?? null;
   }
 
   /**
    * Address of the module enforcing {@link type} on {@link chainId}, or `null`
-   * when unknown - which is what makes a module-enforced policy unavailable.
+   * when unknown - which leaves the entry's `enforcement` empty.
    */
   public getModuleAddress(chainId: string, type: PolicyType): Address | null {
     if (type === PolicyType.SpendingLimit) {
@@ -94,8 +90,7 @@ export class PolicyDeploymentsService {
 
     if (type === PolicyType.Recovery) {
       return (
-        this.getDeployment(chainId)?.moduleAddresses[PolicyType.Recovery] ??
-        null
+        this.getDeployment(chainId).moduleAddresses[PolicyType.Recovery] ?? null
       );
     }
 

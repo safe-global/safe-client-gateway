@@ -5,7 +5,7 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import {
   type ILoggingService,
   LoggingService,
@@ -17,6 +17,7 @@ import type {
   PendingPolicy,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { AvailablePolicy } from '@/modules/policies/domain/entities/available-policy.entity';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
 import { guardEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
@@ -33,6 +34,7 @@ import {
   type PolicyResolver,
   type ResolvedPolicy,
 } from '@/modules/policies/domain/resolvers/policy-resolver.interface';
+import { toPolicyInfo } from '@/modules/policies/domain/utils/policy-configuration.utils';
 import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { POLICY_RESOLVERS } from '@/modules/policies/policies.constants';
 import type {
@@ -132,21 +134,19 @@ export class PoliciesService {
 
   /**
    * The policy types the Safe can configure, with the deployment addresses that
-   * would enforce them and how many of each are already active.
+   * would enforce them.
+   *
+   * Nothing here depends on the Safe beyond it belonging to the space: how many
+   * policies of a type are already configured is what `/policies/active`
+   * answers, and resolving them to count would make a static response cost a
+   * fan-out to the Transaction Service.
    */
   public async getAvailablePolicies(
     request: PolicyRequest,
   ): Promise<{ items: Array<AvailablePolicy> }> {
     await this.assertSafeInSpace(request);
 
-    const active = await this.resolveActivePolicies(request);
-
-    return {
-      items: await this.policyCatalogueService.get({
-        chainId: request.safeId.chainId,
-        configuredCounts: this.countByType(active),
-      }),
-    };
+    return { items: this.policyCatalogueService.get(request.safeId.chainId) };
   }
 
   /**
@@ -169,9 +169,15 @@ export class PoliciesService {
   ): Promise<{ items: Array<PendingPolicy> }> {
     await this.assertSafeInSpace(request);
 
+    const { chainId, address: safeAddress } = request.safeId;
     const rootRequests = await this.policiesRepository.getOpenRootRequests({
-      chainId: request.safeId.chainId,
-      safeAddress: request.safeId.address,
+      chainId,
+      safeAddress,
+    });
+    const configurations = await this.getStoredConfigurations({
+      chainId,
+      safeAddress,
+      roots: rootRequests.map((rootRequest) => rootRequest.root),
     });
     const now = Date.now();
 
@@ -183,9 +189,30 @@ export class PoliciesService {
         // ready time is authoritative and needs no `DELAY()` read.
         readyAt: toUnixSeconds(rootRequest.validFrom),
         isReady: rootRequest.validFrom.getTime() <= now,
-        policy: null,
+        policies:
+          configurations.get(rootKey(rootRequest.root))?.map(toPolicyInfo) ??
+          null,
       })),
     };
+  }
+
+  /**
+   * The stored configurations of {@link roots}, keyed by root.
+   *
+   * One query for every root of the Safe: a request lists as many pending roots
+   * as the Safe has, and a lookup per root would make the response cost scale
+   * with that.
+   */
+  private async getStoredConfigurations(args: {
+    chainId: string;
+    safeAddress: Address;
+    roots: Array<Hex>;
+  }): Promise<Map<string, Array<PolicyConfiguration>>> {
+    const stored = await this.configurationRequestsRepository.findByRoots(args);
+
+    return new Map(
+      stored.map((request) => [rootKey(request.root), request.configurations]),
+    );
   }
 
   private async resolveActivePolicies(
@@ -294,18 +321,6 @@ export class PoliciesService {
     };
   }
 
-  private countByType(
-    policies: Array<ActivePolicy>,
-  ): Partial<Record<PolicyType, number>> {
-    const counts: Partial<Record<PolicyType, number>> = {};
-
-    for (const policy of policies) {
-      counts[policy.type] = (counts[policy.type] ?? 0) + 1;
-    }
-
-    return counts;
-  }
-
   /**
    * Names of the space address book that apply to the Safe's chain, keyed by
    * lower-cased address.
@@ -362,6 +377,14 @@ function newestOf(groups: Array<PolicyGroup>): PolicyConfirmation {
       ? group
       : newest,
   ).latest;
+}
+
+/**
+ * Hex is compared case-insensitively: a root can reach CGW in either casing, and
+ * the stored one and the indexed one need not agree.
+ */
+function rootKey(root: Hex): string {
+  return root.toLowerCase();
 }
 
 function toUnixSeconds(date: Date): number {

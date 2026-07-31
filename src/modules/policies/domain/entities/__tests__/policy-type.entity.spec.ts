@@ -14,13 +14,15 @@ describe('policyTypeFromContractName', () => {
   });
 
   it.each([
-    // Registered in the Transaction Service but not modelled by CGW.
+    // Registered in the Transaction Service, and - for DenyPolicy and
+    // NativeTransferPolicy - offered by the catalogue, but with no resolver to
+    // render a configured one in `/policies/active`.
     'AllowedModulePolicy',
     'DenyPolicy',
     'ERC20ApprovePolicy',
     'MultiSendPolicy',
     'NativeTransferPolicy',
-  ])('should not map %s, which CGW does not model', (name) => {
+  ])('should not map %s, which CGW cannot resolve', (name) => {
     expect(policyTypeFromContractName(name)).toBeNull();
   });
 

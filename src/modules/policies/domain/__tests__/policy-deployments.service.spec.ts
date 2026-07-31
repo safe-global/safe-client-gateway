@@ -5,6 +5,7 @@ import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import { DEFAULT_POLICY_DEPLOYMENT } from '@/modules/policies/domain/policy-deployments.constants';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -36,8 +37,8 @@ const SEPOLIA_GUARD = getAddress(faker.finance.ethereumAddress());
 const SEPOLIA_ERC20_POLICY = getAddress(faker.finance.ethereumAddress());
 
 /**
- * A service configured through `POLICY_ENGINE_DEPLOYMENTS`, the only source of
- * deployment addresses.
+ * A service whose Sepolia addresses come from `POLICY_ENGINE_DEPLOYMENTS`, which
+ * replaces the default deployment for the chains it lists.
  */
 function createConfiguredService(): PolicyDeploymentsService {
   return createService(
@@ -55,29 +56,21 @@ describe('PolicyDeploymentsService', () => {
     vi.resetAllMocks();
   });
 
-  it('should know no chain until one is configured', () => {
-    // CGW hardcodes no addresses: configured policies are typed and addressed
-    // from the Transaction Service's indexed events, so a transcribed map would
-    // only be a second source able to drift.
-    expect(createService().getDeployment(SEPOLIA_CHAIN_ID)).toBeNull();
+  it('should fall back to the default deployment for an unconfigured chain', () => {
+    expect(createService().getDeployment(SEPOLIA_CHAIN_ID)).toBe(
+      DEFAULT_POLICY_DEPLOYMENT,
+    );
   });
 
-  describe('isSupportedChain', () => {
-    it('should support a chain configured with a SafePolicyGuard', () => {
-      expect(createConfiguredService().isSupportedChain(SEPOLIA_CHAIN_ID)).toBe(
-        true,
-      );
-    });
-
-    it('should not support a chain without configuration', () => {
-      expect(
-        createService().isSupportedChain(faker.string.numeric({ length: 18 })),
-      ).toBe(false);
-    });
-
-    it('should support no chain when nothing is configured', () => {
-      expect(createService().isSupportedChain(SEPOLIA_CHAIN_ID)).toBe(false);
-    });
+  it('should describe a configured chain by its entry alone', () => {
+    // Not a field-by-field merge with the default: which address CGW reports
+    // has to be answerable from one place.
+    expect(
+      createConfiguredService().getPolicyContract(
+        SEPOLIA_CHAIN_ID,
+        PolicyType.AllowPolicy,
+      ),
+    ).toBeNull();
   });
 
   describe('getSafePolicyGuard', () => {
@@ -87,8 +80,10 @@ describe('PolicyDeploymentsService', () => {
       ).toBe(SEPOLIA_GUARD);
     });
 
-    it('should return null for an unconfigured chain', () => {
-      expect(createConfiguredService().getSafePolicyGuard('1')).toBeNull();
+    it('should return the default guard address for an unconfigured chain', () => {
+      expect(createConfiguredService().getSafePolicyGuard('1')).toBe(
+        DEFAULT_POLICY_DEPLOYMENT.safePolicyGuard,
+      );
     });
   });
 
@@ -120,13 +115,16 @@ describe('PolicyDeploymentsService', () => {
       ).toBeNull();
     });
 
-    it('should return null when nothing is configured for the chain', () => {
-      expect(
-        createService().getPolicyContract(
-          SEPOLIA_CHAIN_ID,
-          PolicyType.Erc20Transfer,
-        ),
-      ).toBeNull();
+    it.each([
+      PolicyType.Erc20Transfer,
+      PolicyType.Cosigner,
+      PolicyType.AllowPolicy,
+      PolicyType.NativeTransfer,
+      PolicyType.Deny,
+    ])('should return the default %s address for an unconfigured chain', (type) => {
+      expect(createService().getPolicyContract(SEPOLIA_CHAIN_ID, type)).toBe(
+        DEFAULT_POLICY_DEPLOYMENT.policyContracts[type],
+      );
     });
   });
 
@@ -209,9 +207,11 @@ describe('PolicyDeploymentsService', () => {
     it('should ignore and log a malformed configuration', () => {
       const service = createService('{not json');
 
-      // Nothing to fall back to, so every chain is simply unsupported - but the
-      // service must still come up rather than take the app down.
-      expect(service.getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBeNull();
+      // Every chain falls back to the default deployment - but the service must
+      // come up rather than take the app down.
+      expect(service.getSafePolicyGuard(SEPOLIA_CHAIN_ID)).toBe(
+        DEFAULT_POLICY_DEPLOYMENT.safePolicyGuard,
+      );
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Invalid POLICY_ENGINE_DEPLOYMENTS, ignoring the override',
@@ -224,7 +224,9 @@ describe('PolicyDeploymentsService', () => {
         JSON.stringify({ '1': { safePolicyGuard: 'not-an-address' } }),
       );
 
-      expect(service.isSupportedChain('1')).toBe(false);
+      expect(service.getSafePolicyGuard('1')).toBe(
+        DEFAULT_POLICY_DEPLOYMENT.safePolicyGuard,
+      );
       expect(mockLoggingService.error).toHaveBeenCalled();
     });
   });

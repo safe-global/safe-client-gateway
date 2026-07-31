@@ -4,13 +4,13 @@ import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
-import type { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
 import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
 import { POLICY_CATALOGUE } from '@/modules/policies/domain/policy-catalogue.constants';
 import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
+import { DEFAULT_POLICY_DEPLOYMENT } from '@/modules/policies/domain/policy-deployments.constants';
 import { PolicyDeploymentsService } from '@/modules/policies/domain/policy-deployments.service';
 
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -28,10 +28,6 @@ const mockLoggingService = {
   debug: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockFeatureFlagService = {
-  isFeatureEnabled: vi.fn(),
-} as MockedObject<IFeatureFlagService>;
-
 const SEPOLIA_GUARD = getAddress(faker.finance.ethereumAddress());
 const SEPOLIA_ERC20_POLICY = getAddress(faker.finance.ethereumAddress());
 
@@ -41,14 +37,12 @@ function createService(override?: string): PolicyCatalogueService {
   );
   return new PolicyCatalogueService(
     new PolicyDeploymentsService(mockConfigurationService, mockLoggingService),
-    mockFeatureFlagService,
   );
 }
 
 /**
- * Guard-enforced entries are only available once the chain's addresses are
- * configured: CGW ships none, deferring to the Transaction Service for the
- * addresses of policies that are already configured on a Safe.
+ * A chain whose addresses are pinned through `POLICY_ENGINE_DEPLOYMENTS`, which
+ * replaces the default deployment for that chain rather than extending it.
  */
 function createConfiguredService(): PolicyCatalogueService {
   return createService(
@@ -64,14 +58,10 @@ function createConfiguredService(): PolicyCatalogueService {
 describe('PolicyCatalogueService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockFeatureFlagService.isFeatureEnabled.mockResolvedValue(true);
   });
 
-  it('should return the four catalogue entries in order, with their copy', async () => {
-    const result = await createService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
-    });
+  it('should return the catalogue entries in order, with their copy', () => {
+    const result = createService().get(SEPOLIA_CHAIN_ID);
 
     expect(result.map((policy) => policy.type)).toStrictEqual(
       POLICY_CATALOGUE.map((entry) => entry.type),
@@ -84,27 +74,44 @@ describe('PolicyCatalogueService', () => {
     );
   });
 
-  it('should not expose the internal enforcementKind', async () => {
-    const [policy] = await createService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
-    });
+  it('should not expose the internal enforcementKind', () => {
+    const [policy] = createService().get(SEPOLIA_CHAIN_ID);
 
     expect(policy).not.toHaveProperty('enforcementKind');
   });
 
-  it('should carry the module address inline for a module-enforced policy', async () => {
-    const result = await createService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
-    });
+  it('should report every policy as available, whatever the chain and configuration', () => {
+    // `available` is a product decision that ships with the release, not a
+    // function of which addresses CGW happens to know.
+    for (const service of [createService(), createConfiguredService()]) {
+      for (const chainId of [SEPOLIA_CHAIN_ID, faker.string.numeric(18)]) {
+        expect(service.get(chainId).every((policy) => policy.available)).toBe(
+          true,
+        );
+      }
+    }
+  });
+
+  it('should flag the fallback policies', () => {
+    const result = createService().get(SEPOLIA_CHAIN_ID);
+
+    expect(
+      result.filter((policy) => policy.isFallback).map((policy) => policy.type),
+    ).toStrictEqual([
+      PolicyType.AllowPolicy,
+      PolicyType.NativeTransfer,
+      PolicyType.Deny,
+    ]);
+  });
+
+  it('should carry the module address inline for a module-enforced policy', () => {
+    const result = createService().get(SEPOLIA_CHAIN_ID);
 
     const spendingLimit = result.find(
       (policy) => policy.type === PolicyType.SpendingLimit,
     );
 
     expect(spendingLimit).toMatchObject({
-      available: true,
       enforcement: {
         via: PolicyEnforcementKind.Module,
         moduleAddress: SEPOLIA_ALLOWANCE_MODULE,
@@ -112,18 +119,53 @@ describe('PolicyCatalogueService', () => {
     });
   });
 
-  it('should carry the guard and policy contract inline for a guard-enforced policy', async () => {
-    const result = await createConfiguredService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
+  it('should carry the default guard and policy contract for an unconfigured chain', () => {
+    const result = createService().get(SEPOLIA_CHAIN_ID);
+
+    expect(
+      result.find((policy) => policy.type === PolicyType.Erc20Transfer),
+    ).toMatchObject({
+      enforcement: {
+        via: PolicyEnforcementKind.Guard,
+        guards: {
+          transactionGuard: {
+            policyContract:
+              DEFAULT_POLICY_DEPLOYMENT.policyContracts[
+                PolicyType.Erc20Transfer
+              ],
+            safePolicyGuard: DEFAULT_POLICY_DEPLOYMENT.safePolicyGuard,
+          },
+        },
+      },
     });
+  });
 
-    const allowlist = result.find(
-      (policy) => policy.type === PolicyType.Erc20Transfer,
-    );
+  it.each([
+    PolicyType.AllowPolicy,
+    PolicyType.NativeTransfer,
+    PolicyType.Deny,
+  ])('should carry the deployment addresses of %s', (type) => {
+    const result = createService().get(SEPOLIA_CHAIN_ID);
 
-    expect(allowlist).toMatchObject({
-      available: true,
+    expect(result.find((policy) => policy.type === type)).toMatchObject({
+      enforcement: {
+        via: PolicyEnforcementKind.Guard,
+        guards: {
+          transactionGuard: {
+            policyContract: DEFAULT_POLICY_DEPLOYMENT.policyContracts[type],
+            safePolicyGuard: DEFAULT_POLICY_DEPLOYMENT.safePolicyGuard,
+          },
+        },
+      },
+    });
+  });
+
+  it('should prefer the configured addresses of a chain over the defaults', () => {
+    const result = createConfiguredService().get(SEPOLIA_CHAIN_ID);
+
+    expect(
+      result.find((policy) => policy.type === PolicyType.Erc20Transfer),
+    ).toMatchObject({
       enforcement: {
         via: PolicyEnforcementKind.Guard,
         guards: {
@@ -136,74 +178,37 @@ describe('PolicyCatalogueService', () => {
     });
   });
 
-  it('should report guard-enforced policies as unavailable when no addresses are configured', async () => {
-    // CGW ships no addresses, so an unconfigured deployment leaves the
-    // guard-enforced entries unavailable even on a supported chain.
-    const result = await createService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
-    });
+  it('should report no enforcement for a type the configured chain does not name', () => {
+    // The configured entry replaces the default one, so a type it omits has no
+    // address to report - the entry is still offered.
+    const result = createConfiguredService().get(SEPOLIA_CHAIN_ID);
 
-    expect(
-      result.find((policy) => policy.type === PolicyType.Erc20Transfer),
-    ).toMatchObject({ available: false, enforcement: null });
-  });
-
-  it('should report a policy without a deployment as unavailable', async () => {
-    const result = await createConfiguredService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
-    });
-
-    // CoSignerPolicy and the Delay Modifier have no known address yet
     expect(
       result.find((policy) => policy.type === PolicyType.Cosigner),
-    ).toMatchObject({ available: false, enforcement: null });
+    ).toMatchObject({ available: true, enforcement: null });
+  });
+
+  it('should report no enforcement for recovery until a Delay Modifier is configured', () => {
+    const result = createService().get(SEPOLIA_CHAIN_ID);
+
     expect(
       result.find((policy) => policy.type === PolicyType.Recovery),
-    ).toMatchObject({ available: false, enforcement: null });
+    ).toMatchObject({ available: true, enforcement: null });
   });
 
-  it('should report every policy as unavailable on a chain without deployments', async () => {
-    const result = await createService().get({
-      chainId: faker.string.numeric({ length: 18 }),
-      configuredCounts: {},
-    });
+  it('should report no module enforcement on a chain without an AllowanceModule', () => {
+    const result = createService().get(faker.string.numeric({ length: 18 }));
 
     expect(result).toHaveLength(POLICY_CATALOGUE.length);
-    expect(result.every((policy) => !policy.available)).toBe(true);
-    expect(result.every((policy) => policy.enforcement === null)).toBe(true);
-  });
-
-  it('should report every policy as unavailable when the feature flag is off', async () => {
-    mockFeatureFlagService.isFeatureEnabled.mockResolvedValue(false);
-
-    const result = await createConfiguredService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: {},
-    });
-
-    expect(result.every((policy) => !policy.available)).toBe(true);
-    // the addresses are still reported so the wallet can explain what is gated
+    expect(
+      result.find((policy) => policy.type === PolicyType.SpendingLimit)
+        ?.enforcement,
+    ).toBeNull();
+    // The guard-enforced entries are deterministic addresses, so they resolve
+    // on any chain.
     expect(
       result.find((policy) => policy.type === PolicyType.Erc20Transfer)
         ?.enforcement,
     ).not.toBeNull();
-  });
-
-  it('should default a missing configuredCount to zero', async () => {
-    const result = await createService().get({
-      chainId: SEPOLIA_CHAIN_ID,
-      configuredCounts: { [PolicyType.Erc20Transfer]: 3 },
-    });
-
-    expect(
-      result.find((policy) => policy.type === PolicyType.Erc20Transfer)
-        ?.configuredCount,
-    ).toBe(3);
-    expect(
-      result.find((policy) => policy.type === PolicyType.Cosigner)
-        ?.configuredCount,
-    ).toBe(0);
   });
 });
