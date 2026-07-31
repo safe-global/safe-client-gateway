@@ -198,6 +198,9 @@ describe('Workspace step-up elevation (ElevationGuard)', () => {
         ...defaultConfiguration.features,
         auth: true,
         users: true,
+        // Explicit rather than inherited: with the flag off the guard admits
+        // everything, and every assertion below would pass vacuously.
+        mfaStepUp: true,
       },
     });
 

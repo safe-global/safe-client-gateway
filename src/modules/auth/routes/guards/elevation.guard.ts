@@ -29,21 +29,33 @@ export const ELEVATION_REQUIRED_ERROR = 'elevation_required';
  * provider, so they carry no MFA proof and would otherwise be locked out of
  * Workspace administration entirely. Extending step-up to them is Milestone 3
  * (WA-2852), at which point the exemption below is what gets removed.
+ *
+ * Enforcement is off unless `features.mfaStepUp` is set. A client that cannot
+ * yet turn a 403 `elevation_required` into a step-up round-trip would surface
+ * it as an unrecoverable error, so the flag lets the gateway ship ahead of
+ * those clients and lets an environment be rolled back without a revert.
  */
 @Injectable()
 export class ElevationGuard implements CanActivate {
+  private readonly isEnabled: boolean;
   private readonly elevationWindowSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
     configurationService: IConfigurationService,
   ) {
+    this.isEnabled =
+      configurationService.getOrThrow<boolean>('features.mfaStepUp');
     this.elevationWindowSeconds = configurationService.getOrThrow<number>(
       'auth.elevationWindowSeconds',
     );
   }
 
   canActivate(context: ExecutionContext): boolean {
+    if (!this.isEnabled) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<HttpRequest>();
     const payload = new AuthPayload(
       request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY],

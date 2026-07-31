@@ -244,6 +244,7 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
     spaceAuditLog: true,
+    mfaStepUp: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),

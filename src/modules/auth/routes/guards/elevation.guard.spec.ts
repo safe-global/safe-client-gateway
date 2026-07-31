@@ -46,11 +46,46 @@ describe('ElevationGuard', () => {
 
   beforeEach(() => {
     const configurationService = new FakeConfigurationService();
+    configurationService.set('features.mfaStepUp', true);
     configurationService.set(
       'auth.elevationWindowSeconds',
       ELEVATION_WINDOW_SECONDS,
     );
     target = new ElevationGuard(configurationService);
+  });
+
+  describe('when features.mfaStepUp is off', () => {
+    let disabledTarget: ElevationGuard;
+
+    beforeEach(() => {
+      const configurationService = new FakeConfigurationService();
+      configurationService.set('features.mfaStepUp', false);
+      configurationService.set(
+        'auth.elevationWindowSeconds',
+        ELEVATION_WINDOW_SECONDS,
+      );
+      disabledTarget = new ElevationGuard(configurationService);
+    });
+
+    it.each([
+      ['a session that never presented a second factor', undefined],
+      ['a session whose window has expired', 1],
+    ])('should admit %s', (_label, mfaVerifiedAt) => {
+      const context = buildContext(
+        oidcPayload(
+          mfaVerifiedAt === undefined
+            ? undefined
+            : nowSeconds() - ELEVATION_WINDOW_SECONDS - mfaVerifiedAt,
+        ),
+      );
+
+      expect(disabledTarget.canActivate(context)).toBe(true);
+    });
+
+    it('should admit a request with no auth payload at all', () => {
+      // AuthGuard still rejects these; the flag only disables elevation.
+      expect(disabledTarget.canActivate(buildContext(undefined))).toBe(true);
+    });
   });
 
   describe('OIDC sessions', () => {
