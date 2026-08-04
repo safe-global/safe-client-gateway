@@ -47,6 +47,7 @@ const mockJobQueueService = vi.mocked({
 
 const mockLoggingService = vi.mocked({
   info: vi.fn(),
+  debug: vi.fn(),
   error: vi.fn(),
   warn: vi.fn(),
 } as MockedObject<ILoggingService>);
@@ -190,7 +191,7 @@ describe('PushNotificationService (Unit)', () => {
         mockNotificationsRepository.getSubscribersBySafe,
       ).not.toHaveBeenCalled();
       expect(mockJobQueueService.addJob).not.toHaveBeenCalled();
-      expect(mockLoggingService.info).toHaveBeenCalledWith({
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
         type: LogType.NotificationSpamTokenDropped,
         eventType: event.type,
         chainId: event.chainId,
@@ -239,7 +240,7 @@ describe('PushNotificationService (Unit)', () => {
       expect(
         mockNotificationsRepository.getSubscribersBySafe,
       ).toHaveBeenCalled();
-      expect(mockLoggingService.info).not.toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).not.toHaveBeenCalledWith(
         expect.objectContaining({
           type: LogType.NotificationSpamTokenDropped,
         }),
@@ -647,13 +648,13 @@ describe('PushNotificationService (Unit)', () => {
 
       await service.processEvent(event);
 
-      const deliveryQueuedCalls = mockLoggingService.info.mock.calls.filter(
+      const deliveryQueuedCalls = mockLoggingService.debug.mock.calls.filter(
         (call) =>
           (call[0] as Record<string, unknown>).type ===
           LogType.NotificationDeliveryQueued,
       );
       expect(deliveryQueuedCalls).toHaveLength(2);
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: LogType.NotificationDeliveryQueued,
           chainId: event.chainId,
@@ -681,7 +682,7 @@ describe('PushNotificationService (Unit)', () => {
 
       await service.processEvent(event);
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: LogType.NotificationEventProcessed,
           eventType: event.type,
@@ -699,7 +700,7 @@ describe('PushNotificationService (Unit)', () => {
 
       await service.processEvent(event);
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: LogType.NotificationEventProcessed,
           deliveryJobCount: 0,
@@ -733,7 +734,7 @@ describe('PushNotificationService (Unit)', () => {
 
       await service.processDelivery(data);
 
-      expect(mockLoggingService.info).toHaveBeenCalledWith({
+      expect(mockLoggingService.debug).toHaveBeenCalledWith({
         type: LogType.NotificationSent,
         chainId: data.chainId,
         safeAddress: data.safeAddress,
