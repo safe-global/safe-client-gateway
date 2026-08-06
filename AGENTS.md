@@ -12,6 +12,7 @@
 |---|---|
 | Anything non-trivial (session start) | [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md) |
 | Any TypeScript code change (cross-cutting dos & don'ts) | [docs/agents/best-practices.md](docs/agents/best-practices.md) |
+| Nest module, provider, guard, interceptor, pipe, filter, DI | [docs/agents/nestjs-patterns.md](docs/agents/nestjs-patterns.md) |
 | Endpoint, DTO, controller, Swagger | [docs/agents/api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md) |
 | Auth, signatures, guards, secrets, PII, cookies | [docs/agents/security.md](docs/agents/security.md) |
 | New module, moving files, naming, versioning | [docs/agents/module-structure.md](docs/agents/module-structure.md) |
@@ -19,7 +20,11 @@
 | Migration, `*.entity.db.ts`, TypeORM | [docs/agents/database-and-migrations.md](docs/agents/database-and-migrations.md) |
 | Any test file | [docs/agents/testing.md](docs/agents/testing.md) |
 | Env var, feature flag, config | [docs/agents/configuration-and-flags.md](docs/agents/configuration-and-flags.md) |
-| Reviewing a PR / verifying a completed task | [docs/agents/reviewing.md](docs/agents/reviewing.md) |
+| Reviewing a PR / verifying a completed task | [docs/agents/reviewing.md](docs/agents/reviewing.md) + [docs/agents/remarks.md](docs/agents/remarks.md) |
+| Commit message, PR title, PR body, splitting a PR | [docs/agents/commits-and-prs.md](docs/agents/commits-and-prs.md) |
+| Adding a skill or a slash command for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
+
+Each guide is also delivered as a `cgw-*` Claude Code skill that auto-loads on the matching work, and the recurring workflows have slash commands (`/new-route`, `/new-datasource`, `/new-domain-service`, `/new-env-var`, `/new-migration`, `/audit-test`, `/pr-ready`). Both are indexed in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
 
 ## Non-negotiables
 
