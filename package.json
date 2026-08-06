@@ -93,7 +93,7 @@
     "@nestjs/cli": "11.0.23",
     "@nestjs/schematics": "11.1.0",
     "@nestjs/testing": "11.1.28",
-    "@smithy/util-stream": "4.7.4",
+    "@smithy/util-stream": "4.7.16",
     "@swc/core": "1.15.43",
     "@types/amqplib": "0",
     "@types/jsonwebtoken": "9",
