@@ -29,7 +29,9 @@ repos:
       - id: insert-license
         name: insert-license
         files: \.(md)$
-        exclude: (node_modules/|dist/|coverage/|abis/)
+        # .claude/ markdown files are Claude Code skills and commands: their YAML
+        # frontmatter must be the first line, so a header cannot be prepended.
+        exclude: (node_modules/|dist/|coverage/|abis/|\.claude/)
         stages: [pre-commit]
         args:
           - --license-filepath

@@ -65,5 +65,5 @@ data
 /docs/*
 !/docs/agents/
 
-# Claude Code local cache (settings.json and commands/ are tracked)
+# Claude Code local cache (settings.json, commands/ and skills/ are tracked)
 /.claude/cache/
