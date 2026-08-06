@@ -61,5 +61,6 @@ data
 #CSV Export data files
 /assets/csv-export/*
 
-# Local docs
-/docs
+# Local docs (docs/agents is tracked — AI guideline content home)
+/docs/*
+!/docs/agents/

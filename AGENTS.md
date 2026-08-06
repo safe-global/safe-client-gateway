@@ -4,25 +4,45 @@
 
 # Agent Guidelines
 
-This document contains guidelines for AI agents (like Claude Code) working on this codebase.
+> These documents describe **this repository** — its architecture, constraints, and conventions. They are not a workflow. Process skills and plugins you run (e.g. Superpowers, spec-kit) govern *how* you work; these guides define *what correct looks like here*. When a process skill needs repo specifics — verification commands, test conventions, architectural context — these guides are the answer.
+
+## Read this first
+
+| Your task touches | You MUST read first |
+|---|---|
+| Anything non-trivial (session start) | [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md) |
+| Any TypeScript code change (cross-cutting dos & don'ts) | [docs/agents/best-practices.md](docs/agents/best-practices.md) |
+| Endpoint, DTO, controller, Swagger | [docs/agents/api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md) |
+| Auth, signatures, guards, secrets, PII, cookies | [docs/agents/security.md](docs/agents/security.md) |
+| New module, moving files, naming, versioning | [docs/agents/module-structure.md](docs/agents/module-structure.md) |
+| Datasource, cache, upstream call, queue, perf | [docs/agents/caching-and-performance.md](docs/agents/caching-and-performance.md) |
+| Migration, `*.entity.db.ts`, TypeORM | [docs/agents/database-and-migrations.md](docs/agents/database-and-migrations.md) |
+| Any test file | [docs/agents/testing.md](docs/agents/testing.md) |
+| Env var, feature flag, config | [docs/agents/configuration-and-flags.md](docs/agents/configuration-and-flags.md) |
+| Reviewing a PR / verifying a completed task | [docs/agents/reviewing.md](docs/agents/reviewing.md) |
+
+## Non-negotiables
+
+1. Every `@Param`/`@Query`/`@Body` goes through `new ValidationPipe(ZodSchema)` — no bare access. → [security.md](docs/agents/security.md)
+2. Never call `fetch`/HTTP clients directly — outbound calls go through `INetworkService`/`CacheFirstDataSource`. → [caching-and-performance.md](docs/agents/caching-and-performance.md)
+3. Datasources return `Raw<T>`; the owning repository must `Schema.parse()` before returning. → [api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md)
+4. Imports use the `@/` alias only; import other modules only via their `domain/`. → [module-structure.md](docs/agents/module-structure.md)
+5. New feature code goes in `src/modules/<kebab>/` following the canonical skeleton — never in `src/routes/`, `src/domain/`, or `src/datasources/`. → [module-structure.md](docs/agents/module-structure.md)
+6. Test data comes from builders + faker — no literal fixtures. → [testing.md](docs/agents/testing.md)
+7. Every env var is declared in `configuration.ts` AND `RootConfigurationSchema`; secrets never get fallback defaults. → [configuration-and-flags.md](docs/agents/configuration-and-flags.md)
+8. Cache keys only via `CacheRouter`; TTLs only from config. → [caching-and-performance.md](docs/agents/caching-and-performance.md)
+9. State-changing or caller-scoped routes declare an auth guard; identity comes from signature recovery or a verified JWT, never from client claims. → [security.md](docs/agents/security.md)
+10. One error funnel per layer: `HttpErrorFactory`/`DataSourceError` in datasources; domain errors + filters in `domain/`; `HttpExceptionNoLog` for expected rejections. → [api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md)
 
 ## Architecture
 
 ```
-Controller → Service → Repository → Datasource → CacheFirstDataSource
+Controller → Route Service → Repository → Datasource → CacheFirstDataSource
 ```
 
-- **Datasources** (`src/datasources/`): HTTP + caching, use `HttpErrorFactory` for errors
-- **Repositories** (`src/modules/*/domain/`): Inject datasources, validate with Zod schemas
-- **Services** (`src/modules/*/routes/`): Business logic, call repositories (never datasources)
+Route services (`routes/*.service.ts`) call repositories (`domain/*.repository.ts`) — never datasources directly — and only a repository calls `Schema.parse()` on a datasource's raw output before trusting it as a domain entity. A new external API client belongs in that module's own `datasources/` (e.g. `src/modules/balances/datasources/coingecko-api.service.ts`); central `src/datasources/` is cross-cutting infrastructure only (cache, db, network, jwt, kms, job-queue, storage, circuit-breaker) plus a handful of legacy API clients not yet migrated — it is not the default home for a new implementation.
 
-Each external API gets its own datasource:
-
-- Interface in `src/domain/interfaces/` (Symbol-based DI)
-- Implementation in `src/datasources/<api-name>/`
-- Own NestJS module exporting the interface
-
-When adding constructor dependencies, update all spec files that instantiate the class.
+See [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md) for the full request lifecycle, validation boundaries, and error funnels.
 
 ## Testing
 
@@ -32,6 +52,8 @@ When adding constructor dependencies, update all spec files that instantiate the
   app = await new TestAppProvider().provide(moduleFixture);
   await initTestApplication(app);
   ```
+
+See [docs/agents/testing.md](docs/agents/testing.md) for test conventions, builders, and fixture patterns.
 
 ## Pre-Commit Checklist
 
