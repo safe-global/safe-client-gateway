@@ -5726,9 +5726,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ox@npm:0.14.30":
-  version: 0.14.30
-  resolution: "ox@npm:0.14.30"
+"ox@npm:0.14.33":
+  version: 0.14.33
+  resolution: "ox@npm:0.14.33"
   dependencies:
     "@adraffy/ens-normalize": "npm:^1.11.0"
     "@noble/ciphers": "npm:^1.3.0"
@@ -5743,7 +5743,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/c58e0f989f883963152f3cf7f9ee2b0d762bb5eb3a393eee4d2fed7ecd70e3eac70653ec21d7f351e5ad299a42840e827fc6ec1f07532b9280e178556b9449c8
+  checksum: 10/8a1390fa4799fc8629ea64c00b49fe4c5c93417c92033bad7599a1861842af202303ea1cdc85023f19145192563ebe9085609d84b0a3d0145ed1b61e579a2052
   languageName: node
   linkType: hard
 
@@ -6328,7 +6328,7 @@ __metadata:
     typescript: "npm:6.0.3"
     undici: "npm:8.8.0"
     unplugin-swc: "npm:1.5.9"
-    viem: "npm:2.54.6"
+    viem: "npm:2.55.10"
     vitest: "npm:4.1.9"
     winston: "npm:3.19.0"
     zod: "npm:4.4.3"
@@ -7261,9 +7261,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:2.54.6":
-  version: 2.54.6
-  resolution: "viem@npm:2.54.6"
+"viem@npm:2.55.10":
+  version: 2.55.10
+  resolution: "viem@npm:2.55.10"
   dependencies:
     "@noble/curves": "npm:1.9.1"
     "@noble/hashes": "npm:1.8.0"
@@ -7271,14 +7271,14 @@ __metadata:
     "@scure/bip39": "npm:1.6.0"
     abitype: "npm:1.2.3"
     isows: "npm:1.0.7"
-    ox: "npm:0.14.30"
+    ox: "npm:0.14.33"
     ws: "npm:8.21.0"
   peerDependencies:
     typescript: ">=5.0.4"
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/e092d1e2448be73ed4848cb04cdc0bdcb0705afb7b9c3c915fb72d411032a32c16cd0d35707eee6d2bd038e80e7e563b7d307d4f88001764d1fff5aca80e7aee
+  checksum: 10/4da52637c5ef51a05748cb4566fc9842b39148fcd847746df239eb19a013fc9cbedeaf70331258b808ddef7c6ca984b1b5b5995a3e47869091723a9d73c245c2
   languageName: node
   linkType: hard
 
