@@ -64,3 +64,6 @@ data
 # Local docs (docs/agents is tracked — AI guideline content home)
 /docs/*
 !/docs/agents/
+
+# Claude Code local cache (settings.json and commands/ are tracked)
+/.claude/cache/
