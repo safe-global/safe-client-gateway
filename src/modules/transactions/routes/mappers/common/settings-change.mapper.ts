@@ -6,11 +6,13 @@ import { AddOwner } from '@/modules/transactions/routes/entities/settings-change
 import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
 import { DeleteGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-guard';
+import { DeleteModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
 import { DisableModule } from '@/modules/transactions/routes/entities/settings-changes/disable-module.entity';
 import { EnableModule } from '@/modules/transactions/routes/entities/settings-changes/enable-module.entity';
 import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
 import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
+import { SetModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
 import type { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
@@ -29,6 +31,8 @@ export class SettingsChangeMapper {
   private static readonly ENABLE_MODULE = 'enableModule';
   private static readonly DISABLE_MODULE = 'disableModule';
   private static readonly SET_GUARD = 'setGuard';
+  // Introduced in Safe 1.5.0
+  private static readonly SET_MODULE_GUARD = 'setModuleGuard';
 
   public static readonly SETTINGS_CHANGE_METHODS = [
     SettingsChangeMapper.SET_FALLBACK_HANDLER,
@@ -40,6 +44,7 @@ export class SettingsChangeMapper {
     SettingsChangeMapper.ENABLE_MODULE,
     SettingsChangeMapper.DISABLE_MODULE,
     SettingsChangeMapper.SET_GUARD,
+    SettingsChangeMapper.SET_MODULE_GUARD,
   ];
 
   constructor(
@@ -201,6 +206,26 @@ export class SettingsChangeMapper {
     return new DeleteGuard();
   }
 
+  private async handleSetModuleGuard(
+    chainId: string,
+    dataDecoded: DataDecoded,
+  ): Promise<DeleteModuleGuard | SetModuleGuard | null> {
+    const moduleGuardValue: unknown =
+      this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0);
+
+    if (typeof moduleGuardValue !== 'string') return null;
+
+    if (moduleGuardValue !== NULL_ADDRESS) {
+      const moduleGuardAddressInfo = await this.addressInfoHelper.getOrDefault(
+        chainId,
+        getAddress(moduleGuardValue),
+        ['CONTRACT'],
+      );
+      return new SetModuleGuard(moduleGuardAddressInfo);
+    }
+    return new DeleteModuleGuard();
+  }
+
   // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   async mapSettingsChange(
     chainId: string,
@@ -225,6 +250,8 @@ export class SettingsChangeMapper {
         return this.handleChangeThreshold(dataDecoded);
       case SettingsChangeMapper.SET_GUARD:
         return this.handleSetGuard(chainId, dataDecoded);
+      case SettingsChangeMapper.SET_MODULE_GUARD:
+        return this.handleSetModuleGuard(chainId, dataDecoded);
     }
 
     throw new Error(`Unknown setting method: ${dataDecoded?.method}`);

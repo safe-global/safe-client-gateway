@@ -10,11 +10,13 @@ import { AddOwner } from '@/modules/transactions/routes/entities/settings-change
 import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
 import { DeleteGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-guard';
+import { DeleteModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
 import { DisableModule } from '@/modules/transactions/routes/entities/settings-changes/disable-module.entity';
 import { EnableModule } from '@/modules/transactions/routes/entities/settings-changes/enable-module.entity';
 import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
 import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
+import { SetModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
 import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/common/settings-change.mapper';
@@ -264,6 +266,49 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     );
 
     expect(actual).toEqual(new DeleteGuard());
+  });
+
+  it('should build a SetModuleGuard setting', async () => {
+    const moduleGuardAddress = faker.finance.ethereumAddress();
+    const moduleGuardAddressInfo = new AddressInfo(moduleGuardAddress);
+    addressInfoHelper.getOrDefault.mockResolvedValue(moduleGuardAddressInfo);
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'setModuleGuard')
+      .with('parameters', [
+        dataDecodedParameterBuilder().with('value', moduleGuardAddress).build(),
+      ])
+      .build();
+
+    const actual = await mapper.mapSettingsChange(
+      faker.string.numeric(),
+      dataDecoded,
+    );
+
+    const expected = new SetModuleGuard(new AddressInfo(moduleGuardAddress));
+    expect(actual).toEqual(expected);
+  });
+
+  it('should build a DeleteModuleGuard setting', async () => {
+    const moduleGuardValue = '0x0000000000000000000000000000000000000000';
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'setModuleGuard')
+      .with('parameters', [
+        dataDecodedParameterBuilder().with('value', moduleGuardValue).build(),
+      ])
+      .build();
+
+    const actual = await mapper.mapSettingsChange(
+      faker.string.numeric(),
+      dataDecoded,
+    );
+
+    expect(actual).toEqual(new DeleteModuleGuard());
+  });
+
+  it('should include setModuleGuard in the settings change methods', () => {
+    expect(SettingsChangeMapper.SETTINGS_CHANGE_METHODS).toContain(
+      'setModuleGuard',
+    );
   });
 
   it('should throw an error on a unknown setting', async () => {
