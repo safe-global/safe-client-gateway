@@ -9,9 +9,7 @@ import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.
 export type ParsedEntitlement = {
   featureKey: FeatureKey;
   enabled: boolean;
-  /** NULL = unlimited (metered only). */
   quota: number | null;
-  /** Non-boolean tiers (value-typed only). */
   value: string | null;
 };
 
@@ -26,10 +24,5 @@ export type MaterializedSubscription = {
   planName: string | null;
   currentPeriodStart: Date | null;
   currentPeriodEnd: Date | null;
-  /**
-   * The purchased package. Non-null only for the subscription holding the
-   * workspace's active slot: its `subscription_entitlements` rows are
-   * replaced wholesale (idempotent).
-   */
   entitlements: Array<ParsedEntitlement> | null;
 };

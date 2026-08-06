@@ -129,11 +129,20 @@ export function isGrandfathered(args: {
   used: number;
 }): boolean {
   return (
-    args.spaceCreatedAt < ENFORCEMENT_LAUNCH_DATE &&
+    isBeforeEnforcementLaunch(args.spaceCreatedAt) &&
     !args.hasEverSubscribed &&
     args.quota !== null &&
     args.used > args.quota
   );
+}
+
+/**
+ * Whether a workspace created on this date could ever qualify for
+ * grandfathering. The single place that knows the comparison, so callers
+ * never restate `< ENFORCEMENT_LAUNCH_DATE` by hand.
+ */
+export function isBeforeEnforcementLaunch(spaceCreatedAt: Date): boolean {
+  return spaceCreatedAt < ENFORCEMENT_LAUNCH_DATE;
 }
 
 /** A workspace degrades its extra Safes only when over-seat under plan rules. */

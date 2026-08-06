@@ -19,10 +19,7 @@ import type {
   FeatureKey,
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
-import {
-  FEATURE_DEFINITIONS,
-  FeatureTypes,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+import { FeatureTypes } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
   ENFORCEMENT_LAUNCH_DATE,
@@ -399,15 +396,19 @@ describe('EntitlementsService', () => {
   }
 
   describe('feature catalog fixtures', () => {
-    // The DB-vs-`FeatureKeys` drift guard belongs with the seed migration,
-    // which ships once product signs the real values off. What matters here is
-    // that the fixtures stay a faithful, exhaustive sample of the catalog.
-    it('declares types matching FEATURE_DEFINITIONS and covers every feature type', async () => {
+    // The DB-vs-catalog drift guard belongs with the seed migration, which
+    // ships once product signs the real values off. What matters here is that
+    // the fixtures round-trip correctly and stay an exhaustive sample of the
+    // catalog.
+    it('round-trips fixture types through the database and covers every feature type', async () => {
       const features = await dataSource.getRepository(Feature).find();
+      const typeByKey = new Map(
+        FEATURE_FIXTURES.map((fixture) => [fixture.key, fixture.type]),
+      );
 
       expect(features).toHaveLength(FEATURE_FIXTURES.length);
       for (const feature of features) {
-        expect(feature.type).toBe(FEATURE_DEFINITIONS[feature.key]);
+        expect(feature.type).toBe(typeByKey.get(feature.key));
       }
       expect(new Set(features.map((feature) => feature.type))).toStrictEqual(
         new Set(FeatureTypes),

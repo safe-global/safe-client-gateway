@@ -12,7 +12,6 @@ import type {
 } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
 import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import {
-  ENFORCEMENT_LAUNCH_DATE,
   isActiveSubscriptionStatus,
   isStockMeteredFeature,
 } from '@/modules/entitlements/domain/entitlements.constants';
@@ -20,6 +19,7 @@ import {
   effectiveEntitlement,
   enforceableQuota,
   eventPeriodStart,
+  isBeforeEnforcementLaunch,
   isGrandfathered,
   isOverSeat,
   resetsAt,
@@ -278,17 +278,17 @@ export class EntitlementsService {
     // Demotions (e.g. active → canceled) run before promotions so the "one
     // active subscription per space" partial unique index never sees both the
     // outgoing and the incoming subscription active at once.
-    const ordered = [...args.subscriptions].sort(
-      (a, b) =>
-        Number(isActiveSubscriptionStatus(a.status)) -
-        Number(isActiveSubscriptionStatus(b.status)),
+    const orderedSubscriptions = [...args.subscriptions].sort(
+      (left, right) =>
+        Number(isActiveSubscriptionStatus(left.status)) -
+        Number(isActiveSubscriptionStatus(right.status)),
     );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       let activeRowId: number | null = null;
       let activePackage: MaterializedSubscription['entitlements'] = null;
 
-      for (const subscription of ordered) {
+      for (const subscription of orderedSubscriptions) {
         const values = {
           status: subscription.status,
           planId: subscription.planId,
@@ -564,10 +564,7 @@ export class EntitlementsService {
     return space.createdAt;
   }
 
-  /**
-   * Only grandfathering reads this, and that needs a pre-launch workspace, so
-   * the COUNT is skipped entirely for every workspace created since.
-   */
+  /** Whether the workspace has ever had a subscription, active or terminal. */
   private async hasEverSubscribed(args: {
     spaceId: Space['id'];
     spaceCreatedAt: Date;
@@ -576,7 +573,7 @@ export class EntitlementsService {
     if (args.activeSubscription !== null) {
       return true;
     }
-    if (args.spaceCreatedAt >= ENFORCEMENT_LAUNCH_DATE) {
+    if (!isBeforeEnforcementLaunch(args.spaceCreatedAt)) {
       return false;
     }
     return (
