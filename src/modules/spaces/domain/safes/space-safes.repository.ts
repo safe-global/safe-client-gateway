@@ -6,6 +6,7 @@ import {
   type FindOptionsSelect,
   type FindOptionsWhere,
   IsNull,
+  type Repository,
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -151,6 +152,37 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     }
 
     return spaceSafes;
+  }
+
+  public async countBySpaceId(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number> {
+    const repository = await this.getSpaceSafeRepository(entityManager);
+    return await repository.count({ where: { space: { id: spaceId } } });
+  }
+
+  /** Safe ids of the workspace, oldest first (the default seat coverage order). */
+  public async getIdsBySpaceIdOldestFirst(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<Array<number>> {
+    const repository = await this.getSpaceSafeRepository(entityManager);
+    const safes = await repository.find({
+      select: { id: true },
+      where: { space: { id: spaceId } },
+      order: { createdAt: 'ASC', id: 'ASC' },
+    });
+    return safes.map((safe) => safe.id);
+  }
+
+  /** Bound to the caller's transaction when one is passed. */
+  private async getSpaceSafeRepository(
+    entityManager?: EntityManager,
+  ): Promise<Repository<SpaceSafe>> {
+    return entityManager
+      ? entityManager.getRepository(SpaceSafe)
+      : await this.postgresDatabaseService.getRepository(SpaceSafe);
   }
 
   public async find(args: {

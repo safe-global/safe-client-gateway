@@ -444,6 +444,21 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
+  /** Members holding a seat: ACTIVE plus pending (non-expired) invites. */
+  public async countActiveOrPendingBySpaceId(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number> {
+    const repository = entityManager
+      ? entityManager.getRepository(DbMember)
+      : await this.postgresDatabaseService.getRepository(DbMember);
+    return await repository.count({
+      where: activeOrPendingMemberWhere<DbMember>(() => ({
+        space: { id: spaceId },
+      })),
+    });
+  }
+
   private assertInviteNotExpired(member: DbMember): void {
     // An `INVITED` member is always expected to carry an expiry;
     // treat a missing one as expired.

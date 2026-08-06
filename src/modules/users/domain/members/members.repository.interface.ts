@@ -2,6 +2,7 @@
 
 import type { UUID } from 'node:crypto';
 import type {
+  EntityManager,
   FindManyOptions,
   FindOptionsRelations,
   FindOptionsWhere,
@@ -32,6 +33,12 @@ export interface IMembersRepository {
   ): Promise<[DbMember, ...Array<DbMember>]>;
 
   find(args?: FindManyOptions<DbMember>): Promise<Array<DbMember>>;
+
+  /** Members holding a seat: ACTIVE plus pending (non-expired) invites. */
+  countActiveOrPendingBySpaceId(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number>;
 
   findActiveAdmin(args: {
     userId: User['id'];
