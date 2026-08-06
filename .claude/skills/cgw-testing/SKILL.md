@@ -1,6 +1,6 @@
 ---
 name: cgw-testing
-description: Use when writing, changing, or debugging any test in safe-client-gateway - unit (*.spec.ts), integration (*.integration.spec.ts), or e2e. Covers the builders-plus-faker rule (no literal fixtures), vi.fn() and MockedObject<T> mocking conventions, FakeConfigurationService, the mandatory initTestApplication(app) Fastify harness (never bare app.init()), seeded faker, and what CI actually runs. Triggers on "write a test", "add tests", "test failing", "fixture", "mock", "builder", "spec file", "vitest".
+description: Use when writing, changing, or debugging any test in safe-client-gateway - unit (*.spec.ts), integration (*.integration.spec.ts), or e2e - AND whenever a change to production code needs its tests updated, which is nearly every change, even when the request never mentions tests. Covers the builders-plus-faker rule (no literal fixtures), vi.fn() and MockedObject<T> mocking conventions, FakeConfigurationService, the mandatory initTestApplication(app) Fastify harness (never bare app.init()), seeded faker, and what CI actually runs. Triggers on "write a test", "add tests", "test failing", "fixture", "mock", "builder", "spec file", "vitest", and on any casting or typing question whose subject is a spec file ("as unknown in these tests", "as never", "how do I type this mock") - the test-mock cast idiom lives here, not in cgw-best-practices.
 ---
 
 # CGW Testing

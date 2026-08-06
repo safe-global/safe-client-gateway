@@ -67,6 +67,20 @@ Nothing has been retired: before the commands above, `.claude/commands/` held on
 6. **Name it for the workflow, not the tool.** `/new-env-var`, not `/config-helper`.
 7. **Nothing but command files lives under `.claude/commands/`** — a loose markdown file there becomes a command.
 
+A command and a skill covering the same ground is not contention: a command is invoked deliberately by a person who wants the whole sequence (`/new-env-var` walks all five files), while a skill loads on its own to supply a rule mid-task (`cgw-config` fires when a config key gets touched for any reason). `/pr-ready` and `cgw-review`, `/new-migration` and `cgw-database`, `/audit-test` and `cgw-testing` pair up this way by design.
+
+## Trigger validation
+
+A skill's `description` is the only thing the auto-load decision sees, so it is the part that needs testing — and it is testable: give a fresh session a synthetic prompt phrased the way a developer would actually phrase it, and check which skill it reaches for. Doing this to the first draft of these thirteen found five real defects, each of which is worth knowing about when writing the next one:
+
+- **Two skills sharing a trigger phrase is a coin flip, not a fallback.** `cgw-review` and `cgw-remarks` both opened with "use when reviewing a diff", so neither won. The fix was to state the relationship in the descriptions themselves — one is the entry point, the other is the catalog it consults.
+- **A description must claim symptoms, not just concepts.** "Why is my provider constructed twice?" matched nothing in `cgw-nestjs-patterns`, whose triggers were all primitive names; the `useExisting`-vs-`useClass` rule that answers it was one keyword away from being unreachable.
+- **Developers phrase permissions as features.** "Let a user delete their own address book entry" contains no security vocabulary at all, so `cgw-security` — the skill that owns exactly that change class — did not fire.
+- **A shared trigger word pulls in the wrong owner.** `cgw-security` listing a bare "env var" made it fire on plain feature flags, which `cgw-config` owns; it now claims only the secret half explicitly.
+- **The same change class routes on incidental wording.** "Add a column" and "add a field" are one change with four representations, and were reaching two different skills; each now names the other.
+
+Re-testing after an edit needs a genuinely fresh session — a subagent spawned mid-session inherits the skill listing as it was at spawn time and will re-read the old descriptions.
+
 ## Relationship to process plugins
 
 Skills and commands here carry **repo context**, never workflow. Process plugins (Superpowers, spec-kit) govern *how* work happens — brainstorming, TDD, debugging, verification order. These guides define *what correct looks like here*, and are the answer when a process skill asks for repo specifics: verification commands, test conventions, architectural context. A skill or command in this repo that starts dictating the order of work has overstepped.

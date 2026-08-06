@@ -1,6 +1,6 @@
 ---
 name: cgw-architecture
-description: Use when starting any non-trivial change in safe-client-gateway, or when deciding where a piece of code belongs - covers the request lifecycle (Fastify to guards to ValidationPipe to controller to route service to repository to datasource to CacheFirstDataSource to upstream), the layer boundaries, where Schema.parse() happens, the cache-invalidation flow, the error-funnel map, and the auth flows. Triggers on "where does this go", "how does a request flow", "what calls what", "new route", "new datasource", "which layer".
+description: The system map for safe-client-gateway - load it whenever a change spans more than one layer, or when you need to know what happens between the request arriving and the upstream call. Covers the request lifecycle (Fastify to guards to ValidationPipe to controller to route service to repository to datasource to CacheFirstDataSource to upstream), the layer boundaries and which layer may call which, where Schema.parse() happens, the cache-invalidation flow, the error-funnel map, and the SIWE/JWT/OIDC auth flows. Triggers on "where does this go", "which layer", "how does a request flow", "what calls what", "should this be in the service or the repository", "why is this endpoint slow" (before profiling - the layer map tells you what it touches), "trace this request", "add a feature that needs a new endpoint and a new upstream call", plus any first look at an unfamiliar part of this codebase.
 ---
 
 # CGW Architecture

@@ -1,6 +1,6 @@
 ---
 name: cgw-performance
-description: Use when a change in safe-client-gateway adds or modifies a cached read, a cache key, a TTL, an outbound upstream call, a datasource, a BullMQ job, or anything on a hot path. Covers the new-cached-call recipe (CacheRouter getter, CacheFirstDataSource with a config TTL and notFoundExpireTimeSeconds, clear*() on every write, EventCacheHelper wiring - all in one PR), the never-call-fetch-directly rule, Promise.all/allSettled over sequential awaits, batching to provider limits, and the small-single-concern-measured protocol for perf PRs. Triggers on "cache", "Redis", "TTL", "invalidate", "slow", "N+1", "timeout", "batch", "upstream call", "queue job".
+description: Use when a change in safe-client-gateway adds or modifies a cached read, a cache key, a TTL, an outbound upstream call, a datasource, a BullMQ job, or anything on a hot path. Covers the new-cached-call recipe (CacheRouter getter, CacheFirstDataSource with a config TTL and notFoundExpireTimeSeconds, clear*() on every write, EventCacheHelper wiring - all in one PR), the never-call-fetch-directly rule, Promise.all/allSettled over sequential awaits, batching to provider limits, and the small-single-concern-measured protocol for perf PRs. Triggers on "cache", "Redis", "TTL", "invalidate", "slow", "p95", "latency", "N+1", "timeout", "retry", "backoff", "circuit breaker", "batch", "chunk", "upstream call", "queue job", "await in a loop".
 ---
 
 # CGW Caching and Performance
