@@ -2021,10 +2021,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@safe-global/safe-modules-deployments@npm:3.0.3":
-  version: 3.0.3
-  resolution: "@safe-global/safe-modules-deployments@npm:3.0.3"
-  checksum: 10/7c1b4bbfb79d5cdfeaab7f1df071b121e7bc81a018f1236569a4da8f50f6873e0e692e5a47c75d53f879819378c86b5324c1843a4dd29e9fd9fbf230473488a5
+"@safe-global/safe-modules-deployments@npm:3.0.8":
+  version: 3.0.8
+  resolution: "@safe-global/safe-modules-deployments@npm:3.0.8"
+  checksum: 10/a09fa165905623f75cf82370af1e29325cb4c95cab91a870991d8f91a7070529f8f45a29ec5bc2ce49a016a4d7bbeb68cea0db16685e30c555da8752331a4867
   languageName: node
   linkType: hard
 
@@ -6289,7 +6289,7 @@ __metadata:
     "@nestjs/testing": "npm:11.1.28"
     "@nestjs/typeorm": "npm:11.0.3"
     "@safe-global/safe-deployments": "npm:1.37.58"
-    "@safe-global/safe-modules-deployments": "npm:3.0.3"
+    "@safe-global/safe-modules-deployments": "npm:3.0.8"
     "@smithy/util-stream": "npm:4.7.16"
     "@swc/core": "npm:1.15.43"
     "@types/amqplib": "npm:0"
