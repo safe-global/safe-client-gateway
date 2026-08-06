@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { EntityManager, Repository } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
 import type { ISpaceSeatSelectionRepository } from '@/modules/entitlements/domain/space-seat-selection.repository.interface';
@@ -19,7 +19,9 @@ export class SpaceSeatSelectionRepository
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<Array<number>> {
-    const repository = await this.getRepository(entityManager);
+    const repository = entityManager
+      ? entityManager.getRepository(SpaceSeatSelection)
+      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
     const selections = await repository.find({
       where: { space: { id: spaceId } },
       // Only the FK is needed; hydrating the Safe would also decrypt its
@@ -37,7 +39,9 @@ export class SpaceSeatSelectionRepository
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<void> {
-    const repository = await this.getRepository(entityManager);
+    const repository = entityManager
+      ? entityManager.getRepository(SpaceSeatSelection)
+      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
     await repository.delete({ space: { id: spaceId } });
   }
 
@@ -48,21 +52,14 @@ export class SpaceSeatSelectionRepository
     if (args.spaceSafeIds.length === 0) {
       return;
     }
-    const repository = await this.getRepository(entityManager);
+    const repository = entityManager
+      ? entityManager.getRepository(SpaceSeatSelection)
+      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
     await repository.insert(
       args.spaceSafeIds.map((spaceSafeId) => ({
         space: { id: args.spaceId },
         spaceSafe: { id: spaceSafeId },
       })),
     );
-  }
-
-  /** Bound to the caller's transaction when one is passed. */
-  private async getRepository(
-    entityManager?: EntityManager,
-  ): Promise<Repository<SpaceSeatSelection>> {
-    return entityManager
-      ? entityManager.getRepository(SpaceSeatSelection)
-      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
   }
 }

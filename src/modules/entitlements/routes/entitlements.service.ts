@@ -134,7 +134,10 @@ export class EntitlementsService {
    *
    * Pass the transactional `entityManager` performing the mutation so the
    * count sees the caller's own uncommitted rows (a batch must see its
-   * earlier inserts).
+   * earlier inserts). It also serializes concurrent checks for the same
+   * workspace via a session-scoped advisory lock (released automatically at
+   * transaction end), so two callers racing to add the last available seat
+   * cannot both pass the check before either commits its mutation.
    */
   public async checkQuotaOrFail(args: {
     spaceId: Space['id'];
@@ -142,6 +145,12 @@ export class EntitlementsService {
     increment: number;
     entityManager?: EntityManager;
   }): Promise<void> {
+    if (args.entityManager) {
+      await args.entityManager.query('SELECT pg_advisory_xact_lock($1)', [
+        args.spaceId,
+      ]);
+    }
+
     const now = new Date();
     const spaceCreatedAt = await this.getSpaceCreatedAtOrFail(args.spaceId);
     const feature = await this.getFeatureOrFail(
@@ -363,6 +372,20 @@ export class EntitlementsService {
     spaceSafeIds: Array<number>;
   }): Promise<void> {
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const ownSafeIds = new Set(
+        await this.spaceSafesRepository.getIdsBySpaceIdOldestFirst(
+          args.spaceId,
+          entityManager,
+        ),
+      );
+      // Fail closed rather than silently dropping the id: a Safe id from
+      // another workspace should never reach the insert below. Kept generic
+      // (no id in the message) so a caller cannot use this to probe which
+      // Safe ids exist elsewhere.
+      if (args.spaceSafeIds.some((id) => !ownSafeIds.has(id))) {
+        throw new NotFoundException('Workspace Safe not found.');
+      }
+
       await this.spaceSeatSelectionRepository.deleteSelectionBySpaceId(
         args.spaceId,
         entityManager,

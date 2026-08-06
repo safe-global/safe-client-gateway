@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { EntityManager, Repository } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
@@ -16,7 +16,9 @@ export class FeaturesRepository implements IFeaturesRepository {
   public async getFeatures(
     entityManager?: EntityManager,
   ): Promise<Array<Feature>> {
-    const repository = await this.getRepository(entityManager);
+    const repository = entityManager
+      ? entityManager.getRepository(Feature)
+      : await this.postgresDatabaseService.getRepository(Feature);
     return await repository.find({ order: { id: 'ASC' } });
   }
 
@@ -24,16 +26,9 @@ export class FeaturesRepository implements IFeaturesRepository {
     key: FeatureKey,
     entityManager?: EntityManager,
   ): Promise<Feature | null> {
-    const repository = await this.getRepository(entityManager);
-    return await repository.findOne({ where: { key } });
-  }
-
-  /** Bound to the caller's transaction when one is passed. */
-  private async getRepository(
-    entityManager?: EntityManager,
-  ): Promise<Repository<Feature>> {
-    return entityManager
+    const repository = entityManager
       ? entityManager.getRepository(Feature)
       : await this.postgresDatabaseService.getRepository(Feature);
+    return await repository.findOne({ where: { key } });
   }
 }

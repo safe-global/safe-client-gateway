@@ -21,7 +21,7 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 @Entity('subscriptions')
 // "1 active per space": only one row may hold the active slot; terminal rows
 // (canceled, incomplete*) stay as history. Matches ACTIVE_SUBSCRIPTION_STATUSES
-// and the 1781800000000-create-entitlements migration.
+// and the 1785406836453-create-entitlements migration.
 @Index('UQ_subscriptions_active_space', ['space'], {
   unique: true,
   where: `status IN ('active','trialing','past_due','paused','unpaid')`,

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { EntityManager, Repository } from 'typeorm';
+import type { EntityManager } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import type {
@@ -21,7 +21,11 @@ export class SubscriptionEntitlementsRepository
     subscriptionId: number,
     entityManager?: EntityManager,
   ): Promise<void> {
-    const repository = await this.getRepository(entityManager);
+    const repository = entityManager
+      ? entityManager.getRepository(SubscriptionEntitlement)
+      : await this.postgresDatabaseService.getRepository(
+          SubscriptionEntitlement,
+        );
     await repository.delete({
       subscription: { id: subscriptionId },
     });
@@ -37,7 +41,11 @@ export class SubscriptionEntitlementsRepository
     if (args.entitlements.length === 0) {
       return;
     }
-    const repository = await this.getRepository(entityManager);
+    const repository = entityManager
+      ? entityManager.getRepository(SubscriptionEntitlement)
+      : await this.postgresDatabaseService.getRepository(
+          SubscriptionEntitlement,
+        );
     await repository.insert(
       args.entitlements.map((entitlement) => ({
         subscription: { id: args.subscriptionId },
@@ -47,16 +55,5 @@ export class SubscriptionEntitlementsRepository
         value: entitlement.value,
       })),
     );
-  }
-
-  /** Bound to the caller's transaction when one is passed. */
-  private async getRepository(
-    entityManager?: EntityManager,
-  ): Promise<Repository<SubscriptionEntitlement>> {
-    return entityManager
-      ? entityManager.getRepository(SubscriptionEntitlement)
-      : await this.postgresDatabaseService.getRepository(
-          SubscriptionEntitlement,
-        );
   }
 }
