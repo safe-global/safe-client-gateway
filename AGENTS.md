@@ -24,7 +24,7 @@
 | Commit message, PR title, PR body, splitting a PR | [docs/agents/commits-and-prs.md](docs/agents/commits-and-prs.md) |
 | Adding a skill or a slash command for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
 
-Each guide is also delivered as a `cgw-*` Claude Code skill that auto-loads on the matching work, and the recurring workflows have slash commands (`/new-route`, `/new-datasource`, `/new-domain-service`, `/new-env-var`, `/new-migration`, `/audit-test`, `/pr-ready`). Both are indexed in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
+Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Code skill that loads itself on the matching work, and a `PreToolUse` hook in `.claude/settings.json` applies the review checklist on any commit that touches `src/`. There are no repo-specific slash commands to remember. Both mechanisms are documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
 
 ## Non-negotiables
 

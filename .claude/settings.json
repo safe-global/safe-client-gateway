@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit *)",
+            "statusMessage": "Checking whether src/ changed",
+            "timeout": 15,
+            "command": "test -n \"$(git status --porcelain -- src/)\" && printf '%s' '{\"systemMessage\":\"src/ changed — applying the repo review checklist from docs/agents/reviewing.md before this commit.\",\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"This commit touches src/. Before treating it as done, apply docs/agents/reviewing.md to the diff. Part 1 (guideline compliance): map the diff against EVERY row of the AGENTS.md routing table, not just the first match; name the applicable guides; verify each rule they list; cite violations as file:line plus the guide own heading for that rule. Part 2 (deviation control), eight independent checks: implementation matches the approved spec or task description with nothing extra; no scope creep or drive-by reformatting; no new deviations from the canonical module structure; no ratchet-baseline growth without written justification in the PR description text; no speculative abstractions, unused exports or dead code; pre-commit commands ran clean with pasted output or a CI link, not an assertion; correct SPDX header on every file the change touched, not only new ones; no debug scripts, seed helpers or transient logging left in the branch. Then scan docs/agents/remarks.md for the sections matching what the diff touches and report any R-NNN it would earn. Report findings most-severe-first as file:line - rule name: defect, and state no findings explicitly when clean.\"}}' || true"
+          }
+        ]
+      }
+    ]
+  }
+}
