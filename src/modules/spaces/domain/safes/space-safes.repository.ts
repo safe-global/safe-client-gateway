@@ -6,9 +6,9 @@ import {
   type FindOptionsSelect,
   type FindOptionsWhere,
   IsNull,
-  type Repository,
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -158,7 +158,11 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<number> {
-    const repository = await this.getSpaceSafeRepository(entityManager);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
     return await repository.count({ where: { space: { id: spaceId } } });
   }
 
@@ -167,22 +171,17 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<Array<number>> {
-    const repository = await this.getSpaceSafeRepository(entityManager);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
     const safes = await repository.find({
       select: { id: true },
       where: { space: { id: spaceId } },
       order: { createdAt: 'ASC', id: 'ASC' },
     });
     return safes.map((safe) => safe.id);
-  }
-
-  /** Bound to the caller's transaction when one is passed. */
-  private async getSpaceSafeRepository(
-    entityManager?: EntityManager,
-  ): Promise<Repository<SpaceSafe>> {
-    return entityManager
-      ? entityManager.getRepository(SpaceSafe)
-      : await this.postgresDatabaseService.getRepository(SpaceSafe);
   }
 
   public async find(args: {

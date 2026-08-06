@@ -15,7 +15,7 @@ export type ParsedEntitlement = {
 
 /**
  * An upstream subscription mapped to its materialized shape, ready to be
- * upserted by `IEntitlementsRepository.materialize`.
+ * upserted by `EntitlementsService.materialize`.
  */
 export type MaterializedSubscription = {
   upstreamSubscriptionId: string;

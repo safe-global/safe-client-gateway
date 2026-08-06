@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type EntityManager, In } from 'typeorm';
+import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
@@ -21,9 +22,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<SpaceSubscription | null> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSubscription)
-      : await this.postgresDatabaseService.getRepository(SpaceSubscription);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
     return await repository.findOne({
       where: {
         space: { id: spaceId },
@@ -37,9 +40,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<number> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSubscription)
-      : await this.postgresDatabaseService.getRepository(SpaceSubscription);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
     return await repository.count({
       where: { space: { id: spaceId } },
     });
@@ -49,9 +54,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     upstreamSubscriptionId: string,
     entityManager?: EntityManager,
   ): Promise<Pick<SpaceSubscription, 'id'> | null> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSubscription)
-      : await this.postgresDatabaseService.getRepository(SpaceSubscription);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
     return await repository.findOne({
       where: { upstreamSubscriptionId },
       select: { id: true },
@@ -66,9 +73,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     },
     entityManager?: EntityManager,
   ): Promise<number> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSubscription)
-      : await this.postgresDatabaseService.getRepository(SpaceSubscription);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
     const inserted = await repository.insert({
       ...args.values,
       upstreamSubscriptionId: args.upstreamSubscriptionId,
@@ -81,9 +90,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     args: { id: number; values: SubscriptionValues },
     entityManager?: EntityManager,
   ): Promise<void> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSubscription)
-      : await this.postgresDatabaseService.getRepository(SpaceSubscription);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
     await repository.update(args.id, args.values);
   }
 

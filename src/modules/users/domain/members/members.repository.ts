@@ -16,6 +16,7 @@ import type {
 } from 'typeorm';
 import { In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
+import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -449,9 +450,11 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<number> {
-    const repository = entityManager
-      ? entityManager.getRepository(DbMember)
-      : await this.postgresDatabaseService.getRepository(DbMember);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      DbMember,
+      entityManager,
+    );
     return await repository.count({
       where: activeOrPendingMemberWhere<DbMember>(() => ({
         space: { id: spaceId },

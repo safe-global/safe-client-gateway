@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
+import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
 import type { ISpaceSeatSelectionRepository } from '@/modules/entitlements/domain/space-seat-selection.repository.interface';
@@ -19,9 +20,11 @@ export class SpaceSeatSelectionRepository
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<Array<number>> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSeatSelection)
-      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSeatSelection,
+      entityManager,
+    );
     const selections = await repository.find({
       where: { space: { id: spaceId } },
       // Only the FK is needed; hydrating the Safe would also decrypt its
@@ -39,9 +42,11 @@ export class SpaceSeatSelectionRepository
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<void> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSeatSelection)
-      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSeatSelection,
+      entityManager,
+    );
     await repository.delete({ space: { id: spaceId } });
   }
 
@@ -52,9 +57,11 @@ export class SpaceSeatSelectionRepository
     if (args.spaceSafeIds.length === 0) {
       return;
     }
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceSeatSelection)
-      : await this.postgresDatabaseService.getRepository(SpaceSeatSelection);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSeatSelection,
+      entityManager,
+    );
     await repository.insert(
       args.spaceSafeIds.map((spaceSafeId) => ({
         space: { id: args.spaceId },

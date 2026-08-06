@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
+import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
 import type {
@@ -22,9 +23,11 @@ export class SpaceFeatureUsageRepository
     key: UsageKey,
     entityManager?: EntityManager,
   ): Promise<number> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceFeatureUsage)
-      : await this.postgresDatabaseService.getRepository(SpaceFeatureUsage);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceFeatureUsage,
+      entityManager,
+    );
     const usage = await repository.findOne({
       where: {
         space: { id: key.spaceId },
@@ -42,9 +45,11 @@ export class SpaceFeatureUsageRepository
     if (args.periods.length === 0) {
       return new Map();
     }
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceFeatureUsage)
-      : await this.postgresDatabaseService.getRepository(SpaceFeatureUsage);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceFeatureUsage,
+      entityManager,
+    );
     const rows = await repository.find({
       where: args.periods.map((period) => ({
         space: { id: args.spaceId },
@@ -68,9 +73,11 @@ export class SpaceFeatureUsageRepository
     key: UsageKey,
     entityManager?: EntityManager,
   ): Promise<void> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceFeatureUsage)
-      : await this.postgresDatabaseService.getRepository(SpaceFeatureUsage);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceFeatureUsage,
+      entityManager,
+    );
     await repository.query(
       `INSERT INTO space_feature_usage ("space_id", "feature_id", "period_start", "used")
        VALUES ($1, $2, $3, 0)
@@ -83,9 +90,11 @@ export class SpaceFeatureUsageRepository
     args: UsageKey & { amount: number; quota: number | null },
     entityManager?: EntityManager,
   ): Promise<number | null> {
-    const repository = entityManager
-      ? entityManager.getRepository(SpaceFeatureUsage)
-      : await this.postgresDatabaseService.getRepository(SpaceFeatureUsage);
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceFeatureUsage,
+      entityManager,
+    );
     // TypeORM returns UPDATE ... RETURNING results as [rows, rowCount].
     const [rows]: [Array<{ used: number }>, number] = await repository.query(
       `UPDATE space_feature_usage

@@ -132,25 +132,23 @@ export class EntitlementsService {
    * inviting a member): throws `QuotaExceededError` (402) when the increment
    * would exceed the workspace's effective quota. Unlimited never throws.
    *
-   * Pass the transactional `entityManager` performing the mutation so the
-   * count sees the caller's own uncommitted rows (a batch must see its
-   * earlier inserts). It also serializes concurrent checks for the same
-   * workspace via a session-scoped advisory lock (released automatically at
-   * transaction end), so two callers racing to add the last available seat
-   * cannot both pass the check before either commits its mutation.
+   * `entityManager` must be the transactional manager performing the
+   * mutation: the count needs to see the caller's own uncommitted rows (a
+   * batch must see its earlier inserts), and the session-scoped advisory
+   * lock taken here is released automatically at transaction end — outside
+   * one it would be pointless, so it is required rather than silently
+   * skipped.
    */
   public async checkQuotaOrFail(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
     increment: number;
-    entityManager?: EntityManager;
+    entityManager: EntityManager;
   }): Promise<void> {
-    if (args.entityManager) {
-      await this.subscriptionsRepository.lockSpaceForQuotaCheck(
-        args.spaceId,
-        args.entityManager,
-      );
-    }
+    await this.subscriptionsRepository.lockSpaceForQuotaCheck(
+      args.spaceId,
+      args.entityManager,
+    );
 
     const now = new Date();
     const spaceCreatedAt = await this.getSpaceCreatedAtOrFail(args.spaceId);
