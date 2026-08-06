@@ -86,4 +86,11 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       : await this.postgresDatabaseService.getRepository(SpaceSubscription);
     await repository.update(args.id, args.values);
   }
+
+  public async lockSpaceForQuotaCheck(
+    spaceId: Space['id'],
+    entityManager: EntityManager,
+  ): Promise<void> {
+    await entityManager.query('SELECT pg_advisory_xact_lock($1)', [spaceId]);
+  }
 }

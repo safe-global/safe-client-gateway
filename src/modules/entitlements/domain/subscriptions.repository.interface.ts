@@ -40,6 +40,19 @@ export interface ISubscriptionsRepository {
     args: { id: number; values: SubscriptionValues },
     entityManager?: EntityManager,
   ): Promise<void>;
+
+  /**
+   * Session-scoped Postgres lock serializing concurrent quota checks for a
+   * workspace, released automatically when `entityManager`'s transaction
+   * ends. Not a query over this table's rows — lives here because this is
+   * the repository closest to what governs a workspace's quota, and every
+   * other home crosses a module boundary worse than this crosses a table
+   * boundary.
+   */
+  lockSpaceForQuotaCheck(
+    spaceId: Space['id'],
+    entityManager: EntityManager,
+  ): Promise<void>;
 }
 
 export type SubscriptionValues = Pick<

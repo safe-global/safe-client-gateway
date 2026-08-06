@@ -146,9 +146,10 @@ export class EntitlementsService {
     entityManager?: EntityManager;
   }): Promise<void> {
     if (args.entityManager) {
-      await args.entityManager.query('SELECT pg_advisory_xact_lock($1)', [
+      await this.subscriptionsRepository.lockSpaceForQuotaCheck(
         args.spaceId,
-      ]);
+        args.entityManager,
+      );
     }
 
     const now = new Date();
