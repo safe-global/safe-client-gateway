@@ -10,7 +10,12 @@ import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
 } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
-import { isActiveSubscriptionStatus } from '@/modules/entitlements/domain/entitlements.constants';
+import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import {
+  ENFORCEMENT_LAUNCH_DATE,
+  isActiveSubscriptionStatus,
+  isStockMeteredFeature,
+} from '@/modules/entitlements/domain/entitlements.constants';
 import {
   effectiveEntitlement,
   enforceableQuota,
@@ -22,7 +27,6 @@ import {
 } from '@/modules/entitlements/domain/entitlements.rules';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import { isStockMeteredFeature } from '@/modules/entitlements/domain/metered-features.registry';
 import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
 import { ISpaceSeatSelectionRepository } from '@/modules/entitlements/domain/space-seat-selection.repository.interface';
 import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
@@ -64,21 +68,23 @@ export class EntitlementsService {
     spaceId: Space['id'],
   ): Promise<ResolvedEntitlements> {
     const now = new Date();
-    const space = await this.getSpaceOrFail(spaceId);
-    const features = await this.featuresRepository.getFeatures();
-    const activeSubscription =
-      await this.subscriptionsRepository.getActiveSubscriptionBySpaceId(
-        spaceId,
-      );
-    const hasEverSubscribed =
-      activeSubscription !== null ||
-      (await this.subscriptionsRepository.countSubscriptionsBySpaceId(
-        spaceId,
-      )) > 0;
+    // Independent reads: the usage lookup below is the first step that needs
+    // their results.
+    const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
+      this.getSpaceCreatedAtOrFail(spaceId),
+      this.featuresRepository.getFeatures(),
+      this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
+    ]);
+
+    const hasEverSubscribed = await this.hasEverSubscribed({
+      spaceId,
+      spaceCreatedAt,
+      activeSubscription,
+    });
 
     const usedByFeatureId = await this.getUsageByFeatureId({
       spaceId,
-      spaceCreatedAt: space.createdAt,
+      spaceCreatedAt,
       features,
       activeSubscription,
       now,
@@ -87,7 +93,7 @@ export class EntitlementsService {
     const entitlements = features.map((feature) =>
       this.resolve({
         feature,
-        spaceCreatedAt: space.createdAt,
+        spaceCreatedAt,
         activeSubscription,
         hasEverSubscribed,
         used: usedByFeatureId.get(feature.id) ?? 0,
@@ -137,7 +143,7 @@ export class EntitlementsService {
     entityManager?: EntityManager;
   }): Promise<void> {
     const now = new Date();
-    const space = await this.getSpaceOrFail(args.spaceId);
+    const spaceCreatedAt = await this.getSpaceCreatedAtOrFail(args.spaceId);
     const feature = await this.getFeatureOrFail(
       args.featureKey,
       args.entityManager,
@@ -149,10 +155,7 @@ export class EntitlementsService {
       );
 
     const quota = enforceableQuota(
-      effectiveEntitlement({
-        feature,
-        purchased: this.purchasedFor(feature, activeSubscription),
-      }),
+      this.effectiveFor(feature, activeSubscription),
     );
     if (quota === null) {
       return;
@@ -160,7 +163,7 @@ export class EntitlementsService {
 
     const used = await this.getUsage({
       spaceId: args.spaceId,
-      spaceCreatedAt: space.createdAt,
+      spaceCreatedAt,
       feature,
       activeSubscription,
       now,
@@ -173,7 +176,7 @@ export class EntitlementsService {
         used,
         resetsAt: resetsAt({
           feature,
-          spaceCreatedAt: space.createdAt,
+          spaceCreatedAt,
           cycle: activeSubscription,
           now,
         }),
@@ -199,7 +202,7 @@ export class EntitlementsService {
     }
 
     const now = new Date();
-    const space = await this.getSpaceOrFail(args.spaceId);
+    const spaceCreatedAt = await this.getSpaceCreatedAtOrFail(args.spaceId);
     const feature = await this.getFeatureOrFail(args.featureKey);
     if (feature.type !== 'metered') {
       throw new Error(`${args.featureKey} is not a metered feature`);
@@ -210,17 +213,14 @@ export class EntitlementsService {
       );
 
     const quota = enforceableQuota(
-      effectiveEntitlement({
-        feature,
-        purchased: this.purchasedFor(feature, activeSubscription),
-      }),
+      this.effectiveFor(feature, activeSubscription),
     );
     const key = {
       spaceId: args.spaceId,
       featureId: feature.id,
       periodStart: eventPeriodStart({
         feature,
-        spaceCreatedAt: space.createdAt,
+        spaceCreatedAt,
         cycle: activeSubscription,
         now,
       }),
@@ -248,7 +248,7 @@ export class EntitlementsService {
             ),
             resetsAt: resetsAt({
               feature,
-              spaceCreatedAt: space.createdAt,
+              spaceCreatedAt,
               cycle: activeSubscription,
               now,
             }),
@@ -269,7 +269,7 @@ export class EntitlementsService {
     spaceId: Space['id'];
     subscriptions: Array<MaterializedSubscription>;
   }): Promise<void> {
-    await this.getSpaceOrFail(args.spaceId);
+    await this.getSpaceCreatedAtOrFail(args.spaceId);
     const features = await this.featuresRepository.getFeatures();
     const featureIdByKey = new Map(
       features.map((feature) => [feature.key, feature.id]),
@@ -383,10 +383,7 @@ export class EntitlementsService {
     now: Date;
   }): ResolvedEntitlement {
     const { feature, spaceCreatedAt, activeSubscription, used, now } = args;
-    const effective = effectiveEntitlement({
-      feature,
-      purchased: this.purchasedFor(feature, activeSubscription),
-    });
+    const effective = this.effectiveFor(feature, activeSubscription);
 
     if (feature.type === 'binary') {
       return {
@@ -424,6 +421,17 @@ export class EntitlementsService {
         used,
       }),
     };
+  }
+
+  /** Effective entitlement of a feature under the workspace's current plan. */
+  private effectiveFor(
+    feature: Feature,
+    activeSubscription: SpaceSubscription | null,
+  ): ReturnType<typeof effectiveEntitlement> {
+    return effectiveEntitlement({
+      feature,
+      purchased: this.purchasedFor(feature, activeSubscription),
+    });
   }
 
   private purchasedFor(
@@ -470,10 +478,9 @@ export class EntitlementsService {
       metered
         .filter((feature) => isStockMeteredFeature(feature.key))
         .map(async (feature) => {
-          const used = await this.countStockUsage(
-            feature.key as 'safe_seats' | 'members',
-            args.spaceId,
-          );
+          const used = await this.stockCounters[
+            feature.key as StockMeteredFeature
+          ](args.spaceId);
           return [feature.id, used] as const;
         }),
     );
@@ -492,8 +499,7 @@ export class EntitlementsService {
   }): Promise<number> {
     const { feature } = args;
     if (isStockMeteredFeature(feature.key)) {
-      return await this.countStockUsage(
-        feature.key,
+      return await this.stockCounters[feature.key](
         args.spaceId,
         args.entityManager,
       );
@@ -516,46 +522,68 @@ export class EntitlementsService {
   /**
    * Stock usage is a live count owned by the feature's own module, so it is
    * read through that module's repository rather than from `entitlements`.
+   * Exhaustive by construction: a new key in `STOCK_METERED_FEATURES` does not
+   * compile until its counter is added here.
    */
-  private async countStockUsage(
-    featureKey: 'safe_seats' | 'members',
-    spaceId: Space['id'],
-    entityManager?: EntityManager,
-  ): Promise<number> {
-    return featureKey === 'safe_seats'
-      ? await this.spaceSafesRepository.countBySpaceId(spaceId, entityManager)
-      : await this.membersRepository.countActiveOrPendingBySpaceId(
-          spaceId,
-          entityManager,
-        );
-  }
+  private readonly stockCounters: Record<
+    StockMeteredFeature,
+    (spaceId: Space['id'], entityManager?: EntityManager) => Promise<number>
+  > = {
+    safe_seats: (spaceId, entityManager) =>
+      this.spaceSafesRepository.countBySpaceId(spaceId, entityManager),
+    members: (spaceId, entityManager) =>
+      this.membersRepository.countActiveOrPendingBySpaceId(
+        spaceId,
+        entityManager,
+      ),
+  };
 
   private async computeOverSeatSafeIds(
     spaceId: Space['id'],
     quota: number,
   ): Promise<Array<number>> {
+    const [safeIdsOldestFirst, selectedSafeIds] = await Promise.all([
+      this.spaceSafesRepository.getIdsBySpaceIdOldestFirst(spaceId),
+      this.spaceSeatSelectionRepository.getSelectedSpaceSafeIds(spaceId),
+    ]);
     return selectOverSeatSafeIds({
-      safeIdsOldestFirst:
-        await this.spaceSafesRepository.getIdsBySpaceIdOldestFirst(spaceId),
-      selectedSafeIds:
-        await this.spaceSeatSelectionRepository.getSelectedSpaceSafeIds(
-          spaceId,
-        ),
+      safeIdsOldestFirst,
+      selectedSafeIds,
       quota,
     });
   }
 
-  private async getSpaceOrFail(
-    spaceId: Space['id'],
-  ): Promise<{ id: number; createdAt: Date }> {
+  private async getSpaceCreatedAtOrFail(spaceId: Space['id']): Promise<Date> {
     const space = await this.spacesRepository.findOne({
       where: { id: spaceId },
-      select: { id: true, createdAt: true },
+      select: { createdAt: true },
     });
     if (!space) {
       throw new NotFoundException('Workspace not found.');
     }
-    return { id: space.id, createdAt: space.createdAt };
+    return space.createdAt;
+  }
+
+  /**
+   * Only grandfathering reads this, and that needs a pre-launch workspace, so
+   * the COUNT is skipped entirely for every workspace created since.
+   */
+  private async hasEverSubscribed(args: {
+    spaceId: Space['id'];
+    spaceCreatedAt: Date;
+    activeSubscription: SpaceSubscription | null;
+  }): Promise<boolean> {
+    if (args.activeSubscription !== null) {
+      return true;
+    }
+    if (args.spaceCreatedAt >= ENFORCEMENT_LAUNCH_DATE) {
+      return false;
+    }
+    return (
+      (await this.subscriptionsRepository.countSubscriptionsBySpaceId(
+        args.spaceId,
+      )) > 0
+    );
   }
 
   private async getFeatureOrFail(

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ENFORCEMENT_LAUNCH_DATE } from '@/modules/entitlements/domain/entitlements.constants';
-import { isStockMeteredFeature } from '@/modules/entitlements/domain/metered-features.registry';
+import {
+  ENFORCEMENT_LAUNCH_DATE,
+  isStockMeteredFeature,
+} from '@/modules/entitlements/domain/entitlements.constants';
 
 /**
  * The entitlement rules of the RFC as pure functions: no database, no Nest, no

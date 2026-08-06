@@ -14,17 +14,22 @@ import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subs
 export const ENFORCEMENT_LAUNCH_DATE = new Date('2026-07-01T00:00:00Z');
 
 /**
- * Prefix of the Stripe metadata keys carrying the purchased feature package,
- * e.g. `FEATURE_SAFE_SEATS=10`, `FEATURE_SECURITY_HUB=true`,
- * `FEATURE_SPONSORED_TRANSACTIONS=unlimited`, `FEATURE_SWAP_FEE_TIER=business`.
+ * Metered features whose usage is a live COUNT over a table another module
+ * owns (Safes, members) rather than a `space_feature_usage` counter — storing
+ * it twice would create a second source of truth that can drift. They have no
+ * reset window (`resetsAt: null`).
+ *
+ * `EntitlementsService` maps each key to the repository call that counts it,
+ * through an exhaustive `Record`, so adding one here fails to compile until
+ * its counter is wired.
  */
-export const FEATURE_METADATA_PREFIX = 'FEATURE_';
+export const STOCK_METERED_FEATURES = ['safe_seats', 'members'] as const;
 
-/**
- * Value of a metered feature's metadata entry meaning "no quota, never
- * blocks" (materialized as `quota = NULL`).
- */
-export const UNLIMITED_METADATA_VALUE = 'unlimited';
+export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
+
+export function isStockMeteredFeature(key: string): key is StockMeteredFeature {
+  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
+}
 
 /**
  * Subscription statuses that occupy a workspace's single "active

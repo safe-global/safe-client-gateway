@@ -36,6 +36,22 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_subscriptions_active_space" ON "subscriptions"  ("space_id") WHERE status IN ('active','trialing','past_due','paused','unpaid')`,
     );
+    // `updated_at` is maintained by the shared trigger every other table uses
+    // (see 1727701600427-update_timestamp_trigger); the entity columns are
+    // declared `update: false`, so nothing writes them from the application.
+    for (const table of [
+      'features',
+      'space_feature_usage',
+      'space_seat_selection',
+      'subscription_entitlements',
+      'subscriptions',
+    ]) {
+      await queryRunner.query(
+        `CREATE TRIGGER update_updated_at
+          BEFORE UPDATE ON ${table}
+          FOR EACH ROW EXECUTE PROCEDURE update_updated_at();`,
+      );
+    }
     await queryRunner.query(
       `ALTER TABLE "space_feature_usage" ADD CONSTRAINT "FK_SFU_space_id" FOREIGN KEY ("space_id") REFERENCES "spaces"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
     );

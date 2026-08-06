@@ -22,11 +22,14 @@ export class SpaceSeatSelectionRepository
     const repository = await this.getRepository(entityManager);
     const selections = await repository.find({
       where: { space: { id: spaceId } },
-      relations: { spaceSafe: true },
+      // Only the FK is needed; hydrating the Safe would also decrypt its
+      // address for nothing.
+      loadRelationIds: { relations: ['spaceSafe'] },
       order: { createdAt: 'ASC', id: 'ASC' },
     });
     return selections.flatMap((selection) =>
-      selection.spaceSafe ? [selection.spaceSafe.id] : [],
+      // With `loadRelationIds` the relation holds the raw id.
+      selection.spaceSafe ? [selection.spaceSafe as unknown as number] : [],
     );
   }
 

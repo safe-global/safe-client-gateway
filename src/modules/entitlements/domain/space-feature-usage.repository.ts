@@ -47,11 +47,15 @@ export class SpaceFeatureUsageRepository
         feature: { id: period.featureId },
         periodStart: period.periodStart,
       })),
-      relations: { feature: true },
+      // Only the FK is needed; hydrating the feature row would be wasted work.
+      loadRelationIds: { relations: ['feature'] },
     });
     return new Map(
       rows.flatMap((row) =>
-        row.feature ? [[row.feature.id, row.used] as const] : [],
+        // With `loadRelationIds` the relation holds the raw id.
+        row.feature
+          ? [[row.feature as unknown as number, row.used] as const]
+          : [],
       ),
     );
   }
@@ -77,7 +81,7 @@ export class SpaceFeatureUsageRepository
     // TypeORM returns UPDATE ... RETURNING results as [rows, rowCount].
     const [rows]: [Array<{ used: number }>, number] = await repository.query(
       `UPDATE space_feature_usage
-       SET "used" = "used" + $4, "updated_at" = CURRENT_TIMESTAMP
+       SET "used" = "used" + $4
        WHERE "space_id" = $1 AND "feature_id" = $2 AND "period_start" = $3
          AND ($5::integer IS NULL OR "used" + $4 <= $5)
        RETURNING "used"`,

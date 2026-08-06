@@ -24,13 +24,12 @@ import {
   FeatureTypes,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import { ENFORCEMENT_LAUNCH_DATE } from '@/modules/entitlements/domain/entitlements.constants';
+import {
+  ENFORCEMENT_LAUNCH_DATE,
+  isStockMeteredFeature,
+} from '@/modules/entitlements/domain/entitlements.constants';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
-import {
-  isStockMeteredFeature,
-  STOCK_METERED_FEATURES,
-} from '@/modules/entitlements/domain/metered-features.registry';
 import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
 import { SpaceSeatSelectionRepository } from '@/modules/entitlements/domain/space-seat-selection.repository';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
@@ -923,31 +922,6 @@ describe('EntitlementsService', () => {
       // 5 seats held → full.
       await expect(
         checkQuota({ spaceId, featureKey: 'members', increment: 1 }),
-      ).rejects.toThrow(QuotaExceededError);
-    });
-
-    // Enforcement dispatches through STOCK_METERED_SOURCES, so every
-    // registered feature is guarded by the same primitive: adding one is a
-    // registry entry plus a catalog row, not a new code path.
-    it.each(
-      STOCK_METERED_FEATURES,
-    )('enforces the %s quota through the shared registry', async (featureKey) => {
-      const quota = featureKey === 'safe_seats' ? 1 : 0;
-      const spaceId = await createSpace();
-      await service.materialize({
-        spaceId,
-        subscriptions: [
-          materializedSubscription({
-            entitlements: [{ featureKey, enabled: true, quota, value: null }],
-          }),
-        ],
-      });
-      if (featureKey === 'safe_seats') {
-        await addSafes(spaceId, 1);
-      }
-
-      await expect(
-        checkQuota({ spaceId, featureKey, increment: 1 }),
       ).rejects.toThrow(QuotaExceededError);
     });
   });
