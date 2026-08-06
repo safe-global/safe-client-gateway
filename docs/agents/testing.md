@@ -41,7 +41,7 @@ Running integration tests locally needs the same backing services running throug
 docker compose up -d db-test redis rabbitmq
 ```
 
-`.env.test` is loaded automatically by every `yarn test:*` script (`node --env-file-if-exists=./.env.test`) and already sets `POSTGRES_TEST_DB`/`POSTGRES_TEST_USER`/`POSTGRES_TEST_PASSWORD`/`POSTGRES_TEST_PORT`, `REDIS_HOST`/`REDIS_PORT`, and `AMQP_URL` to match the Compose services above — override one only if your local setup diverges from it. Then:
+No further setup is needed for a default local setup: `src/config/entities/__tests__/configuration.ts` already defaults `POSTGRES_TEST_*`, `REDIS_HOST`/`REDIS_PORT`, and `AMQP_URL` to match the Compose services above. If yours diverges, create a `.env.test` at the repo root overriding the ones that differ — it is `.gitignore`d, so a fresh clone has none, and every `yarn test:*` script loads it only when present (`node --env-file-if-exists=./.env.test`). Then:
 
 ```bash
 yarn test:integration

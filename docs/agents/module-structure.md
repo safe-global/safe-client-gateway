@@ -34,7 +34,7 @@ src/modules/<kebab-name>/
 
 **Canonical example:** `src/modules/spaces/`, `src/modules/chains/`.
 
-**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`) — do not imitate.
+**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (no `domain/` or `routes/` at all — a controller at the module root plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts`) — do not imitate either.
 
 ### Layer placement
 
