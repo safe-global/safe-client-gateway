@@ -124,7 +124,10 @@ jobs:
             touches, is NOT a finding — only actual violations of the guides
             and failed Part 2 checks count.
           # The gh commands are pinned to the triggering PR's number so a
-          # prompt injection cannot redirect them at another PR.
+          # prompt injection cannot redirect them at another PR. `:*` is a
+          # string-prefix match, so each entry must end the number with a
+          # space-delimited token (or be an exact match) — a bare
+          # `gh pr comment 123:*` would also allow `gh pr comment 1234`.
           claude_args: |
             --model claude-opus-5
-            --allowedTools "Read,Grep,Glob,Bash(gh pr view ${{ github.event.issue.number || github.event.pull_request.number }}:*),Bash(gh pr diff ${{ github.event.issue.number || github.event.pull_request.number }}:*),Bash(gh pr comment ${{ github.event.issue.number || github.event.pull_request.number }}:*)"
+            --allowedTools "Read,Grep,Glob,Bash(gh pr view ${{ github.event.issue.number || github.event.pull_request.number }} --json:*),Bash(gh pr diff ${{ github.event.issue.number || github.event.pull_request.number }}),Bash(gh pr diff ${{ github.event.issue.number || github.event.pull_request.number }} --name-only),Bash(gh pr comment ${{ github.event.issue.number || github.event.pull_request.number }} --body:*)"
