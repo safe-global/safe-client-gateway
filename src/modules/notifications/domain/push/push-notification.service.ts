@@ -90,7 +90,7 @@ export class PushNotificationService implements IPushNotificationService {
 
     // Drop transfers the Transaction Service flagged as untrusted.
     if (event.type === TransactionEventType.INCOMING_TOKEN && !event.trusted) {
-      this.loggingService.info({
+      this.loggingService.debug({
         type: LogType.NotificationSpamTokenDropped,
         eventType: event.type,
         chainId: event.chainId,
@@ -136,7 +136,7 @@ export class PushNotificationService implements IPushNotificationService {
                 notificationType: notification.type,
               },
             );
-            this.loggingService.info({
+            this.loggingService.debug({
               type: LogType.NotificationDeliveryQueued,
               chainId: notification.chainId,
               safeAddress: notification.address,
@@ -157,7 +157,7 @@ export class PushNotificationService implements IPushNotificationService {
       )
     ).reduce((sum, n) => sum + n, 0);
 
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.NotificationEventProcessed,
       eventType: event.type,
       chainId: event.chainId,
@@ -183,7 +183,7 @@ export class PushNotificationService implements IPushNotificationService {
       deviceUuid: data.deviceUuid,
       notification: data.notification,
     });
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.NotificationSent,
       chainId: data.chainId,
       safeAddress: data.safeAddress,
@@ -379,7 +379,9 @@ export class PushNotificationService implements IPushNotificationService {
         to: event.to,
         safeTxHash: event.safeTxHash,
         txHash: event.txHash,
-        failed: event.failed,
+        // Stringified: FirebaseNotification['data'] only accepts strings and
+        // deployed clients read `failed`.
+        failed: event.isFailed ? 'true' : 'false',
         data: event.data,
       };
     }

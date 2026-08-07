@@ -16,6 +16,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { SpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository';
 import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
@@ -25,10 +26,12 @@ import {
 } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
+import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
+import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { MembersRepository } from '@/modules/users/domain/members/members.repository';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
@@ -124,25 +127,34 @@ describe('SpaceAuditRepository', () => {
     spaceAuditRepository = new SpaceAuditRepository(
       postgresDatabaseService,
       mockConfigurationService,
+      createMockSpaceEncryptionService(),
     );
     spacesRepository = new SpacesRepository(
       postgresDatabaseService,
       mockConfigurationService,
       spaceAuditRepository,
+      createMockSpaceEncryptionService(),
+      createMockMemberEncryptionService(),
     );
-    const walletsRepository = new WalletsRepository(postgresDatabaseService);
+    const walletsRepository = new WalletsRepository(
+      postgresDatabaseService,
+      createMockWalletEncryptionService(),
+    );
     usersRepository = new UsersRepository(
       postgresDatabaseService,
       walletsRepository,
       spaceAuditRepository,
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
+      createMockWalletEncryptionService(),
     );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       spacesRepository,
       spaceAuditRepository,
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
+      createMockWalletEncryptionService(),
+      createMockMemberEncryptionService(),
     );
   });
 
@@ -243,7 +255,7 @@ describe('SpaceAuditRepository', () => {
         eventType: 'SPACE_CREATED',
         actorUserId: adminUserId,
       });
-      expect(rows[0].payload).toHaveProperty('name');
+      expect(JSON.parse(rows[0].payload)).toHaveProperty('name');
     });
 
     it('should record MEMBER_ROLE_UPDATED with old and new role', async () => {
@@ -264,7 +276,7 @@ describe('SpaceAuditRepository', () => {
       });
       expect(rows).toHaveLength(1);
       expect(rows[0].actorUserId).toBe(adminUserId);
-      expect(rows[0].payload).toStrictEqual({
+      expect(JSON.parse(rows[0].payload)).toStrictEqual({
         targetUserId: invitee.userId,
         oldRole: 'MEMBER',
         newRole: 'ADMIN',
@@ -340,7 +352,7 @@ describe('SpaceAuditRepository', () => {
       expect(timestamps.size).toBe(1);
       for (const row of rows) {
         expect(row.actorUserId).toBe(adminUserId);
-        expect(row.payload).toMatchObject({ role: 'MEMBER' });
+        expect(JSON.parse(row.payload)).toMatchObject({ role: 'MEMBER' });
       }
     });
 
@@ -381,7 +393,7 @@ describe('SpaceAuditRepository', () => {
       });
       expect(rowsA).toHaveLength(1);
       expect(rowsA[0].actorUserId).toBe(invitee.userId);
-      expect(rowsA[0].payload).toStrictEqual({
+      expect(JSON.parse(rowsA[0].payload)).toStrictEqual({
         targetUserId: invitee.userId,
         accountDeleted: true,
       });
@@ -633,6 +645,7 @@ describe('SpaceAuditRepository', () => {
       const disabledRepository = new SpaceAuditRepository(
         postgresDatabaseService,
         disabledConfigurationService,
+        createMockSpaceEncryptionService(),
       );
 
       await postgresDatabaseService.transaction(async (entityManager) => {

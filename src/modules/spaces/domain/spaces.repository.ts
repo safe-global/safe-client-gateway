@@ -23,6 +23,7 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -30,6 +31,7 @@ import {
   MemberRole,
   MemberStatus,
 } from '@/modules/users/domain/entities/member.entity';
+import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
@@ -42,6 +44,10 @@ export class SpacesRepository implements ISpacesRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
+    @Inject(MemberEncryptionService)
+    private readonly memberEncryptionService: MemberEncryptionService,
   ) {
     this.maxSpaceCreationsPerUser =
       this.configurationService.getOrThrow<number>(
@@ -82,17 +88,38 @@ export class SpacesRepository implements ISpacesRepository {
       async (entityManager) => {
         const insertResult = await entityManager.save(space);
 
+        const encryptedName =
+          await this.spaceEncryptionService.encryptSpaceName(
+            insertResult.id,
+            args.name,
+          );
+        if (encryptedName !== args.name) {
+          await entityManager.update(Space, insertResult.id, {
+            name: encryptedName,
+          });
+        }
+        const encryptedMemberName =
+          await this.memberEncryptionService.encryptName(
+            insertResult.id,
+            member.name,
+          );
+        if (encryptedMemberName !== member.name) {
+          await entityManager.update(Member, insertResult.members[0].id, {
+            name: encryptedMemberName,
+          });
+        }
+
         await this.spaceAuditRepository.record(entityManager, {
           spaceId: insertResult.id,
           spaceUuid: insertResult.uuid,
           eventType: SpaceAuditEventType.SPACE_CREATED,
           actorUserId: args.userId,
-          payload: { name: insertResult.name },
+          payload: { name: args.name },
         });
 
         return {
           uuid: insertResult.uuid,
-          name: insertResult.name,
+          name: args.name,
         };
       },
     );
@@ -228,14 +255,34 @@ export class SpacesRepository implements ISpacesRepository {
           throw new NotFoundException('Workspace not found.');
         }
 
+        const { name } = args.updatePayload;
+        const currentName =
+          name !== undefined
+            ? await this.spaceEncryptionService.decryptSpaceName(
+                args.id,
+                current.name,
+              )
+            : current.name;
+        const encryptedName =
+          name !== undefined
+            ? await this.spaceEncryptionService.encryptSpaceName(args.id, name)
+            : undefined;
+
         await entityManager
           .createQueryBuilder()
           .update(Space)
-          .set(args.updatePayload)
+          .set({
+            ...args.updatePayload,
+            ...(encryptedName !== undefined && { name: encryptedName }),
+          })
           .where({ id: args.id })
           .execute();
 
-        const diff = this.diffSpaceUpdate(current, args.updatePayload);
+        const diff = this.diffSpaceUpdate({
+          current,
+          currentName,
+          updatePayload: args.updatePayload,
+        });
         if (diff) {
           await this.spaceAuditRepository.record(entityManager, {
             spaceId: current.id,
@@ -251,21 +298,27 @@ export class SpacesRepository implements ISpacesRepository {
     );
   }
 
-  /** Changed `name`/`status` fields of a space update, or `null` for a no-op. */
-  private diffSpaceUpdate(
-    current: Pick<Space, 'name' | 'status'>,
-    updatePayload: Partial<Pick<Space, 'name' | 'status'>>,
-  ): SpaceUpdatedPayload | null {
-    const { name, status } = updatePayload;
+  /**
+   * Changed `name`/`status` fields of a space update, or `null` for a no-op.
+   * Names are the plaintext values — the audit payload is encrypted as a whole
+   * blob by the audit repository.
+   */
+  private diffSpaceUpdate(args: {
+    current: Pick<Space, 'status'>;
+    /** The stored name decrypted, for the plaintext comparison. */
+    currentName: string;
+    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+  }): SpaceUpdatedPayload | null {
+    const { name, status } = args.updatePayload;
     const oldFields: SpaceUpdatedPayload['old'] = {};
     const newFields: SpaceUpdatedPayload['new'] = {};
 
-    if (name !== undefined && name !== current.name) {
-      oldFields.name = current.name;
+    if (name !== undefined && name !== args.currentName) {
+      oldFields.name = args.currentName;
       newFields.name = name;
     }
-    if (status !== undefined && status !== current.status) {
-      oldFields.status = current.status;
+    if (status !== undefined && status !== args.current.status) {
+      oldFields.status = args.current.status;
       newFields.status = status;
     }
 
@@ -306,12 +359,16 @@ export class SpacesRepository implements ISpacesRepository {
         throw new NotFoundException('Workspace not found.');
       }
 
+      const name = await this.spaceEncryptionService.decryptSpaceName(
+        space.id,
+        space.name,
+      );
       await this.spaceAuditRepository.record(entityManager, {
         spaceId: space.id,
         spaceUuid: space.uuid,
         eventType: SpaceAuditEventType.SPACE_DELETED,
         actorUserId: args.actorUserId,
-        payload: { name: space.name },
+        payload: { name },
       });
 
       await entityManager.delete(Space, space.id);

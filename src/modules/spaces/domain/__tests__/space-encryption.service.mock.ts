@@ -1,0 +1,57 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { MockedObject } from 'vitest';
+import type { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
+
+/**
+ * A passthrough {@link SpaceEncryptionService} double reproducing
+ * exactly how the real service behaves when field encryption is disabled —
+ * the default everywhere outside production rollout: values pass through
+ * unchanged, blind indexes are null (callers store/look up plaintext), and
+ * KMS is never touched. Mirrors createMockUserEncryptionService.
+ */
+export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryptionService> {
+  return {
+    isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
+    encryptSpaceName: vi.fn((_spaceId: number, name: string) =>
+      Promise.resolve(name),
+    ),
+    decryptSpaceName: vi.fn((_spaceId: number, value: string) =>
+      Promise.resolve(value),
+    ),
+    decryptSpaces: vi.fn((spaces: Array<{ id: number; name: string }>) =>
+      Promise.resolve(spaces),
+    ),
+    encryptSafeAddress: vi.fn((_spaceId: number, address: string) =>
+      Promise.resolve(address),
+    ),
+    safeAddressIndex: vi.fn((_address: string) => null),
+    decryptSpaceSafes: vi.fn(
+      (_spaceId: number, safes: Array<{ address: string }>) =>
+        Promise.resolve(safes),
+    ),
+    encryptAddressBookItem: vi.fn(
+      (_spaceId: number, entry: { address: string; name: string }) =>
+        Promise.resolve({ ...entry, addressIndex: null }),
+    ),
+    itemAddressIndex: vi.fn((_address: string) => null),
+    decryptAddressBookItems: vi.fn(
+      (_spaceId: number, items: Array<{ address: string; name: string }>) =>
+        Promise.resolve(items),
+    ),
+    encryptAddressBookRequest: vi.fn(
+      (_spaceId: number, entry: { address: string; name: string }) =>
+        Promise.resolve({ ...entry, addressIndex: null }),
+    ),
+    requestAddressIndex: vi.fn((_address: string) => null),
+    decryptAddressBookRequests: vi.fn(
+      (_spaceId: number, requests: Array<{ address: string; name: string }>) =>
+        Promise.resolve(requests),
+    ),
+    encryptAuditPayload: vi.fn((_spaceId: number, payload: unknown) =>
+      Promise.resolve(JSON.stringify(payload)),
+    ),
+    decryptAuditPayload: vi.fn((_spaceId: number, payload: string) =>
+      Promise.resolve(JSON.parse(payload)),
+    ),
+  } as MockedObject<SpaceEncryptionService>;
+}

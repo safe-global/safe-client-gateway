@@ -41,6 +41,10 @@ export default (): ReturnType<typeof configuration> => ({
       scope: 'openid email',
       jwksCacheMaxAgeMs: faker.number.int({ min: 60_000, max: 3_600_000 }),
       jwksCooldownMs: faker.number.int({ min: 1_000, max: 60_000 }),
+      managementApiTokenTtlBufferInSeconds: faker.number.int({
+        min: 30,
+        max: 120,
+      }),
     },
     rateLimit: {
       max: faker.number.int({ min: 100, max: 200 }),
@@ -471,16 +475,6 @@ export default (): ReturnType<typeof configuration> => ({
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
-    fieldEncryption: {
-      enabled: false,
-      emailIndexKey: undefined,
-      kms: {
-        keyId: undefined,
-        accessKeyId: undefined,
-        secretAccessKey: undefined,
-        webIdentityTokenFile: undefined,
-      },
-    },
     invite: {
       ttlMs: faker.number.int({ min: 60_000, max: 7 * 24 * 60 * 60 * 1000 }),
     },
@@ -497,6 +491,16 @@ export default (): ReturnType<typeof configuration> => ({
         max: faker.number.int({ min: 100, max: 200 }),
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
+    },
+  },
+  encryption: {
+    enabled: false,
+    indexKey: undefined,
+    kms: {
+      keyId: undefined,
+      accessKeyId: undefined,
+      secretAccessKey: undefined,
+      webIdentityTokenFile: undefined,
     },
   },
   staking: {

@@ -97,7 +97,7 @@ export class TransferInfoMapper {
       return await this.swapTransferInfoMapper.mapSwapTransferInfo(args);
     } catch (error) {
       // There were either issues mapping the swap transfer or it is a "normal" transfer
-      this.loggingService.warn(error);
+      this.loggingService.debug(error);
       return null;
     }
   }

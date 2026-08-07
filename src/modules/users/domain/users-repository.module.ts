@@ -2,11 +2,11 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { KmsModule } from '@/datasources/kms/kms.module';
+import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -29,14 +29,14 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     TypeOrmModule.forFeature([User, Member, Wallet]),
     WalletsModule,
     SpaceAuditModule,
-    KmsModule,
+    KmsEncryptionModule,
   ],
   providers: [
-    EmailEncryptionService,
+    UserEncryptionService,
     { provide: IUsersRepository, useClass: UsersRepository },
   ],
-  // EmailEncryptionService is exported for MembersRepository (UsersModule),
+  // UserEncryptionService is exported for MembersRepository (UsersModule),
   // which must decrypt the emails of relation-loaded users.
-  exports: [IUsersRepository, EmailEncryptionService],
+  exports: [IUsersRepository, UserEncryptionService],
 })
 export class UsersRepositoryModule {}

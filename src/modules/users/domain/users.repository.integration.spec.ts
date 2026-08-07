@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
+import {
+  DecryptCommand,
+  GenerateDataKeyCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
@@ -14,6 +18,8 @@ import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import { INDEX_KEY_LENGTH } from '@/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -27,13 +33,13 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { createMockEmailEncryptionService } from '@/modules/users/domain/__tests__/email-encryption.service.mock';
-import { INDEX_KEY_LENGTH } from '@/modules/users/domain/email-encryption.constants';
-import { EmailEncryptionService } from '@/modules/users/domain/email-encryption.service';
+import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { UsersRepository } from '@/modules/users/domain/users.repository';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
@@ -113,9 +119,13 @@ describe('UsersRepository', () => {
 
     usersRepository = new UsersRepository(
       postgresDatabaseService,
-      new WalletsRepository(postgresDatabaseService),
+      new WalletsRepository(
+        postgresDatabaseService,
+        createMockWalletEncryptionService(),
+      ),
       createMockSpaceAuditRepository(),
-      createMockEmailEncryptionService(),
+      createMockUserEncryptionService(),
+      createMockWalletEncryptionService(),
     );
   });
 
@@ -225,6 +235,7 @@ describe('UsersRepository', () => {
 
       expect(wallet).toEqual({
         address: authPayload.signer_address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -498,6 +509,7 @@ describe('UsersRepository', () => {
       });
       expect(wallet).toEqual({
         address: walletAddress,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -715,6 +727,7 @@ describe('UsersRepository', () => {
       expect(wallets).toEqual([
         {
           address: authPayload.signer_address,
+          addressIndex: null,
           createdAt: expect.any(Date),
           id: wallets[0].id,
           updatedAt: expect.any(Date),
@@ -880,6 +893,7 @@ describe('UsersRepository', () => {
       });
       expect(wallet).toEqual({
         address,
+        addressIndex: null,
         createdAt: expect.any(Date),
         id: wallet.id,
         updatedAt: expect.any(Date),
@@ -1297,11 +1311,11 @@ describe('UsersRepository', () => {
 
   describe('email encryption (real KMS)', () => {
     // Unlike the hand-rolled fake double used elsewhere, this wires the real
-    // EmailEncryptionService to a real AwsKmsService with only the AWS SDK
+    // UserEncryptionService to a real AwsKmsService with only the AWS SDK
     // boundary mocked (same pattern as aws-kms.service.spec.ts). It proves
     // the actual kms:v1:... on-disk contract round-trips through a live
-    // repository call, and that a plaintext row (not yet reached by the
-    // backfill) still reads back untouched rather than erroring.
+    // repository call, and that a plaintext row read while encryption is
+    // enabled is rejected rather than silently passed through.
     const kmsMock = mockClient(KMSClient);
     const keyId = faker.string.uuid();
     const indexKey = Buffer.alloc(INDEX_KEY_LENGTH, 7);
@@ -1314,7 +1328,7 @@ describe('UsersRepository', () => {
     // spaces.repository.integration.spec.ts, rather than a generic path
     // resolver over the whole config tree.
     function buildEncryptingConfigurationService(): MockedObject<IConfigurationService> {
-      const emailIndexKey = faker.string.alphanumeric(24);
+      const wrappedIndexKey = faker.string.alphanumeric(24);
       const accessKeyId = faker.string.alphanumeric(20);
       const secretAccessKey = faker.string.alphanumeric(40);
 
@@ -1323,17 +1337,17 @@ describe('UsersRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       configurationService.get.mockImplementation((key: string) => {
-        if (key === 'spaces.fieldEncryption.emailIndexKey') {
-          return emailIndexKey;
+        if (key === 'encryption.indexKey') {
+          return wrappedIndexKey;
         }
-        if (key === 'spaces.fieldEncryption.kms.keyId') return keyId;
+        if (key === 'encryption.kms.keyId') return keyId;
       });
       configurationService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'spaces.fieldEncryption.enabled') return true;
-        if (key === 'spaces.fieldEncryption.kms.accessKeyId') {
+        if (key === 'encryption.enabled') return true;
+        if (key === 'encryption.kms.accessKeyId') {
           return accessKeyId;
         }
-        if (key === 'spaces.fieldEncryption.kms.secretAccessKey') {
+        if (key === 'encryption.kms.secretAccessKey') {
           return secretAccessKey;
         }
       });
@@ -1348,28 +1362,39 @@ describe('UsersRepository', () => {
       // The blind-index key unwrap in onModuleInit is the first Decrypt call.
       kmsMock.on(DecryptCommand).resolvesOnce({ Plaintext: indexKey });
 
-      const emailEncryptionService = new EmailEncryptionService(
+      const fieldCrypto = new KmsEncryptionService(
         encryptingConfigurationService,
         new AwsKmsService(encryptingConfigurationService),
       );
-      await emailEncryptionService.onModuleInit();
+      await fieldCrypto.onModuleInit();
+      const userEncryptionService = new UserEncryptionService(fieldCrypto);
 
       return new UsersRepository(
         postgresDatabaseService,
-        new WalletsRepository(postgresDatabaseService),
+        new WalletsRepository(
+          postgresDatabaseService,
+          createMockWalletEncryptionService(),
+        ),
         createMockSpaceAuditRepository(),
-        emailEncryptionService,
+        userEncryptionService,
+        createMockWalletEncryptionService(),
       );
     }
 
     it('round-trips the real kms:v1: on-disk value through create and decrypt', async () => {
       const encryptingUsersRepository = await buildEncryptingUsersRepository();
       const email = fakeEmailAddress();
-      const ciphertextBlob = Buffer.from(faker.string.alphanumeric(16));
-      kmsMock.on(EncryptCommand).resolves({ CiphertextBlob: ciphertextBlob });
+      const dataKey = Buffer.alloc(32, 9);
+      const wrappedKey = Buffer.from(faker.string.alphanumeric(64));
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: new Uint8Array(dataKey),
+        CiphertextBlob: new Uint8Array(wrappedKey),
+      });
+      // Unwrapping the stored data key hands back the same key material; the
+      // email itself is then decrypted locally (AES-256-GCM), for real.
       kmsMock
         .on(DecryptCommand)
-        .resolves({ Plaintext: Buffer.from(email, 'utf8') });
+        .resolves({ Plaintext: new Uint8Array(dataKey) });
 
       const userId = await encryptingUsersRepository.findOrCreateByEmail(email);
 
@@ -1377,15 +1402,21 @@ describe('UsersRepository', () => {
       const stored = await dbUserRepository.findOneOrFail({
         where: { id: userId },
       });
-      expect(stored.email).toBe(
-        `kms:v1:${ciphertextBlob.toString('base64url')}`,
+      expect(stored.email).toMatch(/^kms:v1:/);
+      // The stored envelope embeds the KMS-wrapped data key, not the email.
+      const blob = Buffer.from(
+        String(stored.email).slice('kms:v1:'.length),
+        'base64url',
+      );
+      expect(blob.subarray(2, 2 + blob.readUInt16BE(0))).toStrictEqual(
+        wrappedKey,
       );
       await expect(
         encryptingUsersRepository.findEmailById(userId),
       ).resolves.toBe(email);
     });
 
-    it('reads a plaintext row through untouched once encryption is enabled (backfill in progress)', async () => {
+    it('rejects a plaintext row read while encryption is enabled', async () => {
       const encryptingUsersRepository = await buildEncryptingUsersRepository();
       const dbUserRepository = dataSource.getRepository(User);
       const email = fakeEmailAddress();
@@ -1397,7 +1428,7 @@ describe('UsersRepository', () => {
 
       await expect(
         encryptingUsersRepository.findEmailById(userId),
-      ).resolves.toBe(email);
+      ).rejects.toThrow('Expected ciphertext but got a plaintext value');
     });
   });
 });

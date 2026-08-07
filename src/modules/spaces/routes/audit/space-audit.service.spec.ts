@@ -2,10 +2,13 @@
 
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { spaceAuditLogBuilder } from '@/modules/spaces/datasources/audit/entities/__tests__/space-audit-log.entity.db.builder';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import {
   FORMER_MEMBER_LABEL,
@@ -28,8 +31,18 @@ const identityResolver = {
   resolveMany: vi.fn(),
 } as MockedObject<UserIdentityResolverService>;
 
+const loggingService: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+};
+
 describe('SpaceAuditService', () => {
   let service: SpaceAuditService;
+  let spaceEncryptionService: ReturnType<
+    typeof createMockSpaceEncryptionService
+  >;
 
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const viewerUserId = faker.number.int({ min: 1, max: 100_000 });
@@ -61,10 +74,13 @@ describe('SpaceAuditService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
+    spaceEncryptionService = createMockSpaceEncryptionService();
     service = new SpaceAuditService(
       spaceAuditRepository,
       membersRepository,
       identityResolver,
+      spaceEncryptionService,
+      loggingService,
     );
     identityResolver.resolveMany.mockResolvedValue(new Map());
     membersRepository.find.mockResolvedValue([]);
@@ -96,6 +112,40 @@ describe('SpaceAuditService', () => {
       expect(spaceAuditRepository.findBySpaceId).not.toHaveBeenCalled();
     });
 
+    it('decrypts each row payload via decryptAuditPayload before returning it', async () => {
+      mockViewer();
+      const decryptedAddress = getAddress(faker.finance.ethereumAddress());
+      const decryptedName = faker.person.fullName();
+      const encryptedPayload = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const row = spaceAuditLogBuilder()
+        .with('spaceId', spaceId)
+        .with('eventType', 'ADDRESS_BOOK_DELETED')
+        .with('actorUserId', viewerUserId)
+        .with('payload', encryptedPayload)
+        .build();
+      spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
+      spaceEncryptionService.decryptAuditPayload.mockResolvedValue({
+        address: decryptedAddress,
+        name: decryptedName,
+      });
+
+      const result = await service.getAuditLog({
+        authPayload,
+        spaceId,
+        routeUrl,
+        paginationData: new PaginationData(20, 0),
+        filters: {},
+      });
+
+      expect(
+        spaceEncryptionService.decryptAuditPayload,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, encryptedPayload);
+      expect(result.results[0].payload).toStrictEqual({
+        address: decryptedAddress,
+        name: decryptedName,
+      });
+    });
+
     it('should resolve actor and target display strings with one resolveMany call', async () => {
       mockViewer();
       const actorUserId = faker.number.int({ min: 1, max: 100_000 });
@@ -109,11 +159,14 @@ describe('SpaceAuditService', () => {
         .with('spaceId', spaceId)
         .with('eventType', 'MEMBER_ROLE_UPDATED')
         .with('actorUserId', actorUserId)
-        .with('payload', {
-          targetUserId,
-          oldRole: 'MEMBER',
-          newRole: 'ADMIN',
-        })
+        .with(
+          'payload',
+          JSON.stringify({
+            targetUserId,
+            oldRole: 'MEMBER',
+            newRole: 'ADMIN',
+          }),
+        )
         .build();
       spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
       identityResolver.resolveMany.mockResolvedValue(
@@ -154,7 +207,7 @@ describe('SpaceAuditService', () => {
       const row = spaceAuditLogBuilder()
         .with('spaceId', spaceId)
         .with('eventType', 'SPACE_CREATED')
-        .with('payload', { name: 'My space' })
+        .with('payload', JSON.stringify({ name: faker.lorem.words() }))
         .build();
       spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
       identityResolver.resolveMany.mockResolvedValue(new Map());
@@ -180,7 +233,7 @@ describe('SpaceAuditService', () => {
           .with('spaceId', spaceId)
           .with('eventType', 'MEMBER_INVITE_ACCEPTED')
           .with('actorUserId', subjectUserId)
-          .with('payload', { targetUserId: subjectUserId })
+          .with('payload', JSON.stringify({ targetUserId: subjectUserId }))
           .build();
         spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
         identityResolver.resolveMany.mockResolvedValue(
@@ -245,7 +298,7 @@ describe('SpaceAuditService', () => {
           .with('spaceId', spaceId)
           .with('eventType', 'MEMBER_LEFT')
           .with('actorUserId', subjectUserId)
-          .with('payload', { targetUserId: subjectUserId })
+          .with('payload', JSON.stringify({ targetUserId: subjectUserId }))
           .build();
         spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
         identityResolver.resolveMany.mockResolvedValue(
@@ -272,10 +325,13 @@ describe('SpaceAuditService', () => {
         const row = spaceAuditLogBuilder()
           .with('spaceId', spaceId)
           .with('eventType', 'MEMBER_INVITE_ACCEPTED')
-          .with('payload', {
-            targetUserId,
-            email: faker.internet.email(),
-          } as never)
+          .with(
+            'payload',
+            JSON.stringify({
+              targetUserId,
+              email: faker.internet.email(),
+            }),
+          )
           .build();
         spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
 
@@ -296,7 +352,7 @@ describe('SpaceAuditService', () => {
           .with('spaceId', spaceId)
           .with('eventType', 'SPACE_CREATED')
           // name missing — does not parse against the SPACE_CREATED schema
-          .with('payload', {} as never)
+          .with('payload', JSON.stringify({}))
           .build();
         spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
 
@@ -309,6 +365,35 @@ describe('SpaceAuditService', () => {
         });
 
         expect(page.results[0].payload).toStrictEqual({});
+        expect(loggingService.warn).toHaveBeenCalledWith(
+          expect.stringContaining('failed schema validation'),
+        );
+      });
+
+      it('should degrade to an empty payload and warn when decryption throws (e.g. an un-backfilled plaintext row read while encryption is enabled)', async () => {
+        mockViewer();
+        const row = spaceAuditLogBuilder()
+          .with('spaceId', spaceId)
+          .with('eventType', 'SPACE_CREATED')
+          .with('payload', JSON.stringify({ name: faker.lorem.words() }))
+          .build();
+        spaceAuditRepository.findBySpaceId.mockResolvedValue([[row], 1]);
+        spaceEncryptionService.decryptAuditPayload.mockRejectedValueOnce(
+          new Error('Expected ciphertext but got a plaintext value'),
+        );
+
+        const page = await service.getAuditLog({
+          authPayload,
+          spaceId,
+          routeUrl,
+          paginationData: new PaginationData(20, 0),
+          filters: {},
+        });
+
+        expect(page.results[0].payload).toStrictEqual({});
+        expect(loggingService.warn).toHaveBeenCalledWith(
+          expect.stringContaining('Failed to decode audit payload'),
+        );
       });
     });
 

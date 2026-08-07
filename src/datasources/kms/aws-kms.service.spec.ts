@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { DecryptCommand, EncryptCommand, KMSClient } from '@aws-sdk/client-kms';
+import {
+  DecryptCommand,
+  EncryptCommand,
+  GenerateDataKeyCommand,
+  KMSClient,
+} from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { mockClient } from 'aws-sdk-client-mock';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
@@ -37,19 +42,16 @@ describe('AwsKmsService', () => {
     webIdentityTokenFile?: string;
   }): AwsKmsService {
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('spaces.fieldEncryption.kms.keyId', keyId);
+    fakeConfigurationService.set('encryption.kms.keyId', keyId);
     if (args?.webIdentityTokenFile) {
       fakeConfigurationService.set(
-        'spaces.fieldEncryption.kms.webIdentityTokenFile',
+        'encryption.kms.webIdentityTokenFile',
         args.webIdentityTokenFile,
       );
     } else {
+      fakeConfigurationService.set('encryption.kms.accessKeyId', accessKeyId);
       fakeConfigurationService.set(
-        'spaces.fieldEncryption.kms.accessKeyId',
-        accessKeyId,
-      );
-      fakeConfigurationService.set(
-        'spaces.fieldEncryption.kms.secretAccessKey',
+        'encryption.kms.secretAccessKey',
         secretAccessKey,
       );
     }
@@ -65,10 +67,10 @@ describe('AwsKmsService', () => {
 
     it('resolves the client eagerly when a key is configured, so a partial configuration fails at construction', () => {
       const fakeConfigurationService = new FakeConfigurationService();
-      fakeConfigurationService.set('spaces.fieldEncryption.kms.keyId', keyId);
+      fakeConfigurationService.set('encryption.kms.keyId', keyId);
 
       expect(() => new AwsKmsService(fakeConfigurationService)).toThrow(
-        'No value set for key spaces.fieldEncryption.kms.accessKeyId',
+        'No value set for key encryption.kms.accessKeyId',
       );
     });
 
@@ -80,7 +82,7 @@ describe('AwsKmsService', () => {
           plaintext: Buffer.from(faker.string.alphanumeric(12)),
         }),
       ).rejects.toThrow(
-        'AWS KMS is not configured: spaces.fieldEncryption.kms.keyId is required',
+        'AWS KMS is not configured: encryption.kms.keyId is required',
       );
     });
   });
@@ -184,6 +186,55 @@ describe('AwsKmsService', () => {
       await expect(
         target.decrypt({ ciphertext: Buffer.from(randomBytes(24)) }),
       ).rejects.toThrow('Could not decrypt data');
+    });
+  });
+
+  describe('generateDataKey', () => {
+    it('generates an AES-256 data key under the configured key, bound to the provided encryption context', async () => {
+      const target = buildTarget();
+      const plaintextKey = randomBytes(32);
+      const wrappedKey = randomBytes(64);
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: plaintextKey,
+        CiphertextBlob: wrappedKey,
+      });
+
+      const dataKey = await target.generateDataKey({ encryptionContext });
+
+      expect(dataKey.plaintextKey).toStrictEqual(Buffer.from(plaintextKey));
+      expect(dataKey.wrappedKey).toStrictEqual(Buffer.from(wrappedKey));
+      const calls = kmsMock.commandCalls(GenerateDataKeyCommand);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].args[0].input).toStrictEqual({
+        KeyId: keyId,
+        KeySpec: 'AES_256',
+        EncryptionContext: encryptionContext,
+      });
+    });
+
+    it('omits the encryption context when none is provided', async () => {
+      const target = buildTarget();
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: randomBytes(32),
+        CiphertextBlob: randomBytes(64),
+      });
+
+      await target.generateDataKey({});
+
+      expect(
+        kmsMock.commandCalls(GenerateDataKeyCommand)[0].args[0].input,
+      ).toStrictEqual({ KeyId: keyId, KeySpec: 'AES_256' });
+    });
+
+    it('throws when KMS returns an incomplete data key', async () => {
+      const target = buildTarget();
+      kmsMock.on(GenerateDataKeyCommand).resolves({
+        Plaintext: randomBytes(32),
+      });
+
+      await expect(target.generateDataKey({})).rejects.toThrow(
+        'Could not generate a data key',
+      );
     });
   });
 

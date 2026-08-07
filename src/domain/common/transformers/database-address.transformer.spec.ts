@@ -1,69 +1,40 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import {
   databaseAddressTransformer,
   databaseNullableAddressTransformer,
 } from './database-address.transformer';
 
+const LOWER = '0x52908400098527886e0f7030069857d2e4169ee7';
+const CHECKSUMMED = getAddress(LOWER);
+const CIPHERTEXT = 'kms:v1:abc123';
+
 describe('databaseAddressTransformer', () => {
-  describe('to', () => {
-    it('should checksum a valid address', () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const checksummedAddress = getAddress(nonChecksummedAddress);
-      expect(databaseAddressTransformer.to(nonChecksummedAddress)).toBe(
-        checksummedAddress,
-      );
-    });
+  it('checksums plaintext addresses in both directions', () => {
+    expect(databaseAddressTransformer.to(LOWER)).toBe(CHECKSUMMED);
+    expect(databaseAddressTransformer.from(LOWER)).toBe(CHECKSUMMED);
   });
-  describe('from', () => {
-    it('should checksum a valid address', () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const checksummedAddress = getAddress(nonChecksummedAddress);
-      expect(databaseAddressTransformer.from(nonChecksummedAddress)).toBe(
-        checksummedAddress,
-      );
-    });
+
+  it('passes kms: ciphertext through untouched in both directions', () => {
+    expect(databaseAddressTransformer.to(CIPHERTEXT)).toBe(CIPHERTEXT);
+    expect(databaseAddressTransformer.from(CIPHERTEXT)).toBe(CIPHERTEXT);
+  });
+
+  it('still rejects non-address, non-ciphertext values', () => {
+    expect(() => databaseAddressTransformer.to('not-an-address')).toThrow();
   });
 });
 
 describe('databaseNullableAddressTransformer', () => {
-  describe('to', () => {
-    it('should return null if value is null', () => {
-      expect(databaseNullableAddressTransformer.to(null)).toBeNull();
-    });
-    it('should return null if value is undefined', () => {
-      expect(databaseNullableAddressTransformer.to(undefined)).toBeNull();
-    });
-    it('should checksum a valid address', () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const checksummedAddress = getAddress(nonChecksummedAddress);
-      expect(databaseNullableAddressTransformer.to(nonChecksummedAddress)).toBe(
-        checksummedAddress,
-      );
-    });
+  it('checksums plaintext and preserves null', () => {
+    expect(databaseNullableAddressTransformer.to(LOWER)).toBe(CHECKSUMMED);
+    expect(databaseNullableAddressTransformer.to(null)).toBeNull();
+    expect(databaseNullableAddressTransformer.from(null)).toBeNull();
   });
-  describe('from', () => {
-    it('should return null if value is null', () => {
-      expect(databaseNullableAddressTransformer.from(null)).toBeNull();
-    });
-    it('should return null if value is undefined', () => {
-      expect(databaseNullableAddressTransformer.from(undefined)).toBeNull();
-    });
-    it('should checksum a valid address', () => {
-      const nonChecksummedAddress = faker.finance
-        .ethereumAddress()
-        .toLowerCase();
-      const checksummedAddress = getAddress(nonChecksummedAddress);
-      expect(
-        databaseNullableAddressTransformer.from(nonChecksummedAddress),
-      ).toBe(checksummedAddress);
-    });
+
+  it('passes kms: ciphertext through untouched', () => {
+    expect(databaseNullableAddressTransformer.from(CIPHERTEXT)).toBe(
+      CIPHERTEXT,
+    );
   });
 });
