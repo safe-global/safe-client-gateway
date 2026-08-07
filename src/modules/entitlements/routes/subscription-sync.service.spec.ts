@@ -16,7 +16,7 @@ import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 function featureFixture(overrides: Pick<Feature, 'key' | 'type'>): Feature {
   return {
-    id: faker.number.int(),
+    id: faker.number.int({ min: 1, max: 100_000 }),
     createdAt: new Date(),
     updatedAt: new Date(),
     description: faker.lorem.sentence(),

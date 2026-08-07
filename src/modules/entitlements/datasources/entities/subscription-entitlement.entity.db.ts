@@ -61,7 +61,6 @@ export class SubscriptionEntitlement implements DomainSubscriptionEntitlement {
   @ManyToOne(() => Feature, {
     onDelete: 'RESTRICT',
     nullable: false,
-    eager: true,
   })
   @JoinColumn({
     name: 'feature_id',

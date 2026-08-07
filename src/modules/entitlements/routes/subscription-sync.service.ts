@@ -96,20 +96,18 @@ export class SubscriptionSyncService {
       );
       return;
     }
-    const upstreamCustomerId = customer?.upstreamCustomerId;
-    if (
-      upstreamCustomerId == null ||
-      !UuidSchema.safeParse(upstreamCustomerId).success
-    ) {
+    const upstreamCustomerIdResult = UuidSchema.safeParse(
+      customer?.upstreamCustomerId,
+    );
+    if (!upstreamCustomerIdResult.success) {
       this.loggingService.warn(
         `Billing webhook event ${event.id} (${event.type}) has no valid upstreamCustomerId`,
       );
       return;
     }
+    const upstreamCustomerId = upstreamCustomerIdResult.data;
 
-    const spaceId = await this.findSpaceIdByUuid(
-      upstreamCustomerId as Space['uuid'],
-    );
+    const spaceId = await this.findSpaceIdByUuid(upstreamCustomerId);
     if (spaceId === null) {
       this.loggingService.warn(
         `Billing webhook event ${event.id} references unknown space ${upstreamCustomerId}`,
@@ -177,7 +175,7 @@ export class SubscriptionSyncService {
   ): Array<MaterializedSubscription> {
     const activeSubscriptions = subscriptions
       .filter((subscription) => isActiveSubscriptionStatus(subscription.status))
-      .sort((a, b) => b.createdAt - a.createdAt);
+      .sort((a, b) => b.createdAt - a.createdAt || b.id.localeCompare(a.id));
     const [active, ...surplusActive] = activeSubscriptions;
     const surplusActiveIds = new Set(
       surplusActive.map((subscription) => subscription.id),

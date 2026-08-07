@@ -50,7 +50,7 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       upstreamSubscriptionId: args.upstreamSubscriptionId,
       space: { id: args.spaceId },
     });
-    return inserted.identifiers[0].id as number;
+    return inserted.identifiers[0].id;
   }
 
   public async updateSubscription(

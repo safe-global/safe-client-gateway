@@ -19,7 +19,7 @@ export type ActiveSubscriptionStatus =
   (typeof ACTIVE_SUBSCRIPTION_STATUSES)[number];
 
 export function isActiveSubscriptionStatus(
-  status: string,
+  status: SubscriptionStatus,
 ): status is ActiveSubscriptionStatus {
   return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
     status,

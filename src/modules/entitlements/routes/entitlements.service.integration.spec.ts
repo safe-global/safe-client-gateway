@@ -447,6 +447,66 @@ describe('EntitlementsService', () => {
       expect(incoming?.entitlements?.[0]).toMatchObject({ quota: 20 });
     });
 
+    it('reorders a batch that lists the promotion before the demotion', async () => {
+      const spaceId = await createSpace();
+      await service.materialize({
+        spaceId,
+        subscriptions: [
+          materializedSubscription({
+            upstreamSubscriptionId: 'sub_old',
+            entitlements: [
+              {
+                featureKey: 'safe_seats',
+                enabled: true,
+                quota: 5,
+                value: null,
+              },
+            ],
+          }),
+        ],
+      });
+
+      // Same upgrade as above, but with the incoming (active) subscription
+      // listed FIRST: nothing here pre-sorts the input, so this only passes
+      // if materialize() reorders it itself before writing — otherwise the
+      // promotion's INSERT would violate the "one active per space" partial
+      // unique index before the demotion ever runs.
+      await service.materialize({
+        spaceId,
+        subscriptions: [
+          materializedSubscription({
+            upstreamSubscriptionId: 'sub_new',
+            planId: 'business',
+            entitlements: [
+              {
+                featureKey: 'safe_seats',
+                enabled: true,
+                quota: 20,
+                value: null,
+              },
+            ],
+          }),
+          materializedSubscription({
+            upstreamSubscriptionId: 'sub_old',
+            status: 'canceled',
+            entitlements: null,
+          }),
+        ],
+      });
+
+      const subscriptions = await getSubscriptions();
+      const byUpstreamId = new Map(
+        subscriptions.map((subscription) => [
+          subscription.upstreamSubscriptionId,
+          subscription,
+        ]),
+      );
+      expect(byUpstreamId.get('sub_old')).toMatchObject({
+        status: 'canceled',
+      });
+      expect(byUpstreamId.get('sub_new')).toMatchObject({ status: 'active' });
+    });
+
     it('rejects an unknown workspace', async () => {
       await expect(
         service.materialize({
