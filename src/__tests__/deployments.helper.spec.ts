@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: FSL-1.1-MIT
 import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
 
 describe('Deployments helper', () => {
@@ -10,7 +9,7 @@ describe('Deployments helper', () => {
       );
 
       expect(versions).toStrictEqual({
-        '100': ['1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -22,7 +21,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -46,7 +45,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.1.1', '1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.1.1', '1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -58,7 +57,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -70,7 +69,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.0.0', '1.1.1', '1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.0.0', '1.1.1', '1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -82,7 +81,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.0.0', '1.1.1', '1.2.0', '1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -94,7 +93,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -106,7 +105,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.4.1', '1.5.0'],
+        '100': ['1.4.1'],
         '11155111': ['1.4.1', '1.5.0'],
       });
     });
@@ -130,7 +129,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.4.1', '1.5.0'],
+        '100': ['1.4.1'],
         '11155111': ['1.4.1', '1.5.0'],
       });
     });
@@ -142,7 +141,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
@@ -154,7 +153,7 @@ describe('Deployments helper', () => {
       ]);
 
       expect(versions).toStrictEqual({
-        '100': ['1.3.0', '1.4.1', '1.5.0'],
+        '100': ['1.3.0', '1.4.1'],
         '11155111': ['1.3.0', '1.4.1', '1.5.0'],
       });
     });
