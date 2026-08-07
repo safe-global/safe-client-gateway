@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import type { MockedObject } from 'vitest';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -276,6 +277,39 @@ describe('SubscriptionSyncService', () => {
     await target.handleWebhook(webhookEvent());
 
     expect(loggingService.warn).toHaveBeenCalled();
+  });
+
+  it('acks and warns when the subscriptions insert races a space deletion (FK violation)', async () => {
+    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    entitlementsService.materialize.mockRejectedValue(
+      new QueryFailedError(
+        '',
+        [],
+        Object.assign(new Error(), {
+          code: '23503',
+          constraint: 'FK_subscriptions_space_id',
+        }),
+      ),
+    );
+
+    await target.handleWebhook(webhookEvent());
+
+    expect(loggingService.warn).toHaveBeenCalled();
+  });
+
+  it('propagates an unrelated foreign key violation', async () => {
+    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    const error = new QueryFailedError(
+      '',
+      [],
+      Object.assign(new Error(), {
+        code: '23503',
+        constraint: 'FK_SE_feature_id',
+      }),
+    );
+    entitlementsService.materialize.mockRejectedValue(error);
+
+    await expect(target.handleWebhook(webhookEvent())).rejects.toThrow(error);
   });
 
   it('acks and logs malformed payloads', async () => {

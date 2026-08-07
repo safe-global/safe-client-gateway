@@ -6,6 +6,7 @@ import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { isForeignKeyViolationError } from '@/datasources/errors/helpers/is-foreign-key-violation-error.helper';
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import {
   type ILoggingService,
@@ -145,8 +146,14 @@ export class SubscriptionSyncService {
       });
     } catch (error) {
       // The space existed a moment ago (`findSpaceIdByUuid` above); a
-      // deletion racing this request is unprocessable, not retryable.
-      if (error instanceof NotFoundException) {
+      // deletion racing this request — caught either as a NotFoundException
+      // from materialize()'s own check, or (a narrower window) as the
+      // subscriptions insert's FK violation once the space is truly gone —
+      // is unprocessable, not retryable.
+      if (
+        error instanceof NotFoundException ||
+        this.isSpaceDeletionRace(error)
+      ) {
         this.loggingService.warn(
           `Billing webhook event ${event.id} raced a deletion of space ${upstreamCustomerId}`,
         );
@@ -225,5 +232,18 @@ export class SubscriptionSyncService {
       }
       throw error;
     }
+  }
+
+  /**
+   * True for the FK violation `materialize()`'s subscriptions insert raises
+   * when the space is deleted between `findSpaceIdByUuid` above and that
+   * insert — narrower than, and not covered by, the NotFoundException its
+   * own upfront existence check throws.
+   */
+  private isSpaceDeletionRace(error: unknown): boolean {
+    return (
+      isForeignKeyViolationError(error) &&
+      error.driverError.constraint === 'FK_subscriptions_space_id'
+    );
   }
 }
