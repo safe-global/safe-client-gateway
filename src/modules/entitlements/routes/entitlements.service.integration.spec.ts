@@ -433,11 +433,14 @@ describe('EntitlementsService', () => {
           subscription,
         ]),
       );
-      // The outgoing subscription keeps its row as history, package cleared.
-      expect(byUpstreamId.get('sub_old')).toMatchObject({
-        status: 'canceled',
-        planId: 'starter',
-      });
+      // The outgoing subscription keeps its row, and its old package, as
+      // history — the RFC requires this as an audit trail, not a bug: an
+      // effective package is always read through the active subscription,
+      // so the stale entitlements below are inert, never re-surfaced.
+      const outgoing = byUpstreamId.get('sub_old');
+      expect(outgoing).toMatchObject({ status: 'canceled', planId: 'starter' });
+      expect(outgoing?.entitlements).toHaveLength(1);
+      expect(outgoing?.entitlements?.[0]).toMatchObject({ quota: 5 });
       const incoming = byUpstreamId.get('sub_new');
       expect(incoming).toMatchObject({ status: 'active', planId: 'business' });
       expect(incoming?.entitlements).toHaveLength(1);
@@ -451,6 +454,42 @@ describe('EntitlementsService', () => {
           subscriptions: [materializedSubscription()],
         }),
       ).rejects.toThrow('Workspace not found.');
+    });
+
+    it('rejects a batch with more than one subscription carrying a package', async () => {
+      const spaceId = await createSpace();
+
+      await expect(
+        service.materialize({
+          spaceId,
+          subscriptions: [
+            materializedSubscription({
+              upstreamSubscriptionId: 'sub_a',
+              entitlements: [
+                {
+                  featureKey: 'safe_seats',
+                  enabled: true,
+                  quota: 5,
+                  value: null,
+                },
+              ],
+            }),
+            materializedSubscription({
+              upstreamSubscriptionId: 'sub_b',
+              entitlements: [
+                {
+                  featureKey: 'safe_seats',
+                  enabled: true,
+                  quota: 10,
+                  value: null,
+                },
+              ],
+            }),
+          ],
+        }),
+      ).rejects.toThrow('expected at most 1');
+      // Rejected before any write.
+      expect(await dataSource.getRepository(SpaceSubscription).count()).toBe(0);
     });
   });
 });

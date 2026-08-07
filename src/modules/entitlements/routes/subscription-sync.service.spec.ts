@@ -267,6 +267,17 @@ describe('SubscriptionSyncService', () => {
     expect(loggingService.warn).toHaveBeenCalled();
   });
 
+  it('acks and warns when materialize races a space deletion', async () => {
+    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    entitlementsService.materialize.mockRejectedValue(
+      new NotFoundException('Workspace not found.'),
+    );
+
+    await target.handleWebhook(webhookEvent());
+
+    expect(loggingService.warn).toHaveBeenCalled();
+  });
+
   it('acks and logs malformed payloads', async () => {
     await target.handleWebhook({ not: 'an event' });
 

@@ -44,6 +44,16 @@ export class EntitlementsService {
     subscriptions: Array<MaterializedSubscription>;
   }): Promise<void> {
     await this.assertSpaceExists(args.spaceId);
+
+    const withPackage = args.subscriptions.filter(
+      (subscription) => subscription.entitlements !== null,
+    );
+    if (withPackage.length > 1) {
+      throw new Error(
+        `materialize() received ${withPackage.length} subscriptions carrying an entitlement package for space ${args.spaceId}; expected at most 1`,
+      );
+    }
+
     const features = await this.featuresRepository.getFeatures();
     const featureIdByKey = new Map(
       features.map((feature) => [feature.key, feature.id]),

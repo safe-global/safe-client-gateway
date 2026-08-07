@@ -36,7 +36,13 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
  * periods nor the full feature package, so the authoritative state is always
  * re-fetched from the billing service (after busting its Redis cache). This
  * makes processing idempotent and out-of-order safe by construction — the
- * last write always reflects current upstream truth.
+ * last write always reflects current upstream truth, regardless of the
+ * delivery order of the events that triggered it.
+ *
+ * This deliberately deviates from the RFC's wording ("replace the package
+ * from the FEATURE_* metadata coming inside the event"): trusting the
+ * event's own metadata instead of re-fetching would let a late-delivered
+ * stale event overwrite a correctly-applied newer one.
  *
  * Unprocessable-but-authenticated payloads (malformed body, unknown space,
  * `api` customer group) are logged and acked: retrying cannot fix them.
@@ -119,22 +125,37 @@ export class SubscriptionSyncService {
         status: 'all',
       }).key,
     );
-    const subscriptions = await this.billingApi.getSubscriptionsByCustomerId({
-      upstreamCustomerId,
-      status: 'all',
-    });
-    const features = await this.featuresRepository.getFeatures();
+    // Independent reads: fetched in parallel.
+    const [subscriptions, features] = await Promise.all([
+      this.billingApi.getSubscriptionsByCustomerId({
+        upstreamCustomerId,
+        status: 'all',
+      }),
+      this.featuresRepository.getFeatures(),
+    ]);
     const featureTypeByKey = new Map(
       features.map((feature) => [feature.key, feature.type]),
     );
 
-    await this.entitlementsService.materialize({
-      spaceId,
-      subscriptions: this.toMaterializedSubscriptions(
-        subscriptions,
-        featureTypeByKey,
-      ),
-    });
+    try {
+      await this.entitlementsService.materialize({
+        spaceId,
+        subscriptions: this.toMaterializedSubscriptions(
+          subscriptions,
+          featureTypeByKey,
+        ),
+      });
+    } catch (error) {
+      // The space existed a moment ago (`findSpaceIdByUuid` above); a
+      // deletion racing this request is unprocessable, not retryable.
+      if (error instanceof NotFoundException) {
+        this.loggingService.warn(
+          `Billing webhook event ${event.id} raced a deletion of space ${upstreamCustomerId}`,
+        );
+        return;
+      }
+      throw error;
+    }
 
     this.loggingService.info(
       `Materialized ${subscriptions.length} subscription(s) for space ${spaceId} (event ${event.id}, ${event.type})`,
