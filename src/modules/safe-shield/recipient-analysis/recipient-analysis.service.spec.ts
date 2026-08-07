@@ -1790,10 +1790,7 @@ describe('RecipientAnalysisService', () => {
 
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
       mockChainsRepository.getChain.mockResolvedValue(
-        chainBuilder()
-          .with('chainId', targetChainId)
-          .with('l2', false)
-          .build(),
+        chainBuilder().with('chainId', targetChainId).with('l2', false).build(),
       );
 
       const result = await service.analyzeBridge({
