@@ -81,52 +81,38 @@ The anti-example is `Feat add subscriptions model` (open PR #3327): capitalized,
 
 ## PR body
 
-**Rule:** The body starts from `.github/pull_request_template.md`'s two sections and adds the rest below. Every section carries content or is deleted — an empty `## Summary` heading is worse than no heading.
+**Rule:** The body is `.github/pull_request_template.md`'s two sections — nothing more. Every section carries content — an empty `## Summary` heading is worse than no heading.
 
 | Section | Required | Content |
 |---|---|---|
 | `## Summary` | Always | What changed and why, in prose. The reader is a reviewer who has not seen the ticket. |
 | `## Changes` | Always | Per-area bullets. For a wide change, group by directory or module, as PR #3328 does. |
-| `## Tests` | Whenever `src/` changes | Which tests cover the change, and the pasted output or CI link proving the pre-commit checklist ran clean. `reviewing.md` treats an unproven "tests pass" as a finding. |
-| `## Risk` | Whenever behavior, a migration, an env var, or a cache key changes | The blast radius and the rollback path. A migration says whether it is reversible; a new env var says what happens when it is unset. |
-| `## Screenshots` | Only when output shape changes | Swagger UI or a response payload before/after. This service has no UI; "UI-adjacent" here means the OpenAPI surface. |
 
-**Why:** two of the body sections are load-bearing for rules elsewhere in this repo — `reviewing.md` requires that ratchet-baseline growth be justified *in the PR description text itself* (not in a commit message or a chat thread), and requires evidence rather than assertion for the pre-commit commands. A PR body that omits `## Tests` and `## Risk` cannot satisfy either.
+**Why:** the body stays lean because everything else already has a home — pre-commit evidence is the PR's own CI run, and risk belongs in `## Summary`'s prose when it is worth a reviewer's attention. One `reviewing.md` requirement still lands here: ratchet-baseline growth must be justified *in the PR description text itself* (not in a commit message or a chat thread), so that justification goes in `## Summary`.
 
 **Canonical example:** three bodies whose shape matched what they changed:
 
 ```markdown
 ## Summary
 Add the billing endpoints so clients can read plans and open a checkout session.
+Behind `FF_BILLING`, default off; unsetting `BILLING_WEBHOOK_JWT_PUBLIC_KEY` fails
+startup validation rather than silently disabling webhook auth.
 
 ## Changes
 - `src/modules/billing/routes/` — controller, DTOs, Zod schemas for the three endpoints
 - `src/modules/billing/domain/` — repository + `Schema.parse()` at the boundary
 - `src/modules/billing/datasources/` — the billing-service client via `CacheFirstDataSource`
-
-## Tests
-`yarn test src/modules/billing` — 34 passed. `yarn lint`, `yarn format` clean (CI run: <link>).
-
-## Risk
-Behind `FF_BILLING`, default off. The checkout-session endpoint is authenticated;
-unsetting `BILLING_WEBHOOK_JWT_PUBLIC_KEY` fails startup validation rather than
-silently disabling webhook auth.
 ```
 
 ```markdown
 ## Summary
 `getRecipientAnalysisCacheDir` swallowed a `JSON.stringify` failure, so a
 serialization error produced a silently-wrong cache key instead of a log line.
+The fallback behavior is unchanged, only now observable.
 
 ## Changes
 - `src/datasources/cache/cache.router.ts` — log the failure through `ILoggingService.debug`
-
-## Tests
-Added `cache.router.spec.ts` case for the circular-reference input.
-`yarn test src/datasources/cache` — 61 passed.
-
-## Risk
-None: the fallback behavior is unchanged, only now observable.
+- `src/datasources/cache/cache.router.spec.ts` — case for the circular-reference input
 ```
 
 ```markdown
@@ -137,9 +123,6 @@ uses and how.
 ## Changes
 - `docs/agents/nestjs-patterns.md` — new guide
 - `AGENTS.md` — routing-table row for it
-
-## Tests
-Docs only; no `src/` change. `yarn format` clean.
 ```
 
 ## Splitting a change

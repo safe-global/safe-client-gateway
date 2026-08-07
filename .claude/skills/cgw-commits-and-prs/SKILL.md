@@ -1,6 +1,6 @@
 ---
 name: cgw-commits-and-prs
-description: Use when writing a commit message, a PR title, or a PR body in safe-client-gateway, or when deciding whether a change is too large for one PR. Covers the Conventional Commits shape this repo uses, the nine allowed types and when each applies, module-name scopes, the fact that main is squash-merged so the PR title becomes the permanent commit subject, the required PR body sections (Summary, Changes, Tests, Risk), how to split an oversized change, and issue linking. Triggers on "commit message", "commit this", "PR title", "PR description", "open a PR", "split this PR", "is this too big".
+description: Use when writing a commit message, a PR title, or a PR body in safe-client-gateway, or when deciding whether a change is too large for one PR. Covers the Conventional Commits shape this repo uses, the nine allowed types and when each applies, module-name scopes, the fact that main is squash-merged so the PR title becomes the permanent commit subject, the required PR body sections (Summary, Changes), how to split an oversized change, and issue linking. Triggers on "commit message", "commit this", "PR title", "PR description", "open a PR", "split this PR", "is this too big".
 ---
 
 # CGW Commits and Pull Requests
@@ -13,6 +13,6 @@ Shape: `<type>(<scope>)?: <description>` — lowercase type from the doc's nine,
 
 **Nothing here is machine-enforced.** There is no `commit-msg` hook and no PR-title CI job — `.husky/pre-commit` only runs `env:validate:silent`, `lint`, and `format`. Every malformed subject on `main` today got there through that gap, so the check is yours.
 
-PR body: `## Summary` and `## Changes` always; `## Tests` whenever `src/` changes; `## Risk` whenever behavior, a migration, an env var, or a cache key changes. `docs/agents/reviewing.md` requires ratchet-baseline justification and pre-commit evidence to appear in the PR description *text*, so those two sections are load-bearing, not decorative.
+PR body: `## Summary` and `## Changes` — the template's two sections, nothing more. `docs/agents/reviewing.md` requires ratchet-baseline justification to appear in the PR description *text*, so it goes in `## Summary`; pre-commit evidence is the PR's own CI run.
 
 Before committing, run the pre-commit checklist from [AGENTS.md](../../../AGENTS.md): `yarn format`, `yarn lint --fix`, `yarn test`.
