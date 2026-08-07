@@ -17,9 +17,6 @@ import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscrip
 /**
  * Data-access layer of the entitlements feature: one repository per table,
  * each exposing plain queries. Composition lives in `EntitlementsService`.
- *
- * `space_feature_usage` and `space_seat_selection` ship as tables here but
- * get their repositories in the follow-up PRs that first read them.
  */
 @Module({
   imports: [

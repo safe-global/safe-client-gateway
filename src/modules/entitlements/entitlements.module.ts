@@ -9,17 +9,14 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { UsersModule } from '@/modules/users/users.module';
 
 /**
- * Routes layer of the entitlements feature. For now this only hosts
- * `SubscriptionSyncService` (consumed by `BillingModule`'s webhook handler);
- * the `GET/PUT /v1/spaces/:spaceId/entitlements` HTTP surface lands in a
- * follow-up PR, which will add `EntitlementsController` and `AuthModule` here.
+ * Routes layer of the entitlements feature: hosts `EntitlementsService` and
+ * `SubscriptionSyncService` (consumed by `BillingModule`'s webhook handler).
  *
- * `EntitlementsService` needs `ISpacesRepository`/`ISpaceSafesRepository`
- * (from `SpacesModule`) and `IMembersRepository` (from `UsersModule`) for its
- * quota/grandfathering checks — hence the `forwardRef`s `EntitlementsDomainModule`
- * itself cannot take, since it must stay acyclic (it's a dependency of
- * `SpacesModule`/`UsersModule`); this module sits above that layer and can
- * afford the cycle.
+ * `EntitlementsService` needs `ISpacesRepository` (from `SpacesModule`) to
+ * check a workspace exists before materializing its subscription state —
+ * hence the `forwardRef` `EntitlementsDomainModule` itself cannot take,
+ * since it must stay acyclic (it's a dependency of `SpacesModule`); this
+ * module sits above that layer and can afford the cycle.
  */
 @Module({
   imports: [

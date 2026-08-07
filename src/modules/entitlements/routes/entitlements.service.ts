@@ -12,11 +12,6 @@ import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.int
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the
  * per-table repositories, and owns the transactions spanning several tables.
- *
- * For now it only covers the write path fed by the billing webhook
- * ({@link EntitlementsService.materialize}). Reading entitlements back
- * (resolving the effective plan, grandfathering, seat coverage) and enforcing
- * quotas land in follow-up PRs.
  */
 @Injectable()
 export class EntitlementsService {
