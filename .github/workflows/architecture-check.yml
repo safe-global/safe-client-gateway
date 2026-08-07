@@ -12,10 +12,6 @@ on:
   pull_request_review_comment:
     types: [created]
 
-concurrency:
-  group: architecture-check-${{ github.event.issue.number || github.event.pull_request.number }}
-  cancel-in-progress: true
-
 # GITHUB_TOKEN is only used by the checkout step; the review agent's gh
 # commands (pr view/diff/comment) run with the Claude GitHub App installation
 # token obtained via the OIDC exchange, so no pull-requests/issues scopes are
@@ -49,6 +45,14 @@ jobs:
           github.event.comment.author_association == 'OWNER'
         )
       )
+    # Job-level, not workflow-level: the verdict comment the agent posts is
+    # itself an issue_comment event, and a workflow-level group is entered
+    # before the `if` guard runs — so the bot-triggered run would cancel the
+    # in-progress review it was spawned by. A skipped job never enters a
+    # job-level group.
+    concurrency:
+      group: architecture-check-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
