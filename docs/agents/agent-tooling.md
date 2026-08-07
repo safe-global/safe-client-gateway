@@ -60,7 +60,7 @@ A newly created `.claude/settings.json` may not be picked up until the settings 
 
 One Part 2 item is adapted for CI: "pre-commit commands ran clean" is skipped because the CI pipeline's lint/format/test jobs are the evidence. The spec-match item needs no adaptation — no approved spec/plan is committed here, so [reviewing.md](reviewing.md)'s own fallback applies and the diff is judged against the PR title and description.
 
-The review agent reads untrusted PR content, so its prompt carries the same injection warning as `claude-code-review.yml`, and its tools are read-only plus `gh pr comment` for the single result comment. The verdict is still an LLM judgment: a finding it misses stays missed, so the gate complements, not replaces, the skills and the hook that run while the code is being written.
+The review agent reads untrusted PR content, so its prompt carries the same injection warning as `claude-code-review.yml`, and its tools are read-only plus `gh pr comment` for the single result comment. The runner never checks out the PR head: the checkout is the default branch, used only for the guides, and the PR's content arrives solely through `gh pr view`/`gh pr diff` — so untrusted code never reaches the runner's disk and a force-push mid-review cannot swap what gets analyzed (the CodeQL untrusted-checkout and TOCTOU alerts this design avoids). Each allowed `gh` command is also pinned to the triggering PR's number, so an injection cannot redirect a comment at another PR. The verdict is still an LLM judgment: a finding it misses stays missed, so the gate complements, not replaces, the skills and the hook that run while the code is being written.
 
 ## Commands
 

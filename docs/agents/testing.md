@@ -115,7 +115,7 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 ### Constructor-change sweep
 
-**Rule:** After changing a repository's constructor parameters, run the standing sweep — `grep -rn "new <RepoClass>(" src --include='*.integration.spec.ts'` — and update every call site it returns before the change is done.
+**Rule:** After changing a repository's constructor parameters, run the standing sweep — `grep -rnF "new <RepoClass>(" src --include='*.integration.spec.ts'` (`-F` so the class name is matched literally, not as a regex) — and update every call site it returns before the change is done.
 
 **Why:** the full rationale — `*.integration.spec.ts` hand-constructs repositories with `new` rather than through Nest DI, and `tsconfig.build.json` excludes spec files from the typecheck that would otherwise catch this — belongs to `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule; this entry only cross-references it so a testing-focused pass over this guide doesn't miss the sweep.
 

@@ -52,12 +52,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout PR head
+      # The PR head is never checked out: untrusted PR content on the runner
+      # would trip CodeQL's untrusted-checkout/TOCTOU alerts and let a
+      # mid-flight force-push swap what gets reviewed. The default branch
+      # supplies AGENTS.md and the guides; the PR's content is read only
+      # through the GitHub API (gh pr view/diff).
+      - name: Checkout default branch
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: refs/pull/${{ github.event.issue.number || github.event.pull_request.number }}/head
-          # Full history so the base...head diff is computable locally.
-          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
 
       - name: Run guideline review
         uses: anthropics/claude-code-action@af0559ee4f514d1ef21826982bed13f7edc3c35e # v1.0.178
@@ -77,12 +80,15 @@ jobs:
             Task: verify the PR obeys this repository's agent guidelines, then
             post ONE brief comment with the outcome. Do not write any files.
 
-            1. The PR head is already checked out. Find the base branch via
-               `gh pr view <PR NUMBER> --json baseRefName,title,body`, then
-               compute the diff under review:
-               `git diff --name-only origin/<baseRefName>...HEAD`, and per-file
-               diffs as needed. "The diff" means every changed file in the PR,
-               not only the latest commit.
+            1. The checkout on disk is the repository's default branch — use
+               it only to read AGENTS.md and the docs/agents/ guides. The PR's
+               content comes exclusively from the GitHub API: fetch metadata
+               via `gh pr view <PR NUMBER> --json baseRefName,title,body`, the
+               changed-file list via `gh pr diff <PR NUMBER> --name-only`, and
+               the full patch via `gh pr diff <PR NUMBER>`. "The diff" means
+               every changed file in the PR, not only the latest commit. Never
+               read a changed file's PR version from the working tree — it is
+               not there.
             2. Read AGENTS.md and docs/agents/reviewing.md, then apply BOTH
                parts of the review standard exactly as reviewing.md defines
                them:
@@ -116,6 +122,8 @@ jobs:
             A rule that is satisfied, or not applicable to what the diff
             touches, is NOT a finding — only actual violations of the guides
             and failed Part 2 checks count.
+          # The gh commands are pinned to the triggering PR's number so a
+          # prompt injection cannot redirect them at another PR.
           claude_args: |
             --model claude-opus-5
-            --allowedTools "Read,Grep,Glob,Bash(git diff:*),Bash(git log:*),Bash(git show:*),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"
+            --allowedTools "Read,Grep,Glob,Bash(gh pr view ${{ github.event.issue.number || github.event.pull_request.number }}:*),Bash(gh pr diff ${{ github.event.issue.number || github.event.pull_request.number }}:*),Bash(gh pr comment ${{ github.event.issue.number || github.event.pull_request.number }}:*)"

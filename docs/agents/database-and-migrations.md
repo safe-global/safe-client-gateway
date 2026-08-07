@@ -79,7 +79,7 @@ The `CachedQueryResolver` variant: `src/modules/targeted-messaging/datasources/t
 
 ### The integration-spec constructor sweep
 
-**Rule:** The standing sweep for a change to a repository's constructor parameters is `grep -rn "new <RepoClass>(" src --include='*.integration.spec.ts'`; every call site the grep returns gets updated to match before the change is complete.
+**Rule:** The standing sweep for a change to a repository's constructor parameters is `grep -rnF "new <RepoClass>(" src --include='*.integration.spec.ts'` (`-F` keeps the class name literal, so a name containing a regex metacharacter cannot skew the sweep); every call site the grep returns gets updated to match before the change is complete.
 
 **Why:** `*.integration.spec.ts` files hand-construct the repositories they exercise with `new`, rather than resolving them through Nest's DI container, and `tsconfig.build.json` excludes every spec file (`**/*spec.ts`, `**/__tests__/*`) from the typecheck it runs — so a green build confirms nothing about whether these call sites still compile. `test:integration` (a separate CI job from `test:unit`) is where an un-swept constructor change actually surfaces, as a test-run failure rather than a build failure.
 
