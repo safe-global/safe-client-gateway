@@ -10,7 +10,7 @@
             "if": "Bash(git commit *)",
             "statusMessage": "Checking whether src/ changed",
             "timeout": 15,
-            "command": "test -n \"$(git status --porcelain -- src/)\" && printf '%s' '{\"systemMessage\":\"src/ changed — applying the repo review checklist from docs/agents/reviewing.md before this commit.\",\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"This commit touches src/. Before treating it as done, read docs/agents/reviewing.md and apply both parts of its checklist to the diff — Part 1 (guideline compliance, mapping the diff against every row of the AGENTS.md routing table) and Part 2 (deviation control). That file is the single source of truth for the checklist items; work from what it says, not from memory of it. Then scan docs/agents/remarks.md for the sections matching what the diff touches and report any R-NNN the diff would earn. Report findings in the reporting format reviewing.md defines, most-severe-first, and state no findings explicitly when clean.\"}}' || true"
+            "command": "test -n \"$(git status --porcelain -- src/)\" && printf '%s' '{\"systemMessage\":\"src/ changed — applying the repo review checklist from docs/agents/reviewing.md before this commit.\",\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"This commit touches src/. Before treating it as done, read docs/agents/reviewing.md and apply it to the diff in full, along with the matching sections of docs/agents/remarks.md. Those two files are the single source of truth for what to check and how to report findings — work from what they say, not from memory of them.\"}}' || true"
           }
         ]
       }
