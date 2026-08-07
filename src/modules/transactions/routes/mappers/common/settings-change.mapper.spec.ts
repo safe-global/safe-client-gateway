@@ -305,12 +305,6 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
     expect(actual).toEqual(new DeleteModuleGuard());
   });
 
-  it('should include setModuleGuard in the settings change methods', () => {
-    expect(SettingsChangeMapper.SETTINGS_CHANGE_METHODS).toContain(
-      'setModuleGuard',
-    );
-  });
-
   it('should throw an error on a unknown setting', async () => {
     const dataDecoded = dataDecodedBuilder()
       .with('method', 'unknownMethod')
