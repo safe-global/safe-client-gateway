@@ -34,7 +34,10 @@ These checks are independent of Part 1 and of each other: passing one never excu
 - [ ] No new deviations from the canonical module structure (`docs/agents/module-structure.md`).
   - Check new or moved files against the canonical skeleton in that guide; a module that is off-shape is a finding even when it passes its own tests.
   - This covers files moved or renamed during the task, not only newly created ones.
-- [ ] No ratchet-baseline growth without written justification in the PR description.
+- [ ] No stale guides: a diff that changes a convention, pattern, or command the guides document updates the affected guide in the same PR.
+  - A guide made stale by the diff is a finding even when the code change itself is correct and intentional — the guide describing the old world is the defect.
+  - "The guides" includes `AGENTS.md` itself: a change that adds or retires a non-negotiable-level rule, or alters what a routing-table row should match, updates that table too.
+  - This item is about content the diff invalidates, not general doc gaps — a guide that was already incomplete before the diff is out of scope here.
   - A baseline file growing without an explanation in the PR description is a finding regardless of whether the underlying check still passes.
   - This applies to any accepted-exceptions list (lint suppressions, dependency-boundary allowlists, and similar), not only to a single named file.
   - A justification recorded only in a commit message or a chat thread does not satisfy this item; it must appear in the PR description text itself.
