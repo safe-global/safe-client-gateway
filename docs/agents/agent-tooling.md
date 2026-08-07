@@ -4,9 +4,9 @@
 
 # Agent Tooling
 
-The guides in this directory are the content. This file documents the two mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, and the review hook in `.claude/settings.json`, which runs itself — plus the conventions for adding to either.
+The guides in this directory are the content. This file documents the three mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, and the `Architecture Check` CI workflow, which reviews a pull request on demand — plus the conventions for adding to any of them.
 
-Both are **automatic by design**. Nothing here needs a slash command typed to take effect, which is why the repo ships none of its own (see "Commands" below).
+The first two are **automatic by design**. Nothing here needs a slash command typed to take effect, which is why the repo ships none of its own (see "Commands" below).
 
 Everything follows the one-content-home rule: `docs/agents/` holds the content, and everything under `.claude/` is a thin loader that links back to it. A loader that starts restating a guide's rules has created a second copy that will drift, and only the guide gets reviewed.
 
@@ -53,6 +53,14 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 - **Both paths need testing, not just the firing one.** Run the exact command string from `settings.json` twice — once with `src/` clean (expect empty stdout, exit 0) and once with a throwaway change under `src/` (expect valid JSON) — and revert the probe afterwards. A hook whose no-op path exits non-zero is noise on every unrelated commit.
 
 A newly created `.claude/settings.json` may not be picked up until the settings watcher reloads: it only watches directories that already had a settings file when the session started. Opening `/hooks` once, or restarting, loads it.
+
+## The CI gate
+
+`.github/workflows/architecture-check.yml` runs on demand: a collaborator (`COLLABORATOR`/`MEMBER`/`OWNER` — the same allowlist gate as `claude-code-review.yml`) comments **`@claude arch-review`** on a PR. The match is a prefix, so `@claude arch-review please` triggers it too. When renaming the phrase, it must not start with `@claude review`: `claude-code-review.yml` matches that prefix, so e.g. `@claude review-compliance` would trigger both workflows. It is the review-hook checklist applied by CI: a `claude-code-action` step applies [reviewing.md](reviewing.md) to the full base…head diff — Part 1 against every row of the AGENTS.md routing table, Part 2's deviation checks — and posts **one brief PR comment** via `gh pr comment`: the applicable guides, findings one line each or "no findings", and a closing verdict line (✅ compliant / ❌ N findings). The agent writes no files and the workflow is advisory — the comment is the verdict, and the run itself stays green either way.
+
+One Part 2 item is adapted for CI: "pre-commit commands ran clean" is skipped because the CI pipeline's lint/format/test jobs are the evidence. The spec-match item needs no adaptation — no approved spec/plan is committed here, so [reviewing.md](reviewing.md)'s own fallback applies and the diff is judged against the PR title and description.
+
+The review agent reads untrusted PR content, so its prompt carries the same injection warning as `claude-code-review.yml`, and its tools are read-only plus `gh pr comment` for the single result comment. The verdict is still an LLM judgment: a finding it misses stays missed, so the gate complements, not replaces, the skills and the hook that run while the code is being written.
 
 ## Commands
 
