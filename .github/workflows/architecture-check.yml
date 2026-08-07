@@ -98,12 +98,13 @@ jobs:
                  every rule it lists; a violation cites file:line plus the
                  guide's own heading for that rule. "No guide applies" is a
                  valid, statable outcome.
-               - Part 2 (deviation control): all eight checks, with these CI
+               - Part 2 (deviation control): all seven checks, with these CI
                  adaptations:
                  - "Pre-commit checklist commands ran clean": SKIP — the CI
                    pipeline's lint/format/test jobs are the evidence.
-                 - "No ratchet-baseline growth without written justification":
-                   check the PR description text fetched above.
+                 - "No stale guides": for its baseline-growth sub-item, the
+                   written justification is checked against the PR description
+                   text fetched above.
             3. Consult docs/agents/remarks.md for the sections matching what
                the diff touches and include any R-NNN the diff would earn.
             4. Post the result as a single PR comment via

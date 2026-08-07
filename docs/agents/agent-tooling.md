@@ -49,7 +49,7 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 
 **Two constraints on the command, learned the hard way:**
 
-- **No `jq`.** It is a reasonable assumption elsewhere and is not installed in every environment used with this repo. The command uses only `git`, `test` and `printf`, and leans on the `if` field for filtering rather than parsing the hook's stdin JSON. Validate hook JSON with `python3 -c 'import json,sys; json.load(sys.stdin)'` instead.
+- **No `jq`.** It is a reasonable assumption elsewhere and is not installed in every environment used with this repo. The command uses only `git`, `test` and `printf`, and leans on the `if` field for filtering rather than parsing the hook's stdin JSON. Validate hook JSON with `node -e 'JSON.parse(require("fs").readFileSync(0, "utf8"))'` instead — Node is the one runtime this repo already guarantees.
 - **Both paths need testing, not just the firing one.** Run the exact command string from `settings.json` twice — once with `src/` clean (expect empty stdout, exit 0) and once with a throwaway change under `src/` (expect valid JSON) — and revert the probe afterwards. A hook whose no-op path exits non-zero is noise on every unrelated commit.
 
 A newly created `.claude/settings.json` may not be picked up until the settings watcher reloads: it only watches directories that already had a settings file when the session started. Opening `/hooks` once, or restarting, loads it.
