@@ -41,7 +41,7 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 
 ## The review hook
 
-`.claude/settings.json` carries one `PreToolUse` hook, filtered to `git commit` via `if: "Bash(git commit *)"`. When `src/` has changes — staged or unstaged, so `git commit -a` is covered too — it injects the `reviewing.md` checklist as context before the commit is treated as done. When `src/` is untouched it emits nothing and exits 0, so a docs-only commit is unaffected.
+`.claude/settings.json` carries one `PreToolUse` hook, filtered to `git commit` via `if: "Bash(git commit *)"`. When `src/` has changes — staged or unstaged, so `git commit -a` is covered too — it injects an instruction to read `reviewing.md` and apply both parts of its checklist before the commit is treated as done. The hook deliberately points at the file rather than inlining the checklist items: an inlined copy drifts every time `reviewing.md` is edited (it did — see the stale-guides item that copy was missing). When `src/` is untouched it emits nothing and exits 0, so a docs-only commit is unaffected.
 
 **Why a hook rather than a slash command.** The review is the one part of the pre-PR flow that nothing else triggers: `.husky/pre-commit` already runs `yarn env:validate:silent`, `yarn lint` and `yarn format` on every commit, so the mechanical half is automatic, but the guideline and deviation checks depended on someone remembering to ask for them. A hook removes the remembering. This repo deliberately has **no repo-specific slash commands** for that reason — see the next section.
 

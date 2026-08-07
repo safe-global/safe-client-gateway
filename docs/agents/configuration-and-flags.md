@@ -54,7 +54,7 @@ An entry that lingers in `.env.sample.json` after its variable leaves the code o
 
 **Canonical example:** `FF_DEBUG_LOGS`/`FF_CONFIG_HOOKS_DEBUG_LOGS` map to `features.debugLogs`/`features.configHooksDebugLogs`, both read via `getOrThrow<boolean>` into `private readonly` fields in `src/datasources/cache/cache.first.data.source.ts`'s constructor — the read-pattern rule above, namespaced under `features`.
 
-The owner-plus-condition comment is not yet standard practice; the nearest existing precedent is `configuration.ts`'s entry for `FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST`, commented `// TODO: Remove this feature flag once the feature is established.` — a condition with no owner attached. A new flag's comment states both.
+The owner-plus-condition comment applies to flags added from this guide onward — no mapping in `configuration.ts` carries the full comment yet, so there is no live example to copy. The nearest existing precedent is the entry for `FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST`, commented `// TODO: Remove this feature flag once the feature is established.` — a condition with no owner attached. A new flag's comment states both, and the first one to land becomes the canonical example.
 
 ### No chain special-casing in code
 
