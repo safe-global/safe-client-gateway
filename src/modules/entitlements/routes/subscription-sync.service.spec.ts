@@ -85,7 +85,6 @@ describe('SubscriptionSyncService', () => {
     };
     featuresRepository = {
       getFeatures: vi.fn().mockResolvedValue(FEATURES),
-      getFeatureByKey: vi.fn(),
     };
     cacheService = {
       deleteByKey: vi.fn(),

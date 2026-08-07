@@ -2,36 +2,6 @@
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 
 /**
- * The date feature-gating enforcement went live.
- *
- * Grandfathering is derived (never stored): a workspace is grandfathered on a
- * metered feature when it was created before this date, has NEVER had a
- * subscription, and its usage exceeds the Free quota. Buying any plan creates
- * a `subscriptions` row and permanently ends the protection.
- */
-// TODO(entitlements): set the real launch date before enabling enforcement
-// in production (pending product sign-off).
-export const ENFORCEMENT_LAUNCH_DATE = new Date('2026-07-01T00:00:00Z');
-
-/**
- * Metered features whose usage is a live COUNT over a table another module
- * owns (Safes, members) rather than a `space_feature_usage` counter — storing
- * it twice would create a second source of truth that can drift. They have no
- * reset window (`resetsAt: null`).
- *
- * `EntitlementsService` maps each key to the repository call that counts it,
- * through an exhaustive `Record`, so adding one here fails to compile until
- * its counter is wired.
- */
-export const STOCK_METERED_FEATURES = ['safe_seats', 'members'] as const;
-
-export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
-
-export function isStockMeteredFeature(key: string): key is StockMeteredFeature {
-  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
-}
-
-/**
  * Subscription statuses that occupy a workspace's single "active
  * subscription" slot (mirrors the partial unique index on `subscriptions`).
  * `past_due`/`paused`/`unpaid` keep the package attached so the UI can drive

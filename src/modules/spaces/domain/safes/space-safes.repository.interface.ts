@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type {
-  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
@@ -28,17 +27,6 @@ export interface ISpaceSafesRepository {
   findOrFail(
     args: Parameters<SpaceSafesRepository['find']>[0],
   ): Promise<Array<SpaceSafe>>;
-
-  countBySpaceId(
-    spaceId: Space['id'],
-    entityManager?: EntityManager,
-  ): Promise<number>;
-
-  /** Safe ids of the workspace, oldest first (the default seat coverage order). */
-  getIdsBySpaceIdOldestFirst(
-    spaceId: Space['id'],
-    entityManager?: EntityManager,
-  ): Promise<Array<number>>;
 
   find(args: {
     where: Array<FindOptionsWhere<SpaceSafe>> | FindOptionsWhere<SpaceSafe>;

@@ -9,10 +9,6 @@ import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/s
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
-import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
-import { SpaceSeatSelectionRepository } from '@/modules/entitlements/domain/space-seat-selection.repository';
-import { ISpaceSeatSelectionRepository } from '@/modules/entitlements/domain/space-seat-selection.repository.interface';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
 import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
 import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
@@ -20,8 +16,10 @@ import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscrip
 
 /**
  * Data-access layer of the entitlements feature: one repository per table,
- * each exposing plain queries. Composition and business rules live in
- * `EntitlementsService` and `entitlements.rules`.
+ * each exposing plain queries. Composition lives in `EntitlementsService`.
+ *
+ * `space_feature_usage` and `space_seat_selection` ship as tables here but
+ * get their repositories in the follow-up PRs that first read them.
  */
 @Module({
   imports: [
@@ -41,21 +39,11 @@ import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscrip
       provide: ISubscriptionEntitlementsRepository,
       useClass: SubscriptionEntitlementsRepository,
     },
-    {
-      provide: ISpaceFeatureUsageRepository,
-      useClass: SpaceFeatureUsageRepository,
-    },
-    {
-      provide: ISpaceSeatSelectionRepository,
-      useClass: SpaceSeatSelectionRepository,
-    },
   ],
   exports: [
     IFeaturesRepository,
     ISubscriptionsRepository,
     ISubscriptionEntitlementsRepository,
-    ISpaceFeatureUsageRepository,
-    ISpaceSeatSelectionRepository,
   ],
 })
 export class EntitlementsDomainModule {}
