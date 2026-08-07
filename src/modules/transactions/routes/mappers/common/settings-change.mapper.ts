@@ -184,10 +184,16 @@ export class SettingsChangeMapper {
     return new ChangeThreshold(threshold);
   }
 
-  private async handleSetGuard(
+  /**
+   * Shared handler for setGuard/setModuleGuard: both take a single address
+   * parameter where the zero address means "remove the guard".
+   */
+  private async handleGuardLike<TSet, TDelete>(
     chainId: string,
     dataDecoded: DataDecoded,
-  ): Promise<DeleteGuard | SetGuard | null> {
+    createSet: (guard: AddressInfo) => TSet,
+    createDelete: () => TDelete,
+  ): Promise<TSet | TDelete | null> {
     const guardValue: unknown = this.dataDecodedParamHelper.getValueAtPosition(
       dataDecoded,
       0,
@@ -201,29 +207,33 @@ export class SettingsChangeMapper {
         getAddress(guardValue),
         ['CONTRACT'],
       );
-      return new SetGuard(guardAddressInfo);
+      return createSet(guardAddressInfo);
     }
-    return new DeleteGuard();
+    return createDelete();
   }
 
-  private async handleSetModuleGuard(
+  private handleSetGuard(
+    chainId: string,
+    dataDecoded: DataDecoded,
+  ): Promise<DeleteGuard | SetGuard | null> {
+    return this.handleGuardLike(
+      chainId,
+      dataDecoded,
+      (guard) => new SetGuard(guard),
+      () => new DeleteGuard(),
+    );
+  }
+
+  private handleSetModuleGuard(
     chainId: string,
     dataDecoded: DataDecoded,
   ): Promise<DeleteModuleGuard | SetModuleGuard | null> {
-    const moduleGuardValue: unknown =
-      this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0);
-
-    if (typeof moduleGuardValue !== 'string') return null;
-
-    if (moduleGuardValue !== NULL_ADDRESS) {
-      const moduleGuardAddressInfo = await this.addressInfoHelper.getOrDefault(
-        chainId,
-        getAddress(moduleGuardValue),
-        ['CONTRACT'],
-      );
-      return new SetModuleGuard(moduleGuardAddressInfo);
-    }
-    return new DeleteModuleGuard();
+    return this.handleGuardLike(
+      chainId,
+      dataDecoded,
+      (moduleGuard) => new SetModuleGuard(moduleGuard),
+      () => new DeleteModuleGuard(),
+    );
   }
 
   // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
