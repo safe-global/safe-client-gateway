@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # Contribution Guide
 
 Thank you for considering contributing to our project! We welcome contributions that align with our goals and help improve the project. To ensure that contributions are valuable and consistent, we ask that all contributors follow these guidelines.
@@ -36,6 +40,7 @@ Thank you for considering contributing to our project! We welcome contributions 
 
 - Ensure your changes are consistent with the project's coding style and standards.
 - Write clear and concise commit messages.
+- The repository conventions live in [docs/agents/](docs/agents/), routed by task in [AGENTS.md](AGENTS.md). Directories with their own constraints carry an `AGENTS.md` pointing at the applicable guide.
 
 ### 5. Test Your Changes
 
