@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -55,9 +56,12 @@ export class BillingController {
   @UseGuards(BillingWebhookAuthGuard)
   @Post('/webhooks')
   @HttpCode(202)
-  postWebhook(): void {
-    // Origin is authenticated by BillingWebhookAuthGuard.
-    // TODO(PLA-1678 follow-up): validate and process the webhook payload.
+  public async postWebhook(@Body() payload: unknown): Promise<void> {
+    // Origin is authenticated by BillingWebhookAuthGuard. The payload is
+    // validated leniently downstream: unprocessable payloads are acked
+    // (retries cannot fix them), fetch/DB errors propagate as 5xx so the
+    // billing service retries.
+    await this.billingService.processWebhook(payload);
   }
 
   @ApiOperation({ summary: 'Get a space subscriptions' })

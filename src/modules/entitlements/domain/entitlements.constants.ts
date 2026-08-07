@@ -55,3 +55,16 @@ export function isActiveSubscriptionStatus(
     status,
   );
 }
+
+/**
+ * Prefix of the Stripe metadata keys carrying the purchased feature package,
+ * e.g. `FEATURE_SAFE_SEATS=10`, `FEATURE_SECURITY_HUB=true`,
+ * `FEATURE_SPONSORED_TRANSACTIONS=unlimited`, `FEATURE_SWAP_FEE_TIER=business`.
+ */
+export const FEATURE_METADATA_PREFIX = 'FEATURE_';
+
+/**
+ * Value of a metered feature's metadata entry meaning "no quota, never
+ * blocks" (materialized as `quota = NULL`).
+ */
+export const UNLIMITED_METADATA_VALUE = 'unlimited';

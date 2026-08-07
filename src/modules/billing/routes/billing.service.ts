@@ -18,6 +18,7 @@ import {
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
+import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -33,8 +34,13 @@ export class BillingService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    private readonly subscriptionSyncService: SubscriptionSyncService,
   ) {
     this.redirectConfig = getRedirectConfig(this.configurationService);
+  }
+
+  public async processWebhook(payload: unknown): Promise<void> {
+    await this.subscriptionSyncService.handleWebhook(payload);
   }
 
   public async getSubscriptions(args: {
