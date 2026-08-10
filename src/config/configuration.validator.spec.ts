@@ -736,16 +736,14 @@ describe('Configuration validator', () => {
       process.env.NODE_ENV = 'production';
     });
 
-    // Both values are compared numerically by `AuthPayload.hasFreshMfa`. An
-    // unparseable one becomes NaN, which makes every comparison false and locks
-    // every OIDC user out of gated Workspace actions — a failure that surfaces
-    // at request time and looks like the identity provider breaking. These
-    // tests pin that it is caught at boot instead.
+    // The window is compared numerically by `AuthPayload.hasFreshMfa`. An
+    // unparseable value becomes NaN, which makes every comparison false and
+    // locks every OIDC user out of gated Workspace actions — a failure that
+    // surfaces at request time and looks like the identity provider breaking.
+    // These tests pin that it is caught at boot instead.
     it.each([
       ['AUTH_ELEVATION_WINDOW_SECONDS', 'not-a-number'],
       ['AUTH_ELEVATION_WINDOW_SECONDS', '0'],
-      ['AUTH_CLOCK_SKEW_SECONDS', 'not-a-number'],
-      ['AUTH_CLOCK_SKEW_SECONDS', '-1'],
     ])('should reject %s=%s', (key, value) => {
       const config = { ...validConfiguration, [key]: value };
 
@@ -758,7 +756,6 @@ describe('Configuration validator', () => {
       const config = {
         ...validConfiguration,
         AUTH_ELEVATION_WINDOW_SECONDS: '1800',
-        AUTH_CLOCK_SKEW_SECONDS: '30',
         FF_MFA_STEP_UP: 'true',
       };
 
@@ -767,10 +764,9 @@ describe('Configuration validator', () => {
       ).not.toThrow();
     });
 
-    it('should accept them missing, since all three are optional', () => {
+    it('should accept them missing, since both are optional', () => {
       const config = omit(validConfiguration, [
         'AUTH_ELEVATION_WINDOW_SECONDS',
-        'AUTH_CLOCK_SKEW_SECONDS',
         'FF_MFA_STEP_UP',
       ]);
 

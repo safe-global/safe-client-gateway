@@ -426,22 +426,10 @@ describe('AuthPayload entity', () => {
       expect(oidcPayload(nowSeconds() + 10_000).hasFreshMfa(300)).toBe(false);
     });
 
-    it('should reject any future stamp when no skew is tolerated', () => {
+    it('should reject a stamp only seconds in the future', () => {
+      // The gateway writes this stamp itself, so a future value cannot come
+      // from a client clock the way a SIWE message timestamp can.
       expect(oidcPayload(nowSeconds() + 5).hasFreshMfa(300)).toBe(false);
-    });
-
-    it.each([
-      ['at the skew bound', 30, true],
-      ['inside the skew bound', 10, true],
-      ['beyond the skew bound', 32, false],
-    ])('should be %s for a stamp %s seconds ahead', (_label, aheadSeconds, expected) => {
-      expect(
-        oidcPayload(nowSeconds() + aheadSeconds).hasFreshMfa(300, 30),
-      ).toBe(expected);
-    });
-
-    it('should still expire on age even with skew tolerated', () => {
-      expect(oidcPayload(nowSeconds() - 301).hasFreshMfa(300, 30)).toBe(false);
     });
 
     it('should never be fresh for a SIWE session, which carries no MFA proof', () => {

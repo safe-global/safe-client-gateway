@@ -39,7 +39,6 @@ export const ELEVATION_REQUIRED_ERROR = 'elevation_required';
 export class ElevationGuard implements CanActivate {
   private readonly isEnabled: boolean;
   private readonly elevationWindowSeconds: number;
-  private readonly clockSkewSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -49,12 +48,6 @@ export class ElevationGuard implements CanActivate {
       configurationService.getOrThrow<boolean>('features.mfaStepUp');
     this.elevationWindowSeconds = configurationService.getOrThrow<number>(
       'auth.elevationWindowSeconds',
-    );
-    // Same tolerance SIWE applies to message timestamps, for the same reason:
-    // the gateway runs as several instances whose clocks are close but not
-    // identical.
-    this.clockSkewSeconds = configurationService.getOrThrow<number>(
-      'auth.clockSkewSeconds',
     );
   }
 
@@ -78,9 +71,7 @@ export class ElevationGuard implements CanActivate {
       return true;
     }
 
-    if (
-      !payload.hasFreshMfa(this.elevationWindowSeconds, this.clockSkewSeconds)
-    ) {
+    if (!payload.hasFreshMfa(this.elevationWindowSeconds)) {
       throw new ForbiddenException(ELEVATION_REQUIRED_ERROR);
     }
 
