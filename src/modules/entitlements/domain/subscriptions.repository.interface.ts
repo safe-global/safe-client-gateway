@@ -7,12 +7,11 @@ export const ISubscriptionsRepository = Symbol('ISubscriptionsRepository');
 
 /** Queries over the `subscriptions` table. */
 export interface ISubscriptionsRepository {
-  getSubscriptionByUpstreamId(
-    upstreamSubscriptionId: string,
-    entityManager?: EntityManager,
-  ): Promise<Pick<SpaceSubscription, 'id'> | null>;
-
-  createSubscription(
+  /**
+   * Atomic upsert by `upstreamSubscriptionId`: inserts a new row, or updates
+   * the existing one in place if the id is already known.
+   */
+  upsertSubscription(
     args: {
       spaceId: Space['id'];
       upstreamSubscriptionId: string;
@@ -20,11 +19,6 @@ export interface ISubscriptionsRepository {
     },
     entityManager?: EntityManager,
   ): Promise<number>;
-
-  updateSubscription(
-    args: { id: number; values: SubscriptionValues },
-    entityManager?: EntityManager,
-  ): Promise<void>;
 }
 
 export type SubscriptionValues = Pick<

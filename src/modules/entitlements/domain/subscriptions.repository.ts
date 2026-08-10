@@ -17,22 +17,7 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
-  public async getSubscriptionByUpstreamId(
-    upstreamSubscriptionId: string,
-    entityManager?: EntityManager,
-  ): Promise<Pick<SpaceSubscription, 'id'> | null> {
-    const repository = await getScopedRepository(
-      this.postgresDatabaseService,
-      SpaceSubscription,
-      entityManager,
-    );
-    return await repository.findOne({
-      where: { upstreamSubscriptionId },
-      select: { id: true },
-    });
-  }
-
-  public async createSubscription(
+  public async upsertSubscription(
     args: {
       spaceId: Space['id'];
       upstreamSubscriptionId: string;
@@ -45,23 +30,21 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       SpaceSubscription,
       entityManager,
     );
-    const inserted = await repository.insert({
-      ...args.values,
-      upstreamSubscriptionId: args.upstreamSubscriptionId,
-      space: { id: args.spaceId },
-    });
-    return inserted.identifiers[0].id;
-  }
-
-  public async updateSubscription(
-    args: { id: number; values: SubscriptionValues },
-    entityManager?: EntityManager,
-  ): Promise<void> {
-    const repository = await getScopedRepository(
-      this.postgresDatabaseService,
-      SpaceSubscription,
-      entityManager,
+    await repository.upsert(
+      {
+        ...args.values,
+        upstreamSubscriptionId: args.upstreamSubscriptionId,
+        space: { id: args.spaceId },
+      },
+      { conflictPaths: ['upstreamSubscriptionId'] },
     );
-    await repository.update(args.id, args.values);
+    // TypeORM's upsert() return value isn't reliably populated on the
+    // conflict (update) path (see notifications.repository.ts for the same
+    // workaround) — a follow-up read is the only reliable way to get the id.
+    const subscription = await repository.findOneOrFail({
+      where: { upstreamSubscriptionId: args.upstreamSubscriptionId },
+      select: { id: true },
+    });
+    return subscription.id;
   }
 }

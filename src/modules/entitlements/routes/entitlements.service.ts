@@ -64,57 +64,42 @@ export class EntitlementsService {
     );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      let activeRowId: number | null = null;
+      let activeSubscriptionId: number | null = null;
       let activePackage: MaterializedSubscription['entitlements'] = null;
 
       for (const subscription of orderedSubscriptions) {
-        const values = {
-          status: subscription.status,
-          planId: subscription.planId,
-          planName: subscription.planName,
-          currentPeriodStart: subscription.currentPeriodStart,
-          currentPeriodEnd: subscription.currentPeriodEnd,
-        };
-        const existing =
-          await this.subscriptionsRepository.getSubscriptionByUpstreamId(
-            subscription.upstreamSubscriptionId,
-            entityManager,
-          );
-
-        let rowId: number;
-        if (existing) {
-          await this.subscriptionsRepository.updateSubscription(
-            { id: existing.id, values },
-            entityManager,
-          );
-          rowId = existing.id;
-        } else {
-          rowId = await this.subscriptionsRepository.createSubscription(
+        const subscriptionId =
+          await this.subscriptionsRepository.upsertSubscription(
             {
               spaceId: args.spaceId,
               upstreamSubscriptionId: subscription.upstreamSubscriptionId,
-              values,
+              values: {
+                status: subscription.status,
+                planId: subscription.planId,
+                planName: subscription.planName,
+                currentPeriodStart: subscription.currentPeriodStart,
+                currentPeriodEnd: subscription.currentPeriodEnd,
+              },
             },
             entityManager,
           );
-        }
 
         if (subscription.entitlements !== null) {
-          activeRowId = rowId;
+          activeSubscriptionId = subscriptionId;
           activePackage = subscription.entitlements;
         }
       }
 
-      if (activeRowId !== null && activePackage !== null) {
+      if (activeSubscriptionId !== null && activePackage !== null) {
         // Full replace: reprocessing the same upstream state yields the same
         // rows (idempotent by construction).
         await this.subscriptionEntitlementsRepository.deleteEntitlementsBySubscriptionId(
-          activeRowId,
+          activeSubscriptionId,
           entityManager,
         );
         await this.subscriptionEntitlementsRepository.createEntitlements(
           {
-            subscriptionId: activeRowId,
+            subscriptionId: activeSubscriptionId,
             entitlements: activePackage.flatMap((entitlement) => {
               const featureId = featureIdByKey.get(entitlement.featureKey);
               // Unknown keys are dropped by the parser; guard anyway.
