@@ -14,6 +14,7 @@ import {
   AuthPayload,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
@@ -398,9 +399,7 @@ describe('OidcAuthService', () => {
   });
 
   describe('step-up authentication', () => {
-    const buildAuth0Token = (
-      amr: Array<string> | undefined,
-    ): Record<string, unknown> => ({
+    const buildAuth0Token = (amr: Array<string> | undefined): Auth0Token => ({
       sub: `auth0|${faker.string.uuid()}`,
       email: fakeEmailAddress(),
       email_verified: true,
@@ -412,7 +411,7 @@ describe('OidcAuthService', () => {
 
     const arrange = (amr: Array<string> | undefined): void => {
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
-        buildAuth0Token(amr) as never,
+        buildAuth0Token(amr),
       );
       usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
         faker.number.int(),
@@ -422,8 +421,12 @@ describe('OidcAuthService', () => {
       );
     };
 
-    const signedPayload = (): Record<string, unknown> =>
-      authRepositoryMock.signToken.mock.calls[0][0] as Record<string, unknown>;
+    const expectStamp = (mfaVerifiedAt: number | undefined): void => {
+      expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+        expect.objectContaining({ mfa_verified_at: mfaVerifiedAt }),
+        expect.anything(),
+      );
+    };
 
     it('should stamp mfa_verified_at when the provider performed MFA', async () => {
       const now = new Date();
@@ -432,9 +435,7 @@ describe('OidcAuthService', () => {
 
       await target.authenticateWithOidc(faker.string.alphanumeric(32));
 
-      expect(signedPayload().mfa_verified_at).toBe(
-        Math.floor(now.getTime() / 1_000),
-      );
+      expectStamp(Math.floor(now.getTime() / 1_000));
     });
 
     it('should stamp mfa_verified_at on a plain login, which is itself multi-factor', async () => {
@@ -446,9 +447,7 @@ describe('OidcAuthService', () => {
         elevate: false,
       });
 
-      expect(signedPayload().mfa_verified_at).toBe(
-        Math.floor(now.getTime() / 1_000),
-      );
+      expectStamp(Math.floor(now.getTime() / 1_000));
     });
 
     it('should not stamp mfa_verified_at when amr is absent', async () => {
@@ -458,7 +457,7 @@ describe('OidcAuthService', () => {
 
       await target.authenticateWithOidc(faker.string.alphanumeric(32));
 
-      expect(signedPayload().mfa_verified_at).toBeUndefined();
+      expectStamp(undefined);
     });
 
     it('should not stamp mfa_verified_at when amr lacks mfa', async () => {
@@ -466,7 +465,7 @@ describe('OidcAuthService', () => {
 
       await target.authenticateWithOidc(faker.string.alphanumeric(32));
 
-      expect(signedPayload().mfa_verified_at).toBeUndefined();
+      expectStamp(undefined);
     });
 
     it('should reject an elevation callback whose token does not prove MFA', async () => {

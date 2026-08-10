@@ -118,6 +118,13 @@ export const RootConfigurationSchema = z
     // sub-second value would collapse to a 1s cookie and break the callback
     // state check. Fail fast on misconfiguration instead.
     AUTH_STATE_TTL_MILLISECONDS: z.coerce.number().int().min(1_000).optional(),
+    // Both feed `AuthPayload.hasFreshMfa`, which compares against them
+    // numerically. An unparseable value yields NaN, every comparison against
+    // NaN is false, and every OIDC user is locked out of gated Workspace
+    // actions with a 403 that looks like the identity provider failing. Fail
+    // at boot instead.
+    AUTH_ELEVATION_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
+    AUTH_CLOCK_SKEW_SECONDS: z.coerce.number().int().min(0).optional(),
     AWS_ACCESS_KEY_ID: z.string().optional(),
     AWS_KMS_ENCRYPTION_KEY_ID: z.string().optional(),
     AWS_SECRET_ACCESS_KEY: z.string().optional(),
@@ -132,6 +139,7 @@ export const RootConfigurationSchema = z
     SES_AWS_SECRET_ACCESS_KEY: z.string().optional(),
     FF_SES_EMAIL: z.string().optional(),
     FF_BILLING_SERVICE: z.string().optional(),
+    FF_MFA_STEP_UP: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),

@@ -113,8 +113,7 @@ export class AddressBooksController {
     description: 'Address book items limit exceeded or invalid data provided',
   })
   @Put('/:spaceId/address-book')
-  @UseGuards(SpacesAddressBookRateLimitGuard)
-  @UseGuards(AuthGuard, ElevationGuard)
+  @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
   public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

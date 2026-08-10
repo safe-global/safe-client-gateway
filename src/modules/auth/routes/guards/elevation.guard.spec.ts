@@ -16,6 +16,7 @@ import {
 // matched it would still pass if the guard hardcoded the constant instead of
 // reading `auth.elevationWindowSeconds` from configuration.
 const ELEVATION_WINDOW_SECONDS = 5 * 60;
+const CLOCK_SKEW_SECONDS = 30;
 
 describe('ElevationGuard', () => {
   let target: ElevationGuard;
@@ -51,6 +52,7 @@ describe('ElevationGuard', () => {
       'auth.elevationWindowSeconds',
       ELEVATION_WINDOW_SECONDS,
     );
+    configurationService.set('auth.clockSkewSeconds', CLOCK_SKEW_SECONDS);
     target = new ElevationGuard(configurationService);
   });
 
@@ -64,6 +66,7 @@ describe('ElevationGuard', () => {
         'auth.elevationWindowSeconds',
         ELEVATION_WINDOW_SECONDS,
       );
+      configurationService.set('auth.clockSkewSeconds', CLOCK_SKEW_SECONDS);
       disabledTarget = new ElevationGuard(configurationService);
     });
 
@@ -125,6 +128,27 @@ describe('ElevationGuard', () => {
     it('should reject a stamp in the future rather than treat it as fresh', () => {
       const context = buildContext(
         oidcPayload(nowSeconds() + ELEVATION_WINDOW_SECONDS * 10),
+      );
+
+      expect(() => target.canActivate(context)).toThrow(
+        ELEVATION_REQUIRED_ERROR,
+      );
+    });
+
+    // The instance that stamps the callback is rarely the one that serves the
+    // next request, so a stamp a few seconds ahead is ordinary skew. Rejecting
+    // it would 403 a session that just passed a real challenge.
+    it('should tolerate a stamp within the configured clock skew', () => {
+      const context = buildContext(
+        oidcPayload(nowSeconds() + CLOCK_SKEW_SECONDS),
+      );
+
+      expect(target.canActivate(context)).toBe(true);
+    });
+
+    it('should reject a stamp beyond the configured clock skew', () => {
+      const context = buildContext(
+        oidcPayload(nowSeconds() + CLOCK_SKEW_SECONDS + 2),
       );
 
       expect(() => target.canActivate(context)).toThrow(

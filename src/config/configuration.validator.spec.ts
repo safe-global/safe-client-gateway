@@ -728,4 +728,55 @@ describe('Configuration validator', () => {
       ).toThrow(/Configuration is invalid: UNDICI_CONNECTIONS/);
     });
   });
+
+  describe('Step-up elevation configuration validation', () => {
+    beforeEach(() => {
+      // The validator is a no-op under NODE_ENV=test, so boot-time validation
+      // has to be exercised as it runs in a deployed environment.
+      process.env.NODE_ENV = 'production';
+    });
+
+    // Both values are compared numerically by `AuthPayload.hasFreshMfa`. An
+    // unparseable one becomes NaN, which makes every comparison false and locks
+    // every OIDC user out of gated Workspace actions — a failure that surfaces
+    // at request time and looks like the identity provider breaking. These
+    // tests pin that it is caught at boot instead.
+    it.each([
+      ['AUTH_ELEVATION_WINDOW_SECONDS', 'not-a-number'],
+      ['AUTH_ELEVATION_WINDOW_SECONDS', '0'],
+      ['AUTH_CLOCK_SKEW_SECONDS', 'not-a-number'],
+      ['AUTH_CLOCK_SKEW_SECONDS', '-1'],
+    ])('should reject %s=%s', (key, value) => {
+      const config = { ...validConfiguration, [key]: value };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(new RegExp(`Configuration is invalid: ${key}`));
+    });
+
+    it('should accept valid step-up values', () => {
+      const config = {
+        ...validConfiguration,
+        AUTH_ELEVATION_WINDOW_SECONDS: '1800',
+        AUTH_CLOCK_SKEW_SECONDS: '30',
+        FF_MFA_STEP_UP: 'true',
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept them missing, since all three are optional', () => {
+      const config = omit(validConfiguration, [
+        'AUTH_ELEVATION_WINDOW_SECONDS',
+        'AUTH_CLOCK_SKEW_SECONDS',
+        'FF_MFA_STEP_UP',
+      ]);
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+  });
 });

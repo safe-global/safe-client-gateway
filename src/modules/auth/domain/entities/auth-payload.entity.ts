@@ -94,16 +94,19 @@ export class AuthPayload {
    *
    * @param maxAgeSeconds - Length of the elevation window.
    */
-  hasFreshMfa(maxAgeSeconds: number): boolean {
+  hasFreshMfa(maxAgeSeconds: number, clockSkewSeconds = 0): boolean {
     if (this.mfa_verified_at === undefined) {
       return false;
     }
 
     const ageSeconds = Math.floor(Date.now() / 1_000) - this.mfa_verified_at;
 
-    // A stamp in the future means clock skew between gateway instances, not
-    // freshness. Reject it rather than trusting an unbounded window.
-    return ageSeconds >= 0 && ageSeconds <= maxAgeSeconds;
+    // The stamp is written by whichever instance handled the OIDC callback and
+    // read by whichever handles the next request, so a slightly negative age is
+    // ordinary clock skew rather than a forged future stamp. Tolerating none
+    // would reject a session seconds after it passed a real challenge; the
+    // tolerance stays bounded so the future window cannot be abused.
+    return ageSeconds >= -clockSkewSeconds && ageSeconds <= maxAgeSeconds;
   }
 
   /**

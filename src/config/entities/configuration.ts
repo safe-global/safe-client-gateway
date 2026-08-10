@@ -478,6 +478,10 @@ export default () => ({
       process.env.HTTP_CLIENT_CACHE_IN_FLIGHT_REQUESTS?.toLowerCase() ===
       'true',
     spaceAuditLog: process.env.FF_SPACE_AUDIT_LOG?.toLowerCase() === 'true',
+    // Owner: Workspace 2FA (WA-2725). Gates step-up enforcement so the gateway
+    // can ship ahead of the clients that turn a 403 `elevation_required` into a
+    // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
+    // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
   },
   httpClient: {
