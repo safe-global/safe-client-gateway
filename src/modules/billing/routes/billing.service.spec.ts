@@ -21,6 +21,7 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
@@ -74,7 +75,7 @@ describe('BillingService', () => {
 
   describe('processWebhook', () => {
     it('delegates to SubscriptionSyncService', async () => {
-      const payload = { id: faker.string.uuid() };
+      const payload = webhookEventBuilder().build();
 
       await service.processWebhook(payload);
 

@@ -15,7 +15,7 @@ import {
 import {
   isPaymentLinkEventType,
   isSubscriptionEventType,
-  WebhookEventSchema,
+  type WebhookEvent,
 } from '@/modules/billing/domain/entities/webhook-event.entity';
 import type {
   FeatureKey,
@@ -34,6 +34,10 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 /**
  * Materializes upstream subscription state on billing webhooks.
  *
+ * The payload is validated once, at the controller boundary
+ * (`ValidationPipe(WebhookEventSchema)` on `BillingController.postWebhook`);
+ * this service only ever sees an already-well-formed `WebhookEvent`.
+ *
  * Events are treated as TRIGGERS only: they carry neither the billing
  * periods nor the full feature package, so the authoritative state is always
  * re-fetched from the billing service (after busting its Redis cache). This
@@ -46,10 +50,10 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
  * event's own metadata instead of re-fetching would let a late-delivered
  * stale event overwrite a correctly-applied newer one.
  *
- * Unprocessable-but-authenticated payloads (malformed body, unknown space,
- * `api` customer group) are logged and acked: retrying cannot fix them.
- * Fetch/DB errors propagate as 5xx so the billing service's retry mechanism
- * provides durability.
+ * Unprocessable-but-authenticated events (unknown space, `api` customer
+ * group) are logged and acked: retrying cannot fix them. Fetch/DB errors
+ * propagate as 5xx so the billing service's retry mechanism provides
+ * durability.
  */
 @Injectable()
 export class SubscriptionSyncService implements ISubscriptionSyncService {
@@ -68,16 +72,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     private readonly loggingService: ILoggingService,
   ) {}
 
-  public async handleWebhook(payload: unknown): Promise<void> {
-    const result = WebhookEventSchema.safeParse(payload);
-    if (!result.success) {
-      this.loggingService.error(
-        `Malformed billing webhook payload: ${result.error.message}`,
-      );
-      return;
-    }
-    const event = result.data;
-
+  public async handleWebhook(event: WebhookEvent): Promise<void> {
     if (isPaymentLinkEventType(event.type)) {
       await this.cacheService.deleteByKey(
         CacheRouter.getBillingPaymentLinksCacheDir().key,

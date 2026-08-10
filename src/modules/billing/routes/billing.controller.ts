@@ -23,6 +23,8 @@ import { SubscriptionStatusFilterSchema } from '@/datasources/billing-api/entiti
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import { WebhookEventSchema } from '@/modules/billing/domain/entities/webhook-event.entity';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
@@ -56,14 +58,13 @@ export class BillingController {
   @UseGuards(BillingWebhookAuthGuard)
   @Post('/webhooks')
   @HttpCode(202)
-  public async postWebhook(@Body() payload: unknown): Promise<void> {
-    // Deliberately not `@Body(new ValidationPipe(...))`: a pipe failure
-    // would 422, and a webhook must never reject with a status the sender
-    // retries — a malformed payload can't be fixed by retrying it. Origin is
-    // authenticated by BillingWebhookAuthGuard; the payload itself is
-    // validated leniently downstream (SubscriptionSyncService.handleWebhook):
-    // unprocessable payloads are acked, fetch/DB errors still propagate as
-    // 5xx so the billing service retries those.
+  public async postWebhook(
+    @Body(new ValidationPipe(WebhookEventSchema)) payload: WebhookEvent,
+  ): Promise<void> {
+    // Origin is authenticated by BillingWebhookAuthGuard. A malformed body
+    // 422s here like any other piped input; a well-formed-but-unprocessable
+    // event (unknown space, `api` customer group) is acked further down in
+    // SubscriptionSyncService.handleWebhook, since retrying that cannot help.
     await this.billingService.processWebhook(payload);
   }
 

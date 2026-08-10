@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 
 export const ISubscriptionSyncService = Symbol('ISubscriptionSyncService');
 
@@ -10,5 +11,5 @@ export const ISubscriptionSyncService = Symbol('ISubscriptionSyncService');
  * (`billing`) are allowed to depend on instead of reaching into `routes/`.
  */
 export interface ISubscriptionSyncService {
-  handleWebhook(payload: unknown): Promise<void>;
+  handleWebhook(event: WebhookEvent): Promise<void>;
 }

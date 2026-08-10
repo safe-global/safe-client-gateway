@@ -14,12 +14,12 @@ import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/s
 import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import type {
-  FeatureKey,
-  FeatureType,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
+import {
+  materializedSubscriptionBuilder,
+  parsedEntitlementBuilder,
+} from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
 import { FeatureTypes } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
 import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
@@ -42,52 +42,16 @@ const mockLoggingService = {
 // pending product sign-off, so no seed migration ships them and these tests
 // must not depend on one. The fixtures stay an exhaustive sample of the
 // catalog's feature types, so the key → id mapping `materialize` builds is
-// exercised for each of them.
-const FREE_SAFE_SEATS = 2;
-const SPONSORED_PERIOD_DAYS = 30;
-
-type FeatureFixture = {
-  key: FeatureKey;
-  type: FeatureType;
-  freeEnabled: boolean;
-  freeQuota: number | null;
-  freeValue: string | null;
-  freePeriod: number | null;
-};
-
-const FEATURE_FIXTURES: Array<FeatureFixture> = [
-  {
-    key: 'security_hub',
-    type: 'binary',
-    freeEnabled: false,
-    freeQuota: null,
-    freeValue: null,
-    freePeriod: null,
-  },
-  {
-    key: 'safe_seats',
-    type: 'metered',
-    freeEnabled: true,
-    freeQuota: FREE_SAFE_SEATS,
-    freeValue: null,
-    freePeriod: null,
-  },
-  {
-    key: 'sponsored_transactions',
-    type: 'metered',
-    freeEnabled: false,
-    freeQuota: 0,
-    freeValue: null,
-    freePeriod: SPONSORED_PERIOD_DAYS,
-  },
-  {
-    key: 'swap_fee_tier',
-    type: 'value',
-    freeEnabled: true,
-    freeQuota: null,
-    freeValue: 'free',
-    freePeriod: null,
-  },
+// exercised for each of them. Only `key`/`type` are asserted on in this file;
+// every other field is left at the builder's faker default.
+const FEATURES: Array<Feature> = [
+  featureBuilder().with('key', 'security_hub').with('type', 'binary').build(),
+  featureBuilder().with('key', 'safe_seats').with('type', 'metered').build(),
+  featureBuilder()
+    .with('key', 'sponsored_transactions')
+    .with('type', 'metered')
+    .build(),
+  featureBuilder().with('key', 'swap_fee_tier').with('type', 'value').build(),
 ];
 
 describe('EntitlementsService', () => {
@@ -179,7 +143,7 @@ describe('EntitlementsService', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.getRepository(Feature).insert(FEATURE_FIXTURES);
+    await dataSource.getRepository(Feature).insert(FEATURES);
   });
 
   afterEach(async () => {
@@ -220,21 +184,6 @@ describe('EntitlementsService', () => {
     return inserted.generatedMaps[0].id as number;
   }
 
-  function materializedSubscription(
-    overrides?: Partial<MaterializedSubscription>,
-  ): MaterializedSubscription {
-    return {
-      upstreamSubscriptionId: faker.string.uuid(),
-      status: 'active',
-      planId: 'business',
-      planName: 'Business',
-      currentPeriodStart: new Date('2026-07-01T00:00:00Z'),
-      currentPeriodEnd: new Date('2026-08-01T00:00:00Z'),
-      entitlements: [],
-      ...overrides,
-    };
-  }
-
   async function getSubscriptions(): Promise<Array<SpaceSubscription>> {
     return await dataSource.getRepository(SpaceSubscription).find({
       relations: { entitlements: { feature: true } },
@@ -250,10 +199,10 @@ describe('EntitlementsService', () => {
     it('round-trips fixture types through the database and covers every feature type', async () => {
       const features = await dataSource.getRepository(Feature).find();
       const typeByKey = new Map(
-        FEATURE_FIXTURES.map((fixture) => [fixture.key, fixture.type]),
+        FEATURES.map((fixture) => [fixture.key, fixture.type]),
       );
 
-      expect(features).toHaveLength(FEATURE_FIXTURES.length);
+      expect(features).toHaveLength(FEATURES.length);
       for (const feature of features) {
         expect(feature.type).toBe(typeByKey.get(feature.key));
       }
@@ -266,33 +215,28 @@ describe('EntitlementsService', () => {
   describe('materialize', () => {
     it('writes the subscription and its purchased package', async () => {
       const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('planId', 'business')
+        .with('planName', 'Business')
+        .with('currentPeriodStart', new Date('2026-07-01T00:00:00Z'))
+        .with('currentPeriodEnd', new Date('2026-08-01T00:00:00Z'))
+        .with('entitlements', [
+          { featureKey: 'safe_seats', enabled: true, quota: 10, value: null },
+          {
+            featureKey: 'swap_fee_tier',
+            enabled: true,
+            quota: null,
+            value: 'business',
+          },
+        ])
+        .build();
 
-      await service.materialize({
-        spaceId,
-        subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_1',
-            entitlements: [
-              {
-                featureKey: 'safe_seats',
-                enabled: true,
-                quota: 10,
-                value: null,
-              },
-              {
-                featureKey: 'swap_fee_tier',
-                enabled: true,
-                quota: null,
-                value: 'business',
-              },
-            ],
-          }),
-        ],
-      });
+      await service.materialize({ spaceId, subscriptions: [subscription] });
 
-      const [subscription] = await getSubscriptions();
-      expect(subscription).toMatchObject({
-        upstreamSubscriptionId: 'sub_1',
+      const [persisted] = await getSubscriptions();
+      expect(persisted).toMatchObject({
+        upstreamSubscriptionId: subscription.upstreamSubscriptionId,
         status: 'active',
         planId: 'business',
         planName: 'Business',
@@ -300,7 +244,7 @@ describe('EntitlementsService', () => {
         currentPeriodEnd: new Date('2026-08-01T00:00:00Z'),
       });
       expect(
-        (subscription.entitlements ?? []).map((entitlement) => ({
+        (persisted.entitlements ?? []).map((entitlement) => ({
           feature: entitlement.feature.key,
           enabled: entitlement.enabled,
           quota: entitlement.quota,
@@ -326,47 +270,32 @@ describe('EntitlementsService', () => {
 
     it('drops package entries whose feature is not in the catalog', async () => {
       const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+          parsedEntitlementBuilder()
+            .with('featureKey', 'not_in_the_catalog')
+            .build(),
+        ])
+        .build();
 
-      await service.materialize({
-        spaceId,
-        subscriptions: [
-          materializedSubscription({
-            entitlements: [
-              {
-                featureKey: 'safe_seats',
-                enabled: true,
-                quota: 10,
-                value: null,
-              },
-              {
-                featureKey: 'not_in_the_catalog',
-                enabled: true,
-                quota: 1,
-                value: null,
-              },
-            ],
-          }),
-        ],
-      });
+      await service.materialize({ spaceId, subscriptions: [subscription] });
 
-      const [subscription] = await getSubscriptions();
-      expect(subscription.entitlements).toHaveLength(1);
-      expect(subscription.entitlements?.[0].feature.key).toBe('safe_seats');
+      const [persisted] = await getSubscriptions();
+      expect(persisted.entitlements).toHaveLength(1);
+      expect(persisted.entitlements?.[0].feature.key).toBe('safe_seats');
     });
 
     it('is idempotent: reprocessing the same state yields the same rows', async () => {
       const spaceId = await createSpace();
-      const subscription = materializedSubscription({
-        entitlements: [
-          { featureKey: 'safe_seats', enabled: true, quota: 10, value: null },
-          {
-            featureKey: 'security_hub',
-            enabled: true,
-            quota: null,
-            value: null,
-          },
-        ],
-      });
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+          parsedEntitlementBuilder().with('featureKey', 'security_hub').build(),
+        ])
+        .build();
 
       await service.materialize({ spaceId, subscriptions: [subscription] });
       await service.materialize({ spaceId, subscriptions: [subscription] });
@@ -379,48 +308,39 @@ describe('EntitlementsService', () => {
 
     it('replaces the active slot on upgrade, keeping the old subscription as history', async () => {
       const spaceId = await createSpace();
+      const oldSubscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('planId', 'starter')
+        .with('entitlements', [
+          parsedEntitlementBuilder()
+            .with('featureKey', 'safe_seats')
+            .with('quota', 5)
+            .build(),
+        ])
+        .build();
       await service.materialize({
         spaceId,
-        subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_old',
-            planId: 'starter',
-            entitlements: [
-              {
-                featureKey: 'safe_seats',
-                enabled: true,
-                quota: 5,
-                value: null,
-              },
-            ],
-          }),
-        ],
+        subscriptions: [oldSubscription],
       });
 
       // Upgrade: the old subscription cancels, a new one becomes active. The
       // demotion must be written before the promotion, or the "one active
       // subscription per space" partial unique index rejects the batch.
+      const newSubscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('planId', 'business')
+        .with('entitlements', [
+          parsedEntitlementBuilder()
+            .with('featureKey', 'safe_seats')
+            .with('quota', 20)
+            .build(),
+        ])
+        .build();
       await service.materialize({
         spaceId,
         subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_old',
-            planId: 'starter',
-            status: 'canceled',
-            entitlements: null,
-          }),
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_new',
-            planId: 'business',
-            entitlements: [
-              {
-                featureKey: 'safe_seats',
-                enabled: true,
-                quota: 20,
-                value: null,
-              },
-            ],
-          }),
+          { ...oldSubscription, status: 'canceled', entitlements: null },
+          newSubscription,
         ],
       });
 
@@ -437,11 +357,11 @@ describe('EntitlementsService', () => {
       // history — the RFC requires this as an audit trail, not a bug: an
       // effective package is always read through the active subscription,
       // so the stale entitlements below are inert, never re-surfaced.
-      const outgoing = byUpstreamId.get('sub_old');
+      const outgoing = byUpstreamId.get(oldSubscription.upstreamSubscriptionId);
       expect(outgoing).toMatchObject({ status: 'canceled', planId: 'starter' });
       expect(outgoing?.entitlements).toHaveLength(1);
       expect(outgoing?.entitlements?.[0]).toMatchObject({ quota: 5 });
-      const incoming = byUpstreamId.get('sub_new');
+      const incoming = byUpstreamId.get(newSubscription.upstreamSubscriptionId);
       expect(incoming).toMatchObject({ status: 'active', planId: 'business' });
       expect(incoming?.entitlements).toHaveLength(1);
       expect(incoming?.entitlements?.[0]).toMatchObject({ quota: 20 });
@@ -449,21 +369,15 @@ describe('EntitlementsService', () => {
 
     it('reorders a batch that lists the promotion before the demotion', async () => {
       const spaceId = await createSpace();
+      const oldSubscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+        ])
+        .build();
       await service.materialize({
         spaceId,
-        subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_old',
-            entitlements: [
-              {
-                featureKey: 'safe_seats',
-                enabled: true,
-                quota: 5,
-                value: null,
-              },
-            ],
-          }),
-        ],
+        subscriptions: [oldSubscription],
       });
 
       // Same upgrade as above, but with the incoming (active) subscription
@@ -471,26 +385,17 @@ describe('EntitlementsService', () => {
       // if materialize() reorders it itself before writing — otherwise the
       // promotion's INSERT would violate the "one active per space" partial
       // unique index before the demotion ever runs.
+      const newSubscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+        ])
+        .build();
       await service.materialize({
         spaceId,
         subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_new',
-            planId: 'business',
-            entitlements: [
-              {
-                featureKey: 'safe_seats',
-                enabled: true,
-                quota: 20,
-                value: null,
-              },
-            ],
-          }),
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_old',
-            status: 'canceled',
-            entitlements: null,
-          }),
+          newSubscription,
+          { ...oldSubscription, status: 'canceled', entitlements: null },
         ],
       });
 
@@ -501,17 +406,21 @@ describe('EntitlementsService', () => {
           subscription,
         ]),
       );
-      expect(byUpstreamId.get('sub_old')).toMatchObject({
+      expect(
+        byUpstreamId.get(oldSubscription.upstreamSubscriptionId),
+      ).toMatchObject({
         status: 'canceled',
       });
-      expect(byUpstreamId.get('sub_new')).toMatchObject({ status: 'active' });
+      expect(
+        byUpstreamId.get(newSubscription.upstreamSubscriptionId),
+      ).toMatchObject({ status: 'active' });
     });
 
     it('rejects an unknown workspace', async () => {
       await expect(
         service.materialize({
           spaceId: faker.number.int({ min: 100_000, max: 1_000_000 }),
-          subscriptions: [materializedSubscription()],
+          subscriptions: [materializedSubscriptionBuilder().build()],
         }),
       ).rejects.toThrow('Workspace not found.');
     });
@@ -523,28 +432,20 @@ describe('EntitlementsService', () => {
         service.materialize({
           spaceId,
           subscriptions: [
-            materializedSubscription({
-              upstreamSubscriptionId: 'sub_a',
-              entitlements: [
-                {
-                  featureKey: 'safe_seats',
-                  enabled: true,
-                  quota: 5,
-                  value: null,
-                },
-              ],
-            }),
-            materializedSubscription({
-              upstreamSubscriptionId: 'sub_b',
-              entitlements: [
-                {
-                  featureKey: 'safe_seats',
-                  enabled: true,
-                  quota: 10,
-                  value: null,
-                },
-              ],
-            }),
+            materializedSubscriptionBuilder()
+              .with('entitlements', [
+                parsedEntitlementBuilder()
+                  .with('featureKey', 'safe_seats')
+                  .build(),
+              ])
+              .build(),
+            materializedSubscriptionBuilder()
+              .with('entitlements', [
+                parsedEntitlementBuilder()
+                  .with('featureKey', 'safe_seats')
+                  .build(),
+              ])
+              .build(),
           ],
         }),
       ).rejects.toThrow('expected at most 1');

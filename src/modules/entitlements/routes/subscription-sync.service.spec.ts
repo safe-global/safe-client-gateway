@@ -8,6 +8,8 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
@@ -15,22 +17,8 @@ import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscript
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
-function featureFixture(overrides: Pick<Feature, 'key' | 'type'>): Feature {
-  return {
-    id: faker.number.int({ min: 1, max: 100_000 }),
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    description: faker.lorem.sentence(),
-    freeEnabled: false,
-    freeQuota: null,
-    freeValue: null,
-    freePeriod: null,
-    ...overrides,
-  };
-}
-
 const FEATURES: Array<Feature> = [
-  featureFixture({ key: 'safe_seats', type: 'metered' }),
+  featureBuilder().with('key', 'safe_seats').with('type', 'metered').build(),
 ];
 
 describe('SubscriptionSyncService', () => {
@@ -51,7 +39,7 @@ describe('SubscriptionSyncService', () => {
     type?: string;
     upstreamCustomerId?: string | null;
     customerGroup?: string;
-  }): unknown {
+  }): WebhookEvent {
     return {
       id: faker.string.uuid(),
       type: overrides?.type ?? 'checkout.session.completed',
@@ -61,9 +49,13 @@ describe('SubscriptionSyncService', () => {
         status: 'active',
         customer: {
           customerGroup: overrides?.customerGroup ?? 'wallet_web',
+          // `handleWebhook` no longer parses the raw wire payload itself
+          // (that now happens once, at the controller's ValidationPipe) —
+          // this helper builds the already-validated `WebhookEvent` shape
+          // directly, so `upstreamCustomerId` is dashed here, not raw.
           upstreamCustomerId:
             overrides?.upstreamCustomerId === undefined
-              ? spaceUuid.replaceAll('-', '')
+              ? spaceUuid
               : overrides.upstreamCustomerId,
           customerId: faker.string.uuid(),
         },
@@ -311,13 +303,6 @@ describe('SubscriptionSyncService', () => {
     entitlementsService.materialize.mockRejectedValue(error);
 
     await expect(target.handleWebhook(webhookEvent())).rejects.toThrow(error);
-  });
-
-  it('acks and logs malformed payloads', async () => {
-    await target.handleWebhook({ not: 'an event' });
-
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
-    expect(loggingService.error).toHaveBeenCalled();
   });
 
   it('propagates re-fetch errors so the webhook returns 5xx and is retried', async () => {
