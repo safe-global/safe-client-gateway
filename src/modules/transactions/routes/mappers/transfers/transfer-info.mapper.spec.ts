@@ -41,6 +41,7 @@ const tokenRepository = vi.mocked({
 
 const mockLoggingService = vi.mocked({
   warn: vi.fn(),
+  debug: vi.fn(),
 } as MockedObject<ILoggingService>);
 
 describe('Transfer Info mapper (Unit)', () => {

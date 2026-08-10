@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
@@ -29,6 +30,13 @@ const mockSafeRepository = vi.mocked({
   isSafe: vi.fn(),
 } as MockedObject<ISafeRepository>);
 
+const mockLoggingService = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 describe('SpaceCounterfactualSafesService', () => {
   let target: SpaceCounterfactualSafesService;
 
@@ -39,6 +47,7 @@ describe('SpaceCounterfactualSafesService', () => {
       mockSpaceSafesRepository,
       mockCounterfactualSafesRepository,
       mockSafeRepository,
+      mockLoggingService,
     );
   });
 
@@ -112,6 +121,14 @@ describe('SpaceCounterfactualSafesService', () => {
 
     expect(result.safes[chainId]).toHaveLength(1);
     expect(result.safes[chainId][0].address).toBe(safe.address);
+    expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+    expect(mockLoggingService.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chainId,
+        address: safe.address,
+        error: 'tx service down',
+      }),
+    );
   });
 
   it('returns no safes and skips lookups when the space has no safes', async () => {
