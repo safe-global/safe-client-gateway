@@ -43,4 +43,4 @@ import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscrip
     ISubscriptionEntitlementsRepository,
   ],
 })
-export class EntitlementsDomainModule {}
+export class EntitlementsRepositoryModule {}

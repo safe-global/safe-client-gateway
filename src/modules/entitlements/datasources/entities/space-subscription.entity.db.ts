@@ -85,6 +85,7 @@ export class SpaceSubscription implements DomainSpaceSubscription {
   })
   public readonly updatedAt!: Date;
 
+  @Index('IDX_subscriptions_space_id')
   @ManyToOne(
     () => Space,
     (space: Space) => space.id,

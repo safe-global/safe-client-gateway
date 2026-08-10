@@ -2,8 +2,8 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { BillingApiModule } from '@/datasources/billing-api/billing-api.module';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
+import { EntitlementsRepositoryModule } from '@/modules/entitlements/domain/entitlements-repository.module';
 import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
-import { EntitlementsDomainModule } from '@/modules/entitlements/entitlements-domain.module';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
@@ -16,13 +16,13 @@ import { UsersModule } from '@/modules/users/users.module';
  *
  * `EntitlementsService` needs `ISpacesRepository` (from `SpacesModule`) to
  * check a workspace exists before materializing its subscription state —
- * hence the `forwardRef` `EntitlementsDomainModule` itself cannot take,
+ * hence the `forwardRef` `EntitlementsRepositoryModule` itself cannot take,
  * since it must stay acyclic (it's a dependency of `SpacesModule`); this
  * module sits above that layer and can afford the cycle.
  */
 @Module({
   imports: [
-    EntitlementsDomainModule,
+    EntitlementsRepositoryModule,
     PostgresDatabaseModuleV2,
     BillingApiModule,
     forwardRef(() => SpacesModule),

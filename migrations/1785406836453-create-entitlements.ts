@@ -47,6 +47,13 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     await queryRunner.query(
       `CREATE UNIQUE INDEX "UQ_subscriptions_active_space" ON "subscriptions"  ("space_id") WHERE status IN ('active','trialing','past_due','paused','unpaid')`,
     );
+    // The unique index above is partial (active-ish statuses only), so it
+    // can't serve a lookup covering terminal-status rows or the FK's
+    // `ON DELETE CASCADE` check from `spaces` — same reasoning as
+    // IDX_SFU_feature_id/IDX_SE_feature_id above.
+    await queryRunner.query(
+      `CREATE INDEX "IDX_subscriptions_space_id" ON "subscriptions" ("space_id")`,
+    );
     // `updated_at` is maintained by the shared trigger every other table uses
     // (see 1727701600427-update_timestamp_trigger); the entity columns are
     // declared `update: false`, so nothing writes them from the application.
@@ -108,6 +115,7 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "space_feature_usage" DROP CONSTRAINT "FK_SFU_space_id"`,
     );
+    await queryRunner.query(`DROP INDEX "public"."IDX_subscriptions_space_id"`);
     await queryRunner.query(
       `DROP INDEX "public"."UQ_subscriptions_active_space"`,
     );
