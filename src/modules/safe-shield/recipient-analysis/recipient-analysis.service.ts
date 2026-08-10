@@ -59,7 +59,14 @@ import {
   TITLE_MAPPING,
 } from './recipient-analysis.constants';
 
-const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
+const SAFE_VERSIONS = [
+  '1.5.0',
+  '1.4.1',
+  '1.3.0',
+  '1.2.0',
+  '1.1.1',
+  '1.0.0',
+] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];
 
 /**
@@ -70,6 +77,7 @@ export class RecipientAnalysisService {
   private readonly defaultExpirationTimeInSeconds: number;
 
   private static readonly MULTICHAIN_SUPPORTED_VERSIONS = [
+    '1.5.0',
     '1.4.1',
     '1.3.0',
   ] as const;
