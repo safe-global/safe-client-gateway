@@ -25,8 +25,9 @@ import type { MaterializedSubscription } from '@/modules/entitlements/domain/ent
 import { isActiveSubscriptionStatus } from '@/modules/entitlements/domain/entitlements.constants';
 import { parseFeaturePackage } from '@/modules/entitlements/domain/feature-package.parser';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
+import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 
@@ -51,7 +52,7 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
  * provides durability.
  */
 @Injectable()
-export class SubscriptionSyncService {
+export class SubscriptionSyncService implements ISubscriptionSyncService {
   public constructor(
     @Inject(IBillingApi)
     private readonly billingApi: IBillingApi,

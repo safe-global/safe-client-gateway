@@ -2,6 +2,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -58,6 +59,9 @@ export class SubscriptionEntitlement implements DomainSubscriptionEntitlement {
   })
   public readonly subscription?: SpaceSubscription;
 
+  // Not `eager`: callers that need it ask for it explicitly via `relations`
+  // (see the integration spec), so unrelated queries don't pay for the join.
+  @Index('IDX_SE_feature_id')
   @ManyToOne(() => Feature, {
     onDelete: 'RESTRICT',
     nullable: false,

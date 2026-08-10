@@ -192,20 +192,21 @@ describe('SubscriptionSyncService', () => {
 
     await target.handleWebhook(webhookEvent());
 
-    const [args] = entitlementsService.materialize.mock.calls[0];
-    expect(args.subscriptions).toHaveLength(2);
-    expect(args.subscriptions).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          upstreamSubscriptionId: newer.id,
-          status: 'active',
-        }),
+    // A plain array (rather than arrayContaining) also pins the length to
+    // exactly 2 — the demoted subscription is kept, not dropped.
+    expect(entitlementsService.materialize).toHaveBeenCalledWith({
+      spaceId,
+      subscriptions: [
         expect.objectContaining({
           upstreamSubscriptionId: older.id,
           status: 'canceled',
         }),
-      ]),
-    );
+        expect.objectContaining({
+          upstreamSubscriptionId: newer.id,
+          status: 'active',
+        }),
+      ],
+    });
     expect(loggingService.warn).toHaveBeenCalled();
   });
 

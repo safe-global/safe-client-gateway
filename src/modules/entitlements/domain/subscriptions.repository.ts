@@ -39,8 +39,8 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       { conflictPaths: ['upstreamSubscriptionId'] },
     );
     // TypeORM's upsert() return value isn't reliably populated on the
-    // conflict (update) path a follow-up read is the only 
-    // reliable way to get the id.
+    // conflict (update) path (see notifications.repository.ts for the same
+    // workaround) — a follow-up read is the only reliable way to get the id.
     const subscription = await repository.findOneOrFail({
       where: { upstreamSubscriptionId: args.upstreamSubscriptionId },
       select: { id: true },

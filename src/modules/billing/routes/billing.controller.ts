@@ -57,10 +57,13 @@ export class BillingController {
   @Post('/webhooks')
   @HttpCode(202)
   public async postWebhook(@Body() payload: unknown): Promise<void> {
-    // Origin is authenticated by BillingWebhookAuthGuard. The payload is
-    // validated leniently downstream: unprocessable payloads are acked
-    // (retries cannot fix them), fetch/DB errors propagate as 5xx so the
-    // billing service retries.
+    // Deliberately not `@Body(new ValidationPipe(...))`: a pipe failure
+    // would 422, and a webhook must never reject with a status the sender
+    // retries — a malformed payload can't be fixed by retrying it. Origin is
+    // authenticated by BillingWebhookAuthGuard; the payload itself is
+    // validated leniently downstream (SubscriptionSyncService.handleWebhook):
+    // unprocessable payloads are acked, fetch/DB errors still propagate as
+    // 5xx so the billing service retries those.
     await this.billingService.processWebhook(payload);
   }
 

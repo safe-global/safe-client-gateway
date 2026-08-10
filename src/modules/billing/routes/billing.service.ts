@@ -18,7 +18,7 @@ import {
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
-import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
+import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -34,7 +34,8 @@ export class BillingService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    private readonly subscriptionSyncService: SubscriptionSyncService,
+    @Inject(ISubscriptionSyncService)
+    private readonly subscriptionSyncService: ISubscriptionSyncService,
   ) {
     this.redirectConfig = getRedirectConfig(this.configurationService);
   }

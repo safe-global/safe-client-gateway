@@ -2,6 +2,7 @@
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -59,6 +60,7 @@ export class SpaceFeatureUsage implements DomainSpaceFeatureUsage {
   })
   public readonly space?: Space;
 
+  @Index('IDX_SFU_feature_id')
   @ManyToOne(() => Feature, {
     onDelete: 'RESTRICT',
     nullable: false,

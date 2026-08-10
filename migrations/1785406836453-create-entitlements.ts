@@ -21,6 +21,12 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "space_feature_usage" ("id" SERIAL NOT NULL, "period_start" TIMESTAMP WITH TIME ZONE NOT NULL, "used" integer NOT NULL DEFAULT '0', "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "space_id" integer NOT NULL, "feature_id" integer NOT NULL, CONSTRAINT "UQ_SFU_space_feature_period" UNIQUE ("space_id", "feature_id", "period_start"), CONSTRAINT "PK_SFU_id" PRIMARY KEY ("id"))`,
     );
+    // `feature_id` is a FK, and only the trailing column of the composite
+    // UNIQUE above — Postgres's auto-index on that constraint can't serve a
+    // lookup keyed on `feature_id` alone, e.g. the `ON DELETE RESTRICT` check.
+    await queryRunner.query(
+      `CREATE INDEX "IDX_SFU_feature_id" ON "space_feature_usage" ("feature_id")`,
+    );
     await queryRunner.query(
       `CREATE TABLE "space_seat_selection" ("id" SERIAL NOT NULL, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "space_id" integer NOT NULL, "space_safe_id" integer NOT NULL, CONSTRAINT "UQ_SSSEL_space_safe_id" UNIQUE ("space_safe_id"), CONSTRAINT "PK_SSSEL_id" PRIMARY KEY ("id"))`,
     );
@@ -29,6 +35,11 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     );
     await queryRunner.query(
       `CREATE TABLE "subscription_entitlements" ("id" SERIAL NOT NULL, "enabled" boolean NOT NULL, "quota" integer, "value" character varying(255), "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "subscription_id" integer NOT NULL, "feature_id" integer NOT NULL, CONSTRAINT "UQ_SE_subscription_feature" UNIQUE ("subscription_id", "feature_id"), CONSTRAINT "PK_SE_id" PRIMARY KEY ("id"))`,
+    );
+    // Same reasoning as IDX_SFU_feature_id above: feature_id trails the
+    // composite UNIQUE here too.
+    await queryRunner.query(
+      `CREATE INDEX "IDX_SE_feature_id" ON "subscription_entitlements" ("feature_id")`,
     );
     await queryRunner.query(
       `CREATE TABLE "subscriptions" ("id" SERIAL NOT NULL, "upstream_subscription_id" character varying(255) NOT NULL, "status" character varying(32) NOT NULL, "plan_id" character varying(255) NOT NULL, "plan_name" character varying(255), "current_period_start" TIMESTAMP WITH TIME ZONE, "current_period_end" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "space_id" integer NOT NULL, CONSTRAINT "UQ_subscriptions_upstream_id" UNIQUE ("upstream_subscription_id"), CONSTRAINT "CHK_subscriptions_status" CHECK ("status" IN ('active','canceled','incomplete','incomplete_expired','past_due','paused','trialing','unpaid')), CONSTRAINT "PK_subscriptions_id" PRIMARY KEY ("id"))`,
@@ -101,9 +112,11 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
       `DROP INDEX "public"."UQ_subscriptions_active_space"`,
     );
     await queryRunner.query(`DROP TABLE "subscriptions"`);
+    await queryRunner.query(`DROP INDEX "public"."IDX_SE_feature_id"`);
     await queryRunner.query(`DROP TABLE "subscription_entitlements"`);
     await queryRunner.query(`DROP INDEX "public"."IDX_SSSEL_space_id"`);
     await queryRunner.query(`DROP TABLE "space_seat_selection"`);
+    await queryRunner.query(`DROP INDEX "public"."IDX_SFU_feature_id"`);
     await queryRunner.query(`DROP TABLE "space_feature_usage"`);
     await queryRunner.query(`DROP TABLE "features"`);
   }
