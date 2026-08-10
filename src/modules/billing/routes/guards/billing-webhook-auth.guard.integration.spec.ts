@@ -89,15 +89,6 @@ describe('BillingWebhookAuthGuard', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
-
-    // This suite only exercises the guard: a well-formed, authenticated
-    // webhook body reaches SubscriptionSyncService, which looks up the
-    // event's space via the (mocked, V2) Postgres datasource. Resolving it
-    // to "not found" drives the request down the already-covered
-    // unknown-space ack path (see subscription-sync.service.spec.ts) instead
-    // of failing on an unconfigured DB mock.
-    mockRepository.findOne.mockResolvedValue(null);
-    mockPostgresDatabaseService.getRepository.mockResolvedValue(mockRepository);
   });
 
   afterEach(async () => {
@@ -171,6 +162,15 @@ describe('BillingWebhookAuthGuard', () => {
       aud: [ISSUER, faker.internet.domainName()],
     });
 
+    // A well-formed, authenticated webhook body reaches SubscriptionSyncService,
+    // which looks up the event's space via the (mocked, V2) Postgres
+    // datasource. Resolving it to "not found" drives the request down the
+    // already-covered unknown-space ack path (see
+    // subscription-sync.service.spec.ts) instead of failing on an
+    // unconfigured DB mock.
+    mockRepository.findOne.mockResolvedValue(null);
+    mockPostgresDatabaseService.getRepository.mockResolvedValue(mockRepository);
+
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
@@ -219,6 +219,12 @@ describe('BillingWebhookAuthGuard', () => {
       issuer: ISSUER,
       expiresInDays: 365,
     });
+
+    // See the equivalent comment above: routes the well-formed webhook body
+    // down the graceful unknown-space ack path instead of an unconfigured DB
+    // mock.
+    mockRepository.findOne.mockResolvedValue(null);
+    mockPostgresDatabaseService.getRepository.mockResolvedValue(mockRepository);
 
     await request(app.getHttpServer())
       .post(PATH)

@@ -41,7 +41,10 @@ export type WebhookEvent = z.infer<typeof WebhookEventSchema>;
 export const WebhookEventSchema = z.object({
   id: z.string(),
   type: z.string(),
-  created: z.number(),
+  // Not read anywhere in the processing path (events are triggers; state is
+  // always re-fetched) — optional so an upstream shape change here can't
+  // reject an otherwise-legitimate, authenticated webhook.
+  created: z.number().optional(),
   // Subscription events carry WebhookSubscriptionData, payment-link events
   // WebhookPaymentLinkData; only the fields the CGW reads are declared and
   // the rest pass through (the event is a trigger — authoritative state is

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { isActiveSubscriptionStatus } from '@/modules/entitlements/domain/entitlements.constants';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
@@ -26,6 +30,8 @@ export class EntitlementsService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -46,6 +52,15 @@ export class EntitlementsService {
     if (withPackage.length > 1) {
       throw new Error(
         `materialize() received ${withPackage.length} subscriptions carrying an entitlement package for space ${args.spaceId}; expected at most 1`,
+      );
+    }
+
+    const activeIsh = args.subscriptions.filter((subscription) =>
+      isActiveSubscriptionStatus(subscription.status),
+    );
+    if (activeIsh.length > 1) {
+      throw new Error(
+        `materialize() received ${activeIsh.length} active-ish subscriptions for space ${args.spaceId}; expected at most 1`,
       );
     }
 
@@ -102,17 +117,25 @@ export class EntitlementsService {
             subscriptionId: activeSubscriptionId,
             entitlements: activePackage.flatMap((entitlement) => {
               const featureId = featureIdByKey.get(entitlement.featureKey);
-              // Unknown keys are dropped by the parser; guard anyway.
-              return featureId === undefined
-                ? []
-                : [
-                    {
-                      featureId,
-                      enabled: entitlement.enabled,
-                      quota: entitlement.quota,
-                      value: entitlement.value,
-                    },
-                  ];
+              if (featureId === undefined) {
+                // The parser already drops unknown keys against its own
+                // catalog snapshot; reaching this means the feature was
+                // renamed/deleted in the narrow window before this
+                // independent re-fetch. Rare, but silently dropping a
+                // purchased entitlement is worth a trace.
+                this.loggingService.warn(
+                  `materialize() dropped unknown feature key '${entitlement.featureKey}' for space ${args.spaceId}`,
+                );
+                return [];
+              }
+              return [
+                {
+                  featureId,
+                  enabled: entitlement.enabled,
+                  quota: entitlement.quota,
+                  value: entitlement.value,
+                },
+              ];
             }),
           },
           entityManager,

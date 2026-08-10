@@ -139,6 +139,7 @@ describe('EntitlementsService', () => {
       new SubscriptionEntitlementsRepository(postgresDatabaseService),
       spacesRepositoryStub,
       postgresDatabaseService,
+      mockLoggingService,
     );
   });
 

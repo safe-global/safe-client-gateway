@@ -8,6 +8,10 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
+import {
+  webhookEventBuilder,
+  webhookEventCustomerBuilder,
+} from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
@@ -35,33 +39,39 @@ describe('SubscriptionSyncService', () => {
   let loggingService: MockedObject<ILoggingService>;
   let target: SubscriptionSyncService;
 
+  // `handleWebhook` no longer parses the raw wire payload itself (that now
+  // happens once, at the controller's ValidationPipe) — this helper builds
+  // the already-validated `WebhookEvent` shape via the shared builders, so
+  // `upstreamCustomerId` is dashed here, not raw.
   function webhookEvent(overrides?: {
     type?: string;
     upstreamCustomerId?: string | null;
     customerGroup?: string;
   }): WebhookEvent {
-    return {
-      id: faker.string.uuid(),
-      type: overrides?.type ?? 'checkout.session.completed',
-      created: faker.number.int(),
-      data: {
-        subscriptionId: faker.string.uuid(),
-        status: 'active',
-        customer: {
-          customerGroup: overrides?.customerGroup ?? 'wallet_web',
-          // `handleWebhook` no longer parses the raw wire payload itself
-          // (that now happens once, at the controller's ValidationPipe) —
-          // this helper builds the already-validated `WebhookEvent` shape
-          // directly, so `upstreamCustomerId` is dashed here, not raw.
-          upstreamCustomerId:
-            overrides?.upstreamCustomerId === undefined
-              ? spaceUuid
-              : overrides.upstreamCustomerId,
-          customerId: faker.string.uuid(),
-        },
-        metadata: null,
-      },
-    };
+    let customerBuilder = webhookEventCustomerBuilder().with(
+      'upstreamCustomerId',
+      overrides?.upstreamCustomerId === undefined
+        ? spaceUuid
+        : overrides.upstreamCustomerId,
+    );
+    if (overrides?.customerGroup !== undefined) {
+      customerBuilder = customerBuilder.with(
+        'customerGroup',
+        overrides.customerGroup,
+      );
+    }
+
+    let builder = webhookEventBuilder().with('data', {
+      subscriptionId: faker.string.uuid(),
+      status: 'active',
+      metadata: null,
+      customer: customerBuilder.build(),
+    });
+    if (overrides?.type !== undefined) {
+      builder = builder.with('type', overrides.type);
+    }
+
+    return builder.build();
   }
 
   beforeEach(() => {

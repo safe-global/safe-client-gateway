@@ -13,6 +13,7 @@ import {
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import type { SpaceSubscription as DomainSpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
+import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 
 // Class named SpaceSubscription to avoid clashing with the billing-api
@@ -24,7 +25,7 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 // and the 1785406836453-create-entitlements migration.
 @Index('UQ_subscriptions_active_space', ['space'], {
   unique: true,
-  where: `status IN ('active','trialing','past_due','paused','unpaid')`,
+  where: `status IN (${ACTIVE_SUBSCRIPTION_STATUSES.map((status) => `'${status}'`).join(',')})`,
 })
 // The 8 Stripe statuses (see SubscriptionStatuses in the billing-api entity).
 @Check(
