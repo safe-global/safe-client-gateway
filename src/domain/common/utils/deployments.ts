@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  getExtensibleFallbackHandlerDeployments as _getExtensibleFallbackHandlerDeployments,
   getCompatibilityFallbackHandlerDeployments as _getFallbackHandlerDeployments,
   getMultiSendCallOnlyDeployments as _getMultiSendCallOnlyDeployments,
   getMultiSendDeployments as _getMultiSendDeployments,
@@ -10,7 +11,11 @@ import {
   getSafeToL2MigrationDeployments as _getSafeToL2MigrationDeployments,
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
 } from '@safe-global/safe-deployments';
-import { _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
+import {
+  _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
+  _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS,
+  _SAFE_TO_L2_SETUP_DEPLOYMENTS,
+} from '@safe-global/safe-deployments/dist/deployments';
 import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
 import { type Address, getAddress, type parseAbi } from 'viem';
 
@@ -26,6 +31,7 @@ type DeploymentGetter =
   | typeof _getMultiSendCallOnlyDeployments
   | typeof _getMultiSendDeployments
   | typeof _getFallbackHandlerDeployments
+  | typeof _getExtensibleFallbackHandlerDeployments
   | typeof _getSafeToL2SetupDeployments
   | typeof _getSafeToL2MigrationDeployments;
 
@@ -122,6 +128,20 @@ export function getFallbackHandlerDeployments(args: Filter): Array<Address> {
 }
 
 /**
+ * Returns a list of official ExtensibleFallbackHandler addresses based on given {@link Filter}.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @param {string} args.version - the version to filter deployments by
+ *
+ * @returns {Array<Address>} - a list of checksummed ExtensibleFallbackHandler addresses
+ */
+export function getExtensibleFallbackHandlerDeployments(
+  args: Filter,
+): Array<Address> {
+  return formatDeployments(_getExtensibleFallbackHandlerDeployments, args);
+}
+
+/**
  * Returns a list of official SafeToL2Migration addresses based on given {@link Filter}.
  *
  * @param {string} args.chainId - the chain ID to filter deployments by
@@ -190,6 +210,30 @@ export function getFallbackHandlerVersions(): Array<string> {
   return _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS.map(
     (deployment) => deployment.version,
   );
+}
+
+/**
+ * Gets the list of ExtensibleFallbackHandler versions available in the safe-deployments package.
+ * Infers versions from the _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS constant exported by the package.
+ * Note: ExtensibleFallbackHandler was introduced in Safe v1.5.0.
+ *
+ * @returns {Array<string>} - a list of extensible fallback handler versions in descending order
+ */
+export function getExtensibleFallbackHandlerVersions(): Array<string> {
+  return _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS.map(
+    (deployment) => deployment.version,
+  );
+}
+
+/**
+ * Gets the list of SafeToL2Setup versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_TO_L2_SETUP_DEPLOYMENTS constant exported by the package.
+ * Note: SafeToL2Setup was introduced in Safe v1.4.1.
+ *
+ * @returns {Array<string>} - a list of SafeToL2Setup versions in descending order
+ */
+export function getSafeToL2SetupVersions(): Array<string> {
+  return _SAFE_TO_L2_SETUP_DEPLOYMENTS.map((deployment) => deployment.version);
 }
 
 /**
@@ -264,6 +308,13 @@ export const isProxyFactoryDeployed = (
 export const isFallbackHandlerDeployed = (
   args: Filter & { address: Address },
 ): boolean => isDeployed(getFallbackHandlerDeployments, args);
+
+/**
+ * Checks if a given address is deployed as an ExtensibleFallbackHandler.
+ */
+export const isExtensibleFallbackHandlerDeployed = (
+  args: Filter & { address: Address },
+): boolean => isDeployed(getExtensibleFallbackHandlerDeployments, args);
 
 /**
  * The SafeWebAuthnSignerFactory contract version supported by the relay.
