@@ -13,9 +13,12 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
+import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
+import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import { BillingController } from '@/modules/billing/routes/billing.controller';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
 
@@ -86,6 +89,15 @@ describe('BillingWebhookAuthGuard', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
+
+    // This suite only exercises the guard: a well-formed, authenticated
+    // webhook body reaches SubscriptionSyncService, which looks up the
+    // event's space via the (mocked, V2) Postgres datasource. Resolving it
+    // to "not found" drives the request down the already-covered
+    // unknown-space ack path (see subscription-sync.service.spec.ts) instead
+    // of failing on an unconfigured DB mock.
+    mockRepository.findOne.mockResolvedValue(null);
+    mockPostgresDatabaseService.getRepository.mockResolvedValue(mockRepository);
   });
 
   afterEach(async () => {
@@ -162,6 +174,7 @@ describe('BillingWebhookAuthGuard', () => {
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
+      .send(webhookEventBuilder().build())
       .expect(202);
   });
 
@@ -210,6 +223,7 @@ describe('BillingWebhookAuthGuard', () => {
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
+      .send(webhookEventBuilder().build())
       .expect(202);
   });
 });
