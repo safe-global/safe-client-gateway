@@ -232,9 +232,10 @@ export class OidcAuthController {
       // Safe to read flags off `state`: it was just compared against the
       // one-time state cookie above, so it is our own value, not the caller's.
       const { accessToken, maxAge, userId } =
-        await this.oidcAuthService.authenticateWithOidc(code, {
-          elevate: this.oidcAuthService.isElevationState(state),
-        });
+        await this.oidcAuthService.authenticateWithOidc(
+          code,
+          this.oidcAuthService.isElevationState(state),
+        );
 
       if (this.oidcAuthService.isEnrollmentState(state)) {
         try {

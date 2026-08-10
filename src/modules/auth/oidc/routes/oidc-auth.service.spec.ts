@@ -443,9 +443,7 @@ describe('OidcAuthService', () => {
       vi.setSystemTime(now);
       arrange(['mfa']);
 
-      await target.authenticateWithOidc(faker.string.alphanumeric(32), {
-        elevate: false,
-      });
+      await target.authenticateWithOidc(faker.string.alphanumeric(32), false);
 
       expectStamp(Math.floor(now.getTime() / 1_000));
     });
@@ -474,9 +472,7 @@ describe('OidcAuthService', () => {
       arrange(['pwd']);
 
       await expect(
-        target.authenticateWithOidc(faker.string.alphanumeric(32), {
-          elevate: true,
-        }),
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
       ).rejects.toThrow(UnauthorizedException);
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
@@ -485,9 +481,7 @@ describe('OidcAuthService', () => {
       arrange(undefined);
 
       await expect(
-        target.authenticateWithOidc(faker.string.alphanumeric(32), {
-          elevate: true,
-        }),
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
       ).rejects.toThrow(UnauthorizedException);
       expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
     });
@@ -496,9 +490,7 @@ describe('OidcAuthService', () => {
       arrange(['mfa']);
 
       await expect(
-        target.authenticateWithOidc(faker.string.alphanumeric(32), {
-          elevate: true,
-        }),
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
       ).resolves.toEqual(
         expect.objectContaining({ accessToken: expect.any(String) }),
       );

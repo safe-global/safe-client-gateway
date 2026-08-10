@@ -84,7 +84,7 @@ export class OidcAuthService {
    */
   public async authenticateWithOidc(
     code: string,
-    { elevate = false }: { elevate?: boolean } = {},
+    elevate = false,
   ): Promise<OidcAuthTokenResponse> {
     const {
       sub: extUserId,
