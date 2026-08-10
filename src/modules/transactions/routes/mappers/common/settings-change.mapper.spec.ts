@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   dataDecodedBuilder,
@@ -289,11 +290,10 @@ describe('Multisig Settings Change Transaction mapper (Unit)', () => {
   });
 
   it('should build a DeleteModuleGuard setting', async () => {
-    const moduleGuardValue = '0x0000000000000000000000000000000000000000';
     const dataDecoded = dataDecodedBuilder()
       .with('method', 'setModuleGuard')
       .with('parameters', [
-        dataDecodedParameterBuilder().with('value', moduleGuardValue).build(),
+        dataDecodedParameterBuilder().with('value', zeroAddress).build(),
       ])
       .build();
 

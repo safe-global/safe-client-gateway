@@ -5,6 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
 import { getAddress, zeroAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
+import { getVersionsByChainIdByDeploymentMap } from '@/__tests__/deployments.helper';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -1749,7 +1750,19 @@ describe('RecipientAnalysisService', () => {
     });
 
     it('should return INCOMPATIBLE_SAFE for a 1.5.0 Safe when the target chain only has 1.4.1 deployments', async () => {
-      const targetChainId = '1101'; // Polygon zkEVM has 1.4.1 deployments but no 1.5.0 ones
+      // Deployment lookups hit the real safe-deployments data, so the chain
+      // cannot be fully random: pick any chain with 1.4.1 but no 1.5.0 ones.
+      const safeVersionsByChainId = getVersionsByChainIdByDeploymentMap().Safe;
+      const targetChainId = faker.helpers.arrayElement(
+        Object.keys(safeVersionsByChainId).filter((chainId) => {
+          const versions = safeVersionsByChainId[chainId];
+          return (
+            chainId !== mockChainId &&
+            !!versions?.includes('1.4.1') &&
+            !versions.includes('1.5.0')
+          );
+        }),
+      );
       const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
 
       mockTransactionApiManager.getApi.mockImplementation((chainId) => {
