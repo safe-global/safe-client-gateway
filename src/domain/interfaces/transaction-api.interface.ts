@@ -9,6 +9,14 @@ import type { Estimation } from '@/modules/estimations/domain/entities/estimatio
 import type { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
+import type {
+  PolicyConfirmation,
+  PolicyOperation,
+} from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type {
+  PolicyRootRequest,
+  PolicyRootRequestStatus,
+} from '@/modules/policies/domain/entities/policy-root-request.entity';
 import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -144,6 +152,31 @@ export interface ITransactionApi {
   }): Promise<Raw<Page<ModuleTransaction>>>;
 
   clearModuleTransactions(safeAddress: Address): Promise<void>;
+
+  getPolicyConfirmations(args: {
+    safeAddress: Address;
+    target?: Address;
+    selector?: Hex;
+    operation?: PolicyOperation;
+    policy?: Address;
+    removed?: boolean;
+    fallback?: boolean;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<PolicyConfirmation>>>;
+
+  clearPolicyConfirmations(safeAddress: Address): Promise<void>;
+
+  getPolicyRootRequests(args: {
+    safeAddress: Address;
+    root?: Hex;
+    status?: PolicyRootRequestStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<PolicyRootRequest>>>;
+
+  clearPolicyRootRequests(safeAddress: Address): Promise<void>;
 
   getMultisigTransaction(
     safeTransactionHash: string,

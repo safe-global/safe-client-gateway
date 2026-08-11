@@ -11,7 +11,10 @@ import {
   getSafeToL2SetupDeployments as _getSafeToL2SetupDeployments,
 } from '@safe-global/safe-deployments';
 import { _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS } from '@safe-global/safe-deployments/dist/deployments';
-import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
+import {
+  getAllowanceModuleDeployment,
+  getSafeWebAuthnSignerFactoryDeployment,
+} from '@safe-global/safe-modules-deployments';
 import { type Address, getAddress, type parseAbi } from 'viem';
 
 type Filter = {
@@ -293,6 +296,32 @@ export function getSignerFactoryDeployments(args: {
     network: args.chainId,
     version: SUPPORTED_SIGNER_FACTORY_VERSION,
   });
+  if (!deployment) return [];
+  const address = deployment.networkAddresses[args.chainId];
+  if (!address) return [];
+  return [getAddress(address)];
+}
+
+/**
+ * Returns a list of official AllowanceModule addresses for a chain.
+ * Uses @safe-global/safe-modules-deployments (separate from core safe-deployments).
+ *
+ * The AllowanceModule enforces the `spending-limit` policy.
+ *
+ * Note: deliberately *not* pinned to a version, unlike
+ * {@link getSignerFactoryDeployments}. The module is looked up by network and
+ * the released versions do not cover the same set of chains (e.g. Sepolia only
+ * has v0.1.0 while v0.1.1 is the latest release), so pinning would silently
+ * drop chains. CGW only ever reads addresses through this helper, so a version
+ * difference has no behavioural impact here.
+ *
+ * @param {string} args.chainId - the chain ID to filter deployments by
+ * @returns {Array<Address>} - a list of checksummed AllowanceModule addresses
+ */
+export function getAllowanceModuleDeployments(args: {
+  chainId: string;
+}): Array<Address> {
+  const deployment = getAllowanceModuleDeployment({ network: args.chainId });
   if (!deployment) return [];
   const address = deployment.networkAddresses[args.chainId];
   if (!address) return [];

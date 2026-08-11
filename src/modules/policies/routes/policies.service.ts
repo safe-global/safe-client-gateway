@@ -1,0 +1,392 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
+import type { Address, Hex } from 'viem';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type {
+  ActivePolicy,
+  PendingPolicy,
+} from '@/modules/policies/domain/entities/active-policy.entity';
+import type { AvailablePolicy } from '@/modules/policies/domain/entities/available-policy.entity';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
+import type { PolicyConfirmation } from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import { guardEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
+import type { PolicyGroup } from '@/modules/policies/domain/entities/policy-group.entity';
+import {
+  type PolicyType,
+  policyTypeFromContractName,
+} from '@/modules/policies/domain/entities/policy-type.entity';
+import { IPoliciesRepository } from '@/modules/policies/domain/policies.repository.interface';
+import { PolicyCacheService } from '@/modules/policies/domain/policy-cache.service';
+import { PolicyCatalogueService } from '@/modules/policies/domain/policy-catalogue.service';
+import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
+import {
+  type AddressNames,
+  type PolicyResolver,
+  type ResolvedPolicy,
+} from '@/modules/policies/domain/resolvers/policy-resolver.interface';
+import { toPolicyInfo } from '@/modules/policies/domain/utils/policy-configuration.utils';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
+import { POLICY_RESOLVERS } from '@/modules/policies/policies.constants';
+import type {
+  CreatePolicyConfigurationRequestPayload,
+  CreatePolicyConfigurationRequestResponse,
+} from '@/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
+import type { SafeId } from '@/modules/policies/routes/entities/safe-id.entity';
+import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+
+type PolicyRequest = {
+  spaceId: Space['id'];
+  safeId: SafeId;
+  authPayload: AuthPayload;
+};
+
+const MILLISECONDS_IN_SECOND = 1000;
+
+@Injectable()
+export class PoliciesService {
+  constructor(
+    @Inject(IPoliciesRepository)
+    private readonly policiesRepository: IPoliciesRepository,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
+    @Inject(IAddressBookItemsRepository)
+    private readonly addressBookItemsRepository: IAddressBookItemsRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
+    @Inject(IPolicyConfigurationRequestsRepository)
+    private readonly configurationRequestsRepository: IPolicyConfigurationRequestsRepository,
+    private readonly policyCatalogueService: PolicyCatalogueService,
+    private readonly policyCacheService: PolicyCacheService,
+    @Inject(POLICY_RESOLVERS)
+    private readonly resolvers: ReadonlyArray<PolicyResolver>,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {}
+
+  /**
+   * Stores the `Configuration[]` of a delayed configuration request, so a later
+   * `pending` read can say what the request changes.
+   *
+   * `requestConfiguration(bytes32 root)` publishes only the hash, so the payload
+   * has to be kept off-chain. The wallet stores it *before* requesting the
+   * configuration on-chain - the root does not exist on-chain yet at this point -
+   * so a row is deliberately accepted for a root the Safe has not requested.
+   *
+   * What keeps that safe is the one check that does not depend on chain state:
+   * the root is recomputed from the submitted configurations and has to match.
+   * A row therefore always describes the configurations that hash to its own
+   * root, and `pending` only ever joins rows onto roots the events report - so a
+   * row for a root that never materialises is inert, and no row can misdescribe
+   * a real request.
+   *
+   * Idempotent, so a client retry cannot duplicate.
+   */
+  public async createConfigurationRequest(
+    request: PolicyRequest & {
+      payload: CreatePolicyConfigurationRequestPayload;
+    },
+  ): Promise<CreatePolicyConfigurationRequestResponse> {
+    const userId = getAuthenticatedUserIdOrFail(request.authPayload);
+    await this.assertSafeInSpace(request);
+
+    const { chainId, address: safeAddress } = request.safeId;
+    const { root, configurations } = request.payload;
+
+    if (configurationRoot(configurations) !== root.toLowerCase()) {
+      throw new UnprocessableEntityException(
+        'The configurations do not hash to the given root',
+      );
+    }
+
+    await this.configurationRequestsRepository.create({
+      chainId,
+      safeAddress,
+      root,
+      configurations,
+      spaceId: request.spaceId,
+      createdBy: userId,
+    });
+
+    // The stored row changes what `pending` can report, so the cached policy
+    // reads of the Safe must not outlive it.
+    await this.policyCacheService.clearPolicies({ chainId, safeAddress });
+
+    return { configureRoot: root };
+  }
+
+  /**
+   * The policy types the Safe can configure, with the deployment addresses that
+   * would enforce them.
+   *
+   * Nothing here depends on the Safe beyond it belonging to the space: how many
+   * policies of a type are already configured is what `/policies/active`
+   * answers, and resolving them to count would make a static response cost a
+   * fan-out to the Transaction Service.
+   */
+  public async getAvailablePolicies(
+    request: PolicyRequest,
+  ): Promise<{ items: Array<AvailablePolicy> }> {
+    await this.assertSafeInSpace(request);
+
+    return { items: this.policyCatalogueService.get(request.safeId.chainId) };
+  }
+
+  /**
+   * The policies currently set on the Safe.
+   */
+  public async getActivePolicies(
+    request: PolicyRequest,
+  ): Promise<{ items: Array<ActivePolicy> }> {
+    await this.assertSafeInSpace(request);
+
+    return { items: await this.resolveActivePolicies(request) };
+  }
+
+  /**
+   * Configuration changes requested through the guard's delayed path that are
+   * still waiting out the delay (or ready to be applied).
+   */
+  public async getPendingPolicies(
+    request: PolicyRequest,
+  ): Promise<{ items: Array<PendingPolicy> }> {
+    await this.assertSafeInSpace(request);
+
+    const { chainId, address: safeAddress } = request.safeId;
+    const rootRequests = await this.policiesRepository.getOpenRootRequests({
+      chainId,
+      safeAddress,
+    });
+    const configurations = await this.getStoredConfigurations({
+      chainId,
+      safeAddress,
+      roots: rootRequests.map((rootRequest) => rootRequest.root),
+    });
+    const now = Date.now();
+
+    return {
+      items: rootRequests.map((rootRequest) => ({
+        configureRoot: rootRequest.root,
+        requestedAt: toUnixSeconds(rootRequest.timestamp),
+        // The `RootConfigured` event carries `block.timestamp + DELAY`, so the
+        // ready time is authoritative and needs no `DELAY()` read.
+        readyAt: toUnixSeconds(rootRequest.validFrom),
+        isReady: rootRequest.validFrom.getTime() <= now,
+        policies:
+          configurations.get(rootKey(rootRequest.root))?.map(toPolicyInfo) ??
+          null,
+      })),
+    };
+  }
+
+  /**
+   * The stored configurations of {@link roots}, keyed by root.
+   *
+   * One query for every root of the Safe: a request lists as many pending roots
+   * as the Safe has, and a lookup per root would make the response cost scale
+   * with that.
+   */
+  private async getStoredConfigurations(args: {
+    chainId: string;
+    safeAddress: Address;
+    roots: Array<Hex>;
+  }): Promise<Map<string, Array<PolicyConfiguration>>> {
+    const stored = await this.configurationRequestsRepository.findByRoots(args);
+
+    return new Map(
+      stored.map((request) => [rootKey(request.root), request.configurations]),
+    );
+  }
+
+  private async resolveActivePolicies(
+    request: PolicyRequest,
+  ): Promise<Array<ActivePolicy>> {
+    const { chainId, address: safeAddress } = request.safeId;
+
+    const [groups, safe, names] = await Promise.all([
+      this.policiesRepository.getPolicyGroups({ chainId, safeAddress }),
+      this.safeRepository.getSafe({ chainId, address: safeAddress }),
+      this.getAddressNames(request),
+    ]);
+
+    const byType = this.groupByPolicyType({ chainId, groups });
+
+    const resolved = await Promise.all(
+      this.resolvers.map((resolver) =>
+        resolver.resolve({
+          chainId,
+          groups: byType.get(resolver.type) ?? [],
+          names,
+        }),
+      ),
+    );
+
+    return resolved
+      .flat()
+      .map((policy) => this.toActivePolicy({ policy, safe }));
+  }
+
+  /**
+   * Routes each group to the resolver of its policy type.
+   *
+   * The type is the one of the group's newest event, i.e. of the policy currently
+   * bound to the access - which is why a tuple that used to hold another type
+   * contributes nothing to that other type's resolver.
+   *
+   * It comes from the `policyType` the Transaction Service resolved for the
+   * policy address through its `PolicyContract` registry - the single source of
+   * truth. CGW keeps no address map to type against, so a chain cannot be missing
+   * an entry and there is nothing to drift.
+   *
+   * A policy CGW does not model (`DenyPolicy`, `MultiSendPolicy`, …) or that the
+   * registry could not name is skipped and logged: rendering an unknown
+   * restriction is worse than omitting it.
+   */
+  private groupByPolicyType(args: {
+    chainId: string;
+    groups: Array<PolicyGroup>;
+  }): Map<PolicyType, Array<PolicyGroup>> {
+    const byType = new Map<PolicyType, Array<PolicyGroup>>();
+
+    for (const group of args.groups) {
+      const type = policyTypeFromContractName(group.latest.policyType);
+
+      if (!type) {
+        this.loggingService.warn({
+          message: 'Unmodelled policy type, skipping the policy',
+          chainId: args.chainId,
+          safe: group.latest.safe,
+          policy: group.latest.policy,
+          policyType: group.latest.policyType,
+        });
+        continue;
+      }
+
+      byType.set(type, [...(byType.get(type) ?? []), group]);
+    }
+
+    return byType;
+  }
+
+  /**
+   * Attaches the Safe-level facts a resolver cannot know: which guard slot
+   * enforces the policy, and whether that guard is enabled on the Safe.
+   *
+   * A policy configured through `configureImmediately` before the guard was set
+   * is reported with `enabled: false` rather than hidden, so the wallet can ask
+   * the user to enable the guard.
+   */
+  private toActivePolicy(args: {
+    policy: ResolvedPolicy;
+    safe: Safe;
+  }): ActivePolicy {
+    // Every group of one item holds the same policy contract and guard; they
+    // differ in the access they cover. Reading the newest of them keeps the
+    // reported addresses those of the most recent configuration.
+    const source = newestOf(args.policy.groups);
+    const isTransactionGuard = isSameAddress(args.safe.guard, source.guard);
+
+    return {
+      id: args.policy.id,
+      type: args.policy.type,
+      // TODO(WA-2914): the module guard slot cannot be read yet - the
+      // Transaction Service's single-Safe endpoint does not return
+      // `moduleGuard`. Guard-enforced policies are therefore reported in the
+      // transaction guard slot, which is the slot the modelled policies use.
+      enforcement: guardEnforcement({
+        transactionGuard: {
+          policyContract: source.policy,
+          safePolicyGuard: source.guard,
+        },
+      }),
+      enabled: isTransactionGuard,
+      data: args.policy.data,
+    };
+  }
+
+  /**
+   * Names of the space address book that apply to the Safe's chain, keyed by
+   * lower-cased address.
+   */
+  private async getAddressNames(request: PolicyRequest): Promise<AddressNames> {
+    const items = await this.addressBookItemsRepository.findAllBySpaceId({
+      authPayload: request.authPayload,
+      spaceId: request.spaceId,
+    });
+
+    return new Map(
+      items
+        .filter((item) => item.chainIds.includes(request.safeId.chainId))
+        .map((item) => [item.address.toLowerCase(), item.name]),
+    );
+  }
+
+  /**
+   * The caller must be an active member of the space, and the Safe must belong
+   * to it - otherwise a member could read the policy state of any Safe through
+   * a space they happen to belong to.
+   */
+  private async assertSafeInSpace(request: PolicyRequest): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(request.authPayload);
+    await assertMember(this.membersRepository, request.spaceId, userId);
+
+    const safes = await this.spaceSafesRepository.findBySpaceId(
+      request.spaceId,
+    );
+    const isInSpace = safes.some(
+      (safe) =>
+        safe.chainId === request.safeId.chainId &&
+        isSameAddress(safe.address, request.safeId.address),
+    );
+
+    if (!isInSpace) {
+      throw new NotFoundException('Safe not found in this space');
+    }
+  }
+}
+
+function isSameAddress(first: Address, second: Address): boolean {
+  return first.toLowerCase() === second.toLowerCase();
+}
+
+/**
+ * The most recently configured group of an item.
+ */
+function newestOf(groups: Array<PolicyGroup>): PolicyConfirmation {
+  return groups.reduce((newest, group) =>
+    group.latest.blockNumber > newest.latest.blockNumber ||
+    (group.latest.blockNumber === newest.latest.blockNumber &&
+      group.latest.logIndex > newest.latest.logIndex)
+      ? group
+      : newest,
+  ).latest;
+}
+
+/**
+ * Hex is compared case-insensitively: a root can reach CGW in either casing, and
+ * the stored one and the indexed one need not agree.
+ */
+function rootKey(root: Hex): string {
+  return root.toLowerCase();
+}
+
+function toUnixSeconds(date: Date): number {
+  return Math.floor(date.getTime() / MILLISECONDS_IN_SECOND);
+}

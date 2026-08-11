@@ -44,6 +44,8 @@ export class CacheRouter {
   private static readonly BILLING_PLAN_KEY = 'billing_plan';
   private static readonly BILLING_PLANS_KEY = 'billing_plans';
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
+  private static readonly POLICY_CONFIRMATIONS_KEY = 'policy_confirmations';
+  private static readonly POLICY_ROOT_REQUESTS_KEY = 'policy_root_requests';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
@@ -330,6 +332,53 @@ export class CacheRouter {
     safeAddress: Address;
   }): string {
     return `${args.chainId}_${CacheRouter.MODULE_TRANSACTIONS_KEY}_${args.safeAddress}`;
+  }
+
+  static getPolicyConfirmationsCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    target?: Address;
+    selector?: string;
+    operation?: string;
+    policy?: Address;
+    removed?: boolean;
+    fallback?: boolean;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPolicyConfirmationsCacheKey(args),
+      `${args.target}_${args.selector}_${args.operation}_${args.policy}_${args.removed}_${args.fallback}_${args.ordering}_${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getPolicyConfirmationsCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.POLICY_CONFIRMATIONS_KEY}_${args.safeAddress}`;
+  }
+
+  static getPolicyRootRequestsCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    root?: string;
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPolicyRootRequestsCacheKey(args),
+      `${args.root}_${args.status}_${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getPolicyRootRequestsCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.POLICY_ROOT_REQUESTS_KEY}_${args.safeAddress}`;
   }
 
   static getIncomingTransfersCacheDir(args: {

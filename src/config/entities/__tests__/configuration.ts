@@ -465,6 +465,12 @@ export default (): ReturnType<typeof configuration> => ({
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
+  policies: {
+    // CGW hardcodes no addresses, so a test needing the `/policies` catalogue to
+    // report a policy as available must configure them itself.
+    deployments: undefined,
+    maxConfigurationRequestsPerSafe: faker.number.int({ min: 5, max: 20 }),
+  },
   spaces: {
     addressBooks: {
       maxItems: faker.number.int({ min: 10, max: 20 }),

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import get from 'lodash/get';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -22,6 +22,15 @@ import type { Estimation } from '@/modules/estimations/domain/entities/estimatio
 import type { GetEstimationDto } from '@/modules/estimations/domain/entities/get-estimation.dto.entity';
 import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
 import type { Message } from '@/modules/messages/domain/entities/message.entity';
+import type {
+  PolicyConfirmation,
+  PolicyOperation,
+} from '@/modules/policies/domain/entities/policy-confirmation.entity';
+import type {
+  PolicyRootRequest,
+  PolicyRootRequestStatus,
+} from '@/modules/policies/domain/entities/policy-root-request.entity';
+import { operationValue } from '@/modules/policies/domain/utils/policy-access.utils';
 import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -680,6 +689,120 @@ export class TransactionApi implements ITransactionApi {
 
   async clearModuleTransactions(safeAddress: Address): Promise<void> {
     const key = CacheRouter.getModuleTransactionsCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  /**
+   * `PolicyConfirmed` events of a Safe, newest first.
+   *
+   * Note: policy events are not published to the events queue, so this cache is
+   * only invalidated by the Safe transaction hooks (every policy change is a
+   * Safe transaction) and otherwise expires after
+   * [defaultExpirationTimeInSeconds].
+   *
+   * @see https://github.com/safe-research/policy-engine
+   */
+  async getPolicyConfirmations(args: {
+    safeAddress: Address;
+    target?: Address;
+    selector?: Hex;
+    operation?: PolicyOperation;
+    policy?: Address;
+    removed?: boolean;
+    fallback?: boolean;
+    ordering?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<PolicyConfirmation>>> {
+    try {
+      const cacheDir = CacheRouter.getPolicyConfirmationsCacheDir({
+        chainId: this.chainId,
+        ...args,
+      });
+      const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/policy-confirmations/`;
+      return await this.dataSource.get<Page<PolicyConfirmation>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            target: args.target,
+            selector: args.selector,
+            // The filter is on the numeric model field, so the name would never
+            // match.
+            operation: args.operation
+              ? operationValue(args.operation)
+              : undefined,
+            policy: args.policy,
+            removed: args.removed,
+            fallback: args.fallback,
+            ordering: args.ordering,
+            limit: args.limit,
+            offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  async clearPolicyConfirmations(safeAddress: Address): Promise<void> {
+    const key = CacheRouter.getPolicyConfirmationsCacheKey({
+      chainId: this.chainId,
+      safeAddress,
+    });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  /**
+   * `RootConfigured` events of a Safe (delayed configuration requests), newest
+   * first, with the lifecycle status derived by the Transaction Service.
+   */
+  async getPolicyRootRequests(args: {
+    safeAddress: Address;
+    root?: Hex;
+    status?: PolicyRootRequestStatus;
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<PolicyRootRequest>>> {
+    try {
+      const cacheDir = CacheRouter.getPolicyRootRequestsCacheDir({
+        chainId: this.chainId,
+        ...args,
+      });
+      const url = `${this.baseUrl}/api/v2/safes/${args.safeAddress}/policy-root-requests/`;
+      return await this.dataSource.get<Page<PolicyRootRequest>>({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        networkRequest: {
+          params: {
+            root: args.root,
+            status: args.status,
+            limit: args.limit,
+            offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),
+          },
+        },
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
+  async clearPolicyRootRequests(safeAddress: Address): Promise<void> {
+    const key = CacheRouter.getPolicyRootRequestsCacheKey({
       chainId: this.chainId,
       safeAddress,
     });

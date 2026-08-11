@@ -825,6 +825,38 @@ export default () => ({
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
+  policies: {
+    /**
+     * Per-chain policy-engine deployments. JSON, keyed by chain ID:
+     *
+     * {"11155111":{"safePolicyGuard":"0x…","policyContracts":{"ERC20TransferPolicy":"0x…"},"moduleAddresses":{"recovery":"0x…"}}}
+     *
+     * Overrides `DEFAULT_POLICY_DEPLOYMENT` for the chains it lists, entry by
+     * entry: a listed chain is described by its entry alone. They are needed
+     * solely for the `/policies` catalogue, which names the contract that would
+     * enforce a policy type a Safe has not configured yet. Policies already
+     * configured on a Safe are typed and addressed from the Transaction
+     * Service's indexed events instead, so `/policies/active` works on any chain
+     * with or without this set.
+     *
+     * A chain left out is reported with the default deployment. Validated by
+     * `PolicyDeploymentsService`; an invalid value is logged and ignored rather
+     * than failing startup.
+     *
+     * TODO: Source from safe-deployments
+     */
+    deployments: process.env.POLICY_ENGINE_DEPLOYMENTS,
+    /**
+     * How many delayed configuration requests CGW stores per Safe. Bounds how
+     * much a client can write by requesting configurations; a Safe with more
+     * open requests than this cannot store further ones until the applied or
+     * invalidated ones are pruned.
+     */
+    maxConfigurationRequestsPerSafe: Number.parseInt(
+      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SAFE ?? `${20}`,
+      10,
+    ),
+  },
   spaces: {
     addressBooks: {
       maxItems: Number.parseInt(
