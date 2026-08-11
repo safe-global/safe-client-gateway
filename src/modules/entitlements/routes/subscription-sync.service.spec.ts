@@ -174,11 +174,25 @@ describe('SubscriptionSyncService', () => {
     await target.handleWebhook(event);
     await target.handleWebhook(event);
 
+    const expected = {
+      spaceId,
+      subscriptions: [
+        expect.objectContaining({
+          upstreamSubscriptionId: subscription.id,
+          status: 'active',
+          planId: subscription.plan.id,
+        }),
+      ],
+    };
     expect(entitlementsService.materialize).toHaveBeenCalledTimes(2);
-    const [first, second] = entitlementsService.materialize.mock.calls.map(
-      ([args]) => args,
+    expect(entitlementsService.materialize).toHaveBeenNthCalledWith(
+      1,
+      expected,
     );
-    expect(second).toStrictEqual(first);
+    expect(entitlementsService.materialize).toHaveBeenNthCalledWith(
+      2,
+      expected,
+    );
   });
 
   it('demotes surplus active subscriptions to canceled instead of dropping them', async () => {
