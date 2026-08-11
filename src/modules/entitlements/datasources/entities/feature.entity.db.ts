@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Check, Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { toSqlList } from '@/datasources/db/v2/entities/sql.utils';
 import type {
   Feature as DomainFeature,
   FeatureKey,
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
+import { FeatureTypes } from '@/modules/entitlements/domain/entities/feature.entity';
 
 @Entity('features')
 @Unique('UQ_features_key', ['key'])
-@Check('CHK_features_type', `"type" IN ('binary','metered','value')`)
+@Check('CHK_features_type', `"type" IN (${toSqlList(FeatureTypes)})`)
 export class Feature implements DomainFeature {
   @PrimaryGeneratedColumn({ primaryKeyConstraintName: 'PK_features_id' })
   public readonly id!: number;

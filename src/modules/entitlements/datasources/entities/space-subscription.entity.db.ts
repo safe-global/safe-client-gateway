@@ -12,13 +12,11 @@ import {
 } from 'typeorm';
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
+import { toSqlList } from '@/datasources/db/v2/entities/sql.utils';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import type { SpaceSubscription as DomainSpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
 import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-
-const toSqlList = (values: ReadonlyArray<string>): string =>
-  values.map((value) => `'${value}'`).join(',');
 
 @Entity('subscriptions')
 // "1 active per space": only one row may hold the active slot; terminal rows

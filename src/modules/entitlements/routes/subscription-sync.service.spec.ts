@@ -314,6 +314,34 @@ describe('SubscriptionSyncService', () => {
     expect(loggingService.warn).toHaveBeenCalled();
   });
 
+  it('acks and logs when the upstream billing period is not a representable date', async () => {
+    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    entitlementsService.materialize.mockRejectedValue(
+      new QueryFailedError(
+        '',
+        [],
+        Object.assign(new Error(), { code: '22007' }),
+      ),
+    );
+
+    // Redelivery carries the same values, so this must not surface as a 5xx.
+    await expect(target.handleWebhook(webhookEvent())).resolves.toBeUndefined();
+    expect(loggingService.error).toHaveBeenCalled();
+  });
+
+  it('propagates an unrelated query failure so the webhook is retried', async () => {
+    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    const error = new QueryFailedError(
+      '',
+      [],
+      // Serialization failure: transient, so retrying is exactly right.
+      Object.assign(new Error(), { code: '40001' }),
+    );
+    entitlementsService.materialize.mockRejectedValue(error);
+
+    await expect(target.handleWebhook(webhookEvent())).rejects.toThrow(error);
+  });
+
   it('propagates an unrelated foreign key violation', async () => {
     billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
     const error = new QueryFailedError(

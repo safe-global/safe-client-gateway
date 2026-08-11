@@ -3,6 +3,7 @@
 import type { Server } from 'node:http';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { In } from 'typeorm';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -38,12 +39,17 @@ const WEBHOOK_PATH = '/v1/billing/webhooks';
 // stay literal rather than faker-random.
 const PERIOD_START = 1_700_000_000;
 const PERIOD_END = 1_702_592_000;
+// This suite runs against the shared `test-db` alongside other integration
+// files, so every write it makes is cleaned up by id or by these keys —
+// never by an unscoped DELETE over a whole table.
+const FEATURE_KEYS = ['safe_seats', 'security_hub'] as const;
 
 describe('Billing webhook → entitlements materialization', () => {
   let app: INestApplication<Server>;
   let networkService: MockedObject<INetworkService>;
   let postgresDatabaseService: PostgresDatabaseService;
   let billingBaseUri: string;
+  const seededSpaceIds: Array<number> = [];
 
   beforeAll(async () => {
     vi.resetAllMocks();
@@ -94,35 +100,11 @@ describe('Billing webhook → entitlements materialization', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
-  });
 
-  afterEach(async () => {
-    networkService.get.mockReset();
-    const subscriptionRepo =
-      await postgresDatabaseService.getRepository(SpaceSubscription);
+    // The catalog is global and idempotent, so it is seeded once. Deleting the
+    // suite's own keys first keeps a re-run from tripping UQ_features_key.
     const featureRepo = await postgresDatabaseService.getRepository(Feature);
-    await subscriptionRepo.createQueryBuilder().delete().execute();
-    await featureRepo.createQueryBuilder().delete().execute();
-  });
-
-  afterAll(async () => {
-    await app?.close();
-  });
-
-  async function seedSpace(): Promise<{ spaceId: number; spaceUuid: string }> {
-    const spaceRepo = await postgresDatabaseService.getRepository(Space);
-    const insert = await spaceRepo.insert({
-      name: nameBuilder(),
-      status: 'ACTIVE',
-    });
-    const spaceId = insert.identifiers[0].id as number;
-    // uuid is filled by the DB default (gen_random_uuid()), so read it back.
-    const space = await spaceRepo.findOneByOrFail({ id: spaceId });
-    return { spaceId, spaceUuid: space.uuid };
-  }
-
-  async function seedFeatures(): Promise<void> {
-    const featureRepo = await postgresDatabaseService.getRepository(Feature);
+    await featureRepo.delete({ key: In(FEATURE_KEYS) });
     await featureRepo.insert([
       featureBuilder()
         .with('key', 'safe_seats')
@@ -133,11 +115,39 @@ describe('Billing webhook → entitlements materialization', () => {
         .with('type', 'binary')
         .build(),
     ]);
+  });
+
+  afterEach(async () => {
+    networkService.get.mockReset();
+    if (seededSpaceIds.length === 0) return;
+    // Deleting the spaces cascades through subscriptions and their
+    // entitlements, so nothing this suite wrote outlives the test.
+    const spaceRepo = await postgresDatabaseService.getRepository(Space);
+    await spaceRepo.delete(seededSpaceIds);
+    seededSpaceIds.length = 0;
+  });
+
+  afterAll(async () => {
+    const featureRepo = await postgresDatabaseService.getRepository(Feature);
+    await featureRepo.delete({ key: In(FEATURE_KEYS) });
+    await app?.close();
+  });
+
+  async function seedSpace(): Promise<{ spaceId: number; spaceUuid: string }> {
+    const spaceRepo = await postgresDatabaseService.getRepository(Space);
+    const insert = await spaceRepo.insert({
+      name: nameBuilder(),
+      status: 'ACTIVE',
+    });
+    const spaceId = insert.identifiers[0].id as number;
+    seededSpaceIds.push(spaceId);
+    // uuid is filled by the DB default (gen_random_uuid()), so read it back.
+    const space = await spaceRepo.findOneByOrFail({ id: spaceId });
+    return { spaceId, spaceUuid: space.uuid };
   }
 
   it('writes the subscription and its purchased package on a checkout event', async () => {
     const { spaceId, spaceUuid } = await seedSpace();
-    await seedFeatures();
 
     // The event is only a trigger: this is the state the webhook re-fetches,
     // and therefore the state that must land in the database.
@@ -215,7 +225,6 @@ describe('Billing webhook → entitlements materialization', () => {
 
   it('is idempotent: redelivering the same event leaves one subscription row', async () => {
     const { spaceId, spaceUuid } = await seedSpace();
-    await seedFeatures();
 
     const subscription = subscriptionBuilder()
       .with('status', 'active')
@@ -262,16 +271,17 @@ describe('Billing webhook → entitlements materialization', () => {
   });
 
   it('acks without writing when the event references an unknown workspace', async () => {
-    await seedFeatures();
-
+    // The event carries the builder's own random customer id, which matches no
+    // workspace.
     await request(app.getHttpServer())
       .post(WEBHOOK_PATH)
       .send(webhookEventBuilder().build())
       .expect(202);
 
-    const subscriptionRepo =
-      await postgresDatabaseService.getRepository(SpaceSubscription);
-    expect(await subscriptionRepo.count()).toBe(0);
+    // The re-fetch is the first step after the space is resolved, so never
+    // reaching it proves nothing was materialized — asserted this way rather
+    // than by counting rows, which on the shared test-db would also see writes
+    // from other suites.
     expect(networkService.get).not.toHaveBeenCalled();
   });
 });

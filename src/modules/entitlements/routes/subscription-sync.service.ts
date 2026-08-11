@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -30,6 +31,10 @@ import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+
+// Postgres invalid_datetime_format. Raised when an upstream billing period is
+// not a representable date, e.g. an epoch outside the range `Date` can hold.
+const INVALID_DATETIME_ERROR_CODE = '22007';
 
 /**
  * Materializes upstream subscription state on billing webhooks.
@@ -155,6 +160,16 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
         );
         return;
       }
+      // A period the upstream payload cannot express as a date is a data
+      // defect, not a transient failure: redelivery carries the same values,
+      // so a 5xx here would have the event retried until it expires. Logged
+      // at error level because someone has to look at the upstream data.
+      if (this.isMalformedUpstreamPeriod(error)) {
+        this.loggingService.error(
+          `Billing webhook event ${event.id} carries an unrepresentable billing period for space ${upstreamCustomerId}; acking to stop redelivery`,
+        );
+        return;
+      }
       throw error;
     }
 
@@ -240,6 +255,14 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     return (
       isForeignKeyViolationError(error) &&
       error.driverError.constraint === 'FK_subscriptions_space_id'
+    );
+  }
+
+  private isMalformedUpstreamPeriod(error: unknown): boolean {
+    return (
+      error instanceof QueryFailedError &&
+      'code' in error.driverError &&
+      error.driverError.code === INVALID_DATETIME_ERROR_CODE
     );
   }
 }
