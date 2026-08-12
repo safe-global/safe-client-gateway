@@ -1280,7 +1280,7 @@ describe('ContractAnalysisService', () => {
         expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
       });
 
-      it('should omit FALLBACK_HANDLER when handler is the official ExtensibleFallbackHandler', async () => {
+      it('should return VERIFIED when the handler is the official ExtensibleFallbackHandler', async () => {
         const mainnetChainId = '1';
         const extensibleHandler = faker.helpers.arrayElement(
           getExtensibleFallbackHandlerDeployments({
