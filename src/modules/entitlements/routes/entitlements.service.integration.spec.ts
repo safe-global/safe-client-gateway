@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import type { MockedObject } from 'vitest';
@@ -8,6 +9,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
@@ -88,8 +90,13 @@ describe('EntitlementsService', () => {
   // same test database, so the query it stands in for still runs for real.
   // Its production implementation is covered by its own spec.
   const spacesRepositoryStub = {
-    findOne: async (args: Parameters<ISpacesRepository['findOne']>[0]) =>
-      await dataSource.getRepository(Space).findOne(args),
+    findUuidById: async (id: Space['id']): Promise<Space['uuid']> => {
+      const space = await dataSource
+        .getRepository(Space)
+        .findOne({ where: { id }, select: { uuid: true } });
+      if (!space) throw new NotFoundException('Workspace not found.');
+      return space.uuid;
+    },
   } as unknown as ISpacesRepository;
 
   beforeAll(async () => {
@@ -148,28 +155,20 @@ describe('EntitlementsService', () => {
   });
 
   afterEach(async () => {
-    // Delete in dependency order; `features` last, as the entitlement rows
-    // reference it with ON DELETE RESTRICT.
-    await dataSource
-      .getRepository(SubscriptionEntitlement)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(SpaceSubscription)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(Space)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(Feature)
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    // Dependency order: `features` last, as the entitlement rows reference it
+    // with ON DELETE RESTRICT.
+    for (const entity of [
+      SubscriptionEntitlement,
+      SpaceSubscription,
+      Space,
+      Feature,
+    ]) {
+      await dataSource
+        .getRepository(entity)
+        .createQueryBuilder()
+        .delete()
+        .execute();
+    }
   });
 
   afterAll(async () => {
@@ -179,7 +178,7 @@ describe('EntitlementsService', () => {
 
   async function createSpace(): Promise<number> {
     const inserted = await dataSource.getRepository(Space).insert({
-      name: faker.company.name(),
+      name: nameBuilder(),
       status: 'ACTIVE',
     });
     return inserted.generatedMaps[0].id as number;

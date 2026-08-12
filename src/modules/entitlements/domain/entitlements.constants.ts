@@ -15,12 +15,9 @@ export const ACTIVE_SUBSCRIPTION_STATUSES = [
   'unpaid',
 ] as const satisfies ReadonlyArray<SubscriptionStatus>;
 
-export type ActiveSubscriptionStatus =
-  (typeof ACTIVE_SUBSCRIPTION_STATUSES)[number];
-
 export function isActiveSubscriptionStatus(
   status: SubscriptionStatus,
-): status is ActiveSubscriptionStatus {
+): boolean {
   return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
     status,
   );

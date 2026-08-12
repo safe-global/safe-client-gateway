@@ -102,6 +102,24 @@ describe('parseFeaturePackage', () => {
     expect(onWarning).toHaveBeenCalledTimes(5);
   });
 
+  it.each([
+    '007',
+    '01',
+    '1.5',
+    '-1',
+    '1e3',
+  ])('warns and skips the non-canonical metered quota %s', (quota) => {
+    const result = parseFeaturePackage({
+      metadata: { FEATURE_SAFE_SEATS: quota },
+      planFeatures: [],
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([]);
+    expect(onWarning).toHaveBeenCalledTimes(1);
+  });
+
   it('returns an empty package when there is nothing to parse', () => {
     expect(
       parseFeaturePackage({

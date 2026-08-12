@@ -9,6 +9,7 @@ import {
   FEATURE_METADATA_PREFIX,
   UNLIMITED_METADATA_VALUE,
 } from '@/modules/entitlements/domain/entitlements.constants';
+import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
 
 /**
  * Parses a subscription's purchased feature package.
@@ -91,7 +92,7 @@ export function parseFeaturePackage(args: {
           });
           continue;
         }
-        if (!/^\d+$/.test(value)) {
+        if (!NonNegativeNumericStringSchema.safeParse(value).success) {
           args.onWarning(
             `Invalid metered value for ${metadataKey}: ${rawValue}`,
           );

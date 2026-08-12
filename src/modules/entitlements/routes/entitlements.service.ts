@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
   type ILoggingService,
@@ -44,7 +44,8 @@ export class EntitlementsService {
     spaceId: Space['id'];
     subscriptions: Array<MaterializedSubscription>;
   }): Promise<void> {
-    await this.assertSpaceExists(args.spaceId);
+    // Existence check: throws when the space is gone.
+    await this.spacesRepository.findUuidById(args.spaceId);
 
     const withPackage = args.subscriptions.filter(
       (subscription) => subscription.entitlements !== null,
@@ -64,23 +65,32 @@ export class EntitlementsService {
       );
     }
 
-    const features = await this.featuresRepository.getFeatures();
-    const featureIdByKey = new Map(
-      features.map((feature) => [feature.key, feature.id]),
-    );
+    // Only the subscription holding the active slot carries a package, and
+    // there is at most one (asserted above) — so the catalog is needed only
+    // when that subscription is present.
+    const packaged = withPackage.at(0);
+    const featureIdByKey =
+      packaged === undefined
+        ? new Map<string, number>()
+        : new Map(
+            (await this.featuresRepository.getFeatures()).map((feature) => [
+              feature.key,
+              feature.id,
+            ]),
+          );
 
-    // Demotions (e.g. active → canceled) run before promotions so the "one
-    // active subscription per space" partial unique index never sees both the
-    // outgoing and the incoming subscription active at once.
-    const orderedSubscriptions = [...args.subscriptions].sort(
-      (left, right) =>
-        Number(isActiveSubscriptionStatus(left.status)) -
-        Number(isActiveSubscriptionStatus(right.status)),
-    );
+    // Demotions (e.g. active → canceled) are written before promotions so the
+    // "one active subscription per space" partial unique index never sees both
+    // the outgoing and the incoming subscription active at once.
+    const orderedSubscriptions = [
+      ...args.subscriptions.filter(
+        (subscription) => !isActiveSubscriptionStatus(subscription.status),
+      ),
+      ...activeIsh,
+    ];
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       let activeSubscriptionId: number | null = null;
-      let activePackage: MaterializedSubscription['entitlements'] = null;
 
       for (const subscription of orderedSubscriptions) {
         const subscriptionId =
@@ -101,11 +111,10 @@ export class EntitlementsService {
 
         if (subscription.entitlements !== null) {
           activeSubscriptionId = subscriptionId;
-          activePackage = subscription.entitlements;
         }
       }
 
-      if (activeSubscriptionId !== null && activePackage !== null) {
+      if (activeSubscriptionId !== null && packaged?.entitlements != null) {
         // Full replace: reprocessing the same upstream state yields the same
         // rows (idempotent by construction).
         await this.subscriptionEntitlementsRepository.deleteEntitlementsBySubscriptionId(
@@ -115,7 +124,7 @@ export class EntitlementsService {
         await this.subscriptionEntitlementsRepository.createEntitlements(
           {
             subscriptionId: activeSubscriptionId,
-            entitlements: activePackage.flatMap((entitlement) => {
+            entitlements: packaged.entitlements.flatMap((entitlement) => {
               const featureId = featureIdByKey.get(entitlement.featureKey);
               if (featureId === undefined) {
                 // The parser already drops unknown keys against its own
@@ -124,7 +133,7 @@ export class EntitlementsService {
                 // independent re-fetch. Rare, but silently dropping a
                 // purchased entitlement is worth a trace.
                 this.loggingService.warn(
-                  `materialize() dropped unknown feature key '${entitlement.featureKey}' for space ${args.spaceId}`,
+                  `materialize() dropped unknown feature key '${entitlement.featureKey}' for space ${args.spaceId}, subscription ${packaged.upstreamSubscriptionId}`,
                 );
                 return [];
               }
@@ -142,15 +151,5 @@ export class EntitlementsService {
         );
       }
     });
-  }
-
-  private async assertSpaceExists(spaceId: Space['id']): Promise<void> {
-    const space = await this.spacesRepository.findOne({
-      where: { id: spaceId },
-      select: { id: true },
-    });
-    if (!space) {
-      throw new NotFoundException('Workspace not found.');
-    }
   }
 }

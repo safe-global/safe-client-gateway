@@ -109,8 +109,13 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     }
     const upstreamCustomerId = upstreamCustomerIdResult.data;
 
-    const spaceId = await this.findSpaceIdByUuid(upstreamCustomerId);
-    if (spaceId === null) {
+    let spaceId: Space['id'];
+    try {
+      spaceId = await this.spacesRepository.findIdByUuid(upstreamCustomerId);
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) {
+        throw error;
+      }
       this.loggingService.warn(
         `Billing webhook event ${event.id} references unknown space ${upstreamCustomerId}`,
       );
@@ -146,7 +151,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
         ),
       });
     } catch (error) {
-      // The space existed a moment ago (`findSpaceIdByUuid` above); a
+      // The space existed a moment ago (resolved just above); a
       // deletion racing this request — caught either as a NotFoundException
       // from materialize()'s own check, or (a narrower window) as the
       // subscriptions insert's FK violation once the space is truly gone —
@@ -232,22 +237,9 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     }));
   }
 
-  private async findSpaceIdByUuid(
-    uuid: Space['uuid'],
-  ): Promise<Space['id'] | null> {
-    try {
-      return await this.spacesRepository.findIdByUuid(uuid);
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        return null;
-      }
-      throw error;
-    }
-  }
-
   /**
    * True for the FK violation `materialize()`'s subscriptions insert raises
-   * when the space is deleted between `findSpaceIdByUuid` above and that
+   * when the space is deleted between that lookup and this
    * insert — narrower than, and not covered by, the NotFoundException its
    * own upfront existence check throws.
    */

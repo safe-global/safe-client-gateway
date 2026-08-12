@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Server } from 'node:http';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { In } from 'typeorm';
@@ -14,6 +15,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import configuration from '@/config/entities/__tests__/configuration';
 import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
@@ -25,6 +27,7 @@ import {
   webhookEventBuilder,
   webhookEventCustomerBuilder,
 } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
@@ -146,6 +149,36 @@ describe('Billing webhook → entitlements materialization', () => {
     return { spaceId, spaceUuid: space.uuid };
   }
 
+  function mockUpstreamSubscriptions(
+    spaceUuid: string,
+    subscriptions: Array<Subscription>,
+  ): void {
+    const url = `${billingBaseUri}/api/v1/customers/${stripDashes(spaceUuid)}/subscriptions`;
+    networkService.get.mockImplementation(({ url: requested }) =>
+      requested === url
+        ? Promise.resolve({ data: rawify({ subscriptions }), status: 200 })
+        : Promise.reject(new Error(`Could not match ${requested}`)),
+    );
+  }
+
+  function webhookEventFor(
+    spaceUuid: string,
+    args: { type: string; subscriptionId: string },
+  ): WebhookEvent {
+    return webhookEventBuilder()
+      .with('type', args.type)
+      .with('data', {
+        subscriptionId: args.subscriptionId,
+        status: 'active',
+        metadata: null,
+        // Wire format: the billing service strips the dashes.
+        customer: webhookEventCustomerBuilder()
+          .with('upstreamCustomerId', stripDashes(spaceUuid))
+          .build(),
+      })
+      .build();
+  }
+
   it('writes the subscription and its purchased package on a checkout event', async () => {
     const { spaceId, spaceUuid } = await seedSpace();
 
@@ -161,31 +194,15 @@ describe('Billing webhook → entitlements materialization', () => {
       )
       .with('metadata', { FEATURE_SAFE_SEATS: '10' })
       .build();
-    networkService.get.mockImplementation(({ url }) =>
-      url ===
-      `${billingBaseUri}/api/v1/customers/${stripDashes(spaceUuid)}/subscriptions`
-        ? Promise.resolve({
-            data: rawify({ subscriptions: [subscription] }),
-            status: 200,
-          })
-        : Promise.reject(new Error(`Could not match ${url}`)),
-    );
+    mockUpstreamSubscriptions(spaceUuid, [subscription]);
 
     await request(app.getHttpServer())
       .post(WEBHOOK_PATH)
       .send(
-        webhookEventBuilder()
-          .with('type', 'checkout.session.completed')
-          .with('data', {
-            subscriptionId: subscription.id,
-            status: 'active',
-            metadata: null,
-            customer: webhookEventCustomerBuilder()
-              // Wire format: the billing service strips the dashes.
-              .with('upstreamCustomerId', stripDashes(spaceUuid))
-              .build(),
-          })
-          .build(),
+        webhookEventFor(spaceUuid, {
+          type: 'checkout.session.completed',
+          subscriptionId: subscription.id,
+        }),
       )
       .expect(202);
 
@@ -232,26 +249,11 @@ describe('Billing webhook → entitlements materialization', () => {
       .with('validUntil', PERIOD_END)
       .with('metadata', { FEATURE_SAFE_SEATS: '10' })
       .build();
-    networkService.get.mockImplementation(({ url }) =>
-      url ===
-      `${billingBaseUri}/api/v1/customers/${stripDashes(spaceUuid)}/subscriptions`
-        ? Promise.resolve({
-            data: rawify({ subscriptions: [subscription] }),
-            status: 200,
-          })
-        : Promise.reject(new Error(`Could not match ${url}`)),
-    );
-    const event = webhookEventBuilder()
-      .with('type', 'customer.subscription.updated')
-      .with('data', {
-        subscriptionId: subscription.id,
-        status: 'active',
-        metadata: null,
-        customer: webhookEventCustomerBuilder()
-          .with('upstreamCustomerId', stripDashes(spaceUuid))
-          .build(),
-      })
-      .build();
+    mockUpstreamSubscriptions(spaceUuid, [subscription]);
+    const event = webhookEventFor(spaceUuid, {
+      type: 'customer.subscription.updated',
+      subscriptionId: subscription.id,
+    });
 
     for (const _ of [1, 2]) {
       await request(app.getHttpServer())
@@ -268,6 +270,58 @@ describe('Billing webhook → entitlements materialization', () => {
     });
     expect(rows).toHaveLength(1);
     expect(rows[0].entitlements).toHaveLength(1);
+  });
+
+  it('keeps the package as history when the only active subscription is canceled', async () => {
+    const { spaceId, spaceUuid } = await seedSpace();
+    const event = webhookEventFor(spaceUuid, {
+      type: 'customer.subscription.updated',
+      subscriptionId: faker.string.uuid(),
+    });
+    const activeSubscription = subscriptionBuilder()
+      .with('status', 'active')
+      .with('startAt', PERIOD_START)
+      .with('validUntil', PERIOD_END)
+      .with('metadata', { FEATURE_SAFE_SEATS: '10' })
+      .build();
+
+    mockUpstreamSubscriptions(spaceUuid, [activeSubscription]);
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(event)
+      .expect(202);
+
+    // Same subscription, now terminal, and no replacement takes the active
+    // slot — so the batch carries no package at all.
+    mockUpstreamSubscriptions(spaceUuid, [
+      { ...activeSubscription, status: 'canceled' },
+    ]);
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(event)
+      .expect(202);
+
+    const subscriptionRepo =
+      await postgresDatabaseService.getRepository(SpaceSubscription);
+    const rows = await subscriptionRepo.find({
+      where: { space: { id: spaceId } },
+      relations: { entitlements: { feature: true } },
+    });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      upstreamSubscriptionId: activeSubscription.id,
+      status: 'canceled',
+    });
+    // The RFC wants the outgoing package kept as an audit trail: an effective
+    // package is only ever read through an active subscription, so these rows
+    // are inert rather than stale. Pinned here so a future change cannot drop
+    // them without this failing.
+    expect(rows[0].entitlements).toHaveLength(1);
+    expect(rows[0].entitlements?.[0]).toMatchObject({
+      quota: 10,
+      enabled: true,
+    });
+    expect(rows[0].entitlements?.[0].feature.key).toBe('safe_seats');
   });
 
   it('acks without writing when the event references an unknown workspace', async () => {
