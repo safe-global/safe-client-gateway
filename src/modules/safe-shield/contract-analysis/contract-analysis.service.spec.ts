@@ -8,6 +8,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { getExtensibleFallbackHandlerDeployments } from '@/domain/common/utils/deployments';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -1280,10 +1281,13 @@ describe('ContractAnalysisService', () => {
       });
 
       it('should omit FALLBACK_HANDLER when handler is the official ExtensibleFallbackHandler', async () => {
-        const extensibleHandler = getAddress(
-          '0x85a8ca358D388530ad0fB95D0cb89Dd44Fc242c3',
-        );
         const mainnetChainId = '1';
+        const extensibleHandler = faker.helpers.arrayElement(
+          getExtensibleFallbackHandlerDeployments({
+            chainId: mainnetChainId,
+            version: '1.5.0',
+          }),
+        );
 
         const mockContractPage = pageBuilder()
           .with('count', 1)

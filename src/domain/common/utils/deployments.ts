@@ -135,7 +135,9 @@ export function getFallbackHandlerDeployments(args: Filter): Array<Address> {
  *
  * @returns {Array<Address>} - a list of checksummed ExtensibleFallbackHandler addresses
  */
-function getExtensibleFallbackHandlerDeployments(args: Filter): Array<Address> {
+export function getExtensibleFallbackHandlerDeployments(
+  args: Filter,
+): Array<Address> {
   return formatDeployments(_getExtensibleFallbackHandlerDeployments, args);
 }
 
