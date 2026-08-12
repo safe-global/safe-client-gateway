@@ -9,6 +9,11 @@ import { getVersionsByChainIdByDeploymentMap } from '@/__tests__/deployments.hel
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  getExtensibleFallbackHandlerDeployments,
+  getProxyFactoryDeployments,
+  getSafeSingletonDeployments,
+} from '@/domain/common/utils/deployments';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -1747,6 +1752,94 @@ describe('RecipientAnalysisService', () => {
       expect(result[mockSafeAddress]?.BRIDGE?.[0]?.type).toBe(
         'MISSING_OWNERSHIP',
       );
+    });
+
+    it('should not return INCOMPATIBLE_SAFE for a 1.5.0 Safe created with the ExtensibleFallbackHandler', async () => {
+      // Deployment lookups hit the real safe-deployments data, so the chain
+      // cannot be fully random: pick any chain with canonical 1.5.0 deployments.
+      const versionsByChainId = getVersionsByChainIdByDeploymentMap();
+      const targetChainId = faker.helpers.arrayElement(
+        Object.keys(versionsByChainId.Safe).filter(
+          (chainId) =>
+            chainId !== mockChainId &&
+            !!versionsByChainId.Safe[chainId]?.includes('1.5.0') &&
+            !!versionsByChainId.ProxyFactory[chainId]?.includes('1.5.0') &&
+            !!versionsByChainId.ExtensibleFallbackHandler[chainId]?.includes(
+              '1.5.0',
+            ),
+        ),
+      );
+      const mockTxInfo = createMockTxInfo(mockSafeAddress, targetChainId);
+
+      mockTransactionApiManager.getApi.mockImplementation((chainId) => {
+        if (chainId === mockChainId) {
+          return Promise.resolve({
+            ...mockTransactionApi,
+            getSafe: vi.fn().mockResolvedValue(mockSourceSafe),
+          });
+        }
+        return Promise.resolve({
+          ...mockTransactionApi,
+          getSafe: vi.fn().mockResolvedValue(null),
+        });
+      });
+
+      const v150CreationTransaction = {
+        ...createMockCreationTransaction([mockSafeAddress], 1),
+        masterCopy: faker.helpers.arrayElement(
+          getSafeSingletonDeployments({
+            chainId: targetChainId,
+            version: '1.5.0',
+          }),
+        ),
+        factoryAddress: faker.helpers.arrayElement(
+          getProxyFactoryDeployments({
+            chainId: targetChainId,
+            version: '1.5.0',
+          }),
+        ),
+      };
+      const extensibleFallbackHandler = faker.helpers.arrayElement(
+        getExtensibleFallbackHandlerDeployments({
+          chainId: targetChainId,
+          version: '1.5.0',
+        }),
+      );
+      v150CreationTransaction.dataDecoded!.parameters =
+        v150CreationTransaction.dataDecoded!.parameters!.map((parameter) => {
+          if (parameter.name === 'fallbackHandler') {
+            return {
+              ...parameter,
+              value: extensibleFallbackHandler,
+            };
+          }
+          if (parameter.name === 'to') {
+            return { ...parameter, value: zeroAddress };
+          }
+          return parameter;
+        });
+      mockTransactionsService.getCreationTransaction.mockResolvedValue(
+        v150CreationTransaction,
+      );
+
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      mockChainsRepository.getChain.mockResolvedValue(
+        chainBuilder().with('chainId', targetChainId).with('l2', false).build(),
+      );
+
+      const result = await service.analyzeBridge({
+        chainId: mockChainId,
+        safeAddress: mockSafeAddress,
+        txInfo: mockTxInfo,
+      });
+
+      const bridgeResultTypes = result[mockSafeAddress]?.BRIDGE?.map(
+        ({ type }) => type,
+      );
+      expect(bridgeResultTypes).not.toContain('INCOMPATIBLE_SAFE');
+      // The compatible Safe does not exist on the target chain, so the
+      // analysis proceeds past the compatibility check to the ownership one.
+      expect(bridgeResultTypes).toEqual(['MISSING_OWNERSHIP']);
     });
 
     it('should return INCOMPATIBLE_SAFE for a 1.5.0 Safe when the target chain only has 1.4.1 deployments', async () => {

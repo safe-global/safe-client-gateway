@@ -8,6 +8,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { getExtensibleFallbackHandlerDeployments } from '@/domain/common/utils/deployments';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -1260,6 +1261,60 @@ describe('ContractAnalysisService', () => {
             address: contractAddress,
             isDelegateCall: false,
             fallbackHandler: officialHandler,
+          },
+        });
+
+        expect(result).toEqual({
+          logoUrl,
+          name,
+          CONTRACT_VERIFICATION: [
+            {
+              severity: SEVERITY_MAPPING.VERIFIED,
+              type: 'VERIFIED',
+              title: TITLE_MAPPING.VERIFIED,
+              description: DESCRIPTION_MAPPING.VERIFIED({ name }),
+            },
+          ],
+        });
+
+        expect(mockDataDecoderApi.getContracts).toHaveBeenCalledTimes(1);
+      });
+
+      it('should return VERIFIED when the handler is the official ExtensibleFallbackHandler', async () => {
+        const mainnetChainId = '1';
+        const extensibleHandler = faker.helpers.arrayElement(
+          getExtensibleFallbackHandlerDeployments({
+            chainId: mainnetChainId,
+            version: '1.5.0',
+          }),
+        );
+
+        const mockContractPage = pageBuilder()
+          .with('count', 1)
+          .with('results', [
+            contractBuilder()
+              .with('address', contractAddress)
+              .with('abi', {
+                abiJson: [{ type: 'function', name: 'test' }],
+                abiHash: faker.string.hexadecimal() as Hex,
+                modified: faker.date.recent(),
+              })
+              .with('displayName', name)
+              .with('logoUrl', logoUrl)
+              .build(),
+          ])
+          .build();
+
+        mockDataDecoderApi.getContracts.mockResolvedValue(
+          rawify(mockContractPage),
+        );
+
+        const result = await service.verifyContract({
+          chainId: mainnetChainId,
+          contract: {
+            address: contractAddress,
+            isDelegateCall: false,
+            fallbackHandler: extensibleHandler,
           },
         });
 
