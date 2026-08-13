@@ -189,15 +189,15 @@ describe('Billing webhook → entitlements materialization', () => {
     };
   }
 
-  it('writes the subscription and its purchased package on a checkout event', async () => {
+  it('writes the subscription and its purchased package from the re-fetch', async () => {
     const { spaceId, spaceUuid } = await seedSpace();
 
-    // The event is only a trigger: this is the state the webhook re-fetches,
+    // The event carries no plan, so this is the state the webhook re-fetches,
     // and therefore the state that must land in the database.
     const subscription = subscriptionBuilder()
       .with('status', 'active')
-      .with('startAt', PERIOD_START)
-      .with('validUntil', PERIOD_END)
+      .with('currentPeriodStart', PERIOD_START)
+      .with('currentPeriodEnd', PERIOD_END)
       .with(
         'plan',
         subscriptionPlanBuilder().with('features', ['security_hub']).build(),
@@ -210,7 +210,7 @@ describe('Billing webhook → entitlements materialization', () => {
       .post(WEBHOOK_PATH)
       .send(
         webhookEventFor(spaceUuid, {
-          type: 'checkout.session.completed',
+          type: 'customer.subscription.created',
           subscriptionId: subscription.id,
         }),
       )
@@ -255,8 +255,8 @@ describe('Billing webhook → entitlements materialization', () => {
 
     const subscription = subscriptionBuilder()
       .with('status', 'active')
-      .with('startAt', PERIOD_START)
-      .with('validUntil', PERIOD_END)
+      .with('currentPeriodStart', PERIOD_START)
+      .with('currentPeriodEnd', PERIOD_END)
       .with('metadata', { FEATURE_SAFE_SEATS: '10' })
       .build();
     mockUpstreamSubscriptions(spaceUuid, [subscription]);
@@ -290,8 +290,8 @@ describe('Billing webhook → entitlements materialization', () => {
     });
     const activeSubscription = subscriptionBuilder()
       .with('status', 'active')
-      .with('startAt', PERIOD_START)
-      .with('validUntil', PERIOD_END)
+      .with('currentPeriodStart', PERIOD_START)
+      .with('currentPeriodEnd', PERIOD_END)
       .with('metadata', { FEATURE_SAFE_SEATS: '10' })
       .build();
 

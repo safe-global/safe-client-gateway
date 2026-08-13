@@ -8,17 +8,19 @@ import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util'
  * (safe-auth-service `app/models/billing.py`, camelCase on the wire).
  *
  * `type` is deliberately validated as a plain string: webhooks must not fail
- * on event types added upstream later — unknown types are acked and ignored.
- * The known values are listed below and drive the routing.
+ * on event types added upstream later — unhandled types are acked and ignored.
+ *
+ * Only the `customer.subscription.*` types below drive materialization: they
+ * are the only ones carrying a subscription snapshot. `checkout.session.completed`
+ * and `invoice.payment_*` describe a session or an invoice, never a
+ * subscription, so they are acked and ignored — each of them has a
+ * `customer.subscription.*` counterpart that reports the same state change.
  */
 export const WebhookSubscriptionEventTypes = [
-  'checkout.session.completed',
   'customer.subscription.created',
   'customer.subscription.updated',
   'customer.subscription.deleted',
   'customer.subscription.paused',
-  'invoice.payment_succeeded',
-  'invoice.payment_failed',
 ] as const;
 
 export const WebhookPaymentLinkEventTypes = [

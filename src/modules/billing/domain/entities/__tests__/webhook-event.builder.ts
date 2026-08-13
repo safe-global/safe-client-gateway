@@ -18,7 +18,7 @@ export function webhookEventCustomerBuilder(): IBuilder<WebhookEventCustomer> {
 export function webhookEventBuilder(): IBuilder<WebhookEvent> {
   return new Builder<WebhookEvent>()
     .with('id', faker.string.uuid())
-    .with('type', 'checkout.session.completed')
+    .with('type', 'customer.subscription.created')
     .with('created', faker.number.int())
     .with('data', {
       subscriptionId: faker.string.uuid(),

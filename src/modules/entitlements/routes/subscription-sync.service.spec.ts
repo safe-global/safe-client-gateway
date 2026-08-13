@@ -127,8 +127,8 @@ describe('SubscriptionSyncService', () => {
     const active = subscriptionBuilder()
       .with('status', 'active')
       .with('createdAt', 2)
-      .with('startAt', 1_700_000_000)
-      .with('validUntil', 1_702_592_000)
+      .with('currentPeriodStart', 1_700_000_000)
+      .with('currentPeriodEnd', 1_702_592_000)
       .with('metadata', { FEATURE_SAFE_SEATS: '10' })
       .build();
     const canceled = subscriptionBuilder()
@@ -243,13 +243,26 @@ describe('SubscriptionSyncService', () => {
     'customer.subscription.updated',
     'customer.subscription.deleted',
     'customer.subscription.paused',
-    'invoice.payment_succeeded',
-    'invoice.payment_failed',
   ])('materializes the %s event payload', async (type) => {
     await target.handleWebhook(webhookEvent({ type }));
 
     expect(entitlementsService.materialize).toHaveBeenCalledTimes(1);
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+  });
+
+  // These describe a session or an invoice, never a subscription: acting on
+  // them could only re-fetch, overwriting the snapshot a
+  // `customer.subscription.*` event already materialized.
+  it.each([
+    'checkout.session.completed',
+    'invoice.payment_succeeded',
+    'invoice.payment_failed',
+  ])('acks and ignores %s without re-fetching', async (type) => {
+    await target.handleWebhook(webhookEvent({ type }));
+
+    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(loggingService.info).toHaveBeenCalled();
   });
 
   it('invalidates the payment links cache and skips materialization for payment_link events', async () => {
@@ -433,6 +446,18 @@ describe('SubscriptionSyncService', () => {
     });
   });
 
+  it('materializes an open-ended subscription carrying no period end', async () => {
+    const event = webhookEvent({ data: { currentPeriodEnd: null } });
+
+    await target.handleWebhook(event);
+
+    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(entitlementsService.materialize).toHaveBeenCalledWith({
+      spaceId,
+      subscriptions: [expect.objectContaining({ currentPeriodEnd: null })],
+    });
+  });
+
   it('leaves an unrepresentable billing period unset instead of failing', async () => {
     const event = webhookEvent({
       data: { currentPeriodEnd: Number.MAX_SAFE_INTEGER },
@@ -450,6 +475,8 @@ describe('SubscriptionSyncService', () => {
   it.each([
     ['an unknown status', { status: 'something-new' }],
     ['no subscription id', { subscriptionId: null }],
+    ['no plan', { planId: null }],
+    ['no billing period', { currentPeriodStart: null }],
   ])('falls back to the re-fetch on %s', async (_, data) => {
     const subscription = subscriptionBuilder().with('status', 'active').build();
     billingApi.getSubscriptionsByCustomerId.mockResolvedValue([subscription]);

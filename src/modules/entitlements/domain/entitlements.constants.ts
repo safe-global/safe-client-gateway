@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import {
+  type SubscriptionStatus,
+  SubscriptionStatusSchema,
+} from '@/datasources/billing-api/entities/subscription.entity';
 
 /**
  * Subscription statuses that occupy a workspace's single "active
@@ -21,6 +24,18 @@ export function isActiveSubscriptionStatus(
   return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
     status,
   );
+}
+
+/**
+ * Narrows an upstream status string to the domain enum, or `null` when it is
+ * one this service does not know — a status added upstream must not fail the
+ * webhook, so the caller decides what to do instead.
+ */
+export function parseSubscriptionStatus(
+  status: string | null | undefined,
+): SubscriptionStatus | null {
+  const result = SubscriptionStatusSchema.safeParse(status);
+  return result.success ? result.data : null;
 }
 
 /**

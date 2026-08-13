@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
-import {
-  type Subscription,
-  SubscriptionStatusSchema,
-} from '@/datasources/billing-api/entities/subscription.entity';
+import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -29,6 +26,7 @@ import type { MaterializedSubscription } from '@/modules/entitlements/domain/ent
 import {
   isActiveSubscriptionStatus,
   PLAN_NAME_METADATA_KEY,
+  parseSubscriptionStatus,
 } from '@/modules/entitlements/domain/entitlements.constants';
 import { parseFeaturePackage } from '@/modules/entitlements/domain/feature-package.parser';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
@@ -62,10 +60,11 @@ function toEpochDate(epochSeconds: number | null | undefined): Date | null {
  * (`ValidationPipe(WebhookEventSchema)` on `BillingController.postWebhook`);
  * this service only ever sees an already-well-formed `WebhookEvent`.
  *
- * An event carrying a complete subscription snapshot (id, plan, status) is
- * materialized directly from the payload. Event types that carry only a
- * partial snapshot fall back to re-fetching the authoritative state from the
- * billing service.
+ * An event carrying a complete subscription snapshot (id, plan, status and
+ * period start) is materialized directly from the payload. Event types that
+ * carry only a partial snapshot fall back to re-fetching the authoritative
+ * state from the billing service, so a thin payload never overwrites stored
+ * state with nulls.
  *
  * Events are applied in delivery order, without comparing their `created`
  * stamp against what is stored: a late-delivered stale event therefore
@@ -204,7 +203,8 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
   /**
    * Maps the event's own subscription snapshot to its materialized shape, or
    * returns `null` when the payload is not a complete snapshot — the caller
-   * then re-fetches the authoritative state instead.
+   * then re-fetches the authoritative state instead. A period end is optional:
+   * upstream leaves it unset for a subscription that has no end.
    */
   private toMaterializedSubscription(
     event: WebhookEvent,
@@ -217,13 +217,14 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       upstreamSubscriptionId == null ||
       upstreamSubscriptionId.length === 0 ||
       planId == null ||
-      planId.length === 0
+      planId.length === 0 ||
+      data?.currentPeriodStart == null
     ) {
       return null;
     }
 
-    const status = SubscriptionStatusSchema.safeParse(data?.status);
-    if (!status.success) {
+    const status = parseSubscriptionStatus(data?.status);
+    if (status === null) {
       this.loggingService.warn(
         `Billing webhook event ${event.id} carries an unprocessable subscription status: ${data?.status}`,
       );
@@ -245,12 +246,12 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
 
     return {
       upstreamSubscriptionId,
-      status: status.data,
+      status,
       planId,
       planName: data?.metadata?.[PLAN_NAME_METADATA_KEY] ?? null,
       currentPeriodStart: toPeriod(data?.currentPeriodStart, 'period start'),
       currentPeriodEnd: toPeriod(data?.currentPeriodEnd, 'period end'),
-      entitlements: isActiveSubscriptionStatus(status.data)
+      entitlements: isActiveSubscriptionStatus(status)
         ? parseFeaturePackage({
             metadata: data?.metadata,
             planFeatures: [],
@@ -298,11 +299,8 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
         : subscription.status,
       planId: subscription.plan.id,
       planName: subscription.plan.name ?? null,
-      currentPeriodStart: new Date(subscription.startAt * 1_000),
-      currentPeriodEnd:
-        subscription.validUntil == null
-          ? null
-          : new Date(subscription.validUntil * 1_000),
+      currentPeriodStart: toEpochDate(subscription.currentPeriodStart),
+      currentPeriodEnd: toEpochDate(subscription.currentPeriodEnd),
       entitlements:
         active !== undefined && subscription.id === active.id
           ? parseFeaturePackage({

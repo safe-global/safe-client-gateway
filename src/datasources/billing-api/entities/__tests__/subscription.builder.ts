@@ -17,6 +17,10 @@ export function subscriptionBuilder(): IBuilder<Subscription> {
     .with('startAt', faker.number.int())
     .with('cancelledAt', null)
     .with('cancelAt', null)
-    .with('validUntil', faker.number.int())
+    .with(
+      'currentPeriodStart',
+      faker.number.int({ min: 1, max: 2_000_000_000 }),
+    )
+    .with('currentPeriodEnd', faker.number.int({ min: 1, max: 2_000_000_000 }))
     .with('metadata', { [faker.word.noun()]: faker.word.sample() });
 }
