@@ -66,10 +66,12 @@ export function mapEventToSubscription(
     currentPeriodEnd,
     entitlements: isActiveSubscriptionStatus(status)
       ? mapFeaturePackage({
-          subscriptionId: upstreamSubscriptionId,
           metadata: data.metadata,
           featureTypeByKey: args.featureTypeByKey,
-          onWarning: args.onWarning,
+          onWarning: (message) =>
+            args.onWarning(
+              `Feature package of subscription ${upstreamSubscriptionId}: ${message}`,
+            ),
         })
       : null,
   };
@@ -112,10 +114,12 @@ export function mapUpstreamSubscriptions(
     entitlements:
       active !== undefined && subscription.id === active.id
         ? mapFeaturePackage({
-            subscriptionId: subscription.id,
             metadata: subscription.metadata,
             featureTypeByKey: args.featureTypeByKey,
-            onWarning: args.onWarning,
+            onWarning: (message) =>
+              args.onWarning(
+                `Feature package of subscription ${subscription.id}: ${message}`,
+              ),
           })
         : null,
   }));

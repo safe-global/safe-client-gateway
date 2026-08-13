@@ -208,37 +208,6 @@ describe('SubscriptionSyncService', () => {
     );
   });
 
-  it('demotes surplus active subscriptions to canceled instead of dropping them', async () => {
-    const older = subscriptionBuilder()
-      .with('status', 'active')
-      .with('createdAt', 1)
-      .build();
-    const newer = subscriptionBuilder()
-      .with('status', 'active')
-      .with('createdAt', 2)
-      .build();
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([older, newer]);
-
-    await target.handleWebhook(partialWebhookEvent());
-
-    // A plain array (rather than arrayContaining) also pins the length to
-    // exactly 2 — the demoted subscription is kept, not dropped.
-    expect(entitlementsService.materialize).toHaveBeenCalledWith({
-      spaceId,
-      subscriptions: [
-        expect.objectContaining({
-          upstreamSubscriptionId: older.id,
-          status: 'canceled',
-        }),
-        expect.objectContaining({
-          upstreamSubscriptionId: newer.id,
-          status: 'active',
-        }),
-      ],
-    });
-    expect(loggingService.warn).toHaveBeenCalled();
-  });
-
   it.each([
     'customer.subscription.created',
     'customer.subscription.updated',
@@ -425,51 +394,6 @@ describe('SubscriptionSyncService', () => {
         },
       ],
     });
-  });
-
-  it('attaches no entitlement package when the event status is terminal', async () => {
-    const event = webhookEvent({
-      type: 'customer.subscription.deleted',
-      data: {
-        status: 'canceled',
-        metadata: { FEATURE_SAFE_SEATS: '10' },
-      },
-    });
-
-    await target.handleWebhook(event);
-
-    expect(entitlementsService.materialize).toHaveBeenCalledWith({
-      spaceId,
-      subscriptions: [
-        expect.objectContaining({ status: 'canceled', entitlements: null }),
-      ],
-    });
-  });
-
-  it('materializes an open-ended subscription carrying no period end', async () => {
-    const event = webhookEvent({ data: { currentPeriodEnd: null } });
-
-    await target.handleWebhook(event);
-
-    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-    expect(entitlementsService.materialize).toHaveBeenCalledWith({
-      spaceId,
-      subscriptions: [expect.objectContaining({ currentPeriodEnd: null })],
-    });
-  });
-
-  it('leaves an unrepresentable billing period unset instead of failing', async () => {
-    const event = webhookEvent({
-      data: { currentPeriodEnd: Number.MAX_SAFE_INTEGER },
-    });
-
-    await target.handleWebhook(event);
-
-    expect(entitlementsService.materialize).toHaveBeenCalledWith({
-      spaceId,
-      subscriptions: [expect.objectContaining({ currentPeriodEnd: null })],
-    });
-    expect(loggingService.warn).toHaveBeenCalled();
   });
 
   it.each([

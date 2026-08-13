@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker';
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { mapFeaturePackage } from '@/modules/entitlements/domain/feature-package.mapper';
@@ -14,7 +13,6 @@ const featureTypeByKey: Map<FeatureKey, FeatureType> = new Map([
 ]);
 
 describe('mapFeaturePackage', () => {
-  const subscriptionId = faker.string.alphanumeric(24);
   let onWarning: (message: string) => void;
 
   beforeEach(() => {
@@ -23,7 +21,6 @@ describe('mapFeaturePackage', () => {
 
   it('parses binary, metered, unlimited and value metadata entries', () => {
     const result = mapFeaturePackage({
-      subscriptionId,
       metadata: {
         FEATURE_SECURITY_HUB: 'true',
         FEATURE_PAY_FROM_SAFE: 'false',
@@ -57,21 +54,21 @@ describe('mapFeaturePackage', () => {
 
   it('warns and skips unknown keys, null values and unparseable values', () => {
     const result = mapFeaturePackage({
-      subscriptionId,
       metadata: {
         FEATURE_UNKNOWN_THING: 'true',
         FEATURE_SECURITY_HUB: 'yes',
         FEATURE_SAFE_SEATS: 'ten',
         FEATURE_SWAP_FEE_TIER: '',
         FEATURE_SSO: null,
-        UNRELATED_KEY: 'ignored silently',
+        FEATUER_SAFE_SEATS: '10',
       },
       featureTypeByKey,
       onWarning,
     });
 
     expect(result).toStrictEqual([]);
-    expect(onWarning).toHaveBeenCalledTimes(5);
+
+    expect(onWarning).toHaveBeenCalledTimes(6);
   });
 
   it.each([
@@ -82,7 +79,6 @@ describe('mapFeaturePackage', () => {
     '1e3',
   ])('warns and skips the non-canonical metered quota %s', (quota) => {
     const result = mapFeaturePackage({
-      subscriptionId,
       metadata: { FEATURE_SAFE_SEATS: quota },
       featureTypeByKey,
       onWarning,
@@ -95,7 +91,6 @@ describe('mapFeaturePackage', () => {
   it('returns an empty package when there is nothing to parse', () => {
     expect(
       mapFeaturePackage({
-        subscriptionId,
         metadata: null,
         featureTypeByKey,
         onWarning,
