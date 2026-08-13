@@ -40,6 +40,11 @@ type Route = {
  * Every route that requires a fresh second factor, per Milestone 2 of the
  * Workspace 2FA plan.
  *
+ * The line is drawn at what a stolen session could do to *other people*:
+ * changing who has access to the Workspace, or changing state the whole
+ * Workspace shares. Acting only on your own membership is not gated — see
+ * {@link UNGATED_ROUTES}.
+ *
  * Guards run before validation pipes, so the request bodies here only need to
  * exist — the assertions are about the elevation contract, not about each
  * route's own success path, which its own controller spec covers.
@@ -50,18 +55,6 @@ const GATED_ROUTES: Array<Route> = [
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/invite`,
     body: { users: [] },
-  },
-  {
-    name: 'POST /v1/spaces/:spaceId/members/accept',
-    method: 'post',
-    path: (id) => `/v1/spaces/${id}/members/accept`,
-    body: {},
-  },
-  {
-    name: 'POST /v1/spaces/:spaceId/members/decline',
-    method: 'post',
-    path: (id) => `/v1/spaces/${id}/members/decline`,
-    body: {},
   },
   {
     name: 'PATCH /v1/spaces/:spaceId/members/:userId/role',
@@ -120,6 +113,12 @@ const GATED_ROUTES: Array<Route> = [
  * Routes deliberately left ungated. Pinned here so that gating or un-gating a
  * Workspace route is always a conscious edit to this list, never a silent
  * side effect of touching a controller.
+ *
+ * Each of these either only reads, or only changes the caller's own
+ * membership. An attacker holding a stolen session gains nothing from them
+ * that the session did not already grant, so a challenge would cost every
+ * legitimate user a prompt — in the invite responses' case, in the middle of
+ * joining a Workspace — to buy nothing.
  */
 const UNGATED_ROUTES: Array<Route> = [
   {
@@ -152,6 +151,21 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'patch',
     path: (id) => `/v1/spaces/${id}/members/alias`,
     body: { alias: nameBuilder() },
+  },
+  // Responding to an invitation someone else already sent, and leaving of
+  // your own accord, only move the caller in or out of the Workspace. The
+  // invite itself is gated, which is where the access decision is made.
+  {
+    name: 'POST /v1/spaces/:spaceId/members/accept',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/members/accept`,
+    body: {},
+  },
+  {
+    name: 'POST /v1/spaces/:spaceId/members/decline',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/members/decline`,
+    body: {},
   },
   {
     name: 'DELETE /v1/spaces/:spaceId/members (self-removal)',

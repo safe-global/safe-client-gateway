@@ -140,7 +140,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/accept')
-  @UseGuards(AuthGuard, ElevationGuard)
+  @UseGuards(AuthGuard)
   public async acceptInvite(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -180,7 +180,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/decline')
-  @UseGuards(AuthGuard, ElevationGuard)
+  @UseGuards(AuthGuard)
   public async declineInvite(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
