@@ -79,16 +79,6 @@ export class EntitlementsService {
             ]),
           );
 
-    // Demotions (e.g. active → canceled) are written before promotions so the
-    // "one active subscription per space" partial unique index never sees both
-    // the outgoing and the incoming subscription active at once.
-    const orderedSubscriptions = [
-      ...args.subscriptions.filter(
-        (subscription) => !isActiveSubscriptionStatus(subscription.status),
-      ),
-      ...activeIsh,
-    ];
-
     const incomingActive = activeIsh.at(0);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
@@ -96,20 +86,20 @@ export class EntitlementsService {
 
       // Frees the "one active subscription per space" slot before the upserts
       // below claim it: on a plan change the outgoing subscription is still
-      // active here, and its own event may not have arrived yet.
+      // active here, and its own event may not have arrived yet. Running it
+      // first is also what lets the upserts below go in any order — no other
+      // row can hold the slot by the time they run.
       if (incomingActive !== undefined) {
         await this.subscriptionsRepository.demoteActiveSubscriptions(
           {
             spaceId: args.spaceId,
-            exceptUpstreamSubscriptionIds: [
-              incomingActive.upstreamSubscriptionId,
-            ],
+            exceptUpstreamSubscriptionId: incomingActive.upstreamSubscriptionId,
           },
           entityManager,
         );
       }
 
-      for (const subscription of orderedSubscriptions) {
+      for (const subscription of args.subscriptions) {
         const subscriptionId =
           await this.subscriptionsRepository.upsertSubscription(
             {

@@ -52,7 +52,7 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
   public async demoteActiveSubscriptions(
     args: {
       spaceId: Space['id'];
-      exceptUpstreamSubscriptionIds: Array<string>;
+      exceptUpstreamSubscriptionId: string;
     },
     entityManager?: EntityManager,
   ): Promise<void> {
@@ -61,20 +61,17 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       SpaceSubscription,
       entityManager,
     );
-    const query = repository
+    await repository
       .createQueryBuilder()
       .update(SpaceSubscription)
       .set({ status: 'canceled' })
       .where('space_id = :spaceId', { spaceId: args.spaceId })
       .andWhere('status IN (:...activeStatuses)', {
         activeStatuses: [...ACTIVE_SUBSCRIPTION_STATUSES],
-      });
-    if (args.exceptUpstreamSubscriptionIds.length > 0) {
-      query.andWhere(
-        'upstream_subscription_id NOT IN (:...exceptUpstreamSubscriptionIds)',
-        { exceptUpstreamSubscriptionIds: args.exceptUpstreamSubscriptionIds },
-      );
-    }
-    await query.execute();
+      })
+      .andWhere('upstream_subscription_id != :exceptUpstreamSubscriptionId', {
+        exceptUpstreamSubscriptionId: args.exceptUpstreamSubscriptionId,
+      })
+      .execute();
   }
 }

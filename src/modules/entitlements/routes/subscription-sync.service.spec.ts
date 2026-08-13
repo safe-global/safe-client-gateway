@@ -80,12 +80,8 @@ describe('SubscriptionSyncService', () => {
 
   // An event whose payload is not a complete subscription snapshot, so the
   // service falls back to re-fetching the authoritative state.
-  function partialWebhookEvent(overrides?: {
-    type?: string;
-    upstreamCustomerId?: string | null;
-    customerGroup?: string;
-  }): WebhookEvent {
-    return webhookEvent({ ...overrides, data: { planId: null } });
+  function partialWebhookEvent(): WebhookEvent {
+    return webhookEvent({ data: { planId: null } });
   }
 
   beforeEach(() => {
@@ -336,21 +332,6 @@ describe('SubscriptionSyncService', () => {
     await target.handleWebhook(webhookEvent());
 
     expect(loggingService.warn).toHaveBeenCalled();
-  });
-
-  it('acks and logs when the upstream billing period is not a representable date', async () => {
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
-    entitlementsService.materialize.mockRejectedValue(
-      new QueryFailedError(
-        '',
-        [],
-        Object.assign(new Error(), { code: '22007' }),
-      ),
-    );
-
-    // Redelivery carries the same values, so this must not surface as a 5xx.
-    await expect(target.handleWebhook(webhookEvent())).resolves.toBeUndefined();
-    expect(loggingService.error).toHaveBeenCalled();
   });
 
   it('propagates an unrelated query failure so the webhook is retried', async () => {

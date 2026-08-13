@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
+import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 
 type WebhookEventCustomer = NonNullable<
@@ -24,8 +25,8 @@ export function webhookEventBuilder(): IBuilder<WebhookEvent> {
       subscriptionId: faker.string.uuid(),
       status: 'active',
       planId: faker.string.alphanumeric(24),
-      currentPeriodStart: faker.number.int({ min: 1, max: 2_000_000_000 }),
-      currentPeriodEnd: faker.number.int({ min: 1, max: 2_000_000_000 }),
+      currentPeriodStart: toSecondsTimestamp(faker.date.recent()),
+      currentPeriodEnd: toSecondsTimestamp(faker.date.soon()),
       metadata: null,
       customer: webhookEventCustomerBuilder().build(),
     });

@@ -324,7 +324,7 @@ describe('EntitlementsService', () => {
       });
 
       // Upgrade: the old subscription cancels, a new one becomes active. The
-      // demotion must be written before the promotion, or the "one active
+      // slot must be freed before the promotion is written, or the "one active
       // subscription per space" partial unique index rejects the batch.
       const newSubscription = materializedSubscriptionBuilder()
         .with('status', 'active')
@@ -367,7 +367,7 @@ describe('EntitlementsService', () => {
       expect(incoming?.entitlements?.[0]).toMatchObject({ quota: 20 });
     });
 
-    it('reorders a batch that lists the promotion before the demotion', async () => {
+    it('accepts a batch that lists the promotion before the demotion', async () => {
       const spaceId = await createSpace();
       const oldSubscription = materializedSubscriptionBuilder()
         .with('status', 'active')
@@ -381,10 +381,10 @@ describe('EntitlementsService', () => {
       });
 
       // Same upgrade as above, but with the incoming (active) subscription
-      // listed FIRST: nothing here pre-sorts the input, so this only passes
-      // if materialize() reorders it itself before writing — otherwise the
-      // promotion's INSERT would violate the "one active per space" partial
-      // unique index before the demotion ever runs.
+      // listed FIRST: input order must not matter, which only holds because
+      // materialize() frees the slot up front. Writing the batch in the given
+      // order alone would violate the "one active per space" partial unique
+      // index on the promotion's INSERT.
       const newSubscription = materializedSubscriptionBuilder()
         .with('status', 'active')
         .with('entitlements', [

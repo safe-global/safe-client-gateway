@@ -20,11 +20,11 @@ export interface ISubscriptionsRepository {
     entityManager?: EntityManager,
   ): Promise<number>;
 
-  /** Demotes every active-ish row of the space other than the listed ones. */
+  /** Demotes every active-ish row of the space other than the named one. */
   demoteActiveSubscriptions(
     args: {
       spaceId: Space['id'];
-      exceptUpstreamSubscriptionIds: Array<string>;
+      exceptUpstreamSubscriptionId: string;
     },
     entityManager?: EntityManager,
   ): Promise<void>;

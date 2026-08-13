@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { QueryFailedError } from 'typeorm';
+import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
 import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -8,12 +8,14 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { isForeignKeyViolationError } from '@/datasources/errors/helpers/is-foreign-key-violation-error.helper';
+import { fromSecondsTimestamp } from '@/domain/common/utils/time';
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
 import {
+  isIgnoredEventType,
   isPaymentLinkEventType,
   isSubscriptionEventType,
   type WebhookEvent,
@@ -22,7 +24,10 @@ import type {
   FeatureKey,
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type {
+  MaterializedSubscription,
+  ParsedEntitlement,
+} from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
   isActiveSubscriptionStatus,
   PLAN_NAME_METADATA_KEY,
@@ -35,23 +40,6 @@ import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
-
-// Postgres invalid_datetime_format. Raised when an upstream billing period is
-// not a representable date, e.g. an epoch outside the range `Date` can hold.
-const INVALID_DATETIME_ERROR_CODE = '22007';
-
-const MAX_TIMESTAMP_MS = 8_640_000_000_000_000;
-
-function toEpochDate(epochSeconds: number | null | undefined): Date | null {
-  if (epochSeconds == null || !Number.isFinite(epochSeconds)) {
-    return null;
-  }
-  const milliseconds = epochSeconds * 1_000;
-  if (Math.abs(milliseconds) > MAX_TIMESTAMP_MS) {
-    return null;
-  }
-  return new Date(milliseconds);
-}
 
 /**
  * Materializes upstream subscription state on billing webhooks.
@@ -99,9 +87,15 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       );
       return;
     }
+    if (isIgnoredEventType(event.type)) {
+      this.loggingService.info(
+        `Ignoring billing webhook event type ${event.type} (event ${event.id}): it carries no subscription snapshot`,
+      );
+      return;
+    }
     if (!isSubscriptionEventType(event.type)) {
       this.loggingService.info(
-        `Ignoring billing webhook event type: ${event.type}`,
+        `Ignoring unknown billing webhook event type: ${event.type}`,
       );
       return;
     }
@@ -182,16 +176,6 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
         );
         return;
       }
-      // A period the upstream payload cannot express as a date is a data
-      // defect, not a transient failure: redelivery carries the same values,
-      // so a 5xx here would have the event retried until it expires. Logged
-      // at error level because someone has to look at the upstream data.
-      if (this.isMalformedUpstreamPeriod(error)) {
-        this.loggingService.error(
-          `Billing webhook event ${event.id} carries an unrepresentable billing period for space ${upstreamCustomerId}; acking to stop redelivery`,
-        );
-        return;
-      }
       throw error;
     }
 
@@ -214,55 +198,64 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     const upstreamSubscriptionId = data?.subscriptionId;
     const planId = data?.planId;
     if (
-      upstreamSubscriptionId == null ||
-      upstreamSubscriptionId.length === 0 ||
-      planId == null ||
-      planId.length === 0 ||
-      data?.currentPeriodStart == null
+      !(upstreamSubscriptionId && planId) ||
+      data.currentPeriodStart == null
     ) {
       return null;
     }
 
-    const status = parseSubscriptionStatus(data?.status);
+    const status = parseSubscriptionStatus(data.status);
     if (status === null) {
       this.loggingService.warn(
-        `Billing webhook event ${event.id} carries an unprocessable subscription status: ${data?.status}`,
+        `Billing webhook event ${event.id} carries an unprocessable subscription status: ${data.status}`,
       );
       return null;
     }
 
-    const toPeriod = (
-      epochSeconds: number | null | undefined,
-      label: string,
-    ): Date | null => {
-      const date = toEpochDate(epochSeconds);
-      if (epochSeconds != null && date === null) {
-        this.loggingService.warn(
-          `Billing webhook event ${event.id} carries an unrepresentable ${label}: ${epochSeconds}`,
-        );
-      }
-      return date;
-    };
+    const currentPeriodStart = fromSecondsTimestamp(data.currentPeriodStart);
+    const currentPeriodEnd = fromSecondsTimestamp(data.currentPeriodEnd);
+    if (
+      currentPeriodStart === null ||
+      (data.currentPeriodEnd != null && currentPeriodEnd === null)
+    ) {
+      this.loggingService.warn(
+        `Billing webhook event ${event.id} carries an unrepresentable billing period: ${data.currentPeriodStart}–${data.currentPeriodEnd}`,
+      );
+    }
 
     return {
       upstreamSubscriptionId,
       status,
       planId,
-      planName: data?.metadata?.[PLAN_NAME_METADATA_KEY] ?? null,
-      currentPeriodStart: toPeriod(data?.currentPeriodStart, 'period start'),
-      currentPeriodEnd: toPeriod(data?.currentPeriodEnd, 'period end'),
+      planName: data.metadata?.[PLAN_NAME_METADATA_KEY] ?? null,
+      currentPeriodStart,
+      currentPeriodEnd,
       entitlements: isActiveSubscriptionStatus(status)
-        ? parseFeaturePackage({
-            metadata: data?.metadata,
+        ? this.parsePackage({
+            subscriptionId: upstreamSubscriptionId,
+            metadata: data.metadata,
             planFeatures: [],
             featureTypeByKey,
-            onWarning: (message) =>
-              this.loggingService.warn(
-                `Feature package of subscription ${upstreamSubscriptionId}: ${message}`,
-              ),
           })
         : null,
     };
+  }
+
+  private parsePackage(args: {
+    subscriptionId: string;
+    metadata: StripeMetadata | null | undefined;
+    planFeatures: Array<string>;
+    featureTypeByKey: Map<FeatureKey, FeatureType>;
+  }): Array<ParsedEntitlement> {
+    return parseFeaturePackage({
+      metadata: args.metadata,
+      planFeatures: args.planFeatures,
+      featureTypeByKey: args.featureTypeByKey,
+      onWarning: (message) =>
+        this.loggingService.warn(
+          `Feature package of subscription ${args.subscriptionId}: ${message}`,
+        ),
+    });
   }
 
   /**
@@ -299,18 +292,15 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
         : subscription.status,
       planId: subscription.plan.id,
       planName: subscription.plan.name ?? null,
-      currentPeriodStart: toEpochDate(subscription.currentPeriodStart),
-      currentPeriodEnd: toEpochDate(subscription.currentPeriodEnd),
+      currentPeriodStart: fromSecondsTimestamp(subscription.currentPeriodStart),
+      currentPeriodEnd: fromSecondsTimestamp(subscription.currentPeriodEnd),
       entitlements:
         active !== undefined && subscription.id === active.id
-          ? parseFeaturePackage({
+          ? this.parsePackage({
+              subscriptionId: subscription.id,
               metadata: subscription.metadata,
               planFeatures: subscription.plan.features,
               featureTypeByKey,
-              onWarning: (message) =>
-                this.loggingService.warn(
-                  `Feature package of subscription ${subscription.id}: ${message}`,
-                ),
             })
           : null,
     }));
@@ -326,14 +316,6 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     return (
       isForeignKeyViolationError(error) &&
       error.driverError.constraint === 'FK_subscriptions_space_id'
-    );
-  }
-
-  private isMalformedUpstreamPeriod(error: unknown): boolean {
-    return (
-      error instanceof QueryFailedError &&
-      'code' in error.driverError &&
-      error.driverError.code === INVALID_DATETIME_ERROR_CODE
     );
   }
 }
