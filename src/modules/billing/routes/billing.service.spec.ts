@@ -70,28 +70,35 @@ describe('BillingService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)('should return subscriptions for %s space members', async (_label, builder) => {
-      const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
-      const authPayload = new AuthPayload(builder().build());
-      const subscriptions = [subscriptionBuilder().build()];
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
-      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
-        subscriptions,
-      );
+    ] as const)(
+      'should return subscriptions for %s space members',
+      async (_label, builder) => {
+        const spaceId = faker.number.int();
+        const spaceUuid = faker.string.uuid();
+        const authPayload = new AuthPayload(builder().build());
+        const subscriptions = [subscriptionBuilder().build()];
+        membersRepositoryMock.findOne.mockResolvedValue(
+          memberBuilder().build(),
+        );
+        billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+          subscriptions,
+        );
 
-      const result = await service.getSubscriptions({
-        spaceId,
-        spaceUuid,
-        authPayload,
-      });
+        const result = await service.getSubscriptions({
+          spaceId,
+          spaceUuid,
+          authPayload,
+        });
 
-      expect(result).toBe(subscriptions);
-      expect(billingApiMock.getSubscriptionsByCustomerId).toHaveBeenCalledWith({
-        upstreamCustomerId: spaceUuid,
-        status: undefined,
-      });
-    });
+        expect(result).toBe(subscriptions);
+        expect(
+          billingApiMock.getSubscriptionsByCustomerId,
+        ).toHaveBeenCalledWith({
+          upstreamCustomerId: spaceUuid,
+          status: undefined,
+        });
+      },
+    );
 
     it('should throw when not authenticated', async () => {
       await expect(

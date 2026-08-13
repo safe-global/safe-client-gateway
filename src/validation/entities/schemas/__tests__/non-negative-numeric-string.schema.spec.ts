@@ -2,15 +2,14 @@
 import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
 
 describe('NonNegativeNumericStringSchema', () => {
-  it.each([
-    '0',
-    '1',
-    '42',
-  ])('should accept a canonical non-negative integer string "%s"', (value) => {
-    const result = NonNegativeNumericStringSchema.safeParse(value);
+  it.each(['0', '1', '42'])(
+    'should accept a canonical non-negative integer string "%s"',
+    (value) => {
+      const result = NonNegativeNumericStringSchema.safeParse(value);
 
-    expect(result.success && result.data).toBe(value);
-  });
+      expect(result.success && result.data).toBe(value);
+    },
+  );
 
   it.each([
     ['leading zero', '01'],

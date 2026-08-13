@@ -128,12 +128,12 @@ export function extractRecipient(
   }
 
   // ERC-20 transfer
-  if (!!data && erc20Decoder.helpers.isTransfer(data)) {
+  if (data && erc20Decoder.helpers.isTransfer(data)) {
     return getAddress(dataDecoded?.parameters?.[0].value as string);
   }
 
   // ERC-20 transferFrom
-  if (!!data && erc20Decoder.helpers.isTransferFrom(data)) {
+  if (data && erc20Decoder.helpers.isTransferFrom(data)) {
     return getAddress(dataDecoded?.parameters?.[1].value as string);
   }
 
