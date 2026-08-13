@@ -3,8 +3,10 @@ import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { ParsedEntitlement } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import {
   FEATURE_METADATA_PREFIX,
+  MAX_ENTITLEMENT_VALUE_LENGTH,
   UNLIMITED_METADATA_VALUE,
 } from '@/modules/entitlements/domain/entitlements.constants';
 import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
@@ -67,7 +69,10 @@ export function mapFeaturePackage(args: {
           });
           continue;
         }
-        if (!NonNegativeNumericStringSchema.safeParse(value).success) {
+        if (
+          !NonNegativeNumericStringSchema.safeParse(value).success ||
+          Number(value) > DB_MAX_SAFE_INTEGER
+        ) {
           args.onWarning(
             `Invalid metered value for ${metadataKey}: ${rawValue}`,
           );
@@ -82,8 +87,8 @@ export function mapFeaturePackage(args: {
         break;
       }
       case FeatureType.Value: {
-        if (value.length === 0) {
-          args.onWarning(`Empty value for ${metadataKey}`);
+        if (value.length === 0 || value.length > MAX_ENTITLEMENT_VALUE_LENGTH) {
+          args.onWarning(`Invalid value for ${metadataKey}`);
           continue;
         }
         packageByKey.set(key, {

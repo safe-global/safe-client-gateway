@@ -28,6 +28,12 @@ export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 export const PLAN_NAME_METADATA_KEY = 'planName';
 
 /**
+ * Mirrors the `subscription_entitlements.value` column's `varchar(255)`: a
+ * longer value is skipped rather than left to fail the insert.
+ */
+export const MAX_ENTITLEMENT_VALUE_LENGTH = 255;
+
+/**
  * Value of a metered feature's metadata entry meaning "no quota, never
  * blocks" (materialized as `quota = NULL`).
  */

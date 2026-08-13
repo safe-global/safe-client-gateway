@@ -45,7 +45,7 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
       `CREATE TABLE "subscriptions" ("id" SERIAL NOT NULL, "upstream_subscription_id" character varying(255) NOT NULL, "status" character varying(32) NOT NULL, "plan_id" character varying(255) NOT NULL, "plan_name" character varying(255), "current_period_start" TIMESTAMP WITH TIME ZONE, "current_period_end" TIMESTAMP WITH TIME ZONE, "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), "space_id" integer NOT NULL, CONSTRAINT "UQ_subscriptions_upstream_id" UNIQUE ("upstream_subscription_id"), CONSTRAINT "CHK_subscriptions_status" CHECK ("status" IN ('active','canceled','incomplete','incomplete_expired','past_due','paused','trialing','unpaid')), CONSTRAINT "PK_subscriptions_id" PRIMARY KEY ("id"))`,
     );
     await queryRunner.query(
-      `CREATE UNIQUE INDEX "UQ_subscriptions_active_space" ON "subscriptions"  ("space_id") WHERE status IN ('active','trialing','past_due','paused','unpaid')`,
+      `CREATE UNIQUE INDEX "UQ_subscriptions_active_space" ON "subscriptions"  ("space_id") WHERE status IN ('active','trialing')`,
     );
     // The unique index above is partial (active-ish statuses only), so it
     // can't serve a lookup covering terminal-status rows or the FK's

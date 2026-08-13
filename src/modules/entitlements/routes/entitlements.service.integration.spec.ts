@@ -425,6 +425,41 @@ describe('EntitlementsService', () => {
       ).toMatchObject({ status: 'active' });
     });
 
+    // Only `active`/`trialing` hold the slot, so a payment-failed subscription
+    // must not block the one replacing it — the partial unique index and
+    // ACTIVE_SUBSCRIPTION_STATUSES have to agree on exactly which statuses do.
+    it('lets a new subscription take the slot a past_due one does not hold', async () => {
+      const spaceId = await createSpace();
+      const pastDue = materializedSubscriptionBuilder()
+        .with('status', 'past_due')
+        .with('entitlements', null)
+        .build();
+      await service.materialize({ spaceId, subscriptions: [pastDue] });
+
+      const incoming = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+        ])
+        .build();
+
+      await expect(
+        service.materialize({ spaceId, subscriptions: [incoming] }),
+      ).resolves.toBeUndefined();
+
+      const rows = await dataSource
+        .getRepository(SpaceSubscription)
+        .find({ where: { space: { id: spaceId } } });
+      expect(
+        rows.map((row) => [row.upstreamSubscriptionId, row.status]),
+      ).toStrictEqual(
+        expect.arrayContaining([
+          [pastDue.upstreamSubscriptionId, 'past_due'],
+          [incoming.upstreamSubscriptionId, 'active'],
+        ]),
+      );
+    });
+
     it('rejects an unknown workspace', async () => {
       await expect(
         service.materialize({

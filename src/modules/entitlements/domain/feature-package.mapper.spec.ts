@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import { MAX_ENTITLEMENT_VALUE_LENGTH } from '@/modules/entitlements/domain/entitlements.constants';
 import { mapFeaturePackage } from '@/modules/entitlements/domain/feature-package.mapper';
 
 const featureTypeByKey: Map<FeatureKey, FeatureType> = new Map([
@@ -71,13 +73,17 @@ describe('mapFeaturePackage', () => {
     expect(onWarning).toHaveBeenCalledTimes(6);
   });
 
+  // The last two exceed `quota`'s `integer` column: left through, the insert
+  // would fail with 22003 and the webhook would be retried until it expires.
   it.each([
     '007',
     '01',
     '1.5',
     '-1',
     '1e3',
-  ])('warns and skips the non-canonical metered quota %s', (quota) => {
+    `${DB_MAX_SAFE_INTEGER + 1}`,
+    '99999999999',
+  ])('warns and skips the unusable metered quota %s', (quota) => {
     const result = mapFeaturePackage({
       metadata: { FEATURE_SAFE_SEATS: quota },
       featureTypeByKey,
@@ -86,6 +92,53 @@ describe('mapFeaturePackage', () => {
 
     expect(result).toStrictEqual([]);
     expect(onWarning).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts the largest quota the column can hold', () => {
+    const result = mapFeaturePackage({
+      metadata: { FEATURE_SAFE_SEATS: `${DB_MAX_SAFE_INTEGER}` },
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([
+      {
+        featureKey: 'safe_seats',
+        enabled: true,
+        quota: DB_MAX_SAFE_INTEGER,
+        value: null,
+      },
+    ]);
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  // Beyond `value`'s `varchar(255)`, so the insert would fail with 22001.
+  it('warns and skips a value longer than the column allows', () => {
+    const result = mapFeaturePackage({
+      metadata: {
+        FEATURE_SWAP_FEE_TIER: 'a'.repeat(MAX_ENTITLEMENT_VALUE_LENGTH + 1),
+      },
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([]);
+    expect(onWarning).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts the longest value the column can hold', () => {
+    const value = 'a'.repeat(MAX_ENTITLEMENT_VALUE_LENGTH);
+
+    expect(
+      mapFeaturePackage({
+        metadata: { FEATURE_SWAP_FEE_TIER: value },
+        featureTypeByKey,
+        onWarning,
+      }),
+    ).toStrictEqual([
+      { featureKey: 'swap_fee_tier', enabled: true, quota: null, value },
+    ]);
+    expect(onWarning).not.toHaveBeenCalled();
   });
 
   it('returns an empty package when there is nothing to parse', () => {
