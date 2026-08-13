@@ -73,17 +73,29 @@ describe('mapFeaturePackage', () => {
     expect(onWarning).toHaveBeenCalledTimes(6);
   });
 
-  // The last two exceed `quota`'s `integer` column: left through, the insert
-  // would fail with 22003 and the webhook would be retried until it expires.
   it.each([
     '007',
     '01',
     '1.5',
     '-1',
     '1e3',
+  ])('warns and skips the non-canonical metered quota %s', (quota) => {
+    const result = mapFeaturePackage({
+      metadata: { FEATURE_SAFE_SEATS: quota },
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([]);
+    expect(onWarning).toHaveBeenCalledTimes(1);
+  });
+
+  // Left through, the insert would fail with 22003 and the webhook would be
+  // retried until it expires.
+  it.each([
     `${DB_MAX_SAFE_INTEGER + 1}`,
     '99999999999',
-  ])('warns and skips the unusable metered quota %s', (quota) => {
+  ])('warns and skips the metered quota %s, beyond the integer column', (quota) => {
     const result = mapFeaturePackage({
       metadata: { FEATURE_SAFE_SEATS: quota },
       featureTypeByKey,

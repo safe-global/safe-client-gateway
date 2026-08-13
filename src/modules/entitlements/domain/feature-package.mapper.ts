@@ -11,6 +11,11 @@ import {
 } from '@/modules/entitlements/domain/entitlements.constants';
 import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
 
+/** A metered quota the `quota` `integer` column can actually hold. */
+const QuotaSchema = NonNegativeNumericStringSchema.refine(
+  (value) => Number(value) <= DB_MAX_SAFE_INTEGER,
+);
+
 /**
  * Maps a subscription's `FEATURE_*` metadata strings — raw, untyped upstream
  * data — to typed `ParsedEntitlement` rows, resolving each key's type against
@@ -69,10 +74,7 @@ export function mapFeaturePackage(args: {
           });
           continue;
         }
-        if (
-          !NonNegativeNumericStringSchema.safeParse(value).success ||
-          Number(value) > DB_MAX_SAFE_INTEGER
-        ) {
+        if (!QuotaSchema.safeParse(value).success) {
           args.onWarning(
             `Invalid metered value for ${metadataKey}: ${rawValue}`,
           );

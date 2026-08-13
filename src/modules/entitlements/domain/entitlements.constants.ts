@@ -4,6 +4,11 @@ import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subs
 /**
  * Subscription statuses that occupy a workspace's single "active
  * subscription" slot.
+ *
+ * The `UQ_subscriptions_active_space` partial unique index enforces the slot
+ * in Postgres from its own frozen copy of this list, so changing this one
+ * needs a paired migration reshaping that index — otherwise the database and
+ * the application disagree on who holds the slot.
  */
 export const ACTIVE_SUBSCRIPTION_STATUSES = [
   'active',
