@@ -4885,10 +4885,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:6.2.4":
-  version: 6.2.4
-  resolution: "jose@npm:6.2.4"
-  checksum: 10/ae4e247817d8b06bab500c5cc4606ad4d0c8149a31ea34bf3c294458606ec29f67bb3411096f72fd6382fe6f5a0de60cb7f0e29db178ddffb3efeca3454fb832
+"jose@npm:6.2.8":
+  version: 6.2.8
+  resolution: "jose@npm:6.2.8"
+  checksum: 10/d1534f56cf693dfbb4b433b72df469c3c858748fe627621e27d9c1e7894716fc1d0225923be3ae98153345b9823a25c0ac376bfccce3ed363a4c032cfd4e2f5b
   languageName: node
   linkType: hard
 
@@ -6308,7 +6308,7 @@ __metadata:
     csv-stringify: "npm:^6.8.1"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
-    jose: "npm:6.2.4"
+    jose: "npm:6.2.8"
     jsonwebtoken: "npm:9.0.3"
     lodash: "npm:4.18.1"
     nestjs-cls: "npm:6.2.1"
