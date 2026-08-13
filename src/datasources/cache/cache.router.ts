@@ -44,6 +44,7 @@ export class CacheRouter {
   private static readonly BILLING_PLAN_KEY = 'billing_plan';
   private static readonly BILLING_PLANS_KEY = 'billing_plans';
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
+  private static readonly SPACE_ENTITLEMENTS_KEY = 'space_entitlements';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
@@ -1220,14 +1221,26 @@ export class CacheRouter {
     );
   }
 
+  static getBillingSubscriptionsCacheKey(upstreamCustomerId: string): string {
+    return `${upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`;
+  }
+
   static getBillingSubscriptionsCacheDir(args: {
     upstreamCustomerId: string;
     status: SubscriptionStatusFilter;
   }): CacheDir {
     return new CacheDir(
-      `${args.upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`,
+      CacheRouter.getBillingSubscriptionsCacheKey(args.upstreamCustomerId),
       args.status,
     );
+  }
+
+  static getSpaceEntitlementsCacheKey(spaceId: number): string {
+    return `${spaceId}_${CacheRouter.SPACE_ENTITLEMENTS_KEY}`;
+  }
+
+  static getSpaceEntitlementsCacheDir(spaceId: number): CacheDir {
+    return new CacheDir(CacheRouter.getSpaceEntitlementsCacheKey(spaceId), '');
   }
 
   static getBillingPaymentLinksCacheDir(upstreamCustomerId?: string): CacheDir {

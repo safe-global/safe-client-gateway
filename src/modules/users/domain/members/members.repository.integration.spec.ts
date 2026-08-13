@@ -9,6 +9,7 @@ import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
@@ -20,6 +21,13 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
+import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { EntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository';
+import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
@@ -81,7 +89,18 @@ describe('MembersRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceSafe, User, Wallet],
+    entities: [
+      Member,
+      Space,
+      SpaceSafe,
+      User,
+      Wallet,
+      Feature,
+      SpaceSubscription,
+      SubscriptionEntitlement,
+      SpaceFeatureUsage,
+      SpaceSeatSelection,
+    ],
   });
 
   const dbWalletRepo = dataSource.getRepository(Wallet);
@@ -136,6 +155,10 @@ describe('MembersRepository', () => {
       if (key === 'spaces.maxSpaceCreationsPerUser') {
         return testConfiguration.spaces.maxSpaceCreationsPerUser;
       }
+      // Entitlements enforcement off: these tests cover the legacy path.
+      if (key === 'features.billingService') {
+        return false;
+      }
     });
     const walletsRepo = new WalletsRepository(
       postgresDatabaseService,
@@ -161,6 +184,9 @@ describe('MembersRepository', () => {
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
+      new EntitlementsRepository(postgresDatabaseService),
+      new FakeCacheService(),
+      mockConfigurationService,
     );
   });
 
@@ -3734,6 +3760,9 @@ describe('MembersRepository', () => {
         userEncryptionService,
         createMockWalletEncryptionService(),
         createMockMemberEncryptionService(),
+        new EntitlementsRepository(postgresDatabaseService),
+        new FakeCacheService(),
+        mockConfigurationService,
       );
     });
 
@@ -3853,6 +3882,138 @@ describe('MembersRepository', () => {
       );
 
       expect(member.user.email).toBe(inviteEmail);
+    });
+  });
+
+  describe('member quota enforcement (FF_BILLING_SERVICE on)', () => {
+    // Seeded Free-tier quota of `members`, read from the catalog so the
+    // suite stays valid whatever the seed-features migration ships.
+    let FREE_MEMBERS: number;
+
+    beforeAll(async () => {
+      const membersRow: Array<{ free_quota: number }> = await dataSource.query(
+        `SELECT free_quota FROM features WHERE key = 'members'`,
+      );
+      FREE_MEMBERS = membersRow[0].free_quota;
+    });
+
+    let enforcedMembersRepository: MembersRepository;
+
+    beforeEach(() => {
+      const enforcedConfigurationService = vi.mocked({
+        getOrThrow: vi.fn().mockImplementation((key: string) => {
+          if (key === 'features.billingService') {
+            return true;
+          }
+        }),
+      } as MockedObject<IConfigurationService>);
+      enforcedMembersRepository = new MembersRepository(
+        postgresDatabaseService,
+        new UsersRepository(
+          postgresDatabaseService,
+          new WalletsRepository(
+            postgresDatabaseService,
+            createMockWalletEncryptionService(),
+          ),
+          createMockSpaceAuditRepository(),
+          createMockUserEncryptionService(),
+          createMockWalletEncryptionService(),
+        ),
+        new SpacesRepository(
+          postgresDatabaseService,
+          mockConfigurationService,
+          createMockSpaceAuditRepository(),
+          createMockSpaceEncryptionService(),
+          createMockMemberEncryptionService(),
+        ),
+        createMockSpaceAuditRepository(),
+        createMockUserEncryptionService(),
+        createMockWalletEncryptionService(),
+        createMockMemberEncryptionService(),
+        new EntitlementsRepository(postgresDatabaseService),
+        new FakeCacheService(),
+        enforcedConfigurationService,
+      );
+    });
+
+    function buildInvites(count: number): Array<InviteUserInput> {
+      return Array.from({ length: count }, () => ({
+        type: InviteType.Wallet,
+        address: getAddress(faker.finance.ethereumAddress()),
+        role: 'MEMBER' as const,
+        name: faker.person.firstName(),
+      }));
+    }
+
+    it('throws a typed 402 QuotaExceededError when inviting past the member quota', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const inviteExpiresAt = faker.date.future();
+
+      // Admin holds 1 seat → filling up to the Free quota succeeds.
+      await expect(
+        enforcedMembersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: buildInvites(FREE_MEMBERS - 1),
+          inviteExpiresAt,
+        }),
+      ).resolves.toHaveLength(FREE_MEMBERS - 1);
+
+      await expect(
+        enforcedMembersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: buildInvites(1),
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(QuotaExceededError);
+    });
+
+    it('rolls back the whole batch when it partially exceeds the quota', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const inviteExpiresAt = faker.date.future();
+      await enforcedMembersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: buildInvites(FREE_MEMBERS - 2),
+        inviteExpiresAt,
+      });
+
+      await expect(
+        enforcedMembersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: buildInvites(2),
+          inviteExpiresAt,
+        }),
+      ).rejects.toThrow(QuotaExceededError);
+
+      await expect(
+        dbMembersRepository.count({ where: { space: { id: spaceId } } }),
+      ).resolves.toBe(FREE_MEMBERS - 1);
+    });
+
+    it('does not count re-invites against the quota', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const inviteExpiresAt = faker.date.future();
+      const invites = buildInvites(FREE_MEMBERS - 1);
+      await enforcedMembersRepository.inviteUsers({
+        authPayload,
+        spaceId,
+        users: invites,
+        inviteExpiresAt,
+      });
+
+      // The workspace is full, but re-inviting an existing INVITED member
+      // updates the row instead of adding a seat.
+      await expect(
+        enforcedMembersRepository.inviteUsers({
+          authPayload,
+          spaceId,
+          users: [invites[0]],
+          inviteExpiresAt: faker.date.future(),
+        }),
+      ).resolves.toHaveLength(1);
     });
   });
 

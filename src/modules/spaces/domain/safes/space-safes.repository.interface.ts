@@ -42,4 +42,23 @@ export interface ISpaceSafesRepository {
       address: SpaceSafe['address'];
     }>;
   }): Promise<void>;
+
+  /**
+   * Resolves (chainId, address) pairs to their `space_safes` row ids via the
+   * blind index (or plaintext when encryption is disabled). Pairs not in the
+   * space are silently omitted — callers compare lengths to detect them.
+   */
+  resolveIds(args: {
+    spaceId: Space['id'];
+    payload: Array<{
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    }>;
+  }): Promise<
+    Array<{
+      id: SpaceSafe['id'];
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    }>
+  >;
 }

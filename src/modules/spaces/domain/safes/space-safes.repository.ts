@@ -8,9 +8,15 @@ import {
   IsNull,
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { IEntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository.interface';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
@@ -20,6 +26,7 @@ import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
   private readonly maxSafesPerSpace: number;
+  private readonly isEntitlementsEnabled: boolean;
 
   public constructor(
     @Inject(PostgresDatabaseService)
@@ -30,9 +37,16 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
+    @Inject(IEntitlementsRepository)
+    private readonly entitlementsRepository: IEntitlementsRepository,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
   ) {
     this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
       'spaces.maxSafesPerSpace',
+    );
+    this.isEntitlementsEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.billingService',
     );
   }
 
@@ -58,20 +72,23 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       address: SpaceSafe['address'];
     }>;
   }): Promise<void> {
-    // A count is enough for the limit check — findBySpaceId would decrypt
-    // every existing row (one KMS call each) just to measure the length.
-    const spaceSafeRepository =
-      await this.postgresDatabaseService.getRepository(SpaceSafe);
-    const existingCount = await spaceSafeRepository.count({
-      where: { space: { id: args.spaceId } },
-    });
-    if (existingCount + args.payload.length > this.maxSafesPerSpace) {
-      const remaining = this.maxSafesPerSpace - existingCount;
-      throw new BadRequestException(
-        remaining > 0
-          ? `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${remaining} more.`
-          : `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts.`,
-      );
+    if (!this.isEntitlementsEnabled) {
+      // Static limit (pre-entitlements behavior, FF_BILLING_SERVICE off).
+      // A count is enough for the limit check — findBySpaceId would decrypt
+      // every existing row (one KMS call each) just to measure the length.
+      const spaceSafeRepository =
+        await this.postgresDatabaseService.getRepository(SpaceSafe);
+      const existingCount = await spaceSafeRepository.count({
+        where: { space: { id: args.spaceId } },
+      });
+      if (existingCount + args.payload.length > this.maxSafesPerSpace) {
+        const remaining = this.maxSafesPerSpace - existingCount;
+        throw new BadRequestException(
+          remaining > 0
+            ? `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${remaining} more.`
+            : `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts.`,
+        );
+      }
     }
 
     // The owning space id is known before every insert, so ciphertext and
@@ -91,6 +108,17 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     );
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      if (this.isEntitlementsEnabled) {
+        // Plan-driven seat quota, counted live inside the insert transaction
+        // so concurrent additions cannot slip past the limit. Throws a typed
+        // 402 QUOTA_EXCEEDED.
+        await this.entitlementsRepository.checkQuotaOrFail({
+          spaceId: args.spaceId,
+          featureKey: 'safe_seats',
+          increment: args.payload.length,
+          entityManager,
+        });
+      }
       try {
         // Catch-on-conflict as before; duplicates now collide on the partial
         // unique indexes (blind index for encrypted rows, plaintext for
@@ -122,6 +150,23 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
         },
       });
     });
+
+    await this.invalidateEntitlementsCache(args.spaceId);
+  }
+
+  /**
+   * Safe additions/removals change the `safe_seats` usage (and potentially
+   * the over-seat set) served by GET /entitlements.
+   */
+  private async invalidateEntitlementsCache(
+    spaceId: Space['id'],
+  ): Promise<void> {
+    if (!this.isEntitlementsEnabled) {
+      return;
+    }
+    await this.cacheService.deleteByKey(
+      CacheRouter.getSpaceEntitlementsCacheKey(spaceId),
+    );
   }
 
   public async findBySpaceId(
@@ -255,6 +300,69 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
           })),
         },
       });
+    });
+
+    await this.invalidateEntitlementsCache(args.spaceId);
+  }
+
+  public async resolveIds(args: {
+    spaceId: Space['id'];
+    payload: Array<{
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    }>;
+  }): Promise<
+    Array<{
+      id: SpaceSafe['id'];
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    }>
+  > {
+    if (args.payload.length === 0) {
+      return [];
+    }
+
+    // Same lookup construction as delete(): blind index for encrypted rows,
+    // plaintext match otherwise.
+    const where: Array<FindOptionsWhere<SpaceSafe>> = args.payload.map(
+      (safe) => {
+        const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+          safe.address,
+        );
+        return addressIndex === null
+          ? {
+              space: { id: args.spaceId },
+              chainId: safe.chainId,
+              addressIndex: IsNull(),
+              address: safe.address,
+            }
+          : {
+              space: { id: args.spaceId },
+              chainId: safe.chainId,
+              addressIndex,
+            };
+      },
+    );
+
+    const spaceSafeRepository =
+      await this.postgresDatabaseService.getRepository(SpaceSafe);
+    const rows = await spaceSafeRepository.find({ where });
+
+    // Match rows back to the caller's plaintext inputs (no decryption needed).
+    return args.payload.flatMap((safe) => {
+      const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+        safe.address,
+      );
+      const row = rows.find(
+        (candidate) =>
+          candidate.chainId === safe.chainId &&
+          (addressIndex === null
+            ? candidate.address === safe.address
+            : candidate.addressIndex === addressIndex),
+      );
+      return row
+        ? [{ id: row.id, chainId: safe.chainId, address: safe.address }]
+        : [];
     });
   }
 }

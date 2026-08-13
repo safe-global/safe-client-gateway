@@ -5,7 +5,9 @@ import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { IEntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository.interface';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
@@ -31,6 +33,8 @@ describe('SpaceSafesRepository', () => {
     findOne: Mock;
   };
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
+  let entitlementsRepository: MockedObject<IEntitlementsRepository>;
+  let cacheService: MockedObject<ICacheService>;
   let target: SpaceSafesRepository;
 
   beforeEach(() => {
@@ -42,6 +46,8 @@ describe('SpaceSafesRepository', () => {
     } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'spaces.maxSafesPerSpace') return maxSafesPerSpace;
+      // Entitlements enforcement off: these tests cover the legacy path.
+      if (key === 'features.billingService') return false;
       throw new Error(`Unexpected config key: ${key}`);
     });
 
@@ -67,11 +73,20 @@ describe('SpaceSafesRepository', () => {
       ),
     } as MockedObject<PostgresDatabaseService>;
 
+    entitlementsRepository = {
+      checkQuotaOrFail: vi.fn(),
+    } as unknown as MockedObject<IEntitlementsRepository>;
+    cacheService = {
+      deleteByKey: vi.fn(),
+    } as unknown as MockedObject<ICacheService>;
+
     target = new SpaceSafesRepository(
       postgresDatabaseService,
       configurationService,
       spaceAuditRepository,
       spaceEncryptionService,
+      entitlementsRepository,
+      cacheService,
     );
   });
 

@@ -393,6 +393,12 @@ export default () => ({
       process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
       10,
     ),
+    // Backstop for the space entitlements read cache; writes invalidate it
+    // explicitly (webhook materialization, safes/members mutations).
+    entitlements: Number.parseInt(
+      process.env.EXPIRATION_TIME_ENTITLEMENTS_SECONDS ?? `${60}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,

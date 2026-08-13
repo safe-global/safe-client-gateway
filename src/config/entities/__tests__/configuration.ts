@@ -205,6 +205,7 @@ export default (): ReturnType<typeof configuration> => ({
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
+    entitlements: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),

@@ -3,6 +3,7 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { EntitlementsDomainModule } from '@/modules/entitlements/entitlements-domain.module';
 import { SiweModule } from '@/modules/siwe/siwe.module';
 import { SpaceAuditModule } from '@/modules/spaces/domain/audit/space-audit.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
@@ -23,6 +24,7 @@ import { WalletsModule } from '@/modules/wallets/wallets.module';
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([User, Member, Wallet]),
     forwardRef(() => AuthModule),
+    EntitlementsDomainModule,
     SiweModule,
     forwardRef(() => SpacesModule),
     WalletsModule,

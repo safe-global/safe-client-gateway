@@ -16,11 +16,18 @@ import type {
 } from 'typeorm';
 import { In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { IEntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository.interface';
 import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
@@ -44,6 +51,8 @@ import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encrypt
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
+  private readonly isEntitlementsEnabled: boolean;
+
   constructor(
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IUsersRepository)
@@ -55,7 +64,32 @@ export class MembersRepository implements IMembersRepository {
     private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
     private readonly memberEncryptionService: MemberEncryptionService,
-  ) {}
+    @Inject(IEntitlementsRepository)
+    private readonly entitlementsRepository: IEntitlementsRepository,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
+  ) {
+    this.isEntitlementsEnabled = configurationService.getOrThrow<boolean>(
+      'features.billingService',
+    );
+  }
+
+  /**
+   * Membership changes alter the `members` usage served by
+   * GET /entitlements.
+   */
+  private async invalidateEntitlementsCache(
+    spaceId: Space['id'],
+  ): Promise<void> {
+    if (!this.isEntitlementsEnabled) {
+      return;
+    }
+    await this.cacheService.deleteByKey(
+      CacheRouter.getSpaceEntitlementsCacheKey(spaceId),
+    );
+  }
 
   /**
    * Returns copies of loaded members with the `email` of their hydrated
@@ -271,6 +305,8 @@ export class MembersRepository implements IMembersRepository {
       }
     });
 
+    await this.invalidateEntitlementsCache(space.id);
+
     return invitations;
   }
 
@@ -312,6 +348,19 @@ export class MembersRepository implements IMembersRepository {
     });
 
     if (!existingMember) {
+      if (this.isEntitlementsEnabled) {
+        // Plan-driven member quota (ACTIVE + pending INVITED hold seats),
+        // counted inside the invite transaction so a batch sees its own
+        // prior inserts. Throws a typed 402 QUOTA_EXCEEDED, rolling back
+        // the whole batch. Re-invites update an existing row and are not
+        // re-counted.
+        await this.entitlementsRepository.checkQuotaOrFail({
+          spaceId: space.id,
+          featureKey: 'members',
+          increment: 1,
+          entityManager,
+        });
+      }
       try {
         await entityManager.insert(DbMember, {
           user: { id: userId },
@@ -442,6 +491,8 @@ export class MembersRepository implements IMembersRepository {
         payload: { targetUserId: userId },
       });
     });
+
+    await this.invalidateEntitlementsCache(args.spaceId);
   }
 
   private assertInviteNotExpired(member: DbMember): void {
@@ -628,6 +679,8 @@ export class MembersRepository implements IMembersRepository {
         payload: { targetUserId: args.userId },
       });
     });
+
+    await this.invalidateEntitlementsCache(args.spaceId);
   }
 
   public async removeSelf(args: {
@@ -662,6 +715,8 @@ export class MembersRepository implements IMembersRepository {
         payload: { targetUserId: userId },
       });
     });
+
+    await this.invalidateEntitlementsCache(args.spaceId);
   }
 
   private assertIsActiveAdmin(args: {

@@ -9,12 +9,21 @@ import { getAddress, maxUint256 } from 'viem';
 import type { MockedObject } from 'vitest';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
+import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { EntitlementsRepository } from '@/modules/entitlements/domain/entitlements.repository';
+import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
@@ -37,6 +46,8 @@ const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
 describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
+  let entitlementsRepository: EntitlementsRepository;
+  let fakeCacheService: FakeCacheService;
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
   let dbSpaceRepository: Repository<Space>;
@@ -56,7 +67,18 @@ describe('SpaceSafesRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [Member, Space, SpaceSafe, User, Wallet],
+    entities: [
+      Member,
+      Space,
+      SpaceSafe,
+      User,
+      Wallet,
+      Feature,
+      SpaceSubscription,
+      SubscriptionEntitlement,
+      SpaceFeatureUsage,
+      SpaceSeatSelection,
+    ],
   });
 
   const maxSafesPerSpace = 5;
@@ -99,6 +121,11 @@ describe('SpaceSafesRepository', () => {
         if (key === 'spaces.maxSafesPerSpace') {
           return maxSafesPerSpace;
         }
+        // Legacy (static limit) path by default; the entitlements-enforcement
+        // suite below builds its own repository with the flag on.
+        if (key === 'features.billingService') {
+          return false;
+        }
       }),
     } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
@@ -108,11 +135,17 @@ describe('SpaceSafesRepository', () => {
     );
     await migrator.migrate();
 
+    entitlementsRepository = new EntitlementsRepository(
+      postgresDatabaseService,
+    );
+    fakeCacheService = new FakeCacheService();
     spaceSafesRepo = new SpaceSafesRepository(
       postgresDatabaseService,
       mockConfigService,
       createMockSpaceAuditRepository(),
       createMockSpaceEncryptionService(),
+      entitlementsRepository,
+      fakeCacheService,
     );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
@@ -864,6 +897,159 @@ describe('SpaceSafesRepository', () => {
           ],
         }),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('entitlements enforcement (FF_BILLING_SERVICE on)', () => {
+    // Seeded Free-tier quota of `safe_seats`, read from the catalog so the
+    // suite stays valid whatever the seed-features migration ships.
+    let FREE_SAFE_SEATS: number;
+    let enforcedRepo: SpaceSafesRepository;
+
+    beforeAll(async () => {
+      const seatsRow: Array<{ free_quota: number }> = await dataSource.query(
+        `SELECT free_quota FROM features WHERE key = 'safe_seats'`,
+      );
+      FREE_SAFE_SEATS = seatsRow[0].free_quota;
+      const enforcedConfigService = {
+        getOrThrow: vi.fn().mockImplementation((key: string) => {
+          if (key === 'spaces.maxSafesPerSpace') {
+            return maxSafesPerSpace;
+          }
+          if (key === 'features.billingService') {
+            return true;
+          }
+        }),
+      } as MockedObject<ConfigService>;
+      enforcedRepo = new SpaceSafesRepository(
+        postgresDatabaseService,
+        enforcedConfigService,
+        createMockSpaceAuditRepository(),
+        createMockSpaceEncryptionService(),
+        entitlementsRepository,
+        fakeCacheService,
+      );
+    });
+
+    function buildSafes(count: number): Array<{
+      chainId: string;
+      address: ReturnType<typeof getAddress>;
+    }> {
+      return Array.from({ length: count }, () => ({
+        chainId: '1',
+        address: getAddress(faker.finance.ethereumAddress()),
+      }));
+    }
+
+    async function createSpace(): Promise<Space['id']> {
+      const space = await dbSpaceRepository.insert({
+        status: 'ACTIVE',
+        name: faker.word.noun(),
+      });
+      return space.identifiers[0].id as Space['id'];
+    }
+
+    it('enforces the seeded Free seat quota instead of the static config limit', async () => {
+      const spaceId = await createSpace();
+      const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+
+      // The catalog quota is authoritative, not the static maxSafesPerSpace
+      // config: filling up to it succeeds and the next addition 402s,
+      // regardless of where the static limit sits.
+      await expect(
+        enforcedRepo.create({
+          spaceId,
+          actorUserId,
+          payload: buildSafes(FREE_SAFE_SEATS),
+        }),
+      ).resolves.toBeUndefined();
+
+      // The next addition exceeds the quota → typed 402.
+      await expect(
+        enforcedRepo.create({ spaceId, actorUserId, payload: buildSafes(1) }),
+      ).rejects.toThrow(QuotaExceededError);
+
+      try {
+        await enforcedRepo.create({
+          spaceId,
+          actorUserId,
+          payload: buildSafes(1),
+        });
+      } catch (err) {
+        expect(err).toMatchObject({
+          feature: 'safe_seats',
+          quota: FREE_SAFE_SEATS,
+          used: FREE_SAFE_SEATS,
+          resetsAt: null,
+        });
+      }
+    });
+
+    it('rejects the whole batch when it partially exceeds the quota', async () => {
+      const spaceId = await createSpace();
+      const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      await enforcedRepo.create({
+        spaceId,
+        actorUserId,
+        payload: buildSafes(FREE_SAFE_SEATS - 1),
+      });
+
+      await expect(
+        enforcedRepo.create({ spaceId, actorUserId, payload: buildSafes(2) }),
+      ).rejects.toThrow(QuotaExceededError);
+
+      await expect(
+        dbSpaceSafesRepository.count({ where: { space: { id: spaceId } } }),
+      ).resolves.toBe(FREE_SAFE_SEATS - 1);
+    });
+
+    it('never blocks when the purchased quota is unlimited', async () => {
+      const spaceId = await createSpace();
+      const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      await entitlementsRepository.materialize({
+        spaceId,
+        subscriptions: [
+          {
+            upstreamSubscriptionId: faker.string.uuid(),
+            status: 'active',
+            planId: 'business',
+            planName: 'Business',
+            currentPeriodStart: new Date(),
+            currentPeriodEnd: null,
+            entitlements: [
+              {
+                featureKey: 'safe_seats',
+                enabled: true,
+                quota: null,
+                value: null,
+              },
+            ],
+          },
+        ],
+      });
+
+      await expect(
+        enforcedRepo.create({
+          spaceId,
+          actorUserId,
+          payload: buildSafes(FREE_SAFE_SEATS + 2),
+        }),
+      ).resolves.toBeUndefined();
+    });
+
+    it('invalidates the space entitlements cache on create and delete', async () => {
+      const spaceId = await createSpace();
+      const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
+      const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
+      const safes = buildSafes(1);
+
+      await fakeCacheService.hSet(cacheDir, 'cached', 60);
+      await enforcedRepo.create({ spaceId, actorUserId, payload: safes });
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+
+      await fakeCacheService.hSet(cacheDir, 'cached', 60);
+      await enforcedRepo.delete({ spaceId, actorUserId, payload: safes });
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
     });
   });
 });
