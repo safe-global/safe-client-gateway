@@ -6327,7 +6327,7 @@ __metadata:
     typeorm: "npm:1.1.0"
     typescript: "npm:6.0.3"
     undici: "npm:8.10.0"
-    unplugin-swc: "npm:1.5.9"
+    unplugin-swc: "npm:1.5.10"
     viem: "npm:2.55.10"
     vitest: "npm:4.1.9"
     winston: "npm:3.19.0"
@@ -7199,16 +7199,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unplugin-swc@npm:1.5.9":
-  version: 1.5.9
-  resolution: "unplugin-swc@npm:1.5.9"
+"unplugin-swc@npm:1.5.10":
+  version: 1.5.10
+  resolution: "unplugin-swc@npm:1.5.10"
   dependencies:
     "@rollup/pluginutils": "npm:^5.3.0"
     load-tsconfig: "npm:^0.2.5"
     unplugin: "npm:^2.3.11"
   peerDependencies:
     "@swc/core": ^1.2.108
-  checksum: 10/d425f43c8e6fb5dc9e6a1ac26e27bf01dfeeeccb9a90737c30aaba6d4c407bc607a4e54845471eabe5b126c2f1da25e4f79579d687e568e2095b94cb292771f8
+  checksum: 10/57365874a1a2a2d29c09e06ff5b3d0bb043802b618dff86afb163080358d9ee0b1a4354950f1540bbca62390f2c1b1be1026b7611a132893707bd0e928cd7227
   languageName: node
   linkType: hard
 
