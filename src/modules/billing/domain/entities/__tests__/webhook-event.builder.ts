@@ -23,6 +23,9 @@ export function webhookEventBuilder(): IBuilder<WebhookEvent> {
     .with('data', {
       subscriptionId: faker.string.uuid(),
       status: 'active',
+      planId: faker.string.alphanumeric(24),
+      currentPeriodStart: faker.number.int({ min: 1, max: 2_000_000_000 }),
+      currentPeriodEnd: faker.number.int({ min: 1, max: 2_000_000_000 }),
       metadata: null,
       customer: webhookEventCustomerBuilder().build(),
     });

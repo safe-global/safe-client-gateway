@@ -163,20 +163,30 @@ describe('Billing webhook → entitlements materialization', () => {
 
   function webhookEventFor(
     spaceUuid: string,
-    args: { type: string; subscriptionId: string },
+    args: {
+      type: string;
+      subscriptionId: string;
+      data?: Partial<NonNullable<WebhookEvent['data']>>;
+    },
   ): WebhookEvent {
-    return webhookEventBuilder()
-      .with('type', args.type)
-      .with('data', {
+    const event = webhookEventBuilder().with('type', args.type).build();
+    return {
+      ...event,
+      data: {
+        ...event.data,
         subscriptionId: args.subscriptionId,
         status: 'active',
+        // Without a plan the payload is not a complete snapshot, so the
+        // service re-fetches; the direct-payload tests below override this.
+        planId: null,
         metadata: null,
         // Wire format: the billing service strips the dashes.
         customer: webhookEventCustomerBuilder()
           .with('upstreamCustomerId', stripDashes(spaceUuid))
           .build(),
-      })
-      .build();
+        ...args.data,
+      },
+    };
   }
 
   it('writes the subscription and its purchased package on a checkout event', async () => {
@@ -322,6 +332,101 @@ describe('Billing webhook → entitlements materialization', () => {
       enabled: true,
     });
     expect(rows[0].entitlements?.[0].feature.key).toBe('safe_seats');
+  });
+
+  it('writes the subscription and its package straight from the event payload', async () => {
+    const { spaceId, spaceUuid } = await seedSpace();
+    const subscriptionId = faker.string.uuid();
+    const planId = faker.string.alphanumeric(24);
+
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(
+        webhookEventFor(spaceUuid, {
+          type: 'customer.subscription.created',
+          subscriptionId,
+          data: {
+            planId,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            metadata: {
+              planName: 'Business',
+              FEATURE_SAFE_SEATS: '10',
+              FEATURE_SECURITY_HUB: 'true',
+            },
+          },
+        }),
+      )
+      .expect(202);
+
+    expect(networkService.get).not.toHaveBeenCalled();
+    const subscriptionRepo =
+      await postgresDatabaseService.getRepository(SpaceSubscription);
+    const rows = await subscriptionRepo.find({
+      where: { space: { id: spaceId } },
+      relations: { entitlements: { feature: true } },
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      upstreamSubscriptionId: subscriptionId,
+      status: 'active',
+      planId,
+      planName: 'Business',
+      currentPeriodStart: new Date(PERIOD_START * 1_000),
+      currentPeriodEnd: new Date(PERIOD_END * 1_000),
+    });
+    expect(
+      rows[0].entitlements?.map((entitlement) => ({
+        key: entitlement.feature.key,
+        enabled: entitlement.enabled,
+        quota: entitlement.quota,
+        value: entitlement.value,
+      })),
+    ).toStrictEqual(
+      expect.arrayContaining([
+        { key: 'safe_seats', enabled: true, quota: 10, value: null },
+        { key: 'security_hub', enabled: true, quota: null, value: null },
+      ]),
+    );
+  });
+
+  it('frees the active slot when a plan change brings in a new subscription', async () => {
+    const { spaceId, spaceUuid } = await seedSpace();
+    const outgoingId = faker.string.uuid();
+    const incomingId = faker.string.uuid();
+
+    for (const subscriptionId of [outgoingId, incomingId]) {
+      await request(app.getHttpServer())
+        .post(WEBHOOK_PATH)
+        .send(
+          webhookEventFor(spaceUuid, {
+            type: 'customer.subscription.created',
+            subscriptionId,
+            data: {
+              planId: faker.string.alphanumeric(24),
+              metadata: { FEATURE_SAFE_SEATS: '10' },
+            },
+          }),
+        )
+        .expect(202);
+    }
+
+    const subscriptionRepo =
+      await postgresDatabaseService.getRepository(SpaceSubscription);
+    const rows = await subscriptionRepo.find({
+      where: { space: { id: spaceId } },
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(
+      rows.map((row) => [row.upstreamSubscriptionId, row.status]),
+    ).toStrictEqual(
+      expect.arrayContaining([
+        [outgoingId, 'canceled'],
+        [incomingId, 'active'],
+      ]),
+    );
   });
 
   it('acks without writing when the event references an unknown workspace', async () => {

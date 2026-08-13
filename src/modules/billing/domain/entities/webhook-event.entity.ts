@@ -46,6 +46,9 @@ export const WebhookEventSchema = z.object({
     .looseObject({
       subscriptionId: z.string().nullish(),
       status: z.string().nullish(),
+      planId: z.string().nullish(),
+      currentPeriodStart: z.number().nullish(),
+      currentPeriodEnd: z.number().nullish(),
       metadata: StripeMetadataSchema.nullish(),
       customer: z
         .looseObject({

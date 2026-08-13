@@ -89,8 +89,25 @@ export class EntitlementsService {
       ...activeIsh,
     ];
 
+    const incomingActive = activeIsh.at(0);
+
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       let activeSubscriptionId: number | null = null;
+
+      // Frees the "one active subscription per space" slot before the upserts
+      // below claim it: on a plan change the outgoing subscription is still
+      // active here, and its own event may not have arrived yet.
+      if (incomingActive !== undefined) {
+        await this.subscriptionsRepository.demoteActiveSubscriptions(
+          {
+            spaceId: args.spaceId,
+            exceptUpstreamSubscriptionIds: [
+              incomingActive.upstreamSubscriptionId,
+            ],
+          },
+          entityManager,
+        );
+      }
 
       for (const subscription of orderedSubscriptions) {
         const subscriptionId =

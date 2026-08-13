@@ -19,6 +19,15 @@ export interface ISubscriptionsRepository {
     },
     entityManager?: EntityManager,
   ): Promise<number>;
+
+  /** Demotes every active-ish row of the space other than the listed ones. */
+  demoteActiveSubscriptions(
+    args: {
+      spaceId: Space['id'];
+      exceptUpstreamSubscriptionIds: Array<string>;
+    },
+    entityManager?: EntityManager,
+  ): Promise<void>;
 }
 
 export type SubscriptionValues = Pick<

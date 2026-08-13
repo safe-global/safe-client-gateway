@@ -47,6 +47,7 @@ describe('SubscriptionSyncService', () => {
     type?: string;
     upstreamCustomerId?: string | null;
     customerGroup?: string;
+    data?: Partial<NonNullable<WebhookEvent['data']>>;
   }): WebhookEvent {
     let customerBuilder = webhookEventCustomerBuilder().with(
       'upstreamCustomerId',
@@ -61,17 +62,30 @@ describe('SubscriptionSyncService', () => {
       );
     }
 
-    let builder = webhookEventBuilder().with('data', {
-      subscriptionId: faker.string.uuid(),
-      status: 'active',
-      metadata: null,
-      customer: customerBuilder.build(),
-    });
+    let builder = webhookEventBuilder();
     if (overrides?.type !== undefined) {
       builder = builder.with('type', overrides.type);
     }
+    const event = builder.build();
 
-    return builder.build();
+    return {
+      ...event,
+      data: {
+        ...event.data,
+        customer: customerBuilder.build(),
+        ...overrides?.data,
+      },
+    };
+  }
+
+  // An event whose payload is not a complete subscription snapshot, so the
+  // service falls back to re-fetching the authoritative state.
+  function partialWebhookEvent(overrides?: {
+    type?: string;
+    upstreamCustomerId?: string | null;
+    customerGroup?: string;
+  }): WebhookEvent {
+    return webhookEvent({ ...overrides, data: { planId: null } });
   }
 
   beforeEach(() => {
@@ -109,7 +123,7 @@ describe('SubscriptionSyncService', () => {
     );
   });
 
-  it('re-fetches upstream state and materializes it for a subscription event', async () => {
+  it('falls back to re-fetching upstream state when the event carries no plan', async () => {
     const active = subscriptionBuilder()
       .with('status', 'active')
       .with('createdAt', 2)
@@ -126,7 +140,7 @@ describe('SubscriptionSyncService', () => {
       canceled,
     ]);
 
-    await target.handleWebhook(webhookEvent());
+    await target.handleWebhook(partialWebhookEvent());
 
     // The billing-api Redis cache is busted before the re-fetch.
     expect(cacheService.deleteByKey).toHaveBeenCalledWith(
@@ -167,8 +181,6 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('is idempotent: processing the same event twice materializes the same state', async () => {
-    const subscription = subscriptionBuilder().with('status', 'active').build();
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([subscription]);
     const event = webhookEvent({ type: 'customer.subscription.updated' });
 
     await target.handleWebhook(event);
@@ -178,9 +190,9 @@ describe('SubscriptionSyncService', () => {
       spaceId,
       subscriptions: [
         expect.objectContaining({
-          upstreamSubscriptionId: subscription.id,
+          upstreamSubscriptionId: event.data?.subscriptionId,
           status: 'active',
-          planId: subscription.plan.id,
+          planId: event.data?.planId,
         }),
       ],
     };
@@ -206,7 +218,7 @@ describe('SubscriptionSyncService', () => {
       .build();
     billingApi.getSubscriptionsByCustomerId.mockResolvedValue([older, newer]);
 
-    await target.handleWebhook(webhookEvent());
+    await target.handleWebhook(partialWebhookEvent());
 
     // A plain array (rather than arrayContaining) also pins the length to
     // exactly 2 — the demoted subscription is kept, not dropped.
@@ -233,12 +245,11 @@ describe('SubscriptionSyncService', () => {
     'customer.subscription.paused',
     'invoice.payment_succeeded',
     'invoice.payment_failed',
-  ])('handles the %s event type as a trigger', async (type) => {
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
-
+  ])('materializes the %s event payload', async (type) => {
     await target.handleWebhook(webhookEvent({ type }));
 
     expect(entitlementsService.materialize).toHaveBeenCalledTimes(1);
+    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
   });
 
   it('invalidates the payment links cache and skips materialization for payment_link events', async () => {
@@ -362,8 +373,95 @@ describe('SubscriptionSyncService', () => {
       new Error('billing-service down'),
     );
 
-    await expect(target.handleWebhook(webhookEvent())).rejects.toThrow(
+    await expect(target.handleWebhook(partialWebhookEvent())).rejects.toThrow(
       'billing-service down',
     );
+  });
+
+  it('materializes the event payload without calling the billing service', async () => {
+    const event = webhookEvent({
+      type: 'customer.subscription.created',
+      data: {
+        currentPeriodStart: 1_786_460_184,
+        currentPeriodEnd: 1_789_138_584,
+        metadata: { planName: 'Business', FEATURE_SAFE_SEATS: '10' },
+      },
+    });
+
+    await target.handleWebhook(event);
+
+    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith({
+      spaceId,
+      subscriptions: [
+        {
+          upstreamSubscriptionId: event.data?.subscriptionId,
+          status: 'active',
+          planId: event.data?.planId,
+          planName: 'Business',
+          currentPeriodStart: new Date(1_786_460_184_000),
+          currentPeriodEnd: new Date(1_789_138_584_000),
+          entitlements: [
+            {
+              featureKey: 'safe_seats',
+              enabled: true,
+              quota: 10,
+              value: null,
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('attaches no entitlement package when the event status is terminal', async () => {
+    const event = webhookEvent({
+      type: 'customer.subscription.deleted',
+      data: {
+        status: 'canceled',
+        metadata: { FEATURE_SAFE_SEATS: '10' },
+      },
+    });
+
+    await target.handleWebhook(event);
+
+    expect(entitlementsService.materialize).toHaveBeenCalledWith({
+      spaceId,
+      subscriptions: [
+        expect.objectContaining({ status: 'canceled', entitlements: null }),
+      ],
+    });
+  });
+
+  it('leaves an unrepresentable billing period unset instead of failing', async () => {
+    const event = webhookEvent({
+      data: { currentPeriodEnd: Number.MAX_SAFE_INTEGER },
+    });
+
+    await target.handleWebhook(event);
+
+    expect(entitlementsService.materialize).toHaveBeenCalledWith({
+      spaceId,
+      subscriptions: [expect.objectContaining({ currentPeriodEnd: null })],
+    });
+    expect(loggingService.warn).toHaveBeenCalled();
+  });
+
+  it.each([
+    ['an unknown status', { status: 'something-new' }],
+    ['no subscription id', { subscriptionId: null }],
+  ])('falls back to the re-fetch on %s', async (_, data) => {
+    const subscription = subscriptionBuilder().with('status', 'active').build();
+    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([subscription]);
+
+    await target.handleWebhook(webhookEvent({ data }));
+
+    expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
+    expect(entitlementsService.materialize).toHaveBeenCalledWith({
+      spaceId,
+      subscriptions: [
+        expect.objectContaining({ upstreamSubscriptionId: subscription.id }),
+      ],
+    });
   });
 });

@@ -4,6 +4,7 @@ import type { EntityManager } from 'typeorm';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
 import type {
   ISubscriptionsRepository,
   SubscriptionValues,
@@ -46,5 +47,34 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       select: { id: true },
     });
     return subscription.id;
+  }
+
+  public async demoteActiveSubscriptions(
+    args: {
+      spaceId: Space['id'];
+      exceptUpstreamSubscriptionIds: Array<string>;
+    },
+    entityManager?: EntityManager,
+  ): Promise<void> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
+    const query = repository
+      .createQueryBuilder()
+      .update(SpaceSubscription)
+      .set({ status: 'canceled' })
+      .where('space_id = :spaceId', { spaceId: args.spaceId })
+      .andWhere('status IN (:...activeStatuses)', {
+        activeStatuses: [...ACTIVE_SUBSCRIPTION_STATUSES],
+      });
+    if (args.exceptUpstreamSubscriptionIds.length > 0) {
+      query.andWhere(
+        'upstream_subscription_id NOT IN (:...exceptUpstreamSubscriptionIds)',
+        { exceptUpstreamSubscriptionIds: args.exceptUpstreamSubscriptionIds },
+      );
+    }
+    await query.execute();
   }
 }

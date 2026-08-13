@@ -30,6 +30,8 @@ export function isActiveSubscriptionStatus(
  */
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 
+export const PLAN_NAME_METADATA_KEY = 'planName';
+
 /**
  * Value of a metered feature's metadata entry meaning "no quota, never
  * blocks" (materialized as `quota = NULL`).

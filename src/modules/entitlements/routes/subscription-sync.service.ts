@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
-import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
+import {
+  type Subscription,
+  SubscriptionStatusSchema,
+} from '@/datasources/billing-api/entities/subscription.entity';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
   CacheService,
@@ -23,7 +26,10 @@ import type {
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import { isActiveSubscriptionStatus } from '@/modules/entitlements/domain/entitlements.constants';
+import {
+  isActiveSubscriptionStatus,
+  PLAN_NAME_METADATA_KEY,
+} from '@/modules/entitlements/domain/entitlements.constants';
 import { parseFeaturePackage } from '@/modules/entitlements/domain/feature-package.parser';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
@@ -36,6 +42,19 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 // not a representable date, e.g. an epoch outside the range `Date` can hold.
 const INVALID_DATETIME_ERROR_CODE = '22007';
 
+const MAX_TIMESTAMP_MS = 8_640_000_000_000_000;
+
+function toEpochDate(epochSeconds: number | null | undefined): Date | null {
+  if (epochSeconds == null || !Number.isFinite(epochSeconds)) {
+    return null;
+  }
+  const milliseconds = epochSeconds * 1_000;
+  if (Math.abs(milliseconds) > MAX_TIMESTAMP_MS) {
+    return null;
+  }
+  return new Date(milliseconds);
+}
+
 /**
  * Materializes upstream subscription state on billing webhooks.
  *
@@ -43,17 +62,14 @@ const INVALID_DATETIME_ERROR_CODE = '22007';
  * (`ValidationPipe(WebhookEventSchema)` on `BillingController.postWebhook`);
  * this service only ever sees an already-well-formed `WebhookEvent`.
  *
- * Events are treated as TRIGGERS only: they carry neither the billing
- * periods nor the full feature package, so the authoritative state is always
- * re-fetched from the billing service (after busting its Redis cache). This
- * makes processing idempotent and out-of-order safe by construction — the
- * last write always reflects current upstream truth, regardless of the
- * delivery order of the events that triggered it.
+ * An event carrying a complete subscription snapshot (id, plan, status) is
+ * materialized directly from the payload. Event types that carry only a
+ * partial snapshot fall back to re-fetching the authoritative state from the
+ * billing service.
  *
- * This deliberately deviates from the RFC's wording ("replace the package
- * from the FEATURE_* metadata coming inside the event"): trusting the
- * event's own metadata instead of re-fetching would let a late-delivered
- * stale event overwrite a correctly-applied newer one.
+ * Events are applied in delivery order, without comparing their `created`
+ * stamp against what is stored: a late-delivered stale event therefore
+ * overwrites a newer one until it is corrected by the next event.
  *
  * Unprocessable-but-authenticated events (unknown space, `api` customer
  * group) are logged and acked: retrying cannot fix them. Fetch/DB errors
@@ -123,33 +139,35 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     }
 
     // The billing-api datasource caches subscriptions in Redis — bust it so
-    // the re-fetch below returns post-event state.
+    // the REST read path serves post-event state.
     await this.cacheService.deleteByKey(
       CacheRouter.getBillingSubscriptionsCacheDir({
         upstreamCustomerId,
         status: 'all',
       }).key,
     );
-    // Independent reads: fetched in parallel.
-    const [subscriptions, features] = await Promise.all([
-      this.billingApi.getSubscriptionsByCustomerId({
-        upstreamCustomerId,
-        status: 'all',
-      }),
-      this.featuresRepository.getFeatures(),
-    ]);
+    const features = await this.featuresRepository.getFeatures();
     const featureTypeByKey = new Map(
       features.map((feature) => [feature.key, feature.type]),
     );
 
+    const eventSubscription = this.toMaterializedSubscription(
+      event,
+      featureTypeByKey,
+    );
+    const subscriptions =
+      eventSubscription === null
+        ? this.toMaterializedSubscriptions(
+            await this.billingApi.getSubscriptionsByCustomerId({
+              upstreamCustomerId,
+              status: 'all',
+            }),
+            featureTypeByKey,
+          )
+        : [eventSubscription];
+
     try {
-      await this.entitlementsService.materialize({
-        spaceId,
-        subscriptions: this.toMaterializedSubscriptions(
-          subscriptions,
-          featureTypeByKey,
-        ),
-      });
+      await this.entitlementsService.materialize({ spaceId, subscriptions });
     } catch (error) {
       // The space existed a moment ago (resolved just above); a
       // deletion racing this request — caught either as a NotFoundException
@@ -181,6 +199,69 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     this.loggingService.info(
       `Materialized ${subscriptions.length} subscription(s) for space ${spaceId} (event ${event.id}, ${event.type})`,
     );
+  }
+
+  /**
+   * Maps the event's own subscription snapshot to its materialized shape, or
+   * returns `null` when the payload is not a complete snapshot — the caller
+   * then re-fetches the authoritative state instead.
+   */
+  private toMaterializedSubscription(
+    event: WebhookEvent,
+    featureTypeByKey: Map<FeatureKey, FeatureType>,
+  ): MaterializedSubscription | null {
+    const data = event.data;
+    const upstreamSubscriptionId = data?.subscriptionId;
+    const planId = data?.planId;
+    if (
+      upstreamSubscriptionId == null ||
+      upstreamSubscriptionId.length === 0 ||
+      planId == null ||
+      planId.length === 0
+    ) {
+      return null;
+    }
+
+    const status = SubscriptionStatusSchema.safeParse(data?.status);
+    if (!status.success) {
+      this.loggingService.warn(
+        `Billing webhook event ${event.id} carries an unprocessable subscription status: ${data?.status}`,
+      );
+      return null;
+    }
+
+    const toPeriod = (
+      epochSeconds: number | null | undefined,
+      label: string,
+    ): Date | null => {
+      const date = toEpochDate(epochSeconds);
+      if (epochSeconds != null && date === null) {
+        this.loggingService.warn(
+          `Billing webhook event ${event.id} carries an unrepresentable ${label}: ${epochSeconds}`,
+        );
+      }
+      return date;
+    };
+
+    return {
+      upstreamSubscriptionId,
+      status: status.data,
+      planId,
+      planName: data?.metadata?.[PLAN_NAME_METADATA_KEY] ?? null,
+      currentPeriodStart: toPeriod(data?.currentPeriodStart, 'period start'),
+      currentPeriodEnd: toPeriod(data?.currentPeriodEnd, 'period end'),
+      entitlements: isActiveSubscriptionStatus(status.data)
+        ? parseFeaturePackage({
+            metadata: data?.metadata,
+            planFeatures: [],
+            featureTypeByKey,
+            onWarning: (message) =>
+              this.loggingService.warn(
+                `Feature package of subscription ${upstreamSubscriptionId}: ${message}`,
+              ),
+          })
+        : null,
+    };
   }
 
   /**
