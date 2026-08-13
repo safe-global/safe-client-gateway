@@ -4,6 +4,7 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import { WALLET_WEB_CUSTOMER_GROUP } from '@/modules/billing/domain/entities/webhook-event.entity';
 
 type WebhookEventCustomer = NonNullable<
   NonNullable<WebhookEvent['data']>['customer']
@@ -11,7 +12,7 @@ type WebhookEventCustomer = NonNullable<
 
 export function webhookEventCustomerBuilder(): IBuilder<WebhookEventCustomer> {
   return new Builder<WebhookEventCustomer>()
-    .with('customerGroup', faker.word.sample())
+    .with('customerGroup', WALLET_WEB_CUSTOMER_GROUP)
     .with('upstreamCustomerId', faker.string.uuid())
     .with('customerId', faker.string.uuid());
 }

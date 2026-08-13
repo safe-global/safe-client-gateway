@@ -4,11 +4,13 @@ import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 
 export type FeatureKey = string;
 
-export const FeatureTypes = ['binary', 'metered', 'value'] as const;
+export enum FeatureType {
+  Binary = 'binary',
+  Metered = 'metered',
+  Value = 'value',
+}
 
-export type FeatureType = (typeof FeatureTypes)[number];
-
-export const FeatureTypeSchema = z.enum(FeatureTypes);
+export const FeatureTypeSchema = z.enum(FeatureType);
 
 export type Feature = z.infer<typeof FeatureSchema>;
 

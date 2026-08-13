@@ -21,7 +21,7 @@ import {
   materializedSubscriptionBuilder,
   parsedEntitlementBuilder,
 } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
-import { FeatureTypes } from '@/modules/entitlements/domain/entities/feature.entity';
+import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
 import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
@@ -47,13 +47,22 @@ const mockLoggingService = {
 // exercised for each of them. Only `key`/`type` are asserted on in this file;
 // every other field is left at the builder's faker default.
 const FEATURES: Array<Feature> = [
-  featureBuilder().with('key', 'security_hub').with('type', 'binary').build(),
-  featureBuilder().with('key', 'safe_seats').with('type', 'metered').build(),
+  featureBuilder()
+    .with('key', 'security_hub')
+    .with('type', FeatureType.Binary)
+    .build(),
+  featureBuilder()
+    .with('key', 'safe_seats')
+    .with('type', FeatureType.Metered)
+    .build(),
   featureBuilder()
     .with('key', 'sponsored_transactions')
-    .with('type', 'metered')
+    .with('type', FeatureType.Metered)
     .build(),
-  featureBuilder().with('key', 'swap_fee_tier').with('type', 'value').build(),
+  featureBuilder()
+    .with('key', 'swap_fee_tier')
+    .with('type', FeatureType.Value)
+    .build(),
 ];
 
 describe('EntitlementsService', () => {
@@ -207,7 +216,7 @@ describe('EntitlementsService', () => {
         expect(feature.type).toBe(typeByKey.get(feature.key));
       }
       expect(new Set(features.map((feature) => feature.type))).toStrictEqual(
-        new Set(FeatureTypes),
+        new Set(Object.values(FeatureType)),
       );
     });
   });

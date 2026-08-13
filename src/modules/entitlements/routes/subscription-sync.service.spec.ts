@@ -13,8 +13,10 @@ import {
   webhookEventCustomerBuilder,
 } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import { WALLET_WEB_CUSTOMER_GROUP } from '@/modules/billing/domain/entities/webhook-event.entity';
 import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
+import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
@@ -22,7 +24,10 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const FEATURES: Array<Feature> = [
-  featureBuilder().with('key', 'safe_seats').with('type', 'metered').build(),
+  featureBuilder()
+    .with('key', 'safe_seats')
+    .with('type', FeatureType.Metered)
+    .build(),
 ];
 
 describe('SubscriptionSyncService', () => {
@@ -278,10 +283,24 @@ describe('SubscriptionSyncService', () => {
     expect(loggingService.info).toHaveBeenCalled();
   });
 
-  it('acks and ignores events for the api customer group', async () => {
-    await target.handleWebhook(webhookEvent({ customerGroup: 'api' }));
+  // Allow-listed, so a customer group nobody has seen yet is ignored rather
+  // than materialized.
+  it.each([
+    'api',
+    'some_future_group',
+  ])('acks and ignores events for the %s customer group', async (customerGroup) => {
+    await target.handleWebhook(webhookEvent({ customerGroup }));
 
     expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+  });
+
+  it('materializes events for the wallet_web customer group', async () => {
+    await target.handleWebhook(
+      webhookEvent({ customerGroup: WALLET_WEB_CUSTOMER_GROUP }),
+    );
+
+    expect(entitlementsService.materialize).toHaveBeenCalledTimes(1);
   });
 
   it('acks and warns on a missing or invalid upstreamCustomerId', async () => {

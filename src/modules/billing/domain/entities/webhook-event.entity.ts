@@ -3,16 +3,10 @@ import { z } from 'zod';
 import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
 import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util';
 
-/**
- * The webhook event contract forwarded by the billing service
- * (safe-auth-service `app/models/billing.py`, camelCase on the wire).
- *
- * `type` is deliberately validated as a plain string: webhooks must not fail
- * on event types added upstream later — unhandled types are acked and ignored.
- *
- * Only the `customer.subscription.*` types drive materialization: they are the
- * only ones carrying a subscription snapshot.
- */
+/** Customer group of the Safe{Wallet} web app, the only one entitlements track. */
+export const WALLET_WEB_CUSTOMER_GROUP = 'wallet_web';
+
+/** Event types carrying a full subscription snapshot to materialize. */
 export const WebhookSubscriptionEventTypes = [
   'customer.subscription.created',
   'customer.subscription.updated',
@@ -55,6 +49,7 @@ export type WebhookEvent = z.infer<typeof WebhookEventSchema>;
 
 export const WebhookEventSchema = z.object({
   id: z.string(),
+  // Unknown types must not fail parsing.
   type: z.string(),
   created: z.number().optional(),
   data: z

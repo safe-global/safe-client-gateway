@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { SubscriptionStatusSchema } from '@/datasources/billing-api/entities/subscription.entity';
 
 /**
- * One entry of a purchased feature package, parsed from the upstream
- * subscription's `FEATURE_*` metadata (see `parseFeaturePackage`).
+ * One entry of a purchased feature package, mapped from the upstream
+ * subscription's `FEATURE_*` metadata (see `mapFeaturePackage`).
  */
 export type ParsedEntitlement = z.infer<typeof ParsedEntitlementSchema>;
 

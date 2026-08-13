@@ -32,6 +32,7 @@ import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -111,11 +112,11 @@ describe('Billing webhook → entitlements materialization', () => {
     await featureRepo.insert([
       featureBuilder()
         .with('key', 'safe_seats')
-        .with('type', 'metered')
+        .with('type', FeatureType.Metered)
         .build(),
       featureBuilder()
         .with('key', 'security_hub')
-        .with('type', 'binary')
+        .with('type', FeatureType.Binary)
         .build(),
     ]);
   });
@@ -198,11 +199,11 @@ describe('Billing webhook → entitlements materialization', () => {
       .with('status', 'active')
       .with('currentPeriodStart', PERIOD_START)
       .with('currentPeriodEnd', PERIOD_END)
-      .with(
-        'plan',
-        subscriptionPlanBuilder().with('features', ['security_hub']).build(),
-      )
-      .with('metadata', { FEATURE_SAFE_SEATS: '10' })
+      .with('plan', subscriptionPlanBuilder().build())
+      .with('metadata', {
+        FEATURE_SAFE_SEATS: '10',
+        FEATURE_SECURITY_HUB: 'true',
+      })
       .build();
     mockUpstreamSubscriptions(spaceUuid, [subscription]);
 
@@ -242,9 +243,7 @@ describe('Billing webhook → entitlements materialization', () => {
       })),
     ).toStrictEqual(
       expect.arrayContaining([
-        // From the FEATURE_* metadata.
         { key: 'safe_seats', enabled: true, quota: 10, value: null },
-        // From the plan's feature list.
         { key: 'security_hub', enabled: true, quota: null, value: null },
       ]),
     );
