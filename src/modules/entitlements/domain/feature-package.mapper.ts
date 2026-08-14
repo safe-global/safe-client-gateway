@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
+import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { ParsedEntitlement } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import {
   FEATURE_METADATA_PREFIX,
   MAX_ENTITLEMENT_VALUE_LENGTH,
