@@ -701,148 +701,87 @@ describe('Safe', () => {
     });
 
     describe('SafeMigration contract', () => {
-      it('should calculate safeTxHash for migrateL2Singleton delegate call when version is null', () => {
-        const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const migrationContracts = getSafeMigrationDeployments({
-          chainId,
-          version: '1.4.1',
+      // SafeMigration deployments exist per singleton release from 1.4.1 onwards
+      describe.each([
+        '1.4.1',
+        '1.5.0',
+      ])('SafeMigration %s deployment', (migrationVersion) => {
+        it.each([
+          ['migrateL2Singleton', migrateL2SingletonEncoder],
+          ['migrateL2WithFallbackHandler', migrateL2WithFallbackHandlerEncoder],
+          ['migrateSingleton', migrateSingletonEncoder],
+          ['migrateWithFallbackHandler', migrateWithFallbackHandlerEncoder],
+        ])('should calculate safeTxHash for %s delegate call when version is null', (_, encoder) => {
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const migrationContracts = getSafeMigrationDeployments({
+            chainId,
+            version: migrationVersion,
+          });
+          expect(migrationContracts.length).toBeGreaterThan(0);
+
+          const migrationContract =
+            faker.helpers.arrayElement(migrationContracts);
+          const safe = safeBuilder()
+            .with('address', safeAddress)
+            .with('version', null)
+            .build();
+
+          const transaction = safeTxHashMultisigTransactionBuilder()
+            .with('to', migrationContract)
+            .with('value', '0')
+            .with('operation', Operation.DELEGATE)
+            .with('data', encoder().encode())
+            .build();
+
+          // Should not throw and should calculate hash using detected version
+          expect(() =>
+            getSafeTxHash({
+              chainId,
+              safe,
+              transaction,
+            }),
+          ).not.toThrow();
         });
 
-        // Skip if no migration contract for this chain
-        if (migrationContracts.length === 0) {
-          return;
-        }
-
-        const migrationContract =
-          faker.helpers.arrayElement(migrationContracts);
-        const safe = safeBuilder()
-          .with('address', safeAddress)
-          .with('version', null)
-          .build();
-
-        const transaction = safeTxHashMultisigTransactionBuilder()
-          .with('to', migrationContract)
-          .with('value', '0')
-          .with('operation', Operation.DELEGATE)
-          .with('data', migrateL2SingletonEncoder().encode())
-          .build();
-
-        // Should not throw and should calculate hash using detected version
-        expect(() =>
-          getSafeTxHash({
+        it('should infer a version hashing identically to an explicit >=1.3.0 version', () => {
+          const safeAddress = getAddress(faker.finance.ethereumAddress());
+          const migrationContracts = getSafeMigrationDeployments({
             chainId,
-            safe,
-            transaction,
-          }),
-        ).not.toThrow();
-      });
+            version: migrationVersion,
+          });
+          expect(migrationContracts.length).toBeGreaterThan(0);
 
-      it('should calculate safeTxHash for migrateL2WithFallbackHandler delegate call when version is null', () => {
-        const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const migrationContracts = getSafeMigrationDeployments({
-          chainId,
-          version: '1.4.1',
+          const migrationContract =
+            faker.helpers.arrayElement(migrationContracts);
+          const transaction = safeTxHashMultisigTransactionBuilder()
+            .with('to', migrationContract)
+            .with('value', '0')
+            .with('operation', Operation.DELEGATE)
+            .with('data', migrateL2SingletonEncoder().encode())
+            .build();
+
+          const result = getSafeTxHash({
+            chainId,
+            safe: safeBuilder()
+              .with('address', safeAddress)
+              .with('version', null)
+              .build(),
+            transaction,
+          });
+
+          // All versions >=1.3.0 share the same domain/types, so the
+          // inferred version must produce the same hash as an explicit one
+          expect(result).toBe(
+            getSafeTxHash({
+              chainId,
+              safe: safeBuilder()
+                .with('address', safeAddress)
+                .with('version', '1.3.0')
+                .build(),
+              transaction,
+            }),
+          );
         });
-
-        // Skip if no migration contract for this chain
-        if (migrationContracts.length === 0) {
-          return;
-        }
-
-        const migrationContract =
-          faker.helpers.arrayElement(migrationContracts);
-        const safe = safeBuilder()
-          .with('address', safeAddress)
-          .with('version', null)
-          .build();
-
-        const transaction = safeTxHashMultisigTransactionBuilder()
-          .with('to', migrationContract)
-          .with('value', '0')
-          .with('operation', Operation.DELEGATE)
-          .with('data', migrateL2WithFallbackHandlerEncoder().encode())
-          .build();
-
-        // Should not throw and should calculate hash using detected version
-        expect(() =>
-          getSafeTxHash({
-            chainId,
-            safe,
-            transaction,
-          }),
-        ).not.toThrow();
-      });
-
-      it('should calculate safeTxHash for migrateSingleton delegate call when version is null', () => {
-        const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const migrationContracts = getSafeMigrationDeployments({
-          chainId,
-          version: '1.4.1',
-        });
-
-        // Skip if no migration contract for this chain
-        if (migrationContracts.length === 0) {
-          return;
-        }
-
-        const migrationContract =
-          faker.helpers.arrayElement(migrationContracts);
-        const safe = safeBuilder()
-          .with('address', safeAddress)
-          .with('version', null)
-          .build();
-
-        const transaction = safeTxHashMultisigTransactionBuilder()
-          .with('to', migrationContract)
-          .with('value', '0')
-          .with('operation', Operation.DELEGATE)
-          .with('data', migrateSingletonEncoder().encode())
-          .build();
-
-        // Should not throw and should calculate hash using detected version
-        expect(() =>
-          getSafeTxHash({
-            chainId,
-            safe,
-            transaction,
-          }),
-        ).not.toThrow();
-      });
-
-      it('should calculate safeTxHash for migrateWithFallbackHandler delegate call when version is null', () => {
-        const safeAddress = getAddress(faker.finance.ethereumAddress());
-        const migrationContracts = getSafeMigrationDeployments({
-          chainId,
-          version: '1.4.1',
-        });
-
-        // Skip if no migration contract for this chain
-        if (migrationContracts.length === 0) {
-          return;
-        }
-
-        const migrationContract =
-          faker.helpers.arrayElement(migrationContracts);
-        const safe = safeBuilder()
-          .with('address', safeAddress)
-          .with('version', null)
-          .build();
-
-        const transaction = safeTxHashMultisigTransactionBuilder()
-          .with('to', migrationContract)
-          .with('value', '0')
-          .with('operation', Operation.DELEGATE)
-          .with('data', migrateWithFallbackHandlerEncoder().encode())
-          .build();
-
-        // Should not throw and should calculate hash using detected version
-        expect(() =>
-          getSafeTxHash({
-            chainId,
-            safe,
-            transaction,
-          }),
-        ).not.toThrow();
       });
 
       it('should throw when version is null and SafeMigration contract is unofficial', () => {
@@ -971,7 +910,7 @@ describe('Safe', () => {
           .build();
 
         // Check if there are any singletons on this chain for the tested versions
-        const hasAnySingletons = ['1.3.0', '1.4.1'].some((version) => {
+        const hasAnySingletons = ['1.3.0', '1.4.1', '1.5.0'].some((version) => {
           const l1 = getSafeSingletonDeployments({
             chainId: testChainId,
             version,

@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import semverCompare from 'semver/functions/compare';
 import semverSatisfies from 'semver/functions/satisfies';
 import type { Address } from 'viem';
 import { hashMessage, hashTypedData, zeroAddress } from 'viem';
 import {
   getSafeL2SingletonDeployments,
+  getSafeL2SingletonVersions,
   getSafeMigrationDeployments,
+  getSafeMigrationVersions,
   getSafeSingletonDeployments,
+  getSafeSingletonVersions,
 } from '@/domain/common/utils/deployments';
 import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
 import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
@@ -17,6 +21,8 @@ const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';
 const BASE_GAS_SAFETX_HASH_VERSION = '>=1.0.0';
 const MESSAGE_PRIMARY_TYPE = 'SafeMessage';
+// SafeMigration contracts (introduced in 1.4.1) only target 1.3.0+ singletons
+const SAFE_MIGRATION_TARGET_VERSION_RANGE = '>=1.3.0';
 
 export function getSafeMessageMessageHash(args: {
   chainId: string;
@@ -176,14 +182,15 @@ function detectSafeMigration(args: {
       return null;
     }
 
-    // Check if target is an official SafeMigration contract
-    const safeMigrationContracts = getSafeMigrationDeployments({
-      chainId: args.chainId,
-      version: '1.4.1', // SafeMigration was introduced in 1.4.1
-    });
-
-    const isSafeMigration = safeMigrationContracts.some(
-      (addr) => addr.toLowerCase() === args.transaction.to.toLowerCase(),
+    // Check if target is an official SafeMigration contract (any known version)
+    const isSafeMigration = getSafeMigrationVersions().some(
+      (migrationVersion) =>
+        getSafeMigrationDeployments({
+          chainId: args.chainId,
+          version: migrationVersion,
+        }).some(
+          (addr) => addr.toLowerCase() === args.transaction.to.toLowerCase(),
+        ),
     );
 
     if (!isSafeMigration) {
@@ -196,7 +203,7 @@ function detectSafeMigration(args: {
     }
 
     // Infer version from available singleton deployments on this chain
-    const versions = ['1.3.0', '1.4.1'];
+    const versions = getSafeMigrationTargetVersions();
 
     for (const version of versions) {
       const l1Singletons = getSafeSingletonDeployments({
@@ -218,6 +225,29 @@ function detectSafeMigration(args: {
   } catch {
     return null;
   }
+}
+
+/**
+ * Returns the singleton versions a SafeMigration contract can target,
+ * in ascending order.
+ *
+ * Derived from the singleton deployments known to the safe-deployments
+ * package (L1 and L2), restricted to {@link SAFE_MIGRATION_TARGET_VERSION_RANGE},
+ * so that newly released versions (e.g. 1.5.0) are covered without
+ * maintaining a hardcoded list.
+ *
+ * @returns {Array<string>} - a list of candidate migration target versions
+ */
+function getSafeMigrationTargetVersions(): Array<string> {
+  const versions = new Set([
+    ...getSafeSingletonVersions(),
+    ...getSafeL2SingletonVersions(),
+  ]);
+  return Array.from(versions)
+    .filter((version) =>
+      semverSatisfies(version, SAFE_MIGRATION_TARGET_VERSION_RANGE),
+    )
+    .sort(semverCompare);
 }
 
 export function _getSafeDomain(args: {

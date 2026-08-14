@@ -14,6 +14,10 @@ import {
 import {
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
   _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS,
+  _SAFE_DEPLOYMENTS,
+  _SAFE_L2_DEPLOYMENTS,
+  _SAFE_MIGRATION_DEPLOYMENTS,
+  _SAFE_TO_L2_MIGRATION_DEPLOYMENTS,
   _SAFE_TO_L2_SETUP_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
 import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
@@ -33,7 +37,8 @@ type DeploymentGetter =
   | typeof _getFallbackHandlerDeployments
   | typeof _getExtensibleFallbackHandlerDeployments
   | typeof _getSafeToL2SetupDeployments
-  | typeof _getSafeToL2MigrationDeployments;
+  | typeof _getSafeToL2MigrationDeployments
+  | typeof _getSafeMigrationDeployments;
 
 /**
  * Type-only declaration of the SafeWebAuthnSignerFactory function signatures
@@ -234,6 +239,51 @@ export function getExtensibleFallbackHandlerVersions(): Array<string> {
  */
 export function getSafeToL2SetupVersions(): Array<string> {
   return _SAFE_TO_L2_SETUP_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of L1 singleton versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_DEPLOYMENTS constant exported by the package.
+ *
+ * @returns {Array<string>} - a list of L1 singleton versions in descending order
+ */
+export function getSafeSingletonVersions(): Array<string> {
+  return _SAFE_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of L2 singleton versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_L2_DEPLOYMENTS constant exported by the package.
+ * Note: the L2 singleton was introduced in Safe v1.3.0.
+ *
+ * @returns {Array<string>} - a list of L2 singleton versions in descending order
+ */
+export function getSafeL2SingletonVersions(): Array<string> {
+  return _SAFE_L2_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of SafeMigration versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_MIGRATION_DEPLOYMENTS constant exported by the package.
+ * Note: SafeMigration was introduced in Safe v1.4.1.
+ *
+ * @returns {Array<string>} - a list of SafeMigration versions in descending order
+ */
+export function getSafeMigrationVersions(): Array<string> {
+  return _SAFE_MIGRATION_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of SafeToL2Migration versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_TO_L2_MIGRATION_DEPLOYMENTS constant exported by the package.
+ * Note: SafeToL2Migration was introduced in Safe v1.4.1.
+ *
+ * @returns {Array<string>} - a list of SafeToL2Migration versions in descending order
+ */
+export function getSafeToL2MigrationVersions(): Array<string> {
+  return _SAFE_TO_L2_MIGRATION_DEPLOYMENTS.map(
+    (deployment) => deployment.version,
+  );
 }
 
 /**

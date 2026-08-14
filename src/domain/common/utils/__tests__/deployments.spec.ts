@@ -4,6 +4,10 @@ import { getAddress } from 'viem';
 import {
   getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
+  getSafeL2SingletonVersions,
+  getSafeMigrationVersions,
+  getSafeSingletonVersions,
+  getSafeToL2MigrationVersions,
   getSafeToL2SetupVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
@@ -39,6 +43,38 @@ describe('deployments', () => {
     it('should include all SafeToL2Setup versions', () => {
       expect(getSafeToL2SetupVersions()).toEqual(
         expect.arrayContaining(['1.4.1', '1.5.0']),
+      );
+    });
+  });
+
+  describe('getSafeSingletonVersions', () => {
+    it('should include all L1 singleton versions', () => {
+      expect(getSafeSingletonVersions()).toEqual(
+        expect.arrayContaining(['1.3.0', '1.4.1', '1.5.0']),
+      );
+    });
+  });
+
+  describe('getSafeL2SingletonVersions', () => {
+    it('should include all L2 singleton versions', () => {
+      expect(getSafeL2SingletonVersions()).toEqual(
+        expect.arrayContaining(['1.3.0', '1.4.1', '1.5.0']),
+      );
+    });
+  });
+
+  describe('getSafeMigrationVersions', () => {
+    it('should include all SafeMigration versions', () => {
+      expect(getSafeMigrationVersions()).toEqual(
+        expect.arrayContaining(['1.4.1', '1.5.0']),
+      );
+    });
+  });
+
+  describe('getSafeToL2MigrationVersions', () => {
+    it('should include all SafeToL2Migration versions', () => {
+      expect(getSafeToL2MigrationVersions()).toEqual(
+        expect.arrayContaining(['1.4.1']),
       );
     });
   });

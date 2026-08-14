@@ -9,6 +9,7 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import {
+  getSafeToL2MigrationVersions,
   getSafeToL2SetupVersions,
   hasCanonicalDeploymentSafeToL2Migration,
   hasCanonicalDeploymentSafeToL2Setup,
@@ -703,10 +704,12 @@ export class RecipientAnalysisService {
 
     const areMigrationConditionsMet =
       !isMigrationRequired ||
-      hasCanonicalDeploymentSafeToL2Migration({
-        chainId: chain.chainId,
-        version: '1.4.1',
-      });
+      getSafeToL2MigrationVersions().some((migrationVersion) =>
+        hasCanonicalDeploymentSafeToL2Migration({
+          chainId: chain.chainId,
+          version: migrationVersion,
+        }),
+      );
 
     return (
       masterCopyExists &&
