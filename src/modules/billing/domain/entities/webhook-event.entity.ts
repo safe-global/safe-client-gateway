@@ -19,18 +19,6 @@ export const WebhookPaymentLinkEventTypes = [
   'payment_link.updated',
 ] as const;
 
-/**
- * Known types deliberately dropped, as distinct from types we have never heard
- * of: each describes a session or an invoice rather than a subscription, and
- * each has a `customer.subscription.*` counterpart reporting the same state
- * change with the snapshot attached.
- */
-export const WebhookIgnoredEventTypes = [
-  'checkout.session.completed',
-  'invoice.payment_succeeded',
-  'invoice.payment_failed',
-] as const;
-
 export function isSubscriptionEventType(type: string): boolean {
   return (WebhookSubscriptionEventTypes as ReadonlyArray<string>).includes(
     type,
@@ -39,10 +27,6 @@ export function isSubscriptionEventType(type: string): boolean {
 
 export function isPaymentLinkEventType(type: string): boolean {
   return (WebhookPaymentLinkEventTypes as ReadonlyArray<string>).includes(type);
-}
-
-export function isIgnoredEventType(type: string): boolean {
-  return (WebhookIgnoredEventTypes as ReadonlyArray<string>).includes(type);
 }
 
 export type WebhookEvent = z.infer<typeof WebhookEventSchema>;

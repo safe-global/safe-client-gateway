@@ -12,7 +12,6 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import {
-  isIgnoredEventType,
   isPaymentLinkEventType,
   isSubscriptionEventType,
   WALLET_WEB_CUSTOMER_GROUP,
@@ -75,15 +74,9 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       );
       return;
     }
-    if (isIgnoredEventType(event.type)) {
-      this.loggingService.info(
-        `Ignoring billing webhook event type ${event.type} (event ${event.id}): it carries no subscription snapshot`,
-      );
-      return;
-    }
     if (!isSubscriptionEventType(event.type)) {
       this.loggingService.info(
-        `Ignoring unknown billing webhook event type: ${event.type}`,
+        `Ignoring billing webhook event type ${event.type} (event ${event.id}): it carries no subscription snapshot`,
       );
       return;
     }
