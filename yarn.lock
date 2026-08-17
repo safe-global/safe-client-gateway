@@ -6318,7 +6318,7 @@ __metadata:
     typescript: "npm:6.0.3"
     undici: "npm:8.10.0"
     unplugin-swc: "npm:1.5.10"
-    viem: "npm:2.55.10"
+    viem: "npm:2.55.13"
     vitest: "npm:4.1.9"
     winston: "npm:3.19.0"
     zod: "npm:4.4.3"
@@ -7251,9 +7251,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"viem@npm:2.55.10":
-  version: 2.55.10
-  resolution: "viem@npm:2.55.10"
+"viem@npm:2.55.13":
+  version: 2.55.13
+  resolution: "viem@npm:2.55.13"
   dependencies:
     "@noble/curves": "npm:1.9.1"
     "@noble/hashes": "npm:1.8.0"
@@ -7268,7 +7268,7 @@ __metadata:
   peerDependenciesMeta:
     typescript:
       optional: true
-  checksum: 10/4da52637c5ef51a05748cb4566fc9842b39148fcd847746df239eb19a013fc9cbedeaf70331258b808ddef7c6ca984b1b5b5995a3e47869091723a9d73c245c2
+  checksum: 10/011228621bad75baa301da9705560858bc58ecdd1f38b16ba1ddfe86c59c9ba7e00c0c29b1b339f6b6e7569d6bc9bed8befca9bd45db1925e2bb7773813f7a3b
   languageName: node
   linkType: hard
 
