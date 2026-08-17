@@ -48,7 +48,7 @@
     "@aws-sdk/credential-provider-web-identity": "3.972.72",
     "@aws-sdk/lib-storage": "3.1102.0",
     "@aws-sdk/s3-request-presigner": "3.1102.0",
-    "@blockaid/client": "^1.5.0",
+    "@blockaid/client": "^1.7.0",
     "@fastify/cookie": "^11.1.1",
     "@fastify/static": "^10.1.2",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.10.0",
