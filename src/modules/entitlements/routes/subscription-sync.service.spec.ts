@@ -6,6 +6,7 @@ import type { MockedObject } from 'vitest';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { toSecondsTimestamp } from '@/domain/common/utils/time';
 import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
@@ -18,6 +19,7 @@ import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
+import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -40,6 +42,9 @@ describe('SubscriptionSyncService', () => {
   >;
   let spacesRepository: MockedObject<Pick<ISpacesRepository, 'findIdByUuid'>>;
   let featuresRepository: MockedObject<IFeaturesRepository>;
+  let subscriptionsRepository: MockedObject<
+    Pick<ISubscriptionsRepository, 'getLastEventAt'>
+  >;
   let cacheService: MockedObject<ICacheService>;
   let loggingService: MockedObject<ILoggingService>;
   let target: SubscriptionSyncService;
@@ -50,6 +55,7 @@ describe('SubscriptionSyncService', () => {
   // `upstreamCustomerId` is dashed here, not raw.
   function webhookEvent(overrides?: {
     type?: string;
+    created?: number;
     upstreamCustomerId?: string | null;
     customerGroup?: string;
     data?: Partial<NonNullable<WebhookEvent['data']>>;
@@ -70,6 +76,9 @@ describe('SubscriptionSyncService', () => {
     let builder = webhookEventBuilder();
     if (overrides?.type !== undefined) {
       builder = builder.with('type', overrides.type);
+    }
+    if (overrides?.created !== undefined) {
+      builder = builder.with('created', overrides.created);
     }
     const event = builder.build();
 
@@ -107,6 +116,9 @@ describe('SubscriptionSyncService', () => {
     featuresRepository = {
       getFeatures: vi.fn().mockResolvedValue(FEATURES),
     };
+    subscriptionsRepository = {
+      getLastEventAt: vi.fn().mockResolvedValue(null),
+    };
     cacheService = {
       deleteByKey: vi.fn(),
     } as unknown as MockedObject<ICacheService>;
@@ -122,6 +134,7 @@ describe('SubscriptionSyncService', () => {
       entitlementsService as unknown as EntitlementsService,
       spacesRepository as unknown as ISpacesRepository,
       featuresRepository,
+      subscriptionsRepository as unknown as ISubscriptionsRepository,
       cacheService,
       loggingService,
     );
@@ -159,6 +172,10 @@ describe('SubscriptionSyncService', () => {
     });
     expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith({
       spaceId,
+      eventAt: expect.any(Date),
+      // Re-fetched state is current by construction, so it is never rejected
+      // as out of order.
+      authoritative: true,
       subscriptions: [
         expect.objectContaining({
           upstreamSubscriptionId: active.id,
@@ -192,6 +209,8 @@ describe('SubscriptionSyncService', () => {
 
     const expected = {
       spaceId,
+      eventAt: expect.any(Date),
+      authoritative: false,
       subscriptions: [
         expect.objectContaining({
           upstreamSubscriptionId: event.data?.subscriptionId,
@@ -364,8 +383,10 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('materializes the event payload without calling the billing service', async () => {
+    const created = toSecondsTimestamp(faker.date.recent());
     const event = webhookEvent({
       type: 'customer.subscription.created',
+      created,
       data: {
         currentPeriodStart: 1_786_460_184,
         currentPeriodEnd: 1_789_138_584,
@@ -378,6 +399,9 @@ describe('SubscriptionSyncService', () => {
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
     expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith({
       spaceId,
+      // The payload's own state, stamped with the event that carried it.
+      eventAt: new Date(created * 1_000),
+      authoritative: false,
       subscriptions: [
         {
           upstreamSubscriptionId: event.data?.subscriptionId,
@@ -420,9 +444,97 @@ describe('SubscriptionSyncService', () => {
     expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
     expect(entitlementsService.materialize).toHaveBeenCalledWith({
       spaceId,
+      eventAt: expect.any(Date),
+      authoritative: true,
       subscriptions: [
         expect.objectContaining({ upstreamSubscriptionId: subscription.id }),
       ],
+    });
+  });
+
+  describe('event ordering', () => {
+    const materializedAt = new Date('2026-08-17T12:00:10.000Z');
+
+    function upstreamState(): void {
+      billingApi.getSubscriptionsByCustomerId.mockResolvedValue([
+        subscriptionBuilder().with('status', 'canceled').build(),
+      ]);
+    }
+
+    // The subscription.updated-after-subscription.deleted case: the payload
+    // would resurrect the subscription, so upstream is asked instead.
+    it('re-fetches instead of applying a payload older than the materialized state', async () => {
+      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
+      upstreamState();
+      const event = webhookEvent({
+        type: 'customer.subscription.updated',
+        created: toSecondsTimestamp(new Date('2026-08-17T12:00:00.000Z')),
+      });
+
+      await target.handleWebhook(event);
+
+      expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
+      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          authoritative: true,
+          subscriptions: [expect.objectContaining({ status: 'canceled' })],
+        }),
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+    });
+
+    it('applies the payload of an event that orders after the materialized state', async () => {
+      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
+      const created = toSecondsTimestamp(new Date('2026-08-17T12:00:20.000Z'));
+
+      await target.handleWebhook(
+        webhookEvent({ type: 'customer.subscription.updated', created }),
+      );
+
+      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          eventAt: new Date(created * 1_000),
+          authoritative: false,
+        }),
+      );
+    });
+
+    // Same stamp: the event is not older, so its own payload still counts.
+    it('applies the payload of an event stamped exactly at the materialized state', async () => {
+      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
+
+      await target.handleWebhook(
+        webhookEvent({ created: toSecondsTimestamp(materializedAt) }),
+      );
+
+      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ authoritative: false }),
+      );
+    });
+
+    it('re-fetches when the event carries no created stamp to order by', async () => {
+      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
+      upstreamState();
+
+      await target.handleWebhook({ ...webhookEvent(), created: undefined });
+
+      expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
+      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ eventAt: null, authoritative: true }),
+      );
+    });
+
+    it('applies the payload of the first event a space ever gets', async () => {
+      subscriptionsRepository.getLastEventAt.mockResolvedValue(null);
+
+      await target.handleWebhook(webhookEvent());
+
+      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ authoritative: false }),
+      );
     });
   });
 });

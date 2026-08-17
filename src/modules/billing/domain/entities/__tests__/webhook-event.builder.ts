@@ -21,7 +21,7 @@ export function webhookEventBuilder(): IBuilder<WebhookEvent> {
   return new Builder<WebhookEvent>()
     .with('id', faker.string.uuid())
     .with('type', 'customer.subscription.created')
-    .with('created', faker.number.int())
+    .with('created', toSecondsTimestamp(faker.date.recent()))
     .with('data', {
       subscriptionId: faker.string.uuid(),
       status: 'active',

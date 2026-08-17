@@ -67,6 +67,16 @@ export class SpaceSubscription implements DomainSpaceSubscription {
   })
   public readonly currentPeriodEnd!: Date | null;
 
+  // Ordering mark of the webhook event whose state this row carries: an event
+  // older than the newest one already materialized for the space never writes
+  // from its own payload (see SubscriptionSyncService).
+  @Column({
+    name: 'last_event_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  public readonly lastEventAt!: Date | null;
+
   @Column({
     name: 'created_at',
     type: 'timestamp with time zone',

@@ -47,6 +47,10 @@ const PERIOD_END = 1_702_592_000;
 // files, so every write it makes is cleaned up by id or by these keys —
 // never by an unscoped DELETE over a whole table.
 const FEATURE_KEYS = ['safe_seats', 'security_hub'] as const;
+// Event stamps, epoch seconds: the deletion happens after the update it is
+// delivered before.
+const UPDATED_AT = 1_786_460_184;
+const DELETED_AT = UPDATED_AT + 10;
 
 describe('Billing webhook → entitlements materialization', () => {
   let app: INestApplication<Server>;
@@ -167,10 +171,15 @@ describe('Billing webhook → entitlements materialization', () => {
     args: {
       type: string;
       subscriptionId: string;
+      created?: number;
       data?: Partial<NonNullable<WebhookEvent['data']>>;
     },
   ): WebhookEvent {
-    const event = webhookEventBuilder().with('type', args.type).build();
+    let builder = webhookEventBuilder().with('type', args.type);
+    if (args.created !== undefined) {
+      builder = builder.with('created', args.created);
+    }
+    const event = builder.build();
     return {
       ...event,
       data: {
@@ -304,5 +313,79 @@ describe('Billing webhook → entitlements materialization', () => {
         { key: 'security_hub', enabled: true, quota: null, value: null },
       ]),
     );
+  });
+
+  // The whole point of the ordering mark: a delivery order that contradicts
+  // event order must not resurrect a deleted subscription.
+  it('does not let an update delivered after a deletion reactivate the subscription', async () => {
+    const { spaceId, spaceUuid } = await seedSpace();
+    const subscriptionId = faker.string.uuid();
+    const planId = faker.string.alphanumeric(24);
+
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(
+        webhookEventFor(spaceUuid, {
+          type: 'customer.subscription.deleted',
+          subscriptionId,
+          created: DELETED_AT,
+          data: {
+            status: 'canceled',
+            planId,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+          },
+        }),
+      )
+      .expect(202);
+
+    // Upstream is the authority the late event is checked against, and it no
+    // longer holds an active subscription.
+    mockUpstreamSubscriptions(spaceUuid, [
+      subscriptionBuilder()
+        .with('id', subscriptionId)
+        .with('status', 'canceled')
+        .with('plan', subscriptionPlanBuilder().with('id', planId).build())
+        .with('currentPeriodStart', PERIOD_START)
+        .with('currentPeriodEnd', PERIOD_END)
+        .with('metadata', null)
+        .build(),
+    ]);
+
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(
+        webhookEventFor(spaceUuid, {
+          type: 'customer.subscription.updated',
+          subscriptionId,
+          created: UPDATED_AT,
+          data: {
+            status: 'active',
+            planId,
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            metadata: { FEATURE_SAFE_SEATS: '10' },
+          },
+        }),
+      )
+      .expect(202);
+
+    const subscriptionRepo =
+      await postgresDatabaseService.getRepository(SpaceSubscription);
+    const rows = await subscriptionRepo.find({
+      where: { space: { id: spaceId } },
+      relations: { entitlements: { feature: true } },
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      upstreamSubscriptionId: subscriptionId,
+      status: 'canceled',
+      // The mark stays at the deletion, the newest event seen for the space.
+      lastEventAt: new Date(DELETED_AT * 1_000),
+    });
+    expect(rows[0].entitlements).toStrictEqual([]);
+    // The stale payload was not trusted: upstream was asked instead.
+    expect(networkService.get).toHaveBeenCalled();
   });
 });

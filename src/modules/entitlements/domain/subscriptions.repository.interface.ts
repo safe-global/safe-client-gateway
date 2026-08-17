@@ -25,12 +25,41 @@ export interface ISubscriptionsRepository {
     args: {
       spaceId: Space['id'];
       exceptUpstreamSubscriptionId: string;
+      lastEventAt: Date | null;
     },
     entityManager?: EntityManager,
+  ): Promise<void>;
+
+  /**
+   * Newest event stamp materialized for the space, across all its
+   * subscriptions — `null` when it has none, or when none was written by an
+   * event carrying a `created` stamp. Read it inside the transaction that
+   * holds `lockSpaceForSync` to compare it against an incoming event.
+   */
+  getLastEventAt(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<Date | null>;
+
+  /**
+   * Transaction-scoped Postgres lock serializing webhook materialization for a
+   * workspace, released when `entityManager`'s transaction ends. Not a query
+   * over this table's rows — it lives here because the rows it protects are
+   * this repository's, and it holds even for a space that has none yet, which
+   * a `SELECT … FOR UPDATE` over those rows could not.
+   */
+  lockSpaceForSync(
+    spaceId: Space['id'],
+    entityManager: EntityManager,
   ): Promise<void>;
 }
 
 export type SubscriptionValues = Pick<
   SpaceSubscription,
-  'status' | 'planId' | 'planName' | 'currentPeriodStart' | 'currentPeriodEnd'
+  | 'status'
+  | 'planId'
+  | 'planName'
+  | 'currentPeriodStart'
+  | 'currentPeriodEnd'
+  | 'lastEventAt'
 >;

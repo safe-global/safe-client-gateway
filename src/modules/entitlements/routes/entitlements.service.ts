@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { latestOf } from '@/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -39,11 +40,25 @@ export class EntitlementsService {
    * upserts every subscription row by `upstreamSubscriptionId` and replaces
    * the active subscription's entitlement package wholesale, in one
    * transaction.
+   *
+   * `eventAt` orders the write against what is already stored. State taken
+   * from an event's own payload (`authoritative: false`) is applied only while
+   * no newer event has been materialized for the space; state re-fetched from
+   * the billing service (`authoritative: true`) is current by construction, so
+   * it always applies and only ever raises the stored mark.
    */
   public async materialize(args: {
     spaceId: Space['id'];
     subscriptions: Array<MaterializedSubscription>;
+    eventAt: Date | null;
+    authoritative: boolean;
   }): Promise<void> {
+    if (!args.authoritative && args.eventAt === null) {
+      throw new Error(
+        `materialize() received an unordered payload for space ${args.spaceId}; an event's own state needs its created stamp`,
+      );
+    }
+
     // Existence check: throws when the space is gone.
     await this.spacesRepository.findUuidById(args.spaceId);
 
@@ -82,6 +97,31 @@ export class EntitlementsService {
     const incomingActive = activeIsh.at(0);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // Serializes concurrent webhooks for this space, so the mark read below
+      // is what the write is actually ordered against.
+      await this.subscriptionsRepository.lockSpaceForSync(
+        args.spaceId,
+        entityManager,
+      );
+      const storedEventAt = await this.subscriptionsRepository.getLastEventAt(
+        args.spaceId,
+        entityManager,
+      );
+      if (
+        !args.authoritative &&
+        storedEventAt !== null &&
+        args.eventAt !== null &&
+        args.eventAt < storedEventAt
+      ) {
+        this.loggingService.warn(
+          `materialize() skipped a payload for space ${args.spaceId} stamped ${args.eventAt.toISOString()}, older than the materialized ${storedEventAt.toISOString()}`,
+        );
+        return;
+      }
+      const lastEventAt = args.authoritative
+        ? latestOf(storedEventAt, args.eventAt)
+        : args.eventAt;
+
       let activeSubscriptionId: number | null = null;
 
       // Frees the "one active subscription per space" slot before the upserts
@@ -94,6 +134,7 @@ export class EntitlementsService {
           {
             spaceId: args.spaceId,
             exceptUpstreamSubscriptionId: incomingActive.upstreamSubscriptionId,
+            lastEventAt,
           },
           entityManager,
         );
@@ -111,6 +152,7 @@ export class EntitlementsService {
                 planName: subscription.planName,
                 currentPeriodStart: subscription.currentPeriodStart,
                 currentPeriodEnd: subscription.currentPeriodEnd,
+                lastEventAt,
               },
             },
             entityManager,

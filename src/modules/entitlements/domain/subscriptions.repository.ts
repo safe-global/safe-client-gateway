@@ -49,10 +49,37 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     return subscription.id;
   }
 
+  public async getLastEventAt(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<Date | null> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
+    const newest = await repository.findOne({
+      where: { space: { id: spaceId } },
+      // NULLS LAST: Postgres sorts them first on DESC, which would hide a
+      // stamped row behind an unstamped one.
+      order: { lastEventAt: { direction: 'DESC', nulls: 'LAST' } },
+      select: { lastEventAt: true },
+    });
+    return newest?.lastEventAt ?? null;
+  }
+
+  public async lockSpaceForSync(
+    spaceId: Space['id'],
+    entityManager: EntityManager,
+  ): Promise<void> {
+    await entityManager.query('SELECT pg_advisory_xact_lock($1)', [spaceId]);
+  }
+
   public async demoteActiveSubscriptions(
     args: {
       spaceId: Space['id'];
       exceptUpstreamSubscriptionId: string;
+      lastEventAt: Date | null;
     },
     entityManager?: EntityManager,
   ): Promise<void> {
@@ -64,7 +91,7 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     await repository
       .createQueryBuilder()
       .update(SpaceSubscription)
-      .set({ status: 'canceled' })
+      .set({ status: 'canceled', lastEventAt: args.lastEventAt })
       .where('space_id = :spaceId', { spaceId: args.spaceId })
       .andWhere('status IN (:...activeStatuses)', {
         activeStatuses: [...ACTIVE_SUBSCRIPTION_STATUSES],

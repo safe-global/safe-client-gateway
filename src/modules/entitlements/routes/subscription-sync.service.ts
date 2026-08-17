@@ -6,6 +6,7 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { isForeignKeyViolationError } from '@/datasources/errors/helpers/is-foreign-key-violation-error.helper';
+import { fromSecondsTimestamp } from '@/domain/common/utils/time';
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import {
   type ILoggingService,
@@ -23,6 +24,7 @@ import {
   mapUpstreamSubscriptions,
 } from '@/modules/entitlements/domain/subscription.mapper';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
+import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -41,9 +43,11 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
  * state from the billing service, so a thin payload never overwrites stored
  * state with nulls.
  *
- * Events are applied in delivery order, without comparing their `created`
- * stamp against what is stored: a late-delivered stale event therefore
- * overwrites a newer one until it is corrected by the next event.
+ * Events are ordered by their `created` stamp, not by delivery: an event that
+ * does not order after the state already materialized for the space — a late
+ * delivery, or one carrying no stamp at all — does not write from its payload.
+ * It re-fetches instead, so upstream decides, and a `subscription.updated`
+ * arriving after a `subscription.deleted` cannot resurrect the subscription.
  *
  * Unprocessable-but-authenticated events (unknown space, `api` customer
  * group) are logged and acked: retrying cannot fix them. Fetch/DB errors
@@ -61,6 +65,8 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IFeaturesRepository)
     private readonly featuresRepository: IFeaturesRepository,
+    @Inject(ISubscriptionsRepository)
+    private readonly subscriptionsRepository: ISubscriptionsRepository,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
     @Inject(LoggingService)
@@ -129,11 +135,23 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
 
     const onWarning = (message: string): void =>
       this.loggingService.warn(message);
-    const eventSubscription = mapEventToSubscription({
-      event,
-      featureTypeByKey,
-      onWarning,
-    });
+    const eventAt = fromSecondsTimestamp(event.created);
+    const storedEventAt =
+      await this.subscriptionsRepository.getLastEventAt(spaceId);
+    const isStale =
+      eventAt === null || (storedEventAt !== null && eventAt < storedEventAt);
+    if (isStale) {
+      this.loggingService.debug(
+        `Billing webhook event ${event.id} (${event.type}) does not order after the state materialized for space ${spaceId}; re-fetching instead of applying its payload`,
+      );
+    }
+    const eventSubscription = isStale
+      ? null
+      : mapEventToSubscription({
+          event,
+          featureTypeByKey,
+          onWarning,
+        });
     const subscriptions =
       eventSubscription === null
         ? mapUpstreamSubscriptions({
@@ -147,7 +165,12 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
         : [eventSubscription];
 
     try {
-      await this.entitlementsService.materialize({ spaceId, subscriptions });
+      await this.entitlementsService.materialize({
+        spaceId,
+        subscriptions,
+        eventAt,
+        authoritative: eventSubscription === null,
+      });
     } catch (error) {
       // The space existed a moment ago (resolved just above); a
       // deletion racing this request — caught either as a NotFoundException

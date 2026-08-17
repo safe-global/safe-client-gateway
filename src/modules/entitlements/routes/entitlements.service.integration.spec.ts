@@ -22,6 +22,7 @@ import {
   parsedEntitlementBuilder,
 } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
 import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
@@ -64,6 +65,10 @@ const FEATURES: Array<Feature> = [
     .with('type', FeatureType.Value)
     .build(),
 ];
+
+// Ordering stamps are asserted on and compared against each other, so they
+// stay literal rather than faker-random.
+const FIRST_STAMP = new Date('2026-08-17T12:00:00.000Z');
 
 describe('EntitlementsService', () => {
   let postgresDatabaseService: PostgresDatabaseService;
@@ -193,6 +198,29 @@ describe('EntitlementsService', () => {
     return inserted.generatedMaps[0].id as number;
   }
 
+  // Every call needs an ordering stamp, which most cases are not about: each
+  // gets a later one than the last, so nothing is rejected as out of order
+  // unless the case asks for it by passing `eventAt` itself.
+  let stampSequence = 0;
+  function nextStamp(): Date {
+    stampSequence += 1;
+    return new Date(FIRST_STAMP.getTime() + stampSequence * 1_000);
+  }
+
+  async function materialize(args: {
+    spaceId: number;
+    subscriptions: Array<MaterializedSubscription>;
+    eventAt?: Date | null;
+    authoritative?: boolean;
+  }): Promise<void> {
+    await service.materialize({
+      spaceId: args.spaceId,
+      subscriptions: args.subscriptions,
+      eventAt: args.eventAt === undefined ? nextStamp() : args.eventAt,
+      authoritative: args.authoritative ?? false,
+    });
+  }
+
   async function getSubscriptions(): Promise<Array<SpaceSubscription>> {
     return await dataSource.getRepository(SpaceSubscription).find({
       relations: { entitlements: { feature: true } },
@@ -241,7 +269,7 @@ describe('EntitlementsService', () => {
         ])
         .build();
 
-      await service.materialize({ spaceId, subscriptions: [subscription] });
+      await materialize({ spaceId, subscriptions: [subscription] });
 
       const [persisted] = await getSubscriptions();
       expect(persisted).toMatchObject({
@@ -289,7 +317,7 @@ describe('EntitlementsService', () => {
         ])
         .build();
 
-      await service.materialize({ spaceId, subscriptions: [subscription] });
+      await materialize({ spaceId, subscriptions: [subscription] });
 
       const [persisted] = await getSubscriptions();
       expect(persisted.entitlements).toHaveLength(1);
@@ -306,8 +334,8 @@ describe('EntitlementsService', () => {
         ])
         .build();
 
-      await service.materialize({ spaceId, subscriptions: [subscription] });
-      await service.materialize({ spaceId, subscriptions: [subscription] });
+      await materialize({ spaceId, subscriptions: [subscription] });
+      await materialize({ spaceId, subscriptions: [subscription] });
 
       expect(await dataSource.getRepository(SpaceSubscription).count()).toBe(1);
       expect(
@@ -327,7 +355,7 @@ describe('EntitlementsService', () => {
             .build(),
         ])
         .build();
-      await service.materialize({
+      await materialize({
         spaceId,
         subscriptions: [oldSubscription],
       });
@@ -345,7 +373,7 @@ describe('EntitlementsService', () => {
             .build(),
         ])
         .build();
-      await service.materialize({
+      await materialize({
         spaceId,
         subscriptions: [
           { ...oldSubscription, status: 'canceled', entitlements: null },
@@ -384,7 +412,7 @@ describe('EntitlementsService', () => {
           parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
         ])
         .build();
-      await service.materialize({
+      await materialize({
         spaceId,
         subscriptions: [oldSubscription],
       });
@@ -400,7 +428,7 @@ describe('EntitlementsService', () => {
           parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
         ])
         .build();
-      await service.materialize({
+      await materialize({
         spaceId,
         subscriptions: [
           newSubscription,
@@ -434,7 +462,7 @@ describe('EntitlementsService', () => {
         .with('status', 'past_due')
         .with('entitlements', null)
         .build();
-      await service.materialize({ spaceId, subscriptions: [pastDue] });
+      await materialize({ spaceId, subscriptions: [pastDue] });
 
       const incoming = materializedSubscriptionBuilder()
         .with('status', 'active')
@@ -444,7 +472,7 @@ describe('EntitlementsService', () => {
         .build();
 
       await expect(
-        service.materialize({ spaceId, subscriptions: [incoming] }),
+        materialize({ spaceId, subscriptions: [incoming] }),
       ).resolves.toBeUndefined();
 
       const rows = await dataSource
@@ -462,7 +490,7 @@ describe('EntitlementsService', () => {
 
     it('rejects an unknown workspace', async () => {
       await expect(
-        service.materialize({
+        materialize({
           spaceId: faker.number.int({ min: 100_000, max: 1_000_000 }),
           subscriptions: [materializedSubscriptionBuilder().build()],
         }),
@@ -473,7 +501,7 @@ describe('EntitlementsService', () => {
       const spaceId = await createSpace();
 
       await expect(
-        service.materialize({
+        materialize({
           spaceId,
           subscriptions: [
             materializedSubscriptionBuilder()
@@ -495,6 +523,105 @@ describe('EntitlementsService', () => {
       ).rejects.toThrow('expected at most 1');
       // Rejected before any write.
       expect(await dataSource.getRepository(SpaceSubscription).count()).toBe(0);
+    });
+  });
+
+  describe('event ordering', () => {
+    const olderStamp = FIRST_STAMP;
+    const newerStamp = new Date(FIRST_STAMP.getTime() + 10_000);
+
+    it('stamps every row it writes with the event behind it', async () => {
+      const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', null)
+        .build();
+
+      await materialize({
+        spaceId,
+        subscriptions: [subscription],
+        eventAt: newerStamp,
+      });
+
+      const [persisted] = await getSubscriptions();
+      expect(persisted.lastEventAt).toStrictEqual(newerStamp);
+    });
+
+    // The subscription.updated-after-subscription.deleted case, at the write
+    // boundary: the payload would resurrect the subscription and restore the
+    // package the deletion took away.
+    it('skips a payload stamped before the materialized state', async () => {
+      const spaceId = await createSpace();
+      const canceled = materializedSubscriptionBuilder()
+        .with('status', 'canceled')
+        .with('entitlements', null)
+        .build();
+      await materialize({
+        spaceId,
+        subscriptions: [canceled],
+        eventAt: newerStamp,
+      });
+
+      await materialize({
+        spaceId,
+        subscriptions: [
+          {
+            ...canceled,
+            status: 'active',
+            entitlements: [
+              parsedEntitlementBuilder()
+                .with('featureKey', 'safe_seats')
+                .build(),
+            ],
+          },
+        ],
+        eventAt: olderStamp,
+      });
+
+      const [persisted] = await getSubscriptions();
+      expect(persisted).toMatchObject({
+        status: 'canceled',
+        lastEventAt: newerStamp,
+      });
+      expect(persisted.entitlements).toStrictEqual([]);
+    });
+
+    it('applies re-fetched state an older event triggered, without lowering the mark', async () => {
+      const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', null)
+        .build();
+      await materialize({
+        spaceId,
+        subscriptions: [subscription],
+        eventAt: newerStamp,
+      });
+
+      await materialize({
+        spaceId,
+        subscriptions: [{ ...subscription, status: 'canceled' }],
+        eventAt: olderStamp,
+        authoritative: true,
+      });
+
+      const [persisted] = await getSubscriptions();
+      expect(persisted).toMatchObject({
+        status: 'canceled',
+        lastEventAt: newerStamp,
+      });
+    });
+
+    it('rejects a payload carrying no stamp to order by', async () => {
+      const spaceId = await createSpace();
+
+      await expect(
+        materialize({
+          spaceId,
+          subscriptions: [materializedSubscriptionBuilder().build()],
+          eventAt: null,
+        }),
+      ).rejects.toThrow('needs its created stamp');
     });
   });
 });
