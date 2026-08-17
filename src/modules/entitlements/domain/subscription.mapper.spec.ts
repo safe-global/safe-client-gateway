@@ -27,11 +27,20 @@ describe('subscription.mapper', () => {
   });
 
   describe('mapEventToSubscription', () => {
+    // An active payload needs a feature package to count as a complete
+    // snapshot, so it is part of the baseline every case starts from.
     function eventWith(
       data?: Partial<NonNullable<WebhookEvent['data']>>,
     ): WebhookEvent {
       const event = webhookEventBuilder().build();
-      return { ...event, data: { ...event.data, ...data } };
+      return {
+        ...event,
+        data: {
+          ...event.data,
+          metadata: { FEATURE_SAFE_SEATS: '10' },
+          ...data,
+        },
+      };
     }
 
     it('maps a complete payload, taking the package from the metadata', () => {
@@ -65,7 +74,9 @@ describe('subscription.mapper', () => {
     });
 
     it('takes the plan name from the metadata', () => {
-      const event = eventWith({ metadata: { planName: 'Business' } });
+      const event = eventWith({
+        metadata: { planName: 'Business', FEATURE_SAFE_SEATS: '10' },
+      });
 
       expect(
         mapEventToSubscription({ event, featureTypeByKey, onWarning }),
@@ -80,6 +91,13 @@ describe('subscription.mapper', () => {
       ['no plan', { planId: null }],
       ['an empty plan', { planId: '' }],
       ['no period start', { currentPeriodStart: null }],
+      // An empty package would wipe the stored entitlements, so the
+      // authoritative state decides whether it is really gone.
+      ['no metadata on an active subscription', { metadata: null }],
+      [
+        'metadata carrying no feature entry',
+        { metadata: { planName: 'Business' } },
+      ],
     ])('returns null on %s', (_, data) => {
       const event = eventWith(data);
 
@@ -97,7 +115,9 @@ describe('subscription.mapper', () => {
       expect(onWarning).toHaveBeenCalledTimes(1);
     });
 
-    it('warns and leaves an unrepresentable period end unset', () => {
+    // Storing the period unset would contradict a payload that does carry one,
+    // so the re-fetch decides instead.
+    it('returns null and warns on an unrepresentable period end', () => {
       const event = eventWith({
         currentPeriodStart: PERIOD_START,
         currentPeriodEnd: Number.MAX_SAFE_INTEGER,
@@ -105,10 +125,7 @@ describe('subscription.mapper', () => {
 
       expect(
         mapEventToSubscription({ event, featureTypeByKey, onWarning }),
-      ).toMatchObject({
-        currentPeriodStart: new Date(PERIOD_START * 1_000),
-        currentPeriodEnd: null,
-      });
+      ).toBeNull();
       expect(onWarning).toHaveBeenCalledTimes(1);
     });
 
@@ -270,7 +287,9 @@ describe('subscription.mapper', () => {
       ).toMatchObject({ planName: null });
     });
 
-    it('leaves an unrepresentable period unset', () => {
+    // The authoritative state is all there is here, so it is stored with the
+    // period unset rather than skipped — but not without a trace.
+    it('warns and leaves an unrepresentable period unset', () => {
       const subscription = subscriptionBuilder()
         .with('status', 'canceled')
         .with('currentPeriodStart', Number.MAX_SAFE_INTEGER)
@@ -285,6 +304,25 @@ describe('subscription.mapper', () => {
           onWarning,
         })[0],
       ).toMatchObject({ currentPeriodStart: null, currentPeriodEnd: null });
+      expect(onWarning).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not warn when upstream simply carries no period', () => {
+      const subscription = subscriptionBuilder()
+        .with('status', 'canceled')
+        .with('currentPeriodStart', null)
+        .with('currentPeriodEnd', null)
+        .with('metadata', null)
+        .build();
+
+      expect(
+        mapUpstreamSubscriptions({
+          subscriptions: [subscription],
+          featureTypeByKey,
+          onWarning,
+        })[0],
+      ).toMatchObject({ currentPeriodStart: null, currentPeriodEnd: null });
+      expect(onWarning).not.toHaveBeenCalled();
     });
   });
 });

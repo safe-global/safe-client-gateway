@@ -62,7 +62,6 @@ describe('mapFeaturePackage', () => {
         FEATURE_SAFE_SEATS: 'ten',
         FEATURE_SWAP_FEE_TIER: '',
         FEATURE_SSO: null,
-        FEATUER_SAFE_SEATS: '10',
       },
       featureTypeByKey,
       onWarning,
@@ -70,7 +69,20 @@ describe('mapFeaturePackage', () => {
 
     expect(result).toStrictEqual([]);
 
-    expect(onWarning).toHaveBeenCalledTimes(6);
+    expect(onWarning).toHaveBeenCalledTimes(5);
+  });
+
+  // Upstream metadata legitimately carries keys that are none of our business,
+  // so warning about them would fire on every event that has a plan name.
+  it('silently skips keys outside the feature package', () => {
+    const result = mapFeaturePackage({
+      metadata: { planName: 'Business', FEATUER_SAFE_SEATS: '10' },
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([]);
+    expect(onWarning).not.toHaveBeenCalled();
   });
 
   it.each([

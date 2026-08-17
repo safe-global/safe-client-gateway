@@ -16,13 +16,23 @@ const QuotaSchema = NonNegativeNumericStringSchema.refine(
   (value) => Number(value) <= DB_MAX_SAFE_INTEGER,
 );
 
+export function hasFeaturePackageMetadata(
+  metadata: StripeMetadata | null | undefined,
+): boolean {
+  return Object.keys(metadata ?? {}).some((key) =>
+    key.startsWith(FEATURE_METADATA_PREFIX),
+  );
+}
+
 /**
  * Maps a subscription's `FEATURE_*` metadata strings — raw, untyped upstream
  * data — to typed `ParsedEntitlement` rows, resolving each key's type against
  * the feature catalog (`featureTypeByKey`). The metadata is the only source of
  * a purchased package; a plan's own feature list never grants entitlements.
- * Unknown keys and undecodable values are reported via `onWarning` and skipped
- * — a malformed entry must never fail the webhook.
+ * Unknown `FEATURE_*` keys and undecodable values are reported via `onWarning`
+ * and skipped — a malformed entry must never fail the webhook. Keys without
+ * the prefix belong to someone else (`planName`, upstream bookkeeping) and are
+ * passed over silently.
  */
 export function mapFeaturePackage(args: {
   metadata: StripeMetadata | null | undefined;
@@ -33,7 +43,6 @@ export function mapFeaturePackage(args: {
 
   for (const [metadataKey, rawValue] of Object.entries(args.metadata ?? {})) {
     if (!metadataKey.startsWith(FEATURE_METADATA_PREFIX)) {
-      args.onWarning(`Unrecognized metadata key: ${metadataKey}`);
       continue;
     }
     const key = metadataKey.slice(FEATURE_METADATA_PREFIX.length).toLowerCase();

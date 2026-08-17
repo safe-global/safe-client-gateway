@@ -78,6 +78,9 @@ describe('SubscriptionSyncService', () => {
       data: {
         ...event.data,
         customer: customerBuilder.build(),
+        // An active payload without a package is not a complete snapshot, so
+        // the baseline carries one to exercise the direct-payload path.
+        metadata: { FEATURE_SAFE_SEATS: '10' },
         ...overrides?.data,
       },
     };
@@ -401,6 +404,13 @@ describe('SubscriptionSyncService', () => {
     ['no subscription id', { subscriptionId: null }],
     ['no plan', { planId: null }],
     ['no billing period', { currentPeriodStart: null }],
+    [
+      'an unrepresentable billing period',
+      { currentPeriodEnd: Number.MAX_SAFE_INTEGER },
+    ],
+    // Materializing it would wipe the space's stored entitlements on a payload
+    // that may simply not carry them.
+    ['no feature metadata on an active payload', { metadata: null }],
   ])('falls back to the re-fetch on %s', async (_, data) => {
     const subscription = subscriptionBuilder().with('status', 'active').build();
     billingApi.getSubscriptionsByCustomerId.mockResolvedValue([subscription]);

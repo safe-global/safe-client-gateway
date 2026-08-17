@@ -14,7 +14,10 @@ import {
   isActiveSubscriptionStatus,
   PLAN_NAME_METADATA_KEY,
 } from '@/modules/entitlements/domain/entitlements.constants';
-import { mapFeaturePackage } from '@/modules/entitlements/domain/feature-package.mapper';
+import {
+  hasFeaturePackageMetadata,
+  mapFeaturePackage,
+} from '@/modules/entitlements/domain/feature-package.mapper';
 
 type MapperArgs = {
   featureTypeByKey: Map<FeatureKey, FeatureType>;
@@ -26,6 +29,10 @@ type MapperArgs = {
  * or `null` when the payload is not a complete snapshot — the caller then
  * re-fetches the authoritative state instead. A period end is optional:
  * upstream leaves it unset for a subscription that has no end.
+ *
+ * An active subscription whose metadata carries no `FEATURE_*` entry counts as
+ * incomplete: mapping it would replace the stored package with an empty one,
+ * so the authoritative state decides whether the package is really gone.
  */
 export function mapEventToSubscription(
   args: MapperArgs & { event: WebhookEvent },
@@ -46,6 +53,13 @@ export function mapEventToSubscription(
   }
   const status = parsedStatus.data;
 
+  if (
+    isActiveSubscriptionStatus(status) &&
+    !hasFeaturePackageMetadata(data.metadata)
+  ) {
+    return null;
+  }
+
   const currentPeriodStart = fromSecondsTimestamp(data.currentPeriodStart);
   const currentPeriodEnd = fromSecondsTimestamp(data.currentPeriodEnd);
   if (
@@ -55,6 +69,7 @@ export function mapEventToSubscription(
     args.onWarning(
       `Billing webhook event ${args.event.id} carries an unrepresentable billing period: ${data.currentPeriodStart}–${data.currentPeriodEnd}`,
     );
+    return null;
   }
 
   return {
@@ -102,25 +117,45 @@ export function mapUpstreamSubscriptions(
     );
   }
 
-  return args.subscriptions.map((subscription) => ({
-    upstreamSubscriptionId: subscription.id,
-    status: surplusActiveIds.has(subscription.id)
-      ? 'canceled'
-      : subscription.status,
-    planId: subscription.plan.id,
-    planName: subscription.plan.name ?? null,
-    currentPeriodStart: fromSecondsTimestamp(subscription.currentPeriodStart),
-    currentPeriodEnd: fromSecondsTimestamp(subscription.currentPeriodEnd),
-    entitlements:
-      active !== undefined && subscription.id === active.id
-        ? mapFeaturePackage({
-            metadata: subscription.metadata,
-            featureTypeByKey: args.featureTypeByKey,
-            onWarning: (message) =>
-              args.onWarning(
-                `Feature package of subscription ${subscription.id}: ${message}`,
-              ),
-          })
-        : null,
-  }));
+  return args.subscriptions.map((subscription) => {
+    const currentPeriodStart = fromSecondsTimestamp(
+      subscription.currentPeriodStart,
+    );
+    const currentPeriodEnd = fromSecondsTimestamp(
+      subscription.currentPeriodEnd,
+    );
+    // Nothing left to fall back to here — this is already the authoritative
+    // state — so an unrepresentable period is stored unset, but not silently.
+    if (
+      (subscription.currentPeriodStart != null &&
+        currentPeriodStart === null) ||
+      (subscription.currentPeriodEnd != null && currentPeriodEnd === null)
+    ) {
+      args.onWarning(
+        `Subscription ${subscription.id} carries an unrepresentable billing period: ${subscription.currentPeriodStart}–${subscription.currentPeriodEnd}`,
+      );
+    }
+
+    return {
+      upstreamSubscriptionId: subscription.id,
+      status: surplusActiveIds.has(subscription.id)
+        ? 'canceled'
+        : subscription.status,
+      planId: subscription.plan.id,
+      planName: subscription.plan.name ?? null,
+      currentPeriodStart,
+      currentPeriodEnd,
+      entitlements:
+        active !== undefined && subscription.id === active.id
+          ? mapFeaturePackage({
+              metadata: subscription.metadata,
+              featureTypeByKey: args.featureTypeByKey,
+              onWarning: (message) =>
+                args.onWarning(
+                  `Feature package of subscription ${subscription.id}: ${message}`,
+                ),
+            })
+          : null,
+    };
+  });
 }
