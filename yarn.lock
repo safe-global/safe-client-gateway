@@ -794,9 +794,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/static@npm:^10.1.2":
-  version: 10.1.2
-  resolution: "@fastify/static@npm:10.1.2"
+"@fastify/static@npm:^10.1.3":
+  version: 10.1.3
+  resolution: "@fastify/static@npm:10.1.3"
   dependencies:
     "@fastify/accept-negotiator": "npm:^2.0.0"
     "@fastify/error": "npm:^4.0.0"
@@ -805,7 +805,7 @@ __metadata:
     fastify-plugin: "npm:^6.0.0"
     fastq: "npm:^1.17.1"
     glob: "npm:^13.0.0"
-  checksum: 10/5c216ce12262f9dc7916c53c9cc045ad3eb15b2bdc8eaa6252ec9b141b9bd330104cdacb1d2a67971c5e1c7e387dfc19773de565b86f557ec045cebc454b4bfa
+  checksum: 10/f106909357b3b23f6d665152387fbbe1c1252943bc352c58895c9ad89526d44f6f40c64821c758a7d232a834091596230ebdd46605d35a1b077945302e56eee5
   languageName: node
   linkType: hard
 
@@ -6263,7 +6263,7 @@ __metadata:
     "@blockaid/client": "npm:^1.5.0"
     "@faker-js/faker": "npm:10.5.0"
     "@fastify/cookie": "npm:^11.1.1"
-    "@fastify/static": "npm:^10.1.2"
+    "@fastify/static": "npm:^10.1.3"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.10.0"
     "@nestjs/bullmq": "npm:^11.0.4"
     "@nestjs/cache-manager": "npm:3.1.3"
