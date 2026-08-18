@@ -24,6 +24,17 @@ export function isActiveSubscriptionStatus(
 }
 
 /**
+ * Whether `stamp` orders strictly after `mark`. Upstream's `created` has
+ * second granularity, so two stamps in the same second say nothing about their
+ * order — a tie is not "after" — and a stamp that is absent cannot be ordered
+ * at all.
+ */
+export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
+  if (stamp === null) return false;
+  return mark === null || stamp > mark;
+}
+
+/**
  * Prefix of the Stripe metadata keys carrying the purchased feature package,
  * e.g. `FEATURE_SAFE_SEATS=10`, `FEATURE_SECURITY_HUB=true`,
  * `FEATURE_SPONSORED_TRANSACTIONS=unlimited`, `FEATURE_SWAP_FEE_TIER=business`.

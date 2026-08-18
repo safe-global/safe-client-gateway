@@ -38,7 +38,10 @@ describe('SubscriptionSyncService', () => {
 
   let billingApi: MockedObject<IBillingApi>;
   let entitlementsService: MockedObject<
-    Pick<EntitlementsService, 'materialize'>
+    Pick<
+      EntitlementsService,
+      'materializeFromEvent' | 'materializeAuthoritative'
+    >
   >;
   let spacesRepository: MockedObject<Pick<ISpacesRepository, 'findIdByUuid'>>;
   let featuresRepository: MockedObject<IFeaturesRepository>;
@@ -108,7 +111,8 @@ describe('SubscriptionSyncService', () => {
       getSubscriptionsByCustomerId: vi.fn(),
     } as unknown as MockedObject<IBillingApi>;
     entitlementsService = {
-      materialize: vi.fn(),
+      materializeFromEvent: vi.fn().mockResolvedValue(true),
+      materializeAuthoritative: vi.fn().mockResolvedValue(true),
     };
     spacesRepository = {
       findIdByUuid: vi.fn().mockResolvedValue(spaceId),
@@ -170,12 +174,14 @@ describe('SubscriptionSyncService', () => {
       upstreamCustomerId: spaceUuid,
       status: 'all',
     });
-    expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith({
+    expect(
+      entitlementsService.materializeAuthoritative,
+    ).toHaveBeenCalledExactlyOnceWith({
       spaceId,
-      eventAt: expect.any(Date),
-      // Re-fetched state is current by construction, so it is never rejected
-      // as out of order.
-      authoritative: true,
+      triggerEventAt: expect.any(Date),
+      // The mark as it stood before the fetch went out: the write is abandoned
+      // if it has moved by the time the lock is held.
+      observedEventAt: null,
       subscriptions: [
         expect.objectContaining({
           upstreamSubscriptionId: active.id,
@@ -210,21 +216,18 @@ describe('SubscriptionSyncService', () => {
     const expected = {
       spaceId,
       eventAt: expect.any(Date),
-      authoritative: false,
-      subscriptions: [
-        expect.objectContaining({
-          upstreamSubscriptionId: event.data?.subscriptionId,
-          status: 'active',
-          planId: event.data?.planId,
-        }),
-      ],
+      subscription: expect.objectContaining({
+        upstreamSubscriptionId: event.data?.subscriptionId,
+        status: 'active',
+        planId: event.data?.planId,
+      }),
     };
-    expect(entitlementsService.materialize).toHaveBeenCalledTimes(2);
-    expect(entitlementsService.materialize).toHaveBeenNthCalledWith(
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(2);
+    expect(entitlementsService.materializeFromEvent).toHaveBeenNthCalledWith(
       1,
       expected,
     );
-    expect(entitlementsService.materialize).toHaveBeenNthCalledWith(
+    expect(entitlementsService.materializeFromEvent).toHaveBeenNthCalledWith(
       2,
       expected,
     );
@@ -238,7 +241,7 @@ describe('SubscriptionSyncService', () => {
   ])('materializes the %s event payload', async (type) => {
     await target.handleWebhook(webhookEvent({ type }));
 
-    expect(entitlementsService.materialize).toHaveBeenCalledTimes(1);
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(1);
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
   });
 
@@ -252,7 +255,8 @@ describe('SubscriptionSyncService', () => {
   ])('acks and ignores %s without re-fetching', async (type) => {
     await target.handleWebhook(webhookEvent({ type }));
 
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
     expect(loggingService.info).toHaveBeenCalled();
   });
@@ -264,13 +268,15 @@ describe('SubscriptionSyncService', () => {
       CacheRouter.getBillingPaymentLinksCacheDir().key,
     );
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
   });
 
   it('acks and ignores unknown event types', async () => {
     await target.handleWebhook(webhookEvent({ type: 'something.new' }));
 
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
     expect(loggingService.info).toHaveBeenCalled();
   });
 
@@ -282,7 +288,8 @@ describe('SubscriptionSyncService', () => {
   ])('acks and ignores events for the %s customer group', async (customerGroup) => {
     await target.handleWebhook(webhookEvent({ customerGroup }));
 
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
   });
 
@@ -291,7 +298,7 @@ describe('SubscriptionSyncService', () => {
       webhookEvent({ customerGroup: WALLET_WEB_CUSTOMER_GROUP }),
     );
 
-    expect(entitlementsService.materialize).toHaveBeenCalledTimes(1);
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(1);
   });
 
   it('acks and warns on a missing or invalid upstreamCustomerId', async () => {
@@ -300,7 +307,8 @@ describe('SubscriptionSyncService', () => {
       webhookEvent({ upstreamCustomerId: 'not-a-uuid' }),
     );
 
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
     expect(loggingService.warn).toHaveBeenCalledTimes(2);
   });
 
@@ -311,13 +319,14 @@ describe('SubscriptionSyncService', () => {
 
     await target.handleWebhook(webhookEvent());
 
-    expect(entitlementsService.materialize).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
     expect(loggingService.warn).toHaveBeenCalled();
   });
 
   it('acks and warns when materialize races a space deletion', async () => {
     billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
-    entitlementsService.materialize.mockRejectedValue(
+    entitlementsService.materializeFromEvent.mockRejectedValue(
       new NotFoundException('Workspace not found.'),
     );
 
@@ -328,7 +337,7 @@ describe('SubscriptionSyncService', () => {
 
   it('acks and warns when the subscriptions insert races a space deletion (FK violation)', async () => {
     billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
-    entitlementsService.materialize.mockRejectedValue(
+    entitlementsService.materializeFromEvent.mockRejectedValue(
       new QueryFailedError(
         '',
         [],
@@ -352,7 +361,7 @@ describe('SubscriptionSyncService', () => {
       // Serialization failure: transient, so retrying is exactly right.
       Object.assign(new Error(), { code: '40001' }),
     );
-    entitlementsService.materialize.mockRejectedValue(error);
+    entitlementsService.materializeFromEvent.mockRejectedValue(error);
 
     await expect(target.handleWebhook(webhookEvent())).rejects.toThrow(error);
   });
@@ -367,7 +376,7 @@ describe('SubscriptionSyncService', () => {
         constraint: 'FK_SE_feature_id',
       }),
     );
-    entitlementsService.materialize.mockRejectedValue(error);
+    entitlementsService.materializeFromEvent.mockRejectedValue(error);
 
     await expect(target.handleWebhook(webhookEvent())).rejects.toThrow(error);
   });
@@ -397,29 +406,28 @@ describe('SubscriptionSyncService', () => {
     await target.handleWebhook(event);
 
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-    expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith({
+    expect(
+      entitlementsService.materializeFromEvent,
+    ).toHaveBeenCalledExactlyOnceWith({
       spaceId,
       // The payload's own state, stamped with the event that carried it.
       eventAt: new Date(created * 1_000),
-      authoritative: false,
-      subscriptions: [
-        {
-          upstreamSubscriptionId: event.data?.subscriptionId,
-          status: 'active',
-          planId: event.data?.planId,
-          planName: 'Business',
-          currentPeriodStart: new Date(1_786_460_184_000),
-          currentPeriodEnd: new Date(1_789_138_584_000),
-          entitlements: [
-            {
-              featureKey: 'safe_seats',
-              enabled: true,
-              quota: 10,
-              value: null,
-            },
-          ],
-        },
-      ],
+      subscription: {
+        upstreamSubscriptionId: event.data?.subscriptionId,
+        status: 'active',
+        planId: event.data?.planId,
+        planName: 'Business',
+        currentPeriodStart: new Date(1_786_460_184_000),
+        currentPeriodEnd: new Date(1_789_138_584_000),
+        entitlements: [
+          {
+            featureKey: 'safe_seats',
+            enabled: true,
+            quota: 10,
+            value: null,
+          },
+        ],
+      },
     });
   });
 
@@ -441,19 +449,20 @@ describe('SubscriptionSyncService', () => {
 
     await target.handleWebhook(webhookEvent({ data }));
 
+    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
     expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
-    expect(entitlementsService.materialize).toHaveBeenCalledWith({
+    expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith({
       spaceId,
-      eventAt: expect.any(Date),
-      authoritative: true,
+      triggerEventAt: expect.any(Date),
+      observedEventAt: null,
       subscriptions: [
         expect.objectContaining({ upstreamSubscriptionId: subscription.id }),
       ],
     });
   });
 
-  describe('event ordering', () => {
-    const materializedAt = new Date('2026-08-17T12:00:10.000Z');
+  describe('ordering fallbacks', () => {
+    const markedAt = new Date('2026-08-17T12:00:10.000Z');
 
     function upstreamState(): void {
       billingApi.getSubscriptionsByCustomerId.mockResolvedValue([
@@ -461,80 +470,66 @@ describe('SubscriptionSyncService', () => {
       ]);
     }
 
-    // The subscription.updated-after-subscription.deleted case: the payload
-    // would resurrect the subscription, so upstream is asked instead.
-    it('re-fetches instead of applying a payload older than the materialized state', async () => {
-      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
-      upstreamState();
-      const event = webhookEvent({
-        type: 'customer.subscription.updated',
-        created: toSecondsTimestamp(new Date('2026-08-17T12:00:00.000Z')),
-      });
+    it('leaves upstream alone when the event write lands', async () => {
+      await target.handleWebhook(webhookEvent());
 
-      await target.handleWebhook(event);
+      expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(1);
+      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
+    });
+
+    // Whatever the reason materialize gives — a stale stamp, a tie, or a
+    // concurrent write — the answer here is the same: ask upstream.
+    it('asks upstream when the event write is not applied', async () => {
+      subscriptionsRepository.getLastEventAt.mockResolvedValue(markedAt);
+      entitlementsService.materializeFromEvent.mockResolvedValue(false);
+      upstreamState();
+
+      await target.handleWebhook(webhookEvent());
 
       expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
-      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({
-          authoritative: true,
+          // Read before the fetch went out, so a write landing meanwhile is
+          // caught under the lock.
+          observedEventAt: markedAt,
           subscriptions: [expect.objectContaining({ status: 'canceled' })],
         }),
       );
-      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      // Neither attempt may be served the other's snapshot.
+      expect(cacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(loggingService.warn).not.toHaveBeenCalled();
     });
 
-    it('applies the payload of an event that orders after the materialized state', async () => {
-      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
-      const created = toSecondsTimestamp(new Date('2026-08-17T12:00:20.000Z'));
-
-      await target.handleWebhook(
-        webhookEvent({ type: 'customer.subscription.updated', created }),
-      );
-
-      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({
-          eventAt: new Date(created * 1_000),
-          authoritative: false,
-        }),
-      );
-    });
-
-    // Same stamp: the event is not older, so its own payload still counts.
-    it('applies the payload of an event stamped exactly at the materialized state', async () => {
-      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
-
-      await target.handleWebhook(
-        webhookEvent({ created: toSecondsTimestamp(materializedAt) }),
-      );
-
-      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ authoritative: false }),
-      );
-    });
-
-    it('re-fetches when the event carries no created stamp to order by', async () => {
-      subscriptionsRepository.getLastEventAt.mockResolvedValue(materializedAt);
+    it('goes straight to upstream when the event carries no created stamp', async () => {
       upstreamState();
 
       await target.handleWebhook({ ...webhookEvent(), created: undefined });
 
-      expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
-      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ eventAt: null, authoritative: true }),
+      expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({ triggerEventAt: null }),
       );
     });
 
-    it('applies the payload of the first event a space ever gets', async () => {
-      subscriptionsRepository.getLastEventAt.mockResolvedValue(null);
+    it('acks with a warning when upstream is superseded too', async () => {
+      entitlementsService.materializeFromEvent.mockResolvedValue(false);
+      entitlementsService.materializeAuthoritative.mockResolvedValue(false);
+      upstreamState();
 
       await target.handleWebhook(webhookEvent());
 
-      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-      expect(entitlementsService.materialize).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({ authoritative: false }),
-      );
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).toHaveBeenCalledTimes(1);
+      expect(loggingService.warn).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).not.toHaveBeenCalled();
     });
   });
 });

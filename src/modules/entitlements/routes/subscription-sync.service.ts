@@ -18,6 +18,10 @@ import {
   WALLET_WEB_CUSTOMER_GROUP,
   type WebhookEvent,
 } from '@/modules/billing/domain/entities/webhook-event.entity';
+import type {
+  FeatureKey,
+  FeatureType,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import {
   mapEventToSubscription,
@@ -38,16 +42,18 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
  * this service only ever sees an already-well-formed `WebhookEvent`.
  *
  * An event carrying a complete subscription snapshot (id, plan, status and
- * period start) is materialized directly from the payload. Event types that
- * carry only a partial snapshot fall back to re-fetching the authoritative
- * state from the billing service, so a thin payload never overwrites stored
- * state with nulls.
+ * period start) is offered to `EntitlementsService.materializeFromEvent`,
+ * which applies it only while it orders strictly after the mark stored for the
+ * space — so a `subscription.updated` delivered after a
+ * `subscription.deleted` cannot resurrect the subscription. That decision is
+ * taken inside the transaction holding the space's lock, and this service only
+ * reacts to its answer.
  *
- * Events are ordered by their `created` stamp, not by delivery: an event that
- * does not order after the state already materialized for the space — a late
- * delivery, or one carrying no stamp at all — does not write from its payload.
- * It re-fetches instead, so upstream decides, and a `subscription.updated`
- * arriving after a `subscription.deleted` cannot resurrect the subscription.
+ * Anything the payload cannot settle — a partial snapshot, no `created` stamp,
+ * an event that does not order after what is stored, or a concurrent delivery
+ * that moved the mark mid-write — falls back to the authoritative state read
+ * from the billing service, so a thin or stale payload never overwrites what
+ * is stored.
  *
  * Unprocessable-but-authenticated events (unknown space, `api` customer
  * group) are logged and acked: retrying cannot fix them. Fetch/DB errors
@@ -120,57 +126,53 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       return;
     }
 
-    // The billing-api datasource caches subscriptions in Redis — bust it so
-    // the REST read path serves post-event state.
-    await this.cacheService.deleteByKey(
-      CacheRouter.getBillingSubscriptionsCacheDir({
-        upstreamCustomerId,
-        status: 'all',
-      }).key,
-    );
+    const eventAt = fromSecondsTimestamp(event.created);
     const features = await this.featuresRepository.getFeatures();
     const featureTypeByKey = new Map(
       features.map((feature) => [feature.key, feature.type]),
     );
+    const eventSubscription = mapEventToSubscription({
+      event,
+      featureTypeByKey,
+      onWarning: (message) => this.loggingService.warn(message),
+    });
 
-    const onWarning = (message: string): void =>
-      this.loggingService.warn(message);
-    const eventAt = fromSecondsTimestamp(event.created);
-    const storedEventAt =
-      await this.subscriptionsRepository.getLastEventAt(spaceId);
-    const isStale =
-      eventAt === null || (storedEventAt !== null && eventAt < storedEventAt);
-    if (isStale) {
-      this.loggingService.debug(
-        `Billing webhook event ${event.id} (${event.type}) does not order after the state materialized for space ${spaceId}; re-fetching instead of applying its payload`,
-      );
-    }
-    const eventSubscription = isStale
-      ? null
-      : mapEventToSubscription({
-          event,
-          featureTypeByKey,
-          onWarning,
-        });
-    const subscriptions =
-      eventSubscription === null
-        ? mapUpstreamSubscriptions({
-            subscriptions: await this.billingApi.getSubscriptionsByCustomerId({
-              upstreamCustomerId,
-              status: 'all',
-            }),
-            featureTypeByKey,
-            onWarning,
-          })
-        : [eventSubscription];
-
+    // Which state the write came from, for the log below.
+    let fromPayload = false;
     try {
-      await this.entitlementsService.materialize({
-        spaceId,
-        subscriptions,
-        eventAt,
-        authoritative: eventSubscription === null,
-      });
+      let materialized = false;
+      if (eventSubscription !== null && eventAt !== null) {
+        // The billing-api datasource caches subscriptions in Redis — bust it so
+        // the REST read path serves post-event state.
+        await this.clearSubscriptionsCache(upstreamCustomerId);
+        materialized = await this.entitlementsService.materializeFromEvent({
+          spaceId,
+          subscription: eventSubscription,
+          eventAt,
+        });
+        fromPayload = materialized;
+      }
+
+      // Either the payload was not usable — a partial snapshot, no `created`
+      // stamp, or an event that does not order after what is stored — or a
+      // concurrent delivery moved the mark while it was being written. Upstream
+      // decides in every one of those cases.
+      if (!materialized) {
+        materialized = await this.materializeFromUpstream({
+          spaceId,
+          upstreamCustomerId,
+          triggerEventAt: eventAt,
+          featureTypeByKey,
+        });
+      }
+      if (!materialized) {
+        // A concurrent delivery beat the re-fetch too: its state is newer than
+        // anything this event could write, so letting it stand is the end.
+        this.loggingService.warn(
+          `Billing webhook event ${event.id} was superseded twice for space ${spaceId}; the concurrent delivery's state stands`,
+        );
+        return;
+      }
     } catch (error) {
       // The space existed a moment ago (resolved just above); a
       // deletion racing this request — caught either as a NotFoundException
@@ -190,15 +192,57 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     }
 
     this.loggingService.info(
-      `Materialized ${subscriptions.length} subscription(s) for space ${spaceId} (event ${event.id}, ${event.type})`,
+      `Materialized space ${spaceId} from ${fromPayload ? 'the event payload' : 'the authoritative state'} (event ${event.id}, ${event.type})`,
     );
   }
 
   /**
-   * True for the FK violation `materialize()`'s subscriptions insert raises
-   * when the space is deleted between that lookup and this
-   * insert — narrower than, and not covered by, the NotFoundException its
-   * own upfront existence check throws.
+   * Reads the authoritative state from the billing service and materializes it.
+   * The mark is read first, so the write can be abandoned if the space moves on
+   * while the fetch is in flight, and the Redis cache is busted before the
+   * fetch, so a second attempt cannot be served the first one's snapshot.
+   */
+  private async materializeFromUpstream(args: {
+    spaceId: Space['id'];
+    upstreamCustomerId: string;
+    triggerEventAt: Date | null;
+    featureTypeByKey: Map<FeatureKey, FeatureType>;
+  }): Promise<boolean> {
+    const observedEventAt = await this.subscriptionsRepository.getLastEventAt(
+      args.spaceId,
+    );
+    await this.clearSubscriptionsCache(args.upstreamCustomerId);
+    const subscriptions = mapUpstreamSubscriptions({
+      subscriptions: await this.billingApi.getSubscriptionsByCustomerId({
+        upstreamCustomerId: args.upstreamCustomerId,
+        status: 'all',
+      }),
+      featureTypeByKey: args.featureTypeByKey,
+      onWarning: (message) => this.loggingService.warn(message),
+    });
+    return await this.entitlementsService.materializeAuthoritative({
+      spaceId: args.spaceId,
+      subscriptions,
+      observedEventAt,
+      triggerEventAt: args.triggerEventAt,
+    });
+  }
+
+  private async clearSubscriptionsCache(
+    upstreamCustomerId: string,
+  ): Promise<void> {
+    await this.cacheService.deleteByKey(
+      CacheRouter.getBillingSubscriptionsCacheDir({
+        upstreamCustomerId,
+        status: 'all',
+      }).key,
+    );
+  }
+
+  /**
+   * True for the FK violation the subscriptions insert raises when the space is
+   * deleted between the existence check and the insert — narrower than, and not
+   * covered by, the NotFoundException that check throws itself.
    */
   private isSpaceDeletionRace(error: unknown): boolean {
     return (

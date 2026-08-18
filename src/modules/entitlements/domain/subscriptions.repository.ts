@@ -11,6 +11,13 @@ import type {
 } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
+/**
+ * Namespace of this module's transaction-scoped advisory locks, so a space id
+ * is only ever compared against other entitlements-sync locks. The value is
+ * arbitrary
+ */
+const SUBSCRIPTION_SYNC_LOCK_NAMESPACE = 1643;
+
 @Injectable()
 export class SubscriptionsRepository implements ISubscriptionsRepository {
   public constructor(
@@ -74,7 +81,13 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     spaceId: Space['id'],
     entityManager: EntityManager,
   ): Promise<void> {
-    await entityManager.query('SELECT pg_advisory_xact_lock($1)', [spaceId]);
+    // Two-int form on purpose: the single-int key space is global and shared
+    // with locks taken elsewhere in the process — PostgresDatabaseMigrationHook
+    // holds 132, which a space with that id would otherwise contend with.
+    await entityManager.query('SELECT pg_advisory_xact_lock($1, $2)', [
+      SUBSCRIPTION_SYNC_LOCK_NAMESPACE,
+      spaceId,
+    ]);
   }
 
   public async demoteActiveSubscriptions(

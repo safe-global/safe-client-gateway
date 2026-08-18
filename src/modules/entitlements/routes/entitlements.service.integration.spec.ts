@@ -75,6 +75,7 @@ describe('EntitlementsService', () => {
   // The service composes the per-table repositories; exercised here against
   // the real database so the queries and the transaction run for real.
   let service: EntitlementsService;
+  let subscriptionsRepository: SubscriptionsRepository;
 
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
   const testConfiguration = configuration();
@@ -154,9 +155,12 @@ describe('EntitlementsService', () => {
     );
     await migrator.migrate();
 
+    subscriptionsRepository = new SubscriptionsRepository(
+      postgresDatabaseService,
+    );
     service = new EntitlementsService(
       new FeaturesRepository(postgresDatabaseService),
-      new SubscriptionsRepository(postgresDatabaseService),
+      subscriptionsRepository,
       new SubscriptionEntitlementsRepository(postgresDatabaseService),
       spacesRepositoryStub,
       postgresDatabaseService,
@@ -207,17 +211,35 @@ describe('EntitlementsService', () => {
     return new Date(FIRST_STAMP.getTime() + stampSequence * 1_000);
   }
 
-  async function materialize(args: {
+  async function materializeFromEvent(args: {
+    spaceId: number;
+    subscription: MaterializedSubscription;
+    eventAt?: Date;
+  }): Promise<boolean> {
+    return await service.materializeFromEvent({
+      spaceId: args.spaceId,
+      subscription: args.subscription,
+      eventAt: args.eventAt ?? nextStamp(),
+    });
+  }
+
+  async function materializeAuthoritative(args: {
     spaceId: number;
     subscriptions: Array<MaterializedSubscription>;
-    eventAt?: Date | null;
-    authoritative?: boolean;
-  }): Promise<void> {
-    await service.materialize({
+    triggerEventAt?: Date | null;
+    observedEventAt?: Date | null;
+  }): Promise<boolean> {
+    return await service.materializeAuthoritative({
       spaceId: args.spaceId,
       subscriptions: args.subscriptions,
-      eventAt: args.eventAt === undefined ? nextStamp() : args.eventAt,
-      authoritative: args.authoritative ?? false,
+      triggerEventAt:
+        args.triggerEventAt === undefined ? nextStamp() : args.triggerEventAt,
+      // What a real caller observes before it fetches, read through the same
+      // query it uses — a case simulating a concurrent write passes its own.
+      observedEventAt:
+        args.observedEventAt === undefined
+          ? await subscriptionsRepository.getLastEventAt(args.spaceId)
+          : args.observedEventAt,
     });
   }
 
@@ -269,7 +291,7 @@ describe('EntitlementsService', () => {
         ])
         .build();
 
-      await materialize({ spaceId, subscriptions: [subscription] });
+      await materializeFromEvent({ spaceId, subscription });
 
       const [persisted] = await getSubscriptions();
       expect(persisted).toMatchObject({
@@ -317,7 +339,7 @@ describe('EntitlementsService', () => {
         ])
         .build();
 
-      await materialize({ spaceId, subscriptions: [subscription] });
+      await materializeFromEvent({ spaceId, subscription });
 
       const [persisted] = await getSubscriptions();
       expect(persisted.entitlements).toHaveLength(1);
@@ -334,8 +356,8 @@ describe('EntitlementsService', () => {
         ])
         .build();
 
-      await materialize({ spaceId, subscriptions: [subscription] });
-      await materialize({ spaceId, subscriptions: [subscription] });
+      await materializeFromEvent({ spaceId, subscription });
+      await materializeFromEvent({ spaceId, subscription });
 
       expect(await dataSource.getRepository(SpaceSubscription).count()).toBe(1);
       expect(
@@ -355,10 +377,7 @@ describe('EntitlementsService', () => {
             .build(),
         ])
         .build();
-      await materialize({
-        spaceId,
-        subscriptions: [oldSubscription],
-      });
+      await materializeFromEvent({ spaceId, subscription: oldSubscription });
 
       // Upgrade: the old subscription cancels, a new one becomes active. The
       // slot must be freed before the promotion is written, or the "one active
@@ -373,7 +392,7 @@ describe('EntitlementsService', () => {
             .build(),
         ])
         .build();
-      await materialize({
+      await materializeAuthoritative({
         spaceId,
         subscriptions: [
           { ...oldSubscription, status: 'canceled', entitlements: null },
@@ -412,10 +431,7 @@ describe('EntitlementsService', () => {
           parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
         ])
         .build();
-      await materialize({
-        spaceId,
-        subscriptions: [oldSubscription],
-      });
+      await materializeFromEvent({ spaceId, subscription: oldSubscription });
 
       // Same upgrade as above, but with the incoming (active) subscription
       // listed FIRST: input order must not matter, which only holds because
@@ -428,7 +444,7 @@ describe('EntitlementsService', () => {
           parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
         ])
         .build();
-      await materialize({
+      await materializeAuthoritative({
         spaceId,
         subscriptions: [
           newSubscription,
@@ -462,7 +478,7 @@ describe('EntitlementsService', () => {
         .with('status', 'past_due')
         .with('entitlements', null)
         .build();
-      await materialize({ spaceId, subscriptions: [pastDue] });
+      await materializeFromEvent({ spaceId, subscription: pastDue });
 
       const incoming = materializedSubscriptionBuilder()
         .with('status', 'active')
@@ -472,8 +488,8 @@ describe('EntitlementsService', () => {
         .build();
 
       await expect(
-        materialize({ spaceId, subscriptions: [incoming] }),
-      ).resolves.toBeUndefined();
+        materializeFromEvent({ spaceId, subscription: incoming }),
+      ).resolves.toBe(true);
 
       const rows = await dataSource
         .getRepository(SpaceSubscription)
@@ -490,7 +506,7 @@ describe('EntitlementsService', () => {
 
     it('rejects an unknown workspace', async () => {
       await expect(
-        materialize({
+        materializeAuthoritative({
           spaceId: faker.number.int({ min: 100_000, max: 1_000_000 }),
           subscriptions: [materializedSubscriptionBuilder().build()],
         }),
@@ -501,7 +517,7 @@ describe('EntitlementsService', () => {
       const spaceId = await createSpace();
 
       await expect(
-        materialize({
+        materializeAuthoritative({
           spaceId,
           subscriptions: [
             materializedSubscriptionBuilder()
@@ -537,9 +553,9 @@ describe('EntitlementsService', () => {
         .with('entitlements', null)
         .build();
 
-      await materialize({
+      await materializeFromEvent({
         spaceId,
-        subscriptions: [subscription],
+        subscription: subscription,
         eventAt: newerStamp,
       });
 
@@ -550,22 +566,27 @@ describe('EntitlementsService', () => {
     // The subscription.updated-after-subscription.deleted case, at the write
     // boundary: the payload would resurrect the subscription and restore the
     // package the deletion took away.
-    it('skips a payload stamped before the materialized state', async () => {
+    // A tie counts as not newer too: upstream stamps in whole seconds, so two
+    // events of the same second are no proof of order.
+    it.each([
+      ['older than', olderStamp],
+      ['equal to', newerStamp],
+    ])('skips, and reports, a payload stamped %s the materialized state', async (_, eventAt) => {
       const spaceId = await createSpace();
       const canceled = materializedSubscriptionBuilder()
         .with('status', 'canceled')
         .with('entitlements', null)
         .build();
-      await materialize({
+      await materializeFromEvent({
         spaceId,
-        subscriptions: [canceled],
+        subscription: canceled,
         eventAt: newerStamp,
       });
 
-      await materialize({
-        spaceId,
-        subscriptions: [
-          {
+      await expect(
+        materializeFromEvent({
+          spaceId,
+          subscription: {
             ...canceled,
             status: 'active',
             entitlements: [
@@ -574,9 +595,9 @@ describe('EntitlementsService', () => {
                 .build(),
             ],
           },
-        ],
-        eventAt: olderStamp,
-      });
+          eventAt,
+        }),
+      ).resolves.toBe(false);
 
       const [persisted] = await getSubscriptions();
       expect(persisted).toMatchObject({
@@ -592,17 +613,16 @@ describe('EntitlementsService', () => {
         .with('status', 'active')
         .with('entitlements', null)
         .build();
-      await materialize({
+      await materializeFromEvent({
         spaceId,
-        subscriptions: [subscription],
+        subscription: subscription,
         eventAt: newerStamp,
       });
 
-      await materialize({
+      await materializeAuthoritative({
         spaceId,
         subscriptions: [{ ...subscription, status: 'canceled' }],
-        eventAt: olderStamp,
-        authoritative: true,
+        triggerEventAt: olderStamp,
       });
 
       const [persisted] = await getSubscriptions();
@@ -612,16 +632,35 @@ describe('EntitlementsService', () => {
       });
     });
 
-    it('rejects a payload carrying no stamp to order by', async () => {
+    // What a slow re-fetch looks like from inside the transaction: the caller
+    // read the mark, prepared its state, and by the time it got the lock a
+    // concurrent delivery had already written something newer.
+    it('abandons a write whose observed mark moved while it was prepared', async () => {
       const spaceId = await createSpace();
+      const canceled = materializedSubscriptionBuilder()
+        .with('status', 'canceled')
+        .with('entitlements', null)
+        .build();
+      await materializeFromEvent({
+        spaceId,
+        subscription: canceled,
+        eventAt: newerStamp,
+      });
 
-      await expect(
-        materialize({
-          spaceId,
-          subscriptions: [materializedSubscriptionBuilder().build()],
-          eventAt: null,
-        }),
-      ).rejects.toThrow('needs its created stamp');
+      const outcome = await materializeAuthoritative({
+        spaceId,
+        subscriptions: [{ ...canceled, status: 'active' }],
+        triggerEventAt: new Date(newerStamp.getTime() + 20_000),
+        // Read before the concurrent write above landed.
+        observedEventAt: olderStamp,
+      });
+
+      expect(outcome).toBe(false);
+      const [persisted] = await getSubscriptions();
+      expect(persisted).toMatchObject({
+        status: 'canceled',
+        lastEventAt: newerStamp,
+      });
     });
   });
 });
