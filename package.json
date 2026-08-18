@@ -66,7 +66,7 @@
     "@safe-global/safe-modules-deployments": "3.0.9",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.0.1",
-    "bullmq": "^5.81.2",
+    "bullmq": "^6.0.11",
     "cache-manager": "7.2.9",
     "csv-stringify": "^6.8.3",
     "ecdsa-sig-formatter": "1.0.11",
