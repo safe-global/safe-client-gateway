@@ -25,6 +25,10 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
   unique: true,
   where: `status IN (${toSqlList(ACTIVE_SUBSCRIPTION_STATUSES)})`,
 })
+// Leading `space` serves the lookups a plain space_id index would (the FK's
+// cascade check, terminal-status rows); the second column lets the sync's
+// "newest event materialized for this space" read resolve with one seek.
+@Index('IDX_subscriptions_space_id_last_event_at', ['space', 'lastEventAt'])
 @Check(
   'CHK_subscriptions_status',
   `"status" IN (${toSqlList(SubscriptionStatuses)})`,
@@ -93,7 +97,6 @@ export class SpaceSubscription implements DomainSpaceSubscription {
   })
   public readonly updatedAt!: Date;
 
-  @Index('IDX_subscriptions_space_id')
   @ManyToOne(
     () => Space,
     (space: Space) => space.id,

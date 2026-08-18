@@ -58,13 +58,15 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       SpaceSubscription,
       entityManager,
     );
-    const newest = await repository.findOne({
-      where: { space: { id: spaceId } },
-      // NULLS LAST: Postgres sorts them first on DESC, which would hide a
-      // stamped row behind an unstamped one.
-      order: { lastEventAt: { direction: 'DESC', nulls: 'LAST' } },
-      select: { lastEventAt: true },
-    });
+    // An aggregate rather than an ordered row read: it lets Postgres answer
+    // from IDX_subscriptions_space_id_last_event_at with a single seek, so the
+    // cost does not grow with the number of subscriptions the space has
+    // accumulated. `MAX` ignores unstamped rows, so no NULL handling is needed.
+    const newest = await repository
+      .createQueryBuilder('subscription')
+      .select('MAX(subscription.lastEventAt)', 'lastEventAt')
+      .where('space_id = :spaceId', { spaceId })
+      .getRawOne<{ lastEventAt: Date | null }>();
     return newest?.lastEventAt ?? null;
   }
 

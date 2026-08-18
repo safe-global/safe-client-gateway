@@ -50,9 +50,12 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     // The unique index above is partial (active-ish statuses only), so it
     // can't serve a lookup covering terminal-status rows or the FK's
     // `ON DELETE CASCADE` check from `spaces` — same reasoning as
-    // IDX_SFU_feature_id/IDX_SE_feature_id above.
+    // IDX_SFU_feature_id/IDX_SE_feature_id above. Leading `space_id` serves
+    // those; the trailing `last_event_at` lets the webhook's "newest event
+    // materialized for this space" read resolve with a single index seek
+    // instead of one growing with the space's subscription history.
     await queryRunner.query(
-      `CREATE INDEX "IDX_subscriptions_space_id" ON "subscriptions" ("space_id")`,
+      `CREATE INDEX "IDX_subscriptions_space_id_last_event_at" ON "subscriptions" ("space_id", "last_event_at")`,
     );
     // `updated_at` is maintained by the shared trigger every other table uses
     // (see 1727701600427-update_timestamp_trigger); the entity columns are
@@ -115,7 +118,9 @@ export class CreateEntitlements1785406836453 implements MigrationInterface {
     await queryRunner.query(
       `ALTER TABLE "space_feature_usage" DROP CONSTRAINT "FK_SFU_space_id"`,
     );
-    await queryRunner.query(`DROP INDEX "public"."IDX_subscriptions_space_id"`);
+    await queryRunner.query(
+      `DROP INDEX "public"."IDX_subscriptions_space_id_last_event_at"`,
+    );
     await queryRunner.query(
       `DROP INDEX "public"."UQ_subscriptions_active_space"`,
     );
