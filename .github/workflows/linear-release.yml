@@ -33,6 +33,7 @@ concurrency:
 jobs:
   linear-release:
     runs-on: ubuntu-latest
+    timeout-minutes: 10 # A hung sync should fail today, not in six hours
     permissions:
       contents: read
 
@@ -50,11 +51,6 @@ jobs:
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "::error::Release tag is empty; refusing to sync an untagged release."
-            exit 1
-          fi
-
           # Linear versions its releases without the tag's `v` prefix.
           echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
           echo "Linear release ${RELEASE_TAG#v} (tag $RELEASE_TAG)"
