@@ -1,0 +1,158 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+name: Linear Release
+
+# Syncs Client Gateway releases to the scheduled release pipeline in Linear.
+#
+# Automated path: publishing a GitHub release (tag `vX.Y.Z`) runs `sync` to
+# attach the issues shipped since the last release, then `complete` to mark the
+# Linear release as Released, which auto-generates its release notes. Both steps
+# are guarded so a Linear outage never fails a shipped release.
+#
+# Manual path: `workflow_dispatch` is the backfill / repair tool - re-sync a
+# release, move it between stages, or preview the result with dry_run.
+#
+# Setup: add the pipeline access key as the `LINEAR_ACCESS_KEY` repository
+# secret (Settings -> Secrets and variables -> Actions). This must be a pipeline
+# access key generated from the pipeline settings in Linear, not a personal API
+# key. Without the secret both jobs no-op on the automated path and fail loudly
+# on the manual one.
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. 1.122.0 or v1.122.0) - defaults to the latest published GitHub release'
+        required: false
+        type: string
+      command:
+        description: 'Linear release command'
+        required: true
+        type: choice
+        default: sync
+        options:
+          - sync
+          - update
+          - complete
+      stage:
+        description: 'Deployment stage (required for the "update" command, e.g. In Progress)'
+        required: false
+        type: string
+      dry_run:
+        description: 'Preview the action without modifying Linear'
+        required: false
+        type: boolean
+        default: false
+
+permissions: {}
+
+concurrency:
+  group: linear-release-${{ github.event.release.tag_name || inputs.version || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # Automated path: a published GitHub release closes out the matching Linear
+  # release. Every step is fail-open - the release has already shipped by the
+  # time this runs, so Linear must never be able to turn it red.
+  release-published:
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
+
+      - name: Resolve release version
+        id: version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Linear releases are versioned without the tag's `v` prefix, matching
+          # the Wallet and Mobile pipelines.
+          VERSION="${RELEASE_TAG#v}"
+          if [ -z "$VERSION" ]; then
+            echo "::error::Release tag is empty; cannot resolve a Linear release version."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Linear release version: $VERSION"
+
+      - name: Sync release to Linear
+        continue-on-error: true
+        uses: linear/linear-release-action@3858a5d7892435dc63302ac76b0cdb587435caa9 # v0.14.6
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+          command: sync
+          version: ${{ steps.version.outputs.version }}
+          links: ${{ github.event.release.html_url }}
+
+      - name: Complete Linear release
+        continue-on-error: true
+        uses: linear/linear-release-action@3858a5d7892435dc63302ac76b0cdb587435caa9 # v0.14.6
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+          command: complete
+          version: ${{ steps.version.outputs.version }}
+
+  # Manual path: backfill or repair. Unlike the automated job this one fails
+  # loudly, because a human is watching the run and wants to know it did nothing.
+  manual:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Validate inputs
+        env:
+          INPUT_COMMAND: ${{ inputs.command }}
+          INPUT_STAGE: ${{ inputs.stage }}
+        run: |
+          if [ "$INPUT_COMMAND" = "update" ] && [ -z "$INPUT_STAGE" ]; then
+            echo "::error::The \"update\" command requires a stage (e.g. In Progress)."
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
+
+      - name: Resolve release version
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
+          fi
+
+          # Accept `v1.122.0` or `1.122.0` so the tag can be pasted verbatim.
+          VERSION="${VERSION#v}"
+
+          if [ -z "$VERSION" ]; then
+            echo "::error::Could not resolve a release version. Pass one explicitly."
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Linear release version: $VERSION"
+
+      - name: Run Linear release (${{ inputs.command }})
+        uses: linear/linear-release-action@3858a5d7892435dc63302ac76b0cdb587435caa9 # v0.14.6
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+          command: ${{ inputs.command }}
+          version: ${{ steps.version.outputs.version }}
+          stage: ${{ inputs.stage }}
+          dry_run: ${{ inputs.dry_run }}
