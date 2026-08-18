@@ -596,12 +596,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@blockaid/client@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "@blockaid/client@npm:1.5.0"
+"@blockaid/client@npm:^1.7.0":
+  version: 1.7.0
+  resolution: "@blockaid/client@npm:1.7.0"
   bin:
     blockaid-client: bin/cli
-  checksum: 10/1a743064ffe7b7f665b29ef8cf138709d5571e659f4bf77a01a8993292e51bf9bb1386360fa3101e7ba65821a819ea269908ceb800f4f9ba90ef33a8a43a422e
+  checksum: 10/b96bb492c6534faf677ff44d734b810b2ef0f7a24d8a7129bd087fb71e099e1b5b715982cc37324cbbf72d80a565b9620589c3d1609bb8ff3be38bf8c4510688
   languageName: node
   linkType: hard
 
@@ -6260,7 +6260,7 @@ __metadata:
     "@aws-sdk/lib-storage": "npm:3.1102.0"
     "@aws-sdk/s3-request-presigner": "npm:3.1102.0"
     "@biomejs/biome": "npm:2.4.12"
-    "@blockaid/client": "npm:^1.5.0"
+    "@blockaid/client": "npm:^1.7.0"
     "@faker-js/faker": "npm:10.5.0"
     "@fastify/cookie": "npm:^11.1.1"
     "@fastify/static": "npm:^10.1.2"
