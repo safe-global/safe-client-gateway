@@ -74,9 +74,13 @@ Client                          Gateway                        Auth0
   │                                │   ?code=...&state=...        │
   ├─ GET /v1/auth/oidc/callback ──►│ validate state vs cookie     │
   │                                │ clear state cookie           │
-  │                                │ exchange code for token ────►│
-  │                                │◄──── Auth0 JWT ──────────────┤
-  │                                │ verify JWT signature + claims│
+  │                                │ POST /oauth/token ──────────►│
+  │                                │  code + client_id +          │
+  │                                │  client_secret + redirect_uri│
+  │                                │◄─ id_token + access_token ───┤
+  │                                │ verify id_token vs JWKS      │
+  │                                │ (RS256, iss, aud=client_id)  │
+  │                                │ require verified email       │
   │                                │ resolve/create user by sub   │
   │                                │ sign internal JWT (OidcAuthPayload)
   │◄──── Set-Cookie: access_token ─┤                              │
@@ -103,10 +107,18 @@ The Auth0 `sub` (external user ID) is mapped to the internal user ID at login. S
 The `state` parameter passed through Auth0 is a base64url-encoded JSON blob:
 
 ```json
-{ "csrf": "<64-char hex>", "redirectUrl": "https://..." }
+{ "csrf": "<64-char hex>", "redirectUrl": "https://...", "enroll": true }
 ```
 
-It is stored in a short-lived HTTP-only cookie (`auth_state`, 5 min TTL). On callback, the gateway compares the full state string from the query param against the cookie value before proceeding. The state cookie is always cleared at the start of the callback handler, regardless of outcome.
+`csrf` is 32 bytes of `randomBytes` hex; `redirectUrl` and `enroll` are both optional. The blob is stored verbatim in a short-lived HTTP-only cookie (`auth_state`, 5 min TTL). On callback, the gateway compares the full state string from the query param against the cookie value before proceeding. The state cookie is always cleared at the start of the callback handler, regardless of outcome.
+
+The state is **not signed** — the cookie comparison is the only integrity check, and it carries three distinct guarantees:
+
+1. **Login CSRF / session fixation.** Without it, an attacker who obtains a valid authorization code for *their own* Auth0 account could navigate a victim's browser to `/v1/auth/oidc/callback?code=<attacker code>&state=…`, and the gateway would mint an `access_token` cookie for the attacker's account in the victim's browser. Anything the victim then does — adding an address book entry, accepting a space invite — lands in the attacker's account. The cookie check blocks this because the victim's browser has no matching `auth_state`.
+2. **Open redirect.** `redirectUrl` is read out of the state blob after the callback succeeds, and base64url is encoding, not authentication. Requiring the state to equal a cookie the gateway itself set is what prevents a hand-crafted state from steering the post-login redirect (and the `access_token` cookie's landing page) at an attacker-controlled origin. The same-origin validation at `/authorize` time only helps because state cannot be swapped afterwards.
+3. **Privileged instructions in state.** `enroll` drives `cleanupSupersededAuthenticators()`, which deletes MFA (TOTP) enrollments. That flag must not be attacker-settable on someone else's callback.
+
+The state cookie is `SameSite=Lax` in production rather than `Strict` deliberately: the Auth0 → callback hop is a cross-site top-level GET navigation, which `Lax` permits and `Strict` would drop, breaking every login. There is no PKCE and no OIDC `nonce` in this flow; code interception is instead mitigated by the confidential-client exchange (see below), and the state cookie is the browser-side binding.
 
 ### Callback error handling
 
@@ -125,17 +137,43 @@ The redirect target is resolved from the state cookie's `redirectUrl` when avail
 
 ## Auth0 Configuration
 
-| Env var                | Description                                  |
-| ---------------------- | -------------------------------------------- |
-| `AUTH0_DOMAIN`         | Auth0 tenant domain, e.g. `tenant.auth0.com` |
-| `AUTH0_CLIENT_ID`      | Application client ID                        |
-| `AUTH0_CLIENT_SECRET`  | Application client secret                    |
-| `AUTH0_REDIRECT_URI`   | Callback URL (must be allowlisted in Auth0)  |
-| `AUTH0_API_AUDIENCE`   | API identifier (audience claim in tokens)    |
-| `AUTH0_SIGNING_SECRET` | HS256 secret for verifying Auth0 JWTs        |
-| `AUTH0_SCOPE`          | Requested scopes, defaults to `openid`       |
+| Env var                                            | Description                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `AUTH0_DOMAIN`                                     | Auth0 tenant domain, e.g. `tenant.auth0.com`                                                                 |
+| `AUTH0_CLIENT_ID`                                  | Application client ID. Also the expected `aud` of the ID token                                               |
+| `AUTH0_CLIENT_SECRET`                              | Application client secret. Used only server-to-server — see below                                            |
+| `AUTH0_REDIRECT_URI`                               | Callback URL (must be allowlisted in Auth0)                                                                  |
+| `AUTH0_API_AUDIENCE`                               | Sent as the `audience` parameter on `/authorize`, so Auth0 issues an API access token. Not an ID token claim |
+| `AUTH0_SCOPE`                                      | Requested scopes, defaults to `openid`                                                                       |
+| `AUTH0_JWKS_CACHE_MAX_AGE_MILLISECONDS`            | How long the tenant JWKS is cached, defaults to 1 hour                                                        |
+| `AUTH0_JWKS_COOLDOWN_MILLISECONDS`                 | Minimum gap between JWKS refetches, defaults to 30s                                                          |
+| `AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS` | Slack subtracted from the cached Management API token's TTL, defaults to 60s                                  |
 
-Auth0 tokens are verified using **HS256** (HMAC-SHA256). The verifier checks issuer (`https://{domain}/`), audience, and signature before extracting claims. The Auth0 `sub` (external user ID) is then mapped to an internal numeric user ID via `usersRepository.findOrCreateByExtUserId()`.
+All of these are `optional()` in `RootConfigurationSchema` because the module is only registered when `FF_OIDC_AUTH` is on (`app.module.ts`). With the flag on they are effectively required: every one is read with `getOrThrow` in a constructor, so a missing value fails at boot rather than at first login.
+
+### ID token verification
+
+`Auth0TokenVerifier` verifies the **`id_token`** from the token response with `jose`, against the tenant's JWKS at `https://{domain}/.well-known/jwks.json` (`createRemoteJWKSet`, cached and cooldown-limited per the env vars above):
+
+- algorithm pinned to **RS256** (`JWT_RS_ALGORITHM`) — asymmetric, so the gateway holds no verification key
+- `iss` must equal `https://{domain}/`
+- `aud` must equal `AUTH0_CLIENT_ID` (the ID token's audience is the client, not the API)
+- claims are then `Auth0TokenSchema.parse()`d, which requires a non-empty `sub` and rejects `email_verified: true` without an `email`
+
+The `access_token` from the same response is schema-validated but otherwise unused: no `/userinfo` call, no Auth0 session-status lookup. Everything the gateway knows about the user comes from the locally verified ID token claims.
+
+`OidcAuthService.authenticateWithOidc` then requires **both** `email` and `email_verified`, rejecting the login with a 401 otherwise, and maps the Auth0 `sub` to an internal numeric user ID via `usersRepository.findOrCreateByExtUserIdAndEmail()`.
+
+### Client secret usage
+
+`AUTH0_CLIENT_SECRET` is only ever sent from the gateway to `https://{domain}/oauth/token`, never to the browser. There are exactly two call sites, both in `auth0-api.service.ts`:
+
+| Grant                | When                                                            | Why the secret                                                                                                                     |
+| -------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `authorization_code` | Every OIDC callback, redeeming the `code` for tokens            | Authenticates the gateway as a confidential client, so a leaked or intercepted `code` is not redeemable by anyone else. This is what stands in for PKCE here |
+| `client_credentials` | Fetching a Management API token (`audience` `/api/v2/`), cached | Machine-to-machine token for the MFA authenticator endpoints; needs `read:authentication_methods` and `delete:authentication_methods` |
+
+Because the code exchange is a confidential-client, server-to-server call, the browser never sees an Auth0 token at all — it only ever receives the gateway's own `access_token` cookie.
 
 > **Auth0 dashboard requirements:** Both redirect URLs must be allowlisted in the Auth0 application settings:
 >
@@ -154,6 +192,16 @@ The authorize URL accepts an optional `connection` parameter to pre-select the i
 - `google-oauth2` — Google social login
 
 If omitted, Auth0 shows its default login page.
+
+## MFA authenticators
+
+| Endpoint                             | Behaviour                                                                                                                                       |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /v1/auth/oidc/mfa/authenticators` | `AuthGuard`-protected. Lists the caller's Auth0 authentication methods via the Management API, for the self-service authenticator management UI |
+
+`/v1/auth/oidc/authorize?enroll=true` requests hosted enrollment of a new authenticator: an `ext-enroll-otp=true` parameter is added to the authorize URL, which the tenant's post-login Action reads from `event.request.query` to challenge an existing factor and then enroll a new one. The callback detects the round-trip via the `enroll` flag in the state blob and calls `cleanupSupersededAuthenticators()`, deleting every TOTP method except the most recently created one. Recovery codes are untouched.
+
+Both paths resolve the Auth0 user ID from the verified gateway payload or callback result — never from request input — because the Management API token has tenant-wide access.
 
 ---
 
@@ -186,7 +234,7 @@ Same as `AuthGuard` but allows unauthenticated requests through. The payload wil
 
 ### `OidcAuthRateLimitGuard`
 
-Applied at the **controller level** on `OidcAuthController`, so it covers both `/oidc/authorize` and `/oidc/callback`. Configured via `AUTH_RATE_LIMIT_MAX` / `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
+Applied at the **controller level** on `OidcAuthController`, so it covers `/oidc/authorize`, `/oidc/callback` and `/oidc/mfa/authenticators`. Configured via `AUTH_RATE_LIMIT_MAX` / `AUTH_RATE_LIMIT_WINDOW_SECONDS`.
 
 ### `@Auth()` decorator
 
