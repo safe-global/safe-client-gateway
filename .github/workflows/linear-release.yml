@@ -4,14 +4,16 @@ name: Linear Release
 
 # Syncs Client Gateway releases to the continuous "CGW" pipeline in Linear.
 #
-# Automated path: publishing a GitHub release (tag `vX.Y.Z`) runs `sync`, which
-# scans the commits since the last release for Linear issue IDs, attaches them,
-# links the GitHub release, and completes it in one step - continuous pipelines
+# Publishing a GitHub release (tag `vX.Y.Z`) runs `sync`, which scans the
+# commits since the last release for Linear issue IDs, attaches them, links the
+# GitHub release, and completes it in one step - continuous pipelines
 # auto-complete, so there is no separate `complete` call and no stage to move
-# between. The step is guarded so a Linear outage never fails a shipped release.
+# between.
 #
-# Manual path: `workflow_dispatch` is the backfill / repair tool - re-sync a
-# release, or preview the result with dry_run.
+# The sync fails loudly rather than fail-open: if Linear is unreachable or the
+# key is rejected, this run goes red and is re-run from the Actions UI. It
+# publishes nothing itself, so a red run here never blocks or reverts a release
+# that has already shipped.
 #
 # Setup: add the pipeline access key as the `LINEAR_ACCESS_KEY` repository
 # secret (Settings -> Secrets and variables -> Actions). This must be a pipeline
@@ -21,101 +23,46 @@ name: Linear Release
 on:
   release:
     types: [released]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g. 1.122.0 or v1.122.0) - defaults to the latest published GitHub release'
-        required: false
-        type: string
-      dry_run:
-        description: 'Preview the action without modifying Linear'
-        required: false
-        type: boolean
-        default: false
 
 permissions: {}
 
 concurrency:
-  group: linear-release-${{ github.event.release.tag_name || inputs.version || github.ref }}
+  group: linear-release-${{ github.event.release.tag_name }}
   cancel-in-progress: false
 
 jobs:
-  # One job for both triggers: the continuous pipeline needs a single `sync`
-  # either way, so the paths differ only in where the version comes from and in
-  # whether a failure is allowed to surface.
   linear-release:
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      # Resolved before checkout, because the tag it produces is what gets
-      # checked out. `gh api` needs no working copy.
-      - name: Resolve release
+      # Checks out the release tag itself, so the commit scan covers that
+      # release's history rather than whatever main happens to be at.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name }}
+          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
+
+      - name: Resolve release version
         id: release
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
-          RELEASE_URL: ${{ github.event.release.html_url }}
-          INPUT_VERSION: ${{ inputs.version }}
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
         run: |
-          if [ -n "$RELEASE_TAG" ]; then
-            # The tag that was actually published is ground truth, so it is
-            # taken as-is - a shipped release must never be rejected here.
-            TAG="$RELEASE_TAG"
-          elif [ -n "$INPUT_VERSION" ]; then
-            # Human-typed, so it is checked before a typo becomes a junk
-            # release in Linear that someone has to clean up by hand.
-            CANDIDATE="${INPUT_VERSION#v}"
-            if ! [[ "$CANDIDATE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "::error::Invalid version '$INPUT_VERSION'. Expected X.Y.Z, e.g. 1.122.0."
-              exit 1
-            fi
-            TAG="v$CANDIDATE"
-          else
-            TAG=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
-          fi
-
-          if [ -z "$TAG" ]; then
-            echo "::error::Could not resolve a release tag. Pass a version explicitly."
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "::error::Release tag is empty; refusing to sync an untagged release."
             exit 1
           fi
 
           # Linear versions its releases without the tag's `v` prefix.
-          VERSION="${TAG#v}"
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Linear release ${RELEASE_TAG#v} (tag $RELEASE_TAG)"
 
-          # Both paths attach the same link: the release event already carries
-          # the URL, a manual run looks it up by tag.
-          URL="$RELEASE_URL"
-          if [ -z "$URL" ]; then
-            URL=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.html_url' || true)
-          fi
-
-          {
-            echo "version=$VERSION"
-            echo "tag=$TAG"
-            echo "url=$URL"
-          } >> "$GITHUB_OUTPUT"
-          echo "Linear release $VERSION (tag $TAG)"
-
-      # Checks out the release tag rather than the branch the run was launched
-      # from, so a backfill scans that release's history and not main's.
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: refs/tags/${{ steps.release.outputs.tag }}
-          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
-
-      # Fail-open on the automated path only: the release has already shipped by
-      # the time this runs, so Linear must never be able to turn it red. A manual
-      # run fails loudly, because someone is watching and wants to know it no-oped.
       - name: Sync release to Linear
-        continue-on-error: ${{ github.event_name == 'release' }}
         uses: linear/linear-release-action@3858a5d7892435dc63302ac76b0cdb587435caa9 # v0.14.6
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
           version: ${{ steps.release.outputs.version }}
-          links: ${{ steps.release.outputs.url }}
-          dry_run: ${{ inputs.dry_run || false }}
+          links: ${{ github.event.release.html_url }}
