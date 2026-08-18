@@ -49,38 +49,63 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.event.release.tag_name || github.ref }}
-          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
-
-      - name: Resolve release version
-        id: version
+      # Resolved before checkout, because the tag it produces is what gets
+      # checked out. `gh api` needs no working copy.
+      - name: Resolve release
+        id: release
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
+          RELEASE_URL: ${{ github.event.release.html_url }}
           INPUT_VERSION: ${{ inputs.version }}
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
         run: |
           if [ -n "$RELEASE_TAG" ]; then
-            VERSION="$RELEASE_TAG"
+            # The tag that was actually published is ground truth, so it is
+            # taken as-is - a shipped release must never be rejected here.
+            TAG="$RELEASE_TAG"
           elif [ -n "$INPUT_VERSION" ]; then
-            VERSION="$INPUT_VERSION"
+            # Human-typed, so it is checked before a typo becomes a junk
+            # release in Linear that someone has to clean up by hand.
+            CANDIDATE="${INPUT_VERSION#v}"
+            if ! [[ "$CANDIDATE" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version '$INPUT_VERSION'. Expected X.Y.Z, e.g. 1.122.0."
+              exit 1
+            fi
+            TAG="v$CANDIDATE"
           else
-            VERSION=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
+            TAG=$(gh api "repos/$REPO/releases/latest" --jq '.tag_name')
           fi
 
-          # Linear releases are versioned without the tag's `v` prefix. Stripping
-          # it here also lets the manual input be pasted verbatim from the tag.
-          VERSION="${VERSION#v}"
-
-          if [ -z "$VERSION" ]; then
-            echo "::error::Could not resolve a release version. Pass one explicitly."
+          if [ -z "$TAG" ]; then
+            echo "::error::Could not resolve a release tag. Pass a version explicitly."
             exit 1
           fi
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Linear release version: $VERSION"
+
+          # Linear versions its releases without the tag's `v` prefix.
+          VERSION="${TAG#v}"
+
+          # Both paths attach the same link: the release event already carries
+          # the URL, a manual run looks it up by tag.
+          URL="$RELEASE_URL"
+          if [ -z "$URL" ]; then
+            URL=$(gh api "repos/$REPO/releases/tags/$TAG" --jq '.html_url' || true)
+          fi
+
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "url=$URL"
+          } >> "$GITHUB_OUTPUT"
+          echo "Linear release $VERSION (tag $TAG)"
+
+      # Checks out the release tag rather than the branch the run was launched
+      # from, so a backfill scans that release's history and not main's.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ steps.release.outputs.tag }}
+          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
 
       # Fail-open on the automated path only: the release has already shipped by
       # the time this runs, so Linear must never be able to turn it red. A manual
@@ -91,6 +116,6 @@ jobs:
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
-          version: ${{ steps.version.outputs.version }}
-          links: ${{ github.event.release.html_url }}
-          dry_run: ${{ inputs.dry_run }}
+          version: ${{ steps.release.outputs.version }}
+          links: ${{ steps.release.outputs.url }}
+          dry_run: ${{ inputs.dry_run || false }}
