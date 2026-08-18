@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { latestOf } from '@/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -96,6 +95,10 @@ export class EntitlementsService {
 
     const incomingActive = activeIsh.at(0);
 
+    // Set only for state taken from an event's own payload — the one kind of
+    // write the stored mark may reject as out of order.
+    const payloadEventAt = args.authoritative ? null : args.eventAt;
+
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       // Serializes concurrent webhooks for this space, so the mark read below
       // is what the write is actually ordered against.
@@ -108,19 +111,20 @@ export class EntitlementsService {
         entityManager,
       );
       if (
-        !args.authoritative &&
+        payloadEventAt !== null &&
         storedEventAt !== null &&
-        args.eventAt !== null &&
-        args.eventAt < storedEventAt
+        payloadEventAt < storedEventAt
       ) {
         this.loggingService.warn(
-          `materialize() skipped a payload for space ${args.spaceId} stamped ${args.eventAt.toISOString()}, older than the materialized ${storedEventAt.toISOString()}`,
+          `materialize() skipped a payload for space ${args.spaceId} stamped ${payloadEventAt.toISOString()}, older than the materialized ${storedEventAt.toISOString()}`,
         );
         return;
       }
-      const lastEventAt = args.authoritative
-        ? latestOf(storedEventAt, args.eventAt)
-        : args.eventAt;
+      // The payload's own stamp, or — for re-fetched state, which is current
+      // whatever triggered it — the later of the trigger and what is stored,
+      // so the mark never goes down.
+      const lastEventAt =
+        payloadEventAt ?? this.laterOf(storedEventAt, args.eventAt);
 
       let activeSubscriptionId: number | null = null;
 
@@ -200,5 +204,14 @@ export class EntitlementsService {
         );
       }
     });
+  }
+
+  private laterOf(
+    storedEventAt: Date | null,
+    triggerEventAt: Date | null,
+  ): Date | null {
+    if (storedEventAt === null) return triggerEventAt;
+    if (triggerEventAt === null) return storedEventAt;
+    return storedEventAt > triggerEventAt ? storedEventAt : triggerEventAt;
   }
 }

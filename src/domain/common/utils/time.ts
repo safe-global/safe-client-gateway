@@ -15,13 +15,6 @@ export const toSecondsTimestamp = (date: Date): number => {
   return Math.floor(date.getTime() / 1_000);
 };
 
-/** The later of two dates, either of which may be absent. */
-export const latestOf = (a: Date | null, b: Date | null): Date | null => {
-  if (a === null) return b;
-  if (b === null) return a;
-  return a > b ? a : b;
-};
-
 /**
  * Inverse of {@link toSecondsTimestamp}: `null` for an absent timestamp, and
  * for one no `Date` can hold, so an out-of-range upstream epoch surfaces as a

@@ -13,5 +13,6 @@ export const SpaceSubscriptionSchema = RowSchema.extend({
   planName: z.string().nullable(),
   currentPeriodStart: z.date().nullable(),
   currentPeriodEnd: z.date().nullable(),
+  lastEventAt: z.date().nullable(),
   entitlements: z.array(SubscriptionEntitlementSchema).optional(),
 });
