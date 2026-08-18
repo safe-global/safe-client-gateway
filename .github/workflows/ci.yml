@@ -107,6 +107,11 @@ jobs:
 
   unit-tests:
     runs-on: ubuntu-latest
+    # The suite normally finishes in ~3 min. Without an explicit cap a wedged
+    # test run (e.g. a Redis client that spins its retry loop instead of
+    # failing) inherits GitHub's 6-hour default and the check never reports at
+    # all — it just occupies a runner. Fail fast instead.
+    timeout-minutes: 20
     env:
       POSTGRES_TEST_DB: test-db
       POSTGRES_TEST_USER: postgres
@@ -171,6 +176,8 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+    # ~5 min in practice; capped for the same reason as unit-tests above.
+    timeout-minutes: 20
     env:
       POSTGRES_TEST_DB: test-db
       POSTGRES_TEST_USER: postgres
