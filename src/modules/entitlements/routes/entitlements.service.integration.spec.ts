@@ -504,6 +504,35 @@ describe('EntitlementsService', () => {
       );
     });
 
+    // A single event speaks only for its own subscription: the others are none
+    // of its business, however stale they look.
+    it('leaves other active rows alone when the state comes from one event', async () => {
+      const spaceId = await createSpace();
+      const active = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('entitlements', null)
+        .build();
+      await materializeFromEvent({ spaceId, subscription: active });
+
+      const unrelated = materializedSubscriptionBuilder()
+        .with('status', 'canceled')
+        .with('entitlements', null)
+        .build();
+      await materializeFromEvent({ spaceId, subscription: unrelated });
+
+      const rows = await dataSource
+        .getRepository(SpaceSubscription)
+        .find({ where: { space: { id: spaceId } } });
+      expect(
+        rows.map((row) => [row.upstreamSubscriptionId, row.status]),
+      ).toStrictEqual(
+        expect.arrayContaining([
+          [active.upstreamSubscriptionId, 'active'],
+          [unrelated.upstreamSubscriptionId, 'canceled'],
+        ]),
+      );
+    });
+
     it('rejects an unknown workspace', async () => {
       await expect(
         materializeAuthoritative({

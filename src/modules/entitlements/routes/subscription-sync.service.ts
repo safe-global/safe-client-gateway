@@ -22,6 +22,7 @@ import type {
   FeatureKey,
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import {
   mapEventToSubscription,
@@ -88,7 +89,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     }
     if (!isSubscriptionEventType(event.type)) {
       this.loggingService.info(
-        `Ignoring billing webhook event type ${event.type} (event ${event.id}): it carries no subscription snapshot`,
+        `Ignoring billing webhook event type ${event.type} (event ${event.id}): it is not about a subscription`,
       );
       return;
     }
@@ -158,11 +159,26 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       // concurrent delivery moved the mark while it was being written. Upstream
       // decides in every one of those cases.
       if (!materialized) {
-        materialized = await this.materializeFromUpstream({
+        const authoritative = await this.readAuthoritativeState({
           spaceId,
           upstreamCustomerId,
-          triggerEventAt: eventAt,
           featureTypeByKey,
+        });
+        // The billing service proxies Stripe, so a customer that ever had a
+        // subscription always lists one. An empty list is therefore an anomaly,
+        // not a state to materialize — writing it would retire the space's
+        // subscription on nothing more than upstream having a bad day.
+        if (authoritative.subscriptions.length === 0) {
+          this.loggingService.error(
+            `Billing webhook event ${event.id} found no subscriptions upstream for space ${spaceId}; nothing materialized`,
+          );
+          return;
+        }
+        materialized = await this.entitlementsService.materializeAuthoritative({
+          spaceId,
+          subscriptions: authoritative.subscriptions,
+          observedEventAt: authoritative.observedEventAt,
+          triggerEventAt: eventAt,
         });
       }
       if (!materialized) {
@@ -197,17 +213,19 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
   }
 
   /**
-   * Reads the authoritative state from the billing service and materializes it.
-   * The mark is read first, so the write can be abandoned if the space moves on
-   * while the fetch is in flight, and the Redis cache is busted before the
-   * fetch, so a second attempt cannot be served the first one's snapshot.
+   * Reads the space's whole subscription state from the billing service. The
+   * mark is read before the fetch goes out, so the write it feeds can be
+   * abandoned if the space moves on meanwhile, and the Redis cache is busted
+   * first, so a second attempt cannot be served the first one's snapshot.
    */
-  private async materializeFromUpstream(args: {
+  private async readAuthoritativeState(args: {
     spaceId: Space['id'];
     upstreamCustomerId: string;
-    triggerEventAt: Date | null;
     featureTypeByKey: Map<FeatureKey, FeatureType>;
-  }): Promise<boolean> {
+  }): Promise<{
+    observedEventAt: Date | null;
+    subscriptions: Array<MaterializedSubscription>;
+  }> {
     const observedEventAt = await this.subscriptionsRepository.getLastEventAt(
       args.spaceId,
     );
@@ -220,12 +238,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       featureTypeByKey: args.featureTypeByKey,
       onWarning: (message) => this.loggingService.warn(message),
     });
-    return await this.entitlementsService.materializeAuthoritative({
-      spaceId: args.spaceId,
-      subscriptions,
-      observedEventAt,
-      triggerEventAt: args.triggerEventAt,
-    });
+    return { observedEventAt, subscriptions };
   }
 
   private async clearSubscriptionsCache(

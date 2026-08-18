@@ -102,9 +102,9 @@ export class EntitlementsService {
    * the active subscription's entitlement package wholesale, in one
    * transaction.
    *
-   * `admit` is the caller's ordering rule, applied to the mark this method
-   * holds under the space's lock: it returns the stamp to write, or `null` to
-   * abandon the write and log why.
+   * `admit` is the caller's rule, applied to the mark this method holds under
+   * the space's lock: it returns the stamp to write, or `null` to abandon the
+   * write and log why.
    */
   private async materializeUnderLock(args: {
     spaceId: Space['id'];

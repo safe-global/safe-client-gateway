@@ -6,13 +6,15 @@ import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util'
 /** Customer group of the Safe{Wallet} web app, the only one entitlements track. */
 export const WALLET_WEB_CUSTOMER_GROUP = 'wallet_web';
 
-/** Event types carrying a full subscription snapshot to materialize. */
-export const WebhookSubscriptionEventTypes = [
-  'customer.subscription.created',
-  'customer.subscription.updated',
-  'customer.subscription.deleted',
-  'customer.subscription.paused',
-] as const;
+/**
+ * Namespace of the event types that say a subscription changed. Matched by
+ * prefix rather than enumerated: an allow-list has to track upstream's
+ * catalog forever, and a type missing from it drifts silently — `resumed`
+ * was, so a reactivated subscription stayed paused here until the next
+ * event happened along. Whether a given event's payload can be trusted as a
+ * complete snapshot is a separate question, answered per payload.
+ */
+const SUBSCRIPTION_EVENT_TYPE_PREFIX = 'customer.subscription.';
 
 export const WebhookPaymentLinkEventTypes = [
   'payment_link.created',
@@ -20,9 +22,7 @@ export const WebhookPaymentLinkEventTypes = [
 ] as const;
 
 export function isSubscriptionEventType(type: string): boolean {
-  return (WebhookSubscriptionEventTypes as ReadonlyArray<string>).includes(
-    type,
-  );
+  return type.startsWith(SUBSCRIPTION_EVENT_TYPE_PREFIX);
 }
 
 export function isPaymentLinkEventType(type: string): boolean {

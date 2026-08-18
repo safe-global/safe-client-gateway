@@ -233,11 +233,15 @@ describe('SubscriptionSyncService', () => {
     );
   });
 
+  // Matched by prefix, so a type nobody enumerated — `resumed` was one, and
+  // left a reactivated subscription paused here — still reaches the sync.
   it.each([
     'customer.subscription.created',
     'customer.subscription.updated',
     'customer.subscription.deleted',
     'customer.subscription.paused',
+    'customer.subscription.resumed',
+    'customer.subscription.something_upstream_adds_later',
   ])('materializes the %s event payload', async (type) => {
     await target.handleWebhook(webhookEvent({ type }));
 
@@ -516,6 +520,22 @@ describe('SubscriptionSyncService', () => {
       ).toHaveBeenCalledExactlyOnceWith(
         expect.objectContaining({ triggerEventAt: null }),
       );
+    });
+
+    // Billing proxies Stripe, so a customer that ever subscribed always lists
+    // something: an empty list is upstream having a bad day, and writing it
+    // would retire the space's subscription on the strength of that.
+    it('writes nothing and logs an error when upstream lists no subscriptions', async () => {
+      entitlementsService.materializeFromEvent.mockResolvedValue(false);
+      billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+
+      await target.handleWebhook(webhookEvent());
+
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
+      expect(loggingService.error).toHaveBeenCalledTimes(1);
+      expect(loggingService.info).not.toHaveBeenCalled();
     });
 
     it('acks with a warning when upstream is superseded too', async () => {
