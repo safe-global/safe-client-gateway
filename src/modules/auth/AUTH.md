@@ -98,6 +98,24 @@ Client                          Gateway                        Auth0
 
 The Auth0 `sub` (external user ID) is mapped to the internal user ID at login. Subsequent requests only carry the internal ID.
 
+### Front channel, not back channel
+
+Auth0 never calls the gateway. `AUTH0_REDIRECT_URI` points at `/v1/auth/oidc/callback` on the gateway rather than at the frontend, but `redirect_uri` in OAuth is always a **front-channel** destination: it is where Auth0 tells the *browser* to navigate. The callback is a top-level browser GET, not a server-to-server request, and not a `fetch` from the frontend either:
+
+| Mechanism                                            | Used? |
+| ---------------------------------------------------- | ----- |
+| Auth0 → gateway, server to server                    | No    |
+| `app.safe.global` JS calling the callback via `fetch` | No    |
+| Browser navigation, Auth0 `302` → gateway callback    | Yes   |
+
+The handler proves it: it reads the `auth_state` cookie off the request, writes `Set-Cookie: access_token`, and answers `302` to the app. None of those work unless the caller is the user's browser — Auth0's servers hold no cookie jar for the user, and would discard the `Set-Cookie`. `OidcAuthRateLimitGuard` keying on `req.ip` is the same story: a back-channel design would collapse every user onto Auth0's egress IPs and rate-limit all logins together.
+
+What pointing `redirect_uri` at the gateway *does* buy is that the `code` lands on the server, so it is redeemed server-side with the client secret and no Auth0 token ever reaches JavaScript. The browser only ever receives the gateway's own `access_token` cookie.
+
+The consequence is that **the callback's inputs are entirely attacker-controllable** — anyone can request `/v1/auth/oidc/callback` with any `code`, `state` or `error`. The flow does not trust them: a forged `code` fails the confidential-client exchange at Auth0, a forged `state` fails the cookie comparison (JS can neither read nor write an HttpOnly cookie), and the ID token is verified against the JWKS. This is precisely why the state cookie is load-bearing rather than a formality — see below.
+
+Note that `error_description` is attacker-supplied and is reflected into the redirect URL. It is URL-encoded by `URLSearchParams`, and the frontend renders it only through an allowlist lookup with a constant fallback (`SIGN_IN_ERROR_DESCRIPTION_MAP`), never raw. Keep it that way.
+
 ### `redirect_url` query parameter
 
 `/v1/auth/oidc/authorize` accepts an optional `redirect_url` query parameter. It is validated to be same-origin with `AUTH_POST_LOGIN_REDIRECT_URI`, then embedded in the state blob so it can be recovered after the Auth0 round-trip.
