@@ -4,16 +4,12 @@ import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 const RelayTaskStatusReceiptSchema = z
   .object({
-    blockHash: z.string().optional(),
-    blockNumber: z.string().optional(),
-    gasUsed: z.string().optional(),
     transactionHash: z.string(),
   })
   .optional();
 
 export const RelayTaskStatusSchema = z.object({
   chainId: z.string(),
-  createdAt: z.number().optional(),
   id: z.string(),
   status: z.number(),
   receipt: RelayTaskStatusReceiptSchema,
