@@ -173,7 +173,7 @@ describe('Balances API Manager Tests', () => {
   });
 
   describe('getFiatCodes checks', () => {
-    it('should return the configured Zerion currencies', async () => {
+    it('should return the configured Zerion currencies without querying CoinGecko', async () => {
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -187,21 +187,6 @@ describe('Balances API Manager Tests', () => {
       const result = await manager.getFiatCodes();
 
       expect(result).toStrictEqual(fiatCodes);
-    });
-
-    it('should not query CoinGecko for the supported currencies', async () => {
-      const manager = new BalancesApiManager(
-        configurationService,
-        configApiMock,
-        dataSourceMock,
-        cacheService,
-        httpErrorFactory,
-        coingeckoApiMock,
-        networkServiceMock,
-      );
-
-      await manager.getFiatCodes();
-
       expect(coingeckoApiMock.getFiatCodes).not.toHaveBeenCalled();
     });
   });
