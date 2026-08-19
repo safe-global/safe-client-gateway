@@ -410,8 +410,9 @@ export class EntitlementsService {
       (feature) => !isStockMeteredFeature(feature.key),
     );
 
-    const eventUsage =
-      await this.spaceFeatureUsageRepository.getUsageByFeatureId({
+    // The two counting strategies read different tables, so they go together.
+    const [eventUsage, stockUsage] = await Promise.all([
+      this.spaceFeatureUsageRepository.getUsageByFeatureId({
         spaceId: args.spaceId,
         periods: eventMetered.map((feature) => ({
           featureId: feature.id,
@@ -422,23 +423,22 @@ export class EntitlementsService {
             now: args.now,
           }),
         })),
-      });
-
-    const stockUsage = await Promise.all(
-      metered
-        .filter((feature) => isStockMeteredFeature(feature.key))
-        .map(async (feature) => {
-          const used = await this.stockCounters[
-            feature.key as StockMeteredFeature
-          ](args.spaceId);
-          return [feature.id, used] as const;
-        }),
-    );
+      }),
+      Promise.all(
+        metered
+          .filter((feature) => isStockMeteredFeature(feature.key))
+          .map(async (feature) => {
+            const used = await this.stockCounters[
+              feature.key as StockMeteredFeature
+            ](args.spaceId);
+            return [feature.id, used] as const;
+          }),
+      ),
+    ]);
 
     return new Map([...eventUsage, ...stockUsage]);
   }
 
-  /** Usage of a single metered feature, whichever way it is counted. */
   /**
    * Stock usage is a live count owned by the feature's own module, so it is
    * read through that module's repository rather than from `entitlements`.

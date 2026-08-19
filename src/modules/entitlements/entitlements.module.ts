@@ -13,7 +13,7 @@ import { UsersModule } from '@/modules/users/users.module';
 
 /**
  * Routes layer of the entitlements feature: the
- * `GET/PUT /v1/spaces/:spaceId/entitlements[...]` endpoint and
+ * `GET /v1/spaces/:spaceId/entitlements` endpoint and
  * `SubscriptionSyncService` (consumed, via `ISubscriptionSyncService`, by
  * `BillingModule`'s webhook handler). Conditionally imported in
  * `app.module.ts` behind `FF_BILLING_SERVICE` and `FF_USERS`.

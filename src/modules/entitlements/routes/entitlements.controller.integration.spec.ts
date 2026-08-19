@@ -24,6 +24,7 @@ import { Feature } from '@/modules/entitlements/datasources/entities/feature.ent
 import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { EntitlementsController } from '@/modules/entitlements/routes/entitlements.controller';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
@@ -146,24 +147,17 @@ describe('EntitlementsController', () => {
     const featuresRepository =
       await postgresDatabaseService.getRepository(Feature);
     await featuresRepository.insert([
-      {
-        key: 'security_hub',
-        type: FeatureType.Binary,
-        description: 'Security Hub',
-        freeEnabled: false,
-        freeQuota: null,
-        freeValue: null,
-        freePeriod: null,
-      },
-      {
-        key: 'safe_seats',
-        type: FeatureType.Metered,
-        description: 'Safe seats',
-        freeEnabled: true,
-        freeQuota: FREE_SAFE_SEATS,
-        freeValue: null,
-        freePeriod: null,
-      },
+      featureBuilder()
+        .with('key', 'security_hub')
+        .with('type', FeatureType.Binary)
+        .with('freeEnabled', false)
+        .build(),
+      featureBuilder()
+        .with('key', 'safe_seats')
+        .with('type', FeatureType.Metered)
+        .with('freeEnabled', true)
+        .with('freeQuota', FREE_SAFE_SEATS)
+        .build(),
     ]);
   });
 

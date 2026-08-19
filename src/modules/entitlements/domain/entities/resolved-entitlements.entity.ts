@@ -6,7 +6,7 @@ import type {
 
 /**
  * The computed entitlement state of a workspace, produced by
- * `IEntitlementsRepository.resolveEntitlements`. Both branches (active
+ * `EntitlementsService.resolveEntitlements`. Both branches (active
  * subscription / Free-tier catalog defaults) produce this exact shape, so
  * consumers never know which one served them.
  */

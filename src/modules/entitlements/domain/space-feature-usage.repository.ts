@@ -43,9 +43,7 @@ export class SpaceFeatureUsageRepository
     return new Map(
       rows.flatMap((row) =>
         // With `loadRelationIds` the relation holds the raw id.
-        row.feature
-          ? [[row.feature as unknown as number, row.used] as const]
-          : [],
+        row.feature ? [[Number(row.feature), row.used] as const] : [],
       ),
     );
   }
