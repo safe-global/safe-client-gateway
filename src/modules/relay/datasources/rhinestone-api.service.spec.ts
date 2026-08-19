@@ -97,7 +97,7 @@ describe('RhinestoneApi', () => {
       const to = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
       const safeTxHash = faker.string.hexadecimal({ length: 64 }) as Hex;
-      const taskId = faker.string.uuid();
+      const taskId = faker.string.numeric({ length: 73 });
       mockNetworkService.post.mockResolvedValue({
         data: rawify({ taskId }),
         status: 201,
@@ -117,7 +117,7 @@ describe('RhinestoneApi', () => {
       const chainId = faker.string.numeric();
       const to = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
-      const taskId = faker.string.uuid();
+      const taskId = faker.string.numeric({ length: 73 });
       mockNetworkService.post.mockResolvedValue({
         data: rawify({ taskId }),
         status: 201,
@@ -173,7 +173,7 @@ describe('RhinestoneApi', () => {
   describe('getTaskStatus', () => {
     it('should return the task status with a receipt when a transactionHash is present', async () => {
       const chainId = faker.string.numeric();
-      const taskId = faker.string.uuid();
+      const taskId = faker.string.numeric({ length: 73 });
       const transactionHash = faker.string.hexadecimal({ length: 64 }) as Hex;
       mockNetworkService.get.mockResolvedValue({
         data: rawify({ taskId, status: 200, transactionHash }),
@@ -196,7 +196,7 @@ describe('RhinestoneApi', () => {
 
     it('should return the task status without a receipt when no transactionHash', async () => {
       const chainId = faker.string.numeric();
-      const taskId = faker.string.uuid();
+      const taskId = faker.string.numeric({ length: 73 });
       mockNetworkService.get.mockResolvedValue({
         data: rawify({ taskId, status: 100 }),
         status: 200,
@@ -214,7 +214,7 @@ describe('RhinestoneApi', () => {
 
     it('should forward errors from the relay provider', async () => {
       const chainId = faker.string.numeric();
-      const taskId = faker.string.uuid();
+      const taskId = faker.string.numeric({ length: 73 });
       const status = faker.internet.httpStatusCode({ types: ['clientError'] });
       const statusText = faker.lorem.words();
       const error = new NetworkResponseError(

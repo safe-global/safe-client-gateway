@@ -2854,7 +2854,7 @@ describe('Relay controller', () => {
     });
     describe('GET /v1/chains/:chainId/relay/status/:taskId', () => {
       it('should return task status with receipt', async () => {
-        const taskId = faker.string.hexadecimal({ length: 64 });
+        const taskId = faker.string.numeric({ length: 73 });
         const transactionHash = faker.string.hexadecimal({ length: 64 });
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
@@ -2878,7 +2878,7 @@ describe('Relay controller', () => {
       });
 
       it('should return task status without receipt (pending)', async () => {
-        const taskId = faker.string.hexadecimal({ length: 64 });
+        const taskId = faker.string.numeric({ length: 73 });
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${relayUrl}/safe-transactions/${taskId}/status`:
@@ -2900,7 +2900,7 @@ describe('Relay controller', () => {
       });
 
       it('should forward error from relay provider', async () => {
-        const taskId = faker.string.hexadecimal({ length: 64 });
+        const taskId = faker.string.numeric({ length: 73 });
         networkService.get.mockImplementation(({ url }) => {
           switch (url) {
             case `${relayUrl}/safe-transactions/${taskId}/status`:
