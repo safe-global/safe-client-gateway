@@ -32,16 +32,11 @@ import { UrlResponse } from '@/modules/billing/routes/entities/url.entity';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 const ReturnUrlSchema = z.url();
-const opaqueIdPipe = new ValidationPipe(
-  z
-    .string()
-    .min(1)
-    .max(255)
-    .regex(/^[A-Za-z0-9_-]+$/),
-);
+const opaqueIdPipe = new ValidationPipe(OpaqueIdSchema);
 
 @ApiTags('billing')
 @Controller({
