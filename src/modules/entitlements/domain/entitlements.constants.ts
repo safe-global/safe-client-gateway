@@ -1,6 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 
+export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
+
+/**
+ * Metered features whose usage is a live COUNT over a table another module
+ * owns (Safes) rather than a `space_feature_usage` counter — storing it twice
+ * would create a second source of truth that can drift. They have no reset
+ * window (`resetsAt: null`).
+ *
+ * `EntitlementsService` maps each key to the repository call that counts it,
+ * through an exhaustive `Record`, so adding one here fails to compile until
+ * its counter is wired.
+ */
+export const STOCK_METERED_FEATURES = ['safe_seats'] as const;
+
+export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
+
+export function isStockMeteredFeature(key: string): key is StockMeteredFeature {
+  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
+}
+
 /**
  * Subscription statuses that occupy a workspace's single "active
  * subscription" slot.

@@ -45,6 +45,7 @@ import { CounterfactualSafesModule } from '@/modules/counterfactual-safes/counte
 import { CsvExportModule } from '@/modules/csv-export/csv-export.module';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { DelegateModule } from '@/modules/delegate/delegate.module';
+import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
 import { EstimationsModule } from '@/modules/estimations/estimations.module';
 import { FeesModule } from '@/modules/fees/fees.module';
 import { HealthModule } from '@/modules/health/health.module';
@@ -120,6 +121,9 @@ export class AppModule implements NestModule {
               CounterfactualSafesModule,
               SurveysModule,
             ]
+          : []),
+        ...(isBillingServiceFeatureEnabled && isUsersFeatureEnabled
+          ? [EntitlementsModule]
           : []),
         OwnersModule,
         RelayModule,
