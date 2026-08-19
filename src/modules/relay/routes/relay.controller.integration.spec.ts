@@ -2914,6 +2914,24 @@ describe('Relay controller', () => {
           .get(`/v1/chains/${chainId}/relay/status/${taskId}`)
           .expect(503);
       });
+
+      it.each([
+        ['path traversal', '../../admin'],
+        ['query injection', 'task?logs=true'],
+        ['empty', ' '],
+      ])('should reject a %s taskId without calling the relay provider', async (_, taskId) => {
+        await request(app.getHttpServer())
+          .get(
+            `/v1/chains/${chainId}/relay/status/${encodeURIComponent(taskId)}`,
+          )
+          .expect(422);
+
+        expect(networkService.get).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: expect.stringContaining('/safe-transactions/'),
+          }),
+        );
+      });
     });
 
     describe('GET /v1/chains/:chainId/relay/:safeAddress', () => {

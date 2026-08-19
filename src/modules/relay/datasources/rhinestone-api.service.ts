@@ -121,7 +121,7 @@ export class RhinestoneApi implements IRelayApi {
     taskId: string;
   }): Promise<RelayTaskStatus> {
     try {
-      const url = `${this.baseUri}/safe-transactions/${args.taskId}/status`;
+      const url = `${this.baseUri}/safe-transactions/${encodeURIComponent(args.taskId)}/status`;
       const { data } =
         await this.networkService.get<RhinestoneTaskStatusResponse>({
           url,

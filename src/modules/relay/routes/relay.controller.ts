@@ -22,6 +22,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
+import { z } from 'zod';
 import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
 import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
@@ -43,6 +44,19 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+
+/**
+ * The relay provider identifies tasks with an opaque id that we interpolate
+ * into its URL path, so constrain it to characters that cannot alter the URL
+ * we build. Mirrors the equivalent pipe in `BillingController`.
+ */
+const taskIdPipe = new ValidationPipe(
+  z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[A-Za-z0-9_-]+$/),
+);
 
 @ApiTags('relay')
 @Controller({
@@ -139,7 +153,7 @@ export class RelayController {
     UnofficialSignerFactoryExceptionFilter,
   )
   async relay(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Body(new ValidationPipe(RelayDtoSchema))
     relayDto: RelayDto,
   ): Promise<Relay> {
@@ -171,8 +185,8 @@ export class RelayController {
   })
   @Get('status/:taskId')
   async getTaskStatus(
-    @Param('chainId') chainId: string,
-    @Param('taskId') taskId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('taskId', taskIdPipe) taskId: string,
   ): Promise<RelayTaskStatus> {
     return await this.relayService.getTaskStatus({ chainId, taskId });
   }
