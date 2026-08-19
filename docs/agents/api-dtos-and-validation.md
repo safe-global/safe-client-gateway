@@ -110,6 +110,8 @@ The pagination envelope and cursor-parsing conventions behind a paginated respon
 
 A non-breaking addition — a new optional field, a brand-new endpoint — lands on the existing version in place; only a change that would break an already-shipped client's parsing of the response, such as a removed or renamed field, earns a new version rather than an in-place edit.
 
+A field no released client could ever have parsed has no shipped client to break, and may be removed or renamed in place: an endpoint that has sat behind a disabled feature flag since it was introduced, or a field the upstream never actually populated. Neither condition is visible in the diff — runtime flag state and upstream behavior live outside the repo — so the in-place change is only valid when the PR description states the justification; without it, reviewers treat the removal as breaking.
+
 ### One error funnel per layer
 
 **Rule:** A datasource throws only a `DataSourceError`, produced by `HttpErrorFactory.from(error)` from within a `catch`; an expected, client-caused verification failure throws `HttpExceptionNoLog`; nothing in feature code constructs a raw `new HttpException(...)` directly; a new domain-specific failure mode gets its own domain error class plus a matching exception filter rather than being forced into an unrelated exception type.

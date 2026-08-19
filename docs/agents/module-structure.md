@@ -30,6 +30,8 @@ src/modules/<kebab-name>/
 
 `domain/entities/` and `routes/entities/` hold different things (internal Zod entities vs Swagger-documented DTOs) — see the Module anatomy section of `docs/agents/ARCHITECTURE.md` for the distinction.
 
+In a declared multi-PR rollout, `routes/` may land one PR ahead of its controller: route services belong in `routes/` from the first PR (parking them under `domain/` reproduces the portfolio anti-example below), so a module whose HTTP surface arrives in the next PR of the series ships `routes/` without a controller. This is only staged delivery — not a standing exception — when the PR description declares the series and links the follow-up PR that adds the controller.
+
 **Why:** the majority of existing modules already follow this shape; deviations from it are the recurring source of review churn, since a reviewer has to relearn a bespoke layout for one module instead of checking it against a shape they already know.
 
 **Canonical example:** `src/modules/spaces/`, `src/modules/chains/`.
@@ -128,7 +130,7 @@ A new module has:
 
 - A `<kebab-name>.module.ts` plus the `domain/` skeleton, with `routes/`/`datasources/` present only where the module actually needs them.
 - A `Symbol`+interface pair for each repository, co-declared per the Symbol DI wiring rule.
-- An entry registering the module in `src/app.module.ts`.
+- An entry registering the module in `src/app.module.ts` — or an import from an already-registered module, when the new module only serves that one (`EntitlementsModule` is reached through `BillingModule`; `backbone`, `email`, `siwe`, and `queues` are wired the same way). A module with its own HTTP surface registers directly.
 - Test builders under `domain/entities/__tests__/` for its domain entities.
 - Specs co-located with the code they exercise.
 - Its endpoints, datasources, and migrations named in the routing table in `AGENTS.md`, so the guides that govern them are discoverable.
