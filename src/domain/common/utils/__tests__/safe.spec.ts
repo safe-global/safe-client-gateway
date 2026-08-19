@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import semverSatisfies from 'semver/functions/satisfies';
 import { getAddress, type Hex } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import {
   getSafeL2SingletonDeployments,
+  getSafeL2SingletonVersions,
   getSafeMigrationDeployments,
   getSafeSingletonDeployments,
+  getSafeSingletonVersions,
 } from '@/domain/common/utils/deployments';
 import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
 import {
@@ -909,8 +912,16 @@ describe('Safe', () => {
           .with('data', migrateL2SingletonEncoder().encode())
           .build();
 
-        // Check if there are any singletons on this chain for the tested versions
-        const hasAnySingletons = ['1.3.0', '1.4.1', '1.5.0'].some((version) => {
+        // Check if there are any singletons on this chain for the versions a
+        // SafeMigration can target — tracked from the safe-deployments package
+        // so the guard does not drift when a new version is released
+        const migrationTargetVersions = Array.from(
+          new Set([
+            ...getSafeSingletonVersions(),
+            ...getSafeL2SingletonVersions(),
+          ]),
+        ).filter((version) => semverSatisfies(version, '>=1.3.0'));
+        const hasAnySingletons = migrationTargetVersions.some((version) => {
           const l1 = getSafeSingletonDeployments({
             chainId: testChainId,
             version,

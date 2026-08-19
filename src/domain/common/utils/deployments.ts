@@ -17,7 +17,6 @@ import {
   _SAFE_DEPLOYMENTS,
   _SAFE_L2_DEPLOYMENTS,
   _SAFE_MIGRATION_DEPLOYMENTS,
-  _SAFE_TO_L2_MIGRATION_DEPLOYMENTS,
   _SAFE_TO_L2_SETUP_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
 import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
@@ -244,6 +243,8 @@ export function getSafeToL2SetupVersions(): Array<string> {
 /**
  * Gets the list of L1 singleton versions available in the safe-deployments package.
  * Infers versions from the _SAFE_DEPLOYMENTS constant exported by the package.
+ * Note: includes legacy pre-1.3.0 versions (1.0.0, 1.1.1, 1.2.0) — callers feeding
+ * these into version-sensitive flows (e.g. SafeTx hashing) must filter by range.
  *
  * @returns {Array<string>} - a list of L1 singleton versions in descending order
  */
@@ -271,19 +272,6 @@ export function getSafeL2SingletonVersions(): Array<string> {
  */
 export function getSafeMigrationVersions(): Array<string> {
   return _SAFE_MIGRATION_DEPLOYMENTS.map((deployment) => deployment.version);
-}
-
-/**
- * Gets the list of SafeToL2Migration versions available in the safe-deployments package.
- * Infers versions from the _SAFE_TO_L2_MIGRATION_DEPLOYMENTS constant exported by the package.
- * Note: SafeToL2Migration was introduced in Safe v1.4.1.
- *
- * @returns {Array<string>} - a list of SafeToL2Migration versions in descending order
- */
-export function getSafeToL2MigrationVersions(): Array<string> {
-  return _SAFE_TO_L2_MIGRATION_DEPLOYMENTS.map(
-    (deployment) => deployment.version,
-  );
 }
 
 /**

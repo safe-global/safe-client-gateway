@@ -7,7 +7,6 @@ import {
   getSafeL2SingletonVersions,
   getSafeMigrationVersions,
   getSafeSingletonVersions,
-  getSafeToL2MigrationVersions,
   getSafeToL2SetupVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
@@ -67,14 +66,6 @@ describe('deployments', () => {
     it('should include all SafeMigration versions', () => {
       expect(getSafeMigrationVersions()).toEqual(
         expect.arrayContaining(['1.4.1', '1.5.0']),
-      );
-    });
-  });
-
-  describe('getSafeToL2MigrationVersions', () => {
-    it('should include all SafeToL2Migration versions', () => {
-      expect(getSafeToL2MigrationVersions()).toEqual(
-        expect.arrayContaining(['1.4.1']),
       );
     });
   });
