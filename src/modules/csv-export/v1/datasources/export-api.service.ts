@@ -4,6 +4,7 @@ import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { mapBannedSafeError } from '@/datasources/errors/helpers/banned-safe.helper';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { Page } from '@/domain/entities/page.entity';
 import type { IExportApi } from '@/modules/csv-export/v1/datasources/export-api.interface';
@@ -60,7 +61,7 @@ export class ExportApi implements IExportApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(mapBannedSafeError(error));
     }
   }
 }

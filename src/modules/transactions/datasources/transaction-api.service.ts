@@ -7,6 +7,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
+import { mapBannedSafeError } from '@/datasources/errors/helpers/banned-safe.helper';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -1199,6 +1200,7 @@ export class TransactionApi implements ITransactionApi {
         });
       }
     }
-    return error;
+    // A banned Safe is reported with a `detail` payload, which the branch above does not match
+    return mapBannedSafeError(error);
   }
 }

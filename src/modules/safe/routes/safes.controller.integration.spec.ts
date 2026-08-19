@@ -12,6 +12,11 @@ import {
 } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import {
+  UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+  UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+} from '@/datasources/errors/constants';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -2394,5 +2399,43 @@ describe('Safes Controller', () => {
           },
         }),
       );
+  });
+
+  it('returns 451 when the Transaction Service reports the Safe as banned', async () => {
+    const chain = chainBuilder().build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safeUrl = `${chain.transactionService}/api/v1/safes/${safeAddress}`;
+
+    networkService.get.mockImplementation(({ url }) => {
+      switch (url) {
+        case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        case `${chain.transactionService}/api/v1/about/singletons/`:
+          return Promise.resolve({
+            data: rawify([singletonBuilder().build()]),
+            status: 200,
+          });
+        case safeUrl:
+          return Promise.reject(
+            new NetworkResponseError(
+              new URL(safeUrl),
+              {
+                status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+              } as Response,
+              // The Transaction Service reports the reason under `detail`
+              { detail: 'Safe is unavailable for legal reasons' },
+            ),
+          );
+      }
+      return Promise.reject(`No matching rule for url: ${url}`);
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safeAddress}`)
+      .expect(UNAVAILABLE_FOR_LEGAL_REASONS_STATUS)
+      .expect({
+        code: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+        message: UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+      });
   });
 });
