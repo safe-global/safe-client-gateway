@@ -3335,22 +3335,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^5.81.2":
-  version: 5.81.2
-  resolution: "bullmq@npm:5.81.2"
+"bullmq@npm:^6.0.11":
+  version: 6.0.11
+  resolution: "bullmq@npm:6.0.11"
   dependencies:
-    cron-parser: "npm:4.9.0"
-    ioredis: "npm:5.11.1"
-    msgpackr: "npm:2.0.4"
+    cron-parser: "npm:5.8.1"
+    msgpackr: "npm:2.0.5"
     node-abort-controller: "npm:3.1.1"
     semver: "npm:7.8.5"
     tslib: "npm:2.8.1"
   peerDependencies:
+    bullmq-otel: ">=2.0.0"
+    ioredis: ">=5.0.0"
+    pg: ">=8.0.0"
     redis: ">=5.0.0"
   peerDependenciesMeta:
+    bullmq-otel:
+      optional: true
+    ioredis:
+      optional: true
+    pg:
+      optional: true
     redis:
       optional: true
-  checksum: 10/5e0a1de81bdd517ba2592c102c1f6b6a8c61055d21faf0529748f1de0a041da764b1e290145f4d4a59434b104a0edfb2479744f901029b9bc830b710c8c5129a
+  checksum: 10/32dca075a2faa158ae194c847dd6a87716c656308e496da04a7191f4ab81a111dda96c527c744519bcbd0c18cc82f031c1be078c19fad40353b43931a9414da6
   languageName: node
   linkType: hard
 
@@ -3711,12 +3719,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cron-parser@npm:4.9.0":
-  version: 4.9.0
-  resolution: "cron-parser@npm:4.9.0"
+"cron-parser@npm:5.8.1":
+  version: 5.8.1
+  resolution: "cron-parser@npm:5.8.1"
   dependencies:
-    luxon: "npm:^3.2.1"
-  checksum: 10/ffca5e532a5ee0923412ee6e4c7f9bbceacc6ddf8810c16d3e9fb4fe5ec7e2de1b6896d7956f304bb6bc96b0ce37ad7e3935304179d52951c18d84107184faa7
+    luxon: "npm:^3.7.2"
+  checksum: 10/7c50cbef62d9287dc51f23153741c71435fb2287c383765e1ee170d7ebd4be1479925008a4c36c8fc10aee0e20ba9427f0649113c8cbb3373abc120802a2d8ab
   languageName: node
   linkType: hard
 
@@ -5270,14 +5278,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"luxon@npm:^3.2.1":
-  version: 3.6.1
-  resolution: "luxon@npm:3.6.1"
-  checksum: 10/35aad425607708c87af110a52c949190bc35b987770079ec8007ef2365cd29639413db3360d2883777aa01cb3ca5bdb37f42ee3e8e5a0dd277fe22e90cc8a786
-  languageName: node
-  linkType: hard
-
-"luxon@npm:~3.7.0":
+"luxon@npm:^3.7.2, luxon@npm:~3.7.0":
   version: 3.7.2
   resolution: "luxon@npm:3.7.2"
   checksum: 10/b24cd205ed306ce7415991687897dcc4027921ae413c9116590bc33a95f93b86ce52cf74ba72b4f5c5ab1c10090517f54ac8edfb127c049e0bf55b90dc2260be
@@ -5493,15 +5494,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"msgpackr@npm:2.0.4":
-  version: 2.0.4
-  resolution: "msgpackr@npm:2.0.4"
+"msgpackr@npm:2.0.5":
+  version: 2.0.5
+  resolution: "msgpackr@npm:2.0.5"
   dependencies:
     msgpackr-extract: "npm:^3.0.4"
   dependenciesMeta:
     msgpackr-extract:
       optional: true
-  checksum: 10/fb5eb85dee3b8b2ed83b81f5360f58cc3f3c290e79586d01c12cf54710b837ccc5d11abce4b5324b861e152fee9131a843cb4511ef03fcc037061c43f72b7195
+  checksum: 10/2eda64f30bf89a8195d732b9eea82a79091c56e2da4a0146a03ccf68b87a2871b18aa371a9f881f6bec53b09a5d63057de4e28942b08aaf8b0cb024b38e9daee
   languageName: node
   linkType: hard
 
@@ -6251,11 +6252,12 @@ __metadata:
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
-    bullmq: "npm:^5.81.2"
+    bullmq: "npm:^6.0.11"
     cache-manager: "npm:7.2.9"
     csv-stringify: "npm:^6.8.3"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
+    ioredis: "npm:5.11.1"
     jose: "npm:6.2.8"
     jsonwebtoken: "npm:9.0.3"
     lodash: "npm:4.18.1"
