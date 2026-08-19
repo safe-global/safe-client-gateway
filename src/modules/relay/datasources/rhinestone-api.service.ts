@@ -8,7 +8,10 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import {
+  NetworkRequestError,
+  NetworkResponseError,
+} from '@/datasources/network/entities/network.error.entity';
 import {
   type INetworkService,
   NetworkService,
@@ -54,18 +57,20 @@ export class RhinestoneApi implements IRelayApi {
   }
 
   /**
-   * Builds a log-friendly error string. For a {@link NetworkResponseError}
-   * (e.g. Rhinestone's 400 on validation / insufficient sponsorship budget /
-   * chain disabled) it surfaces the HTTP status and response body, which carry
-   * the human-readable reason — otherwise the message is empty and undiagnosable.
+   * Builds a log-friendly error string.
+   *
+   * Both network error classes extend {@link Error} without setting a message,
+   * so `asError(error).message` alone is empty and undiagnosable. This surfaces
+   * the HTTP status (or the target URL, when no response was received) instead.
+   * Response bodies are deliberately not logged — they are attacker-influenced
+   * and may carry request details we do not want in logs.
    */
   private formatError(error: unknown): string {
     if (error instanceof NetworkResponseError) {
-      const body =
-        typeof error.data === 'string'
-          ? error.data
-          : JSON.stringify(error.data);
-      return `status=${error.response.status} body=${body}`;
+      return `status=${error.response.status} ${error.response.statusText}`;
+    }
+    if (error instanceof NetworkRequestError) {
+      return `no response received from ${error.url}`;
     }
     return asError(error).message;
   }

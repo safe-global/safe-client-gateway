@@ -8,7 +8,10 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+import {
+  NetworkRequestError,
+  NetworkResponseError,
+} from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -134,16 +137,36 @@ describe('RhinestoneApi', () => {
       const chainId = faker.string.numeric();
       const to = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
+      const status = faker.internet.httpStatusCode({ types: ['clientError'] });
+      const statusText = faker.lorem.words();
       const error = new NetworkResponseError(
         new URL(`${baseUri}/safe-transactions`),
-        { status: 400 } as Response,
+        { status, statusText } as Response,
+        { message: faker.lorem.sentence() },
       );
       mockNetworkService.post.mockRejectedValue(error);
 
       await expect(target.relay({ chainId, to, data })).rejects.toThrow(
         DataSourceError,
       );
-      expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        `Error relaying transaction for chain ${chainId}: status=${status} ${statusText}`,
+      );
+    });
+
+    it('should log the target URL when no response was received', async () => {
+      const chainId = faker.string.numeric();
+      const to = getAddress(faker.finance.ethereumAddress());
+      const data = faker.string.hexadecimal() as Hex;
+      const url = new URL(`${baseUri}/safe-transactions`);
+      mockNetworkService.post.mockRejectedValue(new NetworkRequestError(url));
+
+      await expect(target.relay({ chainId, to, data })).rejects.toThrow(
+        DataSourceError,
+      );
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        `Error relaying transaction for chain ${chainId}: no response received from ${url}`,
+      );
     });
   });
 
@@ -192,16 +215,21 @@ describe('RhinestoneApi', () => {
     it('should forward errors from the relay provider', async () => {
       const chainId = faker.string.numeric();
       const taskId = faker.string.uuid();
+      const status = faker.internet.httpStatusCode({ types: ['clientError'] });
+      const statusText = faker.lorem.words();
       const error = new NetworkResponseError(
         new URL(`${baseUri}/safe-transactions/${taskId}/status`),
-        { status: 404 } as Response,
+        { status, statusText } as Response,
+        { message: faker.lorem.sentence() },
       );
       mockNetworkService.get.mockRejectedValue(error);
 
       await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow(
         DataSourceError,
       );
-      expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        `Error getting task status ${taskId} for chain ${chainId}: status=${status} ${statusText}`,
+      );
     });
   });
 
