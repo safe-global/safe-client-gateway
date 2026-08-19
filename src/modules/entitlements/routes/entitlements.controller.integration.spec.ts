@@ -48,9 +48,7 @@ describe('EntitlementsController', () => {
   // with another suite that seeds the same keys is a race.
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
 
-  async function withAdminConnection(
-    run: (dataSource: DataSource) => Promise<void>,
-  ): Promise<void> {
+  async function adminQuery(sql: string): Promise<void> {
     const adminDataSource = new DataSource({
       ...postgresConfig({
         ...configuration().db.connection.postgres,
@@ -60,7 +58,7 @@ describe('EntitlementsController', () => {
     });
     await adminDataSource.initialize();
     try {
-      await run(adminDataSource);
+      await adminDataSource.query(sql);
     } finally {
       await adminDataSource.destroy();
     }
@@ -69,9 +67,7 @@ describe('EntitlementsController', () => {
   beforeAll(async () => {
     vi.resetAllMocks();
 
-    await withAdminConnection(async (adminDataSource) => {
-      await adminDataSource.query(`CREATE DATABASE ${testDatabaseName}`);
-    });
+    await adminQuery(`CREATE DATABASE ${testDatabaseName}`);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -177,11 +173,9 @@ describe('EntitlementsController', () => {
 
   afterAll(async () => {
     await app.close();
-    await withAdminConnection(async (adminDataSource) => {
-      await adminDataSource.query(
-        `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
-      );
-    });
+    await adminQuery(
+      `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
+    );
   });
 
   // Auth resolves the acting user from the JWT `sub`, so a token must carry

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import { FEATURE_KEYS } from '@/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 
@@ -13,7 +14,9 @@ export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
  * through an exhaustive `Record`, so adding one here fails to compile until
  * its counter is wired.
  */
-export const STOCK_METERED_FEATURES = ['safe_seats'] as const;
+export const STOCK_METERED_FEATURES = [
+  'safe_seats',
+] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
 

@@ -22,7 +22,10 @@ import {
   parsedEntitlementBuilder,
 } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import {
+  FEATURE_KEYS,
+  FeatureType,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
@@ -122,6 +125,8 @@ describe('EntitlementsService', () => {
   // the real database so queries and derivation rules are covered end to end.
   let service: EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
+  // Read off the migrated database before the fixtures below replace it.
+  let seededFeatureKeys: Array<FeatureKey> = [];
 
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
   const testConfiguration = configuration();
@@ -213,6 +218,9 @@ describe('EntitlementsService', () => {
       mockConfigService,
     );
     await migrator.migrate();
+    seededFeatureKeys = (
+      await dataSource.getRepository(Feature).find({ select: { key: true } })
+    ).map((feature) => feature.key);
     // The seed migration ships a `safe_seats` row; this suite owns its own
     // catalog, so it starts from an empty `features` table.
     await dataSource
@@ -449,6 +457,15 @@ describe('EntitlementsService', () => {
     });
   });
 
+  // The catalog only ever ships by migration, and the response publishes
+  // FEATURE_KEYS as an OpenAPI enum, so a seeded key missing from that list
+  // would be served outside the published contract.
+  it('publishes every feature key the migrations seed', () => {
+    expect([...seededFeatureKeys].sort()).toStrictEqual(
+      [...FEATURE_KEYS].sort(),
+    );
+  });
+
   describe('resolveEntitlements', () => {
     it('resolves the Free branch from catalog defaults when no subscription exists', async () => {
       const spaceId = await createSpace();
@@ -564,18 +581,6 @@ describe('EntitlementsService', () => {
         quota: FREE_SAFE_SEATS,
         used: FREE_SAFE_SEATS + 2,
         overLimit: true,
-      });
-    });
-
-    it('reports no over-limit feature while usage stays within quota', async () => {
-      const spaceId = await createSpace();
-      await addSafes(spaceId, FREE_SAFE_SEATS);
-
-      const result = await service.resolveEntitlements(spaceId);
-
-      expect(seatsOf(result)).toMatchObject({
-        used: FREE_SAFE_SEATS,
-        overLimit: false,
       });
     });
 

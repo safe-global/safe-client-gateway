@@ -85,9 +85,9 @@ export function eventPeriodStart(args: {
 /**
  * Whether usage has passed the quota the plan grants. `used > quota` is a legal
  * state — the quota is never inflated to match usage — so this is where it gets
- * named, next to the two fields it is read from: the enforcement layer locks on
- * it, and clients are spared re-deriving a rule whose unlimited case (a null
- * quota, which no usage can pass) is easy to get wrong.
+ * named, next to the two fields it is read from: clients are spared re-deriving
+ * a rule whose unlimited case (a null quota, which no usage can pass) is easy
+ * to get wrong.
  */
 export function isOverLimit(
   entitlement: Pick<ResolvedEntitlement, 'quota' | 'used'>,

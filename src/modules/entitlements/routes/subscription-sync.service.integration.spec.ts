@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { In } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -13,6 +13,7 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import { postgresConfig } from '@/config/entities/postgres.config';
 import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
 import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
@@ -43,9 +44,7 @@ const WEBHOOK_PATH = '/v1/billing/webhooks';
 // stay literal rather than faker-random.
 const PERIOD_START = 1_700_000_000;
 const PERIOD_END = 1_702_592_000;
-// This suite runs against the shared `test-db` alongside other integration
-// files, so every write it makes is cleaned up by id or by these keys —
-// never by an unscoped DELETE over a whole table.
+// The keys this suite seeds into the `features` catalog with its own values.
 const FEATURE_KEYS = ['safe_seats', 'security_hub'] as const;
 // Event stamps, epoch seconds: the deletion happens after the update it is
 // delivered before.
@@ -59,12 +58,45 @@ describe('Billing webhook → entitlements materialization', () => {
   let billingBaseUri: string;
   const seededSpaceIds: Array<number> = [];
 
+  // Its own database, not the shared `test-db`: `features` is a global table
+  // and this suite seeds it with its own values, so sharing an instance with
+  // another suite that seeds the same keys is a race.
+  const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+
+  async function adminQuery(sql: string): Promise<void> {
+    const adminDataSource = new DataSource({
+      ...postgresConfig({
+        ...configuration().db.connection.postgres,
+        type: 'postgres',
+        database: 'postgres',
+      }),
+    });
+    await adminDataSource.initialize();
+    try {
+      await adminDataSource.query(sql);
+    } finally {
+      await adminDataSource.destroy();
+    }
+  }
+
   beforeAll(async () => {
     vi.resetAllMocks();
+
+    await adminQuery(`CREATE DATABASE ${testDatabaseName}`);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      db: {
+        ...defaultConfiguration.db,
+        connection: {
+          ...defaultConfiguration.db.connection,
+          postgres: {
+            ...defaultConfiguration.db.connection.postgres,
+            database: testDatabaseName,
+          },
+        },
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -109,8 +141,8 @@ describe('Billing webhook → entitlements materialization', () => {
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
 
-    // The catalog is global and idempotent, so it is seeded once. Deleting the
-    // suite's own keys first keeps a re-run from tripping UQ_features_key.
+    // Booting the app ran the migrations, so the catalog already holds the
+    // shipped `safe_seats` row; drop it to seed this suite's own values.
     const featureRepo = await postgresDatabaseService.getRepository(Feature);
     await featureRepo.delete({ key: In(FEATURE_KEYS) });
     await featureRepo.insert([
@@ -136,9 +168,10 @@ describe('Billing webhook → entitlements materialization', () => {
   });
 
   afterAll(async () => {
-    const featureRepo = await postgresDatabaseService.getRepository(Feature);
-    await featureRepo.delete({ key: In(FEATURE_KEYS) });
     await app?.close();
+    await adminQuery(
+      `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
+    );
   });
 
   async function seedSpace(): Promise<{ spaceId: number; spaceUuid: string }> {
