@@ -43,6 +43,15 @@ export function createMockStats(isSymLink: boolean): fs.Stats {
     mtime: date,
     ctime: date,
     birthtime: date,
+    // `@types/node` >= 26.2.0 adds Temporal-based timestamps to `fs.Stats`.
+    // Their type resolves to `unknown` unless the TypeScript `lib` exposes
+    // `Temporal` on `globalThis`, and Node only populates them on runtimes that
+    // ship `Temporal`. No consumer of this mock reads them, so declare the keys
+    // to keep the structural match complete and leave them unset.
+    atimeInstant: undefined,
+    mtimeInstant: undefined,
+    ctimeInstant: undefined,
+    birthtimeInstant: undefined,
   } as fs.Stats;
 }
 
