@@ -72,7 +72,7 @@ describe('RhinestoneApi', () => {
           fakeCacheService,
           mockLoggingService,
         ),
-    ).toThrow();
+    ).toThrow('No value set for key relay.baseUri');
   });
 
   it('should error if apiKey is not defined', () => {
@@ -88,7 +88,7 @@ describe('RhinestoneApi', () => {
           fakeCacheService,
           mockLoggingService,
         ),
-    ).toThrow();
+    ).toThrow('No value set for key relay.apiKey');
   });
 
   describe('relay', () => {
