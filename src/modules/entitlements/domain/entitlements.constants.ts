@@ -1,0 +1,56 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+
+/**
+ * Subscription statuses that occupy a workspace's single "active
+ * subscription" slot.
+ *
+ * The `UQ_subscriptions_active_space` partial unique index enforces the slot
+ * in Postgres from its own frozen copy of this list, so changing this one
+ * needs a paired migration reshaping that index — otherwise the database and
+ * the application disagree on who holds the slot.
+ */
+export const ACTIVE_SUBSCRIPTION_STATUSES = [
+  'active',
+  'trialing',
+] as const satisfies ReadonlyArray<SubscriptionStatus>;
+
+export function isActiveSubscriptionStatus(
+  status: SubscriptionStatus,
+): boolean {
+  return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
+    status,
+  );
+}
+
+/**
+ * Whether `stamp` orders strictly after `mark`. Upstream's `created` has
+ * second granularity, so two stamps in the same second say nothing about their
+ * order — a tie is not "after" — and a stamp that is absent cannot be ordered
+ * at all.
+ */
+export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
+  if (stamp === null) return false;
+  return mark === null || stamp > mark;
+}
+
+/**
+ * Prefix of the Stripe metadata keys carrying the purchased feature package,
+ * e.g. `FEATURE_SAFE_SEATS=10`, `FEATURE_SECURITY_HUB=true`,
+ * `FEATURE_SPONSORED_TRANSACTIONS=unlimited`, `FEATURE_SWAP_FEE_TIER=business`.
+ */
+export const FEATURE_METADATA_PREFIX = 'FEATURE_';
+
+export const PLAN_NAME_METADATA_KEY = 'planName';
+
+/**
+ * Mirrors the `subscription_entitlements.value` column's `varchar(255)`: a
+ * longer value is skipped rather than left to fail the insert.
+ */
+export const MAX_ENTITLEMENT_VALUE_LENGTH = 255;
+
+/**
+ * Value of a metered feature's metadata entry meaning "no quota, never
+ * blocks" (materialized as `quota = NULL`).
+ */
+export const UNLIMITED_METADATA_VALUE = 'unlimited';

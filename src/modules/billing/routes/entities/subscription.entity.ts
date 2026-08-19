@@ -25,7 +25,9 @@ export class Subscription implements DomainSubscription {
   @ApiProperty({ type: Number, nullable: true })
   cancelAt!: number | null;
   @ApiPropertyOptional({ type: Number, nullable: true })
-  validUntil?: number | null;
+  currentPeriodStart?: number | null;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  currentPeriodEnd?: number | null;
   @ApiPropertyOptional({ type: Object, nullable: true })
   metadata?: StripeMetadata | null;
 }

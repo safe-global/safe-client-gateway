@@ -40,6 +40,7 @@ export const SubscriptionSchema = z.object({
   startAt: z.number(),
   cancelledAt: z.number().nullable(),
   cancelAt: z.number().nullable(),
-  validUntil: z.number().nullish(),
+  currentPeriodStart: z.number().nullish(),
+  currentPeriodEnd: z.number().nullish(),
   metadata: StripeMetadataSchema.nullish(),
 });

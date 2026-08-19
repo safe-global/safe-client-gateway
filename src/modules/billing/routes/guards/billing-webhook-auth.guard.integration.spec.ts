@@ -13,9 +13,12 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
+import { mockPostgresDatabaseService } from '@/datasources/db/v2/__tests__/postgresql-database.service.mock';
+import { mockRepository } from '@/datasources/db/v2/__tests__/repository.mock';
 import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
 import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import { BillingController } from '@/modules/billing/routes/billing.controller';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
 
@@ -159,9 +162,16 @@ describe('BillingWebhookAuthGuard', () => {
       aud: [ISSUER, faker.internet.domainName()],
     });
 
+    // Valid token → the request runs past the guard into SubscriptionSyncService;
+    // an unresolvable space makes it ack with 202 instead of hitting an
+    // unconfigured mock.
+    mockRepository.findOne.mockResolvedValue(null);
+    mockPostgresDatabaseService.getRepository.mockResolvedValue(mockRepository);
+
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
+      .send(webhookEventBuilder().build())
       .expect(202);
   });
 
@@ -207,9 +217,14 @@ describe('BillingWebhookAuthGuard', () => {
       expiresInDays: 365,
     });
 
+    // See the comment above.
+    mockRepository.findOne.mockResolvedValue(null);
+    mockPostgresDatabaseService.getRepository.mockResolvedValue(mockRepository);
+
     await request(app.getHttpServer())
       .post(PATH)
       .set('Authorization', `Bearer ${token}`)
+      .send(webhookEventBuilder().build())
       .expect(202);
   });
 });

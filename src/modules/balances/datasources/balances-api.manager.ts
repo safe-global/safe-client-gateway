@@ -18,7 +18,7 @@ import { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
 import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import type { Raw } from '@/validation/entities/raw.entity';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class BalancesApiManager
@@ -26,6 +26,7 @@ export class BalancesApiManager
   implements IBalancesApiManager
 {
   private readonly useVpcUrl: boolean;
+  private readonly fiatCodes: Array<string>;
 
   constructor(
     @Inject(IConfigurationService)
@@ -41,14 +42,21 @@ export class BalancesApiManager
     this.useVpcUrl = this.configurationService.getOrThrow<boolean>(
       'safeTransaction.useVpcUrl',
     );
+    this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
+      'balances.providers.zerion.currencies',
+    );
   }
 
   getApi(chainId: string): Promise<IBalancesApi> {
     return this.getOrCreateApi(chainId);
   }
 
+  /**
+   * Returns `balances.providers.zerion.currencies`, not CoinGecko's wider
+   * `simple/supported_vs_currencies`.
+   */
   getFiatCodes(): Promise<Raw<Array<string>>> {
-    return this.coingeckoApi.getFiatCodes();
+    return Promise.resolve(rawify([...this.fiatCodes]));
   }
 
   protected async createApi(chainId: string): Promise<SafeBalancesApi> {

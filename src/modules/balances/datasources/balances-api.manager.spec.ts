@@ -53,10 +53,16 @@ const networkService = {
 
 const networkServiceMock = vi.mocked(networkService);
 
+const fiatCodes = Array.from(
+  { length: faker.number.int({ min: 2, max: 5 }) },
+  () => faker.finance.currencyCode(),
+);
+
 beforeEach(() => {
   vi.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
     if (key === 'safeTransaction.useVpcUrl') return false;
+    if (key === 'balances.providers.zerion.currencies') return fiatCodes;
     // TODO: Remove after Vault decoding has been released
     if (key === 'application.isProduction') return true;
   });
@@ -116,6 +122,7 @@ describe('Balances API Manager Tests', () => {
       const notFoundExpireTimeSeconds = faker.number.int();
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
         if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
+        if (key === 'balances.providers.zerion.currencies') return fiatCodes;
         if (key === 'expirationTimeInSeconds.default')
           return expirationTimeInSeconds;
         if (key === 'expirationTimeInSeconds.notFound.default')
@@ -166,8 +173,7 @@ describe('Balances API Manager Tests', () => {
   });
 
   describe('getFiatCodes checks', () => {
-    it('should return Safe balances supported currencies', async () => {
-      coingeckoApiMock.getFiatCodes.mockResolvedValue(rawify(['EUR', 'GBP']));
+    it('should return the configured Zerion currencies without querying CoinGecko', async () => {
       const manager = new BalancesApiManager(
         configurationService,
         configApiMock,
@@ -180,7 +186,8 @@ describe('Balances API Manager Tests', () => {
 
       const result = await manager.getFiatCodes();
 
-      expect(result).toStrictEqual(['EUR', 'GBP']);
+      expect(result).toStrictEqual(fiatCodes);
+      expect(coingeckoApiMock.getFiatCodes).not.toHaveBeenCalled();
     });
   });
 });

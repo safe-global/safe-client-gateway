@@ -21,8 +21,10 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
+import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
@@ -40,6 +42,10 @@ const billingApiMock = {
 const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+const subscriptionSyncServiceMock = {
+  handleWebhook: vi.fn(),
+} as MockedObject<ISubscriptionSyncService>;
 
 describe('BillingService', () => {
   let service: BillingService;
@@ -63,7 +69,20 @@ describe('BillingService', () => {
       billingApiMock,
       membersRepositoryMock,
       fakeConfigurationService,
+      subscriptionSyncServiceMock,
     );
+  });
+
+  describe('processWebhook', () => {
+    it('delegates to SubscriptionSyncService', async () => {
+      const payload = webhookEventBuilder().build();
+
+      await service.processWebhook(payload);
+
+      expect(subscriptionSyncServiceMock.handleWebhook).toHaveBeenCalledWith(
+        payload,
+      );
+    });
   });
 
   describe('getSubscriptions', () => {

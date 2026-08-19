@@ -126,6 +126,7 @@ export default () => ({
         assetsApiKey:
           process.env.ZERION_ASSETS_API_KEY ?? process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        // Also the source of truth for /v1/balances/supported-fiat-codes.
         currencies: [
           'USD',
           'EUR',
