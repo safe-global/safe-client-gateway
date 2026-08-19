@@ -77,9 +77,17 @@ export class RhinestoneApi implements IRelayApi {
 
   /**
    * Submits a pre-signed Safe transaction to Rhinestone for sponsored relay.
-   * @param args.safeTxHash - Required for execTransaction; omitted for
-   *   multiSend batches and factory deployments (createProxyWithNonce /
-   *   createSigner), which have no single SafeTx hash.
+   *
+   * @param args.safeTxHash - Taken from the relay request and forwarded as
+   *   received. This gateway does not verify it here, and it is not verified
+   *   on every path: only the relay-fee relayer checks the hash against the
+   *   submitted calldata, via `RelayTransactionHelper.isSafeTxHashValid`.
+   *   Requests routed to the daily-limit and no-fee-campaign relayers forward
+   *   whatever the caller sent, including `undefined` and including a value
+   *   that does not correspond to `data` — multiSend batches and factory
+   *   deployments (createProxyWithNonce / createSigner) have no single SafeTx
+   *   hash at all. Treat it as caller-supplied metadata, not a trusted input:
+   *   what is actually executed is determined by `to` and `data`.
    */
   async relay(args: {
     chainId: string;
