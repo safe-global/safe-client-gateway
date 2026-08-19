@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import {
+  FEATURE_KEYS,
+  FeatureType,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 
 export class EntitlementsPlan {
   @ApiProperty({ description: 'Plan identifier in the billing service' })
@@ -20,9 +23,9 @@ export class EntitlementsPlan {
 
 export class EntitlementItem {
   @ApiProperty({
-    type: String,
-    description:
-      'Feature key from the entitlements catalog. Data-driven, not a fixed enum: the catalog can grow without a contract change.',
+    enum: FEATURE_KEYS,
+    enumName: 'FeatureKey',
+    description: 'Feature key from the entitlements catalog.',
   })
   public readonly feature!: FeatureKey;
 

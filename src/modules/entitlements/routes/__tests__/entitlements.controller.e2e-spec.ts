@@ -28,12 +28,12 @@ import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
-// The suite owns its own tiny catalog: the production Free-tier values are
-// still pending product sign-off, so no seed migration ships them and this
-// suite must not depend on one (same policy as the service's integration
-// spec). Kept intentionally small — the business logic across every feature
-// type is already exhaustively covered there; this file only exercises HTTP
-// wiring: guards, status codes, and the request/response shape.
+// The suite owns its own tiny catalog: only `safe_seats` is signed off and
+// seeded by a migration, so the feature types below come from fixtures (same
+// policy as the service's integration spec). Kept intentionally small — the
+// business logic across every feature type is already exhaustively covered
+// there; this file only exercises HTTP wiring: guards, status codes, and the
+// request/response shape.
 const FREE_SAFE_SEATS = 2;
 
 describe('EntitlementsController', () => {

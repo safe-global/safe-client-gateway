@@ -46,9 +46,9 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-// The suite owns its catalog: the production Free-tier values are still
-// pending product sign-off, so no seed migration ships them and these tests
-// must not depend on one. The fixtures below cover every resolution branch
+// The suite owns its catalog: only `safe_seats` is signed off and seeded by a
+// migration, so the branches below are exercised against fixtures rather than
+// the shipped catalog. The fixtures below cover every resolution branch
 // the repository implements — binary, value, stock-metered (usage is a live
 // COUNT over an existing table) and event-metered (usage is a period-keyed
 // `space_feature_usage` counter). Keys come from the real `FeatureKey` enum
@@ -213,6 +213,13 @@ describe('EntitlementsService', () => {
       mockConfigService,
     );
     await migrator.migrate();
+    // The seed migration ships a `safe_seats` row; this suite owns its own
+    // catalog, so it starts from an empty `features` table.
+    await dataSource
+      .getRepository(Feature)
+      .createQueryBuilder()
+      .delete()
+      .execute();
 
     subscriptionsRepository = new SubscriptionsRepository(
       postgresDatabaseService,
