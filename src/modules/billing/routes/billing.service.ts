@@ -15,9 +15,11 @@ import {
   type RedirectConfig,
   resolveAndValidateRedirectUrl,
 } from '@/modules/auth/utils/auth-redirect.helper';
+import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
+import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -33,8 +35,14 @@ export class BillingService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISubscriptionSyncService)
+    private readonly subscriptionSyncService: ISubscriptionSyncService,
   ) {
     this.redirectConfig = getRedirectConfig(this.configurationService);
+  }
+
+  public async processWebhook(payload: WebhookEvent): Promise<void> {
+    await this.subscriptionSyncService.handleWebhook(payload);
   }
 
   public async getSubscriptions(args: {

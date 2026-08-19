@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
@@ -22,6 +23,8 @@ import { SubscriptionStatusFilterSchema } from '@/datasources/billing-api/entiti
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import { WebhookEventSchema } from '@/modules/billing/domain/entities/webhook-event.entity';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
@@ -55,9 +58,10 @@ export class BillingController {
   @UseGuards(BillingWebhookAuthGuard)
   @Post('/webhooks')
   @HttpCode(202)
-  postWebhook(): void {
-    // Origin is authenticated by BillingWebhookAuthGuard.
-    // TODO(PLA-1678 follow-up): validate and process the webhook payload.
+  public async postWebhook(
+    @Body(new ValidationPipe(WebhookEventSchema)) payload: WebhookEvent,
+  ): Promise<void> {
+    await this.billingService.processWebhook(payload);
   }
 
   @ApiOperation({ summary: 'Get a space subscriptions' })

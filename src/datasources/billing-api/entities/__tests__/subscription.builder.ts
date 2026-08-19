@@ -5,6 +5,7 @@ import { Builder } from '@/__tests__/builder';
 import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
+import { toSecondsTimestamp } from '@/domain/common/utils/time';
 
 export function subscriptionBuilder(): IBuilder<Subscription> {
   return new Builder<Subscription>()
@@ -17,6 +18,7 @@ export function subscriptionBuilder(): IBuilder<Subscription> {
     .with('startAt', faker.number.int())
     .with('cancelledAt', null)
     .with('cancelAt', null)
-    .with('validUntil', faker.number.int())
+    .with('currentPeriodStart', toSecondsTimestamp(faker.date.recent()))
+    .with('currentPeriodEnd', toSecondsTimestamp(faker.date.soon()))
     .with('metadata', { [faker.word.noun()]: faker.word.sample() });
 }
