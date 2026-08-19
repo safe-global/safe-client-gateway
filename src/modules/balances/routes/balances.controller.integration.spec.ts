@@ -28,6 +28,7 @@ describe('Balances Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let pricesProviderUrl: string;
+  let zerionCurrencies: Array<string>;
   let networkService: MockedObject<INetworkService>;
 
   beforeEach(async () => {
@@ -41,6 +42,9 @@ describe('Balances Controller', () => {
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
     pricesProviderUrl = configurationService.getOrThrow(
       'balances.providers.safe.prices.baseUri',
+    );
+    zerionCurrencies = configurationService.getOrThrow(
+      'balances.providers.zerion.currencies',
     );
     networkService = moduleFixture.get(NetworkService);
 
@@ -870,69 +874,24 @@ describe('Balances Controller', () => {
   });
 
   describe('GET /balances/supported-fiat-codes', () => {
-    it("should return supported fiat codes from the prices provider (assuming provider's response contains lowercase codes)", async () => {
-      const chain = chainBuilder().build();
-      const pricesProviderFiatCodes = ['usd', 'eth', 'eur'];
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/1`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({
-              data: rawify(pricesProviderFiatCodes),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
+    it('should return the currencies the positions provider supports', async () => {
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['USD', 'ETH', 'EUR']);
+        .expect(zerionCurrencies);
     });
 
-    it("should return supported fiat codes from the prices provider (assuming provider's response contains uppercase codes)", async () => {
-      const chain = chainBuilder().build();
-      const pricesProviderFiatCodes = ['USD', 'ETH'];
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/1`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.resolve({
-              data: rawify(pricesProviderFiatCodes),
-              status: 200,
-            });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
+    it('should not depend on the prices provider', async () => {
+      networkService.get.mockImplementation(({ url }) =>
+        Promise.reject(new Error(`Could not match ${url}`)),
+      );
 
       await request(app.getHttpServer())
         .get('/v1/balances/supported-fiat-codes')
         .expect(200)
-        .expect(['USD', 'ETH']);
-    });
+        .expect(zerionCurrencies);
 
-    it('should get an empty array of fiat currencies on failure', async () => {
-      const chain = chainBuilder().build();
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/1`:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${pricesProviderUrl}/simple/supported_vs_currencies`:
-            return Promise.reject(new Error());
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get('/v1/balances/supported-fiat-codes')
-        .expect(200)
-        .expect([]);
+      expect(networkService.get).not.toHaveBeenCalled();
     });
   });
 });
