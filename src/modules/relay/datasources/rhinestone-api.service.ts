@@ -95,18 +95,15 @@ export class RhinestoneApi implements IRelayApi {
     data: string;
     safeTxHash?: Hex;
   }): Promise<Relay> {
-    const url = `${this.baseUri}/safe-transactions`;
-    const body = {
-      chainId: Number(args.chainId),
-      to: args.to,
-      data: args.data,
-      safeTxHash: args.safeTxHash,
-    };
-
     try {
       const { data } = await this.networkService.post<RhinestoneRelayResponse>({
-        url,
-        data: body,
+        url: `${this.baseUri}/safe-transactions`,
+        data: {
+          chainId: Number(args.chainId),
+          to: args.to,
+          data: args.data,
+          safeTxHash: args.safeTxHash,
+        },
         networkRequest: {
           headers: this.headers(),
         },
