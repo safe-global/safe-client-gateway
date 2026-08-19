@@ -9,8 +9,10 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import {
+  getSafeToL2SetupVersions,
   hasCanonicalDeploymentSafeToL2Migration,
   hasCanonicalDeploymentSafeToL2Setup,
+  isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
   isL1SingletonDeployed,
   isL2SingletonDeployed,
@@ -59,7 +61,14 @@ import {
   TITLE_MAPPING,
 } from './recipient-analysis.constants';
 
-const SAFE_VERSIONS = ['1.4.1', '1.3.0', '1.2.0', '1.1.1', '1.0.0'] as const;
+const SAFE_VERSIONS = [
+  '1.5.0',
+  '1.4.1',
+  '1.3.0',
+  '1.2.0',
+  '1.1.1',
+  '1.0.0',
+] as const;
 type SafeVersion = (typeof SAFE_VERSIONS)[number];
 
 /**
@@ -70,6 +79,7 @@ export class RecipientAnalysisService {
   private readonly defaultExpirationTimeInSeconds: number;
 
   private static readonly MULTICHAIN_SUPPORTED_VERSIONS = [
+    '1.5.0',
     '1.4.1',
     '1.3.0',
   ] as const;
@@ -665,21 +675,29 @@ export class RecipientAnalysisService {
       address: safeCreationData.factoryAddress,
     });
 
-    const fallbackHandlerExists = isFallbackHandlerDeployed({
-      version,
-      chainId: chain.chainId,
-      address: safeCreationData.safeAccountConfig.fallbackHandler,
-    });
+    const fallbackHandlerExists =
+      isFallbackHandlerDeployed({
+        version,
+        chainId: chain.chainId,
+        address: safeCreationData.safeAccountConfig.fallbackHandler,
+      }) ||
+      isExtensibleFallbackHandlerDeployed({
+        version,
+        chainId: chain.chainId,
+        address: safeCreationData.safeAccountConfig.fallbackHandler,
+      });
 
     const includesSetupToL2 =
       safeCreationData.safeAccountConfig.to !== zeroAddress;
 
     const areSetupToL2ConditionsMet =
       !includesSetupToL2 ||
-      hasCanonicalDeploymentSafeToL2Setup({
-        chainId: chain.chainId,
-        version: '1.4.1',
-      });
+      getSafeToL2SetupVersions().some((setupVersion) =>
+        hasCanonicalDeploymentSafeToL2Setup({
+          chainId: chain.chainId,
+          version: setupVersion,
+        }),
+      );
 
     const isMigrationRequired = isL2Singleton && !includesSetupToL2 && chain.l2;
 

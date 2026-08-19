@@ -5,11 +5,13 @@ import { AddOwner } from '@/modules/transactions/routes/entities/settings-change
 import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
 import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
 import { DeleteGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-guard';
+import { DeleteModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
 import { DisableModule } from '@/modules/transactions/routes/entities/settings-changes/disable-module.entity';
 import { EnableModule } from '@/modules/transactions/routes/entities/settings-changes/enable-module.entity';
 import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
 import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
 import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
+import { SetModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
 import { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import {
@@ -22,11 +24,13 @@ import {
   ChangeMasterCopy,
   ChangeThreshold,
   DeleteGuard,
+  DeleteModuleGuard,
   DisableModule,
   EnableModule,
   RemoveOwner,
   SetFallbackHandler,
   SetGuard,
+  SetModuleGuard,
   SettingsChange,
   SwapOwner,
 )
@@ -41,11 +45,13 @@ export class SettingsChangeTransaction extends TransactionInfo {
       { $ref: getSchemaPath(ChangeMasterCopy) },
       { $ref: getSchemaPath(ChangeThreshold) },
       { $ref: getSchemaPath(DeleteGuard) },
+      { $ref: getSchemaPath(DeleteModuleGuard) },
       { $ref: getSchemaPath(DisableModule) },
       { $ref: getSchemaPath(EnableModule) },
       { $ref: getSchemaPath(RemoveOwner) },
       { $ref: getSchemaPath(SetFallbackHandler) },
       { $ref: getSchemaPath(SetGuard) },
+      { $ref: getSchemaPath(SetModuleGuard) },
       { $ref: getSchemaPath(SwapOwner) },
     ],
   })

@@ -10,7 +10,7 @@ export const ExecutedTransactionEventSchema = HookEventBaseSchema.extend({
   to: AddressSchema,
   safeTxHash: HexSchema,
   txHash: HexSchema,
-  failed: z.enum(['true', 'false']),
+  isFailed: z.boolean(),
   // FirebaseNotification['data'] does not accept null values
   data: z.preprocess((val) => val ?? undefined, HexSchema.optional()),
 });

@@ -48,7 +48,10 @@ export class DataDecoderRepository implements IDataDecoderRepository {
         to: this.getDataDecodedTo(args.transaction),
       });
     } catch (e) {
-      this.loggingService.warn(
+      // Undecodable data is expected and not actionable, so this is logged at
+      // debug level to keep it out of indexed logs. APM traces cover the
+      // failing Decoder calls when they need investigating.
+      this.loggingService.debug(
         `Error decoding transaction data: ${asError(e).message}`,
       );
       return null;

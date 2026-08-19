@@ -5,13 +5,14 @@
 <!--
 SYNC IMPACT REPORT
 ==================
-Version change: N/A (initial) → 1.0.0
+Version change: 1.0.0 → 1.0.1
 Modified principles: N/A (initial ratification)
 Added sections:
   - Core Principles (5 principles)
   - Development Workflow
   - Quality Standards
   - Governance
+  - Compliance Review: reference to docs/agents/ guides + reviewing.md (PATCH)
 Removed sections: N/A
 Templates requiring updates:
   - .specify/templates/plan-template.md ✅ aligned (Constitution Check section exists)
@@ -144,5 +145,6 @@ This constitution supersedes ad-hoc practices. All contributions MUST verify com
 - All PRs MUST be reviewed against these principles
 - CI pipelines enforce automated quality gates
 - Complexity additions MUST be explicitly justified
+- Repo-specific rules and the review checklist live in docs/agents/ (routing table: /AGENTS.md); reviews verify against docs/agents/reviewing.md
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-01-21
+**Version**: 1.0.1 | **Ratified**: 2026-01-21 | **Last Amended**: 2026-07-24

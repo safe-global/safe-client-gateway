@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+name: Linear Release
+
+# Syncs Client Gateway releases to the continuous "CGW" pipeline in Linear.
+#
+# Publishing a GitHub release (tag `vX.Y.Z`) runs `sync`, which scans the
+# commits since the last release for Linear issue IDs, attaches them, links the
+# GitHub release, and completes it in one step - continuous pipelines
+# auto-complete, so there is no separate `complete` call and no stage to move
+# between.
+#
+# The sync fails loudly rather than fail-open: if Linear is unreachable or the
+# key is rejected, this run goes red and is re-run from the Actions UI. It
+# publishes nothing itself, so a red run here never blocks or reverts a release
+# that has already shipped.
+#
+# Setup: add the pipeline access key as the `LINEAR_ACCESS_KEY` repository
+# secret (Settings -> Secrets and variables -> Actions). This must be a pipeline
+# access key generated from the pipeline settings in Linear, not a personal API
+# key.
+
+on:
+  release:
+    types: [released]
+
+permissions: {}
+
+concurrency:
+  group: linear-release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  linear-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10 # A hung sync should fail today, not in six hours
+    permissions:
+      contents: read
+
+    steps:
+      # Checks out the release tag itself, so the commit scan covers that
+      # release's history rather than whatever main happens to be at.
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ github.event.release.tag_name }}
+          fetch-depth: 0 # Full history required to scan commits for Linear issue IDs
+
+      - name: Resolve release version
+        id: release
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Linear versions its releases without the tag's `v` prefix.
+          echo "version=${RELEASE_TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "Linear release ${RELEASE_TAG#v} (tag $RELEASE_TAG)"
+
+      - name: Sync release to Linear
+        uses: linear/linear-release-action@17b8c24f8ceb2b98cabaf1965ff83c55dd596fac # v0.15.1
+        with:
+          access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
+          command: sync
+          version: ${{ steps.release.outputs.version }}
+          links: ${{ github.event.release.html_url }}

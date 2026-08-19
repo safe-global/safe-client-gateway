@@ -8,7 +8,9 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import {
+  getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
+  isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
 } from '@/domain/common/utils/deployments';
 import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
@@ -444,8 +446,13 @@ export class ContractAnalysisService {
     address: Address,
     chainId: string,
   ): boolean {
-    return getFallbackHandlerVersions().some((version) =>
-      isFallbackHandlerDeployed({ chainId, version, address }),
+    return (
+      getFallbackHandlerVersions().some((version) =>
+        isFallbackHandlerDeployed({ chainId, version, address }),
+      ) ||
+      getExtensibleFallbackHandlerVersions().some((version) =>
+        isExtensibleFallbackHandlerDeployed({ chainId, version, address }),
+      )
     );
   }
 

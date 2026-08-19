@@ -41,6 +41,10 @@ export default (): ReturnType<typeof configuration> => ({
       scope: 'openid email',
       jwksCacheMaxAgeMs: faker.number.int({ min: 60_000, max: 3_600_000 }),
       jwksCooldownMs: faker.number.int({ min: 1_000, max: 60_000 }),
+      managementApiTokenTtlBufferInSeconds: faker.number.int({
+        min: 30,
+        max: 120,
+      }),
     },
     rateLimit: {
       max: faker.number.int({ min: 100, max: 200 }),

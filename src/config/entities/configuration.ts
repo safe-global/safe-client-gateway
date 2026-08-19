@@ -76,6 +76,10 @@ export default () => ({
         process.env.AUTH0_JWKS_COOLDOWN_MILLISECONDS ?? `${30_000}`,
         10, // 30 seconds
       ),
+      managementApiTokenTtlBufferInSeconds: Number.parseInt(
+        process.env.AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS ?? `${60}`,
+        10, // 60 seconds
+      ),
     },
     rateLimit: {
       max: Number.parseInt(process.env.AUTH_RATE_LIMIT_MAX ?? `${5}`, 10),
@@ -122,6 +126,7 @@ export default () => ({
         assetsApiKey:
           process.env.ZERION_ASSETS_API_KEY ?? process.env.ZERION_API_KEY,
         baseUri: process.env.ZERION_BASE_URI || 'https://api.zerion.io',
+        // Also the source of truth for /v1/balances/supported-fiat-codes.
         currencies: [
           'USD',
           'EUR',

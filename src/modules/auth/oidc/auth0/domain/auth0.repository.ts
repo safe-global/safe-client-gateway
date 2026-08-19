@@ -2,6 +2,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
+import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
 import { Auth0TokenResponseSchema } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
@@ -15,8 +16,12 @@ export class Auth0Repository implements IAuth0Repository {
     private readonly auth0TokenVerifier: Auth0TokenVerifier,
   ) {}
 
-  public getAuthorizationUrl(state: string, connection?: string): string {
-    return this.auth0Api.getAuthorizationUrl(state, connection);
+  public getAuthorizationUrl(
+    state: string,
+    connection?: string,
+    enroll?: boolean,
+  ): string {
+    return this.auth0Api.getAuthorizationUrl(state, connection, enroll);
   }
 
   public async authenticateWithAuthorizationCode(
@@ -25,5 +30,18 @@ export class Auth0Repository implements IAuth0Repository {
     const response = await this.auth0Api.exchangeAuthorizationCode(code);
     const { id_token } = Auth0TokenResponseSchema.parse(response);
     return this.auth0TokenVerifier.verifyAndDecode(id_token);
+  }
+
+  public async listUserAuthenticationMethods(
+    extUserId: string,
+  ): Promise<Array<Auth0AuthenticationMethod>> {
+    return await this.auth0Api.listUserAuthenticationMethods(extUserId);
+  }
+
+  public async deleteUserAuthenticationMethod(
+    extUserId: string,
+    methodId: string,
+  ): Promise<void> {
+    await this.auth0Api.deleteUserAuthenticationMethod(extUserId, methodId);
   }
 }

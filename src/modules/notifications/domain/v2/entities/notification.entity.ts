@@ -27,7 +27,12 @@ export type ConfirmationRequestNotification = Omit<
 export type DeletedMultisigTransactionNotification =
   DeletedMultisigTransactionEvent;
 
-export type ExecutedMultisigTransactionNotification = ExecutedTransactionEvent;
+// The event carries a boolean `isFailed`, but FirebaseNotification['data'] only
+// accepts strings and deployed clients read `failed`, so it is sent stringified
+export type ExecutedMultisigTransactionNotification = Omit<
+  ExecutedTransactionEvent,
+  'isFailed'
+> & { failed: 'true' | 'false' };
 
 export type IncomingEtherNotification = IncomingEtherEvent;
 
