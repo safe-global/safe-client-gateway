@@ -4,6 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
 import { getAddress } from 'viem';
 import {
   initTestApplication,
@@ -12,6 +13,7 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
+import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
@@ -41,12 +43,49 @@ describe('EntitlementsController', () => {
   let jwtService: IJwtService;
   let postgresDatabaseService: PostgresDatabaseService;
 
+  // Its own database, not the shared `test-db`: the `features` catalog is a
+  // global table, and this suite replaces it wholesale. Sharing an instance
+  // with another suite that seeds the same keys is a race.
+  const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+
+  async function withAdminConnection(
+    run: (dataSource: DataSource) => Promise<void>,
+  ): Promise<void> {
+    const adminDataSource = new DataSource({
+      ...postgresConfig({
+        ...configuration().db.connection.postgres,
+        type: 'postgres',
+        database: 'postgres',
+      }),
+    });
+    await adminDataSource.initialize();
+    try {
+      await run(adminDataSource);
+    } finally {
+      await adminDataSource.destroy();
+    }
+  }
+
   beforeAll(async () => {
     vi.resetAllMocks();
+
+    await withAdminConnection(async (adminDataSource) => {
+      await adminDataSource.query(`CREATE DATABASE ${testDatabaseName}`);
+    });
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      db: {
+        ...defaultConfiguration.db,
+        connection: {
+          ...defaultConfiguration.db.connection,
+          postgres: {
+            ...defaultConfiguration.db.connection.postgres,
+            database: testDatabaseName,
+          },
+        },
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -87,10 +126,9 @@ describe('EntitlementsController', () => {
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
 
-    // `test-db` is a shared, disposable Postgres instance; other test runs
-    // against it may have left catalog rows behind (the `features` table has
-    // no per-suite isolation). Clear it once up front, in FK-dependency
-    // order, so this suite's own fixtures start from a clean slate.
+    // Booting the app ran the migrations, seed included, so the catalog holds
+    // the shipped `safe_seats` row. Clear it in FK-dependency order to leave
+    // the fixtures below as the suite's whole catalog.
     await clearFeatureCatalog();
   });
 
@@ -139,6 +177,11 @@ describe('EntitlementsController', () => {
 
   afterAll(async () => {
     await app.close();
+    await withAdminConnection(async (adminDataSource) => {
+      await adminDataSource.query(
+        `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
+      );
+    });
   });
 
   // Auth resolves the acting user from the JWT `sub`, so a token must carry
