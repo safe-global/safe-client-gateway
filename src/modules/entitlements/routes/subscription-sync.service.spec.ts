@@ -262,7 +262,9 @@ describe('SubscriptionSyncService', () => {
     expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
     expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
     expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-    expect(loggingService.info).toHaveBeenCalled();
+    // Debug, not info: upstream forwards every invoice and charge it sees.
+    expect(loggingService.debug).toHaveBeenCalled();
+    expect(loggingService.info).not.toHaveBeenCalled();
   });
 
   it('invalidates the payment links cache and skips materialization for payment_link events', async () => {
@@ -281,7 +283,8 @@ describe('SubscriptionSyncService', () => {
 
     expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
     expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
-    expect(loggingService.info).toHaveBeenCalled();
+    expect(loggingService.debug).toHaveBeenCalled();
+    expect(loggingService.info).not.toHaveBeenCalled();
   });
 
   // Allow-listed, so a customer group nobody has seen yet is ignored rather

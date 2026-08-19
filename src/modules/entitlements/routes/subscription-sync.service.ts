@@ -88,7 +88,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       return;
     }
     if (!isSubscriptionEventType(event.type)) {
-      this.loggingService.info(
+      this.loggingService.debug(
         `Ignoring billing webhook event type ${event.type} (event ${event.id}): it is not about a subscription`,
       );
       return;
@@ -98,7 +98,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     // added upstream must not silently start writing entitlements.
     const customer = event.data?.customer;
     if (customer?.customerGroup !== WALLET_WEB_CUSTOMER_GROUP) {
-      this.loggingService.info(
+      this.loggingService.debug(
         `Ignoring billing webhook for customer group ${customer?.customerGroup} (event ${event.id})`,
       );
       return;
