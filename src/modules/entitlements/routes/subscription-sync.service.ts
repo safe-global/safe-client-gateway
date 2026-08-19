@@ -94,6 +94,36 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       return;
     }
 
+    const space = await this.resolveSpace(event);
+    if (space === null) {
+      return;
+    }
+
+    try {
+      await this.syncSubscriptions({ event, ...space });
+    } catch (error) {
+      // Deleted between resolving the space and writing: retrying cannot fix it.
+      if (
+        error instanceof NotFoundException ||
+        this.isSpaceDeletionRace(error)
+      ) {
+        this.loggingService.warn(
+          `Billing webhook event ${event.id} raced a deletion of space ${space.upstreamCustomerId}`,
+        );
+        return;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * The space the event's customer maps to, or `null` when nothing can be
+   * processed.
+   */
+  private async resolveSpace(event: WebhookEvent): Promise<{
+    spaceId: Space['id'];
+    upstreamCustomerId: string;
+  } | null> {
     // Allow-listed rather than excluding known groups: an unrecognised group
     // added upstream must not silently start writing entitlements.
     const customer = event.data?.customer;
@@ -101,22 +131,24 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       this.loggingService.debug(
         `Ignoring billing webhook for customer group ${customer?.customerGroup} (event ${event.id})`,
       );
-      return;
+      return null;
     }
     const upstreamCustomerIdResult = UuidSchema.safeParse(
-      customer?.upstreamCustomerId,
+      customer.upstreamCustomerId,
     );
     if (!upstreamCustomerIdResult.success) {
       this.loggingService.warn(
         `Billing webhook event ${event.id} (${event.type}) has no valid upstreamCustomerId`,
       );
-      return;
+      return null;
     }
     const upstreamCustomerId = upstreamCustomerIdResult.data;
 
-    let spaceId: Space['id'];
     try {
-      spaceId = await this.spacesRepository.findIdByUuid(upstreamCustomerId);
+      return {
+        spaceId: await this.spacesRepository.findIdByUuid(upstreamCustomerId),
+        upstreamCustomerId,
+      };
     } catch (error) {
       if (!(error instanceof NotFoundException)) {
         throw error;
@@ -124,91 +156,83 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       this.loggingService.warn(
         `Billing webhook event ${event.id} references unknown space ${upstreamCustomerId}`,
       );
-      return;
+      return null;
     }
+  }
 
-    const eventAt = fromSecondsTimestamp(event.created);
+  /**
+   * Brings the space's stored state in line with the event: from the event's
+   * own payload while that settles it, from the authoritative state otherwise.
+   */
+  private async syncSubscriptions(args: {
+    event: WebhookEvent;
+    spaceId: Space['id'];
+    upstreamCustomerId: string;
+  }): Promise<void> {
+    const eventAt = fromSecondsTimestamp(args.event.created);
     const features = await this.featuresRepository.getFeatures();
     const featureTypeByKey = new Map(
       features.map((feature) => [feature.key, feature.type]),
     );
     const eventSubscription = mapEventToSubscription({
-      event,
+      event: args.event,
       featureTypeByKey,
       onWarning: (message) => this.loggingService.warn(message),
     });
 
-    // Which state the write came from, for the log below.
-    let fromPayload = false;
-    try {
-      let materialized = false;
-      if (eventSubscription !== null && eventAt !== null) {
-        // The billing-api datasource caches subscriptions in Redis — bust it so
-        // the REST read path serves post-event state.
-        await this.clearSubscriptionsCache(upstreamCustomerId);
-        materialized = await this.entitlementsService.materializeFromEvent({
-          spaceId,
-          subscription: eventSubscription,
-          eventAt,
-        });
-        fromPayload = materialized;
-      }
-
-      // Either the payload was not usable — a partial snapshot, no `created`
-      // stamp, or an event that does not order after what is stored — or a
-      // concurrent delivery moved the mark while it was being written. Upstream
-      // decides in every one of those cases.
-      if (!materialized) {
-        const authoritative = await this.readAuthoritativeState({
-          spaceId,
-          upstreamCustomerId,
-          featureTypeByKey,
-        });
-        // The billing service proxies Stripe, so a customer that ever had a
-        // subscription always lists one. An empty list is therefore an anomaly,
-        // not a state to materialize — writing it would retire the space's
-        // subscription on nothing more than upstream having a bad day.
-        if (authoritative.subscriptions.length === 0) {
-          this.loggingService.error(
-            `Billing webhook event ${event.id} found no subscriptions upstream for space ${spaceId}; nothing materialized`,
-          );
-          return;
-        }
-        materialized = await this.entitlementsService.materializeAuthoritative({
-          spaceId,
-          subscriptions: authoritative.subscriptions,
-          observedEventAt: authoritative.observedEventAt,
-          triggerEventAt: eventAt,
-        });
-      }
-      if (!materialized) {
-        // A concurrent delivery beat the re-fetch too: its state is newer than
-        // anything this event could write, so letting it stand is the end.
-        this.loggingService.warn(
-          `Billing webhook event ${event.id} was superseded twice for space ${spaceId}; the concurrent delivery's state stands`,
+    if (eventSubscription !== null && eventAt !== null) {
+      // The billing-api datasource caches subscriptions in Redis — bust it so
+      // the REST read path serves post-event state.
+      await this.clearSubscriptionsCache(args.upstreamCustomerId);
+      const materialized = await this.entitlementsService.materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: eventSubscription,
+        eventAt,
+      });
+      if (materialized) {
+        this.loggingService.info(
+          `Materialized space ${args.spaceId} from the event payload (event ${args.event.id}, ${args.event.type})`,
         );
         return;
       }
-    } catch (error) {
-      // The space existed a moment ago (resolved just above); a
-      // deletion racing this request — caught either as a NotFoundException
-      // from materialize()'s own check, or (a narrower window) as the
-      // subscriptions insert's FK violation once the space is truly gone —
-      // is unprocessable, not retryable.
-      if (
-        error instanceof NotFoundException ||
-        this.isSpaceDeletionRace(error)
-      ) {
-        this.loggingService.warn(
-          `Billing webhook event ${event.id} raced a deletion of space ${upstreamCustomerId}`,
-        );
-        return;
-      }
-      throw error;
     }
 
+    // Either the payload was not usable — a partial snapshot, no `created`
+    // stamp, or an event that does not order after what is stored — or a
+    // concurrent delivery moved the mark while it was being written. Upstream
+    // decides in every one of those cases.
+    const authoritative = await this.readAuthoritativeState({
+      spaceId: args.spaceId,
+      upstreamCustomerId: args.upstreamCustomerId,
+      featureTypeByKey,
+    });
+    // The billing service proxies Stripe, so a customer that ever had a
+    // subscription always lists one. An empty list is therefore an anomaly, not
+    // a state to materialize — writing it would retire the space's subscription
+    // on nothing more than upstream having a bad day.
+    if (authoritative.subscriptions.length === 0) {
+      this.loggingService.error(
+        `Billing webhook event ${args.event.id} found no subscriptions upstream for space ${args.spaceId}; nothing materialized`,
+      );
+      return;
+    }
+    const materialized =
+      await this.entitlementsService.materializeAuthoritative({
+        spaceId: args.spaceId,
+        subscriptions: authoritative.subscriptions,
+        observedEventAt: authoritative.observedEventAt,
+        triggerEventAt: eventAt,
+      });
+    if (!materialized) {
+      // A concurrent delivery beat the re-fetch too: its state is newer than
+      // anything this event could write, so letting it stand is the end.
+      this.loggingService.warn(
+        `Billing webhook event ${args.event.id} was superseded twice for space ${args.spaceId}; the concurrent delivery's state stands`,
+      );
+      return;
+    }
     this.loggingService.info(
-      `Materialized space ${spaceId} from ${fromPayload ? 'the event payload' : 'the authoritative state'} (event ${event.id}, ${event.type})`,
+      `Materialized space ${args.spaceId} from the authoritative state (event ${args.event.id}, ${args.event.type})`,
     );
   }
 
