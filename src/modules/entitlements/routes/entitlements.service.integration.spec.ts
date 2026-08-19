@@ -340,6 +340,14 @@ describe('EntitlementsService', () => {
     );
   }
 
+  function seatsOf<T extends { feature: FeatureKey }>(result: {
+    entitlements: Array<T>;
+  }): T | undefined {
+    return result.entitlements.find(
+      (entitlement) => entitlement.feature === 'safe_seats',
+    );
+  }
+
   function materializedSubscription(
     overrides?: Partial<MaterializedSubscription>,
   ): MaterializedSubscription {
@@ -457,6 +465,7 @@ describe('EntitlementsService', () => {
         enabled: true,
         quota: FREE_SAFE_SEATS,
         used: 2,
+        overLimit: false,
         resetsAt: null,
       });
       expect(byFeature.get('security_hub')).toStrictEqual({
@@ -542,13 +551,53 @@ describe('EntitlementsService', () => {
 
       const result = await service.resolveEntitlements(spaceId);
 
-      const seats = result.entitlements.find(
-        (entitlement) => entitlement.feature === 'safe_seats',
-      );
-      // Quota is never inflated; used > quota is legal.
-      expect(seats).toMatchObject({
+      // Quota is never inflated; used > quota is legal, and that legal state is
+      // what the endpoint names as over-limit.
+      expect(seatsOf(result)).toMatchObject({
         quota: FREE_SAFE_SEATS,
         used: FREE_SAFE_SEATS + 2,
+        overLimit: true,
+      });
+    });
+
+    it('reports no over-limit feature while usage stays within quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS);
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(seatsOf(result)).toMatchObject({
+        used: FREE_SAFE_SEATS,
+        overLimit: false,
+      });
+    });
+
+    it('reports no over-limit feature when the plan grants an unlimited quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS + 2);
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [
+          materializedSubscription({
+            upstreamSubscriptionId: 'sub_unlimited',
+            entitlements: [
+              {
+                featureKey: 'safe_seats',
+                enabled: true,
+                quota: null,
+                value: null,
+              },
+            ],
+          }),
+        ],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(seatsOf(result)).toMatchObject({
+        quota: null,
+        used: FREE_SAFE_SEATS + 2,
+        overLimit: false,
       });
     });
 
@@ -586,10 +635,11 @@ describe('EntitlementsService', () => {
 
       const result = await service.resolveEntitlements(spaceId);
 
-      const seats = result.entitlements.find(
-        (entitlement) => entitlement.feature === 'safe_seats',
-      );
-      expect(seats).toMatchObject({ quota: FREE_SAFE_SEATS, used: 3 });
+      expect(seatsOf(result)).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: 3,
+        overLimit: true,
+      });
     });
   });
 
@@ -1027,10 +1077,11 @@ describe('EntitlementsService', () => {
 
       expect(result.plan).toBeNull();
       expect(result.entitlements).toHaveLength(FEATURE_FIXTURES.length);
-      const seats = result.entitlements.find(
-        (entitlement) => entitlement.feature === 'safe_seats',
-      );
-      expect(seats).toMatchObject({ quota: FREE_SAFE_SEATS, used: 0 });
+      expect(seatsOf(result)).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: 0,
+        overLimit: false,
+      });
     });
 
     it('rejects a non-member', async () => {

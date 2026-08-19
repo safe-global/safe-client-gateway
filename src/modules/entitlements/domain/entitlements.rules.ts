@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { ResolvedEntitlement } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
 import type { SpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
 import type { SubscriptionEntitlement } from '@/modules/entitlements/domain/entities/subscription-entitlement.entity';
 import {
@@ -79,6 +80,23 @@ export function eventPeriodStart(args: {
     return new Date(anchor + Math.floor(elapsed / periodMs) * periodMs);
   }
   return spaceCreatedAt;
+}
+
+/**
+ * Whether usage has passed the quota the plan grants. `used > quota` is a legal
+ * state — the quota is never inflated to match usage — so this is where it gets
+ * named, next to the two fields it is read from: the enforcement layer locks on
+ * it, and clients are spared re-deriving a rule whose unlimited case (a null
+ * quota, which no usage can pass) is easy to get wrong.
+ */
+export function isOverLimit(
+  entitlement: Pick<ResolvedEntitlement, 'quota' | 'used'>,
+): boolean {
+  return (
+    entitlement.quota != null &&
+    entitlement.used != null &&
+    entitlement.used > entitlement.quota
+  );
 }
 
 /** When the current quota window rolls over; NULL for stock-type features. */

@@ -11,12 +11,11 @@ export class EntitlementsPlan {
   public readonly name!: string | null;
 
   @ApiProperty({
-    type: String,
-    format: 'date-time',
+    type: Date,
     nullable: true,
     description: 'End of the current billing cycle',
   })
-  public readonly cycleEndsAt!: string | null;
+  public readonly cycleEndsAt!: Date | null;
 }
 
 export class EntitlementItem {
@@ -48,13 +47,18 @@ export class EntitlementItem {
   public readonly used?: number;
 
   @ApiPropertyOptional({
-    type: String,
-    format: 'date-time',
+    description:
+      'Metered only. True once `used` has passed `quota`; never true for an unlimited quota. The over-limit state lasts until usage drops or the plan is upgraded, and it is reported here only — the blocking itself happens on the mutations.',
+  })
+  public readonly overLimit?: boolean;
+
+  @ApiPropertyOptional({
+    type: Date,
     nullable: true,
     description:
       'Metered only. Null for stock-type features (seats) that have no reset window.',
   })
-  public readonly resetsAt?: string | null;
+  public readonly resetsAt?: Date | null;
 
   @ApiPropertyOptional({
     type: String,

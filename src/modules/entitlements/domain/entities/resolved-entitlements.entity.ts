@@ -24,6 +24,8 @@ export type ResolvedEntitlement = {
   quota?: number | null;
   /** Metered only. `used > quota` is a legal state. */
   used?: number;
+  /** Metered only. TRUE once `used` passed `quota`; never for an unlimited one. */
+  overLimit?: boolean;
   /** Metered only. NULL for stock-type features (no reset window). */
   resetsAt?: Date | null;
   /** Value-typed only. */

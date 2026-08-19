@@ -25,6 +25,7 @@ import {
 import {
   effectiveEntitlement,
   eventPeriodStart,
+  isOverLimit,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
@@ -87,7 +88,7 @@ export class EntitlementsService {
     });
 
     const entitlements = features.map((feature) =>
-      this.resolve({
+      this.resolveFeature({
         feature,
         spaceCreatedAt,
         activeSubscription,
@@ -116,7 +117,9 @@ export class EntitlementsService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    return this.toResponse(await this.resolveEntitlements(args.spaceId));
+    return this.toEntitlementsResponse(
+      await this.resolveEntitlements(args.spaceId),
+    );
   }
   /**
    * Materializes the state an event carries in its own payload, and stamps the
@@ -344,7 +347,7 @@ export class EntitlementsService {
     return storedEventAt > triggerEventAt ? storedEventAt : triggerEventAt;
   }
 
-  private resolve(args: {
+  private resolveFeature(args: {
     feature: Feature;
     spaceCreatedAt: Date;
     activeSubscription: SpaceSubscription | null;
@@ -352,7 +355,12 @@ export class EntitlementsService {
     now: Date;
   }): ResolvedEntitlement {
     const { feature, spaceCreatedAt, activeSubscription, used, now } = args;
-    const effective = this.effectiveFor(feature, activeSubscription);
+    const effective = effectiveEntitlement({
+      feature,
+      purchased: activeSubscription?.entitlements?.find(
+        (entitlement) => entitlement.feature.id === feature.id,
+      ),
+    });
 
     if (feature.type === FeatureType.Binary) {
       return {
@@ -377,6 +385,7 @@ export class EntitlementsService {
       // Always the plan's quota, never inflated to match usage.
       quota: effective.quota,
       used,
+      overLimit: isOverLimit({ quota: effective.quota, used }),
       resetsAt: resetsAt({
         feature,
         spaceCreatedAt,
@@ -384,28 +393,6 @@ export class EntitlementsService {
         now,
       }),
     };
-  }
-
-  /** Effective entitlement of a feature under the workspace's current plan. */
-  private effectiveFor(
-    feature: Feature,
-    activeSubscription: SpaceSubscription | null,
-  ): ReturnType<typeof effectiveEntitlement> {
-    return effectiveEntitlement({
-      feature,
-      purchased: this.purchasedFor(feature, activeSubscription),
-    });
-  }
-
-  private purchasedFor(
-    feature: Feature,
-    activeSubscription: SpaceSubscription | null,
-  ):
-    | { enabled: boolean; quota: number | null; value: string | null }
-    | undefined {
-    return activeSubscription?.entitlements?.find(
-      (entitlement) => entitlement.feature.id === feature.id,
-    );
   }
 
   /** Usage of every metered feature in the catalog, keyed by feature id. */
@@ -477,13 +464,15 @@ export class EntitlementsService {
     return space.createdAt;
   }
 
-  private toResponse(resolved: ResolvedEntitlements): EntitlementsResponse {
+  private toEntitlementsResponse(
+    resolved: ResolvedEntitlements,
+  ): EntitlementsResponse {
     return {
       plan: resolved.plan
         ? {
             id: resolved.plan.id,
             name: resolved.plan.name,
-            cycleEndsAt: this.toIso(resolved.plan.cycleEndsAt),
+            cycleEndsAt: resolved.plan.cycleEndsAt,
           }
         : null,
       entitlements: resolved.entitlements.map((entitlement) => ({
@@ -492,15 +481,14 @@ export class EntitlementsService {
         enabled: entitlement.enabled,
         ...(entitlement.quota !== undefined && { quota: entitlement.quota }),
         ...(entitlement.used !== undefined && { used: entitlement.used }),
+        ...(entitlement.overLimit !== undefined && {
+          overLimit: entitlement.overLimit,
+        }),
         ...(entitlement.resetsAt !== undefined && {
-          resetsAt: this.toIso(entitlement.resetsAt),
+          resetsAt: entitlement.resetsAt,
         }),
         ...(entitlement.value !== undefined && { value: entitlement.value }),
       })),
     };
-  }
-
-  private toIso(value: Date | null): string | null {
-    return value === null ? null : value.toISOString();
   }
 }
