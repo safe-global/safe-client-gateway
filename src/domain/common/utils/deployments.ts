@@ -36,8 +36,7 @@ type DeploymentGetter =
   | typeof _getFallbackHandlerDeployments
   | typeof _getExtensibleFallbackHandlerDeployments
   | typeof _getSafeToL2SetupDeployments
-  | typeof _getSafeToL2MigrationDeployments
-  | typeof _getSafeMigrationDeployments;
+  | typeof _getSafeToL2MigrationDeployments;
 
 /**
  * Type-only declaration of the SafeWebAuthnSignerFactory function signatures
