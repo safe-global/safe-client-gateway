@@ -4,11 +4,9 @@ import type { EntityManager } from 'typeorm';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionValues } from '@/modules/entitlements/domain/entities/space-subscription.entity';
 import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
-import type {
-  ISubscriptionsRepository,
-  SubscriptionValues,
-} from '@/modules/entitlements/domain/subscriptions.repository.interface';
+import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
 /**

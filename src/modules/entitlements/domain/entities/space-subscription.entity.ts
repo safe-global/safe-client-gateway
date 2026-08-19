@@ -16,3 +16,14 @@ export const SpaceSubscriptionSchema = RowSchema.extend({
   lastEventAt: z.date().nullable(),
   entitlements: z.array(SubscriptionEntitlementSchema).optional(),
 });
+
+/** The columns a sync writes: everything but the row's own identity. */
+export type SubscriptionValues = Pick<
+  SpaceSubscription,
+  | 'status'
+  | 'planId'
+  | 'planName'
+  | 'currentPeriodStart'
+  | 'currentPeriodEnd'
+  | 'lastEventAt'
+>;

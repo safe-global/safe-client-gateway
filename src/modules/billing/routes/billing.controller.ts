@@ -61,10 +61,6 @@ export class BillingController {
   public async postWebhook(
     @Body(new ValidationPipe(WebhookEventSchema)) payload: WebhookEvent,
   ): Promise<void> {
-    // Origin is authenticated by BillingWebhookAuthGuard. A malformed body
-    // 422s here like any other piped input; a well-formed-but-unprocessable
-    // event (unknown space, `api` customer group) is acked further down in
-    // SubscriptionSyncService.handleWebhook, since retrying that cannot help.
     await this.billingService.processWebhook(payload);
   }
 
