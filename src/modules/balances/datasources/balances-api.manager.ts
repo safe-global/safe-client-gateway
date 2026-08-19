@@ -56,7 +56,7 @@ export class BalancesApiManager
    * `simple/supported_vs_currencies`.
    */
   getFiatCodes(): Promise<Raw<Array<string>>> {
-    return Promise.resolve(rawify(this.fiatCodes));
+    return Promise.resolve(rawify([...this.fiatCodes]));
   }
 
   protected async createApi(chainId: string): Promise<SafeBalancesApi> {
