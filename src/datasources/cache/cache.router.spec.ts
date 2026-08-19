@@ -252,4 +252,174 @@ describe('CacheRouter', () => {
       expect(relayDir.key).not.toBe(gtfDir.key);
     });
   });
+
+  describe('getSafeQueueMultisigTransactionCacheDir', () => {
+    const chainId = '1';
+    const safeTransactionHash = faker.string.hexadecimal({ length: 64 });
+
+    it('Should produce a key under the safe_queue_multisig_transaction namespace, distinct from the tx-service key', () => {
+      const queueDir = CacheRouter.getSafeQueueMultisigTransactionCacheDir({
+        chainId,
+        safeTransactionHash,
+      });
+      const txDir = CacheRouter.getMultisigTransactionCacheDir({
+        chainId,
+        safeTransactionHash,
+      });
+
+      expect(queueDir.key).not.toBe(txDir.key);
+      expect(queueDir.key).toBe(
+        `${chainId}_safe_queue_multisig_transaction_${safeTransactionHash}`,
+      );
+    });
+  });
+
+  describe('getSafeQueueMultisigTransactionsBatchCacheDir', () => {
+    const chainId = '1';
+
+    it('produces distinct fields for distinct sets of hashes under the same key', () => {
+      const hashesA = [
+        faker.string.hexadecimal({ length: 64 }),
+        faker.string.hexadecimal({ length: 64 }),
+      ];
+      const hashesB = [faker.string.hexadecimal({ length: 64 })];
+
+      const dirA = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashesA,
+      });
+      const dirB = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashesB,
+      });
+
+      expect(dirA.key).toBe(dirB.key);
+      expect(dirA.field).not.toBe(dirB.field);
+    });
+
+    it('is deterministic for the same set of hashes', () => {
+      const hashes = [
+        faker.string.hexadecimal({ length: 64 }),
+        faker.string.hexadecimal({ length: 64 }),
+      ];
+
+      const dir1 = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashes,
+      });
+      const dir2 = CacheRouter.getSafeQueueMultisigTransactionsBatchCacheDir({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(dir1.field).toBe(dir2.field);
+    });
+  });
+
+  describe('getSafeQueueMultisigTransactionsCacheKey', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('Should produce a key under the safe_queue_multisig_transactions namespace, distinct from the tx-service key', () => {
+      const queueListKey = CacheRouter.getSafeQueueMultisigTransactionsCacheKey(
+        {
+          chainId,
+          safeAddress,
+        },
+      );
+      const txListKey = CacheRouter.getMultisigTransactionsCacheKey({
+        chainId,
+        safeAddress,
+      });
+
+      expect(queueListKey).not.toBe(txListKey);
+      expect(queueListKey).toBe(
+        `${chainId}_safe_queue_multisig_transactions_${safeAddress}`,
+      );
+    });
+  });
+
+  describe('getSafeQueuedTransactionsCacheDir', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('Should produce a cache dir under the safe_queue_multisig_transactions key with a queue_-prefixed field', () => {
+      const dir = CacheRouter.getSafeQueuedTransactionsCacheDir({
+        chainId,
+        safeAddress,
+        nonceOrder: 'asc',
+        limit: 10,
+        offset: 0,
+      });
+
+      expect(dir.key).toBe(
+        `${chainId}_safe_queue_multisig_transactions_${safeAddress}`,
+      );
+      expect(dir.field).toBe('safe_queue_asc_10_0');
+    });
+  });
+
+  describe('getSafeQueueMessageByHashCacheDir', () => {
+    const chainId = '1';
+    const messageHash = faker.string.hexadecimal({ length: 64 });
+
+    it('Should produce a key under the safe_queue_message namespace, distinct from the tx-service key', () => {
+      const queueDir = CacheRouter.getSafeQueueMessageByHashCacheDir({
+        chainId,
+        messageHash,
+      });
+      const txDir = CacheRouter.getMessageByHashCacheDir({
+        chainId,
+        messageHash,
+      });
+
+      expect(queueDir.key).not.toBe(txDir.key);
+      expect(queueDir.key).toBe(`${chainId}_safe_queue_message_${messageHash}`);
+    });
+  });
+
+  describe('getSafeQueueMessagesBySafeCacheDir', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('Should produce a key under the safe_queue_messages namespace, distinct from the tx-service key', () => {
+      const queueDir = CacheRouter.getSafeQueueMessagesBySafeCacheDir({
+        chainId,
+        safeAddress,
+        limit: 5,
+        offset: 0,
+      });
+      const txDir = CacheRouter.getMessagesBySafeCacheDir({
+        chainId,
+        safeAddress,
+        limit: 5,
+        offset: 0,
+      });
+
+      expect(queueDir.key).not.toBe(txDir.key);
+      expect(queueDir.key).toBe(
+        `${chainId}_safe_queue_messages_${safeAddress}`,
+      );
+      expect(queueDir.field).toBe('5_0');
+    });
+  });
+
+  describe('getSafeQueueDelegatesCacheKey', () => {
+    const chainId = '1';
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    it('Should produce a key under the safe_queue_delegates namespace, distinct from the tx-service key', () => {
+      const queueKey = CacheRouter.getSafeQueueDelegatesCacheKey({
+        chainId,
+        safeAddress,
+      });
+      const txKey = CacheRouter.getDelegatesCacheKey({
+        chainId,
+        safeAddress,
+      });
+
+      expect(queueKey).not.toBe(txKey);
+      expect(queueKey).toBe(`${chainId}_safe_queue_delegates_${safeAddress}`);
+    });
+  });
 });

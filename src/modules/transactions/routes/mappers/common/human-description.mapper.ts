@@ -18,6 +18,7 @@ import { IHumanDescriptionRepository } from '@/modules/human-description/domain/
 import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { isMultisigTransaction } from '@/modules/safe/domain/entities/transaction.entity';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
@@ -29,7 +30,6 @@ import {
   RichTextFragment,
   RichTokenValueFragment,
 } from '@/modules/transactions/routes/entities/human-description.entity';
-import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 
 @Injectable()
 export class HumanDescriptionMapper {
@@ -170,7 +170,11 @@ export class HumanDescriptionMapper {
     chainId: string,
   ): Promise<Array<RichDecodedInfoFragment>> {
     const safeAppInfo = isMultisigTransaction(transaction)
-      ? await this.safeAppInfoMapper.mapSafeAppInfo(chainId, transaction)
+      ? await this.safeAppInfoMapper.mapSafeAppInfo(
+          chainId,
+          transaction.origin,
+          transaction.safeTxHash,
+        )
       : null;
 
     if (safeAppInfo) {

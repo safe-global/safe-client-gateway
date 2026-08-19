@@ -9,6 +9,7 @@ import { MessagesController } from '@/modules/messages/routes/messages.controlle
 import { MessagesService } from '@/modules/messages/routes/messages.service';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
+import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     TransactionApiManagerModule,
     SafeRepositoryModule,
     SafeAppsModule,
+    SafeQueueModule,
   ],
   providers: [
     {

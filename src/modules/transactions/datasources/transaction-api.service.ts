@@ -398,6 +398,29 @@ export class TransactionApi implements ITransactionApi {
     }
   }
 
+  async updateDelegateV2(args: {
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
+    signature: string;
+    label: string;
+  }): Promise<void> {
+    try {
+      const url = `${this.baseUrl}/api/v2/delegates/${args.delegate}`;
+      await this.networkService.patch({
+        url,
+        data: {
+          safe: args.safeAddress,
+          delegator: args.delegator,
+          signature: args.signature,
+          label: args.label,
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(this.mapError(error));
+    }
+  }
+
   async deleteDelegate(args: {
     delegate: Address;
     delegator: Address;

@@ -7,7 +7,6 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import {
   NullableHexSchema,
-  NullableNumberSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
 
@@ -20,7 +19,6 @@ export const MessageSchema = z.object({
   messageHash: HexSchema,
   message: z.union([z.string(), TypedDataSchema]),
   proposedBy: AddressSchema,
-  safeAppId: NullableNumberSchema,
   confirmations: z.array(MessageConfirmationSchema),
   preparedSignature: NullableHexSchema,
   origin: NullableStringSchema,
