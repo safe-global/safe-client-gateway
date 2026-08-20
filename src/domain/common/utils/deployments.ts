@@ -14,6 +14,9 @@ import {
 import {
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
   _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS,
+  _SAFE_DEPLOYMENTS,
+  _SAFE_L2_DEPLOYMENTS,
+  _SAFE_MIGRATION_DEPLOYMENTS,
   _SAFE_TO_L2_SETUP_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
 import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
@@ -234,6 +237,40 @@ export function getExtensibleFallbackHandlerVersions(): Array<string> {
  */
 export function getSafeToL2SetupVersions(): Array<string> {
   return _SAFE_TO_L2_SETUP_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of L1 singleton versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_DEPLOYMENTS constant exported by the package.
+ * Note: includes legacy pre-1.3.0 versions (1.0.0, 1.1.1, 1.2.0) — callers feeding
+ * these into version-sensitive flows (e.g. SafeTx hashing) must filter by range.
+ *
+ * @returns {Array<string>} - a list of L1 singleton versions in descending order
+ */
+export function getSafeSingletonVersions(): Array<string> {
+  return _SAFE_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of L2 singleton versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_L2_DEPLOYMENTS constant exported by the package.
+ * Note: the L2 singleton was introduced in Safe v1.3.0.
+ *
+ * @returns {Array<string>} - a list of L2 singleton versions in descending order
+ */
+export function getSafeL2SingletonVersions(): Array<string> {
+  return _SAFE_L2_DEPLOYMENTS.map((deployment) => deployment.version);
+}
+
+/**
+ * Gets the list of SafeMigration versions available in the safe-deployments package.
+ * Infers versions from the _SAFE_MIGRATION_DEPLOYMENTS constant exported by the package.
+ * Note: SafeMigration was introduced in Safe v1.4.1.
+ *
+ * @returns {Array<string>} - a list of SafeMigration versions in descending order
+ */
+export function getSafeMigrationVersions(): Array<string> {
+  return _SAFE_MIGRATION_DEPLOYMENTS.map((deployment) => deployment.version);
 }
 
 /**
