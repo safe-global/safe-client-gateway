@@ -30,7 +30,7 @@ src/modules/<kebab-name>/
 
 `domain/entities/` and `routes/entities/` hold different things (internal Zod entities vs Swagger-documented DTOs) — see the Module anatomy section of `docs/agents/ARCHITECTURE.md` for the distinction.
 
-In a declared multi-PR rollout, `routes/` may land one PR ahead of its controller: route services belong in `routes/` from the first PR (parking them under `domain/` reproduces the portfolio anti-example below), so a module whose HTTP surface arrives in the next PR of the series ships `routes/` without a controller. This is only staged delivery — not a standing exception — when the PR description declares the series and links the follow-up PR that adds the controller.
+In a declared multi-PR rollout, `routes/` may land one PR ahead of its controller: route services belong in `routes/` from the first PR (parking them under `domain/` reproduces the portfolio anti-example below), so a module whose HTTP surface arrives in the next PR of the series ships `routes/` without a controller. This is only staged delivery — not a standing exception — when the PR description declares the series and identifies the follow-up that adds the controller: a link where that PR already exists, otherwise a statement of what it lands. The first PR of a series necessarily opens before its successor, so a named-but-unlinked follow-up satisfies this — the same bar the staged-delivery check in `reviewing.md` sets.
 
 **Why:** the majority of existing modules already follow this shape; deviations from it are the recurring source of review churn, since a reviewer has to relearn a bespoke layout for one module instead of checking it against a shape they already know.
 
