@@ -472,20 +472,9 @@ export class EntitlementsService {
             cycleEndsAt: resolved.plan.cycleEndsAt,
           }
         : null,
-      entitlements: resolved.entitlements.map((entitlement) => ({
-        feature: entitlement.feature,
-        type: entitlement.type,
-        enabled: entitlement.enabled,
-        ...(entitlement.quota !== undefined && { quota: entitlement.quota }),
-        ...(entitlement.used !== undefined && { used: entitlement.used }),
-        ...(entitlement.overLimit !== undefined && {
-          overLimit: entitlement.overLimit,
-        }),
-        ...(entitlement.resetsAt !== undefined && {
-          resetsAt: entitlement.resetsAt,
-        }),
-        ...(entitlement.value !== undefined && { value: entitlement.value }),
-      })),
+      // Each resolved variant already is its documented DTO shape, so the
+      // entries pass through; the DTO classes are what publish them.
+      entitlements: resolved.entitlements,
     };
   }
 }

@@ -48,9 +48,8 @@ describe('entitlements rules', () => {
       expect(isOverLimit({ quota: null, used: 9_000 })).toBe(false);
     });
 
-    it('is false for a feature that carries no usage at all', () => {
-      expect(isOverLimit({})).toBe(false);
-      expect(isOverLimit({ quota: 0, used: undefined })).toBe(false);
+    it('is false at a zero quota with nothing used', () => {
+      expect(isOverLimit({ quota: 0, used: 0 })).toBe(false);
     });
   });
 

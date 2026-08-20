@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { ResolvedEntitlement } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
 import type { SpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
 import type { SubscriptionEntitlement } from '@/modules/entitlements/domain/entities/subscription-entitlement.entity';
 import {
@@ -19,6 +18,12 @@ export type FeatureDefaults = Pick<
   Feature,
   'key' | 'freeEnabled' | 'freeQuota' | 'freeValue' | 'freePeriod'
 >;
+
+/** Usage measured against the quota that bounds it. */
+type UsageAgainstQuota = {
+  quota: number | null;
+  used: number;
+};
 
 /** The purchased row for a feature, when the workspace has one. */
 type PurchasedEntitlement = Pick<
@@ -88,14 +93,8 @@ export function eventPeriodStart(args: {
  * a rule whose unlimited case (a null quota, which no usage can pass) is easy
  * to get wrong.
  */
-export function isOverLimit(
-  entitlement: Pick<ResolvedEntitlement, 'quota' | 'used'>,
-): boolean {
-  return (
-    entitlement.quota != null &&
-    entitlement.used != null &&
-    entitlement.used > entitlement.quota
-  );
+export function isOverLimit(entitlement: UsageAgainstQuota): boolean {
+  return entitlement.quota !== null && entitlement.used > entitlement.quota;
 }
 
 /** When the current quota window rolls over; NULL for stock-type features. */

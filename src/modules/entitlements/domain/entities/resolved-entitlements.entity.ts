@@ -7,8 +7,8 @@ import type {
 /**
  * The computed entitlement state of a workspace, produced by
  * `EntitlementsService.resolveEntitlements`. Both branches (active
- * subscription / Free-tier catalog defaults) produce this exact shape, so
- * consumers never know which one served them.
+ * subscription / catalog defaults) produce this exact shape, so consumers
+ * never know which one served them.
  */
 export type ResolvedPlan = {
   id: string;
@@ -16,24 +16,48 @@ export type ResolvedPlan = {
   cycleEndsAt: Date | null;
 };
 
-export type ResolvedEntitlement = {
+type ResolvedEntitlementBase = {
   feature: FeatureKey;
-  type: FeatureType;
+  /** Whether the plan grants the feature at all. */
   enabled: boolean;
-  /** Metered only. NULL = unlimited. Always the plan's quota, never inflated. */
-  quota?: number | null;
-  /** Metered only. `used > quota` is a legal state. */
-  used?: number;
-  /** Metered only. TRUE once `used` passed `quota`; never for an unlimited one. */
-  overLimit?: boolean;
-  /** Metered only. NULL for stock-type features (no reset window). */
-  resetsAt?: Date | null;
-  /** Value-typed only. */
-  value?: string | null;
 };
 
+/** A feature that is only ever on or off. */
+export type ResolvedBinaryEntitlement = ResolvedEntitlementBase & {
+  type: FeatureType.Binary;
+};
+
+/** A feature whose grant is a value, e.g. a fee tier. */
+export type ResolvedValueEntitlement = ResolvedEntitlementBase & {
+  type: FeatureType.Value;
+  value: string | null;
+};
+
+/**
+ * A feature with a quota and usage measured against it. The four fields below
+ * are always present together — that is what discriminating on `type` buys
+ * over one flat shape of optionals, where a NULL `quota` could not tell
+ * "unlimited" apart from "does not apply".
+ */
+export type ResolvedMeteredEntitlement = ResolvedEntitlementBase & {
+  type: FeatureType.Metered;
+  /** NULL = unlimited. Always the plan's quota, never inflated. */
+  quota: number | null;
+  /** `used > quota` is a legal state. */
+  used: number;
+  /** TRUE once `used` passed `quota`; never for an unlimited quota. */
+  overLimit: boolean;
+  /** NULL for stock-type features, which have no reset window. */
+  resetsAt: Date | null;
+};
+
+export type ResolvedEntitlement =
+  | ResolvedBinaryEntitlement
+  | ResolvedValueEntitlement
+  | ResolvedMeteredEntitlement;
+
 export type ResolvedEntitlements = {
-  /** NULL when the workspace is on the Free plan. */
+  /** NULL when the workspace has no active subscription. */
   plan: ResolvedPlan | null;
   entitlements: Array<ResolvedEntitlement>;
 };
