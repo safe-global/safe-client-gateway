@@ -2,14 +2,12 @@
 import { escapeCsvFormula } from '@/modules/csv-export/csv-utils/escape-csv-formula';
 
 describe('escapeCsvFormula', () => {
-  it.each([
-    '=HYPERLINK("http://x")',
-    '+1+1',
-    '-1',
-    '@SUM(A1)',
-  ])('prefixes formula trigger %s with a single quote', (value) => {
-    expect(escapeCsvFormula(value)).toBe(`'${value}`);
-  });
+  it.each(['=HYPERLINK("http://x")', '+1+1', '-1', '@SUM(A1)'])(
+    'prefixes formula trigger %s with a single quote',
+    (value) => {
+      expect(escapeCsvFormula(value)).toBe(`'${value}`);
+    },
+  );
 
   it('prefixes a value starting with TAB (0x09)', () => {
     expect(escapeCsvFormula('\t=1')).toBe("'\t=1");

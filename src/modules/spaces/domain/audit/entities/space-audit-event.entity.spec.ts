@@ -8,16 +8,16 @@ describe('SpaceAuditEventSchema — plaintext addresses', () => {
   const ciphertext = 'kms:v1:abcDEF012_-';
   const plaintext = getAddress(faker.finance.ethereumAddress());
 
-  it.each([
-    'SAFE_ADDED',
-    'SAFE_REMOVED',
-  ] as const)('accepts a plaintext address in a %s payload', (eventType) => {
-    const result = SpaceAuditEventSchema.safeParse({
-      eventType,
-      payload: { safes: [{ chainId: '1', address: plaintext }] },
-    });
-    expect(result.success).toBe(true);
-  });
+  it.each(['SAFE_ADDED', 'SAFE_REMOVED'] as const)(
+    'accepts a plaintext address in a %s payload',
+    (eventType) => {
+      const result = SpaceAuditEventSchema.safeParse({
+        eventType,
+        payload: { safes: [{ chainId: '1', address: plaintext }] },
+      });
+      expect(result.success).toBe(true);
+    },
+  );
 
   it('rejects a ciphertext address in a SAFE_ADDED payload (payloads carry plaintext)', () => {
     const result = SpaceAuditEventSchema.safeParse({
