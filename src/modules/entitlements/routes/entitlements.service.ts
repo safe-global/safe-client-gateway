@@ -408,32 +408,52 @@ export class EntitlementsService {
     const metered = args.features.filter(
       (feature) => feature.type === FeatureType.Metered,
     );
-    const eventMetered = metered.filter(
-      (feature) => !isStockMeteredFeature(feature),
-    );
 
     const [eventUsage, stockUsage] = await Promise.all([
-      this.spaceFeatureUsageRepository.getUsageByFeatureId({
-        spaceId: args.spaceId,
-        periods: eventMetered.map((feature) => ({
-          featureId: feature.id,
-          periodStart: eventPeriodStart({
-            feature,
-            spaceCreatedAt: args.spaceCreatedAt,
-            cycle: args.activeSubscription,
-            now: args.now,
-          }),
-        })),
-      }),
-      Promise.all(
-        metered.filter(isStockMeteredFeature).map(async (feature) => {
-          const used = await this.stockCounters[feature.key](args.spaceId);
-          return [feature.id, used] as const;
-        }),
-      ),
+      this.getEventUsage({ ...args, features: metered }),
+      this.getStockUsage(args.spaceId, metered.filter(isStockMeteredFeature)),
     ]);
 
     return new Map([...eventUsage, ...stockUsage]);
+  }
+
+  /** One query covering every event-metered feature's current period. */
+  private async getEventUsage(args: {
+    spaceId: Space['id'];
+    spaceCreatedAt: Date;
+    features: Array<Feature>;
+    activeSubscription: SpaceSubscription | null;
+    now: Date;
+  }): Promise<Map<number, number>> {
+    const eventMetered = args.features.filter(
+      (feature) => !isStockMeteredFeature(feature),
+    );
+
+    return await this.spaceFeatureUsageRepository.getUsageByFeatureId({
+      spaceId: args.spaceId,
+      periods: eventMetered.map((feature) => ({
+        featureId: feature.id,
+        periodStart: eventPeriodStart({
+          feature,
+          spaceCreatedAt: args.spaceCreatedAt,
+          cycle: args.activeSubscription,
+          now: args.now,
+        }),
+      })),
+    });
+  }
+
+  /** One live count per stock-metered feature, run concurrently. */
+  private async getStockUsage(
+    spaceId: Space['id'],
+    features: Array<Feature & { key: StockMeteredFeature }>,
+  ): Promise<Array<readonly [number, number]>> {
+    return await Promise.all(
+      features.map(
+        async (feature) =>
+          [feature.id, await this.stockCounters[feature.key](spaceId)] as const,
+      ),
+    );
   }
 
   /**
