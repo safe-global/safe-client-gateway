@@ -108,6 +108,7 @@ export class NoFeeCampaignRelayer implements IRelayer {
       chainId: args.chainId,
       to: args.to,
       data: args.data,
+      safeTxHash: args.safeTxHash,
     });
 
     // If we fail to increment count, we should not fail the relay

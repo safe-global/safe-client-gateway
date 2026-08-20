@@ -4,8 +4,10 @@ import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import configuration from '@/config/entities/configuration';
+import {
+  getDeploymentVersionsByChainIds,
+  RELAY_SUPPORTED_CHAIN_IDS,
+} from '@/__tests__/deployments.helper';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -46,7 +48,7 @@ import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
-const supportedChainIds = Object.keys(configuration().relay.apiKey);
+const supportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 
 // Record<chainId, version[]>
 const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(

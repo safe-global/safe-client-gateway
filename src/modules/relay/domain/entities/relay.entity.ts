@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
-export const GelatoRelayResponseSchema = z.object({
-  jsonrpc: z.literal('2.0'),
-  result: z.string(),
-  id: z.number(),
+export const RhinestoneRelayResponseSchema = z.object({
+  taskId: z.string(),
 });
 
-export type GelatoRelayResponse = z.infer<typeof GelatoRelayResponseSchema>;
+export type RhinestoneRelayResponse = z.infer<
+  typeof RhinestoneRelayResponseSchema
+>;
 
 export const RelaySchema = z.object({
   taskId: z.string(),

@@ -42,6 +42,7 @@ import { RelayService } from '@/modules/relay/routes/relay.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('relay')
@@ -139,7 +140,7 @@ export class RelayController {
     UnofficialSignerFactoryExceptionFilter,
   )
   async relay(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Body(new ValidationPipe(RelayDtoSchema))
     relayDto: RelayDto,
   ): Promise<Relay> {
@@ -171,8 +172,8 @@ export class RelayController {
   })
   @Get('status/:taskId')
   async getTaskStatus(
-    @Param('chainId') chainId: string,
-    @Param('taskId') taskId: string,
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('taskId', new ValidationPipe(OpaqueIdSchema)) taskId: string,
   ): Promise<RelayTaskStatus> {
     return await this.relayService.getTaskStatus({ chainId, taskId });
   }
