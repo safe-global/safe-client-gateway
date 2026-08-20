@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { errorStatusCodeExcluding } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } from '@/datasources/errors/constants';
@@ -140,13 +141,9 @@ describe('ExportApi', () => {
       const executionDateLte = faker.date.recent().toISOString();
 
       const errorMessage = faker.word.words();
-      // 451 is mapped to a dedicated banned-Safe message
-      let statusCode: number;
-      do {
-        statusCode = faker.internet.httpStatusCode({
-          types: ['clientError', 'serverError'],
-        });
-      } while (statusCode === UNAVAILABLE_FOR_LEGAL_REASONS_STATUS);
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
 
       const exportUrl = `${baseUrl}/api/v1/safes/${safeAddress}/export/`;
       mockCacheFirstDataSource.get.mockImplementation(({ url }) => {

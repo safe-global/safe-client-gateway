@@ -853,8 +853,9 @@ describe('Balances Controller', () => {
               {
                 status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
               } as Response,
-              // The Transaction Service reports the reason under `detail`
-              { detail: 'Safe is unavailable for legal reasons' },
+              // The Transaction Service reports the reason under `detail`, a key
+              // HttpErrorFactory does not read; the text itself is discarded
+              { detail: faker.word.words() },
             );
             return Promise.reject(error);
           }

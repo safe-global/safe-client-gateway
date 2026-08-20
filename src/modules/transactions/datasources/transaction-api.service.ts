@@ -7,7 +7,10 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import { mapBannedSafeError } from '@/datasources/errors/helpers/banned-safe.helper';
+import {
+  isBannedSafeError,
+  mapBannedSafeError,
+} from '@/datasources/errors/helpers/banned-safe.helper';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -1191,6 +1194,10 @@ export class TransactionApi implements ITransactionApi {
   }
 
   private mapError(error: unknown): unknown {
+    // The status identifies a banned Safe, so it wins over any payload shape
+    if (isBannedSafeError(error)) {
+      return mapBannedSafeError(error);
+    }
     if (error instanceof NetworkResponseError) {
       const errors = get(error.data, TransactionApi.ERROR_ARRAY_PATH);
       if (errors) {
@@ -1200,7 +1207,6 @@ export class TransactionApi implements ITransactionApi {
         });
       }
     }
-    // A banned Safe is reported with a `detail` payload, which the branch above does not match
-    return mapBannedSafeError(error);
+    return error;
   }
 }

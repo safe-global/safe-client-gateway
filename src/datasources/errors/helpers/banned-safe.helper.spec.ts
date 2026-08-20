@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { errorStatusCodeExcluding } from '@/__tests__/faker';
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
 } from '@/datasources/errors/constants';
-import { mapBannedSafeError } from '@/datasources/errors/helpers/banned-safe.helper';
+import {
+  isBannedSafeError,
+  mapBannedSafeError,
+} from '@/datasources/errors/helpers/banned-safe.helper';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
   NetworkRequestError,
@@ -18,8 +22,9 @@ describe('mapBannedSafeError', () => {
       {
         status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       } as Response,
-      // The Transaction Service reports the reason under `detail`
-      { detail: 'Safe is unavailable for legal reasons' },
+      // The Transaction Service reports the reason under `detail`, a key
+      // HttpErrorFactory does not read; the text itself is discarded
+      { detail: faker.word.words() },
     );
 
     const actual = mapBannedSafeError(error);
@@ -33,15 +38,11 @@ describe('mapBannedSafeError', () => {
   });
 
   it('returns a response error of any other status untouched', () => {
-    let statusCode: number;
-    do {
-      statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
-    } while (statusCode === UNAVAILABLE_FOR_LEGAL_REASONS_STATUS);
     const error = new NetworkResponseError(
       new URL(faker.internet.url()),
-      { status: statusCode } as Response,
+      {
+        status: errorStatusCodeExcluding(UNAVAILABLE_FOR_LEGAL_REASONS_STATUS),
+      } as Response,
       { message: faker.word.words() },
     );
 
@@ -66,12 +67,39 @@ describe('mapBannedSafeError', () => {
       {
         status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       } as Response,
-      { detail: 'Safe is unavailable for legal reasons' },
+      { detail: faker.word.words() },
     );
 
     const actual = new HttpErrorFactory().from(mapBannedSafeError(error));
 
     expect(actual.code).toBe(UNAVAILABLE_FOR_LEGAL_REASONS_STATUS);
     expect(actual.message).toBe(UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE);
+  });
+
+  it('identifies a banned-Safe response by status alone, whatever the payload', () => {
+    const withDetail = new NetworkResponseError(
+      new URL(faker.internet.url()),
+      { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } as Response,
+      { detail: faker.word.words() },
+    );
+    // A payload shape the Transaction Service does not currently send for 451
+    const withNonFieldErrors = new NetworkResponseError(
+      new URL(faker.internet.url()),
+      { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } as Response,
+      { nonFieldErrors: [faker.word.words()] },
+    );
+
+    expect(isBannedSafeError(withDetail)).toBe(true);
+    expect(isBannedSafeError(withNonFieldErrors)).toBe(true);
+    expect(
+      isBannedSafeError(
+        new NetworkResponseError(new URL(faker.internet.url()), {
+          status: errorStatusCodeExcluding(
+            UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+          ),
+        } as Response),
+      ),
+    ).toBe(false);
+    expect(isBannedSafeError(new Error(faker.word.words()))).toBe(false);
   });
 });
