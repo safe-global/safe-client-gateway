@@ -11,6 +11,7 @@ import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -289,7 +290,7 @@ describe('EntitlementsService', () => {
 
   async function createSpace(): Promise<number> {
     const inserted = await dataSource.getRepository(Space).insert({
-      name: faker.company.name(),
+      name: nameBuilder(),
       status: 'ACTIVE',
     });
     return inserted.generatedMaps[0].id as number;
