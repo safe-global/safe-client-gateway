@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -58,10 +59,10 @@ describe('Billing webhook → entitlements materialization', () => {
   let billingBaseUri: string;
   const seededSpaceIds: Array<number> = [];
 
-  // Its own database, not the shared `test-db`: `features` is a global table
-  // and this suite seeds it with its own values, so sharing an instance with
-  // another suite that seeds the same keys is a race.
-  const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+  // Its own database, like the repo's repository specs, because `features` is a
+  // global table this suite seeds with its own values. Not faker: a fixed
+  // FAKER_SEED would hand every spec file the same name.
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
 
   async function adminQuery(sql: string): Promise<void> {
     const adminDataSource = new DataSource({

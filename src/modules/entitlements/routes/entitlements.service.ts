@@ -412,7 +412,6 @@ export class EntitlementsService {
       (feature) => !isStockMeteredFeature(feature),
     );
 
-    // The two counting strategies read different tables, so they go together.
     const [eventUsage, stockUsage] = await Promise.all([
       this.spaceFeatureUsageRepository.getUsageByFeatureId({
         spaceId: args.spaceId,
@@ -472,8 +471,6 @@ export class EntitlementsService {
             cycleEndsAt: resolved.plan.cycleEndsAt,
           }
         : null,
-      // Each resolved variant already is its documented DTO shape, so the
-      // entries pass through; the DTO classes are what publish them.
       entitlements: resolved.entitlements,
     };
   }

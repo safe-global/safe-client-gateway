@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
@@ -17,6 +18,7 @@ import { Feature } from '@/modules/entitlements/datasources/entities/feature.ent
 import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import {
   materializedSubscriptionBuilder,
   parsedEntitlementBuilder,
@@ -59,60 +61,41 @@ const mockLoggingService = {
 const FREE_SAFE_SEATS = 2;
 const SPONSORED_PERIOD_DAYS = 30;
 
-type FeatureFixture = {
-  key: FeatureKey;
-  type: FeatureType;
-  freeEnabled: boolean;
-  freeQuota: number | null;
-  freeValue: string | null;
-  freePeriod: number | null;
-};
-
-const FEATURE_FIXTURES: Array<FeatureFixture> = [
-  {
-    key: 'security_hub',
-    type: FeatureType.Binary,
-    freeEnabled: false,
-    freeQuota: null,
-    freeValue: null,
-    freePeriod: null,
-  },
+const FEATURE_FIXTURES = [
+  featureBuilder()
+    .with('key', 'security_hub')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
   // A second binary, never purchased by any test, so the "unpurchased feature
   // falls back to the Free default" branch stays covered.
-  {
-    key: 'pay_from_safe',
-    type: FeatureType.Binary,
-    freeEnabled: false,
-    freeQuota: null,
-    freeValue: null,
-    freePeriod: null,
-  },
-  {
-    key: 'safe_seats',
-    type: FeatureType.Metered,
-    freeEnabled: true,
-    freeQuota: FREE_SAFE_SEATS,
-    freeValue: null,
-    freePeriod: null,
-  },
+  featureBuilder()
+    .with('key', 'pay_from_safe')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
+  // `resetsAt` is null by key here: seats are stock-metered.
+  featureBuilder()
+    .with('key', 'safe_seats')
+    .with('type', FeatureType.Metered)
+    .with('freeEnabled', true)
+    .with('freeQuota', FREE_SAFE_SEATS)
+    .build(),
   // Free-disabled by default so the "disabled admits no usage" path is
   // covered; the `consume` tests enable it explicitly.
-  {
-    key: 'sponsored_transactions',
-    type: FeatureType.Metered,
-    freeEnabled: false,
-    freeQuota: 0,
-    freeValue: null,
-    freePeriod: SPONSORED_PERIOD_DAYS,
-  },
-  {
-    key: 'swap_fee_tier',
-    type: FeatureType.Value,
-    freeEnabled: true,
-    freeQuota: null,
-    freeValue: 'free',
-    freePeriod: null,
-  },
+  featureBuilder()
+    .with('key', 'sponsored_transactions')
+    .with('type', FeatureType.Metered)
+    .with('freeEnabled', false)
+    .with('freeQuota', 0)
+    .with('freePeriod', SPONSORED_PERIOD_DAYS)
+    .build(),
+  featureBuilder()
+    .with('key', 'swap_fee_tier')
+    .with('type', FeatureType.Value)
+    .with('freeEnabled', true)
+    .with('freeValue', 'free')
+    .build(),
 ];
 
 // Ordering stamps are asserted on and compared against each other, so they
@@ -125,10 +108,10 @@ describe('EntitlementsService', () => {
   // the real database so queries and derivation rules are covered end to end.
   let service: EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
-  // Read off the migrated database before the fixtures below replace it.
   let seededFeatureKeys: Array<FeatureKey> = [];
 
-  const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+  // Not faker: a fixed FAKER_SEED would hand every spec file the same name.
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
   const testConfiguration = configuration();
 
   const dataSource = new DataSource({
@@ -221,8 +204,6 @@ describe('EntitlementsService', () => {
     seededFeatureKeys = (
       await dataSource.getRepository(Feature).find({ select: { key: true } })
     ).map((feature) => feature.key);
-    // The seed migration ships a `safe_seats` row; this suite owns its own
-    // catalog, so it starts from an empty `features` table.
     await dataSource
       .getRepository(Feature)
       .createQueryBuilder()
@@ -457,9 +438,6 @@ describe('EntitlementsService', () => {
     });
   });
 
-  // The catalog only ever ships by migration, and the response publishes
-  // FEATURE_KEYS as an OpenAPI enum, so a seeded key missing from that list
-  // would be served outside the published contract.
   it('publishes every feature key the migrations seed', () => {
     expect([...seededFeatureKeys].sort()).toStrictEqual(
       [...FEATURE_KEYS].sort(),

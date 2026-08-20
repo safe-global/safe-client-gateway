@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -44,10 +45,10 @@ describe('EntitlementsController', () => {
   let jwtService: IJwtService;
   let postgresDatabaseService: PostgresDatabaseService;
 
-  // Its own database, not the shared `test-db`: the `features` catalog is a
-  // global table, and this suite replaces it wholesale. Sharing an instance
-  // with another suite that seeds the same keys is a race.
-  const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+  // Its own database, like the repo's repository specs, because `features` is a
+  // global table this suite replaces wholesale. Not faker: a fixed FAKER_SEED
+  // would hand every spec file the same name.
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
 
   async function adminQuery(sql: string): Promise<void> {
     const adminDataSource = new DataSource({
@@ -123,9 +124,6 @@ describe('EntitlementsController', () => {
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
 
-    // Booting the app ran the migrations, seed included, so the catalog holds
-    // the shipped `safe_seats` row. Clear it in FK-dependency order to leave
-    // the fixtures below as the suite's whole catalog.
     await clearFeatureCatalog();
   });
 
@@ -166,7 +164,7 @@ describe('EntitlementsController', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
     await adminQuery(
       `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
     );
