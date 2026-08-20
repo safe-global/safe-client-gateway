@@ -30,6 +30,7 @@ import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
     where: 'address_index IS NOT NULL',
   },
 )
+@Index('IDX_SS_space_id', ['space'])
 export class SpaceSafe implements DomainSpaceSafe {
   @PrimaryGeneratedColumn({
     primaryKeyConstraintName: 'PK_SS_id',
