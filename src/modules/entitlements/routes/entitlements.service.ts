@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { EntityManager } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
   type ILoggingService,
@@ -67,6 +66,9 @@ export class EntitlementsService {
     private readonly loggingService: ILoggingService,
   ) {}
 
+  /**
+   * Resolves the workspace's entitlements.
+   */
   public async resolveEntitlements(
     spaceId: Space['id'],
   ): Promise<ResolvedEntitlements> {
@@ -404,10 +406,10 @@ export class EntitlementsService {
     now: Date;
   }): Promise<Map<number, number>> {
     const metered = args.features.filter(
-      (feature) => feature.type === 'metered',
+      (feature) => feature.type === FeatureType.Metered,
     );
     const eventMetered = metered.filter(
-      (feature) => !isStockMeteredFeature(feature.key),
+      (feature) => !isStockMeteredFeature(feature),
     );
 
     // The two counting strategies read different tables, so they go together.
@@ -425,14 +427,10 @@ export class EntitlementsService {
         })),
       }),
       Promise.all(
-        metered
-          .filter((feature) => isStockMeteredFeature(feature.key))
-          .map(async (feature) => {
-            const used = await this.stockCounters[
-              feature.key as StockMeteredFeature
-            ](args.spaceId);
-            return [feature.id, used] as const;
-          }),
+        metered.filter(isStockMeteredFeature).map(async (feature) => {
+          const used = await this.stockCounters[feature.key](args.spaceId);
+          return [feature.id, used] as const;
+        }),
       ),
     ]);
 
@@ -447,10 +445,9 @@ export class EntitlementsService {
    */
   private readonly stockCounters: Record<
     StockMeteredFeature,
-    (spaceId: Space['id'], entityManager?: EntityManager) => Promise<number>
+    (spaceId: Space['id']) => Promise<number>
   > = {
-    safe_seats: (spaceId, entityManager) =>
-      this.spaceSafesRepository.countBySpaceId(spaceId, entityManager),
+    safe_seats: (spaceId) => this.spaceSafesRepository.countBySpaceId(spaceId),
   };
 
   private async getSpaceCreatedAtOrFail(spaceId: Space['id']): Promise<Date> {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import { DAY_IN_MS } from '@/modules/entitlements/domain/entitlements.constants';
 import type { FeatureDefaults } from '@/modules/entitlements/domain/entitlements.rules';
 import {
@@ -10,14 +11,7 @@ import {
 } from '@/modules/entitlements/domain/entitlements.rules';
 
 function feature(overrides?: Partial<FeatureDefaults>): FeatureDefaults {
-  return {
-    key: 'sponsored_transactions',
-    freeEnabled: true,
-    freeQuota: 10,
-    freeValue: null,
-    freePeriod: null,
-    ...overrides,
-  };
+  return { ...featureBuilder().build(), ...overrides };
 }
 
 describe('entitlements rules', () => {

@@ -293,6 +293,7 @@ describe('EntitlementsController', () => {
                 feature: 'safe_seats',
                 quota: FREE_SAFE_SEATS,
                 used: 3,
+                overLimit: true,
               }),
             ]),
           );

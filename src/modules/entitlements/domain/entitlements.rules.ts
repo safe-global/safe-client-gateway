@@ -61,7 +61,6 @@ export function effectiveEntitlement(args: {
  * Paid workspaces anchor on the billing cycle; free ones bucket usage in
  * `freePeriod`-day windows anchored at the workspace's creation date
  * (`periodStart = createdAt + floor((now - createdAt) / period) * period`).
- * Without a window the whole lifetime is a single bucket.
  */
 export function eventPeriodStart(args: {
   feature: FeatureDefaults;
@@ -73,7 +72,7 @@ export function eventPeriodStart(args: {
   if (cycle?.currentPeriodStart) {
     return cycle.currentPeriodStart;
   }
-  if (feature.freePeriod !== null) {
+  if (feature.freePeriod !== null && feature.freePeriod > 0) {
     const anchor = spaceCreatedAt.getTime();
     const periodMs = feature.freePeriod * DAY_IN_MS;
     const elapsed = Math.max(0, now.getTime() - anchor);
@@ -107,13 +106,13 @@ export function resetsAt(args: {
   now: Date;
 }): Date | null {
   const { feature, cycle } = args;
-  if (isStockMeteredFeature(feature.key)) {
+  if (isStockMeteredFeature(feature)) {
     return null;
   }
   if (cycle?.currentPeriodStart) {
     return cycle.currentPeriodEnd;
   }
-  if (feature.freePeriod !== null) {
+  if (feature.freePeriod !== null && feature.freePeriod > 0) {
     return new Date(
       eventPeriodStart(args).getTime() + feature.freePeriod * DAY_IN_MS,
     );

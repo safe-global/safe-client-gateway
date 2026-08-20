@@ -32,7 +32,10 @@ export class EntitlementItem {
   @ApiProperty({ enum: FeatureType, enumName: 'FeatureType' })
   public readonly type!: FeatureType;
 
-  @ApiProperty()
+  @ApiProperty({
+    description:
+      'Whether the plan grants the feature at all. The metered fields below are still reported when it is false — a workspace that holds more than a disabled feature allows is over its limit, and that is what the enforcement layer acts on.',
+  })
   public readonly enabled!: boolean;
 
   @ApiPropertyOptional({

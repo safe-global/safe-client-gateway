@@ -2,12 +2,7 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Seeds the only feature the product has signed off, `safe_seats`. Its
- * `free_*` columns grant nothing: there is no free plan, so a workspace
- * without an active subscription holds no seats and has no window to reset.
- *
- * Kept in step with `FEATURE_KEYS`, which publishes the catalog keys as an
- * OpenAPI enum.
+ * Seeds the `safe_seats` feature.
  */
 export class SeedFeatures1787148838500 implements MigrationInterface {
   name = 'SeedFeatures1787148838500';

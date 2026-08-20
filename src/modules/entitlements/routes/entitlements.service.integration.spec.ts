@@ -449,10 +449,10 @@ describe('EntitlementsService', () => {
       );
 
       expect(
-        metered.filter((fixture) => isStockMeteredFeature(fixture.key)),
+        metered.filter((fixture) => isStockMeteredFeature(fixture)),
       ).not.toHaveLength(0);
       expect(
-        metered.filter((fixture) => !isStockMeteredFeature(fixture.key)),
+        metered.filter((fixture) => !isStockMeteredFeature(fixture)),
       ).not.toHaveLength(0);
     });
   });

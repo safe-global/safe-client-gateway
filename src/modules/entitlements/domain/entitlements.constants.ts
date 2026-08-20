@@ -20,8 +20,13 @@ export const STOCK_METERED_FEATURES = [
 
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
 
-export function isStockMeteredFeature(key: string): key is StockMeteredFeature {
-  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
+/** Takes the row, not the key, so a filtered array narrows without a cast. */
+export function isStockMeteredFeature<T extends { key: string }>(
+  feature: T,
+): feature is T & { key: StockMeteredFeature } {
+  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(
+    feature.key,
+  );
 }
 
 /**
