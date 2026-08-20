@@ -13,6 +13,6 @@ Shape: `<type>(<scope>)?: <description>` — lowercase type from the doc's nine,
 
 **Nothing here is machine-enforced.** There is no `commit-msg` hook and no PR-title CI job — `.husky/pre-commit` only runs `env:validate:silent`, `lint`, and `format`. Every malformed subject on `main` today got there through that gap, so the check is yours.
 
-PR body: `## Summary` and `## Changes` — the template's two sections, nothing more. `docs/agents/reviewing.md` requires ratchet-baseline justification to appear in the PR description *text*, so it goes in `## Summary`; pre-commit evidence is the PR's own CI run.
+PR body: `## Summary` and `## Changes` — the template's two sections, nothing more. Other guides require their justification in the PR description *text itself*, not a commit message or a chat thread; those all go in `## Summary`, and the doc's PR-body rule names which guides set one. Pre-commit evidence is the PR's own CI run.
 
 Before committing, run the pre-commit checklist from [AGENTS.md](../../../AGENTS.md): `yarn format`, `yarn lint --fix`, `yarn test`.
