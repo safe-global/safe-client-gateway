@@ -88,7 +88,7 @@ The anti-example is `Feat add subscriptions model` (open PR #3327): capitalized,
 | `## Summary` | Always | What changed and why, in prose. The reader is a reviewer who has not seen the ticket. |
 | `## Changes` | Always | Per-area bullets. For a wide change, group by directory or module, as PR #3328 does. |
 
-**Why:** the body stays lean because everything else already has a home — pre-commit evidence is the PR's own CI run, and risk belongs in `## Summary`'s prose when it is worth a reviewer's attention. One `reviewing.md` requirement still lands here: ratchet-baseline growth must be justified *in the PR description text itself* (not in a commit message or a chat thread), so that justification goes in `## Summary`.
+**Why:** the body stays lean because everything else already has a home — pre-commit evidence is the PR's own CI run, and risk belongs in `## Summary`'s prose when it is worth a reviewer's attention. Four guide requirements still land here, because each must be stated *in the PR description text itself* (not in a commit message or a chat thread) — all of them belong in `## Summary`: a justification for ratchet-baseline growth (`reviewing.md`); a declared multi-PR series naming the follow-up that consumes an artifact shipped ahead of its reader (`reviewing.md`); the same declaration plus a link to the follow-up PR when `routes/` lands ahead of its controller (`module-structure.md`); and the justification for changing a field in place that no released client could have parsed (`api-dtos-and-validation.md`).
 
 **Canonical example:** three bodies whose shape matched what they changed:
 

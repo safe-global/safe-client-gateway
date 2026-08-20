@@ -93,6 +93,8 @@ src/modules/<kebab-name>/
     └── entities/*.entity.db.ts
 ```
 
+The one qualification to `routes/` is staged delivery: under a declared multi-PR series it may land one PR ahead of its controller — see the Canonical skeleton rule in `docs/agents/module-structure.md` for the conditions.
+
 Layer responsibilities are fixed:
 
 - **Controllers** are thin: routing, Swagger decorators, and pipe wiring only — no business logic.
