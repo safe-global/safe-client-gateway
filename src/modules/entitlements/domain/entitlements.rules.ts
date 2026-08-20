@@ -19,11 +19,19 @@ export type FeatureDefaults = Pick<
   'key' | 'freeEnabled' | 'freeQuota' | 'freeValue' | 'freePeriod'
 >;
 
-/** The purchased row for a feature, when the workspace has one. */
-type PurchasedEntitlement = Pick<
-  SubscriptionEntitlement,
-  'enabled' | 'quota' | 'value'
->;
+/**
+ * The purchased row for a feature, when the workspace has one. Its own
+ * `enabled` column is not read: being in an active subscription's package is
+ * what makes a feature active.
+ */
+type PurchasedEntitlement = Pick<SubscriptionEntitlement, 'quota' | 'value'>;
+
+/** What a feature grants the workspace once the plan is applied. */
+type EffectiveEntitlement = {
+  enabled: boolean;
+  quota: number | null;
+  value: string | null;
+};
 
 /** The active subscription's billing cycle, or null on the Free plan. */
 type BillingCycle = Pick<
@@ -33,17 +41,21 @@ type BillingCycle = Pick<
 
 /**
  * The effective entitlement of one feature: the purchased package wins,
- * otherwise the catalog's Free defaults. Both branches produce the same shape,
- * so consumers never know which one served them.
+ * otherwise the catalog's defaults. Both branches produce the same shape, so
+ * consumers never know which one served them.
+ *
+ * `enabled` says only whether the feature is active: a feature the active
+ * subscription bought is active, and one it did not buy falls back to whatever
+ * the catalog grants.
  */
 export function effectiveEntitlement(args: {
   feature: FeatureDefaults;
   purchased: PurchasedEntitlement | undefined;
-}): PurchasedEntitlement {
+}): EffectiveEntitlement {
   const { feature, purchased } = args;
   return purchased
     ? {
-        enabled: purchased.enabled,
+        enabled: true,
         quota: purchased.quota,
         value: purchased.value,
       }

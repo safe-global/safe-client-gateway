@@ -28,9 +28,18 @@ describe('entitlements rules', () => {
       expect(
         effectiveEntitlement({
           feature: feature({ freeQuota: 2 }),
-          purchased: { enabled: true, quota: null, value: null },
+          purchased: { quota: null, value: null },
         }),
       ).toStrictEqual({ enabled: true, quota: null, value: null });
+    });
+
+    it('enables a purchased feature the catalog disables', () => {
+      expect(
+        effectiveEntitlement({
+          feature: feature({ freeEnabled: false, freeQuota: 0 }),
+          purchased: { quota: 20, value: null },
+        }),
+      ).toStrictEqual({ enabled: true, quota: 20, value: null });
     });
   });
 
