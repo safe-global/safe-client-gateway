@@ -28,7 +28,7 @@ describe('entitlements rules', () => {
       expect(
         effectiveEntitlement({
           feature: feature({ freeQuota: 2 }),
-          purchased: { quota: null, value: null },
+          purchased: { enabled: true, quota: null, value: null },
         }),
       ).toStrictEqual({ enabled: true, quota: null, value: null });
     });
@@ -37,9 +37,18 @@ describe('entitlements rules', () => {
       expect(
         effectiveEntitlement({
           feature: feature({ freeEnabled: false, freeQuota: 0 }),
-          purchased: { quota: 20, value: null },
+          purchased: { enabled: true, quota: 20, value: null },
         }),
       ).toStrictEqual({ enabled: true, quota: 20, value: null });
+    });
+
+    it('honours a purchased row that switches the feature off', () => {
+      expect(
+        effectiveEntitlement({
+          feature: feature({ freeEnabled: true }),
+          purchased: { enabled: false, quota: null, value: null },
+        }),
+      ).toStrictEqual({ enabled: false, quota: null, value: null });
     });
   });
 

@@ -19,12 +19,11 @@ export type FeatureDefaults = Pick<
   'key' | 'freeEnabled' | 'freeQuota' | 'freeValue' | 'freePeriod'
 >;
 
-/**
- * The purchased row for a feature, when the workspace has one. Its own
- * `enabled` column is not read: being in an active subscription's package is
- * what makes a feature active.
- */
-type PurchasedEntitlement = Pick<SubscriptionEntitlement, 'quota' | 'value'>;
+/** The purchased row for a feature, when the workspace has one. */
+type PurchasedEntitlement = Pick<
+  SubscriptionEntitlement,
+  'enabled' | 'quota' | 'value'
+>;
 
 /** What a feature grants the workspace once the plan is applied. */
 type EffectiveEntitlement = {
@@ -44,9 +43,9 @@ type BillingCycle = Pick<
  * otherwise the catalog's defaults. Both branches produce the same shape, so
  * consumers never know which one served them.
  *
- * `enabled` says only whether the feature is active: a feature the active
- * subscription bought is active, and one it did not buy falls back to whatever
- * the catalog grants.
+ * `enabled` says only whether the feature is active, and the purchased row
+ * carries that answer: materialization writes it from the upstream metadata, so
+ * a package that explicitly switches a feature off is honoured here.
  */
 export function effectiveEntitlement(args: {
   feature: FeatureDefaults;
@@ -55,7 +54,7 @@ export function effectiveEntitlement(args: {
   const { feature, purchased } = args;
   return purchased
     ? {
-        enabled: true,
+        enabled: purchased.enabled,
         quota: purchased.quota,
         value: purchased.value,
       }

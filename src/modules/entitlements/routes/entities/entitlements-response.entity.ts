@@ -114,7 +114,16 @@ export class EntitlementsResponse {
         { $ref: getSchemaPath(ValueEntitlement) },
         { $ref: getSchemaPath(MeteredEntitlement) },
       ],
-      discriminator: { propertyName: 'type' },
+      discriminator: {
+        propertyName: 'type',
+        // The wire values are not the schema names, so the mapping cannot be
+        // implicit — without it a generated SDK cannot resolve the variant.
+        mapping: {
+          [FeatureType.Binary]: getSchemaPath(BinaryEntitlement),
+          [FeatureType.Value]: getSchemaPath(ValueEntitlement),
+          [FeatureType.Metered]: getSchemaPath(MeteredEntitlement),
+        },
+      },
     },
   })
   public readonly entitlements!: Array<EntitlementItem>;

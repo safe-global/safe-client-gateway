@@ -295,6 +295,27 @@ describe('EntitlementsService', () => {
     return inserted.generatedMaps[0].id as number;
   }
 
+  // The usage counter is keyed by period, and an unsubscribed workspace's
+  // current period starts at its creation date.
+  async function recordUsage(args: {
+    spaceId: number;
+    featureKey: string;
+    used: number;
+  }): Promise<void> {
+    const space = await dataSource
+      .getRepository(Space)
+      .findOneByOrFail({ id: args.spaceId });
+    const feature = await dataSource
+      .getRepository(Feature)
+      .findOneByOrFail({ key: args.featureKey });
+    await dataSource.getRepository(SpaceFeatureUsage).insert({
+      space: { id: args.spaceId },
+      feature: { id: feature.id },
+      periodStart: space.createdAt,
+      used: args.used,
+    });
+  }
+
   async function addSafes(spaceId: number, count: number): Promise<void> {
     const base = Date.now() - count * 60_000;
     for (let i = 0; i < count; i++) {
@@ -487,6 +508,23 @@ describe('EntitlementsService', () => {
         quota: 0,
         used: 0,
       });
+    });
+
+    it('reads event-metered usage from the current period counter', async () => {
+      const spaceId = await createSpace();
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: 7,
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(
+        result.entitlements.find(
+          (entitlement) => entitlement.feature === 'sponsored_transactions',
+        ),
+      ).toMatchObject({ used: 7, quota: 0 });
     });
 
     it('resolves the paid branch with Free fallback for unpurchased features', async () => {

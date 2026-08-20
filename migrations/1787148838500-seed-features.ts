@@ -13,7 +13,15 @@ export class SeedFeatures1787148838500 implements MigrationInterface {
     );
   }
 
+  // The dependents go first: both reference `features` with ON DELETE RESTRICT,
+  // so undoing the seed discards the feature's purchased rows and counters.
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DELETE FROM "space_feature_usage" WHERE "feature_id" IN (SELECT "id" FROM "features" WHERE "key" = 'safe_seats')`,
+    );
+    await queryRunner.query(
+      `DELETE FROM "subscription_entitlements" WHERE "feature_id" IN (SELECT "id" FROM "features" WHERE "key" = 'safe_seats')`,
+    );
     await queryRunner.query(
       `DELETE FROM "features" WHERE "key" = 'safe_seats'`,
     );
