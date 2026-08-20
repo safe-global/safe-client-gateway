@@ -34,7 +34,7 @@ export type ResolvedValueEntitlement = ResolvedEntitlementBase & {
 };
 
 /**
- * A feature with a quota and usage measured against it. The four fields below
+ * A feature with a quota and usage measured against it. The three fields below
  * are always present together — that is what discriminating on `type` buys
  * over one flat shape of optionals, where a NULL `quota` could not tell
  * "unlimited" apart from "does not apply".
@@ -45,8 +45,6 @@ export type ResolvedMeteredEntitlement = ResolvedEntitlementBase & {
   quota: number | null;
   /** `used > quota` is a legal state. */
   used: number;
-  /** TRUE once `used` passed `quota`; never for an unlimited quota. */
-  overLimit: boolean;
   /** NULL for stock-type features, which have no reset window. */
   resetsAt: Date | null;
 };

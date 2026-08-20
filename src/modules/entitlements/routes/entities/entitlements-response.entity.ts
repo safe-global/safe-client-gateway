@@ -36,7 +36,7 @@ class EntitlementItemBase {
 
   @ApiProperty({
     description:
-      'Whether the plan grants the feature at all. A metered feature reports its quota and usage even when this is false — a workspace holding more than a disabled feature allows is over its limit, and that is what the enforcement layer acts on.',
+      'Whether the plan grants the feature at all. A metered feature reports its quota and usage even when this is false.',
   })
   public readonly enabled!: boolean;
 }
@@ -80,12 +80,6 @@ export class MeteredEntitlement
 
   @ApiProperty({ description: 'May legally exceed `quota`.' })
   public readonly used!: number;
-
-  @ApiProperty({
-    description:
-      'True once `used` has passed `quota`; never true for an unlimited quota. The state lasts until usage drops or the plan is upgraded, and it is reported here only — the blocking itself happens on the mutations.',
-  })
-  public readonly overLimit!: boolean;
 
   @ApiProperty({
     type: Date,

@@ -24,7 +24,6 @@ import {
 import {
   effectiveEntitlement,
   eventPeriodStart,
-  isOverLimit,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
@@ -387,7 +386,6 @@ export class EntitlementsService {
       // Always the plan's quota, never inflated to match usage.
       quota: effective.quota,
       used,
-      overLimit: isOverLimit({ quota: effective.quota, used }),
       resetsAt: resetsAt({
         feature,
         spaceCreatedAt,

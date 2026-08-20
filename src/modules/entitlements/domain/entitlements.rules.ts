@@ -19,12 +19,6 @@ export type FeatureDefaults = Pick<
   'key' | 'freeEnabled' | 'freeQuota' | 'freeValue' | 'freePeriod'
 >;
 
-/** Usage measured against the quota that bounds it. */
-type UsageAgainstQuota = {
-  quota: number | null;
-  used: number;
-};
-
 /** The purchased row for a feature, when the workspace has one. */
 type PurchasedEntitlement = Pick<
   SubscriptionEntitlement,
@@ -84,17 +78,6 @@ export function eventPeriodStart(args: {
     return new Date(anchor + Math.floor(elapsed / periodMs) * periodMs);
   }
   return spaceCreatedAt;
-}
-
-/**
- * Whether usage has passed the quota the plan grants. `used > quota` is a legal
- * state — the quota is never inflated to match usage — so this is where it gets
- * named, next to the two fields it is read from: clients are spared re-deriving
- * a rule whose unlimited case (a null quota, which no usage can pass) is easy
- * to get wrong.
- */
-export function isOverLimit(entitlement: UsageAgainstQuota): boolean {
-  return entitlement.quota !== null && entitlement.used > entitlement.quota;
 }
 
 /** When the current quota window rolls over; NULL for stock-type features. */

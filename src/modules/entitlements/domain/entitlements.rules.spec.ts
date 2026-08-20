@@ -6,7 +6,6 @@ import type { FeatureDefaults } from '@/modules/entitlements/domain/entitlements
 import {
   effectiveEntitlement,
   eventPeriodStart,
-  isOverLimit,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
 
@@ -32,24 +31,6 @@ describe('entitlements rules', () => {
           purchased: { enabled: true, quota: null, value: null },
         }),
       ).toStrictEqual({ enabled: true, quota: null, value: null });
-    });
-  });
-
-  describe('isOverLimit', () => {
-    it('is true once usage passed the quota', () => {
-      expect(isOverLimit({ quota: 2, used: 3 })).toBe(true);
-    });
-
-    it('is false right at the quota, which is still within it', () => {
-      expect(isOverLimit({ quota: 5, used: 5 })).toBe(false);
-    });
-
-    it('is false for an unlimited quota, whatever the usage', () => {
-      expect(isOverLimit({ quota: null, used: 9_000 })).toBe(false);
-    });
-
-    it('is false at a zero quota with nothing used', () => {
-      expect(isOverLimit({ quota: 0, used: 0 })).toBe(false);
     });
   });
 

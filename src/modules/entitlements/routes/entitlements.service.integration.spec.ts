@@ -467,7 +467,6 @@ describe('EntitlementsService', () => {
         enabled: true,
         quota: FREE_SAFE_SEATS,
         used: 2,
-        overLimit: false,
         resetsAt: null,
       });
       expect(byFeature.get('security_hub')).toStrictEqual({
@@ -558,7 +557,6 @@ describe('EntitlementsService', () => {
       expect(seatsOf(result)).toMatchObject({
         quota: FREE_SAFE_SEATS,
         used: FREE_SAFE_SEATS + 2,
-        overLimit: true,
       });
     });
 
@@ -587,7 +585,6 @@ describe('EntitlementsService', () => {
       expect(seatsOf(result)).toMatchObject({
         quota: null,
         used: FREE_SAFE_SEATS + 2,
-        overLimit: false,
       });
     });
 
@@ -628,7 +625,6 @@ describe('EntitlementsService', () => {
       expect(seatsOf(result)).toMatchObject({
         quota: FREE_SAFE_SEATS,
         used: 3,
-        overLimit: true,
       });
     });
   });
@@ -1070,7 +1066,6 @@ describe('EntitlementsService', () => {
       expect(seatsOf(result)).toMatchObject({
         quota: FREE_SAFE_SEATS,
         used: 0,
-        overLimit: false,
       });
     });
 
