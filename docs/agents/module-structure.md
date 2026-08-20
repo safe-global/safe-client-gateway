@@ -130,7 +130,7 @@ A new module has:
 
 - A `<kebab-name>.module.ts` plus the `domain/` skeleton, with `routes/`/`datasources/` present only where the module actually needs them.
 - A `Symbol`+interface pair for each repository, co-declared per the Symbol DI wiring rule.
-- An entry registering the module in `src/app.module.ts` — or an import from the already-registered module(s) that consume it, when the new module declares no controller of its own (`EntitlementsModule` is reached through `BillingModule`; `backbone` and `email` are wired the same way, while `siwe` is reached through both `AuthModule` and `UsersModule`, and `queues` through `HealthModule` and `HooksModule`). Every module that declares a controller registers directly.
+- A path from `src/app.module.ts` to the module: either its own entry there, or an import from a module already reachable from it. Reachability is what matters, not directness, and neither wiring is tied to whether the module declares a controller — `EntitlementsModule` is reached through `BillingModule` and `siwe` through both `AuthModule` and `UsersModule`, while the controller-bearing `delegate/routes/`, `notifications/routes/v2/`, and `csv-export/v1/` are each reached through their own parent module.
 - Test builders under `domain/entities/__tests__/` for its domain entities.
 - Specs co-located with the code they exercise.
 - Its endpoints, datasources, and migrations named in the routing table in `AGENTS.md`, so the guides that govern them are discoverable.
