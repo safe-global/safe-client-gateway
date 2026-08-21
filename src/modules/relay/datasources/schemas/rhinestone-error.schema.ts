@@ -20,7 +20,3 @@ export const RhinestoneErrorResponseSchema = z.object({
   errors: z.array(z.object({ message: z.string() })).optional(),
   traceId: z.string().optional(),
 });
-
-export type RhinestoneErrorResponse = z.infer<
-  typeof RhinestoneErrorResponseSchema
->;

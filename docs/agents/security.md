@@ -19,9 +19,11 @@ A pipe failure throws `ZodErrorWithCode`, not a generic `BadRequestException` �
 
 ### No raw values in upstream URLs
 
-**Rule:** Only the output of a Zod schema — `AddressSchema`, `NumericStringSchema`/`ChainIdSchema`, `UuidSchema` — may be interpolated into a datasource's upstream URL path template; anything added as a query parameter goes through the shared URL builder in `src/datasources/network/fetch.network.service.ts`, never manual string concatenation.
+**Rule:** Only the output of a Zod schema — `AddressSchema`, `NumericStringSchema`/`ChainIdSchema`, `UuidSchema`, `OpaqueIdSchema` — may be interpolated into a datasource's upstream URL path template; anything added as a query parameter goes through the shared URL builder in `src/datasources/network/fetch.network.service.ts`, never manual string concatenation.
 
 **Why:** an unvalidated value spliced into an upstream request path is a path-traversal vector into the internal services CGW proxies to.
+
+`OpaqueIdSchema` (`src/validation/entities/schemas/opaque-id.schema.ts`) is the schema for provider-minted identifiers whose internal structure we deliberately do not model (relay task ids, billing plan/session ids). Its charset (`/^[A-Za-z0-9_-]+$/`) exists precisely because these values end up in upstream paths — it excludes `/`, `?`, `#`, `.` and whitespace. The schema is shared across modules (relay, billing), so its regex may only be widened if **every** consumer can accept the wider charset; a provider that mints, say, dotted ids needs its own schema rather than a loosened shared one, otherwise the widening silently relaxes the other consumers' validation too.
 
 **Canonical example:** `src/datasources/network/fetch.network.service.ts`'s private `buildUrl` constructs a `URL` object from the base and appends each parameter with `urlObject.searchParams.append(key, String(value))`; every `get`/`post`/`postForm`/`delete` method routes through it, so no call site hand-builds a query string.
 
