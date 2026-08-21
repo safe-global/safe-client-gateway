@@ -87,7 +87,7 @@ jobs:
             1. The checkout on disk is the repository's default branch — use
                it only to read AGENTS.md and the docs/agents/ guides. The PR's
                content comes exclusively from the GitHub API: fetch metadata
-               via `gh pr view <PR NUMBER> --json baseRefName,title,body`, the
+               via `gh pr view <PR NUMBER> --json baseRefName,title,body,headRefOid`, the
                changed-file list via `gh pr diff <PR NUMBER> --name-only`, and
                the full patch via `gh pr diff <PR NUMBER>`. "The diff" means
                every changed file in the PR, not only the latest commit. Never
@@ -112,15 +112,53 @@ jobs:
             3. Consult docs/agents/remarks.md for the sections matching what
                the diff touches and include any R-NNN the diff would earn.
             4. Post the result as a single PR comment via
-               `gh pr comment <PR NUMBER> --body "..."`. The comment MUST:
-               - start with the heading `## Architecture check`, then one line
-                 naming the applicable guides (or "none"), then the findings
-                 most-severe-first, one line each in reviewing.md's format
-                 (`file:line — <rule name>: <one-sentence defect>`), or the
-                 explicit statement "no findings";
-               - end with a verdict line: `**Verdict:** ✅ compliant` when
+               `gh pr comment <PR NUMBER> --body "..."`, in the shape
+               reviewing.md's "Reporting format" section defines. Everything
+               in the comment that names a rule, a guide or a line is a link,
+               so a reader can reach the standard being applied in one click.
+               The comment MUST:
+               - start with the heading `## Architecture check`;
+               - then one line naming the applicable guides (or "none"), each
+                 name a Markdown link to
+                 `https://github.com/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/docs/agents/<file>`;
+               - then the findings, most-severe-first, as a NUMBERED Markdown
+                 list — one `N.` item per finding, so a reader can reply
+                 "finding 3" and be understood. Lines separated only by
+                 newlines are NOT a list: GitHub renders them as one
+                 run-together paragraph. When there are none, write the
+                 explicit statement "No findings." instead of a list;
+               - shape each finding item exactly like this:
+                 `N. **[<rule name>](<rule link>)** — [<path>:<line>](<permalink>) — <one-sentence defect>. **Fix:** <the concrete change>.`
+                 - `<rule name>` is the guide's own heading for the rule (or,
+                   for a Part 2 item, that item's lead phrase), and
+                   `<rule link>` points at the line you read it from:
+                   `https://github.com/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/docs/agents/<file>#L<line>`
+                   — `grep -n` the checked-out guide for the line number. An
+                   unlinked rule name does not meet the format.
+                 - `<permalink>` is
+                   `https://github.com/${{ github.repository }}/blob/<headRefOid>/<path>#L<line>`,
+                   using the head SHA from `gh pr view` so the link keeps
+                   pointing at the reviewed revision after a later push.
+                   A finding with no code line — the PR title, the PR
+                   description — cites that artifact as plain unlinked text
+                   (`PR title`, `PR description`) in place of the location.
+                 - `**Fix:**` says what to change, never why the rule exists.
+                   Where a compliant value exists, give it verbatim (the
+                   corrected PR title, the missing schema line) so the author
+                   can apply it without re-deriving it — the rule's rationale
+                   stays in the linked guide.
+               - then a verdict line: `**Verdict:** ✅ compliant` when
                  there are zero findings, `**Verdict:** ❌ N finding(s)`
                  otherwise;
+               - then, as the last line, exactly the text between the
+                 markers below (it tells a reader what ran and where the
+                 rules live) — copy it as-is, without the markers:
+                 <<<FOOTER
+                 <sub>Automated check of this repo's [agent guidelines](https://github.com/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/${{ github.repository }}/blob/${{ github.event.repository.default_branch }}/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+                 FOOTER
+               - never contain a bare `#<number>`: GitHub autolinks it to an
+                 unrelated issue or PR (`#9` becomes a link to PR 9). Write
+                 `` `non-negotiable #9` `` in backticks, or "non-negotiable 9";
                - be brief: no prose, no restated rules, no praise — findings
                  and verdict only.
 

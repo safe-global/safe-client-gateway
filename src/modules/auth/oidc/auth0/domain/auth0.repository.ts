@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Inject, Injectable } from '@nestjs/common';
-import { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
+import {
+  type AuthorizationUrlOptions,
+  IAuth0Api,
+} from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
 import { Auth0TokenResponseSchema } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
@@ -18,10 +21,9 @@ export class Auth0Repository implements IAuth0Repository {
 
   public getAuthorizationUrl(
     state: string,
-    connection?: string,
-    enroll?: boolean,
+    options?: AuthorizationUrlOptions,
   ): string {
-    return this.auth0Api.getAuthorizationUrl(state, connection, enroll);
+    return this.auth0Api.getAuthorizationUrl(state, options);
   }
 
   public async authenticateWithAuthorizationCode(

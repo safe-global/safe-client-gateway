@@ -101,6 +101,13 @@ export class OidcAuthController {
     description:
       'When true, requests hosted enrollment of a new authenticator: the provider challenges an existing factor, then walks the user through enrolling the new one.',
   })
+  @ApiQuery({
+    name: 'elevate',
+    required: false,
+    type: Boolean,
+    description:
+      'When true, requests step-up authentication: the provider re-challenges a second factor and the resulting session is elevated for sensitive actions.',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -114,13 +121,15 @@ export class OidcAuthController {
     connection?: OidcConnection,
     @Query('enroll', new ValidationPipe(z.literal('true').optional()))
     enroll?: 'true',
+    @Query('elevate', new ValidationPipe(z.literal('true').optional()))
+    elevate?: 'true',
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
-      this.oidcAuthService.createOidcAuthorizationRequest(
-        redirectUrl,
+      this.oidcAuthService.createOidcAuthorizationRequest(redirectUrl, {
         connection,
-        enroll === 'true',
-      );
+        enroll: enroll === 'true',
+        elevate: elevate === 'true',
+      });
 
     res.setCookie(
       OidcAuthController.OIDC_STATE_COOKIE_NAME,
@@ -220,8 +229,13 @@ export class OidcAuthController {
     }
 
     try {
+      // Safe to read flags off `state`: it was just compared against the
+      // one-time state cookie above, so it is our own value, not the caller's.
       const { accessToken, maxAge, userId } =
-        await this.oidcAuthService.authenticateWithOidc(code);
+        await this.oidcAuthService.authenticateWithOidc(
+          code,
+          this.oidcAuthService.isElevationState(state),
+        );
 
       if (this.oidcAuthService.isEnrollmentState(state)) {
         try {

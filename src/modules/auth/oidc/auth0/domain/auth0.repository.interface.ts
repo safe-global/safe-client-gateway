@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { AuthorizationUrlOptions } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
 import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
@@ -9,15 +10,10 @@ export interface IAuth0Repository {
    * Builds the Auth0 authorization URL used to start the Authorization Code Flow.
    *
    * @param state - Opaque anti-CSRF state value that will be echoed back by Auth0.
-   * @param connection - Optional OIDC connection name to route directly to a specific identity provider.
-   * @param enroll - When true, requests hosted enrollment of a new authenticator.
+   * @param options - Optional flow modifiers, see {@link AuthorizationUrlOptions}.
    * @returns The fully qualified Auth0 `/authorize` URL.
    */
-  getAuthorizationUrl(
-    state: string,
-    connection?: string,
-    enroll?: boolean,
-  ): string;
+  getAuthorizationUrl(state: string, options?: AuthorizationUrlOptions): string;
 
   /**
    * Authenticates an Auth0 authorization code and returns the verified token claims.

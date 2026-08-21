@@ -79,8 +79,39 @@ describe('Auth0Api', () => {
     it('should append the connection parameter when provided', () => {
       const state = faker.string.alphanumeric(32);
 
-      const url = new URL(target.getAuthorizationUrl(state, 'google-oauth2'));
+      const url = new URL(
+        target.getAuthorizationUrl(state, { connection: 'google-oauth2' }),
+      );
       expect(url.searchParams.get('connection')).toBe('google-oauth2');
+    });
+
+    it('should append ext-enroll-otp when enrolling', () => {
+      const state = faker.string.alphanumeric(32);
+
+      const url = new URL(target.getAuthorizationUrl(state, { enroll: true }));
+
+      expect(url.searchParams.get('ext-enroll-otp')).toBe('true');
+      expect(url.searchParams.has('acr_values')).toBe(false);
+    });
+
+    it('should append the multi-factor acr_values when elevating', () => {
+      const state = faker.string.alphanumeric(32);
+
+      const url = new URL(target.getAuthorizationUrl(state, { elevate: true }));
+
+      expect(url.searchParams.get('acr_values')).toBe(
+        'http://schemas.openid.net/pape/policies/2007/06/multi-factor',
+      );
+      expect(url.searchParams.has('ext-enroll-otp')).toBe(false);
+    });
+
+    it('should not append acr_values or ext-enroll-otp by default', () => {
+      const state = faker.string.alphanumeric(32);
+
+      const url = new URL(target.getAuthorizationUrl(state));
+
+      expect(url.searchParams.has('acr_values')).toBe(false);
+      expect(url.searchParams.has('ext-enroll-otp')).toBe(false);
     });
   });
 

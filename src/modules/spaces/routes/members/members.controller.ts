@@ -51,6 +51,7 @@ import {
 } from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members/members.service';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -93,7 +94,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/invite')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -347,7 +348,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Patch('/:spaceId/members/:userId/role')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async updateRole(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -431,7 +432,7 @@ export class MembersController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Delete('/:spaceId/members/:userId')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async removeUser(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
