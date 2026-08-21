@@ -6,6 +6,7 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { mapBannedSafeError } from '@/datasources/errors/helpers/banned-safe.helper';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { getNumberString } from '@/domain/common/utils/utils';
@@ -105,7 +106,7 @@ export class SafeBalancesApi implements IBalancesApi {
       if (error instanceof ZodError) {
         throw error;
       }
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(mapBannedSafeError(error));
     }
   }
 
@@ -177,7 +178,7 @@ export class SafeBalancesApi implements IBalancesApi {
       if (error instanceof ZodError) {
         throw error;
       }
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(mapBannedSafeError(error));
     }
   }
 
@@ -217,7 +218,7 @@ export class SafeBalancesApi implements IBalancesApi {
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
       });
     } catch (error) {
-      throw this.httpErrorFactory.from(error);
+      throw this.httpErrorFactory.from(mapBannedSafeError(error));
     }
   }
 

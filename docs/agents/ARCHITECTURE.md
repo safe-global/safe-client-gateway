@@ -240,6 +240,9 @@ Guard inventory:
 Each layer funnels exceptions through exactly one place.
 Datasources normalize any thrown error with `HttpErrorFactory` (`src/datasources/errors/http-error-factory.ts`) into a `DataSourceError` (`src/domain/errors/data-source.error.ts`), which carries a message safe to expose and an optional HTTP status code (defaulting to 503).
 `DataSourceErrorFilter` (`src/routes/common/filters/data-source-error.filter.ts`) is the only place that turns a `DataSourceError` into an HTTP response.
+`HttpErrorFactory` reads the upstream message from the response body's `message` key, so an upstream reporting it under another key yields a generic `An error occurred`.
+The Transaction Service's HTTP 451 for a banned Safe — returned by every Safe-scoped endpoint, with the reason under `detail` — is the one case handled explicitly: `mapBannedSafeError` (`src/datasources/errors/helpers/banned-safe.helper.ts`) rewrites that payload before the factory reads it, so the 451 reaches the client with a stable message rather than a generic one.
+It is applied by the three datasources that call the Transaction Service (`TransactionApi`, `SafeBalancesApi`, `ExportApi`) rather than inside `HttpErrorFactory`, because 451 only carries that meaning for that upstream.
 
 Validation failures funnel through `ZodErrorFilter` (`src/routes/common/filters/zod-error.filter.ts`), which distinguishes the two places a Zod error can originate.
 A `ZodErrorWithCode` from a route-level `ValidationPipe` (user input) returns 422 with the parsed issue.
