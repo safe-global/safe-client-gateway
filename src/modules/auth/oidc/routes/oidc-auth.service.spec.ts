@@ -14,7 +14,7 @@ import {
   AuthPayload,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+import { auth0TokenBuilder } from '@/modules/auth/oidc/auth0/domain/entities/__tests__/auth0-token.entity.builder';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
@@ -399,19 +399,9 @@ describe('OidcAuthService', () => {
   });
 
   describe('step-up authentication', () => {
-    const buildAuth0Token = (amr: Array<string> | undefined): Auth0Token => ({
-      sub: `auth0|${faker.string.uuid()}`,
-      email: fakeEmailAddress(),
-      email_verified: true,
-      exp: undefined,
-      nbf: undefined,
-      iat: undefined,
-      amr,
-    });
-
     const arrange = (amr: Array<string> | undefined): void => {
       auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
-        buildAuth0Token(amr),
+        auth0TokenBuilder().with('amr', amr).build(),
       );
       usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
         faker.number.int(),
