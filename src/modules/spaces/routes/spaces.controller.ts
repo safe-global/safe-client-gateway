@@ -43,6 +43,7 @@ import {
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -175,7 +176,7 @@ export class SpacesController {
     description: 'Space not found',
   })
   @Patch('/:id')
-  @UseGuards(SpacesCreationRateLimitGuard)
+  @UseGuards(ElevationGuard, SpacesCreationRateLimitGuard)
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
@@ -218,6 +219,7 @@ export class SpacesController {
     description: 'Space not found',
   })
   @Delete('/:id')
+  @UseGuards(ElevationGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   public async delete(
     @Param('id', SpaceIdPipe) id: number,

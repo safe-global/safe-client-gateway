@@ -5,20 +5,30 @@ import type { Raw } from '@/validation/entities/raw.entity';
 
 export const IAuth0Api = Symbol('IAuth0Api');
 
+/**
+ * Optional modifiers for the Auth0 `/authorize` request.
+ *
+ * An options object rather than positional flags: `enroll` and `elevate` are
+ * both booleans, and transposing them would silently start the wrong flow.
+ */
+export type AuthorizationUrlOptions = {
+  /** Auth0 connection name to route directly to a specific identity provider. */
+  connection?: string;
+  /** Request hosted enrollment of a new authenticator. */
+  enroll?: boolean;
+  /** Request step-up authentication: a fresh multi-factor challenge. */
+  elevate?: boolean;
+};
+
 export interface IAuth0Api {
   /**
    * Builds the Auth0 authorization URL used to start the Authorization Code Flow.
    *
    * @param state - Opaque anti-CSRF state value that will be echoed back by Auth0.
-   * @param connection - Optional Auth0 connection name to route directly to a specific identity provider.
-   * @param enroll - When true, requests hosted enrollment of a new authenticator.
+   * @param options - Optional flow modifiers, see {@link AuthorizationUrlOptions}.
    * @returns The fully qualified Auth0 `/authorize` URL.
    */
-  getAuthorizationUrl(
-    state: string,
-    connection?: string,
-    enroll?: boolean,
-  ): string;
+  getAuthorizationUrl(state: string, options?: AuthorizationUrlOptions): string;
 
   /**
    * Exchanges an OAuth 2.0 authorization code for Auth0 tokens.

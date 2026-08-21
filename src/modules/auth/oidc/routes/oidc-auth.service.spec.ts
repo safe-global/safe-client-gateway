@@ -14,6 +14,7 @@ import {
   AuthPayload,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import { auth0TokenBuilder } from '@/modules/auth/oidc/auth0/domain/entities/__tests__/auth0-token.entity.builder';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
@@ -397,6 +398,134 @@ describe('OidcAuthService', () => {
     });
   });
 
+  describe('step-up authentication', () => {
+    const arrange = (amr: Array<string> | undefined): void => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
+        auth0TokenBuilder().with('amr', amr).build(),
+      );
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
+        faker.number.int(),
+      );
+      authRepositoryMock.signToken.mockReturnValue(
+        faker.string.alphanumeric(64),
+      );
+    };
+
+    const expectStamp = (mfaVerifiedAt: number | undefined): void => {
+      expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+        expect.objectContaining({ mfa_verified_at: mfaVerifiedAt }),
+        expect.anything(),
+      );
+    };
+
+    it('should stamp mfa_verified_at when the provider performed MFA', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange(['pwd', 'mfa']);
+
+      await target.authenticateWithOidc(faker.string.alphanumeric(32));
+
+      expectStamp(Math.floor(now.getTime() / 1_000));
+    });
+
+    it('should stamp mfa_verified_at on a plain login, which is itself multi-factor', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange(['mfa']);
+
+      await target.authenticateWithOidc(faker.string.alphanumeric(32), false);
+
+      expectStamp(Math.floor(now.getTime() / 1_000));
+    });
+
+    it('should not stamp mfa_verified_at when amr is absent', async () => {
+      // Auth0 omits `amr` when an existing SSO session is reused without a
+      // challenge, which must not count as a fresh second factor.
+      arrange(undefined);
+
+      await target.authenticateWithOidc(faker.string.alphanumeric(32));
+
+      expectStamp(undefined);
+    });
+
+    it('should not stamp mfa_verified_at when amr lacks mfa', async () => {
+      arrange(['pwd']);
+
+      await target.authenticateWithOidc(faker.string.alphanumeric(32));
+
+      expectStamp(undefined);
+    });
+
+    it('should reject an elevation callback whose token does not prove MFA', async () => {
+      // Guards against the tenant silently ignoring acr_values because the
+      // post-login Action is missing or misconfigured.
+      arrange(['pwd']);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should reject an elevation callback whose token has no amr at all', async () => {
+      arrange(undefined);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should accept an elevation callback whose token proves MFA', async () => {
+      arrange(['mfa']);
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
+      ).resolves.toEqual(
+        expect.objectContaining({ accessToken: expect.any(String) }),
+      );
+    });
+  });
+
+  describe('isElevationState', () => {
+    it('should detect a step-up state', () => {
+      auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+        faker.internet.url(),
+      );
+      const { state } = target.createOidcAuthorizationRequest(undefined, {
+        elevate: true,
+      });
+
+      expect(target.isElevationState(state)).toBe(true);
+    });
+
+    it('should not detect a step-up state on a plain login', () => {
+      auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+        faker.internet.url(),
+      );
+      const { state } = target.createOidcAuthorizationRequest();
+
+      expect(target.isElevationState(state)).toBe(false);
+    });
+
+    it('should not detect a step-up state on an enrollment round-trip', () => {
+      auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(
+        faker.internet.url(),
+      );
+      const { state } = target.createOidcAuthorizationRequest(undefined, {
+        enroll: true,
+      });
+
+      expect(target.isElevationState(state)).toBe(false);
+    });
+
+    it('should throw on a malformed state', () => {
+      expect(() => target.isElevationState('not-a-state')).toThrow(
+        UnauthorizedException,
+      );
+    });
+  });
+
   describe('createOidcAuthorizationRequest', () => {
     it('should return authorizationUrl, stateMaxAge and base64url-encoded state with csrf token', () => {
       const authorizationUrl = faker.internet.url();
@@ -413,10 +542,10 @@ describe('OidcAuthService', () => {
       expect(decoded.csrf).toHaveLength(64); // 32 bytes hex-encoded
       expect(decoded.redirectUrl).toBeUndefined();
       expect(decoded.enroll).toBeUndefined();
+      expect(decoded.elevate).toBeUndefined();
       expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
         result.state,
-        undefined,
-        undefined,
+        { connection: undefined, enroll: undefined, elevate: undefined },
       );
     });
 
@@ -424,16 +553,14 @@ describe('OidcAuthService', () => {
       const authorizationUrl = faker.internet.url();
       auth0RepositoryMock.getAuthorizationUrl.mockReturnValue(authorizationUrl);
 
-      const result = target.createOidcAuthorizationRequest(
-        undefined,
-        'google-oauth2',
-      );
+      const result = target.createOidcAuthorizationRequest(undefined, {
+        connection: 'google-oauth2',
+      });
 
       expect(result.authorizationUrl).toBe(authorizationUrl);
       expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
         result.state,
-        'google-oauth2',
-        undefined,
+        { connection: 'google-oauth2', enroll: undefined, elevate: undefined },
       );
     });
 

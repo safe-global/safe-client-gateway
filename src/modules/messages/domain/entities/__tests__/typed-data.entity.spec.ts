@@ -114,16 +114,17 @@ describe('TypedDataSchema', () => {
       );
     });
 
-    it.each(
-      Object.keys(typedDataDomainBuilder().build()),
-    )('should allow an optional %s', (key) => {
-      const domain = typedDataDomainBuilder().build();
-      delete domain[key];
+    it.each(Object.keys(typedDataDomainBuilder().build()))(
+      'should allow an optional %s',
+      (key) => {
+        const domain = typedDataDomainBuilder().build();
+        delete domain[key];
 
-      const result = _TypedDataDomainSchema.safeParse(domain);
+        const result = _TypedDataDomainSchema.safeParse(domain);
 
-      expect(result.success).toBe(true);
-    });
+        expect(result.success).toBe(true);
+      },
+    );
   });
 
   describe('types', () => {

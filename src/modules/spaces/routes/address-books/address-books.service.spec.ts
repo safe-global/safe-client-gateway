@@ -70,21 +70,24 @@ describe('AddressBooksService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)('should return address book items for %s user', async (_label, builder) => {
-      const spaceId = faker.number.int();
-      const authPayload = new AuthPayload(builder().build());
-      const items = [addressBookItemBuilder().build()];
-      repositoryMock.findAllBySpaceId.mockResolvedValue(items);
+    ] as const)(
+      'should return address book items for %s user',
+      async (_label, builder) => {
+        const spaceId = faker.number.int();
+        const authPayload = new AuthPayload(builder().build());
+        const items = [addressBookItemBuilder().build()];
+        repositoryMock.findAllBySpaceId.mockResolvedValue(items);
 
-      const result = await service.findAllBySpaceId(authPayload, spaceId);
+        const result = await service.findAllBySpaceId(authPayload, spaceId);
 
-      expect(result.spaceUuid).toEqual(expect.any(String));
-      expect(result.data).toHaveLength(1);
-      expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
-        authPayload,
-        spaceId,
-      });
-    });
+        expect(result.spaceUuid).toEqual(expect.any(String));
+        expect(result.data).toHaveLength(1);
+        expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
+          authPayload,
+          spaceId,
+        });
+      },
+    );
 
     it('should throw for unauthenticated user', async () => {
       const spaceId = faker.number.int();
