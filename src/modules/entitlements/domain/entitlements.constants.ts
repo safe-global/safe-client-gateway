@@ -63,9 +63,11 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
 }
 
 /**
- * Prefix of the Stripe metadata keys carrying the purchased feature package,
- * e.g. `FEATURE_SAFE_SEATS=10`, `FEATURE_SECURITY_HUB=true`,
- * `FEATURE_SPONSORED_TRANSACTIONS=unlimited`, `FEATURE_SWAP_FEE_TIER=business`.
+ * Prefix of the Stripe metadata keys carrying the purchased feature package.
+ * The Business plan sends `FEATURE_SAFE_SEATS=10`, `FEATURE_MEMBERS=5`,
+ * `FEATURE_SECURITY_HUB=true`, `FEATURE_SHARED_ADDRESS_BOOK=true` and
+ * `FEATURE_COPILOT_SCANS=true`; a key with no catalog row is dropped, so the
+ * seed lags the plan until each feature is signed off.
  */
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 

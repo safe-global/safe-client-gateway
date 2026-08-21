@@ -363,36 +363,42 @@ export class EntitlementsService {
       ),
     });
 
-    if (feature.type === FeatureType.Binary) {
-      return {
-        feature: feature.key,
-        type: FeatureType.Binary,
-        enabled: effective.enabled,
-      };
+    switch (feature.type) {
+      case FeatureType.Binary:
+        return {
+          feature: feature.key,
+          type: FeatureType.Binary,
+          enabled: effective.enabled,
+        };
+      case FeatureType.Value:
+        return {
+          feature: feature.key,
+          type: FeatureType.Value,
+          enabled: effective.enabled,
+          value: effective.value,
+        };
+      case FeatureType.Metered:
+        return {
+          feature: feature.key,
+          type: FeatureType.Metered,
+          enabled: effective.enabled,
+          // Always the plan's quota, never inflated to match usage.
+          quota: effective.quota,
+          used,
+          resetsAt: resetsAt({
+            feature,
+            spaceCreatedAt,
+            cycle: activeSubscription,
+            now,
+          }),
+        };
+      default: {
+        // A new FeatureType stops compiling here rather than being served as
+        // metered, the same guarantee `stockCounters` gets from its Record.
+        const unhandled: never = feature.type;
+        throw new Error(`Unhandled feature type: ${String(unhandled)}`);
+      }
     }
-    if (feature.type === FeatureType.Value) {
-      return {
-        feature: feature.key,
-        type: FeatureType.Value,
-        enabled: effective.enabled,
-        value: effective.value,
-      };
-    }
-
-    return {
-      feature: feature.key,
-      type: FeatureType.Metered,
-      enabled: effective.enabled,
-      // Always the plan's quota, never inflated to match usage.
-      quota: effective.quota,
-      used,
-      resetsAt: resetsAt({
-        feature,
-        spaceCreatedAt,
-        cycle: activeSubscription,
-        now,
-      }),
-    };
   }
 
   /** Usage of every metered feature in the catalog, keyed by feature id. */
