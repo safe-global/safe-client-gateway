@@ -31,3 +31,19 @@ export function fakeJson(): string {
 
   return JSON.stringify(returnObject);
 }
+
+/**
+ * A random 4xx/5xx status code, excluding the given codes.
+ *
+ * Use it where a specific status has dedicated handling, so an assertion
+ * about the generic path cannot be made flaky by drawing that status.
+ */
+export function errorStatusCodeExcluding(...excluded: Array<number>): number {
+  let statusCode: number;
+  do {
+    statusCode = faker.internet.httpStatusCode({
+      types: ['clientError', 'serverError'],
+    });
+  } while (excluded.includes(statusCode));
+  return statusCode;
+}

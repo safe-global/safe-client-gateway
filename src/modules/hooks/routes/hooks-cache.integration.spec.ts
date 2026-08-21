@@ -371,58 +371,59 @@ describe('Hook Events for Cache', () => {
     it.each([
       { name: 'isFailed false', status: { isFailed: false } },
       { name: 'isFailed true', status: { isFailed: true } },
-    ])('clears the Safe and its queue for a payload with $name', async ({
-      status,
-    }) => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({ length: 32 });
-      // Safe info holds the nonce the wallet needs to build the next transaction
-      const safeCacheDir = new CacheDir(
-        `${chainId}_safe_${safeAddress}`,
-        faker.string.alpha(),
-      );
-      const multisigTxsCacheDir = new CacheDir(
-        `${chainId}_multisig_transactions_${safeAddress}`,
-        faker.string.alpha(),
-      );
-      for (const cacheDir of [safeCacheDir, multisigTxsCacheDir]) {
-        await fakeCacheService.hSet(
-          cacheDir,
+    ])(
+      'clears the Safe and its queue for a payload with $name',
+      async ({ status }) => {
+        const chainId = faker.string.numeric();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const safeTxHash = faker.string.hexadecimal({ length: 32 });
+        // Safe info holds the nonce the wallet needs to build the next transaction
+        const safeCacheDir = new CacheDir(
+          `${chainId}_safe_${safeAddress}`,
           faker.string.alpha(),
-          faker.number.int({ min: 1 }),
         );
-      }
-      const data = {
-        type: 'EXECUTED_MULTISIG_TRANSACTION',
-        address: safeAddress,
-        chainId,
-        to: faker.finance.ethereumAddress(),
-        safeTxHash,
-        txHash: faker.string.hexadecimal({ length: 32 }),
-        data: faker.string.hexadecimal({ length: 32 }),
-        ...status,
-      };
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
-          return Promise.resolve({
-            data: rawify(chainBuilder().with('chainId', chainId).build()),
-            status: 200,
-          });
+        const multisigTxsCacheDir = new CacheDir(
+          `${chainId}_multisig_transactions_${safeAddress}`,
+          faker.string.alpha(),
+        );
+        for (const cacheDir of [safeCacheDir, multisigTxsCacheDir]) {
+          await fakeCacheService.hSet(
+            cacheDir,
+            faker.string.alpha(),
+            faker.number.int({ min: 1 }),
+          );
         }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
+        const data = {
+          type: 'EXECUTED_MULTISIG_TRANSACTION',
+          address: safeAddress,
+          chainId,
+          to: faker.finance.ethereumAddress(),
+          safeTxHash,
+          txHash: faker.string.hexadecimal({ length: 32 }),
+          data: faker.string.hexadecimal({ length: 32 }),
+          ...status,
+        };
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+            return Promise.resolve({
+              data: rawify(chainBuilder().with('chainId', chainId).build()),
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
 
-      const cb = getSubscriptionCallback(queuesApiService);
-      await cb({
-        content: Buffer.from(JSON.stringify(data)),
-      } as ConsumeMessage);
+        const cb = getSubscriptionCallback(queuesApiService);
+        await cb({
+          content: Buffer.from(JSON.stringify(data)),
+        } as ConsumeMessage);
 
-      await expect(fakeCacheService.hGet(safeCacheDir)).resolves.toBeNull();
-      await expect(
-        fakeCacheService.hGet(multisigTxsCacheDir),
-      ).resolves.toBeNull();
-    });
+        await expect(fakeCacheService.hGet(safeCacheDir)).resolves.toBeNull();
+        await expect(
+          fakeCacheService.hGet(multisigTxsCacheDir),
+        ).resolves.toBeNull();
+      },
+    );
   });
 
   describe('nested Safe approveHash invalidation', () => {

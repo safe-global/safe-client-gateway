@@ -75,18 +75,19 @@ describe('SesEmailErrorMapper', () => {
       expect(result).toBeInstanceOf(TransientEmailError);
     });
 
-    it.each([
-      408, 429, 500, 502, 503, 504,
-    ])('should return TransientEmailError for HTTP status %s', (statusCode) => {
-      const error = new BadRequestException({
-        message: 'server error',
-        $metadata: { httpStatusCode: statusCode },
-      });
+    it.each([408, 429, 500, 502, 503, 504])(
+      'should return TransientEmailError for HTTP status %s',
+      (statusCode) => {
+        const error = new BadRequestException({
+          message: 'server error',
+          $metadata: { httpStatusCode: statusCode },
+        });
 
-      const result = SesEmailErrorMapper.fromSesError(error);
+        const result = SesEmailErrorMapper.fromSesError(error);
 
-      expect(result).toBeInstanceOf(TransientEmailError);
-    });
+        expect(result).toBeInstanceOf(TransientEmailError);
+      },
+    );
   });
 
   describe('permanent SES errors', () => {

@@ -94,24 +94,26 @@ describe('FeesService', () => {
       expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
     });
 
-    it.each([
-      [RelayerType.DAILY_LIMIT],
-      [RelayerType.NO_FEE_CAMPAIGN],
-    ])('should throw a BadRequestException for unsupported relayer type %s', async (type) => {
-      const chain = chainBuilder()
-        .with('chainId', chainId)
-        .with('relayer', relayerBuilder().with('type', type).build())
-        .build();
-      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
+    it.each([[RelayerType.DAILY_LIMIT], [RelayerType.NO_FEE_CAMPAIGN]])(
+      'should throw a BadRequestException for unsupported relayer type %s',
+      async (type) => {
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with('relayer', relayerBuilder().with('type', type).build())
+          .build();
+        mockChainsRepository.getChain.mockResolvedValueOnce(chain);
 
-      await expect(
-        target.getFeePreview({ chainId, safeAddress, feePreviewDto }),
-      ).rejects.toThrow(
-        new BadRequestException('Fee preview is not available for this chain'),
-      );
-      expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
-      expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
-    });
+        await expect(
+          target.getFeePreview({ chainId, safeAddress, feePreviewDto }),
+        ).rejects.toThrow(
+          new BadRequestException(
+            'Fee preview is not available for this chain',
+          ),
+        );
+        expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
+        expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
+      },
+    );
 
     it('should throw a BadRequestException when the chain has no relayer', async () => {
       const chain = chainBuilder()

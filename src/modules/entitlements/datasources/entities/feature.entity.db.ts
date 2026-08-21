@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Check, Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { toSqlList } from '@/datasources/db/v2/entities/sql.utils';
-import type {
-  Feature as DomainFeature,
-  FeatureKey,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+import type { Feature as DomainFeature } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 
 @Entity('features')
@@ -18,7 +15,7 @@ export class Feature implements DomainFeature {
   public readonly id!: number;
 
   @Column({ type: 'varchar', length: 64 })
-  public readonly key!: FeatureKey;
+  public readonly key!: string;
 
   @Column({ type: 'varchar', length: 16 })
   public readonly type!: FeatureType;

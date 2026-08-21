@@ -471,41 +471,41 @@ describe('Chain schemas', () => {
       expect(result.success && result.data.zk).toBe(false);
     });
 
-    it.each([
-      ['chainLogoUri' as const],
-      ['ensRegistryAddress' as const],
-    ])('should allow undefined %s and default to null', (field) => {
-      const chain = chainBuilder().build();
-      delete chain[field];
+    it.each([['chainLogoUri' as const], ['ensRegistryAddress' as const]])(
+      'should allow undefined %s and default to null',
+      (field) => {
+        const chain = chainBuilder().build();
+        delete chain[field];
 
-      const result = ChainSchema.safeParse(chain);
+        const result = ChainSchema.safeParse(chain);
 
-      expect(result.success && result.data[field]).toBe(null);
-    });
+        expect(result.success && result.data[field]).toBe(null);
+      },
+    );
 
-    it.each([
-      'transactionService' as const,
-      'vpcTransactionService' as const,
-    ])('accept non-trailing slash %s as is', (field) => {
-      const url = faker.internet.url({ appendSlash: false });
-      const chain = chainBuilder().with(field, url).build();
+    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
+      'accept non-trailing slash %s as is',
+      (field) => {
+        const url = faker.internet.url({ appendSlash: false });
+        const chain = chainBuilder().with(field, url).build();
 
-      const result = ChainSchema.safeParse(chain);
+        const result = ChainSchema.safeParse(chain);
 
-      expect(result.success && result.data[field]).toBe(url);
-    });
+        expect(result.success && result.data[field]).toBe(url);
+      },
+    );
 
-    it.each([
-      'transactionService' as const,
-      'vpcTransactionService' as const,
-    ])('should remove trailing slashes from %s', (field) => {
-      const url = faker.internet.url({ appendSlash: false });
-      const chain = chainBuilder().with(field, `${url}/`).build();
+    it.each(['transactionService' as const, 'vpcTransactionService' as const])(
+      'should remove trailing slashes from %s',
+      (field) => {
+        const url = faker.internet.url({ appendSlash: false });
+        const chain = chainBuilder().with(field, `${url}/`).build();
 
-      const result = ChainSchema.safeParse(chain);
+        const result = ChainSchema.safeParse(chain);
 
-      expect(result.success && result.data[field]).toBe(url);
-    });
+        expect(result.success && result.data[field]).toBe(url);
+      },
+    );
 
     it.each([
       ['chainId' as const],

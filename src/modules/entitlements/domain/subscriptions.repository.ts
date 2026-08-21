@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { EntityManager } from 'typeorm';
+import { type EntityManager, In } from 'typeorm';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
@@ -22,6 +22,24 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
+
+  public async getActiveSubscriptionBySpaceId(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<SpaceSubscription | null> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+      entityManager,
+    );
+    return await repository.findOne({
+      where: {
+        space: { id: spaceId },
+        status: In([...ACTIVE_SUBSCRIPTION_STATUSES]),
+      },
+      relations: { entitlements: { feature: true } },
+    });
+  }
 
   public async upsertSubscription(
     args: {

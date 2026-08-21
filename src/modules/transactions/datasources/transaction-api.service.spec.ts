@@ -3,12 +3,16 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
+import { errorStatusCodeExcluding, fakeJson } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
+import {
+  UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+  UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+} from '@/datasources/errors/constants';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -154,9 +158,9 @@ describe('TransactionApi', () => {
       const data = faker.string.hexadecimal() as Address;
       const to = getAddress(faker.finance.ethereumAddress());
       const getDataDecodedUrl = `${baseUrl}/api/v1/data-decoder/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -213,9 +217,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const getBackboneUrl = `${baseUrl}/api/v1/about`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_backbone`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -265,9 +269,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const getSingletonsUrl = `${baseUrl}/api/v1/about/singletons/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_singletons`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -317,9 +321,9 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const getIndexingStatusUrl = `${baseUrl}/api/v1/about/indexing/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_indexing`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -374,9 +378,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const safe = safeBuilder().build();
       const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_safe_${safe.address}`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -403,6 +407,46 @@ describe('TransactionApi', () => {
           },
         },
       });
+    });
+
+    it('should forward a banned-Safe error even when the payload carries nonFieldErrors', async () => {
+      const safe = safeBuilder().build();
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const expected = new DataSourceError(
+        UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
+      mockDataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getSafeUrl),
+          new Response(null, { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS }),
+          // A shape the Transaction Service does not currently pair with 451;
+          // the status still decides, so the message is not taken from here
+          { nonFieldErrors: [faker.word.words()] },
+        ),
+      );
+
+      await expect(service.getSafe(safe.address)).rejects.toThrow(expected);
+    });
+
+    it('should forward a banned-Safe error with a dedicated message', async () => {
+      const safe = safeBuilder().build();
+      const getSafeUrl = `${baseUrl}/api/v1/safes/${safe.address}`;
+      const expected = new DataSourceError(
+        UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
+      mockDataSource.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(getSafeUrl),
+          new Response(null, { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS }),
+          // The Transaction Service reports the reason under `detail`, a key
+          // HttpErrorFactory does not read; the text itself is discarded
+          { detail: faker.word.words() },
+        ),
+      );
+
+      await expect(service.getSafe(safe.address)).rejects.toThrow(expected);
     });
   });
 
@@ -599,9 +643,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getDelegatesUrl = `${baseUrl}/api/v1/delegates/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_delegates_${delegate.safe}`,
@@ -679,9 +723,9 @@ describe('TransactionApi', () => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
       const postDelegateUrl = `${baseUrl}/api/v1/delegates/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -747,9 +791,9 @@ describe('TransactionApi', () => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
       const deleteDelegateUrl = `${baseUrl}/api/v1/delegates/${delegate.delegate}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.delete.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -816,9 +860,9 @@ describe('TransactionApi', () => {
       const delegate = delegateBuilder().build();
       const signature = faker.string.hexadecimal();
       const deleteSafeDelegateUrl = `${baseUrl}/api/v1/safes/${delegate.safe}/delegates/${delegate.delegate}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.delete.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -884,9 +928,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const transferId = faker.string.hexadecimal();
       const getTransferUrl = `${baseUrl}/api/v1/transfer/${transferId}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_transfer_${transferId}`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -1019,9 +1063,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_transfers_${safeAddress}`,
@@ -1157,9 +1201,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getIncomingTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/incoming-transfers/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_incoming_transfers_${safeAddress}`,
@@ -1263,9 +1307,9 @@ describe('TransactionApi', () => {
         length: 130,
       }) as Address;
       const postConfirmationUrl = `${baseUrl}/api/v1/multisig-transactions/${safeTxHash}/confirmations/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1330,9 +1374,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const moduleAddress = getAddress(faker.finance.ethereumAddress());
       const getSafesByModuleUrl = `${baseUrl}/api/v1/modules/${moduleAddress}/safes/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       mockNetworkService.get.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1395,9 +1439,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const moduleTransactionId = faker.string.hexadecimal();
       const getModuleTransactionUrl = `${baseUrl}/api/v1/module-transaction/${moduleTransactionId}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_module_transaction_${moduleTransactionId}`,
@@ -1487,9 +1531,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getModuleTransactionsUrl = `${baseUrl}/api/v1/safes/${moduleTransaction.safe}/module-transactions/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_module_transactions_${moduleTransaction.safe}`,
@@ -1627,9 +1671,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getMultisigTransactionsUrl = `${baseUrl}/api/v2/safes/${multisigTransaction.safe}/multisig-transactions/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transactions_${multisigTransaction.safe}`,
@@ -1740,9 +1784,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const multisigTransaction = multisigTransactionBuilder().build();
       const getMultisigTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_multisig_transaction_${multisigTransaction.safeTxHash}`,
@@ -1809,9 +1853,9 @@ describe('TransactionApi', () => {
       const safeTxHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
       const deleteTransactionUrl = `${baseUrl}/api/v2/multisig-transactions/${safeTxHash}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.delete.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -1888,9 +1932,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const getCreationTransactionUrl = `${baseUrl}/api/v1/safes/${safeAddress}/creation/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_creation_transaction_${safeAddress}`,
@@ -1989,9 +2033,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getAllTransactionsUrl = `${baseUrl}/api/v2/safes/${safeAddress}/all-transactions/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_all_transactions_${safeAddress}`,
@@ -2085,9 +2129,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const token = tokenBuilder().build();
       const getTokenUrl = `${baseUrl}/api/v1/tokens/${token.address}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_token_${token.address}`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -2159,9 +2203,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getTokensUrl = `${baseUrl}/api/v1/tokens/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_tokens`, `${limit}_${offset}`);
       mockDataSource.get.mockRejectedValueOnce(
@@ -2238,9 +2282,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const owner = getAddress(faker.finance.ethereumAddress());
       const getSafesByOwnerUrl = `${baseUrl}/api/v1/owners/${owner}/safes/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_owner_safes_${owner}`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -2381,9 +2425,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int({ min: 1, max: 100 });
       const offset = faker.number.int({ min: 0 });
       const getSafesByOwnerV2Url = `${baseUrl}/api/v2/owners/${owner}/safes/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_owner_safes_v2_${owner}`,
@@ -2472,9 +2516,9 @@ describe('TransactionApi', () => {
       const data = faker.string.hexadecimal() as Address;
       const operation = faker.helpers.arrayElement([0, 1] as const);
       const getEstimationUrl = `${baseUrl}/api/v1/safes/${safeAddress}/multisig-transactions/estimations/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -2538,9 +2582,9 @@ describe('TransactionApi', () => {
     ])(`should forward a %s error`, async (_, error) => {
       const messageHash = faker.string.hexadecimal();
       const getMessageByHashUrl = `${baseUrl}/api/v1/messages/${messageHash}`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(`${chainId}_message_${messageHash}`, '');
       mockDataSource.get.mockRejectedValueOnce(
@@ -2619,9 +2663,9 @@ describe('TransactionApi', () => {
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getMessageBySafeUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_messages_${safeAddress}`,
@@ -2698,9 +2742,9 @@ describe('TransactionApi', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
       const postMultisigTransactionUrl = `${baseUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -2775,9 +2819,9 @@ describe('TransactionApi', () => {
       const signature = faker.string.hexadecimal();
       const origin = fakeJson();
       const postMessageUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -2844,9 +2888,9 @@ describe('TransactionApi', () => {
       const messageHash = faker.string.hexadecimal();
       const signature = faker.string.hexadecimal();
       const postMessageSignatureUrl = `${baseUrl}/api/v1/messages/${messageHash}/signatures/`;
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
       const expected = new DataSourceError(errorMessage, statusCode);
       networkService.post.mockRejectedValueOnce(
         new NetworkResponseError(

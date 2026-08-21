@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type postgres from 'postgres';
 import request from 'supertest';
 import { In } from 'typeorm';
 import type { MockedObject } from 'vitest';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
@@ -43,9 +46,7 @@ const WEBHOOK_PATH = '/v1/billing/webhooks';
 // stay literal rather than faker-random.
 const PERIOD_START = 1_700_000_000;
 const PERIOD_END = 1_702_592_000;
-// This suite runs against the shared `test-db` alongside other integration
-// files, so every write it makes is cleaned up by id or by these keys —
-// never by an unscoped DELETE over a whole table.
+// The keys this suite seeds into the `features` catalog with its own values.
 const FEATURE_KEYS = ['safe_seats', 'security_hub'] as const;
 // Event stamps, epoch seconds: the deletion happens after the update it is
 // delivered before.
@@ -59,12 +60,31 @@ describe('Billing webhook → entitlements materialization', () => {
   let billingBaseUri: string;
   const seededSpaceIds: Array<number> = [];
 
+  // Its own database, like the repo's repository specs, because `features` is a
+  // global table this suite seeds with its own values. Not faker: a fixed
+  // FAKER_SEED would hand every spec file the same name.
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
+  const testDbFactory = new TestDbFactory();
+  let testDatabase: postgres.Sql;
+
   beforeAll(async () => {
     vi.resetAllMocks();
+
+    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
+      db: {
+        ...defaultConfiguration.db,
+        connection: {
+          ...defaultConfiguration.db.connection,
+          postgres: {
+            ...defaultConfiguration.db.connection.postgres,
+            database: testDatabaseName,
+          },
+        },
+      },
       features: {
         ...defaultConfiguration.features,
         auth: true,
@@ -109,8 +129,8 @@ describe('Billing webhook → entitlements materialization', () => {
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
 
-    // The catalog is global and idempotent, so it is seeded once. Deleting the
-    // suite's own keys first keeps a re-run from tripping UQ_features_key.
+    // Booting the app ran the migrations, so the catalog already holds the
+    // shipped `safe_seats` row; drop it to seed this suite's own values.
     const featureRepo = await postgresDatabaseService.getRepository(Feature);
     await featureRepo.delete({ key: In(FEATURE_KEYS) });
     await featureRepo.insert([
@@ -136,9 +156,8 @@ describe('Billing webhook → entitlements materialization', () => {
   });
 
   afterAll(async () => {
-    const featureRepo = await postgresDatabaseService.getRepository(Feature);
-    await featureRepo.delete({ key: In(FEATURE_KEYS) });
     await app?.close();
+    await testDbFactory.destroyTestDatabase(testDatabase);
   });
 
   async function seedSpace(): Promise<{ spaceId: number; spaceUuid: string }> {

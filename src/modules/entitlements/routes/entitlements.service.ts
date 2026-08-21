@@ -1,24 +1,56 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
+import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import {
+  FeatureType,
+  isFeatureKey,
+} from '@/modules/entitlements/domain/entities/feature.entity';
+import type {
+  MaterializedSubscription,
+  ParsedEntitlement,
+} from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type {
+  ResolvedEntitlement,
+  ResolvedEntitlements,
+} from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
+import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
+  isStockMeteredFeature,
   ordersAfter,
 } from '@/modules/entitlements/domain/entitlements.constants';
+import {
+  effectiveEntitlement,
+  eventPeriodStart,
+  resetsAt,
+} from '@/modules/entitlements/domain/entitlements.rules';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
+import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
 import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
 import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+import type {
+  EntitlementItem,
+  EntitlementsResponse,
+} from '@/modules/entitlements/routes/entities/entitlements-response.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the
- * per-table repositories, and owns the transactions spanning several tables.
+ * per-table repositories, applies the pure rules in `entitlements.rules`,
+ * and owns the transactions spanning several tables.
  */
 @Injectable()
 export class EntitlementsService {
@@ -29,14 +61,85 @@ export class EntitlementsService {
     private readonly subscriptionsRepository: ISubscriptionsRepository,
     @Inject(ISubscriptionEntitlementsRepository)
     private readonly subscriptionEntitlementsRepository: ISubscriptionEntitlementsRepository,
+    @Inject(ISpaceFeatureUsageRepository)
+    private readonly spaceFeatureUsageRepository: ISpaceFeatureUsageRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {}
 
+  /**
+   * Resolves the workspace's entitlements.
+   */
+  public async resolveEntitlements(
+    spaceId: Space['id'],
+  ): Promise<ResolvedEntitlements> {
+    const now = new Date();
+    // Independent reads: the usage lookup below is the first step that needs
+    // their results.
+    const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
+      this.getSpaceCreatedAtOrFail(spaceId),
+      this.featuresRepository.getFeatures(),
+      this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
+    ]);
+
+    const usedByFeatureId = await this.getUsageByFeatureId({
+      spaceId,
+      spaceCreatedAt,
+      features,
+      activeSubscription,
+      now,
+    });
+
+    const purchasedByFeatureId = new Map(
+      (activeSubscription?.entitlements ?? []).map((entitlement) => [
+        entitlement.feature.id,
+        entitlement,
+      ]),
+    );
+
+    const entitlements = features.map((feature) =>
+      this.resolveFeature({
+        feature,
+        spaceCreatedAt,
+        activeSubscription,
+        purchased: purchasedByFeatureId.get(feature.id),
+        used: usedByFeatureId.get(feature.id) ?? 0,
+        now,
+      }),
+    );
+
+    return {
+      plan: activeSubscription
+        ? {
+            id: activeSubscription.planId,
+            name: activeSubscription.planName,
+            cycleEndsAt: activeSubscription.currentPeriodEnd,
+          }
+        : null,
+      entitlements,
+    };
+  }
+
+  /** `GET /v1/spaces/:spaceId/entitlements`: any active member can read it. */
+  public async getEntitlements(args: {
+    spaceId: Space['id'];
+    authPayload: AuthPayload;
+  }): Promise<EntitlementsResponse> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertMember(this.membersRepository, args.spaceId, userId);
+
+    return this.toEntitlementsResponse(
+      await this.resolveEntitlements(args.spaceId),
+    );
+  }
   /**
    * Materializes the state an event carries in its own payload, and stamps the
    * space with that event's `created`. Applied only while it orders strictly
@@ -115,7 +218,11 @@ export class EntitlementsService {
     await this.spacesRepository.findUuidById(args.spaceId);
 
     const withPackage = args.subscriptions.filter(
-      (subscription) => subscription.entitlements !== null,
+      (
+        subscription,
+      ): subscription is MaterializedSubscription & {
+        entitlements: Array<ParsedEntitlement>;
+      } => subscription.entitlements !== null,
     );
     if (withPackage.length > 1) {
       throw new Error(
@@ -208,7 +315,7 @@ export class EntitlementsService {
           }
         }
 
-        if (activeSubscriptionId !== null && packaged?.entitlements != null) {
+        if (activeSubscriptionId !== null && packaged !== undefined) {
           // Full replace: reprocessing the same upstream state yields the same
           // rows (idempotent by construction).
           await this.subscriptionEntitlementsRepository.deleteEntitlementsBySubscriptionId(
@@ -261,5 +368,178 @@ export class EntitlementsService {
     if (storedEventAt === null) return triggerEventAt;
     if (triggerEventAt === null) return storedEventAt;
     return storedEventAt > triggerEventAt ? storedEventAt : triggerEventAt;
+  }
+
+  private resolveFeature(args: {
+    feature: Feature;
+    spaceCreatedAt: Date;
+    activeSubscription: SpaceSubscription | null;
+    purchased: SubscriptionEntitlement | undefined;
+    used: number;
+    now: Date;
+  }): ResolvedEntitlement {
+    const { feature, spaceCreatedAt, activeSubscription, used, now } = args;
+    const effective = effectiveEntitlement({
+      feature,
+      purchased: args.purchased,
+    });
+
+    switch (feature.type) {
+      case FeatureType.Binary:
+        return {
+          feature: feature.key,
+          type: FeatureType.Binary,
+          enabled: effective.enabled,
+        };
+      case FeatureType.Value:
+        return {
+          feature: feature.key,
+          type: FeatureType.Value,
+          enabled: effective.enabled,
+          value: effective.value,
+        };
+      case FeatureType.Metered:
+        return {
+          feature: feature.key,
+          type: FeatureType.Metered,
+          enabled: effective.enabled,
+          // Always the plan's quota, never inflated to match usage.
+          quota: effective.quota,
+          used,
+          resetsAt: resetsAt({
+            feature,
+            spaceCreatedAt,
+            cycle: activeSubscription,
+            now,
+          }),
+        };
+      default: {
+        // A new FeatureType stops compiling here rather than being served as
+        // metered, the same guarantee `stockCounters` gets from its Record.
+        const unhandled: never = feature.type;
+        throw new Error(`Unhandled feature type: ${String(unhandled)}`);
+      }
+    }
+  }
+
+  /** Usage of every metered feature in the catalog, keyed by feature id. */
+  private async getUsageByFeatureId(args: {
+    spaceId: Space['id'];
+    spaceCreatedAt: Date;
+    features: Array<Feature>;
+    activeSubscription: SpaceSubscription | null;
+    now: Date;
+  }): Promise<Map<number, number>> {
+    const metered = args.features.filter(
+      (feature) => feature.type === FeatureType.Metered,
+    );
+
+    const [eventUsage, stockUsage] = await Promise.all([
+      this.getEventUsage({ ...args, features: metered }),
+      this.getStockUsage(args.spaceId, metered.filter(isStockMeteredFeature)),
+    ]);
+
+    return new Map([...eventUsage, ...stockUsage]);
+  }
+
+  /** One query covering every event-metered feature's current period. */
+  private async getEventUsage(args: {
+    spaceId: Space['id'];
+    spaceCreatedAt: Date;
+    features: Array<Feature>;
+    activeSubscription: SpaceSubscription | null;
+    now: Date;
+  }): Promise<Map<number, number>> {
+    const eventMetered = args.features.filter(
+      (feature) => !isStockMeteredFeature(feature),
+    );
+
+    return await this.spaceFeatureUsageRepository.getUsageByFeatureId({
+      spaceId: args.spaceId,
+      periods: eventMetered.map((feature) => ({
+        featureId: feature.id,
+        periodStart: eventPeriodStart({
+          feature,
+          spaceCreatedAt: args.spaceCreatedAt,
+          cycle: args.activeSubscription,
+          now: args.now,
+        }),
+      })),
+    });
+  }
+
+  /** One live count per stock-metered feature, run concurrently. */
+  private async getStockUsage(
+    spaceId: Space['id'],
+    features: Array<Feature & { key: StockMeteredFeature }>,
+  ): Promise<Array<readonly [number, number]>> {
+    return await Promise.all(
+      features.map(
+        async (feature) =>
+          [feature.id, await this.stockCounters[feature.key](spaceId)] as const,
+      ),
+    );
+  }
+
+  /**
+   * Stock usage is a live count owned by the feature's own module, so it is
+   * read through that module's repository rather than from `entitlements`.
+   * Exhaustive by construction: a new key in `STOCK_METERED_FEATURES` does not
+   * compile until its counter is added here.
+   */
+  private readonly stockCounters: Record<
+    StockMeteredFeature,
+    (spaceId: Space['id']) => Promise<number>
+  > = {
+    safe_seats: (spaceId) => this.spaceSafesRepository.countBySpaceId(spaceId),
+  };
+
+  /**
+   * Maps the resolved state onto the published contract. `features.key` is a
+   * plain column seeded by migration while the response documents a closed
+   * `FeatureKey` enum, so a key the contract does not declare is left out
+   * rather than served outside it.
+   */
+  private toEntitlementsResponse(
+    resolved: ResolvedEntitlements,
+  ): EntitlementsResponse {
+    const unpublished: Array<string> = [];
+    const entitlements = resolved.entitlements.flatMap<EntitlementItem>(
+      (entitlement) => {
+        if (!isFeatureKey(entitlement.feature)) {
+          unpublished.push(entitlement.feature);
+          return [];
+        }
+        return [{ ...entitlement, feature: entitlement.feature }];
+      },
+    );
+
+    if (unpublished.length > 0) {
+      this.loggingService.warn(
+        `Features seeded but not published, omitted from the response: ${unpublished.join(', ')}`,
+      );
+    }
+
+    return {
+      plan: resolved.plan
+        ? {
+            id: resolved.plan.id,
+            name: resolved.plan.name,
+            cycleEndsAt: resolved.plan.cycleEndsAt,
+          }
+        : null,
+      entitlements,
+    };
+  }
+
+  private async getSpaceCreatedAtOrFail(spaceId: Space['id']): Promise<Date> {
+    const space = await this.spacesRepository.findOne({
+      where: { id: spaceId },
+      select: { createdAt: true },
+    });
+    if (!space) {
+      throw new NotFoundException('Workspace not found.');
+    }
+    return space.createdAt;
   }
 }

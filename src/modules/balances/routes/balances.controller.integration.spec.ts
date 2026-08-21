@@ -13,6 +13,10 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import {
+  UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+  UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+} from '@/datasources/errors/constants';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -826,6 +830,44 @@ describe('Balances Controller', () => {
           .expect({
             message: 'An error occurred',
             code: 404,
+          });
+
+        expect(networkService.get.mock.calls.length).toBe(2);
+      });
+
+      it(`451 error response for a banned Safe`, async () => {
+        const chainId = '1';
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const chainResponse = chainBuilder().with('chainId', chainId).build();
+        const transactionServiceUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}/balances/`;
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chainId}`) {
+            return Promise.resolve({
+              data: rawify(chainResponse),
+              status: 200,
+            });
+          }
+          if (url === transactionServiceUrl) {
+            const error = new NetworkResponseError(
+              new URL(transactionServiceUrl),
+              new Response(null, {
+                status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+              }),
+              // The Transaction Service reports the reason under `detail`, a key
+              // HttpErrorFactory does not read; the text itself is discarded
+              { detail: faker.word.words() },
+            );
+            return Promise.reject(error);
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/safes/${safeAddress}/balances/usd`)
+          .expect(UNAVAILABLE_FOR_LEGAL_REASONS_STATUS)
+          .expect({
+            message: UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+            code: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
           });
 
         expect(networkService.get.mock.calls.length).toBe(2);

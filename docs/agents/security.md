@@ -37,6 +37,16 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 **Canonical example:** `src/modules/auth/routes/auth.controller.ts`'s `getMe` pairs `@UseGuards(AuthGuard)` with `@Auth() authPayload: AuthPayload`. For the internal-route half of the rule, `src/modules/hooks/routes/hooks.controller.ts` guards its event-ingestion route with `@UseGuards(BasicAuthGuard)` on `POST /hooks/events`.
 
+### Sensitive Workspace mutations also require a fresh second factor
+
+**Rule:** A route that mutates Workspace membership, Workspace metadata, the Safes attached to a Workspace, or the shared address book declares `@UseGuards(AuthGuard, ElevationGuard)` — `ElevationGuard` always after `AuthGuard`, which is what attaches the payload, and before any per-route rate-limit guard, so an unelevated request does not consume the caller's budget. A new route in that family is added to the gated table in `src/modules/spaces/routes/elevation.integration.spec.ts`; a deliberately ungated mutation is added to the ungated table in the same file with the reason.
+
+**Why:** enforcement is opt-in per route, so a sensitive route that simply omits the guard is silently unprotected — the failure mode is absence, which no test on the route itself can catch. The two tables in that spec exist so the omission fails CI instead: every gated route is asserted to reject a session with no fresh factor, and every ungated one is asserted not to, which makes gating or un-gating a route a deliberate edit rather than a side effect of touching a controller.
+
+**Canonical example:** `src/modules/spaces/routes/members/members.controller.ts` guards `POST /:spaceId/members/invite` with `@UseGuards(AuthGuard, ElevationGuard)`; `src/modules/spaces/routes/address-books/address-books.controller.ts:116` shows the rate-limited form, `@UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)`.
+
+**Anti-example:** `POST /v1/spaces` is ungated on purpose — creating a Workspace has no prior state to tamper with, and a challenge there would land mid-onboarding. That is a recorded entry in the ungated table, not an omission; do not read it as licence to skip the guard on a route that mutates existing state.
+
 `OptionalAuthGuard` letting a request through with no cookie present is only safe when every downstream branch treats a missing `authPayload` as unauthenticated; it is never a substitute for `AuthGuard` on a route that actually requires a signed-in user.
 
 ### Ownership by signature recovery only

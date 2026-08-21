@@ -107,34 +107,35 @@ describe('Configuration validator', () => {
     { key: 'RELAY_PROVIDER_API_KEY' },
     { key: 'STAKING_API_KEY' },
     { key: 'STAKING_TESTNET_API_KEY' },
-  ])('should detect that $key is missing in the configuration in production environment', ({
-    key,
-  }) => {
-    process.env.NODE_ENV = 'production';
-    expect(() =>
-      configurationValidator(
-        omit(validConfiguration, key),
-        RootConfigurationSchema,
-      ),
-    ).toThrow(
-      `Configuration is invalid: ${key} Invalid input: expected string, received undefined`,
-    );
-  });
+  ])(
+    'should detect that $key is missing in the configuration in production environment',
+    ({ key }) => {
+      process.env.NODE_ENV = 'production';
+      expect(() =>
+        configurationValidator(
+          omit(validConfiguration, key),
+          RootConfigurationSchema,
+        ),
+      ).toThrow(
+        `Configuration is invalid: ${key} Invalid input: expected string, received undefined`,
+      );
+    },
+  );
 
-  it.each([
-    '',
-    '   ',
-  ])('should reject empty TX_SERVICE_API_KEY values in production environment', (apiKey) => {
-    process.env.NODE_ENV = 'production';
-    expect(() =>
-      configurationValidator(
-        { ...validConfiguration, TX_SERVICE_API_KEY: apiKey },
-        RootConfigurationSchema,
-      ),
-    ).toThrow(
-      'Configuration is invalid: TX_SERVICE_API_KEY Too small: expected string to have >=1 characters',
-    );
-  });
+  it.each(['', '   '])(
+    'should reject empty TX_SERVICE_API_KEY values in production environment',
+    (apiKey) => {
+      process.env.NODE_ENV = 'production';
+      expect(() =>
+        configurationValidator(
+          { ...validConfiguration, TX_SERVICE_API_KEY: apiKey },
+          RootConfigurationSchema,
+        ),
+      ).toThrow(
+        'Configuration is invalid: TX_SERVICE_API_KEY Too small: expected string to have >=1 characters',
+      );
+    },
+  );
 
   it('should detect an invalid LOG_LEVEL configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
@@ -173,20 +174,21 @@ describe('Configuration validator', () => {
   it.each([
     { key: 'TARGETED_MESSAGING_FILE_STORAGE_TYPE' },
     { key: 'CSV_EXPORT_FILE_STORAGE_TYPE' },
-  ])(`should detect an invalid $key configuration in production environment`, ({
-    key,
-  }) => {
-    process.env.NODE_ENV = 'production';
-    const config = {
-      ...omit(validConfiguration, key),
-      [`${key}`]: faker.lorem.words(),
-    };
-    expect(() =>
-      configurationValidator(config, RootConfigurationSchema),
-    ).toThrow(
-      new RegExp(`${key} Invalid option: expected one of "local"\\|"aws"`),
-    );
-  });
+  ])(
+    `should detect an invalid $key configuration in production environment`,
+    ({ key }) => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...omit(validConfiguration, key),
+        [`${key}`]: faker.lorem.words(),
+      };
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        new RegExp(`${key} Invalid option: expected one of "local"\\|"aws"`),
+      );
+    },
+  );
 
   it('should detect an invalid TARGETED_MESSAGING_FILE_STORAGE_TYPE configuration in production environment', () => {
     process.env.NODE_ENV = 'production';
@@ -289,23 +291,23 @@ describe('Configuration validator', () => {
   });
 
   describe('BILLING_WEBHOOK_JWT_PRIVATE_KEY', () => {
-    it.each([
-      'production',
-      'staging',
-    ])('should reject BILLING_WEBHOOK_JWT_PRIVATE_KEY in %s environment', (env) => {
-      process.env.NODE_ENV = 'production';
-      const config = {
-        ...validConfiguration,
-        CGW_ENV: env,
-        BILLING_WEBHOOK_JWT_PRIVATE_KEY: faker.string.alphanumeric(),
-      };
+    it.each(['production', 'staging'])(
+      'should reject BILLING_WEBHOOK_JWT_PRIVATE_KEY in %s environment',
+      (env) => {
+        process.env.NODE_ENV = 'production';
+        const config = {
+          ...validConfiguration,
+          CGW_ENV: env,
+          BILLING_WEBHOOK_JWT_PRIVATE_KEY: faker.string.alphanumeric(),
+        };
 
-      expect(() =>
-        configurationValidator(config, RootConfigurationSchema),
-      ).toThrow(
-        'Configuration is invalid: BILLING_WEBHOOK_JWT_PRIVATE_KEY must not be set in production and staging environments; sign via KMS (BILLING_WEBHOOK_JWT_KMS_KEY_ID) instead',
-      );
-    });
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          'Configuration is invalid: BILLING_WEBHOOK_JWT_PRIVATE_KEY must not be set in production and staging environments; sign via KMS (BILLING_WEBHOOK_JWT_KMS_KEY_ID) instead',
+        );
+      },
+    );
 
     it('should accept BILLING_WEBHOOK_JWT_PRIVATE_KEY outside staging and production', () => {
       process.env.NODE_ENV = 'production';
@@ -646,23 +648,22 @@ describe('Configuration validator', () => {
         value: '-1',
         min: 0,
       },
-    ])('should reject invalid $key with value $value', ({
-      key,
-      value,
-      min,
-    }) => {
-      const config = {
-        ...validConfiguration,
-        [key]: value,
-      };
-      expect(() =>
-        configurationValidator(config, RootConfigurationSchema),
-      ).toThrow(
-        new RegExp(
-          `Configuration is invalid: ${key} Too small: expected number to be >=${min}`,
-        ),
-      );
-    });
+    ])(
+      'should reject invalid $key with value $value',
+      ({ key, value, min }) => {
+        const config = {
+          ...validConfiguration,
+          [key]: value,
+        };
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          new RegExp(
+            `Configuration is invalid: ${key} Too small: expected number to be >=${min}`,
+          ),
+        );
+      },
+    );
 
     it('should accept zero UNDICI_PIPELINING', () => {
       const config = {
@@ -682,6 +683,53 @@ describe('Configuration validator', () => {
       expect(() =>
         configurationValidator(config, RootConfigurationSchema),
       ).toThrow(/Configuration is invalid: UNDICI_CONNECTIONS/);
+    });
+  });
+
+  describe('Step-up elevation configuration validation', () => {
+    beforeEach(() => {
+      // The validator is a no-op under NODE_ENV=test, so boot-time validation
+      // has to be exercised as it runs in a deployed environment.
+      process.env.NODE_ENV = 'production';
+    });
+
+    // The window is compared numerically by `AuthPayload.hasFreshMfa`. An
+    // unparseable value becomes NaN, which makes every comparison false and
+    // locks every OIDC user out of gated Workspace actions — a failure that
+    // surfaces at request time and looks like the identity provider breaking.
+    // These tests pin that it is caught at boot instead.
+    it.each([
+      ['AUTH_ELEVATION_WINDOW_SECONDS', 'not-a-number'],
+      ['AUTH_ELEVATION_WINDOW_SECONDS', '0'],
+    ])('should reject %s=%s', (key, value) => {
+      const config = { ...validConfiguration, [key]: value };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(new RegExp(`Configuration is invalid: ${key}`));
+    });
+
+    it('should accept valid step-up values', () => {
+      const config = {
+        ...validConfiguration,
+        AUTH_ELEVATION_WINDOW_SECONDS: '1800',
+        FF_MFA_STEP_UP: 'true',
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
+    });
+
+    it('should accept them missing, since both are optional', () => {
+      const config = omit(validConfiguration, [
+        'AUTH_ELEVATION_WINDOW_SECONDS',
+        'FF_MFA_STEP_UP',
+      ]);
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).not.toThrow();
     });
   });
 });

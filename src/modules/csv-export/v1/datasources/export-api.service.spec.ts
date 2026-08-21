@@ -3,8 +3,10 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { errorStatusCodeExcluding } from '@/__tests__/faker';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } from '@/datasources/errors/constants';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
@@ -139,9 +141,9 @@ describe('ExportApi', () => {
       const executionDateLte = faker.date.recent().toISOString();
 
       const errorMessage = faker.word.words();
-      const statusCode = faker.internet.httpStatusCode({
-        types: ['clientError', 'serverError'],
-      });
+      const statusCode = errorStatusCodeExcluding(
+        UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+      );
 
       const exportUrl = `${baseUrl}/api/v1/safes/${safeAddress}/export/`;
       mockCacheFirstDataSource.get.mockImplementation(({ url }) => {

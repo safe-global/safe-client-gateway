@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { MAX_ENTITLEMENT_VALUE_LENGTH } from '@/modules/entitlements/domain/entitlements.constants';
 import { mapFeaturePackage } from '@/modules/entitlements/domain/feature-package.mapper';
 
-const featureTypeByKey: Map<FeatureKey, FeatureType> = new Map([
+const featureTypeByKey: Map<string, FeatureType> = new Map([
   ['security_hub', FeatureType.Binary],
   ['sso', FeatureType.Binary],
   ['pay_from_safe', FeatureType.Binary],
@@ -85,38 +84,35 @@ describe('mapFeaturePackage', () => {
     expect(onWarning).not.toHaveBeenCalled();
   });
 
-  it.each([
-    '007',
-    '01',
-    '1.5',
-    '-1',
-    '1e3',
-  ])('warns and skips the non-canonical metered quota %s', (quota) => {
-    const result = mapFeaturePackage({
-      metadata: { FEATURE_SAFE_SEATS: quota },
-      featureTypeByKey,
-      onWarning,
-    });
+  it.each(['007', '01', '1.5', '-1', '1e3'])(
+    'warns and skips the non-canonical metered quota %s',
+    (quota) => {
+      const result = mapFeaturePackage({
+        metadata: { FEATURE_SAFE_SEATS: quota },
+        featureTypeByKey,
+        onWarning,
+      });
 
-    expect(result).toStrictEqual([]);
-    expect(onWarning).toHaveBeenCalledTimes(1);
-  });
+      expect(result).toStrictEqual([]);
+      expect(onWarning).toHaveBeenCalledTimes(1);
+    },
+  );
 
   // Left through, the insert would fail with 22003 and the webhook would be
   // retried until it expires.
-  it.each([
-    `${DB_MAX_SAFE_INTEGER + 1}`,
-    '99999999999',
-  ])('warns and skips the metered quota %s, beyond the integer column', (quota) => {
-    const result = mapFeaturePackage({
-      metadata: { FEATURE_SAFE_SEATS: quota },
-      featureTypeByKey,
-      onWarning,
-    });
+  it.each([`${DB_MAX_SAFE_INTEGER + 1}`, '99999999999'])(
+    'warns and skips the metered quota %s, beyond the integer column',
+    (quota) => {
+      const result = mapFeaturePackage({
+        metadata: { FEATURE_SAFE_SEATS: quota },
+        featureTypeByKey,
+        onWarning,
+      });
 
-    expect(result).toStrictEqual([]);
-    expect(onWarning).toHaveBeenCalledTimes(1);
-  });
+      expect(result).toStrictEqual([]);
+      expect(onWarning).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('accepts the largest quota the column can hold', () => {
     const result = mapFeaturePackage({

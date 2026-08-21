@@ -289,16 +289,18 @@ describe('SubscriptionSyncService', () => {
 
   // Allow-listed, so a customer group nobody has seen yet is ignored rather
   // than materialized.
-  it.each([
-    'api',
-    'some_future_group',
-  ])('acks and ignores events for the %s customer group', async (customerGroup) => {
-    await target.handleWebhook(webhookEvent({ customerGroup }));
+  it.each(['api', 'some_future_group'])(
+    'acks and ignores events for the %s customer group',
+    async (customerGroup) => {
+      await target.handleWebhook(webhookEvent({ customerGroup }));
 
-    expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
-    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
-    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-  });
+      expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
+      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    },
+  );
 
   it('materializes events for the wallet_web customer group', async () => {
     await target.handleWebhook(

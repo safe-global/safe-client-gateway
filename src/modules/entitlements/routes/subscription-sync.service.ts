@@ -18,10 +18,7 @@ import {
   WALLET_WEB_CUSTOMER_GROUP,
   type WebhookEvent,
 } from '@/modules/billing/domain/entities/webhook-event.entity';
-import type {
-  FeatureKey,
-  FeatureType,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import {
@@ -245,7 +242,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
   private async readAuthoritativeState(args: {
     spaceId: Space['id'];
     upstreamCustomerId: string;
-    featureTypeByKey: Map<FeatureKey, FeatureType>;
+    featureTypeByKey: Map<string, FeatureType>;
   }): Promise<{
     observedEventAt: Date | null;
     subscriptions: Array<MaterializedSubscription>;

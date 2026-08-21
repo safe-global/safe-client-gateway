@@ -67,6 +67,7 @@ describe('OidcAuthController', () => {
     nbf?: number;
     email?: string;
     email_verified?: boolean;
+    amr?: Array<string>;
   }): string {
     return signAuth0Jwt({
       issuer: `https://${auth0Config.domain}/`,
@@ -673,6 +674,138 @@ describe('OidcAuthController', () => {
           'User denied access',
         );
         expect(networkService.postForm).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('step-up authentication', () => {
+      const MULTI_FACTOR_ACR =
+        'http://schemas.openid.net/pape/policies/2007/06/multi-factor';
+      // A realistic clock: epoch 0 would make the stamp itself 0 and hide
+      // whether it was written at all.
+      const NOW_MS = 1_764_000_000_000;
+      const NOW_SECONDS = Math.floor(NOW_MS / 1_000);
+
+      /**
+       * Drives a full authorize -> callback round-trip and returns the minted
+       * session payload, or `undefined` when the callback rejected.
+       */
+      async function roundTrip({
+        elevate,
+        amr,
+      }: {
+        elevate: boolean;
+        amr?: Array<string>;
+      }): Promise<Record<string, unknown> | undefined> {
+        vi.setSystemTime(NOW_MS);
+
+        const auth0Token = signAuth0Token({
+          sub: faker.string.uuid(),
+          email: faker.internet.email(),
+          email_verified: true,
+          iat: Math.floor(Date.now() / 1_000),
+          amr,
+        });
+
+        networkService.postForm.mockResolvedValueOnce({
+          status: 200,
+          data: rawify({
+            access_token: faker.string.alphanumeric(64),
+            id_token: auth0Token,
+            token_type: 'Bearer',
+            scope: faker.lorem.words(),
+          }),
+        });
+
+        const authorizeResponse = await request(app.getHttpServer())
+          .get(`/v1/auth/oidc/authorize${elevate ? '?elevate=true' : ''}`)
+          .expect(302);
+
+        const state = new URL(
+          authorizeResponse.headers.location,
+        ).searchParams.get('state');
+        const stateCookie = (
+          authorizeResponse.headers['set-cookie'] as unknown as Array<string>
+        )
+          .find((cookie) => cookie.startsWith('auth_state='))
+          ?.split(';')[0];
+
+        const callbackResponse = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/callback')
+          .set('Cookie', stateCookie!)
+          .query({ code: 'auth-code', state })
+          .expect(302);
+
+        const accessToken = (
+          callbackResponse.headers['set-cookie'] as unknown as Array<string>
+        )
+          ?.find((cookie) => cookie.startsWith('access_token='))
+          ?.match(/^access_token=([^;]+)/)?.[1];
+
+        if (!accessToken) {
+          return undefined;
+        }
+
+        return jwtService.verify<Record<string, unknown>>(accessToken);
+      }
+
+      it('should request the multi-factor acr_values when elevating', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize?elevate=true')
+          .expect(302);
+
+        const location = new URL(response.headers.location);
+        expect(location.searchParams.get('acr_values')).toBe(MULTI_FACTOR_ACR);
+      });
+
+      it('should not request acr_values on a plain login', async () => {
+        const response = await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize')
+          .expect(302);
+
+        const location = new URL(response.headers.location);
+        expect(location.searchParams.has('acr_values')).toBe(false);
+      });
+
+      it('should return 422 for a non-boolean elevate value', async () => {
+        await request(app.getHttpServer())
+          .get('/v1/auth/oidc/authorize?elevate=yes')
+          .expect(422);
+      });
+
+      it('should elevate the session when the provider performed MFA', async () => {
+        const payload = await roundTrip({ elevate: true, amr: ['mfa'] });
+
+        expect(payload).toMatchObject({
+          auth_method: 'oidc',
+          mfa_verified_at: NOW_SECONDS,
+        });
+      });
+
+      it('should refuse to elevate when the provider did not perform MFA', async () => {
+        // acr_values is inert unless the tenant's post-login Action acts on
+        // it, so the callback must not take the redirect at face value.
+        const payload = await roundTrip({ elevate: true, amr: ['pwd'] });
+
+        expect(payload).toBeUndefined();
+      });
+
+      it('should refuse to elevate when the token carries no amr', async () => {
+        const payload = await roundTrip({ elevate: true, amr: undefined });
+
+        expect(payload).toBeUndefined();
+      });
+
+      it('should stamp a plain login that performed MFA, since MFA is mandatory', async () => {
+        const payload = await roundTrip({ elevate: false, amr: ['mfa'] });
+
+        expect(payload).toMatchObject({ mfa_verified_at: NOW_SECONDS });
+      });
+
+      it('should not stamp a login whose token carries no amr', async () => {
+        const payload = await roundTrip({ elevate: false, amr: undefined });
+
+        expect(payload).toBeDefined();
+        expect(payload?.mfa_verified_at).toBeUndefined();
       });
     });
   });

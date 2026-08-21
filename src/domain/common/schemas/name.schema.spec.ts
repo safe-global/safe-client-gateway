@@ -82,15 +82,12 @@ describe('NameSchema', () => {
 
 describe('name.schema — UTF-8 acceptance', () => {
   describe('accepts UTF-8 letter names from any script', () => {
-    it.each([
-      'José',
-      '山田太郎',
-      'Müller',
-      'Анна',
-      'محمد علي',
-    ])('accepts %s', (name) => {
-      expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
-    });
+    it.each(['José', '山田太郎', 'Müller', 'Анна', 'محمد علي'])(
+      'accepts %s',
+      (name) => {
+        expect(NameSchema.parse(name)).toBe(name.normalize('NFC'));
+      },
+    );
   });
 
   describe('accepts real-world contact names with allowed punctuation', () => {

@@ -13,7 +13,7 @@ import type { SpaceFeatureUsage as DomainSpaceFeatureUsage } from '@/modules/ent
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 
 // Event-type consumption counters only (e.g. gas-sponsored transactions).
-// Stock counts (seats, members) are live COUNTs over their own tables.
+// Stock counts (seats) are live COUNTs over their own tables.
 // Keyed by period start: a new cycle reads/creates a different row, so quota
 // resets are implicit and per-period history is preserved. Usage hangs off
 // the SPACE (not the subscription) so it survives plan changes and exists

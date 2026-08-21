@@ -8,6 +8,7 @@ import {
   IsNull,
 } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -151,6 +152,18 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     }
 
     return spaceSafes;
+  }
+
+  public async countBySpaceId(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
+    return await repository.count({ where: { space: { id: spaceId } } });
   }
 
   public async find(args: {

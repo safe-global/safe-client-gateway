@@ -157,16 +157,19 @@ describe('CacheRouter', () => {
         ['nonce', '1'],
         ['origin', Origin.SAFE_APP],
         ['fiatCode', 'EUR'],
-      ] as const)('should produce a different hash when %s differs', (field, value) => {
-        const dir1 = CacheRouter.getRelayFeePreviewCacheDir(baseArgs);
-        const dir2 = CacheRouter.getRelayFeePreviewCacheDir({
-          ...baseArgs,
-          [field]: value,
-        });
+      ] as const)(
+        'should produce a different hash when %s differs',
+        (field, value) => {
+          const dir1 = CacheRouter.getRelayFeePreviewCacheDir(baseArgs);
+          const dir2 = CacheRouter.getRelayFeePreviewCacheDir({
+            ...baseArgs,
+            [field]: value,
+          });
 
-        expect(dir1.key).toBe(dir2.key);
-        expect(dir1.field).not.toBe(dir2.field);
-      });
+          expect(dir1.key).toBe(dir2.key);
+          expect(dir1.field).not.toBe(dir2.field);
+        },
+      );
 
       it('should default origin and fiatCode the same as their explicit values', () => {
         const { origin, fiatCode, ...rest } = baseArgs;
@@ -206,16 +209,19 @@ describe('CacheRouter', () => {
         ['to', getAddress(faker.finance.ethereumAddress())],
         ['nonce', '1'],
         ['origin', Origin.SAFE_APP],
-      ] as const)('should produce a different hash when %s differs', (field, value) => {
-        const dir1 = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
-        const dir2 = CacheRouter.getGtfFeePreviewCacheDir({
-          ...baseArgs,
-          [field]: value,
-        });
+      ] as const)(
+        'should produce a different hash when %s differs',
+        (field, value) => {
+          const dir1 = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
+          const dir2 = CacheRouter.getGtfFeePreviewCacheDir({
+            ...baseArgs,
+            [field]: value,
+          });
 
-        expect(dir1.key).toBe(dir2.key);
-        expect(dir1.field).not.toBe(dir2.field);
-      });
+          expect(dir1.key).toBe(dir2.key);
+          expect(dir1.field).not.toBe(dir2.field);
+        },
+      );
 
       it('should default origin the same as its explicit value', () => {
         const { origin, ...rest } = baseArgs;

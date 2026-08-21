@@ -1,5 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import { FEATURE_KEYS } from '@/modules/entitlements/domain/entities/feature.entity';
+
+export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
+
+/**
+ * Metered features whose usage is a live COUNT over a table another module
+ * owns (Safes) rather than a `space_feature_usage` counter — storing it twice
+ * would create a second source of truth that can drift. They have no reset
+ * window (`resetsAt: null`).
+ *
+ * `EntitlementsService` maps each key to the repository call that counts it,
+ * through an exhaustive `Record`, so adding one here fails to compile until
+ * its counter is wired.
+ */
+export const STOCK_METERED_FEATURES = [
+  'safe_seats',
+] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
+
+export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
+
+/** Takes the row, not the key, so a filtered array narrows without a cast. */
+export function isStockMeteredFeature<T extends { key: string }>(
+  feature: T,
+): feature is T & { key: StockMeteredFeature } {
+  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(
+    feature.key,
+  );
+}
 
 /**
  * Subscription statuses that occupy a workspace's single "active
@@ -35,9 +63,11 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
 }
 
 /**
- * Prefix of the Stripe metadata keys carrying the purchased feature package,
- * e.g. `FEATURE_SAFE_SEATS=10`, `FEATURE_SECURITY_HUB=true`,
- * `FEATURE_SPONSORED_TRANSACTIONS=unlimited`, `FEATURE_SWAP_FEE_TIER=business`.
+ * Prefix of the Stripe metadata keys carrying the purchased feature package.
+ * The Business plan sends `FEATURE_SAFE_SEATS=10`, `FEATURE_MEMBERS=5`,
+ * `FEATURE_SECURITY_HUB=true`, `FEATURE_SHARED_ADDRESS_BOOK=true` and
+ * `FEATURE_COPILOT_SCANS=true`; a key with no catalog row is dropped, so the
+ * seed lags the plan until each feature is signed off.
  */
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 

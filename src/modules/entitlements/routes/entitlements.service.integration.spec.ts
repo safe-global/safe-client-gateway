@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { DataSource } from 'typeorm';
+import { DataSource, type EntityManager, type ObjectLiteral } from 'typeorm';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
@@ -11,9 +13,10 @@ import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service'
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
-import { SpaceSeatSelection } from '@/modules/entitlements/datasources/entities/space-seat-selection.entity.db';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
@@ -21,17 +24,24 @@ import {
   materializedSubscriptionBuilder,
   parsedEntitlementBuilder,
 } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import {
+  FEATURE_KEYS,
+  FeatureType,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
+import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
 import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
@@ -41,28 +51,50 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-// The suite owns its catalog: the production Free-tier values are still
-// pending product sign-off, so no seed migration ships them and these tests
-// must not depend on one. The fixtures stay an exhaustive sample of the
-// catalog's feature types, so the key → id mapping `materialize` builds is
-// exercised for each of them. Only `key`/`type` are asserted on in this file;
-// every other field is left at the builder's faker default.
-const FEATURES: Array<Feature> = [
+// The suite owns its catalog: only `safe_seats` is signed off and seeded by a
+// migration, so the branches below are exercised against fixtures rather than
+// the shipped catalog. The fixtures below cover every resolution branch
+// the repository implements — binary, value, stock-metered (usage is a live
+// COUNT over an existing table) and event-metered (usage is a period-keyed
+// `space_feature_usage` counter). Keys come from the real `FeatureKey` enum
+// because the repository dispatches stock counting by key.
+const FREE_SAFE_SEATS = 2;
+const SPONSORED_PERIOD_DAYS = 30;
+
+const FEATURE_FIXTURES = [
   featureBuilder()
     .with('key', 'security_hub')
     .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
     .build(),
+  // A second binary, never purchased by any test, so the "unpurchased feature
+  // falls back to the Free default" branch stays covered.
+  featureBuilder()
+    .with('key', 'pay_from_safe')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
+  // `resetsAt` is null by key here: seats are stock-metered.
   featureBuilder()
     .with('key', 'safe_seats')
     .with('type', FeatureType.Metered)
+    .with('freeEnabled', true)
+    .with('freeQuota', FREE_SAFE_SEATS)
     .build(),
+  // Free-disabled by default so the "disabled admits no usage" path is
+  // covered; the `consume` tests enable it explicitly.
   featureBuilder()
     .with('key', 'sponsored_transactions')
     .with('type', FeatureType.Metered)
+    .with('freeEnabled', false)
+    .with('freeQuota', 0)
+    .with('freePeriod', SPONSORED_PERIOD_DAYS)
     .build(),
   featureBuilder()
     .with('key', 'swap_fee_tier')
     .with('type', FeatureType.Value)
+    .with('freeEnabled', true)
+    .with('freeValue', 'free')
     .build(),
 ];
 
@@ -73,11 +105,13 @@ const FIRST_STAMP = new Date('2026-08-17T12:00:00.000Z');
 describe('EntitlementsService', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   // The service composes the per-table repositories; exercised here against
-  // the real database so the queries and the transaction run for real.
+  // the real database so queries and derivation rules are covered end to end.
   let service: EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
+  let seededFeatureKeys: Array<string> = [];
 
-  const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
+  // Not faker: a fixed FAKER_SEED would hand every spec file the same name.
+  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
   const testConfiguration = configuration();
 
   const dataSource = new DataSource({
@@ -97,14 +131,15 @@ describe('EntitlementsService', () => {
       SpaceSubscription,
       SubscriptionEntitlement,
       SpaceFeatureUsage,
-      SpaceSeatSelection,
     ],
   });
 
-  // Stub for the collaborating module's repository: a thin adapter over the
-  // same test database, so the query it stands in for still runs for real.
-  // Its production implementation is covered by its own spec.
+  // Stubs for the collaborating modules' repositories: thin adapters over the
+  // same test database, so the queries they stand in for still run for real.
+  // Their production implementations are covered by their own specs.
   const spacesRepositoryStub = {
+    findOne: async (args: Parameters<ISpacesRepository['findOne']>[0]) =>
+      await dataSource.getRepository(Space).findOne(args),
     findUuidById: async (id: Space['id']): Promise<Space['uuid']> => {
       const space = await dataSource
         .getRepository(Space)
@@ -113,6 +148,18 @@ describe('EntitlementsService', () => {
       return space.uuid;
     },
   } as unknown as ISpacesRepository;
+
+  const spaceSafesRepositoryStub = {
+    countBySpaceId: async (spaceId: number, entityManager?: EntityManager) =>
+      await (entityManager ?? dataSource.manager).count(SpaceSafe, {
+        where: { space: { id: spaceId } },
+      }),
+  } as unknown as ISpaceSafesRepository;
+
+  const membersRepositoryStub = {
+    findOne: async (where: Parameters<IMembersRepository['findOne']>[0]) =>
+      await dataSource.getRepository(Member).findOne({ where }),
+  } as unknown as IMembersRepository;
 
   beforeAll(async () => {
     const testDataSource = new DataSource({
@@ -154,6 +201,10 @@ describe('EntitlementsService', () => {
       mockConfigService,
     );
     await migrator.migrate();
+    seededFeatureKeys = (
+      await dataSource.getRepository(Feature).find({ select: { key: true } })
+    ).map((feature) => feature.key);
+    await deleteAll(Feature);
 
     subscriptionsRepository = new SubscriptionsRepository(
       postgresDatabaseService,
@@ -162,37 +213,49 @@ describe('EntitlementsService', () => {
       new FeaturesRepository(postgresDatabaseService),
       subscriptionsRepository,
       new SubscriptionEntitlementsRepository(postgresDatabaseService),
+      new SpaceFeatureUsageRepository(postgresDatabaseService),
       spacesRepositoryStub,
+      spaceSafesRepositoryStub,
+      membersRepositoryStub,
       postgresDatabaseService,
       mockLoggingService,
     );
   });
 
+  // Pristine catalog per test: some tests mutate feature rows (changing the
+  // Free tier is an UPDATE on the catalog, per the RFC).
   beforeEach(async () => {
-    await dataSource.getRepository(Feature).insert(FEATURES);
+    await dataSource.getRepository(Feature).insert(FEATURE_FIXTURES);
   });
 
   afterEach(async () => {
-    // Dependency order: `features` last, as the entitlement rows reference it
-    // with ON DELETE RESTRICT.
-    for (const entity of [
-      SubscriptionEntitlement,
-      SpaceSubscription,
-      Space,
-      Feature,
-    ]) {
-      await dataSource
-        .getRepository(entity)
-        .createQueryBuilder()
-        .delete()
-        .execute();
-    }
+    // Delete in dependency order; `features` last, as the usage and
+    // entitlement rows reference it with ON DELETE RESTRICT.
+    await deleteAll(SpaceFeatureUsage);
+    await deleteAll(SubscriptionEntitlement);
+    await deleteAll(SpaceSubscription);
+    await deleteAll(Member);
+    await deleteAll(SpaceSafe);
+    await deleteAll(Space);
+    await deleteAll(Wallet);
+    await deleteAll(User);
+    await deleteAll(Feature);
   });
 
   afterAll(async () => {
     await postgresDatabaseService.getDataSource().dropDatabase();
     await postgresDatabaseService.destroyDatabaseConnection();
   });
+
+  async function deleteAll<T extends ObjectLiteral>(entity: {
+    new (): T;
+  }): Promise<void> {
+    await dataSource
+      .getRepository(entity)
+      .createQueryBuilder()
+      .delete()
+      .execute();
+  }
 
   async function createSpace(): Promise<number> {
     const inserted = await dataSource.getRepository(Space).insert({
@@ -202,9 +265,70 @@ describe('EntitlementsService', () => {
     return inserted.generatedMaps[0].id as number;
   }
 
-  // Every call needs an ordering stamp, which most cases are not about: each
-  // gets a later one than the last, so nothing is rejected as out of order
-  // unless the case asks for it by passing `eventAt` itself.
+  // The usage counter is keyed by period, and an unsubscribed workspace's
+  // current period starts at its creation date.
+  async function recordUsage(args: {
+    spaceId: number;
+    featureKey: string;
+    used: number;
+  }): Promise<void> {
+    const space = await dataSource
+      .getRepository(Space)
+      .findOneByOrFail({ id: args.spaceId });
+    const feature = await dataSource
+      .getRepository(Feature)
+      .findOneByOrFail({ key: args.featureKey });
+    await dataSource.getRepository(SpaceFeatureUsage).insert({
+      space: { id: args.spaceId },
+      feature: { id: feature.id },
+      periodStart: space.createdAt,
+      used: args.used,
+    });
+  }
+
+  async function addSafes(spaceId: number, count: number): Promise<void> {
+    const base = Date.now() - count * 60_000;
+    for (let i = 0; i < count; i++) {
+      await dataSource.getRepository(SpaceSafe).insert({
+        space: { id: spaceId },
+        chainId: '1',
+        address: getAddress(faker.finance.ethereumAddress()),
+        addressIndex: null,
+        createdAt: new Date(base + i * 60_000),
+      });
+    }
+  }
+
+  async function addActiveMember(spaceId: number): Promise<number> {
+    const user = await dataSource.getRepository(User).insert({
+      status: 'ACTIVE',
+    });
+    const userId = user.generatedMaps[0].id as number;
+    await dataSource.getRepository(Member).insert({
+      user: { id: userId },
+      space: { id: spaceId },
+      name: faker.person.firstName(),
+      role: 'MEMBER',
+      status: 'ACTIVE',
+      inviteExpiresAt: null,
+    });
+    return userId;
+  }
+
+  function authPayloadFor(userId: number): AuthPayload {
+    return new AuthPayload(
+      siweAuthPayloadDtoBuilder().with('sub', String(userId)).build(),
+    );
+  }
+
+  function seatsOf<T extends { feature: string }>(result: {
+    entitlements: Array<T>;
+  }): T | undefined {
+    return result.entitlements.find(
+      (entitlement) => entitlement.feature === 'safe_seats',
+    );
+  }
+
   let stampSequence = 0;
   function nextStamp(): Date {
     stampSequence += 1;
@@ -258,16 +382,244 @@ describe('EntitlementsService', () => {
     it('round-trips fixture types through the database and covers every feature type', async () => {
       const features = await dataSource.getRepository(Feature).find();
       const typeByKey = new Map(
-        FEATURES.map((fixture) => [fixture.key, fixture.type]),
+        FEATURE_FIXTURES.map((fixture) => [fixture.key, fixture.type]),
       );
 
-      expect(features).toHaveLength(FEATURES.length);
+      expect(features).toHaveLength(FEATURE_FIXTURES.length);
       for (const feature of features) {
         expect(feature.type).toBe(typeByKey.get(feature.key));
       }
       expect(new Set(features.map((feature) => feature.type))).toStrictEqual(
         new Set(Object.values(FeatureType)),
       );
+    });
+
+    it('covers both metered flavors: stock-counted and event-counted', () => {
+      const metered = FEATURE_FIXTURES.filter(
+        (fixture) => fixture.type === 'metered',
+      );
+
+      expect(
+        metered.filter((fixture) => isStockMeteredFeature(fixture)),
+      ).not.toHaveLength(0);
+      expect(
+        metered.filter((fixture) => !isStockMeteredFeature(fixture)),
+      ).not.toHaveLength(0);
+    });
+  });
+
+  it('publishes every feature key the migrations seed', () => {
+    expect([...seededFeatureKeys].sort()).toStrictEqual(
+      [...FEATURE_KEYS].sort(),
+    );
+  });
+
+  describe('resolveEntitlements', () => {
+    it('resolves the Free branch from catalog defaults when no subscription exists', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 2);
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(result.plan).toBeNull();
+      // One resolved entitlement per catalog row, always.
+      expect(result.entitlements).toHaveLength(FEATURE_FIXTURES.length);
+
+      const byFeature = new Map(
+        result.entitlements.map((entitlement) => [
+          entitlement.feature,
+          entitlement,
+        ]),
+      );
+      expect(byFeature.get('safe_seats')).toStrictEqual({
+        feature: 'safe_seats',
+        type: FeatureType.Metered,
+        enabled: true,
+        quota: FREE_SAFE_SEATS,
+        used: 2,
+        resetsAt: null,
+      });
+      expect(byFeature.get('security_hub')).toStrictEqual({
+        feature: 'security_hub',
+        type: FeatureType.Binary,
+        enabled: false,
+      });
+      expect(byFeature.get('swap_fee_tier')).toStrictEqual({
+        feature: 'swap_fee_tier',
+        type: FeatureType.Value,
+        enabled: true,
+        value: 'free',
+      });
+      // Event-metered on the Free tier: disabled, so no usage is admitted.
+      expect(byFeature.get('sponsored_transactions')).toMatchObject({
+        type: FeatureType.Metered,
+        enabled: false,
+        quota: 0,
+        used: 0,
+      });
+    });
+
+    it('reads event-metered usage from the current period counter', async () => {
+      const spaceId = await createSpace();
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: 7,
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(
+        result.entitlements.find(
+          (entitlement) => entitlement.feature === 'sponsored_transactions',
+        ),
+      ).toMatchObject({ used: 7, quota: 0 });
+    });
+
+    it('resolves the paid branch with Free fallback for unpurchased features', async () => {
+      const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('planId', 'business')
+        .with('planName', 'Business')
+        .with('currentPeriodStart', new Date('2026-07-01T00:00:00Z'))
+        .with('currentPeriodEnd', new Date('2026-08-01T00:00:00Z'))
+        .with('entitlements', [
+          { featureKey: 'safe_seats', enabled: true, quota: 20, value: null },
+          {
+            featureKey: 'security_hub',
+            enabled: true,
+            quota: null,
+            value: null,
+          },
+          {
+            featureKey: 'swap_fee_tier',
+            enabled: true,
+            quota: null,
+            value: 'business',
+          },
+          {
+            featureKey: 'sponsored_transactions',
+            enabled: true,
+            quota: null,
+            value: null,
+          },
+        ])
+        .build();
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [subscription],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(result.plan).toStrictEqual({
+        id: 'business',
+        name: 'Business',
+        cycleEndsAt: new Date('2026-08-01T00:00:00Z'),
+      });
+      const byFeature = new Map(
+        result.entitlements.map((entitlement) => [
+          entitlement.feature,
+          entitlement,
+        ]),
+      );
+      expect(byFeature.get('safe_seats')).toMatchObject({ quota: 20 });
+      expect(byFeature.get('security_hub')).toMatchObject({ enabled: true });
+      expect(byFeature.get('swap_fee_tier')).toMatchObject({
+        value: 'business',
+      });
+      // Unlimited: quota null, and the reset anchors on the billing cycle.
+      expect(byFeature.get('sponsored_transactions')).toMatchObject({
+        quota: null,
+        resetsAt: new Date('2026-08-01T00:00:00Z'),
+      });
+      // Not purchased → Free defaults.
+      expect(byFeature.get('pay_from_safe')).toMatchObject({ enabled: false });
+    });
+
+    it('reports usage over the Free quota without inflating it', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS + 2);
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      // Quota is never inflated; used > quota is legal, and that legal state is
+      // what the endpoint names as over-limit.
+      expect(seatsOf(result)).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: FREE_SAFE_SEATS + 2,
+      });
+    });
+
+    it('reports no over-limit feature when the plan grants an unlimited quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS + 2);
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [
+          materializedSubscriptionBuilder()
+            .with('status', 'active')
+            .with('upstreamSubscriptionId', 'sub_unlimited')
+            .with('entitlements', [
+              {
+                featureKey: 'safe_seats',
+                enabled: true,
+                quota: null,
+                value: null,
+              },
+            ])
+            .build(),
+        ],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(seatsOf(result)).toMatchObject({
+        quota: null,
+        used: FREE_SAFE_SEATS + 2,
+      });
+    });
+
+    it('falls back to the Free quota once the subscription is canceled', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS + 1);
+
+      // Buy a plan above usage, then cancel it.
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [
+          materializedSubscriptionBuilder()
+            .with('status', 'active')
+            .with('upstreamSubscriptionId', 'sub_1')
+            .with('entitlements', [
+              {
+                featureKey: 'safe_seats',
+                enabled: true,
+                quota: 5,
+                value: null,
+              },
+            ])
+            .build(),
+        ],
+      });
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [
+          materializedSubscriptionBuilder()
+            .with('upstreamSubscriptionId', 'sub_1')
+            .with('status', 'canceled')
+            .with('entitlements', null)
+            .build(),
+        ],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(seatsOf(result)).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: 3,
+      });
     });
   });
 
@@ -600,41 +952,44 @@ describe('EntitlementsService', () => {
     it.each([
       ['older than', olderStamp],
       ['equal to', newerStamp],
-    ])('skips, and reports, a payload stamped %s the materialized state', async (_, eventAt) => {
-      const spaceId = await createSpace();
-      const canceled = materializedSubscriptionBuilder()
-        .with('status', 'canceled')
-        .with('entitlements', null)
-        .build();
-      await materializeFromEvent({
-        spaceId,
-        subscription: canceled,
-        eventAt: newerStamp,
-      });
-
-      await expect(
-        materializeFromEvent({
+    ])(
+      'skips, and reports, a payload stamped %s the materialized state',
+      async (_, eventAt) => {
+        const spaceId = await createSpace();
+        const canceled = materializedSubscriptionBuilder()
+          .with('status', 'canceled')
+          .with('entitlements', null)
+          .build();
+        await materializeFromEvent({
           spaceId,
-          subscription: {
-            ...canceled,
-            status: 'active',
-            entitlements: [
-              parsedEntitlementBuilder()
-                .with('featureKey', 'safe_seats')
-                .build(),
-            ],
-          },
-          eventAt,
-        }),
-      ).resolves.toBe(false);
+          subscription: canceled,
+          eventAt: newerStamp,
+        });
 
-      const [persisted] = await getSubscriptions();
-      expect(persisted).toMatchObject({
-        status: 'canceled',
-        lastEventAt: newerStamp,
-      });
-      expect(persisted.entitlements).toStrictEqual([]);
-    });
+        await expect(
+          materializeFromEvent({
+            spaceId,
+            subscription: {
+              ...canceled,
+              status: 'active',
+              entitlements: [
+                parsedEntitlementBuilder()
+                  .with('featureKey', 'safe_seats')
+                  .build(),
+              ],
+            },
+            eventAt,
+          }),
+        ).resolves.toBe(false);
+
+        const [persisted] = await getSubscriptions();
+        expect(persisted).toMatchObject({
+          status: 'canceled',
+          lastEventAt: newerStamp,
+        });
+        expect(persisted.entitlements).toStrictEqual([]);
+      },
+    );
 
     it('applies re-fetched state an older event triggered, without lowering the mark', async () => {
       const spaceId = await createSpace();
@@ -690,6 +1045,55 @@ describe('EntitlementsService', () => {
         status: 'canceled',
         lastEventAt: newerStamp,
       });
+    });
+  });
+
+  describe('getEntitlements', () => {
+    it('returns the resolved entitlements for a member', async () => {
+      const spaceId = await createSpace();
+      const userId = await addActiveMember(spaceId);
+
+      const result = await service.getEntitlements({
+        spaceId,
+        authPayload: authPayloadFor(userId),
+      });
+
+      expect(result.plan).toBeNull();
+      expect(seatsOf(result)).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: 0,
+      });
+    });
+
+    // The response is the published contract, so it carries the keys the
+    // OpenAPI enum declares, not every row the catalog happens to hold.
+    it('omits catalog features the contract does not publish', async () => {
+      const spaceId = await createSpace();
+      const userId = await addActiveMember(spaceId);
+
+      const result = await service.getEntitlements({
+        spaceId,
+        authPayload: authPayloadFor(userId),
+      });
+
+      expect(
+        result.entitlements.map((entitlement) => entitlement.feature),
+      ).toStrictEqual([...FEATURE_KEYS]);
+    });
+
+    it('rejects a non-member', async () => {
+      const spaceId = await createSpace();
+      const outsiderUserId = await dataSource
+        .getRepository(User)
+        .insert({ status: 'ACTIVE' })
+        .then((inserted) => inserted.generatedMaps[0].id as number);
+
+      await expect(
+        service.getEntitlements({
+          spaceId,
+          authPayload: authPayloadFor(outsiderUserId),
+        }),
+      ).rejects.toThrow('User is not a member of this workspace');
     });
   });
 });

@@ -14,6 +14,10 @@ import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import {
+  UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+  UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+} from '@/datasources/errors/constants';
+import {
   NetworkRequestError,
   NetworkResponseError,
 } from '@/datasources/network/entities/network.error.entity';
@@ -279,6 +283,44 @@ describe('Collectibles Controller', () => {
         .expect({
           code: 503,
           message: 'Service unavailable',
+        });
+    });
+
+    it('tx service collectibles returns 451 for a banned Safe', async () => {
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainResponse = chainBuilder().with('chainId', chainId).build();
+      const safeResponse = safeBuilder().build();
+      const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
+      const transactionServiceError = new NetworkResponseError(
+        new URL(transactionServiceUrl),
+        new Response(null, { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS }),
+        // The Transaction Service reports the reason under `detail`, a key
+        // HttpErrorFactory does not read; the text itself is discarded
+        { detail: faker.word.words() },
+      );
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({
+              data: rawify(chainResponse),
+              status: 200,
+            });
+          case `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`:
+            return Promise.resolve({ data: rawify(safeResponse), status: 200 });
+          case transactionServiceUrl:
+            return Promise.reject(transactionServiceError);
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v2/chains/${chainId}/safes/${safeAddress}/collectibles`)
+        .expect(UNAVAILABLE_FOR_LEGAL_REASONS_STATUS)
+        .expect({
+          code: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+          message: UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
         });
     });
   });
