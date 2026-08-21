@@ -114,13 +114,23 @@ const GATED_ROUTES: Array<Route> = [
  * Workspace route is always a conscious edit to this list, never a silent
  * side effect of touching a controller.
  *
- * Each of these either only reads, or only changes the caller's own
- * membership. An attacker holding a stolen session gains nothing from them
- * that the session did not already grant, so a challenge would cost every
- * legitimate user a prompt — in the invite responses' case, in the middle of
- * joining a Workspace — to buy nothing.
+ * Most of these only read, or only change the caller's own membership: an
+ * attacker holding a stolen session gains nothing from them that the session
+ * did not already grant, so a challenge would cost every legitimate user a
+ * prompt to buy nothing. The entries where that reasoning does not apply
+ * carry their own justification below.
  */
 const UNGATED_ROUTES: Array<Route> = [
+  // Creating a Workspace has no prior state to tamper with — the caller is the
+  // only member of what they just made — and gating it would put a challenge
+  // in the middle of onboarding. Listed rather than omitted so that gating it
+  // later is a deliberate edit, like every other row here.
+  {
+    name: 'POST /v1/spaces',
+    method: 'post',
+    path: () => '/v1/spaces',
+    body: { name: nameBuilder() },
+  },
   {
     name: 'GET /v1/spaces/:id',
     method: 'get',
@@ -172,6 +182,11 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'delete',
     path: (id) => `/v1/spaces/${id}/members`,
   },
+  // The one admin action on another user here. It re-sends an invitation a
+  // gated `members/invite` call already created: it grants no access, changes
+  // no role, and cannot reach anyone who was not already invited. The worst an
+  // attacker gets is repeat mail to an address an admin already chose to
+  // invite, so the cost of a challenge outweighs it.
   {
     name: 'POST /v1/spaces/:spaceId/members/:userId/invite/renew',
     method: 'post',
