@@ -36,12 +36,7 @@ const mockNetworkService = vi.mocked({
   get: vi.fn(),
 } as MockedObject<INetworkService>);
 
-/**
- * `getBalance` bypasses the cache and calls {@link INetworkService} directly, so
- * its error funnel is not reachable from any route — the no-fee relayer
- * validation path is its only caller.
- */
-describe('SafeBalancesApi getBalance error funnel', () => {
+describe('SafeBalancesApi banned-Safe error funnel', () => {
   let service: SafeBalancesApi;
   const chainId = faker.string.numeric();
   const baseUrl = faker.internet.url({ appendSlash: false });
@@ -72,51 +67,76 @@ describe('SafeBalancesApi getBalance error funnel', () => {
     );
   });
 
-  function getBalance(): Promise<unknown> {
-    return service.getBalance({
-      safeAddress: getAddress(faker.finance.ethereumAddress()),
-      fiatCode: faker.finance.currencyCode(),
-      chain: chainBuilder().with('chainId', chainId).build(),
-      tokenAddress: getAddress(faker.finance.ethereumAddress()),
+  describe.each([
+    {
+      name: 'getBalances',
+      upstream: (): typeof mockDataSource.get => mockDataSource.get,
+      call: (): Promise<unknown> =>
+        service.getBalances({
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          fiatCode: faker.finance.currencyCode(),
+          chain: chainBuilder().with('chainId', chainId).build(),
+        }),
+    } as const,
+    {
+      // Bypasses the cache and calls the network service directly: the no-fee
+      // relayer validation path is its only caller, so no route reaches it
+      name: 'getBalance',
+      upstream: (): typeof mockNetworkService.get => mockNetworkService.get,
+      call: (): Promise<unknown> =>
+        service.getBalance({
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+          fiatCode: faker.finance.currencyCode(),
+          chain: chainBuilder().with('chainId', chainId).build(),
+          tokenAddress: getAddress(faker.finance.ethereumAddress()),
+        }),
+    } as const,
+    {
+      name: 'getCollectibles',
+      upstream: (): typeof mockDataSource.get => mockDataSource.get,
+      call: (): Promise<unknown> =>
+        service.getCollectibles({
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        }),
+    } as const,
+  ])('$name', ({ upstream, call }) => {
+    it('maps a banned-Safe response to a 451 with a dedicated message', async () => {
+      upstream().mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(baseUrl),
+          {
+            status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+          } as Response,
+          // The Transaction Service reports the reason under `detail`, a key
+          // HttpErrorFactory does not read; the text itself is discarded
+          { detail: faker.word.words() },
+        ),
+      );
+
+      await expect(call()).rejects.toThrow(
+        new DataSourceError(
+          UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+          UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
+        ),
+      );
     });
-  }
 
-  it('maps a banned-Safe response to a 451 with a dedicated message', async () => {
-    mockNetworkService.get.mockRejectedValueOnce(
-      new NetworkResponseError(
-        new URL(baseUrl),
-        {
-          status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-        } as Response,
-        // The Transaction Service reports the reason under `detail`, a key
-        // HttpErrorFactory does not read; the text itself is discarded
-        { detail: faker.word.words() },
-      ),
-    );
-
-    await expect(getBalance()).rejects.toThrow(
-      new DataSourceError(
-        UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
+    it('forwards the upstream message for any other error status', async () => {
+      const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-      ),
-    );
-  });
+      );
+      const message = faker.word.words();
+      upstream().mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(baseUrl),
+          { status: statusCode } as Response,
+          { message },
+        ),
+      );
 
-  it('forwards the upstream message for any other error status', async () => {
-    const statusCode = errorStatusCodeExcluding(
-      UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-    );
-    const message = faker.word.words();
-    mockNetworkService.get.mockRejectedValueOnce(
-      new NetworkResponseError(
-        new URL(baseUrl),
-        { status: statusCode } as Response,
-        { message },
-      ),
-    );
-
-    await expect(getBalance()).rejects.toThrow(
-      new DataSourceError(message, statusCode),
-    );
+      await expect(call()).rejects.toThrow(
+        new DataSourceError(message, statusCode),
+      );
+    });
   });
 });
