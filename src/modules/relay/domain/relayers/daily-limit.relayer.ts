@@ -12,6 +12,7 @@ import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eli
 import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class DailyLimitRelayer implements IRelayer {
@@ -47,7 +48,7 @@ export class DailyLimitRelayer implements IRelayer {
     data: Hex;
     gasLimit: bigint | null;
     safeTxHash?: Hex;
-  }): Promise<Relay> {
+  }): Promise<Raw<Relay>> {
     const relayAddresses =
       await this.limitAddressesMapper.getLimitAddresses(args);
 

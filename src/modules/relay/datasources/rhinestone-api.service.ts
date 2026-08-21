@@ -32,6 +32,7 @@ import {
   type RhinestoneTaskStatusResponse,
   RhinestoneTaskStatusResponseSchema,
 } from '@/modules/relay/domain/entities/relay-task-status.entity';
+import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class RhinestoneApi implements IRelayApi {
@@ -94,7 +95,7 @@ export class RhinestoneApi implements IRelayApi {
     to: Address;
     data: string;
     safeTxHash?: Hex;
-  }): Promise<Relay> {
+  }): Promise<Raw<Relay>> {
     try {
       const { data } = await this.networkService.post<RhinestoneRelayResponse>({
         url: `${this.baseUri}/safe-transactions`,
@@ -109,7 +110,7 @@ export class RhinestoneApi implements IRelayApi {
         },
       });
       const response = RhinestoneRelayResponseSchema.parse(data);
-      return { taskId: response.taskId };
+      return rawify({ taskId: response.taskId });
     } catch (error) {
       this.loggingService.error(
         `Error relaying transaction for chain ${args.chainId}: ${this.formatError(error)}`,
@@ -124,7 +125,7 @@ export class RhinestoneApi implements IRelayApi {
   async getTaskStatus(args: {
     chainId: string;
     taskId: string;
-  }): Promise<RelayTaskStatus> {
+  }): Promise<Raw<RelayTaskStatus>> {
     try {
       const url = `${this.baseUri}/safe-transactions/${encodeURIComponent(args.taskId)}/status`;
       const { data } =
@@ -136,14 +137,14 @@ export class RhinestoneApi implements IRelayApi {
         });
 
       const response = RhinestoneTaskStatusResponseSchema.parse(data);
-      return {
+      return rawify({
         chainId: args.chainId,
         id: response.taskId,
         status: response.status,
         receipt: response.transactionHash
           ? { transactionHash: response.transactionHash }
           : undefined,
-      };
+      });
     } catch (error) {
       this.loggingService.error(
         `Error getting task status ${args.taskId} for chain ${args.chainId}: ${this.formatError(error)}`,

@@ -3,8 +3,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
+import {
+  type Relay,
+  RelaySchema,
+} from '@/modules/relay/domain/entities/relay.entity';
+import {
+  type RelayTaskStatus,
+  RelayTaskStatusSchema,
+} from '@/modules/relay/domain/entities/relay-task-status.entity';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 
 @Injectable()
@@ -26,20 +32,22 @@ export class RelayRepository {
     acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
     const { relayer } = await this.chainsRepository.getChain(args.chainId);
-    return this.relayManager
+    const relay = await this.relayManager
       .getRelayer(relayer?.type ?? null, args.data)
       .relay({
         ...args,
         simulationEnabled:
           relayer?.enableTenderlySimulationBeforeRelay ?? false,
       });
+    return RelaySchema.parse(relay);
   }
 
-  getTaskStatus(args: {
+  async getTaskStatus(args: {
     chainId: string;
     taskId: string;
   }): Promise<RelayTaskStatus> {
-    return this.relayApi.getTaskStatus(args);
+    const taskStatus = await this.relayApi.getTaskStatus(args);
+    return RelayTaskStatusSchema.parse(taskStatus);
   }
 
   async getRelaysRemaining(args: {

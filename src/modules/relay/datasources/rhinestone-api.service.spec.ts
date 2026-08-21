@@ -105,7 +105,7 @@ describe('RhinestoneApi', () => {
 
       const actual = await target.relay({ chainId, to, data, safeTxHash });
 
-      expect(actual).toStrictEqual({ taskId });
+      expect(actual).toStrictEqual(rawify({ taskId }));
       expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: `${baseUri}/safe-transactions`,
         data: { chainId: Number(chainId), to, data, safeTxHash },
@@ -125,7 +125,7 @@ describe('RhinestoneApi', () => {
 
       const actual = await target.relay({ chainId, to, data });
 
-      expect(actual).toStrictEqual({ taskId });
+      expect(actual).toStrictEqual(rawify({ taskId }));
       expect(mockNetworkService.post).toHaveBeenCalledWith({
         url: `${baseUri}/safe-transactions`,
         data: { chainId: Number(chainId), to, data, safeTxHash: undefined },
@@ -182,12 +182,14 @@ describe('RhinestoneApi', () => {
 
       const actual = await target.getTaskStatus({ chainId, taskId });
 
-      expect(actual).toStrictEqual({
-        chainId,
-        id: taskId,
-        status: 200,
-        receipt: { transactionHash },
-      });
+      expect(actual).toStrictEqual(
+        rawify({
+          chainId,
+          id: taskId,
+          status: 200,
+          receipt: { transactionHash },
+        }),
+      );
       expect(mockNetworkService.get).toHaveBeenCalledWith({
         url: `${baseUri}/safe-transactions/${taskId}/status`,
         networkRequest: { headers: { 'x-api-key': apiKey } },
@@ -204,12 +206,14 @@ describe('RhinestoneApi', () => {
 
       const actual = await target.getTaskStatus({ chainId, taskId });
 
-      expect(actual).toStrictEqual({
-        chainId,
-        id: taskId,
-        status: 100,
-        receipt: undefined,
-      });
+      expect(actual).toStrictEqual(
+        rawify({
+          chainId,
+          id: taskId,
+          status: 100,
+          receipt: undefined,
+        }),
+      );
     });
 
     it('should forward errors from the relay provider', async () => {
