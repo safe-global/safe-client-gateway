@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { ParsedEntitlement } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
@@ -36,10 +35,10 @@ export function hasFeaturePackageMetadata(
  */
 export function mapFeaturePackage(args: {
   metadata: StripeMetadata | null | undefined;
-  featureTypeByKey: Map<FeatureKey, FeatureType>;
+  featureTypeByKey: Map<string, FeatureType>;
   onWarning: (message: string) => void;
 }): Array<ParsedEntitlement> {
-  const packageByKey = new Map<FeatureKey, ParsedEntitlement>();
+  const packageByKey = new Map<string, ParsedEntitlement>();
 
   for (const [metadataKey, rawValue] of Object.entries(args.metadata ?? {})) {
     if (!metadataKey.startsWith(FEATURE_METADATA_PREFIX)) {

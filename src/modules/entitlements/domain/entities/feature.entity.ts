@@ -2,7 +2,18 @@
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 
-export type FeatureKey = string;
+/**
+ * The catalog keys this API publishes, as an OpenAPI enum. The `features` table
+ * is data and its `key` column a plain string, so the response is narrowed to
+ * this list and a seeded-but-unpublished key never ships.
+ */
+export const FEATURE_KEYS = ['safe_seats'] as const;
+
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+export function isFeatureKey(key: string): key is FeatureKey {
+  return (FEATURE_KEYS as ReadonlyArray<string>).includes(key);
+}
 
 export enum FeatureType {
   Binary = 'binary',

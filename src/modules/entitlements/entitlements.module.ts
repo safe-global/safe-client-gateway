@@ -10,15 +10,17 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { UsersModule } from '@/modules/users/users.module';
 
 /**
- * Routes layer of the entitlements feature: hosts `EntitlementsService` and
+ * Service layer of the entitlements feature: `EntitlementsService` and
  * `SubscriptionSyncService` (consumed, via `ISubscriptionSyncService`, by
- * `BillingModule`'s webhook handler).
+ * `BillingModule`'s webhook handler). The endpoint lives in
+ * `EntitlementsRoutesModule`, which is what `FF_USERS` gates.
  *
- * `EntitlementsService` needs `ISpacesRepository` (from `SpacesModule`) to
- * check a workspace exists before materializing its subscription state —
- * hence the `forwardRef` `EntitlementsRepositoryModule` itself cannot take,
- * since it must stay acyclic (it's a dependency of `SpacesModule`); this
- * module sits above that layer and can afford the cycle.
+ * `EntitlementsService` needs `ISpacesRepository`/`ISpaceSafesRepository`
+ * (from `SpacesModule`) and `IMembersRepository` (from `UsersModule`) for
+ * `assertMember` — hence the `forwardRef`s `EntitlementsRepositoryModule`
+ * itself cannot take, since it must stay acyclic (it's a dependency of
+ * `SpacesModule`/`UsersModule`); this module sits above that layer and can
+ * afford the cycle.
  */
 @Module({
   imports: [
@@ -33,6 +35,6 @@ import { UsersModule } from '@/modules/users/users.module';
     SubscriptionSyncService,
     { provide: ISubscriptionSyncService, useExisting: SubscriptionSyncService },
   ],
-  exports: [ISubscriptionSyncService],
+  exports: [EntitlementsService, ISubscriptionSyncService],
 })
 export class EntitlementsModule {}
