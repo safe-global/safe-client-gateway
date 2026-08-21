@@ -185,12 +185,14 @@ describe('RhinestoneApi', () => {
       const chainId = faker.string.numeric();
       const to = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Hex;
+      const status = faker.internet.httpStatusCode({ types: ['clientError'] });
+      const statusText = faker.lorem.words();
       const message = faker.lorem.sentence();
       const traceId = faker.string.hexadecimal({ length: 32, prefix: '' });
       mockNetworkService.post.mockRejectedValue(
         new NetworkResponseError(
           new URL(`${baseUri}/safe-transactions`),
-          { status: 400, statusText: 'Bad Request' } as Response,
+          { status, statusText } as Response,
           { errors: [{ message }], traceId },
         ),
       );
@@ -198,83 +200,7 @@ describe('RhinestoneApi', () => {
       // The provider's reason is a diagnostic for our logs only - clients get
       // the generic HttpErrorFactory message, never the upstream detail.
       await expect(target.relay({ chainId, to, data })).rejects.toThrow(
-        new DataSourceError('An error occurred', 400),
-      );
-    });
-
-    it('should not log the context of a provider error', async () => {
-      const chainId = faker.string.numeric();
-      const to = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as Hex;
-      const message = faker.lorem.sentence();
-      const contextAddress = getAddress(faker.finance.ethereumAddress());
-      mockNetworkService.post.mockRejectedValue(
-        new NetworkResponseError(
-          new URL(`${baseUri}/safe-transactions`),
-          { status: 400, statusText: 'Bad Request' } as Response,
-          {
-            errors: [
-              {
-                message,
-                context: {
-                  chainId: Number(chainId),
-                  address: contextAddress,
-                },
-              },
-            ],
-          },
-        ),
-      );
-
-      await expect(target.relay({ chainId, to, data })).rejects.toThrow(
-        DataSourceError,
-      );
-      // Asserting the whole line: `context` is absent, not merely unasserted.
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
-        `Error relaying transaction for chain ${chainId}: status=400 Bad Request upstreamErrors="${message}"`,
-      );
-    });
-
-    it('should collapse newlines and cap the length of a provider error message', async () => {
-      const chainId = faker.string.numeric();
-      const to = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as Hex;
-      const injected = faker.lorem.word();
-      const message = `${'a'.repeat(250)}\n${injected}`;
-      mockNetworkService.post.mockRejectedValue(
-        new NetworkResponseError(
-          new URL(`${baseUri}/safe-transactions`),
-          { status: 400, statusText: 'Bad Request' } as Response,
-          { errors: [{ message }] },
-        ),
-      );
-
-      await expect(target.relay({ chainId, to, data })).rejects.toThrow(
-        DataSourceError,
-      );
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
-        `Error relaying transaction for chain ${chainId}: status=400 Bad Request upstreamErrors="${'a'.repeat(200)}…"`,
-      );
-    });
-
-    it('should cap the number of provider error messages logged', async () => {
-      const chainId = faker.string.numeric();
-      const to = getAddress(faker.finance.ethereumAddress());
-      const data = faker.string.hexadecimal() as Hex;
-      const messages = Array.from({ length: 5 }, () => faker.lorem.word());
-      mockNetworkService.post.mockRejectedValue(
-        new NetworkResponseError(
-          new URL(`${baseUri}/safe-transactions`),
-          { status: 400, statusText: 'Bad Request' } as Response,
-          { errors: messages.map((message) => ({ message })) },
-        ),
-      );
-
-      await expect(target.relay({ chainId, to, data })).rejects.toThrow(
-        DataSourceError,
-      );
-      expect(mockLoggingService.error).toHaveBeenCalledWith(
-        `Error relaying transaction for chain ${chainId}: status=400 Bad Request upstreamErrors="${messages.slice(0, 3).join('; ')}"`,
+        new DataSourceError('An error occurred', status),
       );
     });
 

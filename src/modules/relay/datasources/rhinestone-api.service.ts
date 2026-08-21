@@ -9,10 +9,6 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import {
-  NetworkRequestError,
-  NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
-import {
   type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
@@ -21,8 +17,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { RhinestoneErrorResponseSchema } from '@/modules/relay/datasources/schemas/rhinestone-error.schema';
+import { formatRhinestoneError } from '@/modules/relay/datasources/helpers/rhinestone-error.helper';
 import {
   type Relay,
   type RhinestoneRelayResponse,
@@ -34,19 +29,6 @@ import {
   RhinestoneTaskStatusResponseSchema,
 } from '@/modules/relay/domain/entities/relay-task-status.entity';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
-
-/**
- * Cap on how many of a Rhinestone error body's `errors[]` entries are copied
- * into a log line. Rhinestone can report several validation failures at once;
- * the first few carry the diagnosis, the rest would only bloat the entry.
- */
-const MAX_LOGGED_UPSTREAM_ERRORS = 3;
-
-/**
- * Per-message character cap for upstream-controlled strings copied into a log
- * line, so a long or hostile body cannot flood log storage.
- */
-const MAX_LOGGED_UPSTREAM_MESSAGE_LENGTH = 200;
 
 @Injectable()
 export class RhinestoneApi implements IRelayApi {
@@ -69,76 +51,6 @@ export class RhinestoneApi implements IRelayApi {
 
   private headers(): Record<string, string> {
     return { 'x-api-key': this.apiKey };
-  }
-
-  /**
-   * Builds a log-friendly error string.
-   *
-   * Both network error classes extend {@link Error} without setting a message,
-   * so `asError(error).message` alone is empty and undiagnosable. This surfaces
-   * the HTTP status (or the target URL, when no response was received), plus
-   * the whitelisted diagnostic fields of the response body — see
-   * {@link describeUpstreamError} for what is and is not copied out of it.
-   */
-  private formatError(error: unknown): string {
-    if (error instanceof NetworkResponseError) {
-      return `status=${error.response.status} ${error.response.statusText}${this.describeUpstreamError(error.data)}`;
-    }
-    if (error instanceof NetworkRequestError) {
-      return `no response received from ${error.url}`;
-    }
-    return asError(error).message;
-  }
-
-  /**
-   * Extracts the loggable part of a Rhinestone error body.
-   *
-   * Rhinestone nests its rejection reason under `errors[].message`, which
-   * {@link HttpErrorFactory} cannot see (it reads only `data.message`), so
-   * without this the reason — e.g. "`to` is not a canonical Safe proxy
-   * factory" — is discarded and the failure is undiagnosable from logs alone.
-   *
-   * The body is not logged wholesale: only `errors[].message` and `traceId`
-   * are copied, per the structured-logging rule in `docs/agents/security.md`.
-   * The `errors[].context` object is dropped — it echoes back request details
-   * (chain ID, addresses) that do not belong in log storage. Messages are
-   * whitespace-collapsed and length-capped so an upstream-controlled string
-   * cannot forge additional log lines or flood a log entry.
-   *
-   * @returns a leading-space-prefixed fragment ready to append to a log line,
-   * or an empty string when the body carries nothing loggable.
-   */
-  private describeUpstreamError(data: unknown): string {
-    const parsed = RhinestoneErrorResponseSchema.safeParse(data);
-    if (!parsed.success) {
-      return '';
-    }
-
-    const messages = (parsed.data.errors ?? [])
-      .slice(0, MAX_LOGGED_UPSTREAM_ERRORS)
-      .map((error) => this.truncateForLog(error.message))
-      .filter((message) => message.length > 0);
-
-    const fragments: Array<string> = [];
-    if (messages.length > 0) {
-      fragments.push(`upstreamErrors="${messages.join('; ')}"`);
-    }
-    if (parsed.data.traceId) {
-      fragments.push(`traceId=${this.truncateForLog(parsed.data.traceId)}`);
-    }
-
-    return fragments.length > 0 ? ` ${fragments.join(' ')}` : '';
-  }
-
-  /**
-   * Collapses whitespace (including newlines, which would otherwise let an
-   * upstream string forge log lines) and caps length.
-   */
-  private truncateForLog(value: string): string {
-    const collapsed = value.replace(/\s+/g, ' ').trim();
-    return collapsed.length > MAX_LOGGED_UPSTREAM_MESSAGE_LENGTH
-      ? `${collapsed.slice(0, MAX_LOGGED_UPSTREAM_MESSAGE_LENGTH)}…`
-      : collapsed;
   }
 
   /**
@@ -178,7 +90,7 @@ export class RhinestoneApi implements IRelayApi {
       return rawify({ taskId: response.taskId });
     } catch (error) {
       this.loggingService.error(
-        `Error relaying transaction for chain ${args.chainId}: ${this.formatError(error)}`,
+        `Error relaying transaction for chain ${args.chainId}: ${formatRhinestoneError(error)}`,
       );
       throw this.httpErrorFactory.from(error);
     }
@@ -212,7 +124,7 @@ export class RhinestoneApi implements IRelayApi {
       });
     } catch (error) {
       this.loggingService.error(
-        `Error getting task status ${args.taskId} for chain ${args.chainId}: ${this.formatError(error)}`,
+        `Error getting task status ${args.taskId} for chain ${args.chainId}: ${formatRhinestoneError(error)}`,
       );
       throw this.httpErrorFactory.from(error);
     }
