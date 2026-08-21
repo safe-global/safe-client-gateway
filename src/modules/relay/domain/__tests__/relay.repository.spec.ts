@@ -9,6 +9,7 @@ import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import { relayTaskStatusBuilder } from '@/modules/relay/domain/entities/__tests__/relay-task-status.builder';
 import type { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { RelayRepository } from '@/modules/relay/domain/relay.repository';
@@ -94,14 +95,9 @@ describe('RelayRepository', () => {
   describe('getTaskStatus', () => {
     it('should return the task status parsed against RelayTaskStatusSchema', async () => {
       const chainId = faker.string.numeric();
-      const taskStatus = {
-        chainId,
-        id: faker.string.alphanumeric({ length: 73 }),
-        status: faker.number.int({ min: 100, max: 599 }),
-        receipt: {
-          transactionHash: faker.string.hexadecimal({ length: 64 }),
-        },
-      };
+      const taskStatus = relayTaskStatusBuilder()
+        .with('chainId', chainId)
+        .build();
       mockRelayApi.getTaskStatus.mockResolvedValue(rawify(taskStatus));
 
       const actual = await target.getTaskStatus({
@@ -117,15 +113,17 @@ describe('RelayRepository', () => {
     });
 
     it('should throw if the datasource result does not match RelayTaskStatusSchema', async () => {
-      const chainId = faker.string.numeric();
-      const taskId = faker.string.alphanumeric({ length: 73 });
+      const taskStatus = relayTaskStatusBuilder().build();
       mockRelayApi.getTaskStatus.mockResolvedValue(
-        rawify({ chainId, id: taskId, status: faker.string.sample() }),
+        rawify({ ...taskStatus, status: faker.string.sample() }),
       );
 
-      await expect(target.getTaskStatus({ chainId, taskId })).rejects.toThrow(
-        ZodError,
-      );
+      await expect(
+        target.getTaskStatus({
+          chainId: taskStatus.chainId,
+          taskId: taskStatus.id,
+        }),
+      ).rejects.toThrow(ZodError);
     });
   });
 });
