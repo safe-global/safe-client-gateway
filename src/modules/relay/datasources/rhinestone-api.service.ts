@@ -156,7 +156,6 @@ export class RhinestoneApi implements IRelayApi {
   async getRelayCount(args: {
     chainId: string;
     address: Address;
-    // TODO: Change to Raw when cache service is migrated
   }): Promise<number> {
     const cacheDir = CacheRouter.getRelayCacheDir(args);
     const count = await this.cacheService.hGet(cacheDir);
