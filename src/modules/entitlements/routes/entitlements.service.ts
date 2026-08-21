@@ -9,11 +9,15 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import {
-  FeatureKeySchema,
   FeatureType,
+  isFeatureKey,
 } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type {
+  MaterializedSubscription,
+  ParsedEntitlement,
+} from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
@@ -94,11 +98,19 @@ export class EntitlementsService {
       now,
     });
 
+    const purchasedByFeatureId = new Map(
+      (activeSubscription?.entitlements ?? []).map((entitlement) => [
+        entitlement.feature.id,
+        entitlement,
+      ]),
+    );
+
     const entitlements = features.map((feature) =>
       this.resolveFeature({
         feature,
         spaceCreatedAt,
         activeSubscription,
+        purchased: purchasedByFeatureId.get(feature.id),
         used: usedByFeatureId.get(feature.id) ?? 0,
         now,
       }),
@@ -206,7 +218,11 @@ export class EntitlementsService {
     await this.spacesRepository.findUuidById(args.spaceId);
 
     const withPackage = args.subscriptions.filter(
-      (subscription) => subscription.entitlements !== null,
+      (
+        subscription,
+      ): subscription is MaterializedSubscription & {
+        entitlements: Array<ParsedEntitlement>;
+      } => subscription.entitlements !== null,
     );
     if (withPackage.length > 1) {
       throw new Error(
@@ -299,7 +315,7 @@ export class EntitlementsService {
           }
         }
 
-        if (activeSubscriptionId !== null && packaged?.entitlements != null) {
+        if (activeSubscriptionId !== null && packaged !== undefined) {
           // Full replace: reprocessing the same upstream state yields the same
           // rows (idempotent by construction).
           await this.subscriptionEntitlementsRepository.deleteEntitlementsBySubscriptionId(
@@ -358,15 +374,14 @@ export class EntitlementsService {
     feature: Feature;
     spaceCreatedAt: Date;
     activeSubscription: SpaceSubscription | null;
+    purchased: SubscriptionEntitlement | undefined;
     used: number;
     now: Date;
   }): ResolvedEntitlement {
     const { feature, spaceCreatedAt, activeSubscription, used, now } = args;
     const effective = effectiveEntitlement({
       feature,
-      purchased: activeSubscription?.entitlements?.find(
-        (entitlement) => entitlement.feature.id === feature.id,
-      ),
+      purchased: args.purchased,
     });
 
     switch (feature.type) {
@@ -491,12 +506,11 @@ export class EntitlementsService {
     const unpublished: Array<string> = [];
     const entitlements = resolved.entitlements.flatMap<EntitlementItem>(
       (entitlement) => {
-        const feature = FeatureKeySchema.safeParse(entitlement.feature);
-        if (!feature.success) {
+        if (!isFeatureKey(entitlement.feature)) {
           unpublished.push(entitlement.feature);
           return [];
         }
-        return [{ ...entitlement, feature: feature.data }];
+        return [{ ...entitlement, feature: entitlement.feature }];
       },
     );
 

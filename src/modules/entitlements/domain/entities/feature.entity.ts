@@ -11,7 +11,9 @@ export const FEATURE_KEYS = ['safe_seats'] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 
-export const FeatureKeySchema = z.enum(FEATURE_KEYS);
+export function isFeatureKey(key: string): key is FeatureKey {
+  return (FEATURE_KEYS as ReadonlyArray<string>).includes(key);
+}
 
 export enum FeatureType {
   Binary = 'binary',
