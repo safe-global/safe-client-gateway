@@ -9,7 +9,10 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import {
+  FeatureKeySchema,
+  FeatureType,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type {
   ResolvedEntitlement,
@@ -30,7 +33,10 @@ import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repo
 import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
 import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
 import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import type { EntitlementsResponse } from '@/modules/entitlements/routes/entities/entitlements-response.entity';
+import type {
+  EntitlementItem,
+  EntitlementsResponse,
+} from '@/modules/entitlements/routes/entities/entitlements-response.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -473,6 +479,45 @@ export class EntitlementsService {
     safe_seats: (spaceId) => this.spaceSafesRepository.countBySpaceId(spaceId),
   };
 
+  /**
+   * Maps the resolved state onto the published contract. `features.key` is a
+   * plain column seeded by migration while the response documents a closed
+   * `FeatureKey` enum, so a key the contract does not declare is left out
+   * rather than served outside it.
+   */
+  private toEntitlementsResponse(
+    resolved: ResolvedEntitlements,
+  ): EntitlementsResponse {
+    const unpublished: Array<string> = [];
+    const entitlements = resolved.entitlements.flatMap<EntitlementItem>(
+      (entitlement) => {
+        const feature = FeatureKeySchema.safeParse(entitlement.feature);
+        if (!feature.success) {
+          unpublished.push(entitlement.feature);
+          return [];
+        }
+        return [{ ...entitlement, feature: feature.data }];
+      },
+    );
+
+    if (unpublished.length > 0) {
+      this.loggingService.warn(
+        `Features seeded but not published, omitted from the response: ${unpublished.join(', ')}`,
+      );
+    }
+
+    return {
+      plan: resolved.plan
+        ? {
+            id: resolved.plan.id,
+            name: resolved.plan.name,
+            cycleEndsAt: resolved.plan.cycleEndsAt,
+          }
+        : null,
+      entitlements,
+    };
+  }
+
   private async getSpaceCreatedAtOrFail(spaceId: Space['id']): Promise<Date> {
     const space = await this.spacesRepository.findOne({
       where: { id: spaceId },
@@ -482,20 +527,5 @@ export class EntitlementsService {
       throw new NotFoundException('Workspace not found.');
     }
     return space.createdAt;
-  }
-
-  private toEntitlementsResponse(
-    resolved: ResolvedEntitlements,
-  ): EntitlementsResponse {
-    return {
-      plan: resolved.plan
-        ? {
-            id: resolved.plan.id,
-            name: resolved.plan.name,
-            cycleEndsAt: resolved.plan.cycleEndsAt,
-          }
-        : null,
-      entitlements: resolved.entitlements,
-    };
   }
 }

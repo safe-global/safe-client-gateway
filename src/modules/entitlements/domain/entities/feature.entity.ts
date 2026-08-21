@@ -3,13 +3,15 @@ import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 
 /**
- * The catalog keys this API publishes, as an OpenAPI enum. Kept in step with
- * the `features` seed migration by hand: a key seeded but missing here is
- * served outside the published contract.
+ * The catalog keys this API publishes, as an OpenAPI enum. The `features` table
+ * is data and its `key` column a plain string, so the response is narrowed to
+ * this list and a seeded-but-unpublished key never ships.
  */
 export const FEATURE_KEYS = ['safe_seats'] as const;
 
-export type FeatureKey = string;
+export type FeatureKey = (typeof FEATURE_KEYS)[number];
+
+export const FeatureKeySchema = z.enum(FEATURE_KEYS);
 
 export enum FeatureType {
   Binary = 'binary',

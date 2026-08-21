@@ -5,10 +5,7 @@ import {
 } from '@/datasources/billing-api/entities/subscription.entity';
 import { fromSecondsTimestamp } from '@/domain/common/utils/time';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import type {
-  FeatureKey,
-  FeatureType,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
   isActiveSubscriptionStatus,
@@ -20,7 +17,7 @@ import {
 } from '@/modules/entitlements/domain/feature-package.mapper';
 
 type MapperArgs = {
-  featureTypeByKey: Map<FeatureKey, FeatureType>;
+  featureTypeByKey: Map<string, FeatureType>;
   onWarning: (message: string) => void;
 };
 

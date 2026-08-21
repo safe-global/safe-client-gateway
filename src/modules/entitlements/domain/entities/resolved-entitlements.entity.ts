@@ -1,8 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type {
-  FeatureKey,
-  FeatureType,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 
 /**
  * The computed entitlement state of a workspace, produced by
@@ -17,7 +14,8 @@ export type ResolvedPlan = {
 };
 
 type ResolvedEntitlementBase = {
-  feature: FeatureKey;
+  /** Any catalog key; the response publishes only `FEATURE_KEYS`. */
+  feature: string;
   /** Whether the plan grants the feature at all. */
   enabled: boolean;
 };

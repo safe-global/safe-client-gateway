@@ -255,22 +255,17 @@ describe('EntitlementsController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body.plan).toBeNull();
-          expect(body.entitlements).toEqual(
-            expect.arrayContaining([
-              expect.objectContaining({
-                feature: 'safe_seats',
-                type: FeatureType.Metered,
-                enabled: true,
-                quota: FREE_SAFE_SEATS,
-                used: 0,
-              }),
-              expect.objectContaining({
-                feature: 'security_hub',
-                type: FeatureType.Binary,
-                enabled: false,
-              }),
-            ]),
-          );
+          // `security_hub` is seeded by the fixtures but absent from
+          // FEATURE_KEYS, so the published contract does not carry it.
+          expect(body.entitlements).toEqual([
+            expect.objectContaining({
+              feature: 'safe_seats',
+              type: FeatureType.Metered,
+              enabled: true,
+              quota: FREE_SAFE_SEATS,
+              used: 0,
+            }),
+          ]);
         });
     });
 

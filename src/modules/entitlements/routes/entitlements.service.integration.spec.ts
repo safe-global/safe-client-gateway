@@ -24,7 +24,6 @@ import {
   materializedSubscriptionBuilder,
   parsedEntitlementBuilder,
 } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import {
   FEATURE_KEYS,
   FeatureType,
@@ -109,7 +108,7 @@ describe('EntitlementsService', () => {
   // the real database so queries and derivation rules are covered end to end.
   let service: EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
-  let seededFeatureKeys: Array<FeatureKey> = [];
+  let seededFeatureKeys: Array<string> = [];
 
   // Not faker: a fixed FAKER_SEED would hand every spec file the same name.
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
@@ -358,7 +357,7 @@ describe('EntitlementsService', () => {
     );
   }
 
-  function seatsOf<T extends { feature: FeatureKey }>(result: {
+  function seatsOf<T extends { feature: string }>(result: {
     entitlements: Array<T>;
   }): T | undefined {
     return result.entitlements.find(
@@ -1101,11 +1100,26 @@ describe('EntitlementsService', () => {
       });
 
       expect(result.plan).toBeNull();
-      expect(result.entitlements).toHaveLength(FEATURE_FIXTURES.length);
       expect(seatsOf(result)).toMatchObject({
         quota: FREE_SAFE_SEATS,
         used: 0,
       });
+    });
+
+    // The response is the published contract, so it carries the keys the
+    // OpenAPI enum declares, not every row the catalog happens to hold.
+    it('omits catalog features the contract does not publish', async () => {
+      const spaceId = await createSpace();
+      const userId = await addMember(spaceId, 'ACTIVE');
+
+      const result = await service.getEntitlements({
+        spaceId,
+        authPayload: authPayloadFor(userId),
+      });
+
+      expect(
+        result.entitlements.map((entitlement) => entitlement.feature),
+      ).toStrictEqual([...FEATURE_KEYS]);
     });
 
     it('rejects a non-member', async () => {
