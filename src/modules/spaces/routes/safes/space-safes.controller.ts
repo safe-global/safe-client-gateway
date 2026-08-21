@@ -32,6 +32,7 @@ import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/dele
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
 import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -80,6 +81,7 @@ export class SpaceSafesController {
       'Access forbidden - user lacks permission to add Safes to this space',
   })
   @Post()
+  @UseGuards(ElevationGuard)
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,
@@ -164,6 +166,7 @@ export class SpaceSafesController {
       'Access forbidden - user lacks permission to remove Safes from this space',
   })
   @Delete()
+  @UseGuards(ElevationGuard)
   @HttpCode(204)
   public async delete(
     @Body(new ValidationPipe(SpaceSafesSchema))

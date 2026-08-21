@@ -13,7 +13,10 @@ import {
   type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import type { IAuth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
+import type {
+  AuthorizationUrlOptions,
+  IAuth0Api,
+} from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import {
   type Auth0AuthenticationMethod,
   Auth0AuthenticationMethodsSchema,
@@ -30,6 +33,12 @@ const ManagementApiTokenResponseSchema = z.object({
 export class Auth0Api implements IAuth0Api {
   private static readonly AUTHORIZATION_CODE_GRANT_TYPE = 'authorization_code';
   private static readonly CLIENT_CREDENTIALS_GRANT_TYPE = 'client_credentials';
+  /**
+   * OpenID Provider Authentication Policy Extension policy asserting that the
+   * end user authenticated with more than one factor.
+   */
+  private static readonly MULTI_FACTOR_ACR_VALUE =
+    'http://schemas.openid.net/pape/policies/2007/06/multi-factor';
   private readonly baseUri: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
@@ -76,8 +85,7 @@ export class Auth0Api implements IAuth0Api {
 
   public getAuthorizationUrl(
     state: string,
-    connection?: string,
-    enroll?: boolean,
+    options: AuthorizationUrlOptions = {},
   ): string {
     const url = new URL('/authorize', this.baseUri);
     url.searchParams.set('response_type', 'code');
@@ -87,15 +95,28 @@ export class Auth0Api implements IAuth0Api {
     url.searchParams.set('state', state);
     url.searchParams.set('audience', this.audience);
 
-    if (connection) {
-      url.searchParams.set('connection', connection);
+    if (options.connection) {
+      url.searchParams.set('connection', options.connection);
     }
 
-    if (enroll) {
+    if (options.enroll) {
       // Signals the tenant's post-login Action (via event.request.query) to
       // challenge an existing factor and then enroll a new authenticator on
       // the hosted pages.
       url.searchParams.set('ext-enroll-otp', 'true');
+    }
+
+    if (options.elevate) {
+      // Step-up authentication. Measured on a dev tenant with
+      // `mfa_policy = "all-applications"`: Auth0 honours this value on its own,
+      // forcing a challenge even on a remembered browser, with no post-login
+      // Action deployed. The Action in terraform-auth0-module is defence in
+      // depth for the case where that policy is relaxed, since Auth0 otherwise
+      // only surfaces the value to Actions as `event.transaction.acr_values`.
+      // Either way the callback requires `amr` to prove a challenge really
+      // happened, so a tenant that ignores this parameter fails closed.
+      // https://auth0.com/docs/secure/multi-factor-authentication/step-up-authentication/configure-step-up-authentication-for-web-apps
+      url.searchParams.set('acr_values', Auth0Api.MULTI_FACTOR_ACR_VALUE);
     }
 
     return url.toString();

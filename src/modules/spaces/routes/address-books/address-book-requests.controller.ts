@@ -38,6 +38,7 @@ import {
 } from '@/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
 import { SpacesAddressBookRequestsRateLimitGuard } from '@/modules/spaces/routes/address-books/guards/spaces-address-book-requests-rate-limit.guard';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -142,7 +143,7 @@ export class AddressBookRequestsController {
     description: 'User is not an admin of this space',
   })
   @Put('/:spaceId/address-book/requests/:requestId/approve')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async approveRequest(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

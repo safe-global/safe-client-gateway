@@ -140,7 +140,7 @@ export class TenderlySimulationApi implements ITenderlySimulationApi {
   }): Promise<TenderlySimulationResult> {
     try {
       // Always use the latest block gas limit as the simulation budget; the
-      // relay request's `gasLimit` is what Gelato will use on-chain and is
+      // relay request's `gasLimit` is what the relay provider will use on-chain and is
       // typically too tight to cover the simulation's overhead (refund path,
       // etc.). Mirrors what the Safe frontend does when no explicit
       // simulation gas budget is supplied.

@@ -36,7 +36,7 @@ Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Cod
 6. Test data comes from builders + faker — no literal fixtures. → [testing.md](docs/agents/testing.md)
 7. Every env var is declared in `configuration.ts` AND `RootConfigurationSchema`; secrets never get fallback defaults. → [configuration-and-flags.md](docs/agents/configuration-and-flags.md)
 8. Cache keys only via `CacheRouter`; TTLs only from config. → [caching-and-performance.md](docs/agents/caching-and-performance.md)
-9. State-changing or caller-scoped routes declare an auth guard; identity comes from signature recovery or a verified JWT, never from client claims. → [security.md](docs/agents/security.md)
+9. State-changing or caller-scoped routes declare an auth guard; identity comes from signature recovery or a verified JWT, never from client claims. Sensitive Workspace mutations additionally declare `ElevationGuard` and are recorded in the gated/ungated tables of `elevation.integration.spec.ts`. → [security.md](docs/agents/security.md)
 10. One error funnel per layer: `HttpErrorFactory`/`DataSourceError` in datasources; domain errors + filters in `domain/`; `HttpExceptionNoLog` for expected rejections. → [api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md)
 
 ## Architecture

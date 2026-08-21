@@ -1568,9 +1568,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantIncomingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantIncomingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -1660,9 +1659,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantOutgoingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantOutgoingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -1874,9 +1872,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantIncomingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantIncomingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -1921,9 +1918,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantOutgoingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantOutgoingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -2181,9 +2177,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantIncomingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantIncomingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -2273,9 +2268,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantOutgoingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantOutgoingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -2487,9 +2481,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantIncomingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantIncomingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },
@@ -2534,9 +2527,8 @@ describe('Transactions History Controller - Imitation Transactions', () => {
                       trusted: imitationToken.trusted,
                       type: 'ERC20',
                       value: (
-                        valueIntolerantOutgoingTransaction
-                          .transfers?.[0] as ERC20Transfer
-                      ).value,
+                        valueIntolerantOutgoingTransaction.transfers as Array<ERC20Transfer>
+                      )[0].value,
                     },
                     type: 'Transfer',
                   },

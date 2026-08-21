@@ -17,7 +17,7 @@ export class RelayDto implements z.infer<typeof RelayDtoSchema> {
   @ApiPropertyOptional({
     type: String,
     nullable: true,
-    description: `Accepted for backward compatibility and validation; not forwarded to the relay provider (Gelato).`,
+    description: `Accepted for backward compatibility and validation; not forwarded to the relay provider.`,
   })
   gasLimit: bigint | null;
 

@@ -35,15 +35,12 @@ describe('Status Entities', () => {
       expect(() => RecipientStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each([
-      'INVALID',
-      '',
-      null,
-      undefined,
-      123,
-    ] as const)('should reject invalid value = %s', (invalidValue) => {
-      expect(() => RecipientStatusSchema.parse(invalidValue)).toThrow();
-    });
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => RecipientStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('BridgeStatus', () => {
@@ -59,15 +56,12 @@ describe('Status Entities', () => {
       expect(() => BridgeStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each([
-      'INVALID',
-      '',
-      null,
-      undefined,
-      123,
-    ] as const)('should reject invalid value = %s', (invalidValue) => {
-      expect(() => BridgeStatusSchema.parse(invalidValue)).toThrow();
-    });
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => BridgeStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('ContractStatus', () => {
@@ -87,15 +81,12 @@ describe('Status Entities', () => {
       expect(() => ContractStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each([
-      'INVALID',
-      '',
-      null,
-      undefined,
-      123,
-    ] as const)('should reject invalid value = %s', (invalidValue) => {
-      expect(() => ContractStatusSchema.parse(invalidValue)).toThrow();
-    });
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => ContractStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('ThreatStatus', () => {
@@ -113,15 +104,12 @@ describe('Status Entities', () => {
       expect(() => ThreatStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each([
-      'INVALID',
-      '',
-      null,
-      undefined,
-      123,
-    ] as const)('should reject invalid value = %s', (invalidValue) => {
-      expect(() => ThreatStatusSchema.parse(invalidValue)).toThrow();
-    });
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => ThreatStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('DeadlockStatus', () => {
@@ -135,15 +123,12 @@ describe('Status Entities', () => {
       expect(() => DeadlockStatusSchema.parse(value)).not.toThrow();
     });
 
-    it.each([
-      'INVALID',
-      '',
-      null,
-      undefined,
-      123,
-    ] as const)('should reject invalid value = %s', (invalidValue) => {
-      expect(() => DeadlockStatusSchema.parse(invalidValue)).toThrow();
-    });
+    it.each(['INVALID', '', null, undefined, 123] as const)(
+      'should reject invalid value = %s',
+      (invalidValue) => {
+        expect(() => DeadlockStatusSchema.parse(invalidValue)).toThrow();
+      },
+    );
   });
 
   describe('cross-entity consistency', () => {

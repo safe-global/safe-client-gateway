@@ -952,41 +952,44 @@ describe('EntitlementsService', () => {
     it.each([
       ['older than', olderStamp],
       ['equal to', newerStamp],
-    ])('skips, and reports, a payload stamped %s the materialized state', async (_, eventAt) => {
-      const spaceId = await createSpace();
-      const canceled = materializedSubscriptionBuilder()
-        .with('status', 'canceled')
-        .with('entitlements', null)
-        .build();
-      await materializeFromEvent({
-        spaceId,
-        subscription: canceled,
-        eventAt: newerStamp,
-      });
-
-      await expect(
-        materializeFromEvent({
+    ])(
+      'skips, and reports, a payload stamped %s the materialized state',
+      async (_, eventAt) => {
+        const spaceId = await createSpace();
+        const canceled = materializedSubscriptionBuilder()
+          .with('status', 'canceled')
+          .with('entitlements', null)
+          .build();
+        await materializeFromEvent({
           spaceId,
-          subscription: {
-            ...canceled,
-            status: 'active',
-            entitlements: [
-              parsedEntitlementBuilder()
-                .with('featureKey', 'safe_seats')
-                .build(),
-            ],
-          },
-          eventAt,
-        }),
-      ).resolves.toBe(false);
+          subscription: canceled,
+          eventAt: newerStamp,
+        });
 
-      const [persisted] = await getSubscriptions();
-      expect(persisted).toMatchObject({
-        status: 'canceled',
-        lastEventAt: newerStamp,
-      });
-      expect(persisted.entitlements).toStrictEqual([]);
-    });
+        await expect(
+          materializeFromEvent({
+            spaceId,
+            subscription: {
+              ...canceled,
+              status: 'active',
+              entitlements: [
+                parsedEntitlementBuilder()
+                  .with('featureKey', 'safe_seats')
+                  .build(),
+              ],
+            },
+            eventAt,
+          }),
+        ).resolves.toBe(false);
+
+        const [persisted] = await getSubscriptions();
+        expect(persisted).toMatchObject({
+          status: 'canceled',
+          lastEventAt: newerStamp,
+        });
+        expect(persisted.entitlements).toStrictEqual([]);
+      },
+    );
 
     it('applies re-fetched state an older event triggered, without lowering the mark', async () => {
       const spaceId = await createSpace();

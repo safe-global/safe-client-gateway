@@ -21,6 +21,15 @@ export const SiweAuthPayloadDtoSchema = z.object({
 export const OidcAuthPayloadDtoSchema = z.object({
   auth_method: z.literal(AuthMethod.Oidc),
   sub: NumericStringSchema,
+  /**
+   * Epoch seconds at which the provider last challenged a second factor for
+   * this session, stamped from the gateway's own clock at the OIDC callback.
+   *
+   * Deliberately not Auth0's `auth_time`: that claim records when the SSO
+   * session was established, and a step-up challenge inside an existing
+   * session does not advance it — so it cannot express step-up freshness.
+   */
+  mfa_verified_at: z.number().int().nonnegative().optional(),
 });
 
 export const AuthPayloadDtoSchema = z.discriminatedUnion('auth_method', [
@@ -65,6 +74,7 @@ export class AuthPayload {
   auth_method?: (typeof AuthMethod)[keyof typeof AuthMethod];
   chain_id?: string;
   signer_address?: Address;
+  mfa_verified_at?: number;
 
   constructor(props?: AuthPayloadDto) {
     this.sub = props?.sub;
@@ -73,6 +83,29 @@ export class AuthPayload {
       this.chain_id = props.chain_id;
       this.signer_address = props.signer_address;
     }
+    if (props?.auth_method === AuthMethod.Oidc) {
+      this.mfa_verified_at = props.mfa_verified_at;
+    }
+  }
+
+  /**
+   * Whether a second factor was presented recently enough to authorise a
+   * sensitive action.
+   *
+   * @param maxAgeSeconds - Length of the elevation window.
+   */
+  hasFreshMfa(maxAgeSeconds: number): boolean {
+    if (this.mfa_verified_at === undefined) {
+      return false;
+    }
+
+    const ageSeconds = Math.floor(Date.now() / 1_000) - this.mfa_verified_at;
+
+    // Unlike a SIWE message timestamp, this one is written by the gateway
+    // itself at the OIDC callback and never supplied by the client, so there
+    // is no client clock to disagree with. A stamp in the future can only come
+    // from our own clock, and is treated as stale rather than trusted.
+    return ageSeconds >= 0 && ageSeconds <= maxAgeSeconds;
   }
 
   /**

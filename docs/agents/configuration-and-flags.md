@@ -54,7 +54,7 @@ An entry that lingers in `.env.sample.json` after its variable leaves the code o
 
 **Canonical example:** `FF_DEBUG_LOGS`/`FF_CONFIG_HOOKS_DEBUG_LOGS` map to `features.debugLogs`/`features.configHooksDebugLogs`, both read via `getOrThrow<boolean>` into `private readonly` fields in `src/datasources/cache/cache.first.data.source.ts`'s constructor — the read-pattern rule above, namespaced under `features`.
 
-The owner-plus-condition comment applies to flags added from this guide onward — no mapping in `configuration.ts` carries the full comment yet, so there is no live example to copy. The nearest existing precedent is the entry for `FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST`, commented `// TODO: Remove this feature flag once the feature is established.` — a condition with no owner attached. A new flag's comment states both, and the first one to land becomes the canonical example.
+The owner-plus-condition comment applies to flags added from this guide onward. The live example is `mfaStepUp` in `src/config/entities/configuration.ts`, which names Workspace 2FA (WA-2725) as owner and the wallet-monorepo client work (WA-2726) shipping as the condition for removing both the flag and the branch it gates. Copy that shape. The older entry for `FF_TRUSTED_FOR_DELEGATE_CALL_CONTRACTS_LIST`, commented `// TODO: Remove this feature flag once the feature is established.`, states a condition with no owner attached and predates the rule — do not imitate it.
 
 ### No chain special-casing in code
 

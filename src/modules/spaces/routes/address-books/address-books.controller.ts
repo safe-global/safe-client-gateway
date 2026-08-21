@@ -33,6 +33,7 @@ import {
 } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/address-books/guards/spaces-address-book-rate-limit.guard';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -112,8 +113,7 @@ export class AddressBooksController {
     description: 'Address book items limit exceeded or invalid data provided',
   })
   @Put('/:spaceId/address-book')
-  @UseGuards(SpacesAddressBookRateLimitGuard)
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
   public async upsertAddressBookItems(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -156,7 +156,7 @@ export class AddressBooksController {
       'Access forbidden - user is not authorized to modify this address book',
   })
   @Delete('/:spaceId/address-book/:address')
-  @UseGuards(AuthGuard)
+  @UseGuards(AuthGuard, ElevationGuard)
   public async deleteByAddress(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

@@ -30,6 +30,7 @@ export default (): ReturnType<typeof configuration> => ({
     maxValidityPeriodSeconds: faker.number.int({ min: 1, max: 60 * 1_000 }),
     clockSkewSeconds: faker.number.int({ min: 1, max: 30 }),
     stateTtlMs: faker.number.int({ min: 60_000, max: 600_000 }),
+    elevationWindowSeconds: faker.number.int({ min: 60, max: 1_800 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,
     auth0: {
@@ -243,6 +244,7 @@ export default (): ReturnType<typeof configuration> => ({
     lifiTransactionsMapping: false,
     cacheInFlightRequests: false,
     spaceAuditLog: true,
+    mfaStepUp: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -359,21 +361,7 @@ export default (): ReturnType<typeof configuration> => ({
     baseUri: faker.internet.url({ appendSlash: false }),
     limit: faker.number.int({ min: 1 }),
     ttlSeconds: faker.number.int(),
-    apiKey: {
-      1: faker.string.hexadecimal({ length: 32 }),
-      10: faker.string.hexadecimal({ length: 32 }),
-      56: faker.string.hexadecimal({ length: 32 }),
-      100: faker.string.hexadecimal({ length: 32 }),
-      130: faker.string.hexadecimal({ length: 32 }),
-      137: faker.string.hexadecimal({ length: 32 }),
-      1101: faker.string.hexadecimal({ length: 32 }),
-      8453: faker.string.hexadecimal({ length: 32 }),
-      42161: faker.string.hexadecimal({ length: 32 }),
-      43114: faker.string.hexadecimal({ length: 32 }),
-      59144: faker.string.hexadecimal({ length: 32 }),
-      81457: faker.string.hexadecimal({ length: 32 }),
-      11155111: faker.string.hexadecimal({ length: 32 }),
-    },
+    apiKey: faker.string.hexadecimal({ length: 32 }),
     noFeeCampaign: {
       1: {
         startsAtTimeStamp: Date.now() / 1000 - 10_000,

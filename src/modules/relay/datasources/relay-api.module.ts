@@ -2,10 +2,13 @@
 import { Module } from '@nestjs/common';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { GelatoApi } from '@/modules/relay/datasources/gelato-api.service';
+import { RhinestoneApi } from '@/modules/relay/datasources/rhinestone-api.service';
 
 @Module({
-  providers: [HttpErrorFactory, { provide: IRelayApi, useClass: GelatoApi }],
+  providers: [
+    HttpErrorFactory,
+    { provide: IRelayApi, useClass: RhinestoneApi },
+  ],
   exports: [IRelayApi],
 })
 export class RelayApiModule {}

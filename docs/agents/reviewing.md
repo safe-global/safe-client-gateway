@@ -55,15 +55,19 @@ These checks are independent of Part 1 and of each other: passing one never excu
 
 ## Reporting format
 
-Findings are ordered most-severe-first. Each finding is one line:
+Findings are ordered most-severe-first and rendered as a **numbered list** — one item per finding, so a reader can answer "finding 3" and be understood. Findings separated only by line breaks are not a list: in a Markdown-rendered report (a PR comment, a Markdown file) consecutive lines collapse into one run-together paragraph, which is a failed report even when every finding in it is correct.
+
+Each finding is one item:
 
 ```
-file:line — <rule name>: <one-sentence defect>
+N. **[<rule name>](<link to the rule>)** — [<path>:<line>](<permalink>) — <one-sentence defect>. **Fix:** <the concrete change>.
 ```
 
-`file:line` identifies the specific line the defect lives on; a file-level comment with no line number does not meet this format.
-
-For a Part 2 finding, `<rule name>` is that item's lead phrase (e.g. `No scope creep`). When a finding has no single code line — missing evidence, missing PR-description justification — the report cites the artifact the defect lives in (the PR description, the command output) in place of a line number.
+- `<rule name>` is the guide's own heading for that rule (for a Part 2 finding, that item's lead phrase, e.g. `No scope creep`) — **linked** to the rule in its guide. A rule name a reader cannot click is not traceable to its source, which is the whole point of quoting the heading; in a Markdown-rendered report the link is a permalink to the line the rule lives on.
+- `<path>:<line>` identifies the specific line the defect lives on, linked to a permalink at the revision under review so it keeps pointing there after a later push; a file-level citation with no line number does not meet this format. When a finding has no single code line — missing evidence, missing PR-description justification, a malformed title — the report cites the artifact the defect lives in (`PR title`, `PR description`, the command output) as plain text in place of the location.
+- `Fix:` states what to change, not why the rule exists. Where a compliant value exists, it is given verbatim — the corrected PR title, the missing schema line — so the author can apply it without re-deriving it. The rationale stays in the linked guide; a finding that explains the rule instead of naming the change is doing the reader's reading for them and not their work.
+- The applicable-guides list is linked the same way: each guide name is a link to that guide.
+- A report never contains a bare `#<number>`. On GitHub `#9` silently becomes a link to issue or PR 9, so a reference to `non-negotiable #9` lands the reader on an unrelated pull request — write it in backticks, or as "non-negotiable 9".
 
 A review with no violations states "no findings" explicitly in place of a findings list; an empty or omitted section is not equivalent to that statement.
 

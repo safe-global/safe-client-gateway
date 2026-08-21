@@ -4,8 +4,10 @@ import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
-import configuration from '@/config/entities/configuration';
+import {
+  getDeploymentVersionsByChainIds,
+  RELAY_SUPPORTED_CHAIN_IDS,
+} from '@/__tests__/deployments.helper';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -46,7 +48,7 @@ import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
-const supportedChainIds = Object.keys(configuration().relay.apiKey);
+const supportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 
 // Record<chainId, version[]>
 const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
@@ -213,18 +215,21 @@ describe('RelayTransactionHelper', () => {
       ['removeOwner', removeOwnerEncoder],
       ['swapOwner', swapOwnerEncoder],
       ['changeThreshold', changeThresholdEncoder],
-    ])('should return true for a Safe owner management call (%s) to self', (_, encoderFn) => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const data = execTransactionEncoder()
-        .with('to', safeAddress)
-        .with('value', BigInt(0))
-        .with('data', encoderFn().encode())
-        .encode();
+    ])(
+      'should return true for a Safe owner management call (%s) to self',
+      (_, encoderFn) => {
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const data = execTransactionEncoder()
+          .with('to', safeAddress)
+          .with('value', BigInt(0))
+          .with('data', encoderFn().encode())
+          .encode();
 
-      expect(helper.isValidExecTransactionCall({ to: safeAddress, data })).toBe(
-        true,
-      );
-    });
+        expect(
+          helper.isValidExecTransactionCall({ to: safeAddress, data }),
+        ).toBe(true);
+      },
+    );
 
     it('should return false for non-execTransaction calldata', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -389,34 +394,37 @@ describe('RelayTransactionHelper', () => {
       ['gasPrice', { field: 'gasPrice' as const, value: null }],
       ['gasToken', { field: 'gasToken' as const, value: null }],
       ['refundReceiver', { field: 'refundReceiver' as const, value: null }],
-    ])('should treat stored %s=null as equivalent to the decoded zero/empty default', async (_, override) => {
-      const chainId = faker.helpers.arrayElement(supportedChainIds);
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeTxHash = faker.string.hexadecimal({
-        length: 64,
-        casing: 'lower',
-      }) as Hex;
-      const decoded = helper.decodeExecTransaction(
-        execTransactionEncoder().encode(),
-      )!;
-      const stored = buildMatchingStored({
-        safeAddress,
-        decodedTo: decoded.to,
-      })
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .with(override.field as any, override.value as any)
-        .build();
-      mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
-
-      await expect(
-        helper.isSafeTxHashValid({
-          chainId,
+    ])(
+      'should treat stored %s=null as equivalent to the decoded zero/empty default',
+      async (_, override) => {
+        const chainId = faker.helpers.arrayElement(supportedChainIds);
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const safeTxHash = faker.string.hexadecimal({
+          length: 64,
+          casing: 'lower',
+        }) as Hex;
+        const decoded = helper.decodeExecTransaction(
+          execTransactionEncoder().encode(),
+        )!;
+        const stored = buildMatchingStored({
           safeAddress,
-          decoded,
-          safeTxHash,
-        }),
-      ).resolves.toBe(true);
-    });
+          decodedTo: decoded.to,
+        })
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .with(override.field as any, override.value as any)
+          .build();
+        mockSafeRepository.getMultiSigTransaction.mockResolvedValue(stored);
+
+        await expect(
+          helper.isSafeTxHashValid({
+            chainId,
+            safeAddress,
+            decoded,
+            safeTxHash,
+          }),
+        ).resolves.toBe(true);
+      },
+    );
 
     it('should match when stored data uses mixed-case hex but decoded data is lowercase', async () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
@@ -482,13 +490,16 @@ describe('RelayTransactionHelper', () => {
       ['removeOwner', removeOwnerEncoder],
       ['swapOwner', swapOwnerEncoder],
       ['changeThreshold', changeThresholdEncoder],
-    ])('should return true for %s wrapped in execTransaction', (_, encoderFn) => {
-      const data = execTransactionEncoder()
-        .with('data', encoderFn().encode())
-        .encode();
+    ])(
+      'should return true for %s wrapped in execTransaction',
+      (_, encoderFn) => {
+        const data = execTransactionEncoder()
+          .with('data', encoderFn().encode())
+          .encode();
 
-      expect(helper.isOwnerManagementTransaction(data)).toBe(true);
-    });
+        expect(helper.isOwnerManagementTransaction(data)).toBe(true);
+      },
+    );
 
     it('should return false for a non-owner-management execTransaction', () => {
       const data = execTransactionEncoder()
@@ -599,36 +610,38 @@ describe('RelayTransactionHelper', () => {
 
   describe('isOfficialMultiSendDeployment', () => {
     describe.each(supportedChainIds)('Chain %s', (chainId) => {
-      it.each(
-        MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
-      )('should return true for official MultiSendCallOnly at version %s', (version) => {
-        const [address] = getMultiSendCallOnlyDeployments({
-          version,
-          chainId,
-        });
-
-        expect(
-          helper.isOfficialMultiSendDeployment({
+      it.each(MULTI_SEND_CALL_ONLY_VERSIONS[chainId])(
+        'should return true for official MultiSendCallOnly at version %s',
+        (version) => {
+          const [address] = getMultiSendCallOnlyDeployments({
             version,
             chainId,
-            address,
-          }),
-        ).toBe(true);
-      });
+          });
 
-      it.each(
-        MULTI_SEND_VERSIONS[chainId],
-      )('should return true for official MultiSend at version %s', (version) => {
-        const [address] = getMultiSendDeployments({ version, chainId });
+          expect(
+            helper.isOfficialMultiSendDeployment({
+              version,
+              chainId,
+              address,
+            }),
+          ).toBe(true);
+        },
+      );
 
-        expect(
-          helper.isOfficialMultiSendDeployment({
-            version,
-            chainId,
-            address,
-          }),
-        ).toBe(true);
-      });
+      it.each(MULTI_SEND_VERSIONS[chainId])(
+        'should return true for official MultiSend at version %s',
+        (version) => {
+          const [address] = getMultiSendDeployments({ version, chainId });
+
+          expect(
+            helper.isOfficialMultiSendDeployment({
+              version,
+              chainId,
+              address,
+            }),
+          ).toBe(true);
+        },
+      );
     });
 
     it('should return false for an unofficial address', () => {
@@ -647,19 +660,20 @@ describe('RelayTransactionHelper', () => {
 
   describe('isOfficialProxyFactoryDeployment', () => {
     describe.each(supportedChainIds)('Chain %s', (chainId) => {
-      it.each(
-        PROXY_FACTORY_VERSIONS[chainId],
-      )('should return true for official ProxyFactory at version %s', (version) => {
-        const [address] = getProxyFactoryDeployments({ version, chainId });
+      it.each(PROXY_FACTORY_VERSIONS[chainId])(
+        'should return true for official ProxyFactory at version %s',
+        (version) => {
+          const [address] = getProxyFactoryDeployments({ version, chainId });
 
-        expect(
-          helper.isOfficialProxyFactoryDeployment({
-            version,
-            chainId,
-            address,
-          }),
-        ).toBe(true);
-      });
+          expect(
+            helper.isOfficialProxyFactoryDeployment({
+              version,
+              chainId,
+              address,
+            }),
+          ).toBe(true);
+        },
+      );
     });
 
     it('should return false for an unofficial address', () => {
@@ -678,44 +692,46 @@ describe('RelayTransactionHelper', () => {
 
   describe('isValidCreateProxyWithNonceCall', () => {
     describe.each(supportedChainIds)('Chain %s', (chainId) => {
-      it.each(
-        PROXY_FACTORY_VERSIONS[chainId],
-      )('should return true for createProxyWithNonce with official L1 singleton at version %s', (version) => {
-        const [singleton] = getSafeSingletonDeployments({ version, chainId });
-        if (!singleton) return;
-        const data = createProxyWithNonceEncoder()
-          .with('singleton', singleton)
-          .encode();
+      it.each(PROXY_FACTORY_VERSIONS[chainId])(
+        'should return true for createProxyWithNonce with official L1 singleton at version %s',
+        (version) => {
+          const [singleton] = getSafeSingletonDeployments({ version, chainId });
+          if (!singleton) return;
+          const data = createProxyWithNonceEncoder()
+            .with('singleton', singleton)
+            .encode();
 
-        expect(
-          helper.isValidCreateProxyWithNonceCall({
+          expect(
+            helper.isValidCreateProxyWithNonceCall({
+              version,
+              chainId,
+              data,
+            }),
+          ).toBe(true);
+        },
+      );
+
+      it.each(PROXY_FACTORY_VERSIONS[chainId])(
+        'should return true for createProxyWithNonce with official L2 singleton at version %s',
+        (version) => {
+          const [singleton] = getSafeL2SingletonDeployments({
             version,
             chainId,
-            data,
-          }),
-        ).toBe(true);
-      });
+          });
+          if (!singleton) return;
+          const data = createProxyWithNonceEncoder()
+            .with('singleton', singleton)
+            .encode();
 
-      it.each(
-        PROXY_FACTORY_VERSIONS[chainId],
-      )('should return true for createProxyWithNonce with official L2 singleton at version %s', (version) => {
-        const [singleton] = getSafeL2SingletonDeployments({
-          version,
-          chainId,
-        });
-        if (!singleton) return;
-        const data = createProxyWithNonceEncoder()
-          .with('singleton', singleton)
-          .encode();
-
-        expect(
-          helper.isValidCreateProxyWithNonceCall({
-            version,
-            chainId,
-            data,
-          }),
-        ).toBe(true);
-      });
+          expect(
+            helper.isValidCreateProxyWithNonceCall({
+              version,
+              chainId,
+              data,
+            }),
+          ).toBe(true);
+        },
+      );
     });
 
     it('should return false for an unofficial singleton address', () => {
@@ -839,42 +855,48 @@ describe('RelayTransactionHelper', () => {
 
   describe('getOwnersFromCreateProxyWithNonce', () => {
     describe.each(supportedChainIds)('Chain %s', (chainId) => {
-      it.each(
-        PROXY_FACTORY_VERSIONS[chainId],
-      )('should return owners from a createProxyWithNonce call with official L1 singleton at version %s', (version) => {
-        const [singleton] = getSafeSingletonDeployments({ version, chainId });
-        if (!singleton) return;
-        const owners = [
-          getAddress(faker.finance.ethereumAddress()),
-          getAddress(faker.finance.ethereumAddress()),
-        ];
-        const data = createProxyWithNonceEncoder()
-          .with('singleton', singleton)
-          .with('initializer', setupEncoder().with('owners', owners).encode())
-          .encode();
+      it.each(PROXY_FACTORY_VERSIONS[chainId])(
+        'should return owners from a createProxyWithNonce call with official L1 singleton at version %s',
+        (version) => {
+          const [singleton] = getSafeSingletonDeployments({ version, chainId });
+          if (!singleton) return;
+          const owners = [
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+          ];
+          const data = createProxyWithNonceEncoder()
+            .with('singleton', singleton)
+            .with('initializer', setupEncoder().with('owners', owners).encode())
+            .encode();
 
-        expect(helper.getOwnersFromCreateProxyWithNonce(data)).toEqual(owners);
-      });
+          expect(helper.getOwnersFromCreateProxyWithNonce(data)).toEqual(
+            owners,
+          );
+        },
+      );
 
-      it.each(
-        PROXY_FACTORY_VERSIONS[chainId],
-      )('should return owners from a createProxyWithNonce call with official L2 singleton at version %s', (version) => {
-        const [singleton] = getSafeL2SingletonDeployments({
-          version,
-          chainId,
-        });
-        if (!singleton) return;
-        const owners = [
-          getAddress(faker.finance.ethereumAddress()),
-          getAddress(faker.finance.ethereumAddress()),
-        ];
-        const data = createProxyWithNonceEncoder()
-          .with('singleton', singleton)
-          .with('initializer', setupEncoder().with('owners', owners).encode())
-          .encode();
+      it.each(PROXY_FACTORY_VERSIONS[chainId])(
+        'should return owners from a createProxyWithNonce call with official L2 singleton at version %s',
+        (version) => {
+          const [singleton] = getSafeL2SingletonDeployments({
+            version,
+            chainId,
+          });
+          if (!singleton) return;
+          const owners = [
+            getAddress(faker.finance.ethereumAddress()),
+            getAddress(faker.finance.ethereumAddress()),
+          ];
+          const data = createProxyWithNonceEncoder()
+            .with('singleton', singleton)
+            .with('initializer', setupEncoder().with('owners', owners).encode())
+            .encode();
 
-        expect(helper.getOwnersFromCreateProxyWithNonce(data)).toEqual(owners);
-      });
+          expect(helper.getOwnersFromCreateProxyWithNonce(data)).toEqual(
+            owners,
+          );
+        },
+      );
     });
 
     it('should throw when data is not a createProxyWithNonce call', () => {
