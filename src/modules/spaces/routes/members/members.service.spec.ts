@@ -199,54 +199,62 @@ describe('MembersService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)('should throw ForbiddenException for the %s caller when findActiveAdmin returns null', async (_label, builder) => {
-      const authPayload = new AuthPayload(builder().build());
-      const spaceId = faker.number.int({ min: 1 });
-      const inviteUsersDto: InviteUsersDto = { users: [] };
+    ] as const)(
+      'should throw ForbiddenException for the %s caller when findActiveAdmin returns null',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const spaceId = faker.number.int({ min: 1 });
+        const inviteUsersDto: InviteUsersDto = { users: [] };
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+        membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
 
-      await expect(
-        service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
-      expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
-    });
+        await expect(
+          service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
+        ).rejects.toThrow(
+          new ForbiddenException('User is not an active admin.'),
+        );
+        expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
+      },
+    );
 
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)('should call inviteUsers when the %s caller is an active admin', async (_label, builder) => {
-      const authPayload = new AuthPayload(builder().build());
-      const spaceId = faker.number.int({ min: 1 });
-      const inviteUsersDto: InviteUsersDto = { users: [] };
-      const adminMember = memberBuilder()
-        .with('role', 'ADMIN')
-        .with('status', 'ACTIVE')
-        .build();
-      const now = new Date('2026-01-15T00:00:00Z');
-      vi.useFakeTimers().setSystemTime(now);
+    ] as const)(
+      'should call inviteUsers when the %s caller is an active admin',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const spaceId = faker.number.int({ min: 1 });
+        const inviteUsersDto: InviteUsersDto = { users: [] };
+        const adminMember = memberBuilder()
+          .with('role', 'ADMIN')
+          .with('status', 'ACTIVE')
+          .build();
+        const now = new Date('2026-01-15T00:00:00Z');
+        vi.useFakeTimers().setSystemTime(now);
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
-      membersRepositoryMock.inviteUsers.mockResolvedValue([]);
+        membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+        membersRepositoryMock.inviteUsers.mockResolvedValue([]);
 
-      try {
-        await expect(
-          service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
-        ).resolves.toEqual([]);
-        expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
-        expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
-          authPayload,
-          spaceId,
-          users: [],
-          inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
-        });
-        expect(
-          spaceInviteEmailServiceMock.enqueueInviteEmails,
-        ).toHaveBeenCalledWith({ users: [], spaceId });
-      } finally {
-        vi.useRealTimers();
-      }
-    });
+        try {
+          await expect(
+            service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
+          ).resolves.toEqual([]);
+          expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
+          expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
+            authPayload,
+            spaceId,
+            users: [],
+            inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+          });
+          expect(
+            spaceInviteEmailServiceMock.enqueueInviteEmails,
+          ).toHaveBeenCalledWith({ users: [], spaceId });
+        } finally {
+          vi.useRealTimers();
+        }
+      },
+    );
 
     it('should delegate invite email sending to the SpaceInviteEmailService', async () => {
       const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
@@ -331,29 +339,31 @@ describe('MembersService', () => {
       expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
     });
 
-    it.each([
-      'ACTIVE',
-      'DECLINED',
-    ] as const)('should throw ConflictException without renewing when the member is %s', async (status) => {
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      const spaceId = faker.number.int({ min: 1 });
-      const userId = faker.number.int({ min: 1 });
-      const adminMember = memberBuilder()
-        .with('role', 'ADMIN')
-        .with('status', 'ACTIVE')
-        .build();
-      const targetMember = memberBuilder().with('status', status).build();
+    it.each(['ACTIVE', 'DECLINED'] as const)(
+      'should throw ConflictException without renewing when the member is %s',
+      async (status) => {
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const spaceId = faker.number.int({ min: 1 });
+        const userId = faker.number.int({ min: 1 });
+        const adminMember = memberBuilder()
+          .with('role', 'ADMIN')
+          .with('status', 'ACTIVE')
+          .build();
+        const targetMember = memberBuilder().with('status', status).build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
-      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+        membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+        membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
-      await expect(
-        service.renewInvite({ authPayload, spaceId, userId }),
-      ).rejects.toThrow(
-        new ConflictException('Only a pending invitation can be renewed.'),
-      );
-      expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
-    });
+        await expect(
+          service.renewInvite({ authPayload, spaceId, userId }),
+        ).rejects.toThrow(
+          new ConflictException('Only a pending invitation can be renewed.'),
+        );
+        expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
+      },
+    );
 
     it('should renew the invite and return the preserved invitation metadata', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
