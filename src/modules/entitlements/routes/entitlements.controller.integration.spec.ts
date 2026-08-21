@@ -4,9 +4,10 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type postgres from 'postgres';
 import request from 'supertest';
-import { DataSource } from 'typeorm';
 import { getAddress } from 'viem';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
@@ -14,7 +15,6 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
@@ -49,27 +49,13 @@ describe('EntitlementsController', () => {
   // global table this suite replaces wholesale. Not faker: a fixed FAKER_SEED
   // would hand every spec file the same name.
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
-
-  async function adminQuery(sql: string): Promise<void> {
-    const adminDataSource = new DataSource({
-      ...postgresConfig({
-        ...configuration().db.connection.postgres,
-        type: 'postgres',
-        database: 'postgres',
-      }),
-    });
-    await adminDataSource.initialize();
-    try {
-      await adminDataSource.query(sql);
-    } finally {
-      await adminDataSource.destroy();
-    }
-  }
+  const testDbFactory = new TestDbFactory();
+  let testDatabase: postgres.Sql;
 
   beforeAll(async () => {
     vi.resetAllMocks();
 
-    await adminQuery(`CREATE DATABASE ${testDatabaseName}`);
+    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -165,9 +151,7 @@ describe('EntitlementsController', () => {
 
   afterAll(async () => {
     await app?.close();
-    await adminQuery(
-      `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
-    );
+    await testDbFactory.destroyTestDatabase(testDatabase);
   });
 
   // Auth resolves the acting user from the JWT `sub`, so a token must carry
@@ -235,6 +219,14 @@ describe('EntitlementsController', () => {
         .get('/v1/spaces/not-a-uuid/entitlements')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(400);
+    });
+
+    it('returns 403 without an access token', async () => {
+      const { spaceId } = await createSpaceForSigner();
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/entitlements`)
+        .expect(403);
     });
 
     it('returns 403 for a non-member', async () => {

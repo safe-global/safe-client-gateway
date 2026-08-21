@@ -20,7 +20,7 @@ export class SpaceFeatureUsageRepository
   ) {}
 
   public async getUsageByFeatureId(
-    args: { spaceId: Space['id']; periods: Array<Omit<UsageKey, 'spaceId'>> },
+    args: { spaceId: Space['id']; periods: Array<UsageKey> },
     entityManager?: EntityManager,
   ): Promise<Map<number, number>> {
     if (args.periods.length === 0) {

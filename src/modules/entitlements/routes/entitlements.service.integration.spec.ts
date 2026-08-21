@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { DataSource, type EntityManager } from 'typeorm';
+import { DataSource, type EntityManager, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -204,11 +204,7 @@ describe('EntitlementsService', () => {
     seededFeatureKeys = (
       await dataSource.getRepository(Feature).find({ select: { key: true } })
     ).map((feature) => feature.key);
-    await dataSource
-      .getRepository(Feature)
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    await deleteAll(Feature);
 
     subscriptionsRepository = new SubscriptionsRepository(
       postgresDatabaseService,
@@ -235,57 +231,31 @@ describe('EntitlementsService', () => {
   afterEach(async () => {
     // Delete in dependency order; `features` last, as the usage and
     // entitlement rows reference it with ON DELETE RESTRICT.
-    await dataSource
-      .getRepository(SpaceFeatureUsage)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(SubscriptionEntitlement)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(SpaceSubscription)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(Member)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(SpaceSafe)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(Space)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(Wallet)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(User)
-      .createQueryBuilder()
-      .delete()
-      .execute();
-    await dataSource
-      .getRepository(Feature)
-      .createQueryBuilder()
-      .delete()
-      .execute();
+    await deleteAll(SpaceFeatureUsage);
+    await deleteAll(SubscriptionEntitlement);
+    await deleteAll(SpaceSubscription);
+    await deleteAll(Member);
+    await deleteAll(SpaceSafe);
+    await deleteAll(Space);
+    await deleteAll(Wallet);
+    await deleteAll(User);
+    await deleteAll(Feature);
   });
 
   afterAll(async () => {
     await postgresDatabaseService.getDataSource().dropDatabase();
     await postgresDatabaseService.destroyDatabaseConnection();
   });
+
+  async function deleteAll<T extends ObjectLiteral>(entity: {
+    new (): T;
+  }): Promise<void> {
+    await dataSource
+      .getRepository(entity)
+      .createQueryBuilder()
+      .delete()
+      .execute();
+  }
 
   async function createSpace(): Promise<number> {
     const inserted = await dataSource.getRepository(Space).insert({
@@ -329,12 +299,7 @@ describe('EntitlementsService', () => {
     }
   }
 
-  async function addMember(
-    spaceId: number,
-    status: 'ACTIVE' | 'INVITED' | 'DECLINED',
-    inviteExpiresAt?: Date,
-    role: 'ADMIN' | 'MEMBER' = 'MEMBER',
-  ): Promise<number> {
+  async function addActiveMember(spaceId: number): Promise<number> {
     const user = await dataSource.getRepository(User).insert({
       status: 'ACTIVE',
     });
@@ -343,10 +308,9 @@ describe('EntitlementsService', () => {
       user: { id: userId },
       space: { id: spaceId },
       name: faker.person.firstName(),
-      role,
-      status,
-      inviteExpiresAt:
-        status === 'INVITED' ? (inviteExpiresAt ?? faker.date.future()) : null,
+      role: 'MEMBER',
+      status: 'ACTIVE',
+      inviteExpiresAt: null,
     });
     return userId;
   }
@@ -363,21 +327,6 @@ describe('EntitlementsService', () => {
     return result.entitlements.find(
       (entitlement) => entitlement.feature === 'safe_seats',
     );
-  }
-
-  function materializedSubscription(
-    overrides?: Partial<MaterializedSubscription>,
-  ): MaterializedSubscription {
-    return {
-      upstreamSubscriptionId: faker.string.uuid(),
-      status: 'active',
-      planId: 'business',
-      planName: 'Business',
-      currentPeriodStart: new Date('2026-07-01T00:00:00Z'),
-      currentPeriodEnd: new Date('2026-08-01T00:00:00Z'),
-      entitlements: [],
-      ...overrides,
-    };
   }
 
   let stampSequence = 0;
@@ -529,8 +478,13 @@ describe('EntitlementsService', () => {
 
     it('resolves the paid branch with Free fallback for unpurchased features', async () => {
       const spaceId = await createSpace();
-      const subscription = materializedSubscription({
-        entitlements: [
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'active')
+        .with('planId', 'business')
+        .with('planName', 'Business')
+        .with('currentPeriodStart', new Date('2026-07-01T00:00:00Z'))
+        .with('currentPeriodEnd', new Date('2026-08-01T00:00:00Z'))
+        .with('entitlements', [
           { featureKey: 'safe_seats', enabled: true, quota: 20, value: null },
           {
             featureKey: 'security_hub',
@@ -550,8 +504,8 @@ describe('EntitlementsService', () => {
             quota: null,
             value: null,
           },
-        ],
-      });
+        ])
+        .build();
       await materializeAuthoritative({
         spaceId,
         subscriptions: [subscription],
@@ -604,17 +558,18 @@ describe('EntitlementsService', () => {
       await materializeAuthoritative({
         spaceId,
         subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_unlimited',
-            entitlements: [
+          materializedSubscriptionBuilder()
+            .with('status', 'active')
+            .with('upstreamSubscriptionId', 'sub_unlimited')
+            .with('entitlements', [
               {
                 featureKey: 'safe_seats',
                 enabled: true,
                 quota: null,
                 value: null,
               },
-            ],
-          }),
+            ])
+            .build(),
         ],
       });
 
@@ -634,27 +589,28 @@ describe('EntitlementsService', () => {
       await materializeAuthoritative({
         spaceId,
         subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_1',
-            entitlements: [
+          materializedSubscriptionBuilder()
+            .with('status', 'active')
+            .with('upstreamSubscriptionId', 'sub_1')
+            .with('entitlements', [
               {
                 featureKey: 'safe_seats',
                 enabled: true,
                 quota: 5,
                 value: null,
               },
-            ],
-          }),
+            ])
+            .build(),
         ],
       });
       await materializeAuthoritative({
         spaceId,
         subscriptions: [
-          materializedSubscription({
-            upstreamSubscriptionId: 'sub_1',
-            status: 'canceled',
-            entitlements: null,
-          }),
+          materializedSubscriptionBuilder()
+            .with('upstreamSubscriptionId', 'sub_1')
+            .with('status', 'canceled')
+            .with('entitlements', null)
+            .build(),
         ],
       });
 
@@ -1092,7 +1048,7 @@ describe('EntitlementsService', () => {
   describe('getEntitlements', () => {
     it('returns the resolved entitlements for a member', async () => {
       const spaceId = await createSpace();
-      const userId = await addMember(spaceId, 'ACTIVE');
+      const userId = await addActiveMember(spaceId);
 
       const result = await service.getEntitlements({
         spaceId,
@@ -1110,7 +1066,7 @@ describe('EntitlementsService', () => {
     // OpenAPI enum declares, not every row the catalog happens to hold.
     it('omits catalog features the contract does not publish', async () => {
       const spaceId = await createSpace();
-      const userId = await addMember(spaceId, 'ACTIVE');
+      const userId = await addActiveMember(spaceId);
 
       const result = await service.getEntitlements({
         spaceId,

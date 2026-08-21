@@ -6,8 +6,8 @@ export const ISpaceFeatureUsageRepository = Symbol(
   'ISpaceFeatureUsageRepository',
 );
 
+/** A counter's key within a space: which feature, which period. */
 export type UsageKey = {
-  spaceId: Space['id'];
   featureId: number;
   periodStart: Date;
 };
@@ -16,7 +16,7 @@ export type UsageKey = {
 export interface ISpaceFeatureUsageRepository {
   /** Counters of several (feature, period) pairs, keyed by feature id. */
   getUsageByFeatureId(
-    args: { spaceId: Space['id']; periods: Array<Omit<UsageKey, 'spaceId'>> },
+    args: { spaceId: Space['id']; periods: Array<UsageKey> },
     entityManager?: EntityManager,
   ): Promise<Map<number, number>>;
 }

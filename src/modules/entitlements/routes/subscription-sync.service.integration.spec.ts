@@ -4,9 +4,11 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
+import type postgres from 'postgres';
 import request from 'supertest';
-import { DataSource, In } from 'typeorm';
+import { In } from 'typeorm';
 import type { MockedObject } from 'vitest';
+import { TestDbFactory } from '@/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
@@ -14,7 +16,6 @@ import {
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
 import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
 import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
@@ -63,27 +64,13 @@ describe('Billing webhook → entitlements materialization', () => {
   // global table this suite seeds with its own values. Not faker: a fixed
   // FAKER_SEED would hand every spec file the same name.
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
-
-  async function adminQuery(sql: string): Promise<void> {
-    const adminDataSource = new DataSource({
-      ...postgresConfig({
-        ...configuration().db.connection.postgres,
-        type: 'postgres',
-        database: 'postgres',
-      }),
-    });
-    await adminDataSource.initialize();
-    try {
-      await adminDataSource.query(sql);
-    } finally {
-      await adminDataSource.destroy();
-    }
-  }
+  const testDbFactory = new TestDbFactory();
+  let testDatabase: postgres.Sql;
 
   beforeAll(async () => {
     vi.resetAllMocks();
 
-    await adminQuery(`CREATE DATABASE ${testDatabaseName}`);
+    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -170,9 +157,7 @@ describe('Billing webhook → entitlements materialization', () => {
 
   afterAll(async () => {
     await app?.close();
-    await adminQuery(
-      `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
-    );
+    await testDbFactory.destroyTestDatabase(testDatabase);
   });
 
   async function seedSpace(): Promise<{ spaceId: number; spaceUuid: string }> {
