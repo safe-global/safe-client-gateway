@@ -2,11 +2,12 @@
 import {
   type CanActivate,
   type ExecutionContext,
-  ForbiddenException,
+  HttpStatus,
   Inject,
   Injectable,
 } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';
@@ -72,7 +73,14 @@ export class ElevationGuard implements CanActivate {
     }
 
     if (!payload.hasFreshMfa(this.elevationWindowSeconds)) {
-      throw new ForbiddenException(ELEVATION_REQUIRED_ERROR);
+      // Not a ForbiddenException: a lapsed window is the expected steady state
+      // once the elevation window is short relative to a session, so every
+      // routine step-up would otherwise be logged at info with a stacktrace by
+      // `GlobalErrorFilter`.
+      throw new HttpExceptionNoLog(
+        ELEVATION_REQUIRED_ERROR,
+        HttpStatus.FORBIDDEN,
+      );
     }
 
     return true;

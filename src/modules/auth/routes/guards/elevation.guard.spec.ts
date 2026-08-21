@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
-import { ForbiddenException } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { HttpStatus } from '@nestjs/common';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import {
+  oidcAuthPayloadDtoBuilder,
+  siweAuthPayloadDtoBuilder,
+} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
   ELEVATION_REQUIRED_ERROR,
@@ -31,18 +33,10 @@ describe('ElevationGuard', () => {
       }),
     }) as unknown as ExecutionContext;
 
-  const oidcPayload = (mfaVerifiedAt?: number): AuthPayloadDto => ({
-    auth_method: AuthMethod.Oidc,
-    sub: faker.string.numeric({ exclude: ['0'] }),
-    mfa_verified_at: mfaVerifiedAt,
-  });
+  const oidcPayload = (mfaVerifiedAt?: number): AuthPayloadDto =>
+    oidcAuthPayloadDtoBuilder().with('mfa_verified_at', mfaVerifiedAt).build();
 
-  const siwePayload = (): AuthPayloadDto => ({
-    auth_method: AuthMethod.Siwe,
-    sub: faker.string.numeric({ exclude: ['0'] }),
-    chain_id: faker.string.numeric({ exclude: ['0'] }),
-    signer_address: getAddress(faker.finance.ethereumAddress()),
-  });
+  const siwePayload = (): AuthPayloadDto => siweAuthPayloadDtoBuilder().build();
 
   beforeEach(() => {
     const configurationService = new FakeConfigurationService();
@@ -108,10 +102,19 @@ describe('ElevationGuard', () => {
         oidcPayload(nowSeconds() - ELEVATION_WINDOW_SECONDS - 1),
       );
 
-      expect(() => target.canActivate(context)).toThrow(ForbiddenException);
+      // HttpExceptionNoLog, not ForbiddenException: a lapsed window is
+      // expected traffic and must not be logged with a stacktrace.
+      expect(() => target.canActivate(context)).toThrow(HttpExceptionNoLog);
       expect(() => target.canActivate(context)).toThrow(
         ELEVATION_REQUIRED_ERROR,
       );
+      try {
+        target.canActivate(context);
+      } catch (error) {
+        expect((error as HttpExceptionNoLog).getStatus()).toBe(
+          HttpStatus.FORBIDDEN,
+        );
+      }
     });
 
     it('should reject a session that never presented a second factor', () => {

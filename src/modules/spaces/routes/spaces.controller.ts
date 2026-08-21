@@ -176,7 +176,7 @@ export class SpacesController {
     description: 'Space not found',
   })
   @Patch('/:id')
-  @UseGuards(SpacesCreationRateLimitGuard, ElevationGuard)
+  @UseGuards(ElevationGuard, SpacesCreationRateLimitGuard)
   public async update(
     @Body(new ValidationPipe(UpdateSpaceSchema))
     payload: UpdateSpaceDto,
