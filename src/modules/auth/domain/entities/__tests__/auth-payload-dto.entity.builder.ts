@@ -18,8 +18,15 @@ export function siweAuthPayloadDtoBuilder(): IBuilder<SiweAuthPayloadDto> {
     .with('signer_address', getAddress(faker.finance.ethereumAddress()));
 }
 
+/**
+ * An OIDC session as it exists in production: multi-factor authentication is
+ * mandatory on every login, so a freshly signed-in session always carries a
+ * recent `mfa_verified_at`. Tests covering the elevation window override it
+ * with a stale value or `undefined`.
+ */
 export function oidcAuthPayloadDtoBuilder(): IBuilder<OidcAuthPayloadDto> {
   return new Builder<OidcAuthPayloadDto>()
     .with('auth_method', AuthMethod.Oidc)
-    .with('sub', faker.string.numeric({ exclude: ['0'] }));
+    .with('sub', faker.string.numeric({ exclude: ['0'] }))
+    .with('mfa_verified_at', Math.floor(Date.now() / 1_000));
 }
