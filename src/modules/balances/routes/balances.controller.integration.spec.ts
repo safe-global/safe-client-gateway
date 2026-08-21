@@ -850,9 +850,9 @@ describe('Balances Controller', () => {
           if (url === transactionServiceUrl) {
             const error = new NetworkResponseError(
               new URL(transactionServiceUrl),
-              {
+              new Response(null, {
                 status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-              } as Response,
+              }),
               // The Transaction Service reports the reason under `detail`, a key
               // HttpErrorFactory does not read; the text itself is discarded
               { detail: faker.word.words() },

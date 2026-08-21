@@ -294,7 +294,7 @@ describe('Collectibles Controller', () => {
       const transactionServiceUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/collectibles/`;
       const transactionServiceError = new NetworkResponseError(
         new URL(transactionServiceUrl),
-        { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } as Response,
+        new Response(null, { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS }),
         // The Transaction Service reports the reason under `detail`, a key
         // HttpErrorFactory does not read; the text itself is discarded
         { detail: faker.word.words() },

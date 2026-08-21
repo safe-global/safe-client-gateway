@@ -419,9 +419,7 @@ describe('TransactionApi', () => {
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
           new URL(getSafeUrl),
-          {
-            status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-          } as Response,
+          new Response(null, { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS }),
           // A shape the Transaction Service does not currently pair with 451;
           // the status still decides, so the message is not taken from here
           { nonFieldErrors: [faker.word.words()] },
@@ -441,9 +439,7 @@ describe('TransactionApi', () => {
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
           new URL(getSafeUrl),
-          {
-            status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-          } as Response,
+          new Response(null, { status: UNAVAILABLE_FOR_LEGAL_REASONS_STATUS }),
           // The Transaction Service reports the reason under `detail`, a key
           // HttpErrorFactory does not read; the text itself is discarded
           { detail: faker.word.words() },
