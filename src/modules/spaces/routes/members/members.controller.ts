@@ -28,7 +28,6 @@ import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ElevationGuard } from '@/modules/auth/routes/guards/elevation.guard';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
@@ -52,6 +51,7 @@ import {
 } from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
 import { MembersService } from '@/modules/spaces/routes/members/members.service';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')

@@ -28,7 +28,6 @@ import { getEnumKey } from '@/domain/common/utils/enum';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ElevationGuard } from '@/modules/auth/routes/guards/elevation.guard';
 import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
 import {
   CreateSpaceDto,
@@ -44,6 +43,7 @@ import {
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')

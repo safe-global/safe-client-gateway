@@ -8,6 +8,7 @@ import {
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 declare module 'fastify' {
@@ -30,7 +31,7 @@ declare module 'fastify' {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  static readonly AUTH_PAYLOAD_REQUEST_PROPERTY = 'accessToken';
+  static readonly AUTH_PAYLOAD_REQUEST_PROPERTY = AUTH_PAYLOAD_REQUEST_PROPERTY;
 
   constructor(
     @Inject(IAuthRepository) private readonly authRepository: IAuthRepository,

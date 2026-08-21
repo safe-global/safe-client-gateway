@@ -9,7 +9,7 @@ import {
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 
 /**
@@ -23,8 +23,8 @@ export const ELEVATION_REQUIRED_ERROR = 'elevation_required';
 /**
  * Allows a sensitive action only when the session presented a second factor
  * recently — either at login (which is itself multi-factor) or through a
- * step-up round-trip. Must be listed after {@link AuthGuard}, which is what
- * attaches the session payload to the request.
+ * step-up round-trip. Must be listed after `AuthGuard`, which is what attaches
+ * the session payload to the request.
  *
  * Sign-In-with-Ethereum sessions are exempt: they never pass through the OIDC
  * provider, so they carry no MFA proof and would otherwise be locked out of
@@ -58,9 +58,7 @@ export class ElevationGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<HttpRequest>();
-    const payload = new AuthPayload(
-      request[AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY],
-    );
+    const payload = new AuthPayload(request[AUTH_PAYLOAD_REQUEST_PROPERTY]);
 
     // Safe only because an account is either OIDC or wallet, never both:
     // linking a wallet requires an already-wallet-authenticated session

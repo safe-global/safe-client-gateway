@@ -8,11 +8,11 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
 import {
   ELEVATION_REQUIRED_ERROR,
   ElevationGuard,
-} from '@/modules/auth/routes/guards/elevation.guard';
+} from '@/routes/common/auth/elevation.guard';
 
 // Deliberately not the production default (30 minutes): a test window that
 // matched it would still pass if the guard hardcoded the constant instead of
@@ -28,7 +28,7 @@ describe('ElevationGuard', () => {
     ({
       switchToHttp: () => ({
         getRequest: () => ({
-          [AuthGuard.AUTH_PAYLOAD_REQUEST_PROPERTY]: payload,
+          [AUTH_PAYLOAD_REQUEST_PROPERTY]: payload,
         }),
       }),
     }) as unknown as ExecutionContext;

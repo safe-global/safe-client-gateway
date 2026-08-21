@@ -29,7 +29,6 @@ import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ElevationGuard } from '@/modules/auth/routes/guards/elevation.guard';
 import { AddressBookRequestsService } from '@/modules/spaces/routes/address-books/address-book-requests.service';
 import {
   AddressBookRequestItemDto,
@@ -39,6 +38,7 @@ import {
 } from '@/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
 import { SpacesAddressBookRequestsRateLimitGuard } from '@/modules/spaces/routes/address-books/guards/spaces-address-book-requests-rate-limit.guard';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')

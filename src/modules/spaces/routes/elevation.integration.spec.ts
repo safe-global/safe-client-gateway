@@ -17,10 +17,10 @@ import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { ELEVATION_REQUIRED_ERROR } from '@/modules/auth/routes/guards/elevation.guard';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+import { ELEVATION_REQUIRED_ERROR } from '@/routes/common/auth/elevation.guard';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
 // Deliberately not the production default (30 minutes), so that a guard which
