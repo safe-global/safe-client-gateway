@@ -80,6 +80,10 @@ export class UsersController {
     description:
       'User not found - the authenticated wallet is not associated with any user',
   })
+  @ApiConflictResponse({
+    description:
+      'User is the last admin of at least one workspace - promote another admin or delete the workspace first',
+  })
   @Delete()
   @UseGuards(AuthGuard)
   public async delete(@Auth() authPayload: AuthPayload): Promise<void> {

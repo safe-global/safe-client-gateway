@@ -6,7 +6,11 @@ import {
   KMSClient,
 } from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DataSource } from 'typeorm';
@@ -134,9 +138,11 @@ describe('UsersRepository', () => {
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
+    const dbSpaceRepository = dataSource.getRepository(Space);
 
     await dbWalletRepository.createQueryBuilder().delete().execute();
     await dbUserRepository.createQueryBuilder().delete().execute();
+    await dbSpaceRepository.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {
@@ -641,6 +647,42 @@ describe('UsersRepository', () => {
   });
 
   describe('delete', () => {
+    const insertUser = async (): Promise<User['id']> => {
+      const result = await dataSource.getRepository(User).insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      return result.identifiers[0].id as User['id'];
+    };
+
+    const insertSpace = async (): Promise<Space['id']> => {
+      const result = await dataSource.getRepository(Space).insert({
+        name: faker.word.noun(),
+        status: 'ACTIVE',
+      });
+      return result.identifiers[0].id as Space['id'];
+    };
+
+    const insertMember = async (args: {
+      userId: User['id'];
+      spaceId: Space['id'];
+      role: Member['role'];
+      status: Member['status'];
+    }): Promise<void> => {
+      await dataSource.getRepository(Member).insert({
+        user: { id: args.userId },
+        space: { id: args.spaceId },
+        name: faker.person.firstName(),
+        role: args.role,
+        status: args.status,
+        invitedBy: null,
+      });
+    };
+
+    const authPayloadFor = (userId: User['id']): AuthPayload =>
+      new AuthPayload(
+        siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
+      );
+
     it('should delete a user and their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
@@ -687,6 +729,118 @@ describe('UsersRepository', () => {
       await usersRepository.delete(authPayload);
 
       await expect(dbUserRepository.find()).resolves.toEqual([]);
+    });
+
+    it('should not delete a user who is the sole active admin of a space', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'ADMIN', status: 'ACTIVE' });
+
+      await expect(
+        usersRepository.delete(authPayloadFor(userId)),
+      ).rejects.toThrow(
+        new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        ),
+      );
+
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbMemberRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should delete a user who shares a space with another active admin', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const coAdminUserId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'ADMIN', status: 'ACTIVE' });
+      await insertMember({
+        userId: coAdminUserId,
+        spaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+
+      await usersRepository.delete(authPayloadFor(userId));
+
+      await expect(dbUserRepository.find()).resolves.toEqual([
+        expect.objectContaining({ id: coAdminUserId }),
+      ]);
+      await expect(dbMemberRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should delete a user whose only admin membership is not active', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'ADMIN', status: 'INVITED' });
+
+      await usersRepository.delete(authPayloadFor(userId));
+
+      await expect(dbUserRepository.find()).resolves.toEqual([]);
+      await expect(dbMemberRepository.find()).resolves.toEqual([]);
+    });
+
+    it('should delete a user who is only a non-admin member of a space', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userId = await insertUser();
+      const adminUserId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'MEMBER', status: 'ACTIVE' });
+      await insertMember({
+        userId: adminUserId,
+        spaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+
+      await usersRepository.delete(authPayloadFor(userId));
+
+      await expect(dbUserRepository.find()).resolves.toEqual([
+        expect.objectContaining({ id: adminUserId }),
+      ]);
+    });
+
+    it('should not delete a user who is the sole active admin of one of several spaces', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const coAdminUserId = await insertUser();
+      const sharedSpaceId = await insertSpace();
+      const soleAdminSpaceId = await insertSpace();
+      await insertMember({
+        userId,
+        spaceId: sharedSpaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await insertMember({
+        userId: coAdminUserId,
+        spaceId: sharedSpaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await insertMember({
+        userId,
+        spaceId: soleAdminSpaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        usersRepository.delete(authPayloadFor(userId)),
+      ).rejects.toThrow(
+        new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        ),
+      );
+
+      await expect(dbUserRepository.find()).resolves.toHaveLength(2);
+      await expect(dbMemberRepository.find()).resolves.toHaveLength(3);
     });
   });
 
