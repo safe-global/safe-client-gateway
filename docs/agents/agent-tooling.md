@@ -4,7 +4,7 @@
 
 # Agent Tooling
 
-The guides in this directory are the content. This file documents the three mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, and the `Claude Review` CI workflow, which reviews a pull request on demand — plus the conventions for adding to any of them.
+The guides in this directory are the content. This file documents the three mechanisms that put them in front of an agent at the right moment — the skills in `.claude/skills/`, which load themselves, the review hook in `.claude/settings.json`, which runs itself, and the `Claude Review` CI workflow, which reviews a pull request on demand and when it is marked ready for review — plus the conventions for adding to any of them.
 
 The first two are **automatic by design**. Nothing here needs a slash command typed to take effect, which is why the repo ships none of its own (see "Commands" below).
 
