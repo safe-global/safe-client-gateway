@@ -235,6 +235,7 @@ export class OidcAuthController {
         await this.oidcAuthService.authenticateWithOidc(
           code,
           this.oidcAuthService.isElevationState(state),
+          req.cookies?.[ACCESS_TOKEN_COOKIE_NAME],
         );
 
       if (this.oidcAuthService.isEnrollmentState(state)) {

@@ -8,7 +8,9 @@ import {
 } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import type { ILoggingService } from '@/logging/logging.interface';
 import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthMethod,
   AuthPayload,
@@ -30,6 +32,13 @@ const usersRepositoryMock = {
   findOneOrFail: vi.fn(),
   findEmailById: vi.fn(),
 } as MockedObject<IUsersRepository>;
+
+const loggingServiceMock: MockedObject<ILoggingService> = {
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+};
 
 const auth0RepositoryMock = {
   getAuthorizationUrl: vi.fn(),
@@ -69,6 +78,7 @@ describe('OidcAuthService', () => {
       fakeConfigurationService,
       usersRepositoryMock,
       auth0RepositoryMock,
+      loggingServiceMock,
     );
   });
 
@@ -477,13 +487,162 @@ describe('OidcAuthService', () => {
     });
 
     it('should accept an elevation callback whose token proves MFA', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
       arrange(['mfa']);
+      // A step-up needs a live session to elevate.
+      authRepositoryMock.decodeToken.mockReturnValue({
+        ...oidcAuthPayloadDtoBuilder().build(),
+        exp: new Date(now.getTime() + 3_600 * 1_000),
+        nbf: undefined,
+        iat: undefined,
+      });
 
       await expect(
-        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
+        target.authenticateWithOidc(
+          faker.string.alphanumeric(32),
+          true,
+          faker.string.alphanumeric(64),
+        ),
       ).resolves.toEqual(
         expect.objectContaining({ accessToken: expect.any(String) }),
       );
+    });
+  });
+
+  describe('session lifetime on step-up', () => {
+    const arrange = (): void => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue({
+        sub: `auth0|${faker.string.uuid()}`,
+        email: fakeEmailAddress(),
+        email_verified: true,
+        exp: undefined,
+        nbf: undefined,
+        iat: undefined,
+        amr: ['mfa'],
+      });
+      usersRepositoryMock.findOrCreateByExtUserIdAndEmail.mockResolvedValue(
+        faker.number.int(),
+      );
+      authRepositoryMock.signToken.mockReturnValue(
+        faker.string.alphanumeric(64),
+      );
+    };
+
+    // The session lifetime is an absolute timeout. A step-up proves only the
+    // second factor, so it must not reset that clock.
+    it('should keep the prior session expiry instead of extending the session', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange();
+      // Strictly inside the max-validity window, so the carry-over branch —
+      // not the bound — decides the expiry.
+      const remainingSeconds = faker.number.int({
+        min: 60,
+        max: maxValidityPeriodInSeconds - 60,
+      });
+      const priorExp = new Date(now.getTime() + remainingSeconds * 1_000);
+      const priorAccessToken = faker.string.alphanumeric(64);
+      authRepositoryMock.decodeToken.mockReturnValue({
+        ...oidcAuthPayloadDtoBuilder().build(),
+        exp: priorExp,
+        nbf: undefined,
+        iat: undefined,
+      });
+
+      const result = await target.authenticateWithOidc(
+        faker.string.alphanumeric(32),
+        true,
+        priorAccessToken,
+      );
+
+      expect(authRepositoryMock.decodeToken).toHaveBeenCalledWith(
+        priorAccessToken,
+      );
+      expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ exp: priorExp }),
+      );
+      expect(result.maxAge).toBe(remainingSeconds);
+    });
+
+    // The max-validity bound applies to the carried-over expiry too: a prior
+    // token claiming more than the constant allows never propagates.
+    it('should not carry over a prior expiry beyond the max-validity bound', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange();
+      const beyondMax = new Date(
+        now.getTime() + (maxValidityPeriodInSeconds + 60) * 1_000,
+      );
+      authRepositoryMock.decodeToken.mockReturnValue({
+        ...oidcAuthPayloadDtoBuilder().build(),
+        exp: beyondMax,
+        nbf: undefined,
+        iat: undefined,
+      });
+
+      await target.authenticateWithOidc(
+        faker.string.alphanumeric(32),
+        true,
+        faker.string.alphanumeric(64),
+      );
+
+      expect(authRepositoryMock.signToken).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          exp: new Date(now.getTime() + maxValidityPeriodInSeconds * 1_000),
+        }),
+      );
+    });
+
+    // A step-up elevates an existing session; without one — e.g. it expired
+    // while the user was on the challenge page — there is nothing to elevate,
+    // and minting a fresh session would let elevation double as a login.
+    it('should reject the step-up when the prior session cannot be decoded', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange();
+      authRepositoryMock.decodeToken.mockImplementation(() => {
+        throw new Error('jwt expired');
+      });
+
+      await expect(
+        target.authenticateWithOidc(
+          faker.string.alphanumeric(32),
+          true,
+          faker.string.alphanumeric(64),
+        ),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should reject the step-up when there is no prior session', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange();
+
+      await expect(
+        target.authenticateWithOidc(faker.string.alphanumeric(32), true),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should ignore the prior session on a plain login', async () => {
+      const now = new Date();
+      vi.setSystemTime(now);
+      arrange();
+
+      const result = await target.authenticateWithOidc(
+        faker.string.alphanumeric(32),
+        false,
+        faker.string.alphanumeric(64),
+      );
+
+      expect(authRepositoryMock.decodeToken).not.toHaveBeenCalled();
+      expect(result.maxAge).toBe(maxValidityPeriodInSeconds);
     });
   });
 
@@ -624,6 +783,7 @@ describe('OidcAuthService', () => {
           fakeConfigurationService,
           usersRepositoryMock,
           auth0RepositoryMock,
+          loggingServiceMock,
         );
       });
 
@@ -744,6 +904,7 @@ describe('OidcAuthService', () => {
           fakeConfigurationService,
           usersRepositoryMock,
           auth0RepositoryMock,
+          loggingServiceMock,
         );
 
         // A subdomain that would pass the domain-suffix check should be
