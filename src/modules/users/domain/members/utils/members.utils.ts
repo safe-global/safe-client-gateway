@@ -2,6 +2,44 @@
 
 import type { FindOptionsWhere } from 'typeorm';
 import { MoreThan } from 'typeorm';
+import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import type { User } from '@/modules/users/datasources/entities/users.entity.db';
+
+/**
+ * The subset of a member row the active-admin rules read. Kept structural so
+ * both a fully loaded row and a relation-limited projection satisfy it.
+ */
+type ActiveAdminCandidate = Pick<Member, 'role' | 'status'> & {
+  user: Pick<User, 'id'>;
+};
+
+/**
+ * Single source of truth for what makes a member an admin of a space: the role
+ * alone is not enough, an `INVITED` or `DECLINED` admin cannot administer
+ * anything.
+ */
+export function isActiveAdmin(
+  member: Pick<Member, 'role' | 'status'>,
+): boolean {
+  return member.role === 'ADMIN' && member.status === 'ACTIVE';
+}
+
+/**
+ * True when `userId` is the only active admin among `members` - i.e. removing
+ * that membership would leave the space with nobody able to administer it.
+ *
+ * Shared by every flow that can drop an admin membership: member removal and
+ * self-demotion in `MembersRepository`, and account deletion in
+ * `UsersRepository`, whose cascade deletes the row just as directly.
+ */
+export function isLastActiveAdmin(args: {
+  members: Array<ActiveAdminCandidate>;
+  userId: User['id'];
+}): boolean {
+  const activeAdmins = args.members.filter(isActiveAdmin);
+
+  return activeAdmins.length === 1 && activeAdmins[0].user.id === args.userId;
+}
 
 /**
  * Single source of truth for the "active or pending" membership rule: an OR of
