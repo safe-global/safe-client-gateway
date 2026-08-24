@@ -786,7 +786,13 @@ describe('OidcAuthController', () => {
       });
 
       it('should elevate the session when the provider performed MFA', async () => {
-        const remainingSeconds = 4 * 3_600;
+        // Strictly inside the configured max-validity window — which the test
+        // configuration randomizes per run — so the carry-over, not the bound,
+        // decides the elevated token's expiry.
+        const remainingSeconds = Math.max(
+          1,
+          Math.floor(maxValidityPeriodInMs / 1_000 / 2),
+        );
         const payload = await roundTrip({
           elevate: true,
           amr: ['mfa'],
