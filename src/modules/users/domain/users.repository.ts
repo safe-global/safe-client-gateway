@@ -206,7 +206,8 @@ export class UsersRepository implements IUsersRepository {
    *
    * Locks each space before reading its admins, or READ COMMITTED would let two
    * co-admins acting at once each still see the other. Ascending id order, so
-   * two deletions over the same spaces cannot deadlock.
+   * two deletions over the same spaces cannot deadlock. The caller locks this
+   * user's row first, which is what makes the space set complete.
    */
   private async assertIsNotLastAdminOfAnySpace(args: {
     entityManager: EntityManager;
@@ -254,6 +255,15 @@ export class UsersRepository implements IUsersRepository {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // A `members` insert for this user takes FOR KEY SHARE on their row,
+      // which this conflicts with: a space created concurrently either waits
+      // and then fails its foreign key, or commits in time to be read below.
+      await entityManager.findOne(DbUser, {
+        where: { id: userId },
+        select: { id: true },
+        lock: { mode: 'pessimistic_write' },
+      });
+
       const memberships = await entityManager.find(DbMember, {
         where: { user: { id: userId } },
         relations: { space: true },

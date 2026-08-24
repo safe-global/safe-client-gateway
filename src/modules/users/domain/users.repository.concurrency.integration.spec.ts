@@ -213,4 +213,62 @@ describe('UsersRepository concurrency', () => {
       dataSource.getRepository(User).findOneBy({ id: userId }),
     ).resolves.not.toBeNull();
   });
+
+  // A space can start being administered after the deletion read its
+  // memberships, so the user-row lock - not the space locks - is what covers it.
+  it('rejects a deletion that would orphan a concurrently created space', async () => {
+    const userId = await insertUser();
+
+    const queryRunner = dataSource.createQueryRunner();
+    let deletion: Promise<void> | undefined;
+    try {
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      // Mimics SpacesRepository.create: space plus its creator as active admin.
+      const inserted = await queryRunner.manager
+        .getRepository(Space)
+        .insert({ name: faker.word.noun(), status: 'ACTIVE' });
+      await queryRunner.manager.getRepository(Member).insert({
+        user: { id: userId },
+        space: { id: inserted.identifiers[0].id as Space['id'] },
+        name: faker.person.firstName(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+
+      // Reads no memberships - the creation is still uncommitted.
+      deletion = usersRepository.delete(
+        new AuthPayload(
+          siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
+        ),
+      );
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      await Promise.race([
+        deletion.then(
+          () => undefined,
+          () => undefined,
+        ),
+        new Promise((resolve) => {
+          timer = setTimeout(resolve, 250);
+        }),
+      ]);
+      clearTimeout(timer);
+
+      await queryRunner.commitTransaction();
+    } finally {
+      if (queryRunner.isTransactionActive) {
+        await queryRunner.rollbackTransaction();
+      }
+      await queryRunner.release();
+    }
+
+    await expect(deletion).rejects.toThrow(ConflictException);
+    await expect(
+      dataSource.getRepository(User).findOneBy({ id: userId }),
+    ).resolves.not.toBeNull();
+    await expect(dataSource.getRepository(Member).find()).resolves.toHaveLength(
+      1,
+    );
+  });
 });
