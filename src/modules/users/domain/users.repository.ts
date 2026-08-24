@@ -205,8 +205,16 @@ export class UsersRepository implements IUsersRepository {
    * already applies (`MembersRepository.assertIsNotLastAdmin`): the user can
    * promote another admin or delete the space, then retry.
    *
-   * Runs inside the deletion transaction so a concurrent role change cannot
-   * slip between this check and the delete.
+   * Runs on the deletion's own `entityManager`, immediately before the writes,
+   * which keeps the window between check and delete as narrow as this codebase's
+   * transaction handling allows. It is *not* mutual exclusion: `transaction()`
+   * takes no row locks and Postgres defaults to READ COMMITTED, so two co-admins
+   * of one space deleting their accounts concurrently can both pass this check
+   * and leave the space admin-less. Closing that needs a row lock here, or a
+   * DB-level "at least one active admin per space" invariant, applied to every
+   * path that drops an admin membership - `removeSelf`, `removeUser` and
+   * `updateRole` read their admin list before opening a transaction at all, so
+   * they share the hole and a fix confined to this path would not close it.
    */
   private async assertIsNotLastAdminOfAnySpace(args: {
     entityManager: EntityManager;
