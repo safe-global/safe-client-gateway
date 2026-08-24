@@ -41,6 +41,7 @@ import {
   activeOrPendingMemberWhere,
   isLastActiveAdminOfSpace,
   lockSpaceForAdminChange,
+  lockUserForAdminChange,
 } from '#/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
@@ -574,6 +575,11 @@ export class MembersRepository implements IMembersRepository {
     role: Member['role'];
   }): Promise<void> {
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // A role change touches no FK column, so on its own it takes no lock on
+      // the target's account row - while their in-flight account deletion picks
+      // which spaces to lock from the memberships it can see. Lock that row so
+      // the two serialize; user rows before space rows, per the helper's doc.
+      await lockUserForAdminChange(entityManager, args.userId);
       await lockSpaceForAdminChange(entityManager, args.spaceId);
 
       // A space must keep at least one active admin. The caller verified the
