@@ -2118,6 +2118,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@smithy/core@npm:^3.33.2":
+  version: 3.33.2
+  resolution: "@smithy/core@npm:3.33.2"
+  dependencies:
+    "@smithy/types": "npm:^4.17.2"
+    tslib: "npm:^2.6.2"
+  checksum: 10/9a7bdacb40e9e79b11de4efc8538cdb302e3228d17e99f5bebe25d695dd57107322b0a8e7dcbcd73844521a1c4b04048043e50e0c82771d59d47710634b44535
+  languageName: node
+  linkType: hard
+
 "@smithy/credential-provider-imds@npm:^4.4.16":
   version: 4.4.16
   resolution: "@smithy/credential-provider-imds@npm:4.4.16"
@@ -2171,13 +2181,22 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/util-stream@npm:4.7.16":
-  version: 4.7.16
-  resolution: "@smithy/util-stream@npm:4.7.16"
+"@smithy/types@npm:^4.17.2":
+  version: 4.17.2
+  resolution: "@smithy/types@npm:4.17.2"
   dependencies:
-    "@smithy/core": "npm:^3.31.1"
     tslib: "npm:^2.6.2"
-  checksum: 10/78be143fc7aa9dad9c608ffad1c06fbf003d8b7d4f95398f3471e564ddf0fa45f815f77f16330a2cd69983176265cdcbc5cee76e965f9195c8703b78770340c6
+  checksum: 10/e54500bb56a12a6f92374d6095834af04f19868e5178836b21fdcbce0c0fef0570dede2a39777b9d3330075d55096db206867f73ddf4dfe530d1b392f8d0aea9
+  languageName: node
+  linkType: hard
+
+"@smithy/util-stream@npm:4.8.2":
+  version: 4.8.2
+  resolution: "@smithy/util-stream@npm:4.8.2"
+  dependencies:
+    "@smithy/core": "npm:^3.33.2"
+    tslib: "npm:^2.6.2"
+  checksum: 10/1d10ac9021986e55c6bb9f81cdfc2283657203b9dae6d12cc45f44a386cc23f32f758716799e8716ea8f07fb777e1eb0216b693e95fbeda567d216cb4227e511
   languageName: node
   linkType: hard
 
@@ -6239,7 +6258,7 @@ __metadata:
     "@nestjs/typeorm": "npm:11.0.3"
     "@safe-global/safe-deployments": "npm:1.37.62"
     "@safe-global/safe-modules-deployments": "npm:3.0.9"
-    "@smithy/util-stream": "npm:4.7.16"
+    "@smithy/util-stream": "npm:4.8.2"
     "@swc/core": "npm:1.15.47"
     "@types/amqplib": "npm:0"
     "@types/jsonwebtoken": "npm:9"
