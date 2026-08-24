@@ -39,7 +39,7 @@ import type { IMembersRepository } from '@/modules/users/domain/members/members.
 import {
   activeOrPendingMemberWhere,
   isActiveAdmin,
-  isLastActiveAdmin,
+  isLastActiveAdminOfSpace,
 } from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -685,7 +685,7 @@ export class MembersRepository implements IMembersRepository {
     members: Array<DbMember>;
     userId: User['id'];
   }): void {
-    if (isLastActiveAdmin(args)) {
+    if (isLastActiveAdminOfSpace(args)) {
       throw new ConflictException('Cannot remove last admin.');
     }
   }

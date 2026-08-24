@@ -28,11 +28,18 @@ export function isActiveAdmin(
  * True when `userId` is the only active admin among `members` - i.e. removing
  * that membership would leave the space with nobody able to administer it.
  *
+ * `members` must be the membership rows of a **single** space. The rule counts
+ * active admins, so rows from several spaces at once answer a question nobody
+ * asked: a user who solely administers two spaces yields two active admins and
+ * the function returns `false`, silently reporting the removal as safe. A
+ * caller holding rows for more than one space partitions them first - see
+ * `UsersRepository.assertIsNotLastAdminOfAnySpace`, which loops per space.
+ *
  * Shared by every flow that can drop an admin membership: member removal and
  * self-demotion in `MembersRepository`, and account deletion in
  * `UsersRepository`, whose cascade deletes the row just as directly.
  */
-export function isLastActiveAdmin(args: {
+export function isLastActiveAdminOfSpace(args: {
   members: Array<ActiveAdminCandidate>;
   userId: User['id'];
 }): boolean {
