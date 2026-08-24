@@ -4,17 +4,31 @@ import type { EntityManager, FindOptionsWhere } from 'typeorm';
 import { MoreThan } from 'typeorm';
 import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 
 /**
- * Serializes the paths that can drop an admin membership: each locks the space
- * row before reading its admin list, so two cannot both check the same
- * pre-change list and both conclude they are safe. Must run in a transaction.
+ * Locks needed by the paths that can drop an admin membership, so two of them
+ * cannot check the same pre-change admin list and both conclude they are safe.
  *
- * No relations loaded - Postgres refuses `FOR UPDATE` on the nullable side of
- * an outer join. A missing space is not an error here; the caller's own admin
- * read reports it.
+ * **Ordering, for any new path:** user rows first, then space rows, spaces in
+ * ascending id order. Nothing may hold a space row and then wait on a user row
+ * - that is the only shape that could deadlock these two against each other.
+ *
+ * Both must run inside a transaction, and load no relations: Postgres refuses
+ * `FOR UPDATE` on the nullable side of an outer join. A missing row is not an
+ * error here; the caller's own read reports it.
  */
+export async function lockUserForAdminChange(
+  entityManager: EntityManager,
+  userId: DbUser['id'],
+): Promise<void> {
+  await entityManager.findOne(DbUser, {
+    where: { id: userId },
+    select: { id: true },
+    lock: { mode: 'pessimistic_write' },
+  });
+}
+/** See {@link lockUserForAdminChange} for the ordering rule both share. */
 export async function lockSpaceForAdminChange(
   entityManager: EntityManager,
   spaceId: DbSpace['id'],
@@ -31,7 +45,7 @@ export async function lockSpaceForAdminChange(
  * both a fully loaded row and a relation-limited projection satisfy it.
  */
 type ActiveAdminCandidate = Pick<Member, 'role' | 'status'> & {
-  user: Pick<User, 'id'>;
+  user: Pick<DbUser, 'id'>;
 };
 
 /** An `INVITED` or `DECLINED` admin administers nothing, so status counts too. */
@@ -51,7 +65,7 @@ export function isActiveAdmin(
  */
 export function isLastActiveAdminOfSpace(args: {
   members: Array<ActiveAdminCandidate>;
-  userId: User['id'];
+  userId: DbUser['id'];
 }): boolean {
   const activeAdmins = args.members.filter(isActiveAdmin);
 

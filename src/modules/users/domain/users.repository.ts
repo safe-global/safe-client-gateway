@@ -24,6 +24,7 @@ import {
   isActiveAdmin,
   isLastActiveAdminOfSpace,
   lockSpaceForAdminChange,
+  lockUserForAdminChange,
 } from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -258,11 +259,8 @@ export class UsersRepository implements IUsersRepository {
       // A `members` insert for this user takes FOR KEY SHARE on their row,
       // which this conflicts with: a space created concurrently either waits
       // and then fails its foreign key, or commits in time to be read below.
-      await entityManager.findOne(DbUser, {
-        where: { id: userId },
-        select: { id: true },
-        lock: { mode: 'pessimistic_write' },
-      });
+      // A promotion changes no FK column, so `updateRole` takes this same lock.
+      await lockUserForAdminChange(entityManager, userId);
 
       const memberships = await entityManager.find(DbMember, {
         where: { user: { id: userId } },
