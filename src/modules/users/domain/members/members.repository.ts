@@ -36,7 +36,11 @@ import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
+import {
+  activeOrPendingMemberWhere,
+  isActiveAdmin,
+  isLastActiveAdmin,
+} from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -670,7 +674,7 @@ export class MembersRepository implements IMembersRepository {
   }): void {
     if (
       !args.members.some((member) => {
-        return this.isActiveAdmin(member) && member.user.id === args.userId;
+        return isActiveAdmin(member) && member.user.id === args.userId;
       })
     ) {
       throw new ForbiddenException('User is not an active admin.');
@@ -681,17 +685,9 @@ export class MembersRepository implements IMembersRepository {
     members: Array<DbMember>;
     userId: User['id'];
   }): void {
-    if (
-      args.members.length === 1 &&
-      args.members[0].user.id === args.userId &&
-      this.isActiveAdmin(args.members[0])
-    ) {
+    if (isLastActiveAdmin(args)) {
       throw new ConflictException('Cannot remove last admin.');
     }
-  }
-
-  private isActiveAdmin(member: DbMember): boolean {
-    return member.role === 'ADMIN' && member.status === 'ACTIVE';
   }
 
   /**
