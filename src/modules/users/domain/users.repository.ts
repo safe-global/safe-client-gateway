@@ -20,6 +20,10 @@ import { User as DbUser } from '@/modules/users/datasources/entities/users.entit
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import {
+  isActiveAdmin,
+  isLastActiveAdmin,
+} from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -193,6 +197,52 @@ export class UsersRepository implements IUsersRepository {
     );
   }
 
+  /**
+   * Deleting the user cascade-deletes their `members` rows, so a space whose
+   * only active admin is this user would be left with nobody able to administer
+   * it - not even to delete it, and its remaining members unable to leave.
+   * Reject the deletion instead, mirroring the guard every member-removal flow
+   * already applies (`MembersRepository.assertIsNotLastAdmin`): the user can
+   * promote another admin or delete the space, then retry.
+   *
+   * Runs inside the deletion transaction so a concurrent role change cannot
+   * slip between this check and the delete.
+   */
+  private async assertIsNotLastAdminOfAnySpace(args: {
+    entityManager: EntityManager;
+    userId: User['id'];
+    memberships: Array<DbMember>;
+  }): Promise<void> {
+    const administeredSpaceIds = args.memberships
+      .filter(isActiveAdmin)
+      .map((membership) => membership.space.id);
+
+    if (administeredSpaceIds.length === 0) {
+      return;
+    }
+
+    const activeAdmins = await args.entityManager.find(DbMember, {
+      where: {
+        space: { id: In(administeredSpaceIds) },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+      relations: { space: true, user: true },
+    });
+
+    for (const spaceId of administeredSpaceIds) {
+      const spaceAdmins = activeAdmins.filter(
+        (activeAdmin) => activeAdmin.space.id === spaceId,
+      );
+
+      if (isLastActiveAdmin({ members: spaceAdmins, userId: args.userId })) {
+        throw new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        );
+      }
+    }
+  }
+
   public async delete(authPayload: AuthPayload): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
@@ -200,6 +250,12 @@ export class UsersRepository implements IUsersRepository {
       const memberships = await entityManager.find(DbMember, {
         where: { user: { id: userId } },
         relations: { space: true },
+      });
+
+      await this.assertIsNotLastAdminOfAnySpace({
+        entityManager,
+        userId,
+        memberships,
       });
 
       for (const membership of memberships) {
