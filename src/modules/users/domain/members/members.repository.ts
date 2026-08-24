@@ -40,6 +40,7 @@ import {
   activeOrPendingMemberWhere,
   isActiveAdmin,
   isLastActiveAdminOfSpace,
+  lockSpaceForAdminChange,
 } from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -493,11 +494,26 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
-  private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
-    return this.findOrFail({
+  /**
+   * Active admins of one space, read through the caller's transaction so the
+   * space lock covers them. Skips `findOrFail`'s email decryption: the admin
+   * rules read only role, status and user id, and a KMS call would sit inside
+   * the lock.
+   */
+  private async findActiveAdminsForUpdateOrFail(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+  ): Promise<Array<DbMember>> {
+    const members = await entityManager.find(DbMember, {
       where: { space: { id: spaceId }, role: 'ADMIN', status: 'ACTIVE' },
       relations: { user: true },
     });
+
+    if (members.length === 0) {
+      throw new NotFoundException('No members found.');
+    }
+
+    return members;
   }
 
   public async updateRole(args: {
@@ -508,18 +524,22 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
-    const isSelf = actingUserId === args.userId;
-    if (isSelf && args.role !== 'ADMIN') {
-      this.assertIsNotLastAdmin({
-        members: activeAdmins,
-        userId: actingUserId,
-      });
-    }
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+      const activeAdmins = await this.findActiveAdminsForUpdateOrFail(
+        entityManager,
+        args.spaceId,
+      );
+
+      this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
+      const isSelf = actingUserId === args.userId;
+      if (isSelf && args.role !== 'ADMIN') {
+        this.assertIsNotLastAdmin({
+          members: activeAdmins,
+          userId: actingUserId,
+        });
+      }
+
       const member = await entityManager.findOne(DbMember, {
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
@@ -599,18 +619,22 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
-    const isSelf = actingUserId === args.userId;
-    if (isSelf) {
-      this.assertIsNotLastAdmin({
-        members: activeAdmins,
-        userId: actingUserId,
-      });
-    }
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+      const activeAdmins = await this.findActiveAdminsForUpdateOrFail(
+        entityManager,
+        args.spaceId,
+      );
+
+      this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
+      const isSelf = actingUserId === args.userId;
+      if (isSelf) {
+        this.assertIsNotLastAdmin({
+          members: activeAdmins,
+          userId: actingUserId,
+        });
+      }
+
       const member = await entityManager.findOne(DbMember, {
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
@@ -640,11 +664,15 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsNotLastAdmin({ members: activeAdmins, userId });
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+      const activeAdmins = await this.findActiveAdminsForUpdateOrFail(
+        entityManager,
+        args.spaceId,
+      );
+
+      this.assertIsNotLastAdmin({ members: activeAdmins, userId });
+
       const member = await entityManager.findOne(DbMember, {
         where: { user: { id: userId }, space: { id: args.spaceId } },
       });

@@ -23,6 +23,7 @@ import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-e
 import {
   isActiveAdmin,
   isLastActiveAdminOfSpace,
+  lockSpaceForAdminChange,
 } from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -198,23 +199,14 @@ export class UsersRepository implements IUsersRepository {
   }
 
   /**
-   * Deleting the user cascade-deletes their `members` rows, so a space whose
-   * only active admin is this user would be left with nobody able to administer
-   * it - not even to delete it, and its remaining members unable to leave.
-   * Reject the deletion instead, mirroring the guard every member-removal flow
-   * already applies (`MembersRepository.assertIsNotLastAdmin`): the user can
-   * promote another admin or delete the space, then retry.
+   * Deleting the user cascade-deletes their `members` rows, so a space they
+   * solely administer would be left un-administrable - and its members unable
+   * to leave. Reject instead, as every member-removal flow already does: the
+   * user can promote another admin or delete the space, then retry.
    *
-   * Runs on the deletion's own `entityManager`, immediately before the writes,
-   * which keeps the window between check and delete as narrow as this codebase's
-   * transaction handling allows. It is *not* mutual exclusion: `transaction()`
-   * takes no row locks and Postgres defaults to READ COMMITTED, so two co-admins
-   * of one space deleting their accounts concurrently can both pass this check
-   * and leave the space admin-less. Closing that needs a row lock here, or a
-   * DB-level "at least one active admin per space" invariant, applied to every
-   * path that drops an admin membership - `removeSelf`, `removeUser` and
-   * `updateRole` read their admin list before opening a transaction at all, so
-   * they share the hole and a fix confined to this path would not close it.
+   * Locks each space before reading its admins, or READ COMMITTED would let two
+   * co-admins acting at once each still see the other. Ascending id order, so
+   * two deletions over the same spaces cannot deadlock.
    */
   private async assertIsNotLastAdminOfAnySpace(args: {
     entityManager: EntityManager;
@@ -223,10 +215,15 @@ export class UsersRepository implements IUsersRepository {
   }): Promise<void> {
     const administeredSpaceIds = args.memberships
       .filter(isActiveAdmin)
-      .map((membership) => membership.space.id);
+      .map((membership) => membership.space.id)
+      .sort((a, b) => a - b);
 
     if (administeredSpaceIds.length === 0) {
       return;
+    }
+
+    for (const spaceId of administeredSpaceIds) {
+      await lockSpaceForAdminChange(args.entityManager, spaceId);
     }
 
     const activeAdmins = await args.entityManager.find(DbMember, {
