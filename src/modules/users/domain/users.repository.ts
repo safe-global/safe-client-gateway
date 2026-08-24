@@ -22,7 +22,7 @@ import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
 import {
   isActiveAdmin,
-  isLastActiveAdmin,
+  isLastActiveAdminOfSpace,
 } from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
@@ -243,7 +243,9 @@ export class UsersRepository implements IUsersRepository {
         (activeAdmin) => activeAdmin.space.id === spaceId,
       );
 
-      if (isLastActiveAdmin({ members: spaceAdmins, userId: args.userId })) {
+      if (
+        isLastActiveAdminOfSpace({ members: spaceAdmins, userId: args.userId })
+      ) {
         throw new ConflictException(
           'Cannot delete account while last admin of a workspace.',
         );

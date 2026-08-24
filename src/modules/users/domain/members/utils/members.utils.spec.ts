@@ -9,7 +9,7 @@ import type { Member } from '@/modules/users/domain/entities/member.entity';
 import {
   activeOrPendingMemberWhere,
   isActiveAdmin,
-  isLastActiveAdmin,
+  isLastActiveAdminOfSpace,
 } from '@/modules/users/domain/members/utils/members.utils';
 
 describe('activeOrPendingMemberWhere', () => {
@@ -89,7 +89,7 @@ describe('isActiveAdmin', () => {
   );
 });
 
-describe('isLastActiveAdmin', () => {
+describe('isLastActiveAdminOfSpace', () => {
   const activeAdminOf = (userId: User['id']): DbMember =>
     memberBuilder()
       .with('role', 'ADMIN')
@@ -101,14 +101,14 @@ describe('isLastActiveAdmin', () => {
     const userId = faker.number.int();
 
     expect(
-      isLastActiveAdmin({ members: [activeAdminOf(userId)], userId }),
+      isLastActiveAdminOfSpace({ members: [activeAdminOf(userId)], userId }),
     ).toBe(true);
   });
 
   it('is false when no members are given', () => {
-    expect(isLastActiveAdmin({ members: [], userId: faker.number.int() })).toBe(
-      false,
-    );
+    expect(
+      isLastActiveAdminOfSpace({ members: [], userId: faker.number.int() }),
+    ).toBe(false);
   });
 
   it('is false when the only active admin is someone else', () => {
@@ -118,7 +118,10 @@ describe('isLastActiveAdmin', () => {
     );
 
     expect(
-      isLastActiveAdmin({ members: [activeAdminOf(otherUserId)], userId }),
+      isLastActiveAdminOfSpace({
+        members: [activeAdminOf(otherUserId)],
+        userId,
+      }),
     ).toBe(false);
   });
 
@@ -129,7 +132,7 @@ describe('isLastActiveAdmin', () => {
     );
 
     expect(
-      isLastActiveAdmin({
+      isLastActiveAdminOfSpace({
         members: [activeAdminOf(userId), activeAdminOf(otherUserId)],
         userId,
       }),
@@ -156,7 +159,7 @@ describe('isLastActiveAdmin', () => {
       .build();
 
     expect(
-      isLastActiveAdmin({
+      isLastActiveAdminOfSpace({
         members: [activeAdminOf(userId), invitedAdmin, activeMember],
         userId,
       }),
