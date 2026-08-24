@@ -1,9 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { FindOptionsWhere } from 'typeorm';
+import type { EntityManager, FindOptionsWhere } from 'typeorm';
 import { MoreThan } from 'typeorm';
+import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import type { User } from '@/modules/users/datasources/entities/users.entity.db';
+
+/**
+ * Serializes the paths that can drop an admin membership: each locks the space
+ * row before reading its admin list, so two cannot both check the same
+ * pre-change list and both conclude they are safe. Must run in a transaction.
+ *
+ * No relations loaded - Postgres refuses `FOR UPDATE` on the nullable side of
+ * an outer join. A missing space is not an error here; the caller's own admin
+ * read reports it.
+ */
+export async function lockSpaceForAdminChange(
+  entityManager: EntityManager,
+  spaceId: DbSpace['id'],
+): Promise<void> {
+  await entityManager.findOne(DbSpace, {
+    where: { id: spaceId },
+    select: { id: true },
+    lock: { mode: 'pessimistic_write' },
+  });
+}
 
 /**
  * The subset of a member row the active-admin rules read. Kept structural so
@@ -13,11 +34,7 @@ type ActiveAdminCandidate = Pick<Member, 'role' | 'status'> & {
   user: Pick<User, 'id'>;
 };
 
-/**
- * Single source of truth for what makes a member an admin of a space: the role
- * alone is not enough, an `INVITED` or `DECLINED` admin cannot administer
- * anything.
- */
+/** An `INVITED` or `DECLINED` admin administers nothing, so status counts too. */
 export function isActiveAdmin(
   member: Pick<Member, 'role' | 'status'>,
 ): boolean {
@@ -25,19 +42,12 @@ export function isActiveAdmin(
 }
 
 /**
- * True when `userId` is the only active admin among `members` - i.e. removing
- * that membership would leave the space with nobody able to administer it.
+ * True when removing `userId`'s membership would leave the space with no admin.
  *
- * `members` must be the membership rows of a **single** space. The rule counts
- * active admins, so rows from several spaces at once answer a question nobody
- * asked: a user who solely administers two spaces yields two active admins and
- * the function returns `false`, silently reporting the removal as safe. A
- * caller holding rows for more than one space partitions them first - see
- * `UsersRepository.assertIsNotLastAdminOfAnySpace`, which loops per space.
- *
- * Shared by every flow that can drop an admin membership: member removal and
- * self-demotion in `MembersRepository`, and account deletion in
- * `UsersRepository`, whose cascade deletes the row just as directly.
+ * `members` must come from a **single** space: the rule counts active admins,
+ * so rows spanning two spaces yield two and this returns `false` - wrongly
+ * reporting the removal as safe. Callers holding more than one space partition
+ * first (see `UsersRepository.assertIsNotLastAdminOfAnySpace`).
  */
 export function isLastActiveAdminOfSpace(args: {
   members: Array<ActiveAdminCandidate>;
