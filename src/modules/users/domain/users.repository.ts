@@ -237,14 +237,20 @@ export class UsersRepository implements IUsersRepository {
       relations: { space: true, user: true },
     });
 
-    for (const spaceId of administeredSpaceIds) {
-      const spaceAdmins = activeAdmins.filter(
-        (activeAdmin) => activeAdmin.space.id === spaceId,
-      );
+    // Grouped in one pass: promotion into other people's spaces is not capped,
+    // so the administered set has no bound to scan per space.
+    const adminsBySpace = new Map<DbMember['space']['id'], Array<DbMember>>();
+    for (const activeAdmin of activeAdmins) {
+      const group = adminsBySpace.get(activeAdmin.space.id);
+      if (group) {
+        group.push(activeAdmin);
+      } else {
+        adminsBySpace.set(activeAdmin.space.id, [activeAdmin]);
+      }
+    }
 
-      if (
-        isLastActiveAdminOfSpace({ members: spaceAdmins, userId: args.userId })
-      ) {
+    for (const members of adminsBySpace.values()) {
+      if (isLastActiveAdminOfSpace({ members, userId: args.userId })) {
         throw new ConflictException(
           'Cannot delete account while last admin of a workspace.',
         );
