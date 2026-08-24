@@ -35,6 +35,7 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import type { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
 import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
@@ -60,6 +61,7 @@ const UserStatusKeys = getStringEnumKeys(UserStatus);
 describe('UsersRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let usersRepository: UsersRepository;
+  let spaceAuditRepository: MockedObject<ISpaceAuditRepository>;
 
   const testDatabaseName = faker.string.alpha({
     length: 10,
@@ -121,13 +123,14 @@ describe('UsersRepository', () => {
     );
     await migrator.migrate();
 
+    spaceAuditRepository = createMockSpaceAuditRepository();
     usersRepository = new UsersRepository(
       postgresDatabaseService,
       new WalletsRepository(
         postgresDatabaseService,
         createMockWalletEncryptionService(),
       ),
-      createMockSpaceAuditRepository(),
+      spaceAuditRepository,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
     );
@@ -748,6 +751,9 @@ describe('UsersRepository', () => {
 
       await expect(dbUserRepository.find()).resolves.toHaveLength(1);
       await expect(dbMemberRepository.find()).resolves.toHaveLength(1);
+      // The guard has to run ahead of the MEMBER_LEFT writes, not just roll
+      // them back - the audit table rejects DELETE.
+      expect(spaceAuditRepository.record).not.toHaveBeenCalled();
     });
 
     it('should delete a user who shares a space with another active admin', async () => {
@@ -841,6 +847,7 @@ describe('UsersRepository', () => {
 
       await expect(dbUserRepository.find()).resolves.toHaveLength(2);
       await expect(dbMemberRepository.find()).resolves.toHaveLength(3);
+      expect(spaceAuditRepository.record).not.toHaveBeenCalled();
     });
   });
 
