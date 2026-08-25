@@ -20,6 +20,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   type Auth0JwksFixture,
   getAuth0JwksFixture,
@@ -735,8 +736,7 @@ describe('OidcAuthController', () => {
         const cookies = [stateCookie!];
         if (priorSessionExp) {
           const priorToken = jwtService.sign({
-            auth_method: 'oidc',
-            sub: faker.string.numeric({ exclude: ['0'] }),
+            ...oidcAuthPayloadDtoBuilder().build(),
             exp: priorSessionExp,
           });
           cookies.push(`access_token=${priorToken}`);
