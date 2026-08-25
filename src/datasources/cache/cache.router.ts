@@ -1181,6 +1181,7 @@ export class CacheRouter {
    * @param args.gasToken - Gas token address
    * @param args.threshold - Safe threshold (number of signatures)
    * @param args.origin - Transaction origin
+   * @param args.safenetCheck - Whether the fee service must price a Safenet check
    * @returns CacheDir - Cache directory
    */
   static getGtfFeePreviewCacheDir(args: {
@@ -1194,10 +1195,11 @@ export class CacheRouter {
     gasToken: Address;
     threshold: number;
     origin?: string;
+    safenetCheck?: boolean;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.origin ?? Origin.NATIVE}`,
+      `${args.to}_${args.value}_${args.data}_${args.operation}_${args.nonce}_${args.gasToken}_${args.threshold}_${args.origin ?? Origin.NATIVE}_${args.safenetCheck ?? false}`,
     );
     return new CacheDir(
       CacheRouter.getGtfFeePreviewCacheKey(args),

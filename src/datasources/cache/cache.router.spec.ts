@@ -209,6 +209,7 @@ describe('CacheRouter', () => {
         ['to', getAddress(faker.finance.ethereumAddress())],
         ['nonce', '1'],
         ['origin', Origin.SAFE_APP],
+        ['safenetCheck', true],
       ] as const)(
         'should produce a different hash when %s differs',
         (field, value) => {
@@ -229,6 +230,16 @@ describe('CacheRouter', () => {
         const dirExplicit = CacheRouter.getGtfFeePreviewCacheDir({
           ...rest,
           origin: Origin.NATIVE,
+        });
+
+        expect(dirDefaulted.field).toBe(dirExplicit.field);
+      });
+
+      it('should default safenetCheck the same as an explicit false', () => {
+        const dirDefaulted = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
+        const dirExplicit = CacheRouter.getGtfFeePreviewCacheDir({
+          ...baseArgs,
+          safenetCheck: false,
         });
 
         expect(dirDefaulted.field).toBe(dirExplicit.field);

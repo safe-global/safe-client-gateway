@@ -148,6 +148,13 @@ export class FeePreviewFeeBreakdown {
   @ApiProperty({ type: [FeePreviewValuationDetail] })
   valuationDetails: Array<FeePreviewValuationDetail>;
 
+  @ApiPropertyOptional({
+    description:
+      'Fee charged to the user for the Safenet check on this transaction. It is already included in totalUsd and encoded in txData.baseGas. It is 0 when the transaction is not checked, so key off safenetFeeUsd > 0, never off field presence. Optional because an older fee service omits the field.',
+    example: 1,
+  })
+  safenetFeeUsd?: number;
+
   constructor(feeBreakdown: GtfFeeBreakdown) {
     this.txValueUsd = feeBreakdown.txValueUsd;
     this.trailingVolumeUsd = feeBreakdown.trailingVolumeUsd;
@@ -159,6 +166,7 @@ export class FeePreviewFeeBreakdown {
     this.valuationDetails = feeBreakdown.valuationDetails.map(
       (detail) => new FeePreviewValuationDetail(detail),
     );
+    this.safenetFeeUsd = feeBreakdown.safenetFeeUsd;
   }
 }
 

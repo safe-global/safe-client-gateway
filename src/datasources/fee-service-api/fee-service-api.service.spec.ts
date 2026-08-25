@@ -5,6 +5,7 @@ import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.service';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
@@ -285,6 +286,38 @@ describe('FeeServiceApi', () => {
       expect(mockDataSource.post).toHaveBeenCalledWith(
         expect.objectContaining({
           data: { ...requestWithoutOrigin, origin: Origin.NATIVE },
+        }),
+      );
+    });
+
+    it('should forward safenetCheck in the body and key the cache on it', async () => {
+      const checkedRequest = gtfFeesRequestBuilder()
+        .with('safenetCheck', true)
+        .build();
+      mockDataSource.post.mockResolvedValueOnce(rawify(mockGtfFeeResponse));
+
+      await target.getGtfFees({
+        chainId,
+        safeAddress,
+        request: checkedRequest,
+      });
+
+      expect(mockDataSource.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ safenetCheck: true }),
+          cacheDir: CacheRouter.getGtfFeePreviewCacheDir({
+            chainId,
+            safeAddress,
+            to: checkedRequest.to,
+            value: checkedRequest.value,
+            data: checkedRequest.data,
+            operation: checkedRequest.operation,
+            nonce: checkedRequest.nonce,
+            gasToken: checkedRequest.gasToken,
+            threshold: checkedRequest.numberSignatures,
+            origin: checkedRequest.origin,
+            safenetCheck: true,
+          }),
         }),
       );
     });
