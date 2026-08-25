@@ -3,6 +3,11 @@ import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
 import {
   AuthMethod,
@@ -50,6 +55,8 @@ export class OidcAuthService {
     private readonly usersRepository: IUsersRepository,
     @Inject(IAuth0Repository)
     private readonly auth0Repository: IAuth0Repository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.maxValidityPeriodInSeconds = this.configurationService.getOrThrow(
       'auth.maxValidityPeriodSeconds',
@@ -81,10 +88,15 @@ export class OidcAuthService {
    * @param elevate - Whether this callback completes a step-up round-trip. When
    *   true the provider must have performed a multi-factor challenge, and the
    *   request is rejected if it did not.
+   * @param priorAccessToken - The session cookie that was present when the
+   *   step-up round-trip completed, if any. On elevation its expiry is carried
+   *   over to the new token, so a step-up never extends the session; without a
+   *   valid one there is nothing to elevate and the request is rejected.
    */
   public async authenticateWithOidc(
     code: string,
     elevate = false,
+    priorAccessToken?: string,
   ): Promise<OidcAuthTokenResponse> {
     const {
       sub: extUserId,
@@ -119,13 +131,12 @@ export class OidcAuthService {
       this.maxValidityPeriodInSeconds,
     );
 
-    if (expirationTime) {
-      assertExpirationTime(
-        expirationTime,
-        maxExpirationTime,
-        this.maxValidityPeriodInSeconds,
-      );
-    }
+    const exp = this.getSessionExpiration({
+      elevate,
+      expirationTime,
+      priorAccessToken,
+      maxExpirationTime,
+    });
 
     const userId = await this.usersRepository.findOrCreateByExtUserIdAndEmail(
       extUserId,
@@ -146,17 +157,93 @@ export class OidcAuthService {
       },
       {
         nbf,
-        exp: expirationTime ?? maxExpirationTime,
+        exp,
         iat: iat ?? new Date(),
       },
     );
 
-    const exp = expirationTime ?? maxExpirationTime;
     return {
       accessToken,
       maxAge: getSecondsUntil(exp),
       userId,
     };
+  }
+
+  /**
+   * The expiry for the token about to be signed.
+   *
+   * A plain login takes the provider's expiry. A step-up elevates the session
+   * the user already has, so it keeps that session's expiry: it proves the
+   * second factor, it does not restart the absolute-timeout clock. The
+   * max-validity bound applies either way.
+   *
+   * @throws {ForbiddenException} When the provider asks for an expiry beyond
+   *   the max-validity bound — a tenant misconfiguration worth surfacing
+   *   rather than silently shortening.
+   * @throws {UnauthorizedException} On a step-up with no live session to
+   *   elevate — it expired while the user was on the challenge page. Minting a
+   *   fresh session here would let a step-up double as a login whose only
+   *   first factor is Auth0's longer-lived SSO session.
+   */
+  private getSessionExpiration({
+    elevate,
+    expirationTime,
+    priorAccessToken,
+    maxExpirationTime,
+  }: {
+    elevate: boolean;
+    expirationTime: Date | undefined;
+    priorAccessToken: string | undefined;
+    maxExpirationTime: Date;
+  }): Date {
+    if (expirationTime) {
+      assertExpirationTime(
+        expirationTime,
+        maxExpirationTime,
+        this.maxValidityPeriodInSeconds,
+      );
+    }
+
+    if (!elevate) {
+      return expirationTime ?? maxExpirationTime;
+    }
+
+    const priorExpiration = this.getPriorExpiration(priorAccessToken);
+    if (!priorExpiration) {
+      throw new UnauthorizedException('There is no session to elevate');
+    }
+
+    // Only fires if the configured max validity was shortened after this
+    // session was issued: re-signing must not carry over a lifetime the
+    // current policy would no longer grant.
+    if (priorExpiration > maxExpirationTime) {
+      return maxExpirationTime;
+    }
+
+    return priorExpiration;
+  }
+
+  /**
+   * The expiry the elevated session must keep: the prior session's own.
+   *
+   * The session lifetime is an absolute timeout — its job is to bound how
+   * long any one session lives, and a step-up proves only the second factor,
+   * so it must not reset that clock. Returns undefined when there is no
+   * (valid) prior session; the caller rejects the elevation in that case.
+   */
+  private getPriorExpiration(priorAccessToken?: string): Date | undefined {
+    if (!priorAccessToken) {
+      return undefined;
+    }
+
+    try {
+      return this.authRepository.decodeToken(priorAccessToken).exp;
+    } catch (err) {
+      // Expected on a session that expired while the user was on the
+      // challenge page; only the error message is logged, never the token.
+      this.loggingService.debug(asError(err).message);
+      return undefined;
+    }
   }
 
   /**

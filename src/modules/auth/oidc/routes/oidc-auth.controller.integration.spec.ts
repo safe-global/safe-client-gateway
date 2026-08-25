@@ -20,6 +20,7 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import { getSecondsUntil } from '@/domain/common/utils/time';
+import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   type Auth0JwksFixture,
   getAuth0JwksFixture,
@@ -692,9 +693,12 @@ describe('OidcAuthController', () => {
       async function roundTrip({
         elevate,
         amr,
+        priorSessionExp,
       }: {
         elevate: boolean;
         amr?: Array<string>;
+        /** When set, the callback arrives with a live session cookie expiring then. */
+        priorSessionExp?: Date;
       }): Promise<Record<string, unknown> | undefined> {
         vi.setSystemTime(NOW_MS);
 
@@ -729,9 +733,18 @@ describe('OidcAuthController', () => {
           .find((cookie) => cookie.startsWith('auth_state='))
           ?.split(';')[0];
 
+        const cookies = [stateCookie!];
+        if (priorSessionExp) {
+          const priorToken = jwtService.sign({
+            ...oidcAuthPayloadDtoBuilder().build(),
+            exp: priorSessionExp,
+          });
+          cookies.push(`access_token=${priorToken}`);
+        }
+
         const callbackResponse = await request(app.getHttpServer())
           .get('/v1/auth/oidc/callback')
-          .set('Cookie', stateCookie!)
+          .set('Cookie', cookies)
           .query({ code: 'auth-code', state })
           .expect(302);
 
@@ -773,12 +786,34 @@ describe('OidcAuthController', () => {
       });
 
       it('should elevate the session when the provider performed MFA', async () => {
-        const payload = await roundTrip({ elevate: true, amr: ['mfa'] });
+        // Strictly inside the configured max-validity window — which the test
+        // configuration randomizes per run — so the carry-over, not the bound,
+        // decides the elevated token's expiry.
+        const remainingSeconds = Math.max(
+          1,
+          Math.floor(maxValidityPeriodInMs / 1_000 / 2),
+        );
+        const payload = await roundTrip({
+          elevate: true,
+          amr: ['mfa'],
+          priorSessionExp: new Date(NOW_MS + remainingSeconds * 1_000),
+        });
 
         expect(payload).toMatchObject({
           auth_method: 'oidc',
           mfa_verified_at: NOW_SECONDS,
+          // The prior session's expiry is carried over, not extended.
+          exp: NOW_SECONDS + remainingSeconds,
         });
+      });
+
+      // A step-up elevates an existing session; with none to elevate — it
+      // expired while the user was on the challenge page — the callback fails
+      // instead of minting a fresh session.
+      it('should refuse to elevate when there is no session to elevate', async () => {
+        const payload = await roundTrip({ elevate: true, amr: ['mfa'] });
+
+        expect(payload).toBeUndefined();
       });
 
       it('should refuse to elevate when the provider did not perform MFA', async () => {
