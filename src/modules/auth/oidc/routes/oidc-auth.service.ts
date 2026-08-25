@@ -131,14 +131,6 @@ export class OidcAuthService {
       this.maxValidityPeriodInSeconds,
     );
 
-    if (expirationTime) {
-      assertExpirationTime(
-        expirationTime,
-        maxExpirationTime,
-        this.maxValidityPeriodInSeconds,
-      );
-    }
-
     const exp = this.getSessionExpiration({
       elevate,
       expirationTime,
@@ -185,6 +177,9 @@ export class OidcAuthService {
    * second factor, it does not restart the absolute-timeout clock. The
    * max-validity bound applies either way.
    *
+   * @throws {ForbiddenException} When the provider asks for an expiry beyond
+   *   the max-validity bound — a tenant misconfiguration worth surfacing
+   *   rather than silently shortening.
    * @throws {UnauthorizedException} On a step-up with no live session to
    *   elevate — it expired while the user was on the challenge page. Minting a
    *   fresh session here would let a step-up double as a login whose only
@@ -201,6 +196,14 @@ export class OidcAuthService {
     priorAccessToken: string | undefined;
     maxExpirationTime: Date;
   }): Date {
+    if (expirationTime) {
+      assertExpirationTime(
+        expirationTime,
+        maxExpirationTime,
+        this.maxValidityPeriodInSeconds,
+      );
+    }
+
     if (!elevate) {
       return expirationTime ?? maxExpirationTime;
     }
