@@ -11,6 +11,8 @@ import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -1265,6 +1267,24 @@ describe('EntitlementsService', () => {
       await expect(
         assertSeats(enforcingService, spaceId, 1),
       ).rejects.toMatchObject({ response: { quota: 4, used: 4 } });
+    });
+
+    it('does not cache a grant computed before an invalidation landed', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
+      fakeCacheService.clear();
+      // Stands in for a materialization committing mid-computation: the key was
+      // dropped after this read started, so writing back would re-poison it.
+      await fakeCacheService.hSet(
+        new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        String(Date.now() + 60_000),
+        60,
+      );
+
+      await assertSeats(enforcingService, spaceId, 1);
+
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
     it('drops the cached grant when a new package is materialized', async () => {

@@ -2,9 +2,11 @@
 import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
+import { UUID_REGEX } from '@/domain/common/constants';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { EntitlementGuard } from '@/modules/entitlements/routes/guards/entitlement.guard';
+import { SpaceIdParamSchema } from '@/modules/entitlements/routes/guards/space-id-param.schema';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
@@ -87,6 +89,22 @@ describe('EntitlementGuard', () => {
     expect(spacesRepository.findIdByUuid).toHaveBeenCalledExactlyOnceWith(
       laxUuid,
     );
+  });
+
+  it('accepts exactly what `SpaceIdPipe` accepts', () => {
+    // The guard skipping an id the pipe resolves would leave the handler
+    // ungated, so both must gate on the same predicate.
+    const ids = [
+      fakeUuid(),
+      '11111111-1111-0111-c111-111111111111',
+      faker.lorem.slug(),
+      '',
+    ];
+
+    for (const id of ids) {
+      const { spaceId } = SpaceIdParamSchema.parse({ spaceId: id });
+      expect(spaceId !== undefined).toBe(UUID_REGEX.test(id));
+    }
   });
 
   it.each([

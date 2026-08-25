@@ -6,6 +6,7 @@ import {
   CacheService,
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
@@ -68,7 +69,11 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
 export class EntitlementsService implements IEntitlementEnforcement {
   private readonly enforcementStartsAt: Date;
   private readonly grantsCacheTtlSeconds: number;
-  private readonly maxSafesPerSpace: number;
+  /**
+   * Exhaustive like `stockCounters`: a new published feature does not compile
+   * until its pre-enforcement limit is named. Goes away after the date.
+   */
+  private readonly preEnforcementQuotas: Record<FeatureKey, number>;
 
   public constructor(
     @Inject(IFeaturesRepository)
@@ -102,9 +107,11 @@ export class EntitlementsService implements IEntitlementEnforcement {
     this.grantsCacheTtlSeconds = configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.entitlements',
     );
-    this.maxSafesPerSpace = configurationService.getOrThrow<number>(
-      'spaces.maxSafesPerSpace',
-    );
+    this.preEnforcementQuotas = {
+      safe_seats: configurationService.getOrThrow<number>(
+        'spaces.maxSafesPerSpace',
+      ),
+    };
   }
 
   /**
@@ -181,10 +188,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
     if (grant.quota === null) {
       return;
     }
-    // `delta: 0` still costs one unit: that is what makes being at the limit,
-    // or granted no allowance at all, a rejection.
-    const consumed = Math.max(args.delta, 1);
-    if (used + consumed <= grant.quota) {
+    // Rejected when already at the limit (`delta: 0` asks exactly that) or
+    // when this batch would overshoot it.
+    if (used < grant.quota && used + args.delta <= grant.quota) {
       return;
     }
     // The canonical quota event, so analytics counts what the server decided.
@@ -230,16 +236,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
 
   /** The feature's own limit until enforcement begins, as a grant. */
   private staticGrant(featureKey: FeatureKey): FeatureGrant {
-    return { quota: this.preEnforcementQuotas[featureKey](), resetsAt: null };
+    return { quota: this.preEnforcementQuotas[featureKey], resetsAt: null };
   }
-
-  /**
-   * Exhaustive like `stockCounters`: a new published feature does not compile
-   * until its pre-enforcement limit is named. Goes away after the date.
-   */
-  private readonly preEnforcementQuotas: Record<FeatureKey, () => number> = {
-    safe_seats: () => this.maxSafesPerSpace,
-  };
 
   /**
    * Read live — a stale count would gate wrongly. Zero for anything but a
@@ -268,12 +266,18 @@ export class EntitlementsService implements IEntitlementEnforcement {
       return CachedGrantsSchema.parse(JSON.parse(cached));
     }
 
+    const startTimeMs = Date.now();
     const grants = await this.computeGrants(spaceId);
-    await this.cacheService.hSet(
-      cacheDir,
-      JSON.stringify(grants),
-      this.grantsCacheTtlSeconds,
-    );
+    // A materialization that committed while this was computing already
+    // dropped the key; writing back would re-poison it for the whole TTL.
+    // Same guard as `CacheFirstDataSource`'s `_shouldBeCached`.
+    if (await this.outlivesLastInvalidation(cacheDir.key, startTimeMs)) {
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(grants),
+        this.grantsCacheTtlSeconds,
+      );
+    }
     return grants;
   }
 
@@ -302,6 +306,17 @@ export class EntitlementsService implements IEntitlementEnforcement {
         ]),
       ),
     };
+  }
+
+  /** Whether nothing invalidated the key since `startTimeMs`. */
+  private async outlivesLastInvalidation(
+    key: string,
+    startTimeMs: number,
+  ): Promise<boolean> {
+    const invalidatedAtMs = await this.cacheService.hGet(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+    );
+    return invalidatedAtMs === null || Number(invalidatedAtMs) < startTimeMs;
   }
 
   private async computeGrants(
