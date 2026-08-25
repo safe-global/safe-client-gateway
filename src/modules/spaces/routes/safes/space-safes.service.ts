@@ -4,6 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -26,6 +27,8 @@ export class SpaceSafesService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IEntitlementEnforcement)
+    private readonly entitlementEnforcement: IEntitlementEnforcement,
   ) {}
 
   public async create(args: {
@@ -36,10 +39,19 @@ export class SpaceSafesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.spaceId, userId);
 
-    return await this.spaceSafesRepository.create({
+    // Resolved here, applied inside the write: no I/O under the space's lock.
+    // `SafeSeatsGuard` only rejects early.
+    const assertSeats = await this.entitlementEnforcement.prepareQuotaCheck({
+      spaceId: args.spaceId,
+      featureKey: 'safe_seats',
+      delta: args.payload.length,
+    });
+
+    await this.spaceSafesRepository.create({
       spaceId: args.spaceId,
       actorUserId: userId,
       payload: args.payload,
+      assertSeats,
     });
   }
 

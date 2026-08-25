@@ -10,6 +10,8 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -33,6 +35,11 @@ const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
 
+const entitlementEnforcementMock = {
+  assertWithinQuota: vi.fn(),
+  prepareQuotaCheck: vi.fn(),
+} as MockedObject<IEntitlementEnforcement>;
+
 describe('SpaceSafesService', () => {
   let service: SpaceSafesService;
 
@@ -42,6 +49,7 @@ describe('SpaceSafesService', () => {
       spaceSafesRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
+      entitlementEnforcementMock,
     );
   });
 
@@ -56,6 +64,7 @@ describe('SpaceSafesService', () => {
       const payload = [{ address: addr(), chainId }];
 
       spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
 
       await service.create({ spaceId, authPayload, payload });
 
@@ -64,6 +73,7 @@ describe('SpaceSafesService', () => {
         spaceId,
         actorUserId: Number(authPayload.sub),
         payload,
+        assertSeats: expect.any(Function),
       });
     });
 
@@ -97,6 +107,64 @@ describe('SpaceSafesService', () => {
         ).rejects.toThrow(ForbiddenException);
       },
     );
+
+    it('prepares the seat check for the whole batch and hands it to the write', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const payload = [
+        { address: addr(), chainId: faker.number.int().toString() },
+        { address: addr(), chainId: faker.number.int().toString() },
+      ];
+      const used = faker.number.int({ min: 1, max: 5 });
+      const check = vi.fn();
+      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
+      // Stands in for the repository, which counts under the space's lock.
+      spaceSafesRepositoryMock.create.mockImplementation(({ assertSeats }) => {
+        assertSeats(used);
+        return Promise.resolve();
+      });
+
+      await service.create({ spaceId, authPayload, payload });
+
+      expect(
+        entitlementEnforcementMock.prepareQuotaCheck,
+      ).toHaveBeenCalledExactlyOnceWith({
+        spaceId,
+        featureKey: 'safe_seats',
+        delta: payload.length,
+      });
+      expect(check).toHaveBeenCalledExactlyOnceWith(used);
+    });
+
+    it('propagates a seat rejection raised inside the write', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      const quota = faker.number.int({ min: 5, max: 10 });
+      const quotaExceeded = new QuotaExceededError({
+        feature: 'safe_seats',
+        quota,
+        used: quota,
+        resetsAt: null,
+      });
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(() => {
+        throw quotaExceeded;
+      });
+      spaceSafesRepositoryMock.create.mockImplementation(({ assertSeats }) => {
+        assertSeats(quota);
+        return Promise.resolve();
+      });
+
+      await expect(
+        service.create({
+          spaceId: faker.number.int(),
+          authPayload,
+          payload: [
+            { address: addr(), chainId: faker.number.int().toString() },
+          ],
+        }),
+      ).rejects.toThrow(quotaExceeded);
+    });
   });
 
   describe('get', () => {

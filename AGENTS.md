@@ -31,7 +31,7 @@ Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Cod
 1. Every `@Param`/`@Query`/`@Body` goes through `new ValidationPipe(ZodSchema)` — no bare access. → [security.md](docs/agents/security.md)
 2. Never call `fetch`/HTTP clients directly — outbound calls go through `INetworkService`/`CacheFirstDataSource`. → [caching-and-performance.md](docs/agents/caching-and-performance.md)
 3. Datasources return `Raw<T>`; the owning repository must `Schema.parse()` before returning. → [api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md)
-4. Imports use the `@/` alias only; import other modules only via their `domain/`. → [module-structure.md](docs/agents/module-structure.md)
+4. Imports use the `@/` alias only; import other modules only via their `domain/` — the sole exception being a guard another module applies, which is imported from where it lives. → [module-structure.md](docs/agents/module-structure.md)
 5. New feature code goes in `src/modules/<kebab>/` following the canonical skeleton — never in `src/routes/`, `src/domain/`, or `src/datasources/`. → [module-structure.md](docs/agents/module-structure.md)
 6. Test data comes from builders + faker — no literal fixtures. → [testing.md](docs/agents/testing.md)
 7. Every env var is declared in `configuration.ts` AND `RootConfigurationSchema`; secrets never get fallback defaults. → [configuration-and-flags.md](docs/agents/configuration-and-flags.md)

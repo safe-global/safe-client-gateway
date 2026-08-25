@@ -12,6 +12,15 @@ import type { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-s
 export const ISpaceSafesRepository = Symbol('ISpaceSafesRepository');
 
 export interface ISpaceSafesRepository {
+  /**
+   * `assertSeats` is the caller's plan rule, applied to the Safe count taken
+   * inside this method's transaction and under the space's lock — so it sees
+   * the state the insert lands on, and concurrent additions cannot each pass a
+   * stale count. Synchronous by contract: that critical section stays free of
+   * I/O, so a caller resolves what it needs first (see
+   * `IEntitlementEnforcement.prepareQuotaCheck`). Required, so a new caller
+   * has to state which seat rule applies.
+   */
   create(args: {
     spaceId: Space['id'];
     actorUserId: number;
@@ -19,6 +28,7 @@ export interface ISpaceSafesRepository {
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
     }>;
+    assertSeats: (used: number) => void;
   }): Promise<void>;
 
   findBySpaceId(

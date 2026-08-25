@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
@@ -37,6 +37,7 @@ const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
 describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
+  let auditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
   let dbSpaceRepository: Repository<Space>;
@@ -49,6 +50,9 @@ describe('SpaceSafesRepository', () => {
   });
   const testConfiguration = configuration();
 
+  /** Most cases are not about the seat rule, so it admits everything. */
+  const noSeatLimit = (): void => {};
+
   const dataSource = new DataSource({
     ...postgresConfig({
       ...testConfiguration.db.connection.postgres,
@@ -58,8 +62,6 @@ describe('SpaceSafesRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [Member, Space, SpaceSafe, User, Wallet],
   });
-
-  const maxSafesPerSpace = 5;
 
   beforeAll(async () => {
     // Create database
@@ -96,9 +98,6 @@ describe('SpaceSafesRepository', () => {
         if (key === 'db.migrator.retryAfterMs') {
           return testConfiguration.db.migrator.retryAfterMs;
         }
-        if (key === 'spaces.maxSafesPerSpace') {
-          return maxSafesPerSpace;
-        }
       }),
     } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
@@ -108,10 +107,10 @@ describe('SpaceSafesRepository', () => {
     );
     await migrator.migrate();
 
+    auditRepository = createMockSpaceAuditRepository();
     spaceSafesRepo = new SpaceSafesRepository(
       postgresDatabaseService,
-      mockConfigService,
-      createMockSpaceAuditRepository(),
+      auditRepository,
       createMockSpaceEncryptionService(),
     );
 
@@ -299,6 +298,7 @@ describe('SpaceSafesRepository', () => {
       });
 
       await spaceSafesRepo.create({
+        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId: userId,
         payload: [
@@ -331,7 +331,7 @@ describe('SpaceSafesRepository', () => {
           chainId: faker.string.numeric(),
           address: getAddress(faker.finance.ethereumAddress()),
         }),
-        { count: { min: 2, max: maxSafesPerSpace } },
+        { count: { min: 2, max: 5 } },
       );
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -355,6 +355,7 @@ describe('SpaceSafesRepository', () => {
       });
 
       await spaceSafesRepo.create({
+        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId: userId,
         payload,
@@ -372,10 +373,8 @@ describe('SpaceSafesRepository', () => {
       );
     });
 
-    it('should fail if the number of SpaceSafes surpasses the limit', async () => {
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
+    it('undoes the inserts when the audit record fails', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       await dbWalletRepo.insert({
         user: { id: userId },
@@ -393,82 +392,13 @@ describe('SpaceSafesRepository', () => {
         name: faker.word.noun(),
         space: { id: spaceId },
       });
-
-      // Create (maxSafesPerSpace - 1) Safes
-      await spaceSafesRepo.create({
-        spaceId: spaceId,
-        actorUserId: userId,
-        payload: faker.helpers.multiple(
-          () => ({
-            chainId: faker.string.numeric(),
-            address: getAddress(faker.finance.ethereumAddress()),
-          }),
-          { count: maxSafesPerSpace - 1 },
-        ),
-      });
-
-      // Create 2 Safes more to surpass the limit
-      await expect(
-        spaceSafesRepo.create({
-          spaceId: spaceId,
-          actorUserId: userId,
-          payload: faker.helpers.multiple(
-            () => ({
-              chainId: faker.string.numeric(),
-              address: getAddress(faker.finance.ethereumAddress()),
-            }),
-            { count: 2 },
-          ),
-        }),
-      ).rejects.toThrow(
-        new BadRequestException(
-          `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts. You can only add up to 1 more.`,
-        ),
-      );
-
-      // The Space should still have (maxSafesPerSpace - 1) Safes
-      await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toHaveLength(
-        maxSafesPerSpace - 1,
-      );
-    });
-
-    it('should not mention remaining slots when the Space is already at the limit', async () => {
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      await dbWalletRepo.insert({
-        user: { id: userId },
-        address: getAddress(faker.finance.ethereumAddress()),
-      });
-      const space = await dbSpaceRepository.insert({
-        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
-        name: faker.word.noun(),
-      });
-      const spaceId = space.identifiers[0].id as Space['id'];
-      await dbMembersRepository.insert({
-        user: { id: userId },
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        name: faker.word.noun(),
-        space: { id: spaceId },
-      });
-
-      await spaceSafesRepo.create({
-        spaceId: spaceId,
-        actorUserId: userId,
-        payload: faker.helpers.multiple(
-          () => ({
-            chainId: faker.string.numeric(),
-            address: getAddress(faker.finance.ethereumAddress()),
-          }),
-          { count: maxSafesPerSpace },
-        ),
-      });
+      const failure = new Error(faker.lorem.sentence());
+      // Breaks if the transaction `create` owns ever moves out of it.
+      auditRepository.record.mockRejectedValueOnce(failure);
 
       await expect(
         spaceSafesRepo.create({
-          spaceId: spaceId,
+          spaceId,
           actorUserId: userId,
           payload: [
             {
@@ -476,15 +406,63 @@ describe('SpaceSafesRepository', () => {
               address: getAddress(faker.finance.ethereumAddress()),
             },
           ],
+          assertSeats: noSeatLimit,
         }),
-      ).rejects.toThrow(
-        new BadRequestException(
-          `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts.`,
-        ),
+      ).rejects.toThrow(failure);
+
+      await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toEqual([]);
+    });
+
+    it('admits no more Safes than the seat rule allows, under concurrent additions', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      await dbWalletRepo.insert({
+        user: { id: userId },
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      await dbMembersRepository.insert({
+        user: { id: userId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        name: faker.word.noun(),
+        space: { id: spaceId },
+      });
+
+      const quota = faker.number.int({ min: 2, max: 4 });
+      const attempts = quota + faker.number.int({ min: 2, max: 5 });
+      const addSafeUnderQuota = (): Promise<void> =>
+        spaceSafesRepo.create({
+          spaceId,
+          actorUserId: userId,
+          payload: [
+            {
+              chainId: faker.string.numeric(),
+              address: getAddress(faker.finance.ethereumAddress()),
+            },
+          ],
+          // Without the lock, each of these reads the same pre-insert count
+          // and they all pass.
+          assertSeats: (used) => {
+            if (used + 1 > quota) {
+              throw new Error('seat quota exceeded');
+            }
+          },
+        });
+
+      const results = await Promise.allSettled(
+        Array.from({ length: attempts }, addSafeUnderQuota),
       );
 
+      expect(
+        results.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(quota);
       await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toHaveLength(
-        maxSafesPerSpace,
+        quota,
       );
     });
 
@@ -515,11 +493,13 @@ describe('SpaceSafesRepository', () => {
       await expect(
         Promise.all([
           spaceSafesRepo.create({
+            assertSeats: noSeatLimit,
             spaceId: spaceId,
             actorUserId: userId,
             payload: [{ chainId, address }],
           }),
           spaceSafesRepo.create({
+            assertSeats: noSeatLimit,
             spaceId: spaceId,
             actorUserId: userId,
             payload: [
@@ -650,6 +630,7 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await spaceSafesRepo.create({
+        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -740,6 +721,7 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await spaceSafesRepo.create({
+        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -804,6 +786,7 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await spaceSafesRepo.create({
+        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -842,6 +825,7 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await spaceSafesRepo.create({
+        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,

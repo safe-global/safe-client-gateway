@@ -197,6 +197,9 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  entitlements: {
+    enforcementStartsAt: faker.date.future().toISOString(),
+  },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
     default: faker.number.int(),
@@ -206,6 +209,7 @@ export default (): ReturnType<typeof configuration> => ({
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
+    entitlements: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),

@@ -2,13 +2,15 @@
 
 import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
+import { HttpStatus, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type EntityManager, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
+import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
@@ -30,6 +32,7 @@ import {
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
 import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
@@ -102,17 +105,24 @@ const FEATURE_FIXTURES = [
 // stay literal rather than faker-random.
 const FIRST_STAMP = new Date('2026-08-17T12:00:00.000Z');
 
+const ENFORCEMENT_OFF = new Date('2099-01-01T00:00:00.000Z');
+const ENFORCEMENT_ON = new Date('2020-01-01T00:00:00.000Z');
+
 describe('EntitlementsService', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   // The service composes the per-table repositories; exercised here against
   // the real database so queries and derivation rules are covered end to end.
   let service: EntitlementsService;
+  // The same service with the enforcement date already past.
+  let enforcingService: EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
   let seededFeatureKeys: Array<string> = [];
 
   // Not faker: a fixed FAKER_SEED would hand every spec file the same name.
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
   const testConfiguration = configuration();
+
+  const fakeCacheService = new FakeCacheService();
 
   const dataSource = new DataSource({
     ...postgresConfig({
@@ -209,17 +219,37 @@ describe('EntitlementsService', () => {
     subscriptionsRepository = new SubscriptionsRepository(
       postgresDatabaseService,
     );
-    service = new EntitlementsService(
-      new FeaturesRepository(postgresDatabaseService),
-      subscriptionsRepository,
-      new SubscriptionEntitlementsRepository(postgresDatabaseService),
-      new SpaceFeatureUsageRepository(postgresDatabaseService),
-      spacesRepositoryStub,
-      spaceSafesRepositoryStub,
-      membersRepositoryStub,
-      postgresDatabaseService,
-      mockLoggingService,
-    );
+    const buildService = (enforcementStartsAt: Date): EntitlementsService => {
+      const configurationService = new FakeConfigurationService();
+      configurationService.set(
+        'entitlements.enforcementStartsAt',
+        enforcementStartsAt.toISOString(),
+      );
+      configurationService.set(
+        'expirationTimeInSeconds.entitlements',
+        testConfiguration.expirationTimeInSeconds.entitlements,
+      );
+      configurationService.set(
+        'spaces.maxSafesPerSpace',
+        testConfiguration.spaces.maxSafesPerSpace,
+      );
+      return new EntitlementsService(
+        new FeaturesRepository(postgresDatabaseService),
+        subscriptionsRepository,
+        new SubscriptionEntitlementsRepository(postgresDatabaseService),
+        new SpaceFeatureUsageRepository(postgresDatabaseService),
+        spacesRepositoryStub,
+        spaceSafesRepositoryStub,
+        membersRepositoryStub,
+        postgresDatabaseService,
+        fakeCacheService,
+        configurationService,
+        mockLoggingService,
+      );
+    };
+    // Enforcement is off by default here, as in production.
+    service = buildService(ENFORCEMENT_OFF);
+    enforcingService = buildService(ENFORCEMENT_ON);
   });
 
   // Pristine catalog per test: some tests mutate feature rows (changing the
@@ -240,6 +270,7 @@ describe('EntitlementsService', () => {
     await deleteAll(Wallet);
     await deleteAll(User);
     await deleteAll(Feature);
+    fakeCacheService.clear();
   });
 
   afterAll(async () => {
@@ -1045,6 +1076,212 @@ describe('EntitlementsService', () => {
         status: 'canceled',
         lastEventAt: newerStamp,
       });
+    });
+  });
+
+  describe('assertWithinQuota', () => {
+    /** The static limit the service resolves from `spaces.maxSafesPerSpace`. */
+    const STATIC_SEATS = testConfiguration.spaces.maxSafesPerSpace;
+
+    function assertSeats(
+      target: EntitlementsService,
+      spaceId: number,
+      delta: number,
+    ): Promise<void> {
+      return target.assertWithinQuota({
+        spaceId,
+        featureKey: 'safe_seats',
+        delta,
+      });
+    }
+
+    async function seatSubscription(args: {
+      spaceId: number;
+      quota: number | null;
+      enabled?: boolean;
+    }): Promise<void> {
+      await materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('planId', 'business')
+          .with('entitlements', [
+            {
+              featureKey: 'safe_seats',
+              enabled: args.enabled ?? true,
+              quota: args.quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    it("applies the caller's static limit before the enforcement date", async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, STATIC_SEATS);
+      // The plan would allow more; until the date, it does not decide.
+      await seatSubscription({ spaceId, quota: STATIC_SEATS + 5 });
+
+      await expect(assertSeats(service, spaceId, 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'safe_seats',
+          quota: STATIC_SEATS,
+          used: STATIC_SEATS,
+          resetsAt: null,
+        },
+      });
+    });
+
+    it("takes the plan's quota from the enforcement date on", async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, STATIC_SEATS + 2);
+      await seatSubscription({ spaceId, quota: STATIC_SEATS + 5 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).resolves.toBeUndefined();
+    });
+
+    it('rejects the whole batch when it would overshoot the quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 3);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 2),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 3 } });
+    });
+
+    it('blocks a space already over its seats, even asking for nothing', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 8);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 8 } });
+    });
+
+    it('rejects a space exactly at its limit, even asking for nothing', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 4);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      // What a guard asks before the payload is parsed: room for one more?
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 4 } });
+    });
+
+    it('grants nothing for a feature the plan switches off, asking for nothing', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 20, enabled: false });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).rejects.toMatchObject({ response: { quota: 0, used: 0 } });
+    });
+
+    it('falls back to the catalog Free quota with no subscription', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS);
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({
+        response: { quota: FREE_SAFE_SEATS, used: FREE_SAFE_SEATS },
+      });
+    });
+
+    it('never blocks on an unlimited quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 50);
+      await seatSubscription({ spaceId, quota: null });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 10),
+      ).resolves.toBeUndefined();
+    });
+
+    it('grants no seats for a feature the plan switches off', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 20, enabled: false });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({ response: { quota: 0, used: 0 } });
+    });
+
+    it('prepares a check that admits a count still fitting the plan', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+
+      const check = await enforcingService.prepareQuotaCheck({
+        spaceId,
+        featureKey: 'safe_seats',
+        delta: 1,
+      });
+
+      // Pure from here on: safe inside a caller's locked transaction.
+      expect(() => check(3)).not.toThrow();
+    });
+
+    it('prepares a check that rejects the count the write measures', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+
+      const check = await enforcingService.prepareQuotaCheck({
+        spaceId,
+        featureKey: 'safe_seats',
+        delta: 2,
+      });
+
+      expect(() => check(3)).toThrow(
+        expect.objectContaining({
+          status: HttpStatus.PAYMENT_REQUIRED,
+          response: expect.objectContaining({
+            code: QUOTA_EXCEEDED_ERROR_CODE,
+            quota: 4,
+            used: 3,
+          }),
+        }),
+      );
+    });
+
+    it('serves the grant from cache but counts usage live', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      await addSafes(spaceId, 3);
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).resolves.toBeUndefined();
+
+      // Cached grant, fresh count: the seat added in between is seen.
+      await addSafes(spaceId, 1);
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 4 } });
+    });
+
+    it('drops the cached grant when a new package is materialized', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 5);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).rejects.toMatchObject({ response: { quota: 4 } });
+
+      // An upgrade lands: the previous grant must not answer for it.
+      await seatSubscription({ spaceId, quota: 20 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).resolves.toBeUndefined();
     });
   });
 
