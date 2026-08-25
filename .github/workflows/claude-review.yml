@@ -6,7 +6,7 @@ on:
   issue_comment:
     types: [created]
   pull_request:
-    types: [ready_for_review]
+    types: [opened, ready_for_review]
 
 permissions:
   contents: read
@@ -20,10 +20,16 @@ env:
 
 jobs:
   claude-review:
+    # The pull_request branch checks head.repo against the fork ourselves because that event fires
+    # for fork PRs too; the issue_comment branch needs no such check because the author_association
+    # allowlist below already excludes non-collaborators, forks included.
     if: |
       (
         github.event_name == 'pull_request' &&
-        github.event.action == 'ready_for_review' &&
+        (
+          github.event.action == 'ready_for_review' ||
+          (github.event.action == 'opened' && github.event.pull_request.draft == false)
+        ) &&
         github.event.pull_request.head.repo.full_name == github.repository
       ) ||
       (
@@ -36,9 +42,6 @@ jobs:
           github.event.comment.author_association == 'OWNER'
         )
       )
-      # The pull_request branch checks head.repo against the fork ourselves because that event fires
-      # for fork PRs too; the issue_comment branch needs no such check because the author_association
-      # allowlist above already excludes non-collaborators, forks included.
     concurrency:
       group: claude-review-${{ github.event.issue.number || github.event.pull_request.number }}
       cancel-in-progress: true
@@ -58,7 +61,7 @@ jobs:
             found=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
               --jq '.[] | select((.user.login // "") == "claude[bot]") | select(.body | contains("<!-- claude-review -->") or contains("## Architecture check")) | .id' | wc -l)
             echo "Prior Claude review comments: $found"
-            if [ "$found" = "0" ]; then run=true; else run=false; fi
+            if [ "$found" -eq 0 ]; then run=true; else run=false; fi
           else
             echo "Explicit @claude review trigger — skipping the dedup check"
             run=true
@@ -91,7 +94,12 @@ jobs:
           node -e '
             if (process.env.AGENTS_JSON.includes("\x27")) throw new Error("agents.json contains a single quote, which breaks its single-quoted interpolation into claude_args");
             const a = JSON.parse(process.env.AGENTS_JSON);
-            ["guideline-reviewer", "quality-reviewer"].forEach((k) => { if (!a[k]) throw new Error("missing agent " + k); });
+            const required = ["description", "tools", "model", "prompt"];
+            ["guideline-reviewer", "quality-reviewer"].forEach((k) => {
+              if (!a[k]) throw new Error("missing agent " + k);
+              required.forEach((f) => { if (!a[k][f]) throw new Error("agent " + k + " is missing " + f); });
+              if (!Array.isArray(a[k].tools)) throw new Error("agent " + k + " tools must be an array, the shape the CLI validates");
+            });
           '
           test -f .github/claude-review/guideline-pass.md
           test -f .github/claude-review/quality-pass.md
