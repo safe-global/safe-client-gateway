@@ -1,0 +1,129 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+name: Claude Review
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request:
+    types: [opened, ready_for_review]
+
+permissions:
+  contents: read
+  issues: read
+  id-token: write
+
+env:
+  PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+  REPO: ${{ github.repository }}
+  DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+
+jobs:
+  claude-review:
+    # The pull_request branch checks head.repo against the fork ourselves because that event fires
+    # for fork PRs too; the issue_comment branch needs no such check because the author_association
+    # allowlist below already excludes non-collaborators, forks included.
+    if: |
+      (
+        github.event_name == 'pull_request' &&
+        (
+          github.event.action == 'ready_for_review' ||
+          (github.event.action == 'opened' && github.event.pull_request.draft == false)
+        ) &&
+        github.event.pull_request.head.repo.full_name == github.repository
+      ) ||
+      (
+        github.event_name == 'issue_comment' &&
+        github.event.issue.pull_request != null &&
+        github.event.comment.body == '@claude review' &&
+        (
+          github.event.comment.author_association == 'COLLABORATOR' ||
+          github.event.comment.author_association == 'MEMBER' ||
+          github.event.comment.author_association == 'OWNER'
+        )
+      )
+    concurrency:
+      group: claude-review-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Decide whether to review
+        id: gate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            # Match on the hidden marker OR the visible heading, so a prompt edit or a rendering
+            # quirk that drops the marker still doesn't cause a re-post on draft<->ready churn.
+            found=$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" --paginate \
+              --jq '.[] | select((.user.login // "") == "claude[bot]") | select(.body | contains("<!-- claude-review -->") or contains("## Architecture check")) | .id' | wc -l)
+            echo "Prior Claude review comments: $found"
+            if [ "$found" -eq 0 ]; then run=true; else run=false; fi
+          else
+            echo "Explicit @claude review trigger — skipping the dedup check"
+            run=true
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout default branch
+        if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ env.DEFAULT_BRANCH }}
+          persist-credentials: false
+
+      - name: Load agents JSON
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          # Minified to one line: claude_args is a line-oriented block scalar, and a raw multi-line
+          # JSON blob substituted into the --agents line below would corrupt the action's arg parsing.
+          {
+            echo "AGENTS_JSON<<CLAUDE_REVIEW_AGENTS_JSON_EOF"
+            node -e 'console.log(JSON.stringify(JSON.parse(require("fs").readFileSync(".github/claude-review/agents.json", "utf8"))))'
+            echo "CLAUDE_REVIEW_AGENTS_JSON_EOF"
+          } >> "$GITHUB_ENV"
+
+      - name: Validate agents JSON
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          # The \x27 check guards the *downstream* `--agents '${{ env.AGENTS_JSON }}'` single-quoted
+          # interpolation below, not this file — a literal quote there would still break out early.
+          node -e '
+            if (process.env.AGENTS_JSON.includes("\x27")) throw new Error("agents.json contains a single quote, which breaks its single-quoted interpolation into claude_args");
+            const a = JSON.parse(process.env.AGENTS_JSON);
+            const required = ["description", "tools", "model", "prompt"];
+            ["guideline-reviewer", "quality-reviewer"].forEach((k) => {
+              if (!a[k]) throw new Error("missing agent " + k);
+              required.forEach((f) => { if (!a[k][f]) throw new Error("agent " + k + " is missing " + f); });
+              if (!Array.isArray(a[k].tools)) throw new Error("agent " + k + " tools must be an array, the shape the CLI validates");
+            });
+          '
+          test -f .github/claude-review/guideline-pass.md
+          test -f .github/claude-review/quality-pass.md
+          test -f .github/claude-review/orchestrator.md
+
+      - name: Run combined review
+        if: steps.gate.outputs.run == 'true'
+        uses: anthropics/claude-code-action@9d7150bc8a3dae8149739a88019d192b579ad90c # v1.0.193
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ env.REPO }}
+            PR NUMBER: ${{ env.PR_NUMBER }}
+            DEFAULT BRANCH: ${{ env.DEFAULT_BRANCH }}
+
+            Read the file .github/claude-review/orchestrator.md in the working directory and follow it exactly as your complete instructions, substituting the three values above wherever it writes <REPO>, <PR_NUMBER> or <DEFAULT_BRANCH>. The only gh commands the session permission rules allow, each run verbatim — the first three are for the review subagents to fetch the PR, the last is for you to post the combined comment:
+
+            - gh pr view ${{ env.PR_NUMBER }} --repo ${{ env.REPO }} --json baseRefName --json title --json body --json headRefOid
+            - gh pr diff ${{ env.PR_NUMBER }} --repo ${{ env.REPO }} --name-only
+            - gh pr diff ${{ env.PR_NUMBER }} --repo ${{ env.REPO }}
+            - gh pr comment ${{ env.PR_NUMBER }} --repo ${{ env.REPO }} --body "<the composed comment>"
+
+          claude_args: |
+            --model claude-fable-5
+            --effort max
+            --agents '${{ env.AGENTS_JSON }}'
+            --allowedTools "Agent,Read,Grep,Glob,Bash(gh pr view ${{ env.PR_NUMBER }} --repo ${{ env.REPO }} --json baseRefName --json title --json body --json headRefOid),Bash(gh pr diff ${{ env.PR_NUMBER }} --repo ${{ env.REPO }}),Bash(gh pr diff ${{ env.PR_NUMBER }} --repo ${{ env.REPO }} --name-only),Bash(gh pr comment ${{ env.PR_NUMBER }} --repo ${{ env.REPO }} --body:*)"
