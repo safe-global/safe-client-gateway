@@ -63,3 +63,38 @@ describe('configuration - features.zerion', () => {
     expect(configuration().features.zerion).toBe(false);
   });
 });
+
+describe('configuration - features.mfaStepUp', () => {
+  const ENV_KEY = 'FF_MFA_STEP_UP';
+  const original = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (original === undefined) {
+      delete process.env[ENV_KEY];
+    } else {
+      process.env[ENV_KEY] = original;
+    }
+  });
+
+  // The default decides what an environment that has never heard of the flag
+  // does, and step-up enforcement must not switch itself on there: clients
+  // that cannot turn a 403 `elevation_required` into a step-up round-trip
+  // would surface it as an unrecoverable error.
+  it('defaults to false when unset', () => {
+    delete process.env[ENV_KEY];
+
+    expect(configuration().features.mfaStepUp).toBe(false);
+  });
+
+  it.each(['true', 'TRUE', 'True'])('is enabled when set to %s', (value) => {
+    process.env[ENV_KEY] = value;
+
+    expect(configuration().features.mfaStepUp).toBe(true);
+  });
+
+  it.each(['false', '', '1', 'yes'])('is disabled when set to %s', (value) => {
+    process.env[ENV_KEY] = value;
+
+    expect(configuration().features.mfaStepUp).toBe(false);
+  });
+});
