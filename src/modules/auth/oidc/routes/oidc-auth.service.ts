@@ -139,28 +139,12 @@ export class OidcAuthService {
       );
     }
 
-    // A step-up elevates an existing session, so it must not extend it: the
-    // elevated token keeps the prior session's expiry, and the hard logout
-    // still lands where the original login put it. With no live session to
-    // elevate — it expired while the user was on the challenge page — the
-    // step-up fails rather than minting a fresh session: elevation would
-    // otherwise double as a login whose first factor is only Auth0's
-    // longer-lived SSO session. The carried-over expiry is our own verified
-    // token's, so it can only shorten the lifetime — but the max-validity
-    // bound is enforced rather than argued.
-    let exp: Date;
-    if (elevate) {
-      const priorExpiration = this.getPriorExpiration(priorAccessToken);
-      if (!priorExpiration) {
-        throw new UnauthorizedException('There is no session to elevate');
-      }
-      exp =
-        priorExpiration < maxExpirationTime
-          ? priorExpiration
-          : maxExpirationTime;
-    } else {
-      exp = expirationTime ?? maxExpirationTime;
-    }
+    const exp = this.getSessionExpiration({
+      elevate,
+      expirationTime,
+      priorAccessToken,
+      maxExpirationTime,
+    });
 
     const userId = await this.usersRepository.findOrCreateByExtUserIdAndEmail(
       extUserId,
@@ -191,6 +175,49 @@ export class OidcAuthService {
       maxAge: getSecondsUntil(exp),
       userId,
     };
+  }
+
+  /**
+   * The expiry for the token about to be signed.
+   *
+   * A plain login takes the provider's expiry. A step-up elevates the session
+   * the user already has, so it keeps that session's expiry: it proves the
+   * second factor, it does not restart the absolute-timeout clock. The
+   * max-validity bound applies either way.
+   *
+   * @throws {UnauthorizedException} On a step-up with no live session to
+   *   elevate — it expired while the user was on the challenge page. Minting a
+   *   fresh session here would let a step-up double as a login whose only
+   *   first factor is Auth0's longer-lived SSO session.
+   */
+  private getSessionExpiration({
+    elevate,
+    expirationTime,
+    priorAccessToken,
+    maxExpirationTime,
+  }: {
+    elevate: boolean;
+    expirationTime: Date | undefined;
+    priorAccessToken: string | undefined;
+    maxExpirationTime: Date;
+  }): Date {
+    if (!elevate) {
+      return expirationTime ?? maxExpirationTime;
+    }
+
+    const priorExpiration = this.getPriorExpiration(priorAccessToken);
+    if (!priorExpiration) {
+      throw new UnauthorizedException('There is no session to elevate');
+    }
+
+    // Only fires if the configured max validity was shortened after this
+    // session was issued: re-signing must not carry over a lifetime the
+    // current policy would no longer grant.
+    if (priorExpiration > maxExpirationTime) {
+      return maxExpirationTime;
+    }
+
+    return priorExpiration;
   }
 
   /**
