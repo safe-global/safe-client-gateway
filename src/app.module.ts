@@ -53,6 +53,7 @@ import { HooksModule } from '@/modules/hooks/hooks.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { OwnersModule } from '@/modules/owners/owners.module';
+import { PoliciesModule } from '@/modules/policies/policies.module';
 import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
 import { PositionsModule } from '@/modules/positions/positions.module';
 import { RecoveryModule } from '@/modules/recovery/recovery.module';
@@ -119,6 +120,7 @@ export class AppModule implements NestModule {
               UsersModule,
               SpacesModule,
               CounterfactualSafesModule,
+              PoliciesModule,
               SurveysModule,
             ]
           : []),
