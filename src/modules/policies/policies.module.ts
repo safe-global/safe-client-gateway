@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { PostgresDatabaseModuleV2 } from "@/datasources/db/v2/postgres-database.module";
 import { HttpErrorFactory } from "@/datasources/errors/http-error-factory";
 import { AuthModule } from "@/modules/auth/auth.module";
+import { PolicyConfigurationRequest } from "@/modules/policies/datasources/entities/policy-configuration-request.entity.db";
 import { PolicyIndexerApi } from "@/modules/policies/datasources/policy-indexer-api.service";
 import { GuardPolicyAssembler } from "@/modules/policies/domain/assemblers/guard-policy.assembler";
 import type { PolicyAssembler } from "@/modules/policies/domain/assemblers/policy-assembler.interface";
 import { SpendingLimitAssembler } from "@/modules/policies/domain/assemblers/spending-limit.assembler";
+import { PolicyConfigurationRequestsRepository } from "@/modules/policies/domain/policy-configuration-requests.repository";
+import { IPolicyConfigurationRequestsRepository } from "@/modules/policies/domain/policy-configuration-requests.repository.interface";
 import { PolicyIndexerRepository } from "@/modules/policies/domain/policy-indexer.repository";
 import { IPolicyIndexerRepository } from "@/modules/policies/domain/policy-indexer.repository.interface";
 import { POLICY_ASSEMBLERS } from "@/modules/policies/policies.constants";
+import { PoliciesController } from "@/modules/policies/routes/policies.controller";
 import { PoliciesService } from "@/modules/policies/routes/policies.service";
 import { SpacePoliciesController } from "@/modules/policies/routes/space-policies.controller";
 import { SafeRepositoryModule } from "@/modules/safe/domain/safe.repository.interface";
@@ -21,13 +27,15 @@ import { UsersModule } from "@/modules/users/users.module";
  */
 @Module({
   imports: [
+    PostgresDatabaseModuleV2,
+    TypeOrmModule.forFeature([PolicyConfigurationRequest]),
     SafeRepositoryModule,
     // Space membership and the Safe-in-space check
     forwardRef(() => SpacesModule),
     forwardRef(() => UsersModule),
     forwardRef(() => AuthModule),
   ],
-  controllers: [SpacePoliciesController],
+  controllers: [PoliciesController, SpacePoliciesController],
   providers: [
     HttpErrorFactory,
     PolicyIndexerApi,
@@ -35,6 +43,10 @@ import { UsersModule } from "@/modules/users/users.module";
     SpendingLimitAssembler,
     GuardPolicyAssembler,
     { provide: IPolicyIndexerRepository, useClass: PolicyIndexerRepository },
+    {
+      provide: IPolicyConfigurationRequestsRepository,
+      useClass: PolicyConfigurationRequestsRepository,
+    },
     {
       // Registering an assembler here is all it takes to report another policy
       // mechanism: the route service never names one.
@@ -46,6 +58,6 @@ import { UsersModule } from "@/modules/users/users.module";
       inject: [SpendingLimitAssembler, GuardPolicyAssembler],
     },
   ],
-  exports: [IPolicyIndexerRepository],
+  exports: [IPolicyIndexerRepository, IPolicyConfigurationRequestsRepository],
 })
 export class PoliciesModule {}

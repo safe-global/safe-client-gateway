@@ -199,6 +199,12 @@ export const RootConfigurationSchema = z
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
+    // Policy configuration
+    POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SAFE: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     // Policy indexer configuration
     POLICY_INDEXER_BASE_URI: z.url().optional(),
     POLICY_INDEXER_EXPIRE_TIME_SECONDS: z.coerce

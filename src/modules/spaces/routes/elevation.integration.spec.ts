@@ -192,6 +192,18 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
   },
+  // Storing the configurations behind a policy configuration root writes no
+  // Workspace state and grants nothing: a row is only accepted when the
+  // configurations hash to the root it is stored under, and the root itself is
+  // only ever applied by a Safe transaction the owners sign. An attacker with a
+  // stolen session can store a payload no Safe will request, and nothing more.
+  {
+    name: 'POST /v1/spaces/:spaceId/safes/:safeId/policies/requests',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/safes/11155111:${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
+    body: {},
+  },
   {
     name: 'POST /v1/spaces/:spaceId/address-book/requests (propose contact)',
     method: 'post',

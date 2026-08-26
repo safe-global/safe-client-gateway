@@ -807,6 +807,16 @@ export default () => ({
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
   policies: {
+    /**
+     * How many delayed configuration requests CGW stores per Safe. Bounds how
+     * much a client can write by requesting configurations; a Safe with more
+     * open requests than this cannot store further ones until the applied or
+     * invalidated ones are pruned.
+     */
+    maxConfigurationRequestsPerSafe: Number.parseInt(
+      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SAFE ?? `${20}`,
+      10,
+    ),
     indexer: {
       /**
        * The Policy Indexer's GraphQL endpoint, without the `/v1/graphql` path.
