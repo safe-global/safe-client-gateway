@@ -1,16 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
+import { NotFoundException } from '@nestjs/common';
+import { type Address, getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
@@ -24,6 +29,10 @@ const mockPolicyIndexerRepository = {
   getState: vi.fn(),
   clearState: vi.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
+
+const mockConfigurationRequestsRepository = {
+  create: vi.fn(),
+} as unknown as MockedObject<IPolicyConfigurationRequestsRepository>;
 
 const mockSafeRepository = {
   getSafe: vi.fn(),
@@ -60,6 +69,7 @@ describe('PoliciesService', () => {
   beforeEach(() => {
     target = new PoliciesService(
       mockPolicyIndexerRepository,
+      mockConfigurationRequestsRepository,
       mockSafeRepository,
       mockSpaceSafesRepository,
       mockMembersRepository,
@@ -78,6 +88,7 @@ describe('PoliciesService', () => {
     mockPolicyIndexerRepository.getState.mockResolvedValue(
       policyIndexerResponseBuilder().build(),
     );
+    mockConfigurationRequestsRepository.create.mockResolvedValue();
   });
 
   /** An allowance of `safe` on `allowanceModule`, spendable by default. */
@@ -345,6 +356,93 @@ describe('PoliciesService', () => {
           authPayload,
         }),
       ).rejects.toThrow('Service unavailable');
+    });
+  });
+
+  describe('storing a configuration request', () => {
+    const request = {
+      spaceId,
+      safeId: { chainId: SEPOLIA, address: safeAddress },
+      authPayload,
+    };
+
+    /** A payload whose root is the hash of its configurations. */
+    function validPayload(): {
+      root: Hex;
+      configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>];
+    } {
+      const configurations: [PolicyConfiguration] = [
+        policyConfigurationBuilder().build(),
+      ];
+      return { root: configurationRoot(configurations), configurations };
+    }
+
+    it('should store the configurations of a root', async () => {
+      const payload = validPayload();
+
+      await expect(
+        target.createConfigurationRequest({ ...request, payload }),
+      ).resolves.toStrictEqual({ configureRoot: payload.root });
+      expect(mockConfigurationRequestsRepository.create).toHaveBeenCalledWith({
+        chainId: SEPOLIA,
+        safeAddress,
+        root: payload.root,
+        configurations: payload.configurations,
+        spaceId,
+        createdBy: userId,
+      });
+    });
+
+    it('should reject configurations that do not hash to the root', async () => {
+      // A client encoding bug; storing it would explain nothing.
+      const payload = validPayload();
+
+      await expect(
+        target.createConfigurationRequest({
+          ...request,
+          payload: { ...payload, root: `0x${'11'.repeat(32)}` as Hex },
+        }),
+      ).rejects.toThrow('The configurations do not hash to the given root');
+      expect(mockConfigurationRequestsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should store an upper-cased root under its canonical casing', async () => {
+      // Otherwise a retry in another casing is a second row for one request.
+      const payload = validPayload();
+      const upperCased = payload.root.toUpperCase().replace('0X', '0x');
+
+      await expect(
+        target.createConfigurationRequest({
+          ...request,
+          payload: { ...payload, root: upperCased as `0x${string}` },
+        }),
+      ).resolves.toStrictEqual({ configureRoot: payload.root });
+      expect(mockConfigurationRequestsRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ root: payload.root }),
+      );
+    });
+
+    it('should reject a caller who is not a member of the space', async () => {
+      mockMembersRepository.findOne.mockResolvedValue(null as never);
+
+      await expect(
+        target.createConfigurationRequest({
+          ...request,
+          payload: validPayload(),
+        }),
+      ).rejects.toThrow('User is not a member of this workspace');
+      expect(mockConfigurationRequestsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should reject a safe that is not in the space', async () => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([] as never);
+
+      await expect(
+        target.createConfigurationRequest({
+          ...request,
+          payload: validPayload(),
+        }),
+      ).rejects.toThrow(new NotFoundException('Safe not found in this space'));
     });
   });
 });
