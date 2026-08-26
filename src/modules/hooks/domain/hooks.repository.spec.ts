@@ -16,9 +16,12 @@ import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
 import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
+import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import type { QueuesRepository } from '@/modules/queues/domain/queues-repository';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
@@ -75,11 +78,13 @@ const mockSafeRepository = vi.mocked({
 
 const mockStakingRepository = vi.mocked({
   clearApi: vi.fn(),
-} as MockedObject<StakingRepository>);
+  clearStakes: vi.fn(),
+} as unknown as MockedObject<StakingRepository>);
 
 const mockEarnRepository = vi.mocked({
   clearApi: vi.fn(),
-} as MockedObject<EarnRepository>);
+  clearStakes: vi.fn(),
+} as unknown as MockedObject<EarnRepository>);
 
 const mockTransactionsRepository = vi.mocked({
   clearApi: vi.fn(),
@@ -91,6 +96,11 @@ const mockLoggingService = vi.mocked({
   info: vi.fn(),
   warn: vi.fn(),
 } as MockedObject<ILoggingService>);
+
+const mockPolicyIndexerRepository = vi.mocked({
+  getState: vi.fn(),
+  clearState: vi.fn(),
+} as MockedObject<IPolicyIndexerRepository>);
 
 const mockQueuesRepository = vi.mocked({
   subscribe: vi.fn(),
@@ -120,6 +130,7 @@ describe('HooksRepository (Unit)', () => {
       mockCollectiblesRepository,
       mockDelegatesRepository,
       mockMessagesRepository,
+      mockPolicyIndexerRepository,
       mockZerionCache,
       mockSafeAppsRepository,
       mockSafeRepository,
@@ -139,6 +150,50 @@ describe('HooksRepository (Unit)', () => {
       mockPushNotificationService,
       eventCacheHelper,
     );
+  });
+
+  it('should forget the policy state of a safe after a policy change', async () => {
+    // Every policy change is a Safe transaction.
+    const chain = chainBuilder().build();
+    const event = executedTransactionEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+    await hooksRepository.onEvent(event);
+
+    expect(mockPolicyIndexerRepository.clearState).toHaveBeenCalledWith({
+      chainId: event.chainId,
+      safeAddress: event.address,
+    });
+  });
+
+  it('should forget the policy state of a safe after a module transaction', async () => {
+    // An allowance transfer moves what a spending limit has left, without
+    // changing any configuration.
+    const chain = chainBuilder().build();
+    const event = moduleTransactionEventBuilder()
+      .with('chainId', chain.chainId)
+      .build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+    await hooksRepository.onEvent(event);
+
+    expect(mockPolicyIndexerRepository.clearState).toHaveBeenCalledWith({
+      chainId: event.chainId,
+      safeAddress: event.address,
+    });
+  });
+
+  it('should not forget the policy state on an unrelated event', async () => {
+    const chain = chainBuilder().build();
+    mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+    await hooksRepository.onEvent(
+      incomingTokenEventBuilder().with('chainId', chain.chainId).build(),
+    );
+
+    expect(mockPolicyIndexerRepository.clearState).not.toHaveBeenCalled();
   });
 
   it('should process events for known chains and memoize the chain lookup', async () => {
