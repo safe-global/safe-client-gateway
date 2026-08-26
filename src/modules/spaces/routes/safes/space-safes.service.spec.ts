@@ -2,9 +2,11 @@
 
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -22,10 +24,21 @@ import type { IMembersRepository } from '@/modules/users/domain/members/members.
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 
 const spaceSafesRepositoryMock = {
-  create: vi.fn(),
+  encryptRows: vi.fn(),
+  lockSeats: vi.fn(),
+  countBySpaceId: vi.fn(),
+  insertRows: vi.fn(),
   findBySpaceId: vi.fn(),
   delete: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
+
+const entityManager = {} as EntityManager;
+
+const postgresDatabaseServiceMock = {
+  transaction: vi.fn((fn: (em: EntityManager) => Promise<unknown>) =>
+    fn(entityManager),
+  ),
+} as MockedObject<PostgresDatabaseService>;
 
 const spacesRepositoryMock = {
   findOne: vi.fn(),
@@ -50,6 +63,7 @@ describe('SpaceSafesService', () => {
       spacesRepositoryMock,
       membersRepositoryMock,
       entitlementEnforcementMock,
+      postgresDatabaseServiceMock,
     );
   });
 
@@ -62,18 +76,35 @@ describe('SpaceSafesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const chainId = faker.number.int().toString();
       const payload = [{ address: addr(), chainId }];
+      // Opaque to the service: whatever `encryptRows` returned reaches
+      // `insertRows` untouched.
+      const rows = [
+        {
+          space: { id: spaceId },
+          chainId,
+          address: payload[0].address,
+          addressIndex: null,
+          plaintextAddress: payload[0].address,
+        },
+      ];
 
       spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
+      spaceSafesRepositoryMock.encryptRows.mockResolvedValue(rows);
 
       await service.create({ spaceId, authPayload, payload });
 
       expect(spacesRepositoryMock.findOne).toHaveBeenCalled();
-      expect(spaceSafesRepositoryMock.create).toHaveBeenCalledWith({
+      expect(
+        spaceSafesRepositoryMock.lockSeats,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, entityManager);
+      expect(
+        spaceSafesRepositoryMock.insertRows,
+      ).toHaveBeenCalledExactlyOnceWith({
         spaceId,
         actorUserId: Number(authPayload.sub),
-        payload,
-        assertSeats: expect.any(Function),
+        rows,
+        entityManager,
       });
     });
 
@@ -119,11 +150,7 @@ describe('SpaceSafesService', () => {
       const check = vi.fn();
       spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
-      // Stands in for the repository, which counts under the space's lock.
-      spaceSafesRepositoryMock.create.mockImplementation(({ assertSeats }) => {
-        assertSeats(used);
-        return Promise.resolve();
-      });
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(used);
 
       await service.create({ spaceId, authPayload, payload });
 
@@ -135,6 +162,7 @@ describe('SpaceSafesService', () => {
         delta: payload.length,
       });
       expect(check).toHaveBeenCalledExactlyOnceWith(used);
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
     });
 
     it('propagates a seat rejection raised inside the write', async () => {
@@ -150,10 +178,7 @@ describe('SpaceSafesService', () => {
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(() => {
         throw quotaExceeded;
       });
-      spaceSafesRepositoryMock.create.mockImplementation(({ assertSeats }) => {
-        assertSeats(quota);
-        return Promise.resolve();
-      });
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(quota);
 
       await expect(
         service.create({
@@ -164,6 +189,8 @@ describe('SpaceSafesService', () => {
           ],
         }),
       ).rejects.toThrow(quotaExceeded);
+
+      expect(spaceSafesRepositoryMock.insertRows).not.toHaveBeenCalled();
     });
   });
 

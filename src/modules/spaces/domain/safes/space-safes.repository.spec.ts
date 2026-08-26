@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { EntityManager } from 'typeorm';
 import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
@@ -21,7 +22,6 @@ describe('SpaceSafesRepository', () => {
     typeof createMockSpaceEncryptionService
   >;
   let spaceSafeRepository: { find: Mock; count: Mock };
-  let assertSeats: Mock;
   let entityManager: {
     query: Mock;
     getRepository: Mock;
@@ -35,8 +35,6 @@ describe('SpaceSafesRepository', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-
-    assertSeats = vi.fn();
 
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
@@ -69,8 +67,8 @@ describe('SpaceSafesRepository', () => {
     );
   });
 
-  describe('create', () => {
-    it('encrypts addresses and computes blind indexes before insert, and records the plaintext in the audit payload', async () => {
+  describe('encryptRows', () => {
+    it('encrypts each address and keeps the plaintext for the audit', async () => {
       const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
       const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
@@ -80,16 +78,63 @@ describe('SpaceSafesRepository', () => {
       );
       spaceEncryptionService.safeAddressIndex.mockReturnValue(addressIndex);
 
-      await target.create({
-        spaceId,
-        actorUserId,
-        payload: [{ chainId, address }],
-        assertSeats,
-      });
+      const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
 
       expect(
         spaceEncryptionService.encryptSafeAddress,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, address);
+      expect(rows).toStrictEqual([
+        {
+          space: { id: spaceId },
+          chainId,
+          address: encryptedAddress,
+          addressIndex,
+          plaintextAddress: address,
+        },
+      ]);
+    });
+
+    it('passes plaintext through with a NULL index when encryption is disabled', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
+
+      expect(rows).toStrictEqual([
+        {
+          space: { id: spaceId },
+          chainId,
+          address,
+          addressIndex: null,
+          plaintextAddress: address,
+        },
+      ]);
+    });
+  });
+
+  describe('insertRows', () => {
+    it('inserts the prepared rows and audits the plaintext addresses', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const address = getAddress(faker.finance.ethereumAddress());
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const addressIndex = faker.string.hexadecimal({ length: 32 });
+
+      await target.insertRows({
+        spaceId,
+        actorUserId,
+        rows: [
+          {
+            space: { id: spaceId },
+            chainId,
+            address: encryptedAddress as SpaceSafe['address'],
+            addressIndex,
+            plaintextAddress: address,
+          },
+        ],
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      // The plaintext travels with the row but is never inserted.
       expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
         {
           space: { id: spaceId },
@@ -102,27 +147,9 @@ describe('SpaceSafesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_ADDED',
-          payload: {
-            safes: [{ chainId, address }],
-          },
+          payload: { safes: [{ chainId, address }] },
         }),
       );
-    });
-
-    it('inserts plaintext with a NULL index when encryption is disabled (passthrough)', async () => {
-      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
-      const address = getAddress(faker.finance.ethereumAddress());
-
-      await target.create({
-        spaceId,
-        actorUserId,
-        payload: [{ chainId, address }],
-        assertSeats,
-      });
-
-      expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
-        { space: { id: spaceId }, chainId, address, addressIndex: null },
-      ]);
     });
   });
 

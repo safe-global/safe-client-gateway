@@ -15,7 +15,10 @@ import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-saf
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import type {
+  ISpaceSafesRepository,
+  PreparedSpaceSafe,
+} from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 /** Own namespace: the single-int lock key space is shared process-wide. */
@@ -46,7 +49,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
   }
 
   /** Serializes seat changes for a space until this transaction ends. */
-  private async lockSeats(
+  public async lockSeats(
     spaceId: Space['id'],
     entityManager: EntityManager,
   ): Promise<void> {
@@ -56,68 +59,70 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     ]);
   }
 
-  public async create(args: {
-    spaceId: Space['id'];
-    actorUserId: number;
+  public async encryptRows(
+    spaceId: Space['id'],
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
-    }>;
-    assertSeats: (used: number) => void;
-  }): Promise<void> {
-    // Before the transaction on purpose: this keeps the KMS round-trips out of
-    // it and out of the seat lock, leaving that critical section DB-local.
+    }>,
+  ): Promise<Array<PreparedSpaceSafe>> {
     // The space id is known up front, so no two-phase dance like spaces.name.
-    const safesToInsert = await Promise.all(
-      args.payload.map(async (safe) => ({
-        space: { id: args.spaceId },
+    return await Promise.all(
+      payload.map(async (safe) => ({
+        space: { id: spaceId },
         chainId: safe.chainId,
         address: (await this.spaceEncryptionService.encryptSafeAddress(
-          args.spaceId,
+          spaceId,
           safe.address,
         )) as SpaceSafe['address'],
         addressIndex: this.spaceEncryptionService.safeAddressIndex(
           safe.address,
         ),
+        plaintextAddress: safe.address,
       })),
     );
+  }
 
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await this.lockSeats(args.spaceId, entityManager);
-      // Counted under the lock, so concurrent additions cannot each pass a
-      // stale count.
-      args.assertSeats(await this.countBySpaceId(args.spaceId, entityManager));
+  public async insertRows(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    rows: Array<PreparedSpaceSafe>;
+    entityManager: EntityManager;
+  }): Promise<void> {
+    const { entityManager } = args;
+    const safesToInsert = args.rows.map(
+      ({ plaintextAddress: _, ...row }) => row,
+    );
 
-      try {
-        // Catch-on-conflict as before; duplicates now collide on the partial
-        // unique indexes (blind index for encrypted rows, plaintext for
-        // plaintext rows when encryption is disabled).
-        await entityManager.insert(SpaceSafe, safesToInsert);
-      } catch (err) {
-        if (isUniqueConstraintError(err)) {
-          throw new UniqueConstraintError(
-            `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
-          );
-        }
-        throw err;
+    try {
+      // Catch-on-conflict as before; duplicates collide on the partial unique
+      // indexes (blind index for encrypted rows, plaintext for plaintext rows
+      // when encryption is disabled).
+      await entityManager.insert(SpaceSafe, safesToInsert);
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
+        );
       }
+      throw err;
+    }
 
-      const space = await this.findSpaceForAuditOrFail(
-        entityManager,
-        args.spaceId,
-      );
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: space.id,
-        spaceUuid: space.uuid,
-        eventType: SpaceAuditEventType.SAFE_ADDED,
-        actorUserId: args.actorUserId,
-        payload: {
-          safes: args.payload.map((safe) => ({
-            chainId: safe.chainId,
-            address: safe.address,
-          })),
-        },
-      });
+    const space = await this.findSpaceForAuditOrFail(
+      entityManager,
+      args.spaceId,
+    );
+    await this.spaceAuditRepository.record(entityManager, {
+      spaceId: space.id,
+      spaceUuid: space.uuid,
+      eventType: SpaceAuditEventType.SAFE_ADDED,
+      actorUserId: args.actorUserId,
+      payload: {
+        safes: args.rows.map((row) => ({
+          chainId: row.chainId,
+          address: row.plaintextAddress,
+        })),
+      },
     });
   }
 

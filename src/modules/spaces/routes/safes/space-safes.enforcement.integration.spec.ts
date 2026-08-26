@@ -79,6 +79,7 @@ describe('Safe seat enforcement', () => {
     const moduleFixture = await createTestModule({
       config: testConfiguration,
       overridePostgresV2: false,
+      cacheKeyPrefix: testDatabaseName,
       guards: [
         {
           originalGuard: SpacesCreationRateLimitGuard,

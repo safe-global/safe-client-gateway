@@ -2,6 +2,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
+import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
@@ -29,6 +30,8 @@ export class SpaceSafesService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IEntitlementEnforcement)
     private readonly entitlementEnforcement: IEntitlementEnforcement,
+    @Inject(PostgresDatabaseService)
+    private readonly postgresDatabaseService: PostgresDatabaseService,
   ) {}
 
   public async create(args: {
@@ -39,19 +42,35 @@ export class SpaceSafesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.spacesRepository, args.spaceId, userId);
 
-    // Resolved here, applied inside the write: no I/O under the space's lock.
+    // The use case owns the transaction, so the seat check and the insert it
+    // admits share one. What each step needs is resolved before it opens:
+    // the plan (cache and database reads) and the ciphertext (a KMS round-trip
+    // per Safe), leaving the locked section free of external I/O.
     // `SafeSeatsGuard` only rejects early.
     const assertSeats = await this.entitlementEnforcement.prepareQuotaCheck({
       spaceId: args.spaceId,
       featureKey: 'safe_seats',
       delta: args.payload.length,
     });
+    const rows = await this.spaceSafesRepository.encryptRows(
+      args.spaceId,
+      args.payload,
+    );
 
-    await this.spaceSafesRepository.create({
-      spaceId: args.spaceId,
-      actorUserId: userId,
-      payload: args.payload,
-      assertSeats,
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await this.spaceSafesRepository.lockSeats(args.spaceId, entityManager);
+      assertSeats(
+        await this.spaceSafesRepository.countBySpaceId(
+          args.spaceId,
+          entityManager,
+        ),
+      );
+      await this.spaceSafesRepository.insertRows({
+        spaceId: args.spaceId,
+        actorUserId: userId,
+        rows,
+        entityManager,
+      });
     });
   }
 
