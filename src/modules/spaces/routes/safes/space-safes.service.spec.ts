@@ -2,14 +2,18 @@
 
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -20,10 +24,21 @@ import type { IMembersRepository } from '@/modules/users/domain/members/members.
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 
 const spaceSafesRepositoryMock = {
-  create: vi.fn(),
+  encryptRows: vi.fn(),
+  lockSeats: vi.fn(),
+  countBySpaceId: vi.fn(),
+  insertRows: vi.fn(),
   findBySpaceId: vi.fn(),
   delete: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
+
+const entityManager = {} as EntityManager;
+
+const postgresDatabaseServiceMock = {
+  transaction: vi.fn((fn: (em: EntityManager) => Promise<unknown>) =>
+    fn(entityManager),
+  ),
+} as MockedObject<PostgresDatabaseService>;
 
 const spacesRepositoryMock = {
   findOne: vi.fn(),
@@ -32,6 +47,11 @@ const spacesRepositoryMock = {
 const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+const entitlementEnforcementMock = {
+  assertWithinQuota: vi.fn(),
+  prepareQuotaCheck: vi.fn(),
+} as MockedObject<IEntitlementEnforcement>;
 
 describe('SpaceSafesService', () => {
   let service: SpaceSafesService;
@@ -42,6 +62,8 @@ describe('SpaceSafesService', () => {
       spaceSafesRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
+      entitlementEnforcementMock,
+      postgresDatabaseServiceMock,
     );
   });
 
@@ -54,16 +76,35 @@ describe('SpaceSafesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const chainId = faker.number.int().toString();
       const payload = [{ address: addr(), chainId }];
+      // Opaque to the service: whatever `encryptRows` returned reaches
+      // `insertRows` untouched.
+      const rows = [
+        {
+          space: { id: spaceId },
+          chainId,
+          address: payload[0].address,
+          addressIndex: null,
+          plaintextAddress: payload[0].address,
+        },
+      ];
 
       spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
+      spaceSafesRepositoryMock.encryptRows.mockResolvedValue(rows);
 
       await service.create({ spaceId, authPayload, payload });
 
       expect(spacesRepositoryMock.findOne).toHaveBeenCalled();
-      expect(spaceSafesRepositoryMock.create).toHaveBeenCalledWith({
+      expect(
+        spaceSafesRepositoryMock.lockSeats,
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, entityManager);
+      expect(
+        spaceSafesRepositoryMock.insertRows,
+      ).toHaveBeenCalledExactlyOnceWith({
         spaceId,
         actorUserId: Number(authPayload.sub),
-        payload,
+        rows,
+        entityManager,
       });
     });
 
@@ -97,6 +138,60 @@ describe('SpaceSafesService', () => {
         ).rejects.toThrow(ForbiddenException);
       },
     );
+
+    it('prepares the seat check for the whole batch and hands it to the write', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const payload = [
+        { address: addr(), chainId: faker.number.int().toString() },
+        { address: addr(), chainId: faker.number.int().toString() },
+      ];
+      const used = faker.number.int({ min: 1, max: 5 });
+      const check = vi.fn();
+      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(used);
+
+      await service.create({ spaceId, authPayload, payload });
+
+      expect(
+        entitlementEnforcementMock.prepareQuotaCheck,
+      ).toHaveBeenCalledExactlyOnceWith({
+        spaceId,
+        featureKey: 'safe_seats',
+        delta: payload.length,
+      });
+      expect(check).toHaveBeenCalledExactlyOnceWith(used);
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
+    });
+
+    it('propagates a seat rejection raised inside the write', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      const quota = faker.number.int({ min: 5, max: 10 });
+      const quotaExceeded = new QuotaExceededError({
+        feature: 'safe_seats',
+        quota,
+        used: quota,
+        resetsAt: null,
+      });
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(() => {
+        throw quotaExceeded;
+      });
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(quota);
+
+      await expect(
+        service.create({
+          spaceId: faker.number.int(),
+          authPayload,
+          payload: [
+            { address: addr(), chainId: faker.number.int().toString() },
+          ],
+        }),
+      ).rejects.toThrow(quotaExceeded);
+
+      expect(spaceSafesRepositoryMock.insertRows).not.toHaveBeenCalled();
+    });
   });
 
   describe('get', () => {

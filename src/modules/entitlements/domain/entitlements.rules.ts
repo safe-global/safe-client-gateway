@@ -39,6 +39,36 @@ type BillingCycle = Pick<
 > | null;
 
 /**
+ * Whether the workspace's own entitlements decide its quotas yet. `startsAt`
+ * is always a valid date: `EntitlementsService` refuses to construct with an
+ * unparseable one, so this can never silently answer `true` for a typo.
+ */
+export function isEnforcementActive(args: {
+  now: Date;
+  startsAt: Date;
+}): boolean {
+  return args.now >= args.startsAt;
+}
+
+/**
+ * Whether an action consuming `delta` still fits the allowance. NULL quota is
+ * unlimited. `delta: 0` is still an attempt to use the feature, so a workspace
+ * at its limit does not fit: that is what a guard asks before the payload is
+ * parsed.
+ */
+export function fitsWithinQuota(args: {
+  quota: number | null;
+  used: number;
+  delta: number;
+}): boolean {
+  const { quota, used, delta } = args;
+  if (quota === null) {
+    return true;
+  }
+  return used < quota && used + delta <= quota;
+}
+
+/**
  * The effective entitlement of one feature: the purchased package wins,
  * otherwise the catalog's defaults. Both branches produce the same shape, so
  * consumers never know which one served them.

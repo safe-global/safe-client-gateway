@@ -1,6 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
+import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
@@ -10,10 +18,13 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
 import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import type { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import {
   FeatureType,
   isFeatureKey,
 } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureGrant } from '@/modules/entitlements/domain/entities/feature-grant.entity';
+import { CachedGrantsSchema } from '@/modules/entitlements/domain/entities/feature-grant.entity';
 import type {
   MaterializedSubscription,
   ParsedEntitlement,
@@ -22,6 +33,7 @@ import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
 } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
+import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
@@ -31,8 +43,11 @@ import {
 import {
   effectiveEntitlement,
   eventPeriodStart,
+  fitsWithinQuota,
+  isEnforcementActive,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
+import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
 import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
@@ -46,6 +61,7 @@ import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
 
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the
@@ -53,7 +69,15 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
  * and owns the transactions spanning several tables.
  */
 @Injectable()
-export class EntitlementsService {
+export class EntitlementsService implements IEntitlementEnforcement {
+  private readonly enforcementStartsAt: Date;
+  private readonly grantsCacheTtlSeconds: number;
+  /**
+   * Exhaustive like `stockCounters`: a new published feature does not compile
+   * until its pre-enforcement limit is named. Goes away after the date.
+   */
+  private readonly preEnforcementQuotas: Record<FeatureKey, number>;
+
   public constructor(
     @Inject(IFeaturesRepository)
     private readonly featuresRepository: IFeaturesRepository,
@@ -71,9 +95,31 @@ export class EntitlementsService {
     private readonly membersRepository: IMembersRepository,
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+  ) {
+    const enforcementStartsAt = DateStringSchema.safeParse(
+      configurationService.getOrThrow('entitlements.enforcementStartsAt'),
+    );
+    if (!enforcementStartsAt.success) {
+      throw new Error(
+        'entitlements.enforcementStartsAt is not an ISO date string',
+      );
+    }
+    this.enforcementStartsAt = new Date(enforcementStartsAt.data);
+    this.grantsCacheTtlSeconds = configurationService.getOrThrow<number>(
+      'expirationTimeInSeconds.entitlements',
+    );
+    this.preEnforcementQuotas = {
+      safe_seats: configurationService.getOrThrow<number>(
+        'spaces.maxSafesPerSpace',
+      ),
+    };
+  }
 
   /**
    * Resolves the workspace's entitlements.
@@ -81,14 +127,8 @@ export class EntitlementsService {
   public async resolveEntitlements(
     spaceId: Space['id'],
   ): Promise<ResolvedEntitlements> {
-    const now = new Date();
-    // Independent reads: the usage lookup below is the first step that needs
-    // their results.
-    const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
-      this.getSpaceCreatedAtOrFail(spaceId),
-      this.featuresRepository.getFeatures(),
-      this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
-    ]);
+    const { now, spaceCreatedAt, features, activeSubscription, purchased } =
+      await this.loadPlanContext(spaceId);
 
     const usedByFeatureId = await this.getUsageByFeatureId({
       spaceId,
@@ -98,19 +138,12 @@ export class EntitlementsService {
       now,
     });
 
-    const purchasedByFeatureId = new Map(
-      (activeSubscription?.entitlements ?? []).map((entitlement) => [
-        entitlement.feature.id,
-        entitlement,
-      ]),
-    );
-
     const entitlements = features.map((feature) =>
       this.resolveFeature({
         feature,
         spaceCreatedAt,
         activeSubscription,
-        purchased: purchasedByFeatureId.get(feature.id),
+        purchased: purchased.get(feature.id),
         used: usedByFeatureId.get(feature.id) ?? 0,
         now,
       }),
@@ -126,6 +159,209 @@ export class EntitlementsService {
         : null,
       entitlements,
     };
+  }
+
+  public async assertWithinQuota(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    delta: number;
+  }): Promise<void> {
+    const grant = await this.resolveGrant(args);
+    // Unlimited: nothing to count against.
+    if (grant.quota === null) {
+      return;
+    }
+    this.admit({ ...args, grant, used: await this.countFeatureUsage(args) });
+  }
+
+  public async prepareQuotaCheck(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    delta: number;
+  }): Promise<(used: number) => void> {
+    const grant = await this.resolveGrant(args);
+    return (used: number): void => this.admit({ ...args, grant, used });
+  }
+
+  /** Pure, so a caller can run it under its own lock. */
+  private admit(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    delta: number;
+    grant: FeatureGrant;
+    used: number;
+  }): void {
+    const { grant, used } = args;
+    if (
+      grant.quota === null ||
+      fitsWithinQuota({ quota: grant.quota, used, delta: args.delta })
+    ) {
+      return;
+    }
+    // The canonical quota event, so analytics counts what the server decided.
+    this.loggingService.warn({
+      type: LogType.QuotaExceeded,
+      spaceId: args.spaceId,
+      feature: args.featureKey,
+      quota: grant.quota,
+      used,
+      requested: args.delta,
+    });
+    throw new QuotaExceededError({
+      feature: args.featureKey,
+      quota: grant.quota,
+      used,
+      resetsAt: grant.resetsAt,
+    });
+  }
+
+  /**
+   * The workspace's entitlements decide from the enforcement date on; until
+   * then the feature's static limit does, so deploying this enforces nothing.
+   */
+  private async resolveGrant(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+  }): Promise<FeatureGrant> {
+    if (
+      !isEnforcementActive({
+        now: new Date(),
+        startsAt: this.enforcementStartsAt,
+      })
+    ) {
+      return this.staticGrant(args.featureKey);
+    }
+
+    const grants = await this.getCachedGrants(args.spaceId);
+    const grant = grants[args.featureKey];
+    if (grant === undefined) {
+      // A catalog gap must not block the action.
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} keeps the static limit`,
+      );
+      return this.staticGrant(args.featureKey);
+    }
+    return grant;
+  }
+
+  /** The feature's own limit until enforcement begins, as a grant. */
+  private staticGrant(featureKey: FeatureKey): FeatureGrant {
+    return { quota: this.preEnforcementQuotas[featureKey], resetsAt: null };
+  }
+
+  /**
+   * Usage measured against a quota, read live so a stale count cannot gate
+   * wrongly: a stock feature counts rows in the table its own module owns,
+   * anything else has no counter and reports zero.
+   */
+  private async countFeatureUsage(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+  }): Promise<number> {
+    if (isStockMeteredFeature({ key: args.featureKey })) {
+      return await this.stockCounters[args.featureKey](args.spaceId);
+    }
+    // TODO: read `space_feature_usage` here for event-metered features, once
+    // one is gated and its consumption is counted.
+    return 0;
+  }
+
+  /**
+   * Cached: it only changes when a subscription is materialized (which
+   * invalidates it) or a migration reseeds the catalog. Never holds usage.
+   */
+  private async getCachedGrants(
+    spaceId: Space['id'],
+  ): Promise<Record<string, FeatureGrant>> {
+    const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached !== null) {
+      return CachedGrantsSchema.parse(JSON.parse(cached));
+    }
+
+    const startTimeMs = Date.now();
+    const grants = await this.computeGrants(spaceId);
+    // A materialization that committed while this was computing already
+    // dropped the key; writing back would re-poison it for the whole TTL.
+    // Same guard as `CacheFirstDataSource`'s `_shouldBeCached`.
+    if (await this.outlivesLastInvalidation(cacheDir.key, startTimeMs)) {
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(grants),
+        this.grantsCacheTtlSeconds,
+      );
+    }
+    return grants;
+  }
+
+  /** Read once for both consumers: the API response and the cached grants. */
+  private async loadPlanContext(spaceId: Space['id']): Promise<{
+    now: Date;
+    spaceCreatedAt: Date;
+    features: Array<Feature>;
+    activeSubscription: SpaceSubscription | null;
+    purchased: Map<number, SubscriptionEntitlement>;
+  }> {
+    const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
+      this.getSpaceCreatedAtOrFail(spaceId),
+      this.featuresRepository.getFeatures(),
+      this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
+    ]);
+    return {
+      now: new Date(),
+      spaceCreatedAt,
+      features,
+      activeSubscription,
+      purchased: new Map(
+        (activeSubscription?.entitlements ?? []).map((entitlement) => [
+          entitlement.feature.id,
+          entitlement,
+        ]),
+      ),
+    };
+  }
+
+  /** Whether nothing invalidated the key since `startTimeMs`. */
+  private async outlivesLastInvalidation(
+    key: string,
+    startTimeMs: number,
+  ): Promise<boolean> {
+    const invalidatedAtMs = await this.cacheService.hGet(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
+    );
+    return invalidatedAtMs === null || Number(invalidatedAtMs) < startTimeMs;
+  }
+
+  private async computeGrants(
+    spaceId: Space['id'],
+  ): Promise<Record<string, FeatureGrant>> {
+    const { now, spaceCreatedAt, features, activeSubscription, purchased } =
+      await this.loadPlanContext(spaceId);
+
+    return Object.fromEntries(
+      features.map((feature) => {
+        const effective = effectiveEntitlement({
+          feature,
+          purchased: purchased.get(feature.id),
+        });
+        return [
+          feature.key,
+          {
+            // A feature the plan does not grant has no allowance at all.
+            quota: effective.enabled ? effective.quota : 0,
+            // Cached: only a webhook moves it, and that invalidates this.
+            // A Free `freePeriod` rolling over on its own can lag by a TTL —
+            // wire that when a feature metered that way is first gated.
+            resetsAt: resetsAt({
+              feature,
+              spaceCreatedAt,
+              cycle: activeSubscription,
+              now,
+            }),
+          },
+        ];
+      }),
+    );
   }
 
   /** `GET /v1/spaces/:spaceId/entitlements`: any active member can read it. */
@@ -255,7 +491,7 @@ export class EntitlementsService {
 
     const incomingActive = activeIsh.at(0);
 
-    return await this.postgresDatabaseService.transaction(
+    const written = await this.postgresDatabaseService.transaction(
       async (entityManager) => {
         // Serializes concurrent webhooks for this space, so the mark read below
         // is what the write is actually ordered against.
@@ -355,6 +591,15 @@ export class EntitlementsService {
         return true;
       },
     );
+
+    // After the commit: a reader repopulating mid-transaction would cache the
+    // pre-write state.
+    if (written) {
+      await this.cacheService.deleteByKey(
+        CacheRouter.getSpaceEntitlementsCacheDir(args.spaceId).key,
+      );
+    }
+    return written;
   }
 
   private markLabel(mark: Date | null): string {

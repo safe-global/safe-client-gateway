@@ -76,6 +76,8 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 This applies in both directions: neither a module's `routes/` nor its `datasources/` is a valid import target for anything outside that module.
 
+**One exception, guards.** A guard is applied by handing its class to `@UseGuards`, so a guard that gates another module's route is necessarily imported from where it lives — and it cannot live in `domain/`, being HTTP-layer by construction (`nestjs-patterns.md`'s "Guards: request admission only"). Two homes are therefore valid for a guard other modules apply: the owning module's `routes/guards/` (`src/modules/auth/routes/guards/auth.guard.ts`, applied by sixteen controllers; `src/modules/entitlements/routes/guards/safe-seats.guard.ts`, applied by the routes that consume a Safe seat), or `src/routes/common/` when it belongs to no feature (`src/routes/common/auth/elevation.guard.ts`). Nothing else about another module's `routes/` becomes importable: a pipe, a decorator, a DTO or a route service stays off limits, as the anti-example below shows.
+
 **Why:** importing another module's `routes/*` drags HTTP-layer concerns (controllers, DTOs, guards) into code that has no business depending on them, and it means a change to another module's controller or DTO shape can break a module that has nothing to do with HTTP.
 
 **Canonical example:** `src/modules/balances/routes/balances.service.ts` imports `IChainsRepository` from `@/modules/chains/domain/chains.repository.interface` — the `chains` module is reached only through its `domain/`.
@@ -130,7 +132,7 @@ A new module has:
 
 - A `<kebab-name>.module.ts` plus the `domain/` skeleton, with `routes/`/`datasources/` present only where the module actually needs them.
 - A `Symbol`+interface pair for each repository, co-declared per the Symbol DI wiring rule.
-- A path from `src/app.module.ts` to the module: either its own entry there, or an import from a module already reachable from it. Reachability is what matters, not directness, and neither wiring is tied to whether the module declares a controller — `EntitlementsModule` is reached through `BillingModule` and `siwe` through both `AuthModule` and `UsersModule`, while the controller-bearing `delegate/routes/`, `notifications/routes/v2/`, and `csv-export/v1/` are each reached through their own parent module.
+- A path from `src/app.module.ts` to the module: either its own entry there, or an import from a module already reachable from it. Reachability is what matters, not directness, and neither wiring is tied to whether the module declares a controller — `EntitlementsModule` is reached through `SpacesModule` (and `SubscriptionSyncModule` through `BillingModule`) and `siwe` through both `AuthModule` and `UsersModule`, while the controller-bearing `delegate/routes/`, `notifications/routes/v2/`, and `csv-export/v1/` are each reached through their own parent module.
 - Test builders under `domain/entities/__tests__/` for its domain entities.
 - Specs co-located with the code they exercise.
 - Its endpoints, datasources, and migrations named in the routing table in `AGENTS.md`, so the guides that govern them are discoverable.

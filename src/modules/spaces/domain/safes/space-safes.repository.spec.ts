@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { EntityManager } from 'typeorm';
 import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
@@ -16,15 +16,15 @@ describe('SpaceSafesRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const spaceUuid = fakeUuid();
   const actorUserId = faker.number.int({ min: 1, max: 100_000 });
-  const maxSafesPerSpace = faker.number.int({ min: 1, max: 100 });
 
-  let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
   let spaceEncryptionService: ReturnType<
     typeof createMockSpaceEncryptionService
   >;
   let spaceSafeRepository: { find: Mock; count: Mock };
   let entityManager: {
+    query: Mock;
+    getRepository: Mock;
     insert: Mock;
     find: Mock;
     remove: Mock;
@@ -36,15 +36,6 @@ describe('SpaceSafesRepository', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    configurationService = {
-      getOrThrow: vi.fn(),
-      get: vi.fn(),
-    } as MockedObject<IConfigurationService>;
-    configurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'spaces.maxSafesPerSpace') return maxSafesPerSpace;
-      throw new Error(`Unexpected config key: ${key}`);
-    });
-
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
     spaceEncryptionService = createMockSpaceEncryptionService();
@@ -54,6 +45,8 @@ describe('SpaceSafesRepository', () => {
       count: vi.fn().mockResolvedValue(0),
     };
     entityManager = {
+      query: vi.fn(),
+      getRepository: vi.fn().mockReturnValue(spaceSafeRepository),
       insert: vi.fn(),
       find: vi.fn(),
       remove: vi.fn(),
@@ -69,14 +62,13 @@ describe('SpaceSafesRepository', () => {
 
     target = new SpaceSafesRepository(
       postgresDatabaseService,
-      configurationService,
       spaceAuditRepository,
       spaceEncryptionService,
     );
   });
 
-  describe('create', () => {
-    it('encrypts addresses and computes blind indexes before insert, and records the plaintext in the audit payload', async () => {
+  describe('encryptRows', () => {
+    it('encrypts each address and keeps the plaintext for the audit', async () => {
       const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
       const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
@@ -86,15 +78,63 @@ describe('SpaceSafesRepository', () => {
       );
       spaceEncryptionService.safeAddressIndex.mockReturnValue(addressIndex);
 
-      await target.create({
-        spaceId,
-        actorUserId,
-        payload: [{ chainId, address }],
-      });
+      const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
 
       expect(
         spaceEncryptionService.encryptSafeAddress,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, address);
+      expect(rows).toStrictEqual([
+        {
+          space: { id: spaceId },
+          chainId,
+          address: encryptedAddress,
+          addressIndex,
+          plaintextAddress: address,
+        },
+      ]);
+    });
+
+    it('passes plaintext through with a NULL index when encryption is disabled', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
+
+      expect(rows).toStrictEqual([
+        {
+          space: { id: spaceId },
+          chainId,
+          address,
+          addressIndex: null,
+          plaintextAddress: address,
+        },
+      ]);
+    });
+  });
+
+  describe('insertRows', () => {
+    it('inserts the prepared rows and audits the plaintext addresses', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const address = getAddress(faker.finance.ethereumAddress());
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const addressIndex = faker.string.hexadecimal({ length: 32 });
+
+      await target.insertRows({
+        spaceId,
+        actorUserId,
+        rows: [
+          {
+            space: { id: spaceId },
+            chainId,
+            address: encryptedAddress as SpaceSafe['address'],
+            addressIndex,
+            plaintextAddress: address,
+          },
+        ],
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      // The plaintext travels with the row but is never inserted.
       expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
         {
           space: { id: spaceId },
@@ -107,47 +147,9 @@ describe('SpaceSafesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_ADDED',
-          payload: {
-            safes: [{ chainId, address }],
-          },
+          payload: { safes: [{ chainId, address }] },
         }),
       );
-    });
-
-    it('inserts plaintext with a NULL index when encryption is disabled (passthrough)', async () => {
-      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
-      const address = getAddress(faker.finance.ethereumAddress());
-
-      await target.create({
-        spaceId,
-        actorUserId,
-        payload: [{ chainId, address }],
-      });
-
-      expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
-        { space: { id: spaceId }, chainId, address, addressIndex: null },
-      ]);
-    });
-
-    it('enforces the per-space limit from a count query before encrypting anything', async () => {
-      spaceSafeRepository.count.mockResolvedValue(maxSafesPerSpace);
-
-      await expect(
-        target.create({
-          spaceId,
-          actorUserId,
-          payload: [
-            {
-              chainId: faker.string.numeric({ length: { min: 1, max: 6 } }),
-              address: getAddress(faker.finance.ethereumAddress()),
-            },
-          ],
-        }),
-      ).rejects.toThrow(
-        `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts.`,
-      );
-      expect(spaceEncryptionService.encryptSafeAddress).not.toHaveBeenCalled();
-      expect(entityManager.insert).not.toHaveBeenCalled();
     });
   });
 

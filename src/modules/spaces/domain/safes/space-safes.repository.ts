@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
 import {
   type EntityManager,
   type FindOptionsRelations,
@@ -7,7 +7,6 @@ import {
   type FindOptionsWhere,
   IsNull,
 } from 'typeorm';
-import { IConfigurationService } from '@/config/configuration.service.interface';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -16,26 +15,24 @@ import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-saf
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import type {
+  ISpaceSafesRepository,
+  PreparedSpaceSafe,
+} from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
-export class SpaceSafesRepository implements ISpaceSafesRepository {
-  private readonly maxSafesPerSpace: number;
+/** Own namespace: the single-int lock key space is shared process-wide. */
+const SEAT_LOCK_NAMESPACE = 1827;
 
+export class SpaceSafesRepository implements ISpaceSafesRepository {
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
-  ) {
-    this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
-      'spaces.maxSafesPerSpace',
-    );
-  }
+  ) {}
 
   private async findSpaceForAuditOrFail(
     entityManager: EntityManager,
@@ -51,77 +48,81 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     return space;
   }
 
-  public async create(args: {
-    spaceId: Space['id'];
-    actorUserId: number;
+  /** Serializes seat changes for a space until this transaction ends. */
+  public async lockSeats(
+    spaceId: Space['id'],
+    entityManager: EntityManager,
+  ): Promise<void> {
+    await entityManager.query('SELECT pg_advisory_xact_lock($1, $2)', [
+      SEAT_LOCK_NAMESPACE,
+      spaceId,
+    ]);
+  }
+
+  public async encryptRows(
+    spaceId: Space['id'],
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
-    }>;
-  }): Promise<void> {
-    // A count is enough for the limit check — findBySpaceId would decrypt
-    // every existing row (one KMS call each) just to measure the length.
-    const spaceSafeRepository =
-      await this.postgresDatabaseService.getRepository(SpaceSafe);
-    const existingCount = await spaceSafeRepository.count({
-      where: { space: { id: args.spaceId } },
-    });
-    if (existingCount + args.payload.length > this.maxSafesPerSpace) {
-      const remaining = this.maxSafesPerSpace - existingCount;
-      throw new BadRequestException(
-        remaining > 0
-          ? `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${remaining} more.`
-          : `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts.`,
-      );
-    }
-
-    // The owning space id is known before every insert, so ciphertext and
-    // blind index are computed up front — no two-phase dance like spaces.name.
-    const safesToInsert = await Promise.all(
-      args.payload.map(async (safe) => ({
-        space: { id: args.spaceId },
+    }>,
+  ): Promise<Array<PreparedSpaceSafe>> {
+    // The space id is known up front, so no two-phase dance like spaces.name.
+    return await Promise.all(
+      payload.map(async (safe) => ({
+        space: { id: spaceId },
         chainId: safe.chainId,
         address: (await this.spaceEncryptionService.encryptSafeAddress(
-          args.spaceId,
+          spaceId,
           safe.address,
         )) as SpaceSafe['address'],
         addressIndex: this.spaceEncryptionService.safeAddressIndex(
           safe.address,
         ),
+        plaintextAddress: safe.address,
       })),
     );
+  }
 
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      try {
-        // Catch-on-conflict as before; duplicates now collide on the partial
-        // unique indexes (blind index for encrypted rows, plaintext for
-        // plaintext rows when encryption is disabled).
-        await entityManager.insert(SpaceSafe, safesToInsert);
-      } catch (err) {
-        if (isUniqueConstraintError(err)) {
-          throw new UniqueConstraintError(
-            `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
-          );
-        }
-        throw err;
+  public async insertRows(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    rows: Array<PreparedSpaceSafe>;
+    entityManager: EntityManager;
+  }): Promise<void> {
+    const { entityManager } = args;
+    const safesToInsert = args.rows.map(
+      ({ plaintextAddress: _, ...row }) => row,
+    );
+
+    try {
+      // Catch-on-conflict as before; duplicates collide on the partial unique
+      // indexes (blind index for encrypted rows, plaintext for plaintext rows
+      // when encryption is disabled).
+      await entityManager.insert(SpaceSafe, safesToInsert);
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
+        );
       }
+      throw err;
+    }
 
-      const space = await this.findSpaceForAuditOrFail(
-        entityManager,
-        args.spaceId,
-      );
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: space.id,
-        spaceUuid: space.uuid,
-        eventType: SpaceAuditEventType.SAFE_ADDED,
-        actorUserId: args.actorUserId,
-        payload: {
-          safes: args.payload.map((safe) => ({
-            chainId: safe.chainId,
-            address: safe.address,
-          })),
-        },
-      });
+    const space = await this.findSpaceForAuditOrFail(
+      entityManager,
+      args.spaceId,
+    );
+    await this.spaceAuditRepository.record(entityManager, {
+      spaceId: space.id,
+      spaceUuid: space.uuid,
+      eventType: SpaceAuditEventType.SAFE_ADDED,
+      actorUserId: args.actorUserId,
+      payload: {
+        safes: args.rows.map((row) => ({
+          chainId: row.chainId,
+          address: row.plaintextAddress,
+        })),
+      },
     });
   }
 

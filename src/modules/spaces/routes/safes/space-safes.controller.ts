@@ -5,9 +5,11 @@ import {
   Delete,
   Get,
   HttpCode,
+  HttpStatus,
   Inject,
   Param,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -20,12 +22,15 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
+import { SafeSeatsGuard } from '@/modules/entitlements/routes/guards/safe-seats.guard';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
@@ -80,8 +85,14 @@ export class SpaceSafesController {
     description:
       'Access forbidden - user lacks permission to add Safes to this space',
   })
+  @ApiResponse({
+    status: HttpStatus.PAYMENT_REQUIRED,
+    description:
+      'The space is at its plan\'s Safe seat limit. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
+  })
   @Post()
-  @UseGuards(ElevationGuard)
+  @UseGuards(ElevationGuard, SafeSeatsGuard)
+  @UseFilters(QuotaExceededExceptionFilter)
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))
     body: CreateSpaceSafesDto,

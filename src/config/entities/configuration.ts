@@ -365,6 +365,10 @@ export default () => ({
       },
     },
   },
+  entitlements: {
+    enforcementStartsAt:
+      process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT ?? '2099-01-01T00:00:00Z',
+  },
   expirationTimeInSeconds: {
     deviatePercent: Number.parseInt(
       process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`,
@@ -396,6 +400,10 @@ export default () => ({
     ),
     billing: Number.parseInt(
       process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
+      10,
+    ),
+    entitlements: Number.parseInt(
+      process.env.EXPIRATION_TIME_ENTITLEMENTS_SECONDS ?? `${300}`,
       10,
     ),
     notFound: {

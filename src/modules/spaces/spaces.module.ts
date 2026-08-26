@@ -7,6 +7,7 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
+import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
 import { AddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { AddressBookRequest } from '@/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
@@ -55,6 +56,8 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
+    // Plan limits: `IEntitlementEnforcement` and the route guards enforcing it.
+    forwardRef(() => EntitlementsModule),
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
     SpaceAuditModule,
     KmsEncryptionModule,

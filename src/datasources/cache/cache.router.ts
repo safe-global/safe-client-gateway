@@ -54,6 +54,7 @@ export class CacheRouter {
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
+  private static readonly SPACE_ENTITLEMENTS_KEY = 'space_entitlements';
   private static readonly STAKING_DEDICATED_STAKING_STATS_KEY =
     'staking_dedicated_staking_stats';
   private static readonly STAKING_DEFI_VAULT_STATS_KEY =
@@ -219,6 +220,11 @@ export class CacheRouter {
 
   static getSingletonsCacheDir(chainId: string): CacheDir {
     return new CacheDir(`${chainId}_${CacheRouter.SINGLETONS_KEY}`, '');
+  }
+
+  /** What the Space's plan grants. Never holds usage. */
+  static getSpaceEntitlementsCacheDir(spaceId: number): CacheDir {
+    return new CacheDir(`${spaceId}_${CacheRouter.SPACE_ENTITLEMENTS_KEY}`, '');
   }
 
   static getCollectiblesCacheDir(args: {
