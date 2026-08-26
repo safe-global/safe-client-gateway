@@ -1,14 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { BadRequestException } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { type Address, getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
+import {
+  gtfFeeBreakdownBuilder,
+  gtfFeesResponseBuilder,
+  gtfTxDataBuilder,
+} from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { FeesService } from '@/modules/fees/routes/fees.service';
@@ -18,6 +24,7 @@ const mockFeeServiceApi = vi.mocked({
   canRelay: vi.fn(),
   getRelayFees: vi.fn(),
   getGtfFees: vi.fn(),
+  getGtfFeeSnapshot: vi.fn(),
 } as unknown as MockedObject<IFeeServiceApi>);
 
 const mockGasTokensRepository = vi.mocked({
@@ -273,5 +280,92 @@ describe('FeesService', () => {
         target.getFeePreview({ chainId, safeAddress, feePreviewDto }),
       ).rejects.toThrow(BadRequestException);
     });
+  });
+
+  describe('getFeePreviewBySafeTxHash', () => {
+    const chainId = faker.string.numeric();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+      casing: 'lower',
+    }) as Hex;
+
+    const storedQuoteFor = (args: {
+      chainId: string;
+      safeAddress: Address;
+    }): GtfFeesResponse =>
+      gtfFeesResponseBuilder()
+        .with('safeTxHash', safeTxHash)
+        .with(
+          'txData',
+          gtfTxDataBuilder()
+            .with('chainId', args.chainId)
+            .with('safeAddress', args.safeAddress)
+            .build(),
+        )
+        .with(
+          'feeBreakdown',
+          gtfFeeBreakdownBuilder()
+            .with(
+              'safenetFeeUsd',
+              faker.number.float({ min: 0.01, max: 10, fractionDigits: 2 }),
+            )
+            .build(),
+        )
+        .build();
+
+    it('should return the stored quote for the requested chain and Safe', async () => {
+      const storedQuote = storedQuoteFor({ chainId, safeAddress });
+      mockFeeServiceApi.getGtfFeeSnapshot.mockResolvedValueOnce(storedQuote);
+
+      const result = await target.getFeePreviewBySafeTxHash({
+        chainId,
+        safeAddress,
+        safeTxHash,
+      });
+
+      expect(mockFeeServiceApi.getGtfFeeSnapshot).toHaveBeenCalledWith({
+        chainId,
+        safeTxHash,
+      });
+      expect(result.relayCost).toBeUndefined();
+      expect(result.feeBreakdown).toEqual(
+        expect.objectContaining({
+          totalUsd: storedQuote.feeBreakdown.totalUsd,
+          safenetFeeUsd: storedQuote.feeBreakdown.safenetFeeUsd,
+        }),
+      );
+      expect(result.maxFeeCapUsd).toBe(
+        storedQuote.pricingContextSnapshot.maxFeeCapUsd,
+      );
+      expect(result.txData).toEqual(
+        expect.objectContaining({ chainId, safeAddress }),
+      );
+    });
+
+    it.each([
+      ['another chain', { chainId: `${chainId}9` }],
+      [
+        'another Safe',
+        { safeAddress: getAddress(faker.finance.ethereumAddress()) },
+      ],
+    ] as const)(
+      'should throw a 404 when the stored quote is for %s',
+      async (_label, scope) => {
+        mockFeeServiceApi.getGtfFeeSnapshot.mockResolvedValueOnce(
+          storedQuoteFor({ chainId, safeAddress, ...scope }),
+        );
+
+        await expect(
+          target.getFeePreviewBySafeTxHash({
+            chainId,
+            safeAddress,
+            safeTxHash,
+          }),
+        ).rejects.toThrow(
+          new HttpExceptionNoLog('Fee quote not found', HttpStatus.NOT_FOUND),
+        );
+      },
+    );
   });
 });

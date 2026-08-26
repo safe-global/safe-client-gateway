@@ -342,4 +342,72 @@ describe('FeeServiceApi', () => {
       ).rejects.toThrow(new DataSourceError('Unexpected error', status));
     });
   });
+
+  describe('getGtfFeeSnapshot', () => {
+    const chainId = faker.string.numeric();
+    const safeTxHash = faker.string.hexadecimal({
+      length: 64,
+      casing: 'lower',
+    }) as Hex;
+
+    it('should call dataSource.get with correct arguments', async () => {
+      const storedQuote = gtfFeesResponseBuilder().build();
+      mockDataSource.get.mockResolvedValueOnce(rawify(storedQuote));
+
+      const result = await target.getGtfFeeSnapshot({ chainId, safeTxHash });
+
+      expect(result).toEqual(storedQuote);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir: CacheRouter.getGtfFeeSnapshotCacheDir({
+          chainId,
+          safeTxHash,
+        }),
+        url: `${baseUri}/v1/fee-snapshots/${safeTxHash}`,
+        notFoundExpireTimeSeconds: 30,
+        expireTimeSeconds: 60,
+      });
+    });
+
+    it('should forward a not-found from the fee service', async () => {
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/v1/fee-snapshots/${safeTxHash}`),
+        { status: 404 } as Response,
+        { message: 'Fee snapshot not found' },
+      );
+      mockDataSource.get.mockRejectedValueOnce(error);
+
+      await expect(
+        target.getGtfFeeSnapshot({ chainId, safeTxHash }),
+      ).rejects.toThrow(new DataSourceError('Fee snapshot not found', 404));
+    });
+
+    it.each([
+      ['the same chain and hash', {}, true],
+      [
+        'another hash',
+        { safeTxHash: faker.string.hexadecimal({ length: 64 }) as Hex },
+        false,
+      ],
+      ['another chain', { chainId: `${chainId}9` }, false],
+    ] as const)(
+      'should key the cache dir on %s',
+      async (_label, override, isSameDir) => {
+        mockDataSource.get.mockResolvedValue(
+          rawify(gtfFeesResponseBuilder().build()),
+        );
+        const baseline = expect.objectContaining({
+          cacheDir: CacheRouter.getGtfFeeSnapshotCacheDir({
+            chainId,
+            safeTxHash,
+          }),
+        });
+
+        await target.getGtfFeeSnapshot({ chainId, safeTxHash, ...override });
+
+        const matcher = expect(mockDataSource.get);
+        if (isSameDir) matcher.toHaveBeenCalledWith(baseline);
+        else matcher.not.toHaveBeenCalledWith(baseline);
+      },
+    );
+  });
 });
