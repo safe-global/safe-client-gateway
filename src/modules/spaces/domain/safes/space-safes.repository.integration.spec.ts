@@ -50,32 +50,21 @@ describe('SpaceSafesRepository', () => {
   });
   const testConfiguration = configuration();
 
-  /** Most cases are not about the seat rule, so it admits everything. */
-  const noSeatLimit = (): void => {};
-
-  /**
-   * What `SpaceSafesService.create` does: encrypt, then lock, count, admit and
-   * insert in one transaction.
-   */
+  /** Encrypt then insert, the two halves `SpaceSafesService.create` sequences. */
   async function addSafes(args: {
     spaceId: Space['id'];
     actorUserId: User['id'];
     payload: Array<{ chainId: string; address: `0x${string}` }>;
-    assertSeats?: (used: number) => void;
   }): Promise<void> {
     const rows = await spaceSafesRepo.encryptRows(args.spaceId, args.payload);
-    await postgresDatabaseService.transaction(async (entityManager) => {
-      await spaceSafesRepo.lockSeats(args.spaceId, entityManager);
-      (args.assertSeats ?? noSeatLimit)(
-        await spaceSafesRepo.countBySpaceId(args.spaceId, entityManager),
-      );
-      await spaceSafesRepo.insertRows({
+    await postgresDatabaseService.transaction(async (entityManager) =>
+      spaceSafesRepo.insertRows({
         spaceId: args.spaceId,
         actorUserId: args.actorUserId,
         rows,
         entityManager,
-      });
-    });
+      }),
+    );
   }
 
   const dataSource = new DataSource({
@@ -323,7 +312,6 @@ describe('SpaceSafesRepository', () => {
       });
 
       await addSafes({
-        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId: userId,
         payload: [
@@ -380,7 +368,6 @@ describe('SpaceSafesRepository', () => {
       });
 
       await addSafes({
-        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId: userId,
         payload,
@@ -432,7 +419,6 @@ describe('SpaceSafesRepository', () => {
               address: getAddress(faker.finance.ethereumAddress()),
             },
           ],
-          assertSeats: noSeatLimit,
         }),
       ).rejects.toThrow(failure);
 
@@ -461,24 +447,33 @@ describe('SpaceSafesRepository', () => {
 
       const quota = faker.number.int({ min: 2, max: 4 });
       const attempts = quota + faker.number.int({ min: 2, max: 5 });
-      const addSafeUnderQuota = (): Promise<void> =>
-        addSafes({
-          spaceId,
-          actorUserId: userId,
-          payload: [
-            {
-              chainId: faker.string.numeric(),
-              address: getAddress(faker.finance.ethereumAddress()),
-            },
-          ],
-          // Without the lock, each of these reads the same pre-insert count
-          // and they all pass.
-          assertSeats: (used) => {
-            if (used + 1 > quota) {
-              throw new Error('seat quota exceeded');
-            }
+      // The sequence the route service runs: lock, count, admit, insert.
+      // Without the lock, each of these reads the same pre-insert count and
+      // they all pass.
+      const addSafeUnderQuota = async (): Promise<void> => {
+        const rows = await spaceSafesRepo.encryptRows(spaceId, [
+          {
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
           },
+        ]);
+        await postgresDatabaseService.transaction(async (entityManager) => {
+          await spaceSafesRepo.lockSeats(spaceId, entityManager);
+          const used = await spaceSafesRepo.countBySpaceId(
+            spaceId,
+            entityManager,
+          );
+          if (used + 1 > quota) {
+            throw new Error('seat quota exceeded');
+          }
+          await spaceSafesRepo.insertRows({
+            spaceId,
+            actorUserId: userId,
+            rows,
+            entityManager,
+          });
         });
+      };
 
       const results = await Promise.allSettled(
         Array.from({ length: attempts }, addSafeUnderQuota),
@@ -519,13 +514,11 @@ describe('SpaceSafesRepository', () => {
       await expect(
         Promise.all([
           addSafes({
-            assertSeats: noSeatLimit,
             spaceId: spaceId,
             actorUserId: userId,
             payload: [{ chainId, address }],
           }),
           addSafes({
-            assertSeats: noSeatLimit,
             spaceId: spaceId,
             actorUserId: userId,
             payload: [
@@ -656,7 +649,6 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await addSafes({
-        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -747,7 +739,6 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await addSafes({
-        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -812,7 +803,6 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await addSafes({
-        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -851,7 +841,6 @@ describe('SpaceSafesRepository', () => {
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       await addSafes({
-        assertSeats: noSeatLimit,
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
