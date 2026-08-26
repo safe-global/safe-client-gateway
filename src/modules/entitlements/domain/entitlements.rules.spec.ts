@@ -1,11 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { faker } from '@faker-js/faker';
 import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import { DAY_IN_MS } from '@/modules/entitlements/domain/entitlements.constants';
 import type { FeatureDefaults } from '@/modules/entitlements/domain/entitlements.rules';
 import {
   effectiveEntitlement,
   eventPeriodStart,
+  fitsWithinQuota,
+  isEnforcementActive,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
 
@@ -14,6 +17,45 @@ function feature(overrides?: Partial<FeatureDefaults>): FeatureDefaults {
 }
 
 describe('entitlements rules', () => {
+  describe('isEnforcementActive', () => {
+    const startsAt = faker.date.recent();
+
+    it.each([
+      ['before the date', new Date(startsAt.getTime() - 1), false],
+      ['on the date', new Date(startsAt.getTime()), true],
+      ['after the date', new Date(startsAt.getTime() + 1), true],
+    ])('is %s', (_label, now, expected) => {
+      expect(isEnforcementActive({ now, startsAt })).toBe(expected);
+    });
+  });
+
+  describe('fitsWithinQuota', () => {
+    it('never blocks on an unlimited quota', () => {
+      expect(
+        fitsWithinQuota({
+          quota: null,
+          used: faker.number.int({ min: 1, max: 1_000 }),
+          delta: faker.number.int({ min: 1, max: 100 }),
+        }),
+      ).toBe(true);
+    });
+
+    it.each([
+      ['room for the batch', 8, 2, true],
+      ['exactly filling the quota', 9, 1, true],
+      ['the batch overshooting', 8, 3, false],
+      ['already at the limit, asking for nothing', 10, 0, false],
+      ['already over the limit', 12, 0, false],
+    ])('is %s', (_label, used, delta, expected) => {
+      expect(fitsWithinQuota({ quota: 10, used, delta })).toBe(expected);
+    });
+
+    it('grants nothing on a zero quota', () => {
+      expect(fitsWithinQuota({ quota: 0, used: 0, delta: 1 })).toBe(false);
+      expect(fitsWithinQuota({ quota: 0, used: 0, delta: 0 })).toBe(false);
+    });
+  });
+
   describe('effectiveEntitlement', () => {
     it('falls back to the catalog defaults with no purchased package', () => {
       expect(

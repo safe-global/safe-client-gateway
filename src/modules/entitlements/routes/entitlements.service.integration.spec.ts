@@ -117,6 +117,10 @@ describe('EntitlementsService', () => {
   let service: EntitlementsService;
   // The same service with the enforcement date already past.
   let enforcingService: EntitlementsService;
+  // Exposed because one test builds a service with a broken date.
+  let buildService: (
+    enforcementStartsAt: Date | string | undefined,
+  ) => EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
   let seededFeatureKeys: Array<string> = [];
 
@@ -221,11 +225,15 @@ describe('EntitlementsService', () => {
     subscriptionsRepository = new SubscriptionsRepository(
       postgresDatabaseService,
     );
-    const buildService = (enforcementStartsAt: Date): EntitlementsService => {
+    buildService = (
+      enforcementStartsAt: Date | string | undefined,
+    ): EntitlementsService => {
       const configurationService = new FakeConfigurationService();
       configurationService.set(
         'entitlements.enforcementStartsAt',
-        enforcementStartsAt.toISOString(),
+        enforcementStartsAt instanceof Date
+          ? enforcementStartsAt.toISOString()
+          : enforcementStartsAt,
       );
       configurationService.set(
         'expirationTimeInSeconds.entitlements',
@@ -1118,6 +1126,14 @@ describe('EntitlementsService', () => {
           .build(),
       });
     }
+
+    it('refuses to construct with an unparseable enforcement date', () => {
+      // Not only a typo: a date without a time, or no value at all, must fail
+      // the same way. Enforcing everywhere is what an Invalid Date would do.
+      for (const value of ['the first of october', '2026-10-01', undefined]) {
+        expect(() => buildService(value)).toThrow();
+      }
+    });
 
     it("applies the caller's static limit before the enforcement date", async () => {
       const spaceId = await createSpace();

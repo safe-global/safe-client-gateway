@@ -43,6 +43,8 @@ import {
 import {
   effectiveEntitlement,
   eventPeriodStart,
+  fitsWithinQuota,
+  isEnforcementActive,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
@@ -59,6 +61,7 @@ import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
 
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the
@@ -99,11 +102,15 @@ export class EntitlementsService implements IEntitlementEnforcement {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    this.enforcementStartsAt = new Date(
-      configurationService.getOrThrow<string>(
-        'entitlements.enforcementStartsAt',
-      ),
+    const enforcementStartsAt = DateStringSchema.safeParse(
+      configurationService.getOrThrow('entitlements.enforcementStartsAt'),
     );
+    if (!enforcementStartsAt.success) {
+      throw new Error(
+        'entitlements.enforcementStartsAt is not an ISO date string',
+      );
+    }
+    this.enforcementStartsAt = new Date(enforcementStartsAt.data);
     this.grantsCacheTtlSeconds = configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.entitlements',
     );
@@ -185,12 +192,10 @@ export class EntitlementsService implements IEntitlementEnforcement {
     used: number;
   }): void {
     const { grant, used } = args;
-    if (grant.quota === null) {
-      return;
-    }
-    // Rejected when already at the limit (`delta: 0` asks exactly that) or
-    // when this batch would overshoot it.
-    if (used < grant.quota && used + args.delta <= grant.quota) {
+    if (
+      grant.quota === null ||
+      fitsWithinQuota({ quota: grant.quota, used, delta: args.delta })
+    ) {
       return;
     }
     // The canonical quota event, so analytics counts what the server decided.
@@ -218,7 +223,12 @@ export class EntitlementsService implements IEntitlementEnforcement {
     spaceId: Space['id'];
     featureKey: FeatureKey;
   }): Promise<FeatureGrant> {
-    if (new Date() < this.enforcementStartsAt) {
+    if (
+      !isEnforcementActive({
+        now: new Date(),
+        startsAt: this.enforcementStartsAt,
+      })
+    ) {
       return this.staticGrant(args.featureKey);
     }
 
@@ -240,17 +250,20 @@ export class EntitlementsService implements IEntitlementEnforcement {
   }
 
   /**
-   * Read live — a stale count would gate wrongly. Zero for anything but a
-   * stock feature, which is what a binary gate needs; an event-metered one
-   * reads its counter here once the ticket consuming it lands.
+   * Usage measured against a quota, read live so a stale count cannot gate
+   * wrongly: a stock feature counts rows in the table its own module owns,
+   * anything else has no counter and reports zero.
    */
   private async countFeatureUsage(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
   }): Promise<number> {
-    return isStockMeteredFeature({ key: args.featureKey })
-      ? await this.stockCounters[args.featureKey](args.spaceId)
-      : 0;
+    if (isStockMeteredFeature({ key: args.featureKey })) {
+      return await this.stockCounters[args.featureKey](args.spaceId);
+    }
+    // TODO: read `space_feature_usage` here for event-metered features, once
+    // one is gated and its consumption is counted.
+    return 0;
   }
 
   /**
