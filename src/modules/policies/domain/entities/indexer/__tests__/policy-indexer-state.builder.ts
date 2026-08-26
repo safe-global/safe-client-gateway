@@ -28,12 +28,14 @@ export function rawPolicyIndexerState(
     _meta: Array<unknown>;
     SafeAllowance: Array<unknown>;
     SafeDelegate: Array<unknown>;
+    SafePolicy: Array<unknown>;
   }> = {},
 ): Record<string, Array<unknown>> {
   return {
     _meta: [rawIndexerMetaBuilder().build()],
     SafeAllowance: [],
     SafeDelegate: [],
+    SafePolicy: [],
     ...overrides,
   };
 }
@@ -48,5 +50,6 @@ export function policyIndexerStateBuilder(): IBuilder<PolicyIndexerState> {
   return new Builder<PolicyIndexerState>()
     .with('meta', [])
     .with('allowances', [])
-    .with('delegates', []);
+    .with('delegates', [])
+    .with('policies', []);
 }

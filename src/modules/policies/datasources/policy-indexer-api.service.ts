@@ -236,5 +236,5 @@ export class PolicyIndexerApi {
 }
 
 function emptySlice(): PolicyStateSlice {
-  return { _meta: [], SafeAllowance: [], SafeDelegate: [] };
+  return { _meta: [], SafeAllowance: [], SafeDelegate: [], SafePolicy: [] };
 }

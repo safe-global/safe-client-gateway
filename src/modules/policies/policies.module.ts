@@ -3,6 +3,7 @@ import { forwardRef, Module } from "@nestjs/common";
 import { HttpErrorFactory } from "@/datasources/errors/http-error-factory";
 import { AuthModule } from "@/modules/auth/auth.module";
 import { PolicyIndexerApi } from "@/modules/policies/datasources/policy-indexer-api.service";
+import { GuardPolicyAssembler } from "@/modules/policies/domain/assemblers/guard-policy.assembler";
 import type { PolicyAssembler } from "@/modules/policies/domain/assemblers/policy-assembler.interface";
 import { SpendingLimitAssembler } from "@/modules/policies/domain/assemblers/spending-limit.assembler";
 import { PolicyIndexerRepository } from "@/modules/policies/domain/policy-indexer.repository";
@@ -32,6 +33,7 @@ import { UsersModule } from "@/modules/users/users.module";
     PolicyIndexerApi,
     PoliciesService,
     SpendingLimitAssembler,
+    GuardPolicyAssembler,
     { provide: IPolicyIndexerRepository, useClass: PolicyIndexerRepository },
     {
       // Registering an assembler here is all it takes to report another policy
@@ -39,8 +41,9 @@ import { UsersModule } from "@/modules/users/users.module";
       provide: POLICY_ASSEMBLERS,
       useFactory: (
         spendingLimit: SpendingLimitAssembler,
-      ): ReadonlyArray<PolicyAssembler> => [spendingLimit],
-      inject: [SpendingLimitAssembler],
+        guard: GuardPolicyAssembler,
+      ): ReadonlyArray<PolicyAssembler> => [spendingLimit, guard],
+      inject: [SpendingLimitAssembler, GuardPolicyAssembler],
     },
   ],
   exports: [IPolicyIndexerRepository],

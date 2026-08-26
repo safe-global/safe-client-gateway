@@ -15,6 +15,13 @@ export type PolicyAssemblerContext = {
   state: PolicyIndexerState;
   /** The Safe's enabled modules, which is what makes a module policy enforced. */
   enabledModules: ReadonlyArray<Address>;
+  /**
+   * The guard set on the Safe, which is what makes a guard policy enforced.
+   *
+   * Only the transaction guard slot: the module guard cannot be read from the
+   * Transaction Service's single-Safe endpoint yet (WA-2914).
+   */
+  transactionGuard: Address | null;
   /** Unix seconds, passed in so an assembler stays a pure function. */
   now: number;
 };

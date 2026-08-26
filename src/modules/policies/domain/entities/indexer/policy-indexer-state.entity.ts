@@ -5,6 +5,7 @@ import type {
   IndexerSafeAllowance,
   IndexerSafeDelegate,
 } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import type { IndexerSafePolicy } from '@/modules/policies/domain/entities/indexer/safe-policy.entity';
 
 /**
  * Indexing progress, one entry per chain - `_meta` is a list, not an object.
@@ -32,6 +33,7 @@ export const PolicyIndexerResponseSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
+  SafePolicy: z.array(z.unknown()),
 });
 
 export type PolicyIndexerResponse = z.infer<typeof PolicyIndexerResponseSchema>;
@@ -43,4 +45,5 @@ export type PolicyIndexerState = {
   meta: Array<IndexerMeta>;
   allowances: Array<IndexerSafeAllowance>;
   delegates: Array<IndexerSafeDelegate>;
+  policies: Array<IndexerSafePolicy>;
 };

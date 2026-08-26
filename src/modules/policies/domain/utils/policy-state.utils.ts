@@ -27,5 +27,6 @@ export function policyStateForSafe(
     meta: state.meta.filter(onChain),
     allowances: state.allowances.filter(onSafe),
     delegates: state.delegates.filter(onSafe),
+    policies: state.policies.filter(onSafe),
   };
 }

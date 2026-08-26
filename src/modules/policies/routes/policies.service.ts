@@ -129,9 +129,9 @@ export class PoliciesService {
       return [];
     }
 
-    const [state, enabledModules] = await Promise.all([
+    const [state, enforcers] = await Promise.all([
       this.policyIndexerRepository.getState({ safes }),
-      Promise.all(safes.map((safe) => this.enabledModules(safe))),
+      Promise.all(safes.map((safe) => this.enforcers(safe))),
     ]);
     const now = Math.floor(Date.now() / MILLISECONDS_IN_SECOND);
 
@@ -139,7 +139,7 @@ export class PoliciesService {
       const context = {
         safe,
         state: policyStateForSafe(state, safe),
-        enabledModules: enabledModules[index],
+        ...enforcers[index],
         now,
       };
 
@@ -153,18 +153,22 @@ export class PoliciesService {
   }
 
   /**
-   * The modules the Safe has enabled, which is what turns a configured
-   * module policy into an enforced one.
+   * What the Safe itself has switched on: the modules it has enabled and the
+   * guard it has set. Both are what turn a configured policy into an enforced
+   * one.
    *
    * Read from the Safe rather than the indexer: enablement lives in the Safe's
    * own storage, and CGW already serves it.
    */
-  private async enabledModules(safe: SafeRef): Promise<Array<Address>> {
-    const { modules } = await this.safeRepository.getSafe({
+  private async enforcers(safe: SafeRef): Promise<{
+    enabledModules: Array<Address>;
+    transactionGuard: Address | null;
+  }> {
+    const { modules, guard } = await this.safeRepository.getSafe({
       chainId: safe.chainId,
       address: safe.address,
     });
 
-    return modules ?? [];
+    return { enabledModules: modules ?? [], transactionGuard: guard };
   }
 }
