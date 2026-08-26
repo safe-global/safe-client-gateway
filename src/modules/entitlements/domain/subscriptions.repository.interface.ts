@@ -18,6 +18,19 @@ export interface ISubscriptionsRepository {
   ): Promise<SpaceSubscription | null>;
 
   /**
+   * Whether the space ever held a subscription, in any status — terminal and
+   * incomplete rows included.
+   */
+  hasAnySubscription(spaceId: Space['id']): Promise<boolean>;
+
+  /**
+   * Plan name on the workspace's active subscription; `null` when it has none
+   * or the row is untagged. Reads only that column — prefer it over
+   * `getActiveSubscriptionBySpaceId` when the entitlement package is not needed.
+   */
+  getActivePlanName(spaceId: Space['id']): Promise<string | null>;
+
+  /**
    * Atomic upsert by `upstreamSubscriptionId`: inserts a new row, or updates
    * the existing one in place if the id is already known.
    */

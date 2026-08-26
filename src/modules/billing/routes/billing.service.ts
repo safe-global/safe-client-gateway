@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
@@ -8,6 +8,8 @@ import type {
   SubscriptionStatusFilter,
 } from '@/datasources/billing-api/entities/subscription.entity';
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { LoggingService } from '@/logging/logging.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import {
@@ -16,17 +18,27 @@ import {
   resolveAndValidateRedirectUrl,
 } from '@/modules/auth/utils/auth-redirect.helper';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-link-offer.rules';
+import {
+  isOfferedToSpace,
+  isUnclassifiedTrialLink,
+} from '@/modules/billing/domain/payment-link-offer.rules';
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
+import { GRACE_PERIOD_METADATA_KEY } from '@/modules/entitlements/domain/entitlements.constants';
+import { predatesEnforcement } from '@/modules/entitlements/domain/entitlements.rules';
 import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
+import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class BillingService {
   private readonly redirectConfig: RedirectConfig;
+  private readonly enforcementStartsAt: Date;
 
   public constructor(
     @Inject(IBillingApi)
@@ -37,8 +49,17 @@ export class BillingService {
     private readonly configurationService: IConfigurationService,
     @Inject(ISubscriptionSyncService)
     private readonly subscriptionSyncService: ISubscriptionSyncService,
+    @Inject(ISubscriptionsRepository)
+    private readonly subscriptionsRepository: ISubscriptionsRepository,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.redirectConfig = getRedirectConfig(this.configurationService);
+    this.enforcementStartsAt = this.configurationService.getOrThrow<Date>(
+      'entitlements.enforcementStartsAt',
+    );
   }
 
   public async processWebhook(payload: WebhookEvent): Promise<void> {
@@ -86,17 +107,7 @@ export class BillingService {
   }): Promise<Array<PaymentLink>> {
     await this.assertSpaceMember(args.spaceId, args.authPayload);
 
-    const [spaceLinks, generalLinks] = await Promise.all([
-      this.billingApi.listPaymentLinks({
-        upstreamCustomerId: args.spaceUuid,
-      }),
-      this.billingApi.listPaymentLinks(),
-    ]);
-
-    const byId = new Map(
-      [...generalLinks, ...spaceLinks].map((link) => [link.id, link]),
-    );
-    return Array.from(byId.values());
+    return await this.listOfferedPaymentLinks(args);
   }
 
   public async createCheckoutUrl(args: {
@@ -107,11 +118,21 @@ export class BillingService {
     returnUrl: string;
   }): Promise<CheckoutSessionResult> {
     await this.assertSpaceMember(args.spaceId, args.authPayload);
+    const returnUrl = this.validateReturnUrl(args.returnUrl);
+
+    // A link the workspace is not offered is not checkable out either, or the
+    // filtered list would only be a hint.
+    const offeredLinks = await this.listOfferedPaymentLinks(args);
+    if (!offeredLinks.some((link) => link.id === args.paymentLinkId)) {
+      throw new ForbiddenException(
+        'This subscription is not available for this workspace',
+      );
+    }
 
     return await this.billingApi.createCheckoutSession({
       paymentLinkId: args.paymentLinkId,
       upstreamCustomerId: args.spaceUuid,
-      returnUrl: this.validateReturnUrl(args.returnUrl),
+      returnUrl,
     });
   }
 
@@ -119,6 +140,72 @@ export class BillingService {
     const session = await this.billingApi.getCheckoutSession({ sessionId });
 
     return toCheckoutSessionDto(session);
+  }
+
+  /**
+   * The general catalog narrowed to what this workspace is entitled to, with
+   * the space-specific catalog merged in on top, always offered: a link
+   * negotiated for one customer is not subject to the general enforcement
+   * rule. Space-specific wins on a shared id.
+   */
+  private async listOfferedPaymentLinks(args: {
+    spaceId: Space['id'];
+    spaceUuid: Space['uuid'];
+  }): Promise<Array<PaymentLink>> {
+    const [spaceLinks, generalLinks, eligibility] = await Promise.all([
+      this.billingApi.listPaymentLinks({
+        upstreamCustomerId: args.spaceUuid,
+      }),
+      this.billingApi.listPaymentLinks(),
+      this.getOfferEligibility(args.spaceId),
+    ]);
+
+    this.warnOnUnclassifiedTrials(generalLinks);
+
+    const offeredGeneralLinks = generalLinks.filter((link) =>
+      isOfferedToSpace(link, eligibility),
+    );
+    const linksById = new Map(
+      [...offeredGeneralLinks, ...spaceLinks].map((link) => [link.id, link]),
+    );
+    return Array.from(linksById.values());
+  }
+
+  /**
+   * A trial link with no recognized `gracePeriod` tag is offered to nobody, so
+   * an untagged catalog looks like an empty one. Surface it rather than serving
+   * fewer offers in silence.
+   */
+  private warnOnUnclassifiedTrials(generalLinks: Array<PaymentLink>): void {
+    const unclassified = generalLinks.filter(isUnclassifiedTrialLink);
+    if (unclassified.length === 0) {
+      return;
+    }
+    this.loggingService.warn(
+      `Dropping ${unclassified.length} trial payment link(s) with no recognized ${GRACE_PERIOD_METADATA_KEY} metadata: ${unclassified
+        .map((link) => link.id)
+        .join(', ')}`,
+    );
+  }
+
+  private async getOfferEligibility(
+    spaceId: Space['id'],
+  ): Promise<SpaceOfferEligibility> {
+    const [spaceCreatedAt, hasEverSubscribed, activePlanName] =
+      await Promise.all([
+        this.spacesRepository.findCreatedAtById(spaceId),
+        this.subscriptionsRepository.hasAnySubscription(spaceId),
+        this.subscriptionsRepository.getActivePlanName(spaceId),
+      ]);
+
+    return {
+      createdBeforeEnforcement: predatesEnforcement({
+        createdAt: spaceCreatedAt,
+        startsAt: this.enforcementStartsAt,
+      }),
+      hasEverSubscribed,
+      activePlanName,
+    };
   }
 
   private validateReturnUrl(returnUrl: string): string {

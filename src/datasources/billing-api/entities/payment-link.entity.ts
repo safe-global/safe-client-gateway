@@ -38,4 +38,6 @@ export const PaymentLinkSchema = z.object({
   customText: z.record(z.string(), z.unknown()).optional(),
   afterCompletion: z.record(z.string(), z.unknown()).optional(),
   lineItems: z.array(PaymentLinkLineItemSchema).optional(),
+  /** The offer's free length; `null`/absent means the link bills immediately. */
+  trialPeriodDays: z.number().int().nullish(),
 });

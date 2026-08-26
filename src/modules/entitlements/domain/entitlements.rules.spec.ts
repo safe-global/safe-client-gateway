@@ -9,6 +9,7 @@ import {
   eventPeriodStart,
   fitsWithinQuota,
   isEnforcementActive,
+  predatesEnforcement,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
 
@@ -26,6 +27,18 @@ describe('entitlements rules', () => {
       ['after the date', new Date(startsAt.getTime() + 1), true],
     ])('is %s', (_label, now, expected) => {
       expect(isEnforcementActive({ now, startsAt })).toBe(expected);
+    });
+  });
+
+  describe('predatesEnforcement', () => {
+    const startsAt = faker.date.recent();
+
+    it.each([
+      ['created before the date', new Date(startsAt.getTime() - 1), true],
+      ['created on the date', new Date(startsAt.getTime()), false],
+      ['created after the date', new Date(startsAt.getTime() + 1), false],
+    ])('is %s', (_label, createdAt, expected) => {
+      expect(predatesEnforcement({ createdAt, startsAt })).toBe(expected);
     });
   });
 

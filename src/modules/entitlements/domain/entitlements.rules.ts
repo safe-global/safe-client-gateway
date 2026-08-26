@@ -40,14 +40,26 @@ type BillingCycle = Pick<
 
 /**
  * Whether the workspace's own entitlements decide its quotas yet. `startsAt`
- * is always a valid date: `EntitlementsService` refuses to construct with an
- * unparseable one, so this can never silently answer `true` for a typo.
+ * is always a valid date: `configuration.ts` parses it once and throws on an
+ * unparseable value, so this can never silently answer `true` for a typo.
  */
 export function isEnforcementActive(args: {
   now: Date;
   startsAt: Date;
 }): boolean {
   return args.now >= args.startsAt;
+}
+
+/**
+ * Whether a workspace created at `createdAt` predates enforcement. The exact
+ * complement of `isEnforcementActive`, so the boundary — a workspace created
+ * exactly at `startsAt` is already enforced — is defined once.
+ */
+export function predatesEnforcement(args: {
+  createdAt: Date;
+  startsAt: Date;
+}): boolean {
+  return !isEnforcementActive({ now: args.createdAt, startsAt: args.startsAt });
 }
 
 /**

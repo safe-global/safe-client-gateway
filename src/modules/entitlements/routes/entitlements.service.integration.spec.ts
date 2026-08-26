@@ -117,9 +117,9 @@ describe('EntitlementsService', () => {
   let service: EntitlementsService;
   // The same service with the enforcement date already past.
   let enforcingService: EntitlementsService;
-  // Exposed because one test builds a service with a broken date.
+  // Exposed because one test builds a service with no date configured.
   let buildService: (
-    enforcementStartsAt: Date | string | undefined,
+    enforcementStartsAt: Date | undefined,
   ) => EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
   let seededFeatureKeys: Array<string> = [];
@@ -162,6 +162,13 @@ describe('EntitlementsService', () => {
         .findOne({ where: { id }, select: { uuid: true } });
       if (!space) throw new NotFoundException('Workspace not found.');
       return space.uuid;
+    },
+    findCreatedAtById: async (id: Space['id']): Promise<Space['createdAt']> => {
+      const space = await dataSource
+        .getRepository(Space)
+        .findOne({ where: { id }, select: { createdAt: true } });
+      if (!space) throw new NotFoundException('Workspace not found.');
+      return space.createdAt;
     },
   } as unknown as ISpacesRepository;
 
@@ -226,14 +233,12 @@ describe('EntitlementsService', () => {
       postgresDatabaseService,
     );
     buildService = (
-      enforcementStartsAt: Date | string | undefined,
+      enforcementStartsAt: Date | undefined,
     ): EntitlementsService => {
       const configurationService = new FakeConfigurationService();
       configurationService.set(
         'entitlements.enforcementStartsAt',
-        enforcementStartsAt instanceof Date
-          ? enforcementStartsAt.toISOString()
-          : enforcementStartsAt,
+        enforcementStartsAt,
       );
       configurationService.set(
         'expirationTimeInSeconds.entitlements',
@@ -1127,12 +1132,11 @@ describe('EntitlementsService', () => {
       });
     }
 
-    it('refuses to construct with an unparseable enforcement date', () => {
-      // Not only a typo: a date without a time, or no value at all, must fail
-      // the same way. Enforcing everywhere is what an Invalid Date would do.
-      for (const value of ['the first of october', '2026-10-01', undefined]) {
-        expect(() => buildService(value)).toThrow();
-      }
+    it('refuses to construct with no enforcement date configured', () => {
+      // The date's format is guaranteed upstream — `configuration.ts` parses it
+      // and `RootConfigurationSchema` rejects a non-ISO env value at boot. A
+      // missing key must still fail loudly rather than enforce everywhere.
+      expect(() => buildService(undefined)).toThrow();
     });
 
     it("applies the caller's static limit before the enforcement date", async () => {

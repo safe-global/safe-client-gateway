@@ -41,6 +41,37 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     });
   }
 
+  public async hasAnySubscription(spaceId: Space['id']): Promise<boolean> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+    );
+    // Filters the FK column rather than `{ space: { id } }`, which would make
+    // TypeORM join `spaces` to answer what space_id already holds.
+    return await repository
+      .createQueryBuilder('subscription')
+      .where('space_id = :spaceId', { spaceId })
+      .getExists();
+  }
+
+  public async getActivePlanName(spaceId: Space['id']): Promise<string | null> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSubscription,
+    );
+    // Deliberately not `getActiveSubscriptionBySpaceId`: that one hydrates the
+    // entitlements/feature tree, which a caller wanting one column pays for.
+    const active = await repository
+      .createQueryBuilder('subscription')
+      .select('subscription.planName', 'planName')
+      .where('space_id = :spaceId', { spaceId })
+      .andWhere('status IN (:...activeStatuses)', {
+        activeStatuses: [...ACTIVE_SUBSCRIPTION_STATUSES],
+      })
+      .getRawOne<{ planName: string | null }>();
+    return active?.planName ?? null;
+  }
+
   public async upsertSubscription(
     args: {
       spaceId: Space['id'];
