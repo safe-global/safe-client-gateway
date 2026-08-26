@@ -153,6 +153,29 @@ export class FeeServiceApi implements IFeeServiceApi {
     });
   }
 
+  /**
+   * {@inheritdoc IFeeServiceApi.getGtfFeeSnapshot}
+   *
+   * Uses {@link CacheFirstDataSource} keyed on chain and safeTxHash — the
+   * stored quote is write-once upstream, so a hit is always current.
+   */
+  async getGtfFeeSnapshot(args: {
+    chainId: string;
+    safeTxHash: Hex;
+  }): Promise<GtfFeesResponse> {
+    try {
+      const data = await this.dataSource.get<GtfFeesResponse>({
+        cacheDir: CacheRouter.getGtfFeeSnapshotCacheDir(args),
+        url: `${this.relayFeeConfiguration.baseUri}/v1/fee-snapshots/${args.safeTxHash}`,
+        notFoundExpireTimeSeconds: this.notFoundExpireTimeSeconds,
+        expireTimeSeconds: this.relayFeeConfiguration.feePreviewTtlSeconds,
+      });
+      return GtfFeesResponseSchema.parse(data);
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   private async postFeeRequest<TResponse, TRequest extends object>(args: {
     cacheDir: CacheDir;
     url: string;

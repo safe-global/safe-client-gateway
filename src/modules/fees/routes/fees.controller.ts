@@ -3,13 +3,15 @@ import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
 import { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { GasToken } from '@/modules/fees/routes/entities/gas-token.entity';
@@ -21,6 +23,7 @@ import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorato
 import type { Page } from '@/routes/common/entities/page.entity';
 import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HashSchema } from '@/validation/entities/schemas/hash.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -105,6 +108,52 @@ export class FeesController {
       chainId,
       safeAddress,
       feePreviewDto,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Get the stored fee quote of an already-quoted transaction',
+    description:
+      'Returns the fee quote the fee service stored when the transaction was quoted, so a co-signer can review the itemized fees behind a payload that is already signed.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiParam({
+    name: 'safeTxHash',
+    type: 'string',
+    description: 'Safe transaction hash the quote was stored under',
+  })
+  @ApiOkResponse({
+    type: FeePreviewResponse,
+    description: 'Stored fee quote with transaction data and fee breakdown',
+  })
+  @ApiNotFoundResponse({
+    description:
+      'No fee quote is stored for this Safe transaction hash, or the stored quote belongs to another chain or Safe',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chain ID, Safe address, or Safe transaction hash',
+  })
+  @Get(':safeAddress/preview/:safeTxHash')
+  getFeePreviewBySafeTxHash(
+    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: Address,
+    @Param('safeTxHash', new ValidationPipe(HashSchema)) safeTxHash: Hex,
+  ): Promise<FeePreviewResponse> {
+    return this.feesService.getFeePreviewBySafeTxHash({
+      chainId,
+      safeAddress,
+      safeTxHash,
     });
   }
 }
