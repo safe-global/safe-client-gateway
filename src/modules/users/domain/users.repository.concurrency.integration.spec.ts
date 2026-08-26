@@ -5,7 +5,7 @@ import { ConflictException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import configuration from '@/config/entities/__tests__/configuration';
 import { postgresConfig } from '@/config/entities/postgres.config';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
@@ -109,15 +109,17 @@ describe('UsersRepository concurrency', () => {
       createMockWalletEncryptionService(),
     );
 
-    const mockConfigurationService = vi.mocked({
-      getOrThrow: vi.fn().mockReturnValue(10),
-    } as MockedObject<IConfigurationService>);
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set(
+      'spaces.maxSpaceCreationsPerUser',
+      testConfiguration.spaces.maxSpaceCreationsPerUser,
+    );
     membersRepository = new MembersRepository(
       postgresDatabaseService,
       usersRepository,
       new SpacesRepository(
         postgresDatabaseService,
-        mockConfigurationService,
+        fakeConfigurationService,
         createMockSpaceAuditRepository(),
         createMockSpaceEncryptionService(),
         createMockMemberEncryptionService(),
