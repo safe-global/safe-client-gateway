@@ -74,7 +74,12 @@ describe('TargetedMessagingController', () => {
         });
     });
 
-    it('should return 404 Not Found if the Safe is not targeted', async () => {
+    // "Not targeted" is the expected answer for nearly every Safe on a route
+    // that is probed on every Safe load, so it is not a failure. A 404 makes
+    // the browser write a console error the client cannot suppress, which is
+    // what WA-2991 set out to remove; 204 is what the sibling submissions
+    // route below already answers for the same TargetedSafeNotFoundError.
+    it('should return 204 No Content if the Safe is not targeted', async () => {
       const outreachId = faker.number.int();
       const chain = chainBuilder().build();
       const safe = safeBuilder().build();
@@ -86,7 +91,34 @@ describe('TargetedMessagingController', () => {
         .get(
           `/v1/targeted-messaging/outreaches/${outreachId}/chains/${chain.chainId}/safes/${safe.address}`,
         )
-        .expect(404);
+        .expect(204)
+        .expect({});
+    });
+
+    it('should set Cache-Control: no-cache on both answers', async () => {
+      const outreachId = faker.number.int();
+      const chain = chainBuilder().build();
+      const safe = safeBuilder().build();
+      const targetedSafe = targetedSafeBuilder()
+        .with('address', safe.address)
+        .build();
+      const url = `/v1/targeted-messaging/outreaches/${outreachId}/chains/${chain.chainId}/safes/${safe.address}`;
+
+      targetedMessagingDatasource.getTargetedSafe.mockResolvedValue(
+        targetedSafe,
+      );
+      await request(app.getHttpServer())
+        .get(url)
+        .expect(200)
+        .expect('Cache-Control', 'no-cache');
+
+      targetedMessagingDatasource.getTargetedSafe.mockRejectedValue(
+        new TargetedSafeNotFoundError(),
+      );
+      await request(app.getHttpServer())
+        .get(url)
+        .expect(204)
+        .expect('Cache-Control', 'no-cache');
     });
   });
 

@@ -13,7 +13,7 @@ import {
 import {
   ApiBody,
   ApiCreatedResponse,
-  ApiNotFoundResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -41,9 +41,10 @@ export class TargetedMessagingController {
   constructor(private readonly service: TargetedMessagingService) {}
 
   @ApiOkResponse({ type: TargetedSafe })
-  @ApiNotFoundResponse({ description: 'Safe not targeted.' })
+  @ApiNoContentResponse({ description: 'Safe not targeted.' })
   @Get(':outreachId/chains/:chainId/safes/:safeAddress')
-  getTargetedSafe(
+  async getTargetedSafe(
+    @Res() res: FastifyReply,
     @Param(
       'outreachId',
       ParseIntPipe,
@@ -53,8 +54,36 @@ export class TargetedMessagingController {
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
-  ): Promise<TargetedSafe> {
-    return this.service.getTargetedSafe({ outreachId, chainId, safeAddress });
+  ): Promise<FastifyReply> {
+    try {
+      const targetedSafe = await this.service.getTargetedSafe({
+        outreachId,
+        chainId,
+        safeAddress,
+      });
+      return res
+        .status(HttpStatus.OK)
+        .header('Cache-Control', 'no-cache')
+        .send(targetedSafe);
+    } catch (err) {
+      if (err instanceof TargetedSafeNotFoundError) {
+        // "Safe not targeted" is the expected answer for nearly every Safe,
+        // and clients probe this route on every Safe load. Answering 404 made
+        // browsers write an unsuppressible console error for a non-failure —
+        // the noise WA-2991 exists to remove. 204 carries the same "no
+        // targeting for this Safe" answer as the sibling submissions route
+        // below, which already maps this error that way.
+        //
+        // `Cache-Control` is set explicitly on both paths: `@Res()` marks the
+        // reply sent, so CacheControlInterceptor skips it (same reason
+        // getSubmission sets it by hand).
+        return res
+          .status(HttpStatus.NO_CONTENT)
+          .header('Cache-Control', 'no-cache')
+          .send();
+      }
+      throw err;
+    }
   }
 
   @ApiOkResponse({ type: Submission })
