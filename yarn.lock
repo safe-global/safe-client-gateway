@@ -1550,9 +1550,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/common@npm:11.1.29":
-  version: 11.1.29
-  resolution: "@nestjs/common@npm:11.1.29"
+"@nestjs/common@npm:11.2.1":
+  version: 11.2.1
+  resolution: "@nestjs/common@npm:11.2.1"
   dependencies:
     file-type: "npm:21.3.4"
     iterare: "npm:1.2.1"
@@ -1569,7 +1569,7 @@ __metadata:
       optional: true
     class-validator:
       optional: true
-  checksum: 10/5e75d4221c37c247f8207b344b4d0c756834f42bfde84f0674b916fb114692300ae42e314f11b8fe391ec8faf274ed7e8b1195c557027246abee05d23fe8d694
+  checksum: 10/386c7452c122e82f1f1d7caf0a5793480c4871a2bca5f4b1a3310a05805cb9e382ee2957ec5948656064bb2abb47bb940596d3077541171656e967598e697c08
   languageName: node
   linkType: hard
 
@@ -1587,9 +1587,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/core@npm:11.1.29":
-  version: 11.1.29
-  resolution: "@nestjs/core@npm:11.1.29"
+"@nestjs/core@npm:11.2.1":
+  version: 11.2.1
+  resolution: "@nestjs/core@npm:11.2.1"
   dependencies:
     fast-safe-stringify: "npm:2.1.1"
     iterare: "npm:1.2.1"
@@ -1610,7 +1610,7 @@ __metadata:
       optional: true
     "@nestjs/websockets":
       optional: true
-  checksum: 10/4853cb6f77e77af6680db3b4e9af2620779dbba8b71680fc793d94c349b7ba27930c0db62ad3f3f8ef6106243580735ec65040632eb55bb8cfd05cb07da6832e
+  checksum: 10/610eaa16e95821fb9a3d0e4363cba87ffbf1b554e473f7096d790c0a6b1eb6e11fa543da342d772e0c73a594c4bc90c9936e7aeb629b0aeaa2a5a91a06a1e85c
   languageName: node
   linkType: hard
 
@@ -1740,9 +1740,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@nestjs/testing@npm:11.1.29":
-  version: 11.1.29
-  resolution: "@nestjs/testing@npm:11.1.29"
+"@nestjs/testing@npm:11.2.1":
+  version: 11.2.1
+  resolution: "@nestjs/testing@npm:11.2.1"
   dependencies:
     tslib: "npm:2.8.1"
   peerDependencies:
@@ -1755,7 +1755,7 @@ __metadata:
       optional: true
     "@nestjs/platform-express":
       optional: true
-  checksum: 10/7de03c0dbb63fbbc40583a759aab65b5c316fa2f6e1f142f554511fe14045dbb64256d8f319b3111145e57631ab883757f8c2c30a0e2950ef0d01a3c4102c48e
+  checksum: 10/2279632f4b578fad30b3b126e3c69d901f5576ccf1c8cf5c2f58091df4dbb9262718fef66cfe40e40c92983c69f91345056a41f50d4a6d8795bea0d4a1ef2739
   languageName: node
   linkType: hard
 
@@ -6246,15 +6246,15 @@ __metadata:
     "@nestjs/bullmq": "npm:^11.0.4"
     "@nestjs/cache-manager": "npm:3.1.3"
     "@nestjs/cli": "npm:11.0.24"
-    "@nestjs/common": "npm:11.1.29"
+    "@nestjs/common": "npm:11.2.1"
     "@nestjs/config": "npm:4.0.4"
-    "@nestjs/core": "npm:11.1.29"
+    "@nestjs/core": "npm:11.2.1"
     "@nestjs/platform-fastify": "npm:11.2.1"
     "@nestjs/schedule": "npm:6.1.3"
     "@nestjs/schematics": "npm:11.1.0"
     "@nestjs/serve-static": "npm:5.0.5"
     "@nestjs/swagger": "npm:11.4.7"
-    "@nestjs/testing": "npm:11.1.29"
+    "@nestjs/testing": "npm:11.2.1"
     "@nestjs/typeorm": "npm:11.0.3"
     "@safe-global/safe-deployments": "npm:1.37.62"
     "@safe-global/safe-modules-deployments": "npm:3.0.9"
