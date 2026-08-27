@@ -481,6 +481,38 @@ describe('Messages controller', () => {
           origin: message.origin,
         });
     });
+
+    it('Returns 422 without any upstream call if chainId is empty', async () => {
+      const message = messageBuilder().build();
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains//messages/${message.messageHash}`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid base-10 numeric string',
+          path: [],
+        });
+
+      expect(networkService.get).not.toHaveBeenCalled();
+    });
+
+    it('Returns 422 without any upstream call if messageHash is not hex', async () => {
+      const chain = chainBuilder().build();
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${faker.string.alpha(10)}`)
+        .expect(422)
+        .expect({
+          statusCode: 422,
+          code: 'custom',
+          message: 'Invalid "0x" notated hex string',
+          path: [],
+        });
+
+      expect(networkService.get).not.toHaveBeenCalled();
+    });
   });
 
   describe('Get messages by Safe address', () => {

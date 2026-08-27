@@ -117,6 +117,15 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
+  it('should reject an empty chainId without addressing the chain collection', async () => {
+    await expect(service.getChain('')).rejects.toThrow(
+      new DataSourceError('Chain not found', 404),
+    );
+
+    expect(mockDataSource.get).not.toHaveBeenCalled();
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
   it('should return the gas tokens retrieved by chainId', async () => {
     const chainId = faker.string.numeric();
     const data = [gasTokenBuilder().build(), gasTokenBuilder().build()];
