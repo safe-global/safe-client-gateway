@@ -6267,7 +6267,7 @@ __metadata:
     redis: "npm:6.2.1"
     reflect-metadata: "npm:0.2.2"
     rxjs: "npm:7.8.2"
-    sanitize-html: "npm:2.17.6"
+    sanitize-html: "npm:2.17.7"
     semver: "npm:7.8.5"
     source-map-support: "npm:0.5.21"
     supertest: "npm:7.2.2"
@@ -6310,9 +6310,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sanitize-html@npm:2.17.6":
-  version: 2.17.6
-  resolution: "sanitize-html@npm:2.17.6"
+"sanitize-html@npm:2.17.7":
+  version: 2.17.7
+  resolution: "sanitize-html@npm:2.17.7"
   dependencies:
     deepmerge: "npm:^4.2.2"
     escape-string-regexp: "npm:^4.0.0"
@@ -6321,7 +6321,7 @@ __metadata:
     launder: "npm:^1.7.1"
     parse-srcset: "npm:^1.0.2"
     postcss: "npm:^8.3.11"
-  checksum: 10/dafa757719fc2eb47c57d59f549aa3210a96bf82ac5d2a601f1a05fa1a3a951d146b25d05cb8edaab6f5ec2f8c13ba54790798b59aef232b53cd2875a6ea339c
+  checksum: 10/8418fcfdabb4cb50569fa7a8af42cac2b4be0247b90b29bd4d7fff61363e78e41455b40397f2a1d084ef71d810b8d90f683d6b27084d3616b7b349ab98bd0e97
   languageName: node
   linkType: hard
 
