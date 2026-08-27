@@ -71,7 +71,7 @@
     "csv-stringify": "^6.8.3",
     "ecdsa-sig-formatter": "1.0.11",
     "ioredis": "5.11.1",
-    "jose": "6.2.8",
+    "jose": "6.2.9",
     "jsonwebtoken": "9.0.3",
     "lodash": "4.18.1",
     "nestjs-cls": "6.2.1",
