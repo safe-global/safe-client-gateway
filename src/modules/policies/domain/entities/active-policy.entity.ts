@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address, Hex } from 'viem';
+import type { Address } from 'viem';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 
@@ -57,8 +57,6 @@ export type ActivePolicyData = SpendingLimitPolicyData;
  * render a policy as configured-but-unenforced rather than hiding it.
  */
 export type ActivePolicy = {
-  /** Opaque and stable; see `policy-id.utils.ts` for the derivation per kind. */
-  id: Hex;
   type: PolicyType;
   enforcement: PolicyEnforcement;
   enabled: boolean;
