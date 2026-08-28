@@ -498,6 +498,53 @@ describe('Messages controller', () => {
       expect(networkService.get).not.toHaveBeenCalled();
     });
 
+    // Every route on this controller takes chainId; an empty one must be rejected
+    // before any upstream call. POST bodies are valid so chainId is the failing pipe.
+    it.each([
+      [
+        'GET messages by hash',
+        (): request.Test =>
+          request(app.getHttpServer()).get(
+            `/v1/chains//messages/${messageBuilder().build().messageHash}`,
+          ),
+      ],
+      [
+        'GET messages by Safe',
+        (): request.Test =>
+          request(app.getHttpServer()).get(
+            `/v1/chains//safes/${getAddress(faker.finance.ethereumAddress())}/messages`,
+          ),
+      ],
+      [
+        'POST message',
+        (): request.Test =>
+          request(app.getHttpServer())
+            .post(
+              `/v1/chains//safes/${getAddress(faker.finance.ethereumAddress())}/messages`,
+            )
+            .send(createMessageDtoBuilder().build()),
+      ],
+      [
+        'POST message signature',
+        (): request.Test =>
+          request(app.getHttpServer())
+            .post(
+              `/v1/chains//messages/${messageBuilder().build().messageHash}/signatures`,
+            )
+            .send(updateMessageSignatureDtoBuilder().build()),
+      ],
+    ])('Returns 422 on %s when chainId is empty', async (_name, send) => {
+      await send().expect(422).expect({
+        statusCode: 422,
+        code: 'custom',
+        message: 'Invalid base-10 numeric string',
+        path: [],
+      });
+
+      expect(networkService.get).not.toHaveBeenCalled();
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
     it('Returns 422 without any upstream call if messageHash is not hex', async () => {
       const chain = chainBuilder().build();
 
