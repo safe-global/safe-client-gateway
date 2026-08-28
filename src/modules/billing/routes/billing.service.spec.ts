@@ -401,7 +401,7 @@ describe('BillingService', () => {
       expect(billingApiMock.listPaymentLinks).not.toHaveBeenCalled();
     });
 
-    it('should warn when a trial link carries no recognized gracePeriod tag', async () => {
+    it('should log an error when a trial link carries no recognized gracePeriod tag', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       // Tagged for neither side, so nobody is offered it: without a log the
       // catalog would just look emptier than it should.
@@ -418,32 +418,12 @@ describe('BillingService', () => {
       });
 
       expect(result).toEqual([]);
-      expect(loggingServiceMock.warn).toHaveBeenCalledWith(
+      expect(loggingServiceMock.error).toHaveBeenCalledWith(
         expect.stringContaining(untagged.id),
       );
     });
 
-    it('should warn only once for the same untagged link across requests', async () => {
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      const untagged = trialPaymentLinkBuilder(true)
-        .with('metadata', {})
-        .build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
-      mockCatalog([untagged]);
-
-      for (let i = 0; i < 3; i++) {
-        await service.getSpacePaymentLinks({
-          spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
-          authPayload,
-        });
-      }
-
-      // A misconfigured catalog is read on every request; the log is not.
-      expect(loggingServiceMock.warn).toHaveBeenCalledTimes(1);
-    });
-
-    it('should not warn when every trial link is tagged', async () => {
+    it('should not log an error when every trial link is tagged', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       mockCatalog([trialPaymentLinkBuilder(false).build()]);
@@ -454,7 +434,7 @@ describe('BillingService', () => {
         authPayload,
       });
 
-      expect(loggingServiceMock.warn).not.toHaveBeenCalled();
+      expect(loggingServiceMock.error).not.toHaveBeenCalled();
     });
 
     it('should offer only the legacy grace link to a space created before the enforcement date', async () => {

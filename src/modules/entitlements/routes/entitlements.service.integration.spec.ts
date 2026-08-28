@@ -1136,7 +1136,9 @@ describe('EntitlementsService', () => {
       // The date's format is guaranteed upstream — `configuration.ts` parses it
       // and `RootConfigurationSchema` rejects a non-ISO env value at boot. A
       // missing key must still fail loudly rather than enforce everywhere.
-      expect(() => buildService(undefined)).toThrow();
+      expect(() => buildService(undefined)).toThrow(
+        'No value set for key entitlements.enforcementStartsAt',
+      );
     });
 
     it("applies the caller's static limit before the enforcement date", async () => {

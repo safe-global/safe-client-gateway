@@ -39,8 +39,6 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
 export class BillingService {
   private readonly redirectConfig: RedirectConfig;
   private readonly enforcementStartsAt: Date;
-  /** Link ids already reported as untagged, so the warning fires once each. */
-  private readonly warnedUnclassifiedLinkIds = new Set<PaymentLink['id']>();
 
   public constructor(
     @Inject(IBillingApi)
@@ -162,7 +160,14 @@ export class BillingService {
       this.getOfferEligibility(args.spaceId),
     ]);
 
-    this.warnOnUnclassifiedTrials(generalLinks);
+    const unclassified = generalLinks.filter(isUnclassifiedTrialLink);
+    if (unclassified.length > 0) {
+      this.loggingService.error(
+        `Trial payment link(s) offered to nobody, missing a recognized ${GRACE_PERIOD_METADATA_KEY} tag: ${unclassified
+          .map((link) => link.id)
+          .join(', ')}`,
+      );
+    }
 
     const offeredGeneralLinks = generalLinks.filter((link) =>
       isOfferedToSpace(link, eligibility),
@@ -171,30 +176,6 @@ export class BillingService {
       [...offeredGeneralLinks, ...spaceLinks].map((link) => [link.id, link]),
     );
     return Array.from(linksById.values());
-  }
-
-  /**
-   * A trial link with no recognized `gracePeriod` tag is offered to nobody, so
-   * an untagged catalog looks like an empty one. Surface it rather than serving
-   * fewer offers in silence — once per link, since this runs on every payment
-   * links and checkout request and a misconfigured catalog would otherwise
-   * repeat the same line at request rate.
-   */
-  private warnOnUnclassifiedTrials(generalLinks: Array<PaymentLink>): void {
-    const unclassified = generalLinks
-      .filter(isUnclassifiedTrialLink)
-      .filter((link) => !this.warnedUnclassifiedLinkIds.has(link.id));
-    if (unclassified.length === 0) {
-      return;
-    }
-    for (const link of unclassified) {
-      this.warnedUnclassifiedLinkIds.add(link.id);
-    }
-    this.loggingService.warn(
-      `Dropping ${unclassified.length} trial payment link(s) with no recognized ${GRACE_PERIOD_METADATA_KEY} metadata: ${unclassified
-        .map((link) => link.id)
-        .join(', ')}`,
-    );
   }
 
   private async getOfferEligibility(
