@@ -12,15 +12,27 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { policyStateForSafe } from '@/modules/policies/domain/utils/policy-state.utils';
 import { POLICY_ASSEMBLERS } from '@/modules/policies/policies.constants';
+import type {
+  CreatePolicyConfigurationRequestPayload,
+  CreatePolicyConfigurationRequestResponse,
+} from '@/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
 import type { SafeId } from '@/modules/policies/routes/entities/safe-id.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+
+type PolicyRequest = {
+  spaceId: Space['id'];
+  safeId: SafeId;
+  authPayload: AuthPayload;
+};
 
 type SpacePolicyRequest = {
   spaceId: Space['id'];
@@ -39,6 +51,8 @@ export class PoliciesService {
   constructor(
     @Inject(IPolicyIndexerRepository)
     private readonly policyIndexerRepository: IPolicyIndexerRepository,
+    @Inject(IPolicyConfigurationRequestsRepository)
+    private readonly configurationRequestsRepository: IPolicyConfigurationRequestsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
     @Inject(ISpaceSafesRepository)
@@ -48,6 +62,61 @@ export class PoliciesService {
     @Inject(POLICY_ASSEMBLERS)
     private readonly assemblers: ReadonlyArray<PolicyAssembler>,
   ) {}
+
+  /**
+   * Stores the `Configuration[]` behind a delayed configuration request.
+   *
+   * `requestConfiguration(bytes32 root)` publishes only the hash, while
+   * `applyConfiguration` needs the configurations themselves, so between the two
+   * calls the payload exists nowhere on-chain. Storing it here is what lets any
+   * client of the Safe - not only the one that requested the configuration -
+   * apply it, or say what it changes.
+   *
+   * The wallet stores it *before* requesting the configuration on-chain, so a row
+   * is deliberately accepted for a root the Safe has not requested yet.
+   *
+   * What keeps that safe is the one check that does not depend on chain state:
+   * the root is recomputed from the submitted configurations and has to match.
+   * A row therefore always describes the configurations that hash to its own
+   * root, so no row can misdescribe a real request.
+   *
+   * Idempotent, so a client retry cannot duplicate.
+   */
+  public async createConfigurationRequest(
+    request: PolicyRequest & {
+      payload: CreatePolicyConfigurationRequestPayload;
+    },
+  ): Promise<CreatePolicyConfigurationRequestResponse> {
+    const userId = getAuthenticatedUserIdOrFail(request.authPayload);
+    await this.assertSafeInSpace(request);
+
+    const { chainId, address: safeAddress } = request.safeId;
+    const { configurations } = request.payload;
+
+    // The recomputed root is what is stored, so a row is keyed by the canonical
+    // lower-case hash rather than by whatever casing the client sent. Storing
+    // the submitted string instead would let a retry in another casing insert a
+    // second row for the same request - past the unique constraint, and into the
+    // per-Safe cap.
+    const root = configurationRoot(configurations);
+
+    if (root !== request.payload.root.toLowerCase()) {
+      throw new UnprocessableEntityException(
+        'The configurations do not hash to the given root',
+      );
+    }
+
+    await this.configurationRequestsRepository.create({
+      chainId,
+      safeAddress,
+      root,
+      configurations,
+      spaceId: request.spaceId,
+      createdBy: userId,
+    });
+
+    return { configureRoot: root };
+  }
 
   /**
    * The policies in effect on every Safe of the Space, in one request.
@@ -170,5 +239,28 @@ export class PoliciesService {
     });
 
     return { enabledModules: modules ?? [], transactionGuard: guard };
+  }
+
+  /**
+   * The caller must be an active member of the space, and the Safe must belong
+   * to it - otherwise a member could write against any Safe through a space they
+   * happen to belong to.
+   */
+  private async assertSafeInSpace(request: PolicyRequest): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(request.authPayload);
+    await assertMember(this.membersRepository, request.spaceId, userId);
+
+    const safes = await this.spaceSafesRepository.findBySpaceId(
+      request.spaceId,
+    );
+    const isInSpace = safes.some(
+      (safe) =>
+        safe.chainId === request.safeId.chainId &&
+        safe.address.toLowerCase() === request.safeId.address.toLowerCase(),
+    );
+
+    if (!isInSpace) {
+      throw new NotFoundException('Safe not found in this space');
+    }
   }
 }

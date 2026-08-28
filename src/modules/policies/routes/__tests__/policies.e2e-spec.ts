@@ -21,13 +21,16 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { rawIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import { rawIndexerSafePolicyBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-policy.builder';
+import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -144,6 +147,17 @@ describe('Policies routes (e2e)', () => {
     });
   }
 
+  /** A store payload whose root is the hash of its configurations. */
+  function payload(): {
+    root: `0x${string}`;
+    configurations: Array<PolicyConfiguration>;
+  } {
+    const configurations: [PolicyConfiguration] = [
+      policyConfigurationBuilder().build(),
+    ];
+    return { root: configurationRoot(configurations), configurations };
+  }
+
   function anAllowance(): ReturnType<typeof rawIndexerSafeAllowanceBuilder> {
     return rawIndexerSafeAllowanceBuilder()
       .with('chainId', Number(SEPOLIA_CHAIN_ID))
@@ -166,6 +180,12 @@ describe('Policies routes (e2e)', () => {
         ...defaultConfiguration.features,
         auth: true,
         users: true,
+      },
+      policies: {
+        ...defaultConfiguration.policies,
+        // Pinned: the faker mirror randomises it, and this file stores several
+        // requests for one Safe - the cap is per Safe, not per space.
+        maxConfigurationRequestsPerSafe: 20,
       },
     });
 
@@ -533,6 +553,103 @@ describe('Policies routes (e2e)', () => {
         .query({ safes: 'not-a-safe' })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(422);
+    });
+  });
+
+  describe('POST /v1/spaces/:spaceId/safes/:safeId/policies/requests', () => {
+    it('should store the configurations of a root', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const body = payload();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ configureRoot: body.root });
+    });
+
+    it('should accept the same root twice', async () => {
+      // Idempotent per (chainId, safeAddress, root), so a client retry is free.
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const body = payload();
+      const url = `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`;
+
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+    });
+
+    it('should reject configurations that do not hash to the root', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ ...payload(), root: `0x${'11'.repeat(32)}` })
+        .expect(422);
+    });
+
+    it('should reject an empty configuration list', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root: `0x${'11'.repeat(32)}`, configurations: [] })
+        .expect(422);
+    });
+
+    it('should return 404 for a safe that is not in the space', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: false,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(payload())
+        .expect(404);
+    });
+
+    it('should return 403 without authentication', async () => {
+      mockUpstream();
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+        )
+        .send(payload())
+        .expect(403);
     });
   });
 });
