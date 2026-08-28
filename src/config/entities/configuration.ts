@@ -390,6 +390,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`,
       10,
     ),
+    policyIndexer: Number.parseInt(
+      process.env.POLICY_INDEXER_EXPIRE_TIME_SECONDS ?? `${60}`,
+      10,
+    ),
     staking: Number.parseInt(
       process.env.EXPIRATION_TIME_STAKING_SECONDS ?? `${60}`,
       10,
@@ -799,6 +803,11 @@ export default () => ({
       ),
     },
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
+  },
+  policies: {
+    indexer: {
+      baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
+    },
   },
   safeDataDecoder: {
     baseUri:

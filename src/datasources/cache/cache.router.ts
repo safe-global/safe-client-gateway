@@ -45,6 +45,7 @@ export class CacheRouter {
   private static readonly BILLING_PLANS_KEY = 'billing_plans';
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
+  private static readonly POLICY_INDEXER_STATE_KEY = 'policy_indexer_state';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
@@ -1241,5 +1242,26 @@ export class CacheRouter {
       CacheRouter.BILLING_PAYMENT_LINKS_KEY,
       upstreamCustomerId ?? '',
     );
+  }
+
+  /**
+   * The policy state of one Safe, as read from the Policy Indexer.
+   *
+   * Keyed per Safe even though the indexer is queried for many at once: a set-
+   * keyed entry could not be invalidated when one Safe's policies change, and a
+   * Safe's own key is what `clearPolicyIndexerState` deletes.
+   */
+  static getPolicyIndexerStateCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): CacheDir {
+    return new CacheDir(CacheRouter.getPolicyIndexerStateCacheKey(args), '');
+  }
+
+  static getPolicyIndexerStateCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.POLICY_INDEXER_STATE_KEY}_${args.safeAddress}`;
   }
 }
