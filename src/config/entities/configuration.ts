@@ -365,6 +365,16 @@ export default () => ({
       },
     },
   },
+  // `Cache-Control: max-age` values served to clients, as opposed to the
+  // server-side cache TTLs under `expirationTimeInSeconds`. A client holds its
+  // copy for the whole window, so each value is the staleness a client may
+  // show. `0` serves the global `no-cache` default instead.
+  clientCacheControl: {
+    safeStateMaxAgeSeconds: Number.parseInt(
+      process.env.CLIENT_CACHE_CONTROL_SAFE_STATE_MAX_AGE_SECONDS ?? `${0}`,
+      10,
+    ),
+  },
   entitlements: {
     enforcementStartsAt:
       process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT ?? '2099-01-01T00:00:00Z',

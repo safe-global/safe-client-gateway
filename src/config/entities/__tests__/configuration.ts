@@ -197,6 +197,9 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  clientCacheControl: {
+    safeStateMaxAgeSeconds: faker.number.int({ min: 1, max: 120 }),
+  },
   entitlements: {
     enforcementStartsAt: faker.date.future().toISOString(),
   },

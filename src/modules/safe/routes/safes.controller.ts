@@ -6,6 +6,7 @@ import {
   Param,
   ParseBoolPipe,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiNotFoundResponse,
@@ -23,6 +24,7 @@ import {
 import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
 import { SafeState } from '@/modules/safe/routes/entities/safe-info.entity';
 import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
+import { SafeStateCacheControlInterceptor } from '@/modules/safe/routes/interceptors/safe-state-cache-control.interceptor';
 import { SafesService } from '@/modules/safe/routes/safes.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -58,6 +60,7 @@ export class SafesController {
     description: 'Safe not found on the specified chain',
   })
   @Get('chains/:chainId/safes/:safeAddress')
+  @UseInterceptors(SafeStateCacheControlInterceptor)
   getSafe(
     @Param('chainId') chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
