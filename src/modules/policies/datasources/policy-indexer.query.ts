@@ -16,6 +16,7 @@ type IndexerPairFilter = {
 export type PolicyIndexerVariables = {
   allowances: Array<IndexerPairFilter>;
   delegates: Array<IndexerPairFilter>;
+  policies: Array<IndexerPairFilter>;
 };
 
 /**
@@ -34,6 +35,7 @@ export type PolicyIndexerVariables = {
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
+  $policies: [SafePolicy_bool_exp!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
   SafeAllowance(
@@ -48,6 +50,12 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     order_by: [{ chainId: asc }, { safe: asc }, { delegate: asc }]
   ) {
     chainId safe module moduleVersion delegate active addedAt updatedAt
+  }
+  SafePolicy(
+    where: { _or: $policies, active: { _eq: true } }
+    order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
+  ) {
+    chainId safe guard target selector operation kind policy active isFallback state
   }
 }`;
 
@@ -77,6 +85,6 @@ export function toPolicyIndexerVariables(
     safe: { _in: addresses },
   }));
 
-  // The same groups for both, since the pairs are the same set.
-  return { allowances: groups, delegates: groups };
+  // The same groups for each, since the pairs are the same set.
+  return { allowances: groups, delegates: groups, policies: groups };
 }

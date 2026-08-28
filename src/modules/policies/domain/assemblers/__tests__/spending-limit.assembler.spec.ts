@@ -28,6 +28,7 @@ describe('SpendingLimitAssembler', () => {
       safe,
       state: policyIndexerStateBuilder().with('allowances', allowances).build(),
       enabledModules: overrides?.enabledModules ?? [allowanceModule],
+      transactionGuard: null,
       now: overrides?.now ?? NOW,
     });
   }

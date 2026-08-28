@@ -63,7 +63,7 @@ function pairGroup(chainId: string, ...safes: Array<SafeRef>) {
 function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
   return expect.objectContaining({
     data: expect.objectContaining({
-      variables: { allowances: groups, delegates: groups },
+      variables: { allowances: groups, delegates: groups, policies: groups },
     }),
   });
 }
@@ -109,9 +109,8 @@ describe('PolicyIndexerApi', () => {
       );
     });
 
-    it('should request the allowance-module fields in one document', async () => {
-      // Guard bindings are a field this client does not pay for; the PR that
-      // reports them adds it.
+    it('should request every root field in one document', async () => {
+      // One document serves both mechanisms, so one cached answer does too.
       await target.getState({ safes: [safeRef(SEPOLIA)] });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -121,7 +120,12 @@ describe('PolicyIndexerApi', () => {
           }),
         }),
       );
-      for (const field of ['_meta', 'SafeAllowance', 'SafeDelegate']) {
+      for (const field of [
+        '_meta',
+        'SafeAllowance',
+        'SafeDelegate',
+        'SafePolicy',
+      ]) {
         expect(mockNetworkService.post).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
@@ -308,6 +312,7 @@ describe('PolicyIndexerApi', () => {
           _meta: [meta],
           SafeAllowance: [myRow],
           SafeDelegate: [],
+          SafePolicy: [],
         }),
         expirationTimeSeconds,
       );
@@ -327,7 +332,12 @@ describe('PolicyIndexerApi', () => {
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         new CacheDir(cacheKey(safe), ''),
-        JSON.stringify({ _meta: [meta], SafeAllowance: [], SafeDelegate: [] }),
+        JSON.stringify({
+          _meta: [meta],
+          SafeAllowance: [],
+          SafeDelegate: [],
+          SafePolicy: [],
+        }),
         expirationTimeSeconds,
       );
     });

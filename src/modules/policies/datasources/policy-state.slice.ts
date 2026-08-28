@@ -12,6 +12,7 @@ export const PolicyStateSliceSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
+  SafePolicy: z.array(z.unknown()),
 });
 
 export type PolicyStateSlice = z.infer<typeof PolicyStateSliceSchema>;
@@ -31,6 +32,7 @@ const RowLocationSchema = z.object({
 const ROW_FIELDS = [
   'SafeAllowance',
   'SafeDelegate',
+  'SafePolicy',
 ] as const satisfies ReadonlyArray<keyof PolicyStateSlice>;
 
 /**
@@ -61,6 +63,7 @@ export function sliceForSafe(
     _meta: response._meta.filter(belongsToChain),
     SafeAllowance: [],
     SafeDelegate: [],
+    SafePolicy: [],
   };
 
   for (const field of ROW_FIELDS) {
@@ -82,6 +85,7 @@ export function mergeSlices(
     _meta: [],
     SafeAllowance: [],
     SafeDelegate: [],
+    SafePolicy: [],
   };
   const chains = new Set<number>();
 
