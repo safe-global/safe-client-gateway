@@ -61,6 +61,7 @@ import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/
 import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const allSupportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
@@ -2974,6 +2975,23 @@ describe('Relay controller', () => {
           );
         },
       );
+
+      it('should reject an over-length chainId without calling the relay provider', async () => {
+        const overLengthChainId = faker.string.numeric({
+          length: CHAIN_ID_MAXLENGTH + 1,
+        });
+        const taskId = faker.string.numeric({ length: 73 });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${overLengthChainId}/relay/status/${taskId}`)
+          .expect(422);
+
+        expect(networkService.get).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: expect.stringContaining('/safe-transactions/'),
+          }),
+        );
+      });
     });
 
     describe('GET /v1/chains/:chainId/relay/:safeAddress', () => {

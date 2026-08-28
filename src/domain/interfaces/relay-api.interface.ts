@@ -3,6 +3,7 @@
 import type { Address, Hex } from 'viem';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 export const IRelayApi = Symbol('IRelayApi');
 
@@ -12,12 +13,12 @@ export interface IRelayApi {
     to: Address;
     data: string;
     safeTxHash?: Hex;
-  }): Promise<Relay>;
+  }): Promise<Raw<Relay>>;
 
   getTaskStatus(args: {
     chainId: string;
     taskId: string;
-  }): Promise<RelayTaskStatus>;
+  }): Promise<Raw<RelayTaskStatus>>;
 
   getRelayCount(args: { chainId: string; address: Address }): Promise<number>;
 
