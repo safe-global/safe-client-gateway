@@ -10,6 +10,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hash } from 'viem';
 import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
@@ -61,6 +62,9 @@ export class MessagesController {
   @ApiNotFoundResponse({
     description: 'Message not found',
   })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId or messageHash',
+  })
   @Get('chains/:chainId/messages/:messageHash')
   getMessageByHash(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -97,6 +101,9 @@ export class MessagesController {
   })
   @ApiNotFoundResponse({
     description: 'Safe not found on the specified chain',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId or safeAddress',
   })
   @Get('chains/:chainId/safes/:safeAddress/messages')
   getMessagesBySafe(
@@ -142,6 +149,9 @@ export class MessagesController {
     description: 'Invalid message format or signature',
   })
   @HttpCode(202)
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId, safeAddress or request body',
+  })
   @Post('chains/:chainId/safes/:safeAddress/messages')
   createMessage(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -187,6 +197,9 @@ export class MessagesController {
     description: 'Invalid signature or signer not authorized',
   })
   @HttpCode(200)
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId, messageHash or request body',
+  })
   @Post('chains/:chainId/messages/:messageHash/signatures')
   updateMessageSignature(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
