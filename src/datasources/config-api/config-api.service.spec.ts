@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
@@ -114,6 +115,15 @@ describe('ConfigApi', () => {
       notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
       expireTimeSeconds: expirationTimeInSeconds,
     });
+    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+  });
+
+  it('should reject an empty chainId without addressing the chain collection', async () => {
+    await expect(service.getChain('')).rejects.toThrow(
+      new DataSourceError('Chain not found', HttpStatus.NOT_FOUND),
+    );
+
+    expect(mockDataSource.get).not.toHaveBeenCalled();
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 

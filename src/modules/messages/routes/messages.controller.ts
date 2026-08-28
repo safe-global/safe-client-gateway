@@ -10,8 +10,10 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hash } from 'viem';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
 import { Message } from '@/modules/messages/routes/entities/message.entity';
 import type { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
@@ -26,6 +28,7 @@ import type { DateLabel } from '@/routes/common/entities/date-label.entity';
 import type { Page } from '@/routes/common/entities/page.entity';
 import type { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('messages')
@@ -59,10 +62,13 @@ export class MessagesController {
   @ApiNotFoundResponse({
     description: 'Message not found',
   })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId or messageHash',
+  })
   @Get('chains/:chainId/messages/:messageHash')
   getMessageByHash(
-    @Param('chainId') chainId: string,
-    @Param('messageHash') messageHash: Hash,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('messageHash', new ValidationPipe(HexSchema)) messageHash: Hash,
   ): Promise<Message> {
     return this.messagesService.getMessageByHash({ chainId, messageHash });
   }
@@ -96,9 +102,12 @@ export class MessagesController {
   @ApiNotFoundResponse({
     description: 'Safe not found on the specified chain',
   })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId or safeAddress',
+  })
   @Get('chains/:chainId/safes/:safeAddress/messages')
   getMessagesBySafe(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
@@ -140,9 +149,12 @@ export class MessagesController {
     description: 'Invalid message format or signature',
   })
   @HttpCode(202)
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId, safeAddress or request body',
+  })
   @Post('chains/:chainId/safes/:safeAddress/messages')
   createMessage(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Body(new ValidationPipe(CreateMessageDtoSchema))
@@ -185,10 +197,13 @@ export class MessagesController {
     description: 'Invalid signature or signer not authorized',
   })
   @HttpCode(200)
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chainId, messageHash or request body',
+  })
   @Post('chains/:chainId/messages/:messageHash/signatures')
   updateMessageSignature(
-    @Param('chainId') chainId: string,
-    @Param('messageHash') messageHash: Hash,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('messageHash', new ValidationPipe(HexSchema)) messageHash: Hash,
     @Body(new ValidationPipe(UpdateMessageSignatureDtoSchema))
     updateMessageSignatureDto: UpdateMessageSignatureDto,
   ): Promise<unknown> {

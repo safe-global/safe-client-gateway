@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -9,6 +9,7 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import {
   type ILoggingService,
@@ -71,6 +72,11 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChain(chainId: string): Promise<Raw<Chain>> {
+    // An empty chainId would hit the chain collection endpoint, whose page payload
+    // fails Chain validation and cache-poisons the key `_chain`.
+    if (!chainId) {
+      throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
+    }
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDir(chainId);
