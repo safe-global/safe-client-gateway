@@ -21,4 +21,6 @@ export class PaymentLink implements DomainPaymentLink {
   afterCompletion?: Record<string, unknown>;
   @ApiPropertyOptional({ type: [Object] })
   lineItems?: Array<PaymentLinkLineItem>;
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  trialPeriodDays?: number | null;
 }

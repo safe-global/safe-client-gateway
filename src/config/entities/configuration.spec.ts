@@ -63,3 +63,45 @@ describe('configuration - features.zerion', () => {
     expect(configuration().features.zerion).toBe(false);
   });
 });
+
+describe('configuration - entitlements.enforcementStartsAt', () => {
+  const ENV_KEY = 'ENTITLEMENTS_ENFORCEMENT_STARTS_AT';
+  const original = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (original === undefined) {
+      delete process.env[ENV_KEY];
+    } else {
+      process.env[ENV_KEY] = original;
+    }
+  });
+
+  it('defaults far into the future when unset', () => {
+    delete process.env[ENV_KEY];
+
+    expect(configuration().entitlements.enforcementStartsAt).toStrictEqual(
+      new Date('2099-01-01T00:00:00Z'),
+    );
+  });
+
+  it('parses the provided value into a Date', () => {
+    process.env[ENV_KEY] = '2026-10-01T00:00:00Z';
+
+    expect(configuration().entitlements.enforcementStartsAt).toStrictEqual(
+      new Date('2026-10-01T00:00:00Z'),
+    );
+  });
+
+  // An Invalid Date would silently disable enforcement and offer the legacy
+  // grace to every workspace, so both failure directions are permissive.
+  it.each(['the first of october', '2026-13-45T00:00:00Z', ''])(
+    'throws when set to %s',
+    (value) => {
+      process.env[ENV_KEY] = value;
+
+      expect(() => configuration()).toThrow(
+        'ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date',
+      );
+    },
+  );
+});

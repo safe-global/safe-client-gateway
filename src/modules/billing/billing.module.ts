@@ -7,6 +7,7 @@ import { BillingAuthService } from '@/modules/billing/domain/billing-auth.servic
 import { BillingController } from '@/modules/billing/routes/billing.controller';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
+import { EntitlementsRepositoryModule } from '@/modules/entitlements/domain/entitlements-repository.module';
 import { SubscriptionSyncModule } from '@/modules/entitlements/subscription-sync.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { UsersModule } from '@/modules/users/users.module';
@@ -16,6 +17,7 @@ import { UsersModule } from '@/modules/users/users.module';
     JwtModule,
     BillingApiModule,
     SubscriptionSyncModule,
+    EntitlementsRepositoryModule,
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     forwardRef(() => SpacesModule),

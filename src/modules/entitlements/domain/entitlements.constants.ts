@@ -74,6 +74,13 @@ export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 export const PLAN_NAME_METADATA_KEY = 'planName';
 
 /**
+ * Metadata key marking which trial a payment link offers: `'true'` for the
+ * legacy grace given to pre-enforcement workspaces, `'false'` for the standard
+ * trial. Same upstream vocabulary as `PLAN_NAME_METADATA_KEY`.
+ */
+export const GRACE_PERIOD_METADATA_KEY = 'gracePeriod';
+
+/**
  * Mirrors the `subscription_entitlements.value` column's `varchar(255)`: a
  * longer value is skipped rather than left to fail the insert.
  */

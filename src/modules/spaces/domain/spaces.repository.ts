@@ -345,6 +345,14 @@ export class SpacesRepository implements ISpacesRepository {
     return space.uuid;
   }
 
+  public async findCreatedAtById(id: Space['id']): Promise<Space['createdAt']> {
+    const space = await this.findOneOrFail({
+      where: { id },
+      select: { createdAt: true },
+    });
+    return space.createdAt;
+  }
+
   // @todo Add a soft delete method
   public async delete(args: {
     id: number;
