@@ -172,10 +172,12 @@ export class BillingService {
     const offeredGeneralLinks = generalLinks.filter((link) =>
       isOfferedToSpace(link, eligibility),
     );
-    const linksById = new Map(
-      [...offeredGeneralLinks, ...spaceLinks].map((link) => [link.id, link]),
-    );
-    return Array.from(linksById.values());
+
+    return [
+      ...new Map(
+        [...offeredGeneralLinks, ...spaceLinks].map((link) => [link.id, link]),
+      ).values(),
+    ];
   }
 
   private async getOfferEligibility(

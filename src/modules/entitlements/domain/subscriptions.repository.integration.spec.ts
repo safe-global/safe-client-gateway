@@ -184,20 +184,18 @@ describe('SubscriptionsRepository', () => {
       },
     );
 
-    it('should report a terminal subscription as subscribed but on no plan', async () => {
-      const spaceId = await createSpace();
-      await subscribe(spaceId, 'canceled');
-
-      await expect(
-        subscriptionsRepository.getSubscriptionSummary(spaceId),
-      ).resolves.toStrictEqual({
-        hasEverSubscribed: true,
-        activePlanName: null,
-      });
-    });
-
-    it.each(['incomplete', 'incomplete_expired'] as const)(
-      'should count a %s subscription as having subscribed',
+    // Every status outside ACTIVE_SUBSCRIPTION_STATUSES, listed literally
+    // rather than derived from it: the point is to pin which side of the line
+    // each one falls on, which a list computed from that constant could not do.
+    it.each([
+      'canceled',
+      'incomplete',
+      'incomplete_expired',
+      'past_due',
+      'paused',
+      'unpaid',
+    ] as const)(
+      'should report a %s subscription as subscribed but on no plan',
       async (status) => {
         const spaceId = await createSpace();
         await subscribe(spaceId, status);

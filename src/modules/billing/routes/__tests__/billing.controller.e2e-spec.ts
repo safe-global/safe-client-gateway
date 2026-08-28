@@ -115,8 +115,6 @@ describe('BillingController', () => {
   afterEach(() => {
     networkService.get.mockReset();
     networkService.post.mockReset();
-    // The general payment-link catalog is cached under a customer-independent
-    // key, so without this a previous test's catalog is served to the next one.
     fakeCacheService.clear();
   });
 
