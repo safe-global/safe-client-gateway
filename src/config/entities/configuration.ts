@@ -390,8 +390,6 @@ export default () => ({
       process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`,
       10,
     ),
-    // Policy state moves on every allowance transfer - `spent` in particular -
-    // so this stays at the service-wide default rather than longer.
     policyIndexer: Number.parseInt(
       process.env.POLICY_INDEXER_EXPIRE_TIME_SECONDS ?? `${60}`,
       10,
@@ -808,16 +806,7 @@ export default () => ({
   },
   policies: {
     indexer: {
-      /**
-       * The Policy Indexer's GraphQL endpoint, without the `/v1/graphql` path.
-       *
-       * The indexer aggregates the `SafePolicyGuard` and `AllowanceModule` logs
-       * into current-state rows; CGW reads state from it and aggregates nothing
-       * itself. One deployment serves every chain it indexes.
-       */
-      baseUri:
-        process.env.POLICY_INDEXER_BASE_URI ||
-        'https://indexer.dev.hyperindex.xyz/8923b9d',
+      baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
     },
   },
   safeDataDecoder: {
