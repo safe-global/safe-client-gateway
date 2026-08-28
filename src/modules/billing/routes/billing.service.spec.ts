@@ -57,8 +57,7 @@ const subscriptionSyncServiceMock = {
 } as MockedObject<ISubscriptionSyncService>;
 
 const subscriptionsRepositoryMock = {
-  hasAnySubscription: vi.fn(),
-  getActivePlanName: vi.fn(),
+  getSubscriptionSummary: vi.fn(),
 } as MockedObject<ISubscriptionsRepository>;
 
 const spacesRepositoryMock = {
@@ -119,8 +118,10 @@ describe('BillingService', () => {
     // Defaults for the specs that are not about the offer filter: a workspace
     // created after the enforcement date that has never subscribed.
     spaceCreatedAt(AFTER_ENFORCEMENT);
-    subscriptionsRepositoryMock.hasAnySubscription.mockResolvedValue(false);
-    subscriptionsRepositoryMock.getActivePlanName.mockResolvedValue(null);
+    subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+      hasEverSubscribed: false,
+      activePlanName: null,
+    });
 
     service = new BillingService(
       billingApiMock,
@@ -317,7 +318,10 @@ describe('BillingService', () => {
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       // A paid link in the general catalog needs the space to have subscribed
       // before to be offered; this test is about merge behaviour, not that.
-      subscriptionsRepositoryMock.hasAnySubscription.mockResolvedValue(true);
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
       billingApiMock.listPaymentLinks.mockImplementation((args) =>
         Promise.resolve(args?.upstreamCustomerId ? [spaceLink] : [generalLink]),
       );
@@ -419,6 +423,26 @@ describe('BillingService', () => {
       );
     });
 
+    it('should warn only once for the same untagged link across requests', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const untagged = trialPaymentLinkBuilder(true)
+        .with('metadata', {})
+        .build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      mockCatalog([untagged]);
+
+      for (let i = 0; i < 3; i++) {
+        await service.getSpacePaymentLinks({
+          spaceId: faker.number.int(),
+          spaceUuid: faker.string.uuid(),
+          authPayload,
+        });
+      }
+
+      // A misconfigured catalog is read on every request; the log is not.
+      expect(loggingServiceMock.warn).toHaveBeenCalledTimes(1);
+    });
+
     it('should not warn when every trial link is tagged', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
@@ -479,7 +503,10 @@ describe('BillingService', () => {
       const paidLink = paymentLinkBuilder().build();
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       spaceCreatedAt(BEFORE_ENFORCEMENT);
-      subscriptionsRepositoryMock.hasAnySubscription.mockResolvedValue(true);
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
       mockCatalog([graceLink, paidLink]);
 
       const result = await service.getSpacePaymentLinks({
@@ -490,7 +517,7 @@ describe('BillingService', () => {
 
       expect(result).toEqual([paidLink]);
       expect(
-        subscriptionsRepositoryMock.hasAnySubscription,
+        subscriptionsRepositoryMock.getSubscriptionSummary,
       ).toHaveBeenCalledWith(spaceId);
     });
 
@@ -505,10 +532,10 @@ describe('BillingService', () => {
         .with('metadata', { planName: faker.commerce.productName() })
         .build();
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
-      subscriptionsRepositoryMock.hasAnySubscription.mockResolvedValue(true);
-      subscriptionsRepositoryMock.getActivePlanName.mockResolvedValue(
-        activeSubscription.planName,
-      );
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: activeSubscription.planName,
+      });
       mockCatalog([currentPlanLink, otherPlanLink]);
 
       const result = await service.getSpacePaymentLinks({
@@ -551,7 +578,10 @@ describe('BillingService', () => {
         .build();
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       // A paid link needs the space to have subscribed before to be offered.
-      subscriptionsRepositoryMock.hasAnySubscription.mockResolvedValue(true);
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
       mockCatalog([paymentLink]);
       billingApiMock.createCheckoutSession.mockResolvedValue(
         checkoutSessionResult,

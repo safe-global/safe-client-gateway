@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type EntityManager, In } from 'typeorm';
+import { toSqlList } from '@/datasources/db/v2/entities/sql.utils';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import type { SubscriptionValues } from '@/modules/entitlements/domain/entities/space-subscription.entity';
 import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
-import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+import type {
+  ISubscriptionsRepository,
+  SpaceSubscriptionSummary,
+} from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
 /**
@@ -41,35 +45,28 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     });
   }
 
-  public async hasAnySubscription(spaceId: Space['id']): Promise<boolean> {
+  public async getSubscriptionSummary(
+    spaceId: Space['id'],
+  ): Promise<SpaceSubscriptionSummary> {
     const repository = await getScopedRepository(
       this.postgresDatabaseService,
       SpaceSubscription,
     );
-    // Filters the FK column rather than `{ space: { id } }`, which would make
-    // TypeORM join `spaces` to answer what space_id already holds.
-    return await repository
+    // `MAX` collapses the active rows, of which the partial unique index
+    // allows at most one.
+    const summary = await repository
       .createQueryBuilder('subscription')
+      .select('COUNT(*) > 0', 'hasEverSubscribed')
+      .addSelect(
+        `MAX(CASE WHEN status IN (${toSqlList(ACTIVE_SUBSCRIPTION_STATUSES)}) THEN plan_name END)`,
+        'activePlanName',
+      )
       .where('space_id = :spaceId', { spaceId })
-      .getExists();
-  }
-
-  public async getActivePlanName(spaceId: Space['id']): Promise<string | null> {
-    const repository = await getScopedRepository(
-      this.postgresDatabaseService,
-      SpaceSubscription,
-    );
-    // Deliberately not `getActiveSubscriptionBySpaceId`: that one hydrates the
-    // entitlements/feature tree, which a caller wanting one column pays for.
-    const active = await repository
-      .createQueryBuilder('subscription')
-      .select('subscription.planName', 'planName')
-      .where('space_id = :spaceId', { spaceId })
-      .andWhere('status IN (:...activeStatuses)', {
-        activeStatuses: [...ACTIVE_SUBSCRIPTION_STATUSES],
-      })
-      .getRawOne<{ planName: string | null }>();
-    return active?.planName ?? null;
+      .getRawOne<SpaceSubscriptionSummary>();
+    return {
+      hasEverSubscribed: summary?.hasEverSubscribed ?? false,
+      activePlanName: summary?.activePlanName ?? null,
+    };
   }
 
   public async upsertSubscription(

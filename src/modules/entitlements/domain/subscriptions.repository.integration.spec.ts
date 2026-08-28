@@ -157,44 +157,84 @@ describe('SubscriptionsRepository', () => {
     return planName;
   }
 
-  describe('hasAnySubscription', () => {
-    it('should return false for a space that never subscribed', async () => {
+  describe('getSubscriptionSummary', () => {
+    it('should report a space that never subscribed', async () => {
       const spaceId = await createSpace();
 
       await expect(
-        subscriptionsRepository.hasAnySubscription(spaceId),
-      ).resolves.toBe(false);
+        subscriptionsRepository.getSubscriptionSummary(spaceId),
+      ).resolves.toStrictEqual({
+        hasEverSubscribed: false,
+        activePlanName: null,
+      });
     });
 
-    it('should return true for a space whose only subscription is terminal', async () => {
+    it.each(['active', 'trialing'] as const)(
+      'should report the plan name of a %s subscription',
+      async (status) => {
+        const spaceId = await createSpace();
+        const planName = await subscribe(spaceId, status);
+
+        await expect(
+          subscriptionsRepository.getSubscriptionSummary(spaceId),
+        ).resolves.toStrictEqual({
+          hasEverSubscribed: true,
+          activePlanName: planName,
+        });
+      },
+    );
+
+    it('should report a terminal subscription as subscribed but on no plan', async () => {
       const spaceId = await createSpace();
       await subscribe(spaceId, 'canceled');
 
       await expect(
-        subscriptionsRepository.hasAnySubscription(spaceId),
-      ).resolves.toBe(true);
-    });
-
-    it('should return true for a space holding the active slot', async () => {
-      const spaceId = await createSpace();
-      await subscribe(spaceId, 'trialing');
-
-      await expect(
-        subscriptionsRepository.hasAnySubscription(spaceId),
-      ).resolves.toBe(true);
+        subscriptionsRepository.getSubscriptionSummary(spaceId),
+      ).resolves.toStrictEqual({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
     });
 
     it.each(['incomplete', 'incomplete_expired'] as const)(
-      'should return true for a space whose only subscription is %s',
+      'should count a %s subscription as having subscribed',
       async (status) => {
         const spaceId = await createSpace();
         await subscribe(spaceId, status);
 
         await expect(
-          subscriptionsRepository.hasAnySubscription(spaceId),
-        ).resolves.toBe(true);
+          subscriptionsRepository.getSubscriptionSummary(spaceId),
+        ).resolves.toStrictEqual({
+          hasEverSubscribed: true,
+          activePlanName: null,
+        });
       },
     );
+
+    it('should report no plan name when the active subscription is untagged', async () => {
+      const spaceId = await createSpace();
+      await subscribe(spaceId, 'active', null);
+
+      await expect(
+        subscriptionsRepository.getSubscriptionSummary(spaceId),
+      ).resolves.toStrictEqual({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
+    });
+
+    it('should keep the active plan name when a terminal row also exists', async () => {
+      const spaceId = await createSpace();
+      await subscribe(spaceId, 'canceled');
+      const planName = await subscribe(spaceId, 'active');
+
+      await expect(
+        subscriptionsRepository.getSubscriptionSummary(spaceId),
+      ).resolves.toStrictEqual({
+        hasEverSubscribed: true,
+        activePlanName: planName,
+      });
+    });
 
     it('should not leak another space subscriptions', async () => {
       const [spaceId, otherSpaceId] = await Promise.all([
@@ -204,60 +244,11 @@ describe('SubscriptionsRepository', () => {
       await subscribe(otherSpaceId, 'active');
 
       await expect(
-        subscriptionsRepository.hasAnySubscription(spaceId),
-      ).resolves.toBe(false);
-    });
-  });
-
-  describe('getActivePlanName', () => {
-    it.each(['active', 'trialing'] as const)(
-      'should return the plan name of a %s subscription',
-      async (status) => {
-        const spaceId = await createSpace();
-        const planName = await subscribe(spaceId, status);
-
-        await expect(
-          subscriptionsRepository.getActivePlanName(spaceId),
-        ).resolves.toBe(planName);
-      },
-    );
-
-    it('should return null for a space that never subscribed', async () => {
-      const spaceId = await createSpace();
-
-      await expect(
-        subscriptionsRepository.getActivePlanName(spaceId),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null when the only subscription is terminal', async () => {
-      const spaceId = await createSpace();
-      await subscribe(spaceId, 'canceled');
-
-      await expect(
-        subscriptionsRepository.getActivePlanName(spaceId),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null when the active subscription is untagged', async () => {
-      const spaceId = await createSpace();
-      await subscribe(spaceId, 'active', null);
-
-      await expect(
-        subscriptionsRepository.getActivePlanName(spaceId),
-      ).resolves.toBeNull();
-    });
-
-    it('should not leak another space plan name', async () => {
-      const [spaceId, otherSpaceId] = await Promise.all([
-        createSpace(),
-        createSpace(),
-      ]);
-      await subscribe(otherSpaceId, 'active');
-
-      await expect(
-        subscriptionsRepository.getActivePlanName(spaceId),
-      ).resolves.toBeNull();
+        subscriptionsRepository.getSubscriptionSummary(spaceId),
+      ).resolves.toStrictEqual({
+        hasEverSubscribed: false,
+        activePlanName: null,
+      });
     });
   });
 });

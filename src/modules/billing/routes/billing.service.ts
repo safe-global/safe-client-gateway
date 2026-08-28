@@ -39,6 +39,8 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
 export class BillingService {
   private readonly redirectConfig: RedirectConfig;
   private readonly enforcementStartsAt: Date;
+  /** Link ids already reported as untagged, so the warning fires once each. */
+  private readonly warnedUnclassifiedLinkIds = new Set<PaymentLink['id']>();
 
   public constructor(
     @Inject(IBillingApi)
@@ -174,12 +176,19 @@ export class BillingService {
   /**
    * A trial link with no recognized `gracePeriod` tag is offered to nobody, so
    * an untagged catalog looks like an empty one. Surface it rather than serving
-   * fewer offers in silence.
+   * fewer offers in silence — once per link, since this runs on every payment
+   * links and checkout request and a misconfigured catalog would otherwise
+   * repeat the same line at request rate.
    */
   private warnOnUnclassifiedTrials(generalLinks: Array<PaymentLink>): void {
-    const unclassified = generalLinks.filter(isUnclassifiedTrialLink);
+    const unclassified = generalLinks
+      .filter(isUnclassifiedTrialLink)
+      .filter((link) => !this.warnedUnclassifiedLinkIds.has(link.id));
     if (unclassified.length === 0) {
       return;
+    }
+    for (const link of unclassified) {
+      this.warnedUnclassifiedLinkIds.add(link.id);
     }
     this.loggingService.warn(
       `Dropping ${unclassified.length} trial payment link(s) with no recognized ${GRACE_PERIOD_METADATA_KEY} metadata: ${unclassified
@@ -191,20 +200,18 @@ export class BillingService {
   private async getOfferEligibility(
     spaceId: Space['id'],
   ): Promise<SpaceOfferEligibility> {
-    const [spaceCreatedAt, hasEverSubscribed, activePlanName] =
-      await Promise.all([
-        this.spacesRepository.findCreatedAtById(spaceId),
-        this.subscriptionsRepository.hasAnySubscription(spaceId),
-        this.subscriptionsRepository.getActivePlanName(spaceId),
-      ]);
+    const [spaceCreatedAt, subscription] = await Promise.all([
+      this.spacesRepository.findCreatedAtById(spaceId),
+      this.subscriptionsRepository.getSubscriptionSummary(spaceId),
+    ]);
 
     return {
       createdBeforeEnforcement: predatesEnforcement({
         createdAt: spaceCreatedAt,
         startsAt: this.enforcementStartsAt,
       }),
-      hasEverSubscribed,
-      activePlanName,
+      hasEverSubscribed: subscription.hasEverSubscribed,
+      activePlanName: subscription.activePlanName,
     };
   }
 

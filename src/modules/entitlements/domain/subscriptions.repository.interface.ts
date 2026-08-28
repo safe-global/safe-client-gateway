@@ -6,6 +6,13 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
 export const ISubscriptionsRepository = Symbol('ISubscriptionsRepository');
 
+export type SpaceSubscriptionSummary = {
+  /** Whether the space ever subscribed, in any status — terminal rows included. */
+  hasEverSubscribed: boolean;
+  /** Plan on the active subscription; `null` with none, or when untagged. */
+  activePlanName: string | null;
+};
+
 /** Queries over the `subscriptions` table. */
 export interface ISubscriptionsRepository {
   /**
@@ -18,17 +25,13 @@ export interface ISubscriptionsRepository {
   ): Promise<SpaceSubscription | null>;
 
   /**
-   * Whether the space ever held a subscription, in any status — terminal and
-   * incomplete rows included.
+   * The space's subscription standing, in one read. Prefer it over
+   * `getActiveSubscriptionBySpaceId` when the entitlement package is not needed:
+   * this one reads two columns instead of hydrating the relation tree.
    */
-  hasAnySubscription(spaceId: Space['id']): Promise<boolean>;
-
-  /**
-   * Plan name on the workspace's active subscription; `null` when it has none
-   * or the row is untagged. Reads only that column — prefer it over
-   * `getActiveSubscriptionBySpaceId` when the entitlement package is not needed.
-   */
-  getActivePlanName(spaceId: Space['id']): Promise<string | null>;
+  getSubscriptionSummary(
+    spaceId: Space['id'],
+  ): Promise<SpaceSubscriptionSummary>;
 
   /**
    * Atomic upsert by `upstreamSubscriptionId`: inserts a new row, or updates
