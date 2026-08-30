@@ -12,4 +12,5 @@ export const FeePreviewTransactionDtoSchema = TransactionBaseSchema.extend({
   nonce: NonNegativeNumericStringSchema,
   origin: z.enum(Origin).optional(),
   fiatCode: z.string().optional(),
+  safenetCheck: z.boolean().optional(),
 });

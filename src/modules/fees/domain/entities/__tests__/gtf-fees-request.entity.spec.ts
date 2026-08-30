@@ -39,6 +39,41 @@ describe('GtfFeesRequestSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('should keep safenetCheck in the parsed request', () => {
+    const request = {
+      to: getAddress(faker.finance.ethereumAddress()),
+      value: '0',
+      data: '0x',
+      operation: 0,
+      numberSignatures: 1,
+      nonce: '0',
+      gasToken: getAddress(zeroAddress),
+      safenetCheck: true,
+    };
+
+    const result = GtfFeesRequestSchema.safeParse(request);
+
+    expect(result.success).toBe(true);
+    expect(result.data?.safenetCheck).toBe(true);
+  });
+
+  it('should not allow a non-boolean safenetCheck', () => {
+    const request = {
+      to: getAddress(faker.finance.ethereumAddress()),
+      value: '0',
+      data: '0x',
+      operation: 0,
+      numberSignatures: 1,
+      nonce: '0',
+      gasToken: getAddress(zeroAddress),
+      safenetCheck: 'yes',
+    };
+
+    const result = GtfFeesRequestSchema.safeParse(request);
+
+    expect(result.success).toBe(false);
+  });
+
   it('should not allow an invalid origin', () => {
     const request = {
       to: getAddress(faker.finance.ethereumAddress()),
@@ -141,5 +176,29 @@ describe('GtfFeesRequestSchema', () => {
     });
 
     expect(result.success).toBe(false);
+  });
+
+  it('should reject a key outside the gtf/fees contract', () => {
+    const request = {
+      to: getAddress(faker.finance.ethereumAddress()),
+      value: '0',
+      data: '0x',
+      operation: 0,
+      numberSignatures: 1,
+      nonce: '0',
+      gasToken: getAddress(zeroAddress),
+      fiatCode: 'USD',
+    };
+
+    const result = GtfFeesRequestSchema.safeParse(request);
+
+    expect(!result.success && result.error.issues).toStrictEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'unrecognized_keys',
+          keys: ['fiatCode'],
+        }),
+      ]),
+    );
   });
 });

@@ -14,6 +14,11 @@ import {
   type PaginationData,
 } from '@/routes/common/pagination/pagination.data';
 
+/**
+ * Config-service feature that marks Safenet checks as available on a chain.
+ */
+const SAFENET_CHECKS_FEATURE = 'SAFENET_CHECKS';
+
 @Injectable()
 export class FeesService {
   constructor(
@@ -64,10 +69,37 @@ export class FeesService {
         return FeePreviewResponse.fromRelayFees(txFeesResponse);
       }
       case RelayerType.GTF: {
+        // The user's per-transaction opt-in, honoured only where the viewed
+        // chain offers Safenet checks — fail closed. Previews that disagree on
+        // the flag are safe by construction: the fee service encodes the fee
+        // into baseGas, so the two choices are different safeTxHashes and
+        // distinct quotes; whichever the user signs is what is billed and
+        // checked.
+        const safenetCheck =
+          args.feePreviewDto.safenetCheck === true &&
+          chain.features.includes(SAFENET_CHECKS_FEATURE);
         const gtfFeesResponse = await this.feeServiceApi.getGtfFees({
           chainId: args.chainId,
           safeAddress: args.safeAddress,
-          request: args.feePreviewDto,
+          // Listed field by field, not spread: this endpoint's contract is
+          // narrower than the route DTO, and the datasource parses the body
+          // strictly, so an unrelated DTO field must not leak in here.
+          request: {
+            to: args.feePreviewDto.to,
+            value: args.feePreviewDto.value,
+            data: args.feePreviewDto.data,
+            operation: args.feePreviewDto.operation,
+            numberSignatures: args.feePreviewDto.numberSignatures,
+            nonce: args.feePreviewDto.nonce,
+            gasToken: args.feePreviewDto.gasToken,
+            origin: args.feePreviewDto.origin,
+            // Omitted when false. Two assumptions about the fee service, neither
+            // verifiable from this repo: it rejects a request body carrying a
+            // field its own DTO does not declare, and absent and false are the
+            // same value to it. On both, a fee service that predates the flag
+            // keeps working for every unchecked chain.
+            ...(safenetCheck && { safenetCheck }),
+          },
         });
         return FeePreviewResponse.fromGtfFees(gtfFeesResponse);
       }

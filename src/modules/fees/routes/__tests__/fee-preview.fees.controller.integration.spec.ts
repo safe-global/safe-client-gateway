@@ -17,6 +17,7 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
@@ -62,6 +63,19 @@ describe('Fees Controller', () => {
   afterEach(async () => {
     await app?.close();
   });
+
+  /**
+   * Serves the one config-service read the preview makes. Its `features` array
+   * carries the Safenet gate.
+   */
+  const mockChain = (chain: Chain): void => {
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+  };
 
   it('should return 400 if relay-fee is not available for the chain', async () => {
     const chain = chainBuilder()
@@ -173,12 +187,7 @@ describe('Fees Controller', () => {
     const feePreviewDto = feePreviewTransactionDtoBuilder().build();
     const mockGtfFeeResponse = gtfFeesResponseBuilder().build();
 
-    networkService.get.mockImplementation(({ url }) => {
-      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
-        return Promise.resolve({ data: rawify(chain), status: 200 });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
+    mockChain(chain);
 
     networkService.post.mockImplementation(({ url }) => {
       if (
@@ -222,6 +231,269 @@ describe('Fees Controller', () => {
         );
         expect(body.txData.to).toBeUndefined();
         expect(body.txData.nonce).toBeUndefined();
+      });
+  });
+
+  it('should pass the Safenet fee line through verbatim', async () => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with('features', ['SAFENET_CHECKS'])
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const safenetFeeUsd = faker.number.float({
+      min: 0.01,
+      max: 10,
+      fractionDigits: 2,
+    });
+    const baseResponse = gtfFeesResponseBuilder().build();
+    const mockGtfFeeResponse = {
+      ...baseResponse,
+      feeBreakdown: {
+        ...baseResponse.feeBreakdown,
+        safenetFeeUsd,
+        // Fields this gateway does not declare must not reach the response.
+        safenetFeeSponsored: true,
+        someFutureFeeUsd: 1.23,
+      },
+    };
+
+    mockChain(chain);
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (
+        url ===
+        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`
+      ) {
+        return Promise.resolve({
+          data: rawify(mockGtfFeeResponse),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send(feePreviewTransactionDtoBuilder().build())
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.feeBreakdown.safenetFeeUsd).toBe(safenetFeeUsd);
+        expect(body.feeBreakdown).not.toHaveProperty('safenetFeeSponsored');
+        expect(body.feeBreakdown).not.toHaveProperty('someFutureFeeUsd');
+      });
+  });
+
+  it('should omit the Safenet fee line when the fee service does not report it', async () => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with('features', ['SAFENET_CHECKS'])
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const mockGtfFeeResponse = gtfFeesResponseBuilder().build();
+
+    mockChain(chain);
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (
+        url ===
+        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`
+      ) {
+        return Promise.resolve({
+          data: rawify(mockGtfFeeResponse),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send(feePreviewTransactionDtoBuilder().build())
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.feeBreakdown).not.toHaveProperty('safenetFeeUsd');
+      });
+  });
+
+  it.each([
+    [
+      'forward safenetCheck when the user opts in and the chain has the feature',
+      ['SAFENET_CHECKS'],
+      { safenetCheck: true },
+      { safenetCheck: true },
+    ],
+    [
+      'omit safenetCheck when the user opts in but the chain lacks the feature',
+      ['ERC721'],
+      { safenetCheck: true },
+      {},
+    ],
+    [
+      'omit safenetCheck when the user does not choose on a chain with the feature',
+      ['SAFENET_CHECKS'],
+      {},
+      {},
+    ],
+    [
+      'omit safenetCheck when the user opts out on a chain with the feature',
+      ['SAFENET_CHECKS'],
+      { safenetCheck: false },
+      {},
+    ],
+  ] as const)('should %s', async (_label, features, choice, expectedFlag) => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with('features', [...features])
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const feePreviewDto = feePreviewTransactionDtoBuilder().build();
+    const gtfUrl = `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`;
+
+    mockChain(chain);
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === gtfUrl) {
+        return Promise.resolve({
+          data: rawify(gtfFeesResponseBuilder().build()),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send({ ...feePreviewDto, ...choice })
+      .expect(200);
+
+    expect(networkService.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: gtfUrl,
+        data: {
+          to: feePreviewDto.to,
+          value: feePreviewDto.value,
+          data: feePreviewDto.data,
+          operation: feePreviewDto.operation,
+          numberSignatures: feePreviewDto.numberSignatures,
+          nonce: feePreviewDto.nonce,
+          gasToken: feePreviewDto.gasToken,
+          origin: feePreviewDto.origin,
+          ...expectedFlag,
+        },
+      }),
+    );
+  });
+
+  it('should not forward caller context outside the gtf/fees contract', async () => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with('features', ['SAFENET_CHECKS'])
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const feePreviewDto = feePreviewTransactionDtoBuilder().build();
+    const gtfUrl = `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`;
+
+    mockChain(chain);
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === gtfUrl) {
+        return Promise.resolve({
+          data: rawify(gtfFeesResponseBuilder().build()),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    // fiatCode belongs to the relay flow; the strict gtf/fees contract
+    // excludes it, so it must be dropped while the opt-in is forwarded.
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send({ ...feePreviewDto, safenetCheck: true, fiatCode: 'EUR' })
+      .expect(200);
+
+    expect(networkService.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: gtfUrl,
+        data: {
+          to: feePreviewDto.to,
+          value: feePreviewDto.value,
+          data: feePreviewDto.data,
+          operation: feePreviewDto.operation,
+          numberSignatures: feePreviewDto.numberSignatures,
+          nonce: feePreviewDto.nonce,
+          gasToken: feePreviewDto.gasToken,
+          origin: feePreviewDto.origin,
+          safenetCheck: true,
+        },
+      }),
+    );
+  });
+
+  it('should ignore a caller-sent safenetCheck on a chain without the feature', async () => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with('features', ['ERC721'])
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const feePreviewDto = feePreviewTransactionDtoBuilder().build();
+    const gtfUrl = `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`;
+
+    mockChain(chain);
+
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === gtfUrl) {
+        return Promise.resolve({
+          data: rawify(gtfFeesResponseBuilder().build()),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    // Fail closed: the chain does not offer Safenet checks, so the user's
+    // opt-in is not forwarded.
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send({ ...feePreviewDto, safenetCheck: true })
+      .expect(200);
+
+    expect(networkService.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: gtfUrl,
+        data: {
+          to: feePreviewDto.to,
+          value: feePreviewDto.value,
+          data: feePreviewDto.data,
+          operation: feePreviewDto.operation,
+          numberSignatures: feePreviewDto.numberSignatures,
+          nonce: feePreviewDto.nonce,
+          gasToken: feePreviewDto.gasToken,
+          origin: feePreviewDto.origin,
+        },
+      }),
+    );
+  });
+
+  it('should throw a validation error for a non-boolean safenetCheck', async () => {
+    const chain = chainBuilder()
+      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with('features', ['SAFENET_CHECKS'])
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    mockChain(chain);
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send({
+        ...feePreviewTransactionDtoBuilder().build(),
+        safenetCheck: 'yes',
+      })
+      .expect(422)
+      .expect(({ body }) => {
+        expect(body.code).toBe('invalid_type');
+        expect(body.path).toEqual(['safenetCheck']);
       });
   });
 
