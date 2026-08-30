@@ -101,6 +101,7 @@ export class CacheRouter {
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
   private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
+  private static readonly GTF_FEE_SNAPSHOT_KEY = 'gtf_fee_snapshot';
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -1204,6 +1205,24 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getGtfFeePreviewCacheKey(args),
       hash.digest('hex'),
+    );
+  }
+
+  /**
+   * Gets cache directory for a stored GTF fee quote.
+   * The quote is write-once upstream, so the safeTxHash alone identifies it.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeTxHash - Safe transaction hash the quote was stored under
+   * @returns CacheDir - Cache directory
+   */
+  static getGtfFeeSnapshotCacheDir(args: {
+    chainId: string;
+    safeTxHash: Hash;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.GTF_FEE_SNAPSHOT_KEY}`,
+      args.safeTxHash,
     );
   }
 

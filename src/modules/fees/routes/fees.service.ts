@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
+import {
+  BadRequestException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import type { Address, Hex } from 'viem';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import type { Page } from '@/domain/entities/page.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
@@ -108,5 +114,32 @@ export class FeesService {
           'Fee preview is not available for this chain',
         );
     }
+  }
+
+  /**
+   * Reads back the quote the fee service stored for an already-quoted
+   * transaction, so a co-signer can see the fee breakdown behind a signed
+   * payload without re-quoting it.
+   */
+  async getFeePreviewBySafeTxHash(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: Hex;
+  }): Promise<FeePreviewResponse> {
+    const gtfFeesResponse = await this.feeServiceApi.getGtfFeeSnapshot({
+      chainId: args.chainId,
+      safeTxHash: args.safeTxHash,
+    });
+
+    // The route claims chain and Safe scoping; a quote stored for another
+    // chain or Safe is not found here rather than readable through this path.
+    if (
+      gtfFeesResponse.txData.chainId !== args.chainId ||
+      gtfFeesResponse.txData.safeAddress !== args.safeAddress
+    ) {
+      throw new HttpExceptionNoLog('Fee quote not found', HttpStatus.NOT_FOUND);
+    }
+
+    return FeePreviewResponse.fromGtfFees(gtfFeesResponse);
   }
 }
