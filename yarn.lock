@@ -3354,11 +3354,11 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^6.0.11":
-  version: 6.0.11
-  resolution: "bullmq@npm:6.0.11"
+"bullmq@npm:^6.2.0":
+  version: 6.2.0
+  resolution: "bullmq@npm:6.2.0"
   dependencies:
-    cron-parser: "npm:5.8.1"
+    cron-parser: "npm:5.10.0"
     msgpackr: "npm:2.0.5"
     node-abort-controller: "npm:3.1.1"
     semver: "npm:7.8.5"
@@ -3377,7 +3377,7 @@ __metadata:
       optional: true
     redis:
       optional: true
-  checksum: 10/32dca075a2faa158ae194c847dd6a87716c656308e496da04a7191f4ab81a111dda96c527c744519bcbd0c18cc82f031c1be078c19fad40353b43931a9414da6
+  checksum: 10/4369a75894ca93d33d9f8c9acf8bd14d6660cfa20f090f4d8f7cf550b6b6519975ea797b6bdd33a1a30bef404e0057818bbbf5fc92f4929942588a427c214cef
   languageName: node
   linkType: hard
 
@@ -3738,12 +3738,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cron-parser@npm:5.8.1":
-  version: 5.8.1
-  resolution: "cron-parser@npm:5.8.1"
+"cron-parser@npm:5.10.0":
+  version: 5.10.0
+  resolution: "cron-parser@npm:5.10.0"
   dependencies:
     luxon: "npm:^3.7.2"
-  checksum: 10/7c50cbef62d9287dc51f23153741c71435fb2287c383765e1ee170d7ebd4be1479925008a4c36c8fc10aee0e20ba9427f0649113c8cbb3373abc120802a2d8ab
+  checksum: 10/b207e6fae10572e1fd524562d9bcfcac4fc6cb8ff86f03487392a2e9fc27e9f07f112997c5af30de50b7ef0de482ce7e804e933b045185fb72eb2de6682285ac
   languageName: node
   linkType: hard
 
@@ -6271,7 +6271,7 @@ __metadata:
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
-    bullmq: "npm:^6.0.11"
+    bullmq: "npm:^6.2.0"
     cache-manager: "npm:7.2.9"
     csv-stringify: "npm:^6.8.3"
     ecdsa-sig-formatter: "npm:1.0.11"
