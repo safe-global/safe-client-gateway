@@ -2,6 +2,7 @@
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type { Address } from 'viem';
 import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
+import { databaseIntegerTransformer } from '@/domain/common/transformers/database-integer.transformer';
 import type { SafeCloudCosignerPolicy as DomainSafeCloudCosignerPolicy } from '@/modules/cloud-cosigner/domain/entities/cloud-cosigner-policy.entity';
 import {
   ADDRESS_LENGTH,
@@ -28,7 +29,11 @@ export class CloudCosignerPolicy implements DomainSafeCloudCosignerPolicy {
   })
   public readonly safeAddress!: Address;
 
-  @Column({ name: 'value_threshold_usd', type: 'bigint' })
+  @Column({
+    name: 'value_threshold_usd',
+    type: 'bigint',
+    transformer: databaseIntegerTransformer,
+  })
   public readonly valueThresholdUsd!: number;
 
   @Column({ name: 'review_unknown_contracts', type: 'boolean' })

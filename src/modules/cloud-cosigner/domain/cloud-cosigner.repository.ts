@@ -108,7 +108,10 @@ export class CloudCosignerRepository implements ICloudCosignerRepository {
         lock: { mode: 'pessimistic_write' },
       });
 
-      if (inserted.identifiers.length > 0) {
+      // `identifiers` is derived from the input even when ON CONFLICT DO
+      // NOTHING skipped the row; only the RETURNING rows prove an insert.
+      const insertedRows: Array<unknown> = inserted.raw;
+      if (insertedRows.length > 0) {
         return {
           claimed: true,
           review: CloudCosignerReviewSchema.parse(existing),
