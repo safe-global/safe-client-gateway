@@ -323,6 +323,131 @@ describe('Configuration validator', () => {
     });
   });
 
+  describe('CLOUD_COSIGNER validation', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+    });
+
+    const privateKey = `0x${faker.string.hexadecimal({ length: 64, prefix: '' })}`;
+
+    it.each(['production', 'staging'])(
+      'should reject CLOUD_COSIGNER_PRIVATE_KEY in %s environment',
+      (env) => {
+        const config = {
+          ...validConfiguration,
+          CGW_ENV: env,
+          CLOUD_COSIGNER_PRIVATE_KEY: privateKey,
+        };
+
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          'Configuration is invalid: CLOUD_COSIGNER_PRIVATE_KEY must not be set in production and staging environments; sign via KMS (CLOUD_COSIGNER_KMS_KEY_ID) instead',
+        );
+      },
+    );
+
+    it('should reject a malformed CLOUD_COSIGNER_PRIVATE_KEY', () => {
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'development',
+        CLOUD_COSIGNER_PRIVATE_KEY: faker.string.alphanumeric(),
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow('CLOUD_COSIGNER_PRIVATE_KEY');
+    });
+
+    it('should require the Anthropic API key when the cosigner is enabled', () => {
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'development',
+        FF_CLOUD_COSIGNER: 'true',
+        CLOUD_COSIGNER_PRIVATE_KEY: privateKey,
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: CLOUD_COSIGNER_ANTHROPIC_API_KEY is required when the cloud cosigner is enabled',
+      );
+    });
+
+    it('should require a signing key when the cosigner is enabled outside deployed environments', () => {
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'development',
+        FF_CLOUD_COSIGNER: 'true',
+        CLOUD_COSIGNER_ANTHROPIC_API_KEY: faker.string.alphanumeric(),
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: CLOUD_COSIGNER_PRIVATE_KEY is required when the cloud cosigner is enabled and no KMS key (CLOUD_COSIGNER_KMS_KEY_ID) is configured',
+      );
+    });
+
+    it.each(['production', 'staging'])(
+      'should require CLOUD_COSIGNER_KMS_KEY_ID in %s when the cosigner is enabled',
+      (env) => {
+        const config = {
+          ...validConfiguration,
+          CGW_ENV: env,
+          FF_CLOUD_COSIGNER: 'true',
+          CLOUD_COSIGNER_ANTHROPIC_API_KEY: faker.string.alphanumeric(),
+        };
+
+        expect(() =>
+          configurationValidator(config, RootConfigurationSchema),
+        ).toThrow(
+          'Configuration is invalid: CLOUD_COSIGNER_KMS_KEY_ID is required in production and staging environments when the cloud cosigner is enabled',
+        );
+      },
+    );
+
+    it('should accept a fully configured cosigner in a deployed environment', () => {
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'production',
+        FF_CLOUD_COSIGNER: 'true',
+        CLOUD_COSIGNER_ANTHROPIC_API_KEY: faker.string.alphanumeric(),
+        CLOUD_COSIGNER_KMS_KEY_ID: faker.string.uuid(),
+      };
+
+      expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+        config,
+      );
+    });
+
+    it('should accept a locally configured cosigner', () => {
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'development',
+        FF_CLOUD_COSIGNER: 'true',
+        CLOUD_COSIGNER_ANTHROPIC_API_KEY: faker.string.alphanumeric(),
+        CLOUD_COSIGNER_PRIVATE_KEY: privateKey,
+      };
+
+      expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+        config,
+      );
+    });
+
+    it('should not require anything when the cosigner is disabled', () => {
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'production',
+        FF_CLOUD_COSIGNER: 'false',
+      };
+
+      expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+        config,
+      );
+    });
+  });
+
   describe('ENCRYPTION validation', () => {
     beforeEach(() => {
       process.env.NODE_ENV = 'production';

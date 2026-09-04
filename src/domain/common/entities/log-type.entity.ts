@@ -3,6 +3,8 @@ export enum LogType {
   AwsCloudStorageUpload = 'AWS_S3_UPLOAD',
   BlocklistHit = 'BLOCKLIST_HIT',
   CacheError = 'CACHE_ERROR',
+  CloudCosignerEvent = 'CLOUD_COSIGNER_EVENT',
+  CloudCosignerReview = 'CLOUD_COSIGNER_REVIEW',
   CacheEvent = 'CACHE_EVENT',
   CacheHit = 'CACHE_HIT',
   CacheMiss = 'CACHE_MISS',

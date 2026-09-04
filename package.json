@@ -13,6 +13,8 @@
     "start:dev": "node --env-file=.env node_modules/.bin/nest start --watch",
     "start:debug": "node --env-file=.env node_modules/.bin/nest start --debug --watch",
     "start:prod": "node --env-file=.env dist/src/main",
+    "start:cosigner": "node --env-file=.env node_modules/.bin/nest start --entryFile cosigner.main",
+    "start:cosigner:prod": "node --env-file=.env dist/src/cosigner.main",
     "lint": "biome check --fix",
     "lint-check": "biome check",
     "test": "TZ=UTC node --env-file-if-exists=./.env.test ./node_modules/.bin/vitest run --project unit",
@@ -42,6 +44,7 @@
     "backfill:field-encryption": "node --env-file=.env -r tsconfig-paths/register ./node_modules/.bin/ts-node scripts/backfill-field-encryption.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.122.0",
     "@aws-sdk/client-kms": "3.1112.0",
     "@aws-sdk/client-s3": "3.1112.0",
     "@aws-sdk/client-sesv2": "3.1112.0",

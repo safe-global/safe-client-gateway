@@ -91,6 +91,67 @@ const DomainSchema = z.string().refine(
   { message: 'Must be a valid domain (e.g. tenant.auth0.com)' },
 );
 
+/**
+ * The cloud cosigner holds a signing key and calls an LLM, so enabling it
+ * without either is always broken. A raw private key is only acceptable
+ * outside production and staging, where the secp256k1 KMS key is mandatory.
+ */
+function validateCloudCosignerConfig(
+  config: {
+    FF_CLOUD_COSIGNER?: string;
+    CLOUD_COSIGNER_PRIVATE_KEY?: string;
+    CLOUD_COSIGNER_KMS_KEY_ID?: string;
+    CLOUD_COSIGNER_ANTHROPIC_API_KEY?: string;
+  },
+  ctx: z.RefinementCtx,
+  isDeployedEnv: boolean,
+): void {
+  if (isDeployedEnv && config.CLOUD_COSIGNER_PRIVATE_KEY) {
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'must not be set in production and staging environments; sign via KMS (CLOUD_COSIGNER_KMS_KEY_ID) instead',
+      path: ['CLOUD_COSIGNER_PRIVATE_KEY'],
+    });
+  }
+
+  if (config.FF_CLOUD_COSIGNER?.toLowerCase() !== 'true') {
+    return;
+  }
+
+  if (!config.CLOUD_COSIGNER_ANTHROPIC_API_KEY) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'is required when the cloud cosigner is enabled',
+      path: ['CLOUD_COSIGNER_ANTHROPIC_API_KEY'],
+    });
+  }
+
+  if (isDeployedEnv && !config.CLOUD_COSIGNER_KMS_KEY_ID) {
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'is required in production and staging environments when the cloud cosigner is enabled',
+      path: ['CLOUD_COSIGNER_KMS_KEY_ID'],
+    });
+  }
+
+  if (
+    !(
+      isDeployedEnv ||
+      config.CLOUD_COSIGNER_KMS_KEY_ID ||
+      config.CLOUD_COSIGNER_PRIVATE_KEY
+    )
+  ) {
+    ctx.addIssue({
+      code: 'custom',
+      message:
+        'is required when the cloud cosigner is enabled and no KMS key (CLOUD_COSIGNER_KMS_KEY_ID) is configured',
+      path: ['CLOUD_COSIGNER_PRIVATE_KEY'],
+    });
+  }
+}
+
 export const RootConfigurationSchema = z
   .object({
     AUTH_TOKEN: z.string(),
@@ -138,6 +199,75 @@ export const RootConfigurationSchema = z
     FF_SES_EMAIL: z.string().optional(),
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
+    FF_CLOUD_COSIGNER: z.string().optional(),
+    // Development only: the production guard below rejects it in deployed
+    // environments, where the cosigner signs through CLOUD_COSIGNER_KMS_KEY_ID.
+    CLOUD_COSIGNER_PRIVATE_KEY: z
+      .string()
+      .regex(/^0x[0-9a-fA-F]{64}$/)
+      .optional(),
+    CLOUD_COSIGNER_KMS_KEY_ID: z.string().optional(),
+    CLOUD_COSIGNER_ANTHROPIC_API_KEY: z.string().optional(),
+    CLOUD_COSIGNER_MODEL: z.string().optional(),
+    CLOUD_COSIGNER_MAX_TOKENS: z.coerce.number().int().min(1).optional(),
+    CLOUD_COSIGNER_REVIEW_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1_000)
+      .optional(),
+    CLOUD_COSIGNER_DEFAULT_VALUE_THRESHOLD_USD: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_POLICY_SIGNATURE_MAX_AGE_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    CLOUD_COSIGNER_DEFAULT_REVIEW_UNKNOWN_CONTRACTS: z.string().optional(),
+    CLOUD_COSIGNER_FIAT_CODE: z.string().length(3).optional(),
+    CLOUD_COSIGNER_HISTORY_LOOKBACK_LIMIT: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    CLOUD_COSIGNER_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_REMOVE_ON_COMPLETE_AGE: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_REMOVE_ON_COMPLETE_COUNT: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_REMOVE_ON_FAIL_COUNT: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_BACKOFF_TYPE: z
+      .enum(['fixed', 'exponential'])
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_BACKOFF_DELAY: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    CLOUD_COSIGNER_QUEUE_ATTEMPTS: z.coerce.number().int().min(1).optional(),
+    CLOUD_COSIGNER_QUEUE_CONCURRENCY: z.coerce.number().int().min(1).optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -271,6 +401,8 @@ export const RootConfigurationSchema = z
         path: ['BILLING_WEBHOOK_JWT_PRIVATE_KEY'],
       });
     }
+
+    validateCloudCosignerConfig(config, ctx, isDeployedEnv);
 
     // Field encryption validation runs regardless of environment: enabling it
     // without its dependencies is always broken, deployed or not.

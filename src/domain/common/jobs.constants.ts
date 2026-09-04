@@ -15,3 +15,8 @@ export const PUSH_NOTIFICATION_WORKER_CONCURRENCY =
 export const SES_EMAIL_QUEUE = 'ses-email';
 export const SES_EMAIL_WORKER_CONCURRENCY =
   configuration().email.ses.queue.concurrency;
+
+// Cloud cosigner queue constants
+export const CLOUD_COSIGNER_QUEUE = 'cloud-cosigner';
+export const CLOUD_COSIGNER_WORKER_CONCURRENCY =
+  configuration().cloudCosigner.queue.concurrency;

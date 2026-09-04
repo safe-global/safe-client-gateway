@@ -200,7 +200,7 @@ Running migrations on startup is retried (`db.migrator.numberOfRetries`, default
 
 ## Async work
 
-Background work runs on BullMQ queues backed by Redis, each declared with config-driven retry `attempts` and `backoff` (never hard-coded): csv-export (`src/modules/csv-export/v1/`), push notifications (`src/modules/notifications/domain/push/`), and SES email (`src/modules/email/ses/`).
+Background work runs on BullMQ queues backed by Redis, each declared with config-driven retry `attempts` and `backoff` (never hard-coded): csv-export (`src/modules/csv-export/v1/`), push notifications (`src/modules/notifications/domain/push/`), SES email (`src/modules/email/ses/`), and cloud cosigner reviews (`src/modules/cloud-cosigner/`, consumed only by the cosigner deployable `src/cosigner.main.ts`).
 Each queue has its own `@Processor`/`WorkerHost` consumer (e.g. `CsvExportConsumer` in `src/modules/csv-export/v1/consumers/csv-export.consumer.ts`) and its own `removeOnComplete`/`removeOnFail` retention config.
 The BullMQ connection itself is registered once, globally, in `src/app.module.ts` (`BullModule.forRootAsync`, pointed at `redis.host`/`redis.port`) — individual queue modules register a named queue against that shared connection rather than opening their own.
 
@@ -268,6 +268,7 @@ The rest of the codebase asks its manager for "the client for this chain" rather
 | Coingecko | Fiat prices for native coins and tokens; requests are batched and chunked (`src/modules/balances/datasources/coingecko-api.service.ts`) |
 | Zerion | Wallet/Safe positions and portfolio data (`src/modules/zerion/`, `src/modules/positions/`) |
 | Blockaid | Address and transaction threat analysis (`src/modules/safe-shield/threat-analysis/blockaid`) |
+| Anthropic | Transaction review verdicts for the cloud cosigner, via the official SDK (`src/modules/cloud-cosigner/datasources/anthropic-api.service.ts`) |
 | Tenderly | Transaction simulation and alert webhooks, HMAC-verified (`src/modules/alerts/`) |
 | AWS KMS | Field-level encryption and asymmetric signing (`src/datasources/kms/`) |
 | AWS S3 | CSV export and targeted-messaging file storage (`src/datasources/storage/`) |

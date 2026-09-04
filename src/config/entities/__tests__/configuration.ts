@@ -249,6 +249,7 @@ export default (): ReturnType<typeof configuration> => ({
     cacheInFlightRequests: false,
     spaceAuditLog: true,
     mfaStepUp: true,
+    cloudCosigner: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -590,5 +591,50 @@ export default (): ReturnType<typeof configuration> => ({
   captcha: {
     enabled: false,
     secretKey: '',
+  },
+  cloudCosigner: {
+    signer: {
+      // A fixed, well-known test key: the mirror is loaded by every spec, so
+      // the derived cosigner address must be deterministic.
+      privateKey:
+        '0x0123456789012345678901234567890123456789012345678901234567890123',
+      kms: {
+        keyId: undefined,
+        webIdentityTokenFile: undefined,
+      },
+    },
+    reviewer: {
+      apiKey: faker.string.alphanumeric({ length: 32 }),
+      model: 'claude-opus-5',
+      maxTokens: faker.number.int({ min: 1_000, max: 16_000 }),
+      reviewTimeoutMs: faker.number.int({ min: 1_000, max: 300_000 }),
+    },
+    defaultPolicy: {
+      valueThresholdUsd: faker.number.int({ min: 1_000, max: 1_000_000 }),
+      reviewUnknownContracts: true,
+    },
+    fiatCode: 'USD',
+    historyLookbackLimit: faker.number.int({ min: 1, max: 50 }),
+    policySignatureMaxAgeSeconds: faker.number.int({ min: 60, max: 600 }),
+    rateLimit: {
+      max: faker.number.int({ min: 10, max: 100 }),
+      windowSeconds: faker.number.int({ min: 10, max: 120 }),
+    },
+    queue: {
+      removeOnComplete: {
+        age: faker.number.int({ min: 0, max: 3600 }),
+        count: faker.number.int({ min: 0, max: 5000 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 0, max: 43200 }),
+        count: faker.number.int({ min: 0, max: 500 }),
+      },
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 5000 }),
+      },
+      attempts: faker.number.int({ min: 1, max: 3 }),
+      concurrency: faker.number.int({ min: 1, max: 2 }),
+    },
   },
 });

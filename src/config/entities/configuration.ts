@@ -492,6 +492,10 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
+    // Owner: Cloud cosigner service. Gates the cosigner's event subscription,
+    // review worker and HTTP surface; the gateway process never sets it.
+    // Remove once the cosigner deployable is live and the flag is on everywhere.
+    cloudCosigner: process.env.FF_CLOUD_COSIGNER?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -1062,6 +1066,95 @@ export default () => ({
   captcha: {
     enabled: process.env.CAPTCHA_ENABLED?.toLowerCase() === 'true',
     secretKey: process.env.CAPTCHA_SECRET_KEY,
+  },
+  cloudCosigner: {
+    signer: {
+      // Development only: the schema rejects it in production and staging,
+      // where signing goes through the secp256k1 KMS key below.
+      privateKey: process.env.CLOUD_COSIGNER_PRIVATE_KEY,
+      kms: {
+        keyId: process.env.CLOUD_COSIGNER_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.KMS_AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
+    },
+    reviewer: {
+      apiKey: process.env.CLOUD_COSIGNER_ANTHROPIC_API_KEY,
+      model: process.env.CLOUD_COSIGNER_MODEL || 'claude-opus-5',
+      maxTokens: Number.parseInt(
+        process.env.CLOUD_COSIGNER_MAX_TOKENS ?? `${16_000}`,
+        10,
+      ),
+      reviewTimeoutMs: Number.parseInt(
+        process.env.CLOUD_COSIGNER_REVIEW_TIMEOUT_MS ?? `${300_000}`,
+        10,
+      ),
+    },
+    defaultPolicy: {
+      valueThresholdUsd: Number.parseInt(
+        process.env.CLOUD_COSIGNER_DEFAULT_VALUE_THRESHOLD_USD ?? `${100_000}`,
+        10,
+      ),
+      reviewUnknownContracts:
+        process.env.CLOUD_COSIGNER_DEFAULT_REVIEW_UNKNOWN_CONTRACTS?.toLowerCase() !==
+        'false',
+    },
+    fiatCode: process.env.CLOUD_COSIGNER_FIAT_CODE || 'USD',
+    historyLookbackLimit: Number.parseInt(
+      process.env.CLOUD_COSIGNER_HISTORY_LOOKBACK_LIMIT ?? `${20}`,
+      10,
+    ),
+    policySignatureMaxAgeSeconds: Number.parseInt(
+      process.env.CLOUD_COSIGNER_POLICY_SIGNATURE_MAX_AGE_SECONDS ?? `${300}`,
+      10,
+    ),
+    rateLimit: {
+      max: Number.parseInt(
+        process.env.CLOUD_COSIGNER_RATE_LIMIT_MAX ?? `${60}`,
+        10,
+      ),
+      windowSeconds: Number.parseInt(
+        process.env.CLOUD_COSIGNER_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+        10,
+      ),
+    },
+    queue: {
+      removeOnComplete: {
+        age: Number.parseInt(
+          process.env.CLOUD_COSIGNER_QUEUE_REMOVE_ON_COMPLETE_AGE ?? `${3600}`,
+          10,
+        ),
+        count: Number.parseInt(
+          process.env.CLOUD_COSIGNER_QUEUE_REMOVE_ON_COMPLETE_COUNT ??
+            `${5000}`,
+          10,
+        ),
+      },
+      removeOnFail: {
+        age: Number.parseInt(
+          process.env.CLOUD_COSIGNER_QUEUE_REMOVE_ON_FAIL_AGE ?? `${43200}`,
+          10,
+        ),
+        count: Number.parseInt(
+          process.env.CLOUD_COSIGNER_QUEUE_REMOVE_ON_FAIL_COUNT ?? `${500}`,
+          10,
+        ),
+      },
+      backoff: {
+        type: process.env.CLOUD_COSIGNER_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: Number.parseInt(
+          process.env.CLOUD_COSIGNER_QUEUE_BACKOFF_DELAY ?? `${5000}`,
+          10,
+        ),
+      },
+      attempts: Number.parseInt(
+        process.env.CLOUD_COSIGNER_QUEUE_ATTEMPTS ?? `${3}`,
+        10,
+      ),
+      concurrency: Number.parseInt(
+        process.env.CLOUD_COSIGNER_QUEUE_CONCURRENCY ?? `${2}`,
+        10,
+      ),
+    },
   },
 });
 
