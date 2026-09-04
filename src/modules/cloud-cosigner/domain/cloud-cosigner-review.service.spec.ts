@@ -5,6 +5,7 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { JobType } from '@/datasources/job-queue/types/job-types';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -36,6 +37,7 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 
 const mockLoggingService = {
@@ -182,8 +184,8 @@ describe('CloudCosignerReviewService', () => {
     mockSigner.getAddress.mockResolvedValue(cosigner.address);
     mockSigner.signHash.mockImplementation((hash) => cosigner.sign({ hash }));
     mockSafeRepository.getSafe.mockResolvedValue(safe);
-    mockSafeRepository.clearMultisigTransaction.mockResolvedValue();
-    mockSafeRepository.addConfirmation.mockResolvedValue();
+    mockSafeRepository.clearMultisigTransaction.mockResolvedValue(undefined);
+    mockSafeRepository.addConfirmation.mockResolvedValue(undefined);
     mockSafeRepository.getMultisigTransactions.mockResolvedValue(
       pageBuilder<MultisigTransaction>()
         .with('count', 0)
@@ -191,7 +193,7 @@ describe('CloudCosignerReviewService', () => {
         .build(),
     );
     mockSafeRepository.getTransactionHistory.mockResolvedValue(
-      pageBuilder().with('results', []).build(),
+      pageBuilder<Transaction>().with('results', []).build(),
     );
     mockChainsRepository.getChain.mockResolvedValue(chain);
     mockBalancesRepository.getBalances.mockResolvedValue([]);
@@ -335,7 +337,7 @@ describe('CloudCosignerReviewService', () => {
         {
           owner: cosigner.address,
           signature: null,
-          signatureType: 'EOA',
+          signatureType: SignatureType.Eoa,
           submissionDate: faker.date.recent(),
           transactionHash: null,
         },

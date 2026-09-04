@@ -22,7 +22,13 @@ function analysis(
 function valuation(
   overrides: Partial<TransactionValuation> = {},
 ): TransactionValuation {
-  return { legs: [], knownFiatValue: 0, hasUnknownValue: false, ...overrides };
+  return {
+    legs: [],
+    isMultiSend: false,
+    knownFiatValue: 0,
+    hasUnknownValue: false,
+    ...overrides,
+  };
 }
 
 describe('evaluatePolicy', () => {
