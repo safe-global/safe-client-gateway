@@ -1,62 +1,39 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import type postgres from 'postgres';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
-import { TestDbFactory } from '@/__tests__/db.factory';
-import {
-  initTestApplication,
-  TestAppProvider,
-} from '@/__tests__/test-app.provider';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestBlocklistModule } from '@/config/entities/__tests__/test.blocklist.module';
-import { BlocklistModule } from '@/config/entities/blocklist.module';
-import { CosignerAppModule } from '@/cosigner-app.module';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
-import { TestPostgresDatabaseModule } from '@/datasources/db/__tests__/test.postgres-database.module';
-import { PostgresDatabaseModule } from '@/datasources/db/v1/postgres-database.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
-import { NetworkModule } from '@/datasources/network/network.module';
 import {
   type INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
-import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import {
+  bootCosignerTestApp,
+  type CosignerTestApp,
+} from '@/modules/cloud-cosigner/__tests__/cosigner-test-app';
 import { cloudCosignerPolicyBuilder } from '@/modules/cloud-cosigner/domain/entities/__tests__/cloud-cosigner-policy.builder';
+import type { CloudCosignerPolicy } from '@/modules/cloud-cosigner/domain/entities/cloud-cosigner-policy.entity';
 import { buildPolicyMessage } from '@/modules/cloud-cosigner/domain/utils/policy-message';
-import { TestQueuesApiModule } from '@/modules/queues/datasources/__tests__/test.queues-api.module';
-import { QueuesApiModule } from '@/modules/queues/datasources/queues-api.module';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 /**
- * Boots the cosigner deployable's own root module — not the gateway's
- * `AppModule` — against a migrated database, so a provider the module forgot
- * to import fails here rather than at deploy time.
+ * Drives the cosigner deployable's HTTP surface end to end: the module boots
+ * for real (see `bootCosignerTestApp`), only the upstream HTTP client is a
+ * double.
  */
 describe('CloudCosignerController (cosigner deployable)', () => {
+  let testApp: CosignerTestApp;
   let app: INestApplication<Server>;
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
   let cosignerAddress: `0x${string}`;
   let defaultValueThreshold: number;
-
-  const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
-  const testDbFactory = new TestDbFactory();
-  let testDatabase: postgres.Sql;
 
   const owner = privateKeyToAccount(generatePrivateKey());
   const chain = chainBuilder().with('chainId', '1').build();
@@ -77,61 +54,21 @@ describe('CloudCosignerController (cosigner deployable)', () => {
   }
 
   beforeAll(async () => {
-    testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
-
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      db: {
-        ...defaultConfiguration.db,
-        connection: {
-          ...defaultConfiguration.db.connection,
-          postgres: {
-            ...defaultConfiguration.db.connection.postgres,
-            database: testDatabaseName,
-          },
-        },
-      },
-    });
+    testApp = await bootCosignerTestApp();
+    app = testApp.app;
     cosignerAddress = privateKeyToAccount(
-      defaultConfiguration.cloudCosigner.signer.privateKey as `0x${string}`,
+      testApp.configuration.cloudCosigner.signer.privateKey as `0x${string}`,
     ).address;
     defaultValueThreshold =
-      defaultConfiguration.cloudCosigner.defaultPolicy.valueThresholdUsd;
-
-    const moduleFixture = await Test.createTestingModule({
-      imports: [CosignerAppModule.register(testConfiguration)],
-    })
-      .overrideProvider(CacheKeyPrefix)
-      .useValue(randomUUID())
-      .overrideModule(PostgresDatabaseModule)
-      .useModule(TestPostgresDatabaseModule)
-      .overrideModule(QueuesApiModule)
-      .useModule(TestQueuesApiModule)
-      .overrideModule(BlocklistModule)
-      .useModule(TestBlocklistModule)
-      .overrideModule(CacheModule)
-      .useModule(TestCacheModule)
-      .overrideModule(RequestScopedLoggingModule)
-      .useModule(TestLoggingModule)
-      .overrideModule(NetworkModule)
-      .useModule(TestNetworkModule)
-      .overrideModule(TxAuthNetworkModule)
-      .useModule(TestTxAuthNetworkModule)
-      .compile();
-
-    safeConfigUrl = moduleFixture
+      testApp.configuration.cloudCosigner.defaultPolicy.valueThresholdUsd;
+    safeConfigUrl = testApp.moduleFixture
       .get<IConfigurationService>(IConfigurationService)
       .getOrThrow('safeConfig.baseUri');
-    networkService = moduleFixture.get(NetworkService);
-
-    app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
+    networkService = testApp.moduleFixture.get(NetworkService);
   });
 
   afterAll(async () => {
-    await app?.close();
-    await testDbFactory.destroyTestDatabase(testDatabase);
+    await testApp?.destroy();
   });
 
   beforeEach(() => {
