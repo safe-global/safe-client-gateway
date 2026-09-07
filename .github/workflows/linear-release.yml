@@ -56,7 +56,7 @@ jobs:
           echo "Linear release ${RELEASE_TAG#v} (tag $RELEASE_TAG)"
 
       - name: Sync release to Linear
-        uses: linear/linear-release-action@0a25abab892a91062ebf42260dbb2ce6277aa205 # v0.16.0
+        uses: linear/linear-release-action@53ad0f863963e7f8e270fba18426bbb55ef55384 # v0.17.2
         with:
           access_key: ${{ secrets.LINEAR_ACCESS_KEY }}
           command: sync
