@@ -198,7 +198,7 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   entitlements: {
-    enforcementStartsAt: faker.date.future().toISOString(),
+    enforcementStartsAt: faker.date.future(),
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),

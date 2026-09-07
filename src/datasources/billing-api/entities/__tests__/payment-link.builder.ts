@@ -4,6 +4,9 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 
+// `trialPeriodDays` defaults to `null` — a paid link. The offer filter reads
+// it, so a random trial length would make every spec that builds a link depend
+// on which offer it happened to get.
 export function paymentLinkBuilder(): IBuilder<PaymentLink> {
   return new Builder<PaymentLink>()
     .with('id', faker.string.uuid())
@@ -26,5 +29,15 @@ export function paymentLinkBuilder(): IBuilder<PaymentLink> {
         },
         quantity: 1,
       },
-    ]);
+    ])
+    .with('trialPeriodDays', null);
+}
+
+/** A trial link tagged with the `gracePeriod` metadata `isOfferedToSpace` filters on. */
+export function trialPaymentLinkBuilder(
+  gracePeriod: boolean,
+): IBuilder<PaymentLink> {
+  return paymentLinkBuilder()
+    .with('trialPeriodDays', faker.number.int({ min: 1, max: 365 }))
+    .with('metadata', { gracePeriod: String(gracePeriod) });
 }

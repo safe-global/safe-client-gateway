@@ -17,9 +17,15 @@ import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
 } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
+import {
+  paymentLinkBuilder,
+  trialPaymentLinkBuilder,
+} from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import {
   type INetworkService,
@@ -41,6 +47,7 @@ describe('BillingController', () => {
   let networkService: MockedObject<INetworkService>;
   let billingBaseUri: string;
   let postLoginRedirectUri: string;
+  let fakeCacheService: FakeCacheService;
 
   beforeAll(async () => {
     vi.resetAllMocks();
@@ -53,6 +60,14 @@ describe('BillingController', () => {
         auth: true,
         users: true,
         billingService: true,
+      },
+      entitlements: {
+        ...defaultConfiguration.entitlements,
+        // In the past, so a workspace a spec creates now reads as
+        // post-enforcement and is offered the standard trial rather than the
+        // legacy grace. The shared default is a future date instead (safe for
+        // suites unrelated to billing: enforcement stays inactive).
+        enforcementStartsAt: new Date('2020-01-01T00:00:00Z'),
       },
       billing: {
         ...defaultConfiguration.billing,
@@ -84,6 +99,7 @@ describe('BillingController', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     networkService = moduleFixture.get(NetworkService);
+    fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -99,6 +115,7 @@ describe('BillingController', () => {
   afterEach(() => {
     networkService.get.mockReset();
     networkService.post.mockReset();
+    fakeCacheService.clear();
   });
 
   afterAll(async () => {
@@ -122,6 +139,32 @@ describe('BillingController', () => {
       .send({ name: nameBuilder() });
 
     return { accessToken, spaceId: createSpaceResponse.body.uuid };
+  }
+
+  /**
+   * Serves the payment-link catalog, split the way the datasource asks for it:
+   * `spaceSpecific` answers the customer-scoped call, `general` the shared one.
+   */
+  function mockPaymentLinkCatalog(args: {
+    general?: Array<PaymentLink>;
+    spaceSpecific?: Array<PaymentLink>;
+  }): void {
+    networkService.get.mockImplementation(({ url, networkRequest }) => {
+      if (url === `${billingBaseUri}/api/v1/payment-links`) {
+        const customerId = (
+          networkRequest?.params as { customerId?: string } | undefined
+        )?.customerId;
+        return Promise.resolve({
+          data: rawify({
+            paymentLinks: customerId
+              ? (args.spaceSpecific ?? [])
+              : (args.general ?? []),
+          }),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
   }
 
   it('should require authentication for every space/session/plan endpoint', () => {
@@ -248,24 +291,12 @@ describe('BillingController', () => {
       .with('id', sharedId)
       .with('active', false)
       .build();
-    const onlyGeneralLink = paymentLinkBuilder().build();
+    // A never-subscribed space is not offered a plain paid link
+    const onlyGeneralLink = trialPaymentLinkBuilder(false).build();
 
-    networkService.get.mockImplementation(({ url, networkRequest }) => {
-      if (url === `${billingBaseUri}/api/v1/payment-links`) {
-        const hasCustomerId = Boolean(
-          (networkRequest?.params as { customerId?: string } | undefined)
-            ?.customerId,
-        );
-        return Promise.resolve({
-          data: rawify({
-            paymentLinks: hasCustomerId
-              ? [spaceLink]
-              : [generalLink, onlyGeneralLink],
-          }),
-          status: 200,
-        });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
+    mockPaymentLinkCatalog({
+      general: [generalLink, onlyGeneralLink],
+      spaceSpecific: [spaceLink],
     });
 
     await request(app.getHttpServer())
@@ -283,7 +314,74 @@ describe('BillingController', () => {
       });
   });
 
+  it('GET /v1/billing/spaces/:spaceId/payment-links returns 403 without an access token', async () => {
+    const { spaceId } = await registerAndCreateSpace();
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .expect(403);
+
+    expect(networkService.get).not.toHaveBeenCalled();
+  });
+
+  it('GET /v1/billing/spaces/:spaceId/payment-links drops the offers the space is not entitled to', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    // The space is created now, and the test configuration's enforcement date
+    // is in the past, so it is a post-enforcement, never-subscribed
+    // workspace: only the standard trial — never the legacy grace, and no
+    // paid link until it has picked a plan.
+    const graceLink = trialPaymentLinkBuilder(true).build();
+    const trialLink = trialPaymentLinkBuilder(false).build();
+    const paidLink = paymentLinkBuilder().build();
+
+    mockPaymentLinkCatalog({ general: [graceLink, trialLink, paidLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.map((link: { id: string }) => link.id)).toEqual([
+          trialLink.id,
+        ]);
+      });
+  });
+
+  it('GET /v1/billing/spaces/:spaceId/payment-links always offers a space-specific link', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    // Negotiated for this customer, untagged: the general-catalog enforcement
+    // filter would drop it, but a space-specific link is not subject to it.
+    const negotiatedLink = paymentLinkBuilder()
+      .with('trialPeriodDays', faker.number.int({ min: 1, max: 365 }))
+      .build();
+
+    mockPaymentLinkCatalog({ spaceSpecific: [negotiatedLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.map((link: { id: string }) => link.id)).toEqual([
+          negotiatedLink.id,
+        ]);
+      });
+  });
+
   describe('GET /v1/billing/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url', () => {
+    it('returns 403 without an access token', async () => {
+      const { spaceId } = await registerAndCreateSpace();
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/payment-links/${faker.string.alphanumeric(20)}/checkout-url`,
+        )
+        .query({ returnUrl: postLoginRedirectUri })
+        .expect(403);
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
     it('returns 422 for a malformed paymentLinkId', async () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
 
@@ -314,6 +412,12 @@ describe('BillingController', () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
       const paymentLinkId = faker.string.alphanumeric(20);
       const checkoutSessionResult = checkoutSessionResultBuilder().build();
+      // The standard trial, which a post-enforcement never-subscribed space is
+      // offered — so the checkout is not rejected by the offer filter.
+      const offeredLink = trialPaymentLinkBuilder(false)
+        .with('id', paymentLinkId)
+        .build();
+      mockPaymentLinkCatalog({ general: [offeredLink] });
       networkService.post.mockImplementation(({ url }) => {
         if (
           url ===
@@ -337,6 +441,25 @@ describe('BillingController', () => {
         .expect(({ body }) => {
           expect(body.sessionId).toBe(checkoutSessionResult.sessionId);
         });
+    });
+
+    it('returns 403 for a payment link the space is not offered', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      // The legacy grace, which a space created now is not entitled to.
+      const graceLink = trialPaymentLinkBuilder(true)
+        .with('id', faker.string.alphanumeric(20))
+        .build();
+      mockPaymentLinkCatalog({ general: [graceLink] });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/payment-links/${graceLink.id}/checkout-url`,
+        )
+        .query({ returnUrl: postLoginRedirectUri })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(networkService.post).not.toHaveBeenCalled();
     });
   });
 
