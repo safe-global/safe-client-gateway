@@ -7,7 +7,7 @@ import type {
   NativeToken as DomainNativeToken,
 } from '@/modules/tokens/domain/entities/token.entity';
 
-class BaseToken {
+class BaseTokenMetadata {
   @ApiProperty()
   address!: Address;
   @ApiProperty()
@@ -26,20 +26,23 @@ class BaseToken {
 }
 
 export class NativeTokenMetadata
-  extends BaseToken
+  extends BaseTokenMetadata
   implements DomainNativeToken
 {
   @ApiProperty({ enum: ['NATIVE_TOKEN'] })
   type!: 'NATIVE_TOKEN';
 }
 
-export class Erc20TokenMetadata extends BaseToken implements DomainErc20Token {
+export class Erc20TokenMetadata
+  extends BaseTokenMetadata
+  implements DomainErc20Token
+{
   @ApiProperty({ enum: ['ERC20'] })
   type!: 'ERC20';
 }
 
 export class Erc721TokenMetadata
-  extends BaseToken
+  extends BaseTokenMetadata
   implements DomainErc721Token
 {
   @ApiProperty({ enum: ['ERC721'] })

@@ -50,13 +50,18 @@ export class TokensController {
     description:
       'Symbol, name, decimals, logo and trust flag of a token on the given chain, as known by the Transaction Service.',
   })
-  @ApiParam({ name: 'chainId', type: 'string', example: '1' })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID the token is deployed on',
+    example: '1',
+  })
   @ApiParam({
     name: 'address',
     type: 'string',
     description: 'Token contract address (0x prefixed hex string)',
   })
-  @ApiOkResponse({ schema: TOKEN_SCHEMA })
+  @ApiOkResponse({ schema: TOKEN_SCHEMA, description: 'Token metadata' })
   @ApiNotFoundResponse({
     description: 'The Transaction Service does not know this token',
   })
@@ -75,7 +80,12 @@ export class TokensController {
     summary: 'Get metadata for several tokens',
     description: `Metadata for up to ${MAX_TOKEN_ADDRESSES} tokens of one chain, in request order. Addresses the Transaction Service does not know are omitted.`,
   })
-  @ApiParam({ name: 'chainId', type: 'string', example: '1' })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID the token is deployed on',
+    example: '1',
+  })
   @ApiQuery({
     name: 'addresses',
     type: 'string',
@@ -83,7 +93,10 @@ export class TokensController {
     example:
       '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48,0xdAC17F958D2ee523a2206206994597C13D831ec7',
   })
-  @ApiOkResponse({ schema: { type: 'array', items: TOKEN_SCHEMA } })
+  @ApiOkResponse({
+    schema: { type: 'array', items: TOKEN_SCHEMA },
+    description: 'Token metadata for the known addresses, in request order',
+  })
   @ApiUnprocessableEntityResponse({
     description: `Invalid chain ID, malformed address, empty list or more than ${MAX_TOKEN_ADDRESSES} addresses`,
   })
