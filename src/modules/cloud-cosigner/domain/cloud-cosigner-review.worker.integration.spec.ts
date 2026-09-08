@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { getQueueToken } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
+import request from 'supertest';
 import { type Hex, recoverAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
@@ -98,7 +99,7 @@ describe('CloudCosignerReviewService (worker)', () => {
       .build();
   }
 
-  async function proposal(safe: Safe): Promise<MultisigTransaction> {
+  function proposal(safe: Safe): Promise<MultisigTransaction> {
     return multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
@@ -130,7 +131,7 @@ describe('CloudCosignerReviewService (worker)', () => {
     networkService.post.mockResolvedValue({ data: rawify({}), status: 201 });
   }
 
-  async function reviewFor(
+  function reviewFor(
     transaction: MultisigTransaction,
   ): Promise<CloudCosignerReview> {
     return vi.waitFor(
@@ -184,6 +185,47 @@ describe('CloudCosignerReviewService (worker)', () => {
       system: expect.stringContaining('cloud cosigner'),
       prompt: expect.stringContaining(transaction.safeTxHash),
     });
+  });
+
+  it('accepts the proposal through the authenticated webhook and ignores other events', async () => {
+    const safe = enrolledSafe();
+    const transaction = await proposal(safe);
+    mockUpstream(safe, transaction);
+    mockAnthropicApi.review.mockResolvedValue({
+      kind: 'verdict',
+      verdict: reviewVerdictBuilder().with('verdict', Verdict.APPROVE).build(),
+      model: 'claude-opus-5',
+    });
+    const authToken = testApp.moduleFixture
+      .get<IConfigurationService>(IConfigurationService)
+      .getOrThrow<string>('auth.token');
+    const event = {
+      type: 'PENDING_MULTISIG_TRANSACTION',
+      chainId: chain.chainId,
+      address: safe.address,
+      to: transaction.to,
+      safeTxHash: transaction.safeTxHash,
+    };
+
+    await request(testApp.app.getHttpServer())
+      .post('/v1/cloud-cosigner/hooks/events')
+      .send(event)
+      .expect(403);
+    await request(testApp.app.getHttpServer())
+      .post('/v1/cloud-cosigner/hooks/events')
+      .set('Authorization', `Basic ${authToken}`)
+      .send({ ...event, type: 'NEW_CONFIRMATION', owner: safe.owners[0] })
+      .expect(202);
+    await request(testApp.app.getHttpServer())
+      .post('/v1/cloud-cosigner/hooks/events')
+      .set('Authorization', `Basic ${authToken}`)
+      .send(event)
+      .expect(202);
+
+    const review = await reviewFor(transaction);
+
+    expect(review.status).toBe(ReviewStatus.APPROVED);
+    expect(networkService.post).toHaveBeenCalledTimes(1);
   });
 
   it('withholds the signature when the model rejects', async () => {

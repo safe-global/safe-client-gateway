@@ -31,6 +31,7 @@ import { LocalCosignerSigner } from '@/modules/cloud-cosigner/domain/signers/loc
 import { TransactionReviewer } from '@/modules/cloud-cosigner/domain/transaction-reviewer.service';
 import { CloudCosignerController } from '@/modules/cloud-cosigner/routes/cloud-cosigner.controller';
 import { CloudCosignerService } from '@/modules/cloud-cosigner/routes/cloud-cosigner.service';
+import { CloudCosignerHooksController } from '@/modules/cloud-cosigner/routes/cloud-cosigner-hooks.controller';
 import { CloudCosignerRateLimitGuard } from '@/modules/cloud-cosigner/routes/guards/cloud-cosigner-rate-limit.guard';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
 import { QueuesRepositoryModule } from '@/modules/queues/domain/queues-repository.interface';
@@ -69,7 +70,7 @@ const hasKmsSigner = !!configuration().cloudCosigner.signer.kms.keyId;
     BalancesModule,
     DataDecoderModule,
   ],
-  controllers: [CloudCosignerController],
+  controllers: [CloudCosignerController, CloudCosignerHooksController],
   providers: [
     {
       provide: IJobQueueService,

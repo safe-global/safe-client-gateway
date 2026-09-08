@@ -4,6 +4,7 @@ import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ICloudCosignerRepository } from '@/modules/cloud-cosigner/domain/cloud-cosigner.repository.interface';
 import type { CloudCosignerPolicyService } from '@/modules/cloud-cosigner/domain/cloud-cosigner-policy.service';
+import type { CloudCosignerReviewService } from '@/modules/cloud-cosigner/domain/cloud-cosigner-review.service';
 import {
   cloudCosignerPolicyBuilder,
   safeCloudCosignerPolicyBuilder,
@@ -22,8 +23,20 @@ const mockRepository = {
   getReview: vi.fn(),
 } as unknown as MockedObject<ICloudCosignerRepository>;
 
+const mockReviewService = {
+  enqueueEvent: vi.fn(),
+} as unknown as MockedObject<CloudCosignerReviewService>;
+
 describe('CloudCosignerService (routes)', () => {
-  const service = new CloudCosignerService(mockPolicyService, mockRepository);
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const service = new CloudCosignerService(
+    mockPolicyService,
+    mockRepository,
+    mockReviewService,
+  );
 
   it('should return the cosigner address and default policy', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
@@ -85,6 +98,35 @@ describe('CloudCosignerService (routes)', () => {
       riskFlags: review.riskFlags,
       model: review.model,
       reviewedAt: review.updatedAt.toISOString(),
+    });
+  });
+
+  describe('onEvent', () => {
+    it('should queue a pending multisig transaction event', async () => {
+      const event = {
+        type: 'PENDING_MULTISIG_TRANSACTION',
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+        safeTxHash: faker.string.hexadecimal({ length: 64 }) as Hex,
+      };
+      mockReviewService.enqueueEvent.mockResolvedValue(undefined);
+
+      await service.onEvent(event);
+
+      expect(mockReviewService.enqueueEvent).toHaveBeenCalledExactlyOnceWith(
+        event,
+      );
+    });
+
+    it('should ignore every other event type', async () => {
+      await service.onEvent({
+        type: 'NEW_CONFIRMATION',
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+        safeTxHash: faker.string.hexadecimal({ length: 64 }) as Hex,
+      });
+
+      expect(mockReviewService.enqueueEvent).not.toHaveBeenCalled();
     });
   });
 

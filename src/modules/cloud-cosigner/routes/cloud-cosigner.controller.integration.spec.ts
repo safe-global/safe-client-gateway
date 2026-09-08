@@ -17,7 +17,6 @@ import {
   type CosignerTestApp,
 } from '@/modules/cloud-cosigner/__tests__/cosigner-test-app';
 import { cloudCosignerPolicyBuilder } from '@/modules/cloud-cosigner/domain/entities/__tests__/cloud-cosigner-policy.builder';
-import type { CloudCosignerPolicy } from '@/modules/cloud-cosigner/domain/entities/cloud-cosigner-policy.entity';
 import { buildPolicyMessage } from '@/modules/cloud-cosigner/domain/utils/policy-message';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '@/validation/entities/raw.entity';

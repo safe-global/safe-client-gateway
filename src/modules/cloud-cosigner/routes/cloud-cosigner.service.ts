@@ -5,6 +5,9 @@ import type { z } from 'zod';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { ICloudCosignerRepository } from '@/modules/cloud-cosigner/domain/cloud-cosigner.repository.interface';
 import { CloudCosignerPolicyService } from '@/modules/cloud-cosigner/domain/cloud-cosigner-policy.service';
+import { CloudCosignerReviewService } from '@/modules/cloud-cosigner/domain/cloud-cosigner-review.service';
+import { PendingTransactionEventSchema } from '@/modules/cloud-cosigner/domain/entities/pending-transaction-event.entity';
+import type { CloudCosignerHookEvent } from '@/modules/cloud-cosigner/routes/entities/cloud-cosigner-hook-event.dto.entity';
 import type {
   CloudCosignerInfoDto,
   SafeCloudCosignerStatusDto,
@@ -22,7 +25,20 @@ export class CloudCosignerService {
     private readonly policyService: CloudCosignerPolicyService,
     @Inject(ICloudCosignerRepository)
     private readonly cloudCosignerRepository: ICloudCosignerRepository,
+    @Inject(CloudCosignerReviewService)
+    private readonly reviewService: CloudCosignerReviewService,
   ) {}
+
+  /**
+   * Webhook intake: the same filter the AMQP subscriber applies, so both
+   * ingress paths queue exactly the proposal events.
+   */
+  public async onEvent(event: CloudCosignerHookEvent): Promise<void> {
+    const pending = PendingTransactionEventSchema.safeParse(event);
+    if (pending.success) {
+      await this.reviewService.enqueueEvent(pending.data);
+    }
+  }
 
   public async getInfo(): Promise<CloudCosignerInfoDto> {
     return {

@@ -61,3 +61,4 @@ Confirmations go through `ISafeRepository.addConfirmation`, i.e. the same
 | `GET /v1/chains/:chainId/safes/:safeAddress/cloud-cosigner` | Whether the cosigner is an owner, and the effective policy. |
 | `PUT /v1/chains/:chainId/safes/:safeAddress/cloud-cosigner/policy` | Store a policy; body carries an EIP-191 owner signature over `buildPolicyMessage(...)`. |
 | `GET /v1/chains/:chainId/safes/:safeAddress/cloud-cosigner/reviews/:safeTxHash` | Verdict and reasoning for one proposal. |
+| `POST /v1/cloud-cosigner/hooks/events` | Webhook intake for Transaction Service events (`Authorization: Basic <AUTH_TOKEN>`); queues a review for `PENDING_MULTISIG_TRANSACTION`, ignores other types. Alternative to the AMQP subscription for local or single-instance setups. |
