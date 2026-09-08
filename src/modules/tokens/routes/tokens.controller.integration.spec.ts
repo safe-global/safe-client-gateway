@@ -84,7 +84,9 @@ describe('Tokens controller', () => {
           new NetworkResponseError(new URL(url), { status: 404 } as Response),
         );
       }
-      return Promise.reject(`No matching rule for url: ${url}`);
+      return Promise.reject(
+        new NetworkResponseError(new URL(url), { status: 418 } as Response),
+      );
     });
   };
 
@@ -168,6 +170,8 @@ describe('Tokens controller', () => {
         .query({ addresses: `${token.address},${token.address.toLowerCase()}` })
         .expect(200)
         .expect([token]);
+      // R-005 exception: the same mock also serves the chain-config call, so
+      // toHaveBeenCalledTimes cannot express "the token URL was requested once".
       expect(
         networkService.get.mock.calls.filter(
           ([{ url }]) => url === tokenUrl(chain, token.address),
@@ -238,7 +242,9 @@ describe('Tokens controller', () => {
             new NetworkResponseError(new URL(url), { status: 503 } as Response),
           );
         }
-        return Promise.reject(`No matching rule for url: ${url}`);
+        return Promise.reject(
+          new NetworkResponseError(new URL(url), { status: 418 } as Response),
+        );
       });
 
       await request(app.getHttpServer())

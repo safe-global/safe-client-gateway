@@ -99,6 +99,39 @@ describe('TokensService', () => {
       ).rejects.toBe(error);
     });
 
+    it('propagates the failure at the lower request index when two requests fail', async () => {
+      const addresses = Array.from({ length: 3 }, () =>
+        getAddress(faker.finance.ethereumAddress()),
+      );
+      const token = erc20TokenBuilder().build();
+      const firstError = new DataSourceError(
+        'Service unavailable',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+      const secondError = new DataSourceError(
+        'Internal error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+      tokenRepository.getToken.mockImplementation(({ address }) => {
+        if (address === addresses[0]) {
+          // Settles after the index-2 rejection below: Promise.allSettled
+          // preserves request order regardless of which promise settles
+          // first, so the index-0 error must still be the one that propagates.
+          return new Promise((_, reject) =>
+            setTimeout(() => reject(firstError), 10),
+          );
+        }
+        if (address === addresses[2]) {
+          return Promise.reject(secondError);
+        }
+        return Promise.resolve(token);
+      });
+
+      await expect(service.getTokens({ chainId, addresses })).rejects.toBe(
+        firstError,
+      );
+    });
+
     it('propagates a non-DataSourceError failure as an Error', async () => {
       tokenRepository.getToken.mockRejectedValue(new Error('boom'));
 

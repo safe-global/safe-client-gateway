@@ -34,6 +34,7 @@ describe('TokenAddressesSchema', () => {
 
     const result = TokenAddressesSchema.safeParse(`${address},${address}`);
 
+    expect(result.success).toBe(true);
     expect(result.data).toHaveLength(2);
   });
 
