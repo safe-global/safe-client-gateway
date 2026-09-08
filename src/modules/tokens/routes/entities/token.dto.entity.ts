@@ -25,17 +25,23 @@ class BaseToken {
   trusted!: boolean;
 }
 
-export class NativeToken extends BaseToken implements DomainNativeToken {
+export class NativeTokenMetadata
+  extends BaseToken
+  implements DomainNativeToken
+{
   @ApiProperty({ enum: ['NATIVE_TOKEN'] })
   type!: 'NATIVE_TOKEN';
 }
 
-export class Erc20Token extends BaseToken implements DomainErc20Token {
+export class Erc20TokenMetadata extends BaseToken implements DomainErc20Token {
   @ApiProperty({ enum: ['ERC20'] })
   type!: 'ERC20';
 }
 
-export class Erc721Token extends BaseToken implements DomainErc721Token {
+export class Erc721TokenMetadata
+  extends BaseToken
+  implements DomainErc721Token
+{
   @ApiProperty({ enum: ['ERC721'] })
   type!: 'ERC721';
 }
