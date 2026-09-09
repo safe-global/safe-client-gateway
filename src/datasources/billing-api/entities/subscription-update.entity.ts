@@ -12,7 +12,6 @@ export type PreviewLineItem = z.infer<typeof PreviewLineItemSchema>;
 
 export const PreviewLineItemSchema = z.object({
   description: z.string(),
-  /** Signed minor units: negative for credit on unused time. */
   amount: z.number(),
   currency: z.string(),
 });
@@ -24,7 +23,6 @@ export type SubscriptionUpdatePreview = z.infer<
 export const SubscriptionUpdatePreviewSchema = z.object({
   amountDue: z.number(),
   currency: z.string(),
-  /** Unix seconds, as everywhere else on a subscription. */
   nextBillingDate: z.number(),
   lineItems: z.array(PreviewLineItemSchema),
 });
