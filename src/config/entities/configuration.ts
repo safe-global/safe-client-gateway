@@ -365,10 +365,6 @@ export default () => ({
       },
     },
   },
-  entitlements: {
-    enforcementStartsAt:
-      process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT ?? '2099-01-01T00:00:00Z',
-  },
   expirationTimeInSeconds: {
     deviatePercent: Number.parseInt(
       process.env.EXPIRATION_DEVIATE_PERCENT ?? `${10}`,
@@ -556,6 +552,12 @@ export default () => ({
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
+  },
+  entitlements: {
+    // When enforcement goes live; workspaces created before it predate it.
+    enforcementStartsAt: parseEnforcementStartsAt(
+      process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT,
+    ),
   },
   billing: {
     baseUri:
@@ -1064,6 +1066,17 @@ export default () => ({
     secretKey: process.env.CAPTCHA_SECRET_KEY,
   },
 });
+
+// An Invalid Date here would read as "enforcement off, grace for everyone",
+// so it fails loudly instead. RootConfigurationSchema does not cover this:
+// configuration.validator skips validation entirely under NODE_ENV=test.
+const parseEnforcementStartsAt = (envValue: string | undefined): Date => {
+  const startsAt = new Date(envValue ?? '2099-01-01T00:00:00Z');
+  if (Number.isNaN(startsAt.getTime())) {
+    throw Error('ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date');
+  }
+  return startsAt;
+};
 
 // Helper function to parse relay rules from environment variable
 const parseRelayRules = (
