@@ -72,8 +72,7 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChain(chainId: string): Promise<Raw<Chain>> {
-    // An empty chainId would hit the chain collection endpoint, whose page payload
-    // fails Chain validation and cache-poisons the key `_chain`.
+    // Empty chainId hits the chain collection endpoint and cache-poisons the key '_chain'.
     if (!chainId) {
       throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
     }

@@ -482,22 +482,6 @@ describe('Messages controller', () => {
         });
     });
 
-    it('Returns 422 without any upstream call if chainId is empty', async () => {
-      const message = messageBuilder().build();
-
-      await request(app.getHttpServer())
-        .get(`/v1/chains//messages/${message.messageHash}`)
-        .expect(422)
-        .expect({
-          statusCode: 422,
-          code: 'custom',
-          message: 'Invalid base-10 numeric string',
-          path: [],
-        });
-
-      expect(networkService.get).not.toHaveBeenCalled();
-    });
-
     // Every route on this controller takes chainId; an empty one must be rejected
     // before any upstream call. POST bodies are valid so chainId is the failing pipe.
     it.each([

@@ -148,10 +148,10 @@ export class MessagesController {
   @ApiBadRequestResponse({
     description: 'Invalid message format or signature',
   })
-  @HttpCode(202)
   @ApiUnprocessableEntityResponse({
     description: 'Invalid chainId, safeAddress or request body',
   })
+  @HttpCode(202)
   @Post('chains/:chainId/safes/:safeAddress/messages')
   createMessage(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -196,10 +196,10 @@ export class MessagesController {
   @ApiBadRequestResponse({
     description: 'Invalid signature or signer not authorized',
   })
-  @HttpCode(200)
   @ApiUnprocessableEntityResponse({
     description: 'Invalid chainId, messageHash or request body',
   })
+  @HttpCode(200)
   @Post('chains/:chainId/messages/:messageHash/signatures')
   updateMessageSignature(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
