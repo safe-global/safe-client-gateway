@@ -2,10 +2,13 @@
 
 import { faker } from '@faker-js/faker';
 import {
+  BadGatewayException,
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
@@ -15,11 +18,17 @@ import {
 } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
 import {
   paymentLinkBuilder,
+  paymentLinkPricedAt,
   trialPaymentLinkBuilder,
 } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+import {
+  subscriptionUpdatePreviewBuilder,
+  updateSubscriptionResultBuilder,
+} from '@/datasources/billing-api/entities/__tests__/subscription-update.builder';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
 import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import {
@@ -28,14 +37,17 @@ import {
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import { planNameOf } from '@/modules/billing/domain/payment-link-offer.rules';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 const billingApiMock = {
   listPlans: vi.fn(),
@@ -46,6 +58,8 @@ const billingApiMock = {
   listPaymentLinks: vi.fn(),
   createCheckoutSession: vi.fn(),
   getCheckoutSession: vi.fn(),
+  previewSubscriptionUpdate: vi.fn(),
+  updateSubscription: vi.fn(),
 } as MockedObject<IBillingApi>;
 
 const membersRepositoryMock = {
@@ -680,6 +694,464 @@ describe('BillingService', () => {
       expect(billingApiMock.getCheckoutSession).toHaveBeenCalledWith({
         sessionId,
       });
+    });
+  });
+
+  /**
+   * A subscribed workspace, offered a paid link priced at `planId`. Neither
+   * plan-change endpoint is reachable without all three.
+   */
+  function subscribedSpace(args?: { planId?: string }): {
+    spaceId: Space['id'];
+    spaceUuid: Space['uuid'];
+    planId: string;
+    paymentLink: PaymentLink;
+    subscription: Subscription;
+  } {
+    const planId = args?.planId ?? faker.string.alphanumeric(32);
+    const paymentLink = paymentLinkPricedAt(planId).build();
+    const subscription = subscriptionBuilder().with('status', 'active').build();
+
+    subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+      // A paid link is only offered to a space that has subscribed before.
+      hasEverSubscribed: true,
+      activePlanName: null,
+    });
+    mockCatalog([paymentLink]);
+    billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue([
+      subscription,
+    ]);
+
+    return {
+      spaceId: faker.number.int(),
+      spaceUuid: fakeUuid(),
+      planId,
+      paymentLink,
+      subscription,
+    };
+  }
+
+  describe('previewSubscriptionUpdate', () => {
+    it('should return the preview for a space member', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const preview = subscriptionUpdatePreviewBuilder().build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      billingApiMock.previewSubscriptionUpdate.mockResolvedValue(preview);
+
+      const result = await service.previewSubscriptionUpdate({
+        spaceId,
+        spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        authPayload,
+      });
+
+      expect(result).toBe(preview);
+      expect(billingApiMock.previewSubscriptionUpdate).toHaveBeenCalledWith({
+        upstreamCustomerId: spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+      });
+    });
+
+    it('should throw when the user is not a space member', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.previewSubscriptionUpdate({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(billingApiMock.previewSubscriptionUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the plan is not offered to the space', async () => {
+      const { spaceId, spaceUuid, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+
+      await expect(
+        service.previewSubscriptionUpdate({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId: faker.string.alphanumeric(32),
+          authPayload,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(billingApiMock.previewSubscriptionUpdate).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the subscription does not belong to the space', async () => {
+      const { spaceId, spaceUuid, planId } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+
+      await expect(
+        service.previewSubscriptionUpdate({
+          spaceId,
+          spaceUuid,
+          subscriptionId: faker.string.alphanumeric(32),
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(billingApiMock.previewSubscriptionUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateSubscription', () => {
+    // `assertMember` only checks that the lookup returns a row.
+    function asMember(): void {
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+    }
+
+    it('should move the subscription onto the plan, sourcing metadata from the offered link', async () => {
+      const { spaceId, spaceUuid, planId, paymentLink, subscription } =
+        subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const updateResult = updateSubscriptionResultBuilder().build();
+      asMember();
+      billingApiMock.updateSubscription.mockResolvedValue(updateResult);
+
+      const result = await service.updateSubscription({
+        spaceId,
+        spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        authPayload,
+      });
+
+      expect(result).toBe(updateResult);
+      expect(billingApiMock.updateSubscription).toHaveBeenCalledWith({
+        upstreamCustomerId: spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        // Derived, never taken from the caller.
+        paymentLinkId: paymentLink.id,
+      });
+    });
+
+    it('should throw when the user is not a space member', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when not authenticated', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload: new AuthPayload(),
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the plan is not offered to the space', async () => {
+      const { spaceId, spaceUuid, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId: faker.string.alphanumeric(32),
+          authPayload,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the subscription does not belong to the space', async () => {
+      const { spaceId, spaceUuid, planId } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: faker.string.alphanumeric(32),
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the workspace is already on the target plan', async () => {
+      const planId = faker.string.alphanumeric(32);
+      const { spaceId, spaceUuid, subscription } = subscribedSpace({ planId });
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+      // The price in force is the one being asked for.
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue([
+        {
+          ...subscription,
+          plan: { ...subscription.plan, id: planId },
+        },
+      ]);
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it.each(['canceled', 'past_due', 'paused', 'unpaid'] as const)(
+      'should throw when the subscription is %s rather than active',
+      async (status) => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        asMember();
+        billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue([
+          { ...subscription, status },
+        ]);
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            authPayload,
+          }),
+        ).rejects.toThrow(ConflictException);
+
+        expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should honour an explicit paymentLinkId that sells the plan', async () => {
+      const { spaceId, spaceUuid, planId, paymentLink, subscription } =
+        subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const updateResult = updateSubscriptionResultBuilder().build();
+      asMember();
+      billingApiMock.updateSubscription.mockResolvedValue(updateResult);
+
+      await service.updateSubscription({
+        spaceId,
+        spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        paymentLinkId: paymentLink.id,
+        authPayload,
+      });
+
+      expect(billingApiMock.updateSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentLinkId: paymentLink.id }),
+      );
+    });
+
+    it('should throw when the named paymentLinkId does not sell the plan', async () => {
+      const { spaceId, spaceUuid, planId, paymentLink, subscription } =
+        subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      // Offered to the space, but priced at another plan.
+      const otherLink = paymentLinkPricedAt(
+        faker.string.alphanumeric(32),
+      ).build();
+      mockCatalog([paymentLink, otherLink]);
+      asMember();
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          paymentLinkId: otherLink.id,
+          authPayload,
+        }),
+      ).rejects.toThrow(UnprocessableEntityException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the named paymentLinkId is not offered to the space', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          // A link that is in no catalog at all.
+          paymentLinkId: faker.string.alphanumeric(32),
+          authPayload,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      // Never quietly swapped for the link that does sell the plan.
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when several offered links sell the plan and none was named', async () => {
+      const planId = faker.string.alphanumeric(32);
+      const { spaceId, spaceUuid, paymentLink, subscription } = subscribedSpace(
+        { planId },
+      );
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      // A second link at the same price, with its own metadata.
+      const negotiatedLink = paymentLinkPricedAt(planId).build();
+      mockCatalog([paymentLink, negotiatedLink]);
+      asMember();
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(loggingServiceMock.error).toHaveBeenCalled();
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should let an explicit paymentLinkId break that tie', async () => {
+      const planId = faker.string.alphanumeric(32);
+      const { spaceId, spaceUuid, paymentLink, subscription } = subscribedSpace(
+        { planId },
+      );
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const negotiatedLink = paymentLinkPricedAt(planId).build();
+      const updateResult = updateSubscriptionResultBuilder().build();
+      mockCatalog([paymentLink, negotiatedLink]);
+      asMember();
+      billingApiMock.updateSubscription.mockResolvedValue(updateResult);
+
+      await service.updateSubscription({
+        spaceId,
+        spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        paymentLinkId: negotiatedLink.id,
+        authPayload,
+      });
+
+      expect(billingApiMock.updateSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentLinkId: negotiatedLink.id }),
+      );
+    });
+
+    it('should answer 409, not 403, when the plan in force is filtered out of the offer', async () => {
+      const planId = faker.string.alphanumeric(32);
+      const { spaceId, spaceUuid, paymentLink, subscription } = subscribedSpace(
+        { planId },
+      );
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+      // `isOfferedToSpace` drops the link whose plan the space already holds.
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: planNameOf(paymentLink),
+      });
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue([
+        { ...subscription, plan: { ...subscription.plan, id: planId } },
+      ]);
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(billingApiMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the upstream reports the change as unsuccessful', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+      billingApiMock.updateSubscription.mockResolvedValue(
+        updateSubscriptionResultBuilder().with('success', false).build(),
+      );
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(BadGatewayException);
+
+      expect(loggingServiceMock.error).toHaveBeenCalled();
+    });
+
+    it('should allow a trialing subscription to change plan', async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const updateResult = updateSubscriptionResultBuilder().build();
+      asMember();
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue([
+        { ...subscription, status: 'trialing' },
+      ]);
+      billingApiMock.updateSubscription.mockResolvedValue(updateResult);
+
+      const result = await service.updateSubscription({
+        spaceId,
+        spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        authPayload,
+      });
+
+      expect(result).toBe(updateResult);
     });
   });
 });

@@ -21,9 +21,22 @@ import type {
   SubscriptionStatusFilter,
 } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionSchema } from '@/datasources/billing-api/entities/subscription.entity';
+import type {
+  SubscriptionUpdatePreview,
+  UpdateSubscriptionResult,
+} from '@/datasources/billing-api/entities/subscription-update.entity';
+import {
+  DEFAULT_PRORATION_BEHAVIOR,
+  SubscriptionUpdatePreviewSchema,
+  UpdateSubscriptionResultSchema,
+} from '@/datasources/billing-api/entities/subscription-update.entity';
 import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '@/datasources/cache/cache.service.interface';
 import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
@@ -32,6 +45,10 @@ import {
   NetworkService,
 } from '@/datasources/network/network.service.interface';
 import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
 
 @Injectable()
 export class BillingApi implements IBillingApi {
@@ -49,6 +66,10 @@ export class BillingApi implements IBillingApi {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {
     this.baseUri =
       this.configurationService.getOrThrow<string>('billing.baseUri');
@@ -99,7 +120,7 @@ export class BillingApi implements IBillingApi {
   getCustomer(args: { upstreamCustomerId: string }): Promise<Customer> {
     return this.request({
       cacheDir: CacheRouter.getBillingCustomerCacheDir(args.upstreamCustomerId),
-      url: `${this.baseUri}/api/v1/customers/${stripDashes(args.upstreamCustomerId)}`,
+      url: this.customerUrl(args.upstreamCustomerId),
       schema: z
         .object({ customer: CustomerSchema })
         .transform((body) => body.customer),
@@ -113,7 +134,7 @@ export class BillingApi implements IBillingApi {
     returnUrl: string;
   }): Promise<string> {
     const url = new URL(
-      `${this.baseUri}/api/v1/customers/${stripDashes(args.upstreamCustomerId)}/session-url`,
+      `${this.customerUrl(args.upstreamCustomerId)}/session-url`,
     );
     url.searchParams.set('returnUrl', args.returnUrl);
 
@@ -146,7 +167,7 @@ export class BillingApi implements IBillingApi {
         upstreamCustomerId: args.upstreamCustomerId,
         status: args.status ?? 'all',
       }),
-      url: `${this.baseUri}/api/v1/customers/${stripDashes(args.upstreamCustomerId)}/subscriptions`,
+      url: `${this.customerUrl(args.upstreamCustomerId)}/subscriptions`,
       params: args.status ? { status: args.status } : undefined,
       schema: z
         .object({ subscriptions: z.array(SubscriptionSchema) })
@@ -210,6 +231,87 @@ export class BillingApi implements IBillingApi {
         .then(({ data }) => data),
       CheckoutSessionSchema,
     );
+  }
+
+  /** Not cached: a live proration quote, valid only for the moment it is asked. */
+  previewSubscriptionUpdate(args: {
+    upstreamCustomerId: string;
+    subscriptionId: string;
+    planId: string;
+  }): Promise<SubscriptionUpdatePreview> {
+    return this.parse(
+      this.networkService
+        .get<SubscriptionUpdatePreview>({
+          url: `${this.subscriptionUrl(args)}/preview-update`,
+          networkRequest: {
+            headers: this.authHeaders,
+            params: {
+              planId: args.planId,
+              prorationBehavior: DEFAULT_PRORATION_BEHAVIOR,
+            },
+            timeout: this.requestTimeout,
+          },
+        })
+        .then(({ data }) => data),
+      SubscriptionUpdatePreviewSchema,
+    );
+  }
+
+  async updateSubscription(args: {
+    upstreamCustomerId: string;
+    subscriptionId: string;
+    planId: string;
+    paymentLinkId: string;
+  }): Promise<UpdateSubscriptionResult> {
+    return await this.parse(
+      this.networkService
+        .patch<UpdateSubscriptionResult>({
+          url: this.subscriptionUrl(args),
+          data: {
+            planId: args.planId,
+            // The upstream copies this link's metadata onto the subscription,
+            // and the entitlements are derived from that metadata.
+            paymentLinkId: args.paymentLinkId,
+            prorationBehavior: DEFAULT_PRORATION_BEHAVIOR,
+          },
+          networkRequest: {
+            headers: this.authHeaders,
+            timeout: this.requestTimeout,
+          },
+        })
+        // Before parsing, not after: the change is applied whatever the body
+        // turns out to be. Best-effort, so a cache failure cannot make the
+        // client retry it — a retried change is a second proration.
+        .then(async ({ data }) => {
+          await this.clearSubscriptions(args).catch(() => {
+            this.loggingService.warn(
+              'Failed to clear the billing subscriptions cache after a plan change',
+            );
+          });
+          return data;
+        }),
+      UpdateSubscriptionResultSchema,
+    );
+  }
+
+  /** The whole key: the subscription may be listed under any cached filter. */
+  async clearSubscriptions(args: {
+    upstreamCustomerId: string;
+  }): Promise<void> {
+    await this.cacheService.deleteByKey(
+      CacheRouter.getBillingSubscriptionsCacheKey(args.upstreamCustomerId),
+    );
+  }
+
+  private customerUrl(upstreamCustomerId: string): string {
+    return `${this.baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}`;
+  }
+
+  private subscriptionUrl(args: {
+    upstreamCustomerId: string;
+    subscriptionId: string;
+  }): string {
+    return `${this.customerUrl(args.upstreamCustomerId)}/subscriptions/${encodeURIComponent(args.subscriptionId)}`;
   }
 
   private request<T>(args: {

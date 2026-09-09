@@ -1226,12 +1226,16 @@ export class CacheRouter {
     );
   }
 
+  static getBillingSubscriptionsCacheKey(upstreamCustomerId: string): string {
+    return `${upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`;
+  }
+
   static getBillingSubscriptionsCacheDir(args: {
     upstreamCustomerId: string;
     status: SubscriptionStatusFilter;
   }): CacheDir {
     return new CacheDir(
-      `${args.upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`,
+      CacheRouter.getBillingSubscriptionsCacheKey(args.upstreamCustomerId),
       args.status,
     );
   }

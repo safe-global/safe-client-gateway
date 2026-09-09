@@ -1,12 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadGatewayException,
+  ConflictException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+  NotFoundException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import type {
   Subscription,
+  SubscriptionStatus,
   SubscriptionStatusFilter,
 } from '@/datasources/billing-api/entities/subscription.entity';
+import type {
+  SubscriptionUpdatePreview,
+  UpdateSubscriptionResult,
+} from '@/datasources/billing-api/entities/subscription-update.entity';
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
@@ -22,6 +35,7 @@ import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-lin
 import {
   isOfferedToSpace,
   isUnclassifiedTrialLink,
+  offersPlan,
 } from '@/modules/billing/domain/payment-link-offer.rules';
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
@@ -34,6 +48,16 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+
+/**
+ * Statuses whose plan the upstream will move. Not
+ * `ACTIVE_SUBSCRIPTION_STATUSES`, which is frozen in lockstep with the
+ * `UQ_subscriptions_active_space` index — same two values, different reason.
+ */
+const UPDATABLE_SUBSCRIPTION_STATUSES: ReadonlyArray<SubscriptionStatus> = [
+  'active',
+  'trialing',
+];
 
 @Injectable()
 export class BillingService {
@@ -143,6 +167,115 @@ export class BillingService {
   }
 
   /**
+   * What moving this subscription onto `planId` would cost right now.
+   *
+   * Rejects for the same reasons as the PATCH, bar one: it does not require an
+   * updatable subscription. The upstream quotes a canceled one just the same,
+   * and refusing would hide the number a client needs to explain why the
+   * change is unavailable.
+   */
+  public async previewSubscriptionUpdate(args: {
+    spaceId: Space['id'];
+    spaceUuid: Space['uuid'];
+    subscriptionId: string;
+    planId: string;
+    authPayload: AuthPayload;
+  }): Promise<SubscriptionUpdatePreview> {
+    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    // No link is resolved: the upstream preview takes only the price, so a tie
+    // between several links offering it cannot matter here.
+    const [offeredLinks, subscription] = await Promise.all([
+      this.listOfferedPaymentLinks(args),
+      this.findOwnedSubscription(args),
+    ]);
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+    // Before the offer check, as in the PATCH: the offer filter drops the link
+    // for the plan in force, so it would answer "not available" instead.
+    if (subscription.plan.id === args.planId) {
+      throw new ConflictException('The workspace is already on this plan');
+    }
+    if (!offeredLinks.some((link) => offersPlan(link, args.planId))) {
+      throw new ForbiddenException(
+        'This plan is not available for this workspace',
+      );
+    }
+
+    return await this.billingApi.previewSubscriptionUpdate({
+      upstreamCustomerId: args.spaceUuid,
+      subscriptionId: args.subscriptionId,
+      planId: args.planId,
+    });
+  }
+
+  /**
+   * Moves the workspace onto another plan.
+   *
+   * Membership, not admin, matching `createCheckoutUrl`: starting a paid
+   * subscription is open to any member. A fresh second factor is required on
+   * top, pinned in the gated table of `elevation.integration.spec.ts`.
+   *
+   * Returning does not mean the entitlements have moved: those are
+   * materialized when the upstream's webhook arrives, so
+   * `GET /v1/spaces/:spaceId/entitlements` answers with the previous plan
+   * until then. Same as after a checkout.
+   */
+  public async updateSubscription(args: {
+    spaceId: Space['id'];
+    spaceUuid: Space['uuid'];
+    subscriptionId: string;
+    planId: string;
+    paymentLinkId?: string;
+    authPayload: AuthPayload;
+  }): Promise<UpdateSubscriptionResult> {
+    await this.assertSpaceMember(args.spaceId, args.authPayload);
+
+    const [offeredLinks, subscription] = await Promise.all([
+      this.listOfferedPaymentLinks(args),
+      this.findOwnedSubscription(args),
+    ]);
+
+    // The subscription's own state is settled before the offer is: the link
+    // for the plan in force is filtered out of the offered set, so resolving
+    // it first would answer 403 for a plan the workspace already has.
+    if (!subscription) {
+      throw new NotFoundException('Subscription not found');
+    }
+
+    // Upstream rejects this too, but as a 400 after a round trip.
+    if (!UPDATABLE_SUBSCRIPTION_STATUSES.includes(subscription.status)) {
+      throw new ConflictException(
+        'This subscription is not in an updatable state',
+      );
+    }
+
+    if (subscription.plan.id === args.planId) {
+      throw new ConflictException('The workspace is already on this plan');
+    }
+
+    const paymentLink = this.paymentLinkForPlanOrFail(offeredLinks, args);
+
+    const result = await this.billingApi.updateSubscription({
+      upstreamCustomerId: args.spaceUuid,
+      subscriptionId: args.subscriptionId,
+      planId: args.planId,
+      paymentLinkId: paymentLink.id,
+    });
+
+    // Relaying a 200 would say the workspace moved plan when it did not, and
+    // the client would re-read the old plan with nothing explaining why.
+    if (!result.success) {
+      this.loggingService.error(
+        `Billing service reported an unsuccessful plan change for subscription ${args.subscriptionId} of workspace ${args.spaceUuid}`,
+      );
+      throw new BadGatewayException('Plan change failed upstream');
+    }
+
+    return result;
+  }
+
+  /**
    * The general catalog narrowed to what this workspace is entitled to, with
    * the space-specific catalog merged in on top, always offered: a link
    * negotiated for one customer is not subject to the general enforcement
@@ -196,6 +329,79 @@ export class BillingService {
       hasEverSubscribed: subscription.hasEverSubscribed,
       activePlanName: subscription.activePlanName,
     };
+  }
+
+  /**
+   * The subscription named by the path, if it is this workspace's — the param
+   * alone names one in the upstream's namespace, not necessarily this
+   * customer's.
+   *
+   * Cache-first, so status and plan can lag by the billing TTL. Tolerable: the
+   * upstream re-checks both, and the checks built on this exist to answer
+   * without a round trip and say which one failed.
+   */
+  private async findOwnedSubscription(args: {
+    spaceUuid: Space['uuid'];
+    subscriptionId: string;
+  }): Promise<Subscription | undefined> {
+    const subscriptions = await this.billingApi.getSubscriptionsByCustomerId({
+      upstreamCustomerId: args.spaceUuid,
+    });
+
+    return subscriptions.find(
+      (candidate) => candidate.id === args.subscriptionId,
+    );
+  }
+
+  /**
+   * Which offered link the upstream must copy the new plan's metadata from.
+   *
+   * A caller-supplied `paymentLinkId` is checked, not trusted: the upstream
+   * does not verify that the link it reads offers the plan it bills, so an
+   * unchecked pair would buy one plan and be entitled to another.
+   */
+  private paymentLinkForPlanOrFail(
+    offeredLinks: Array<PaymentLink>,
+    args: { planId: string; paymentLinkId?: string },
+  ): PaymentLink {
+    if (args.paymentLinkId !== undefined) {
+      const named = offeredLinks.find((link) => link.id === args.paymentLinkId);
+      // Honoured or refused, never swapped for another offering the same plan.
+      if (!named) {
+        throw new ForbiddenException(
+          'This payment link is not available for this workspace',
+        );
+      }
+      if (!offersPlan(named, args.planId)) {
+        throw new UnprocessableEntityException(
+          'The payment link does not offer this plan',
+        );
+      }
+      return named;
+    }
+
+    const linksOfferingPlan = offeredLinks.filter((link) =>
+      offersPlan(link, args.planId),
+    );
+    if (linksOfferingPlan.length === 0) {
+      throw new ForbiddenException(
+        'This plan is not available for this workspace',
+      );
+    }
+    if (linksOfferingPlan.length > 1) {
+      // A negotiated link beside the general one, say: same price, different
+      // metadata and so different entitlements. Only the caller can pick.
+      this.loggingService.error(
+        `Payment link(s) sharing price ${args.planId}, cannot pick one: ${linksOfferingPlan
+          .map((link) => link.id)
+          .join(', ')}`,
+      );
+      throw new ConflictException(
+        'Several plans match; specify which paymentLinkId to use',
+      );
+    }
+
+    return linksOfferingPlan[0];
   }
 
   private validateReturnUrl(returnUrl: string): string {

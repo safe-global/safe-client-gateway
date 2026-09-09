@@ -265,12 +265,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
   private async clearSubscriptionsCache(
     upstreamCustomerId: string,
   ): Promise<void> {
-    await this.cacheService.deleteByKey(
-      CacheRouter.getBillingSubscriptionsCacheDir({
-        upstreamCustomerId,
-        status: 'all',
-      }).key,
-    );
+    await this.billingApi.clearSubscriptions({ upstreamCustomerId });
   }
 
   /**

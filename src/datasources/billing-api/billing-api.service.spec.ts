@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
+import { ZodError } from 'zod';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BillingApi } from '@/datasources/billing-api/billing-api.service';
 import {
@@ -12,24 +13,41 @@ import { customerBuilder } from '@/datasources/billing-api/entities/__tests__/cu
 import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+import {
+  subscriptionUpdatePreviewBuilder,
+  updateSubscriptionResultBuilder,
+} from '@/datasources/billing-api/entities/__tests__/subscription-update.builder';
+import { DEFAULT_PRORATION_BEHAVIOR } from '@/datasources/billing-api/entities/subscription-update.entity';
 import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '@/datasources/cache/cache.router';
+import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { DataSourceError } from '@/domain/errors/data-source.error';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockNetworkService = vi.mocked({
   get: vi.fn(),
   post: vi.fn(),
+  patch: vi.fn(),
 } as MockedObject<INetworkService>);
 
 const mockDataSource = vi.mocked({
   get: vi.fn(),
   post: vi.fn(),
 } as MockedObject<CacheFirstDataSource>);
+
+const mockCacheService = vi.mocked({
+  deleteByKey: vi.fn(),
+} as MockedObject<ICacheService>);
+
+const mockLoggingService = vi.mocked({
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>);
 
 describe('BillingApi', () => {
   let target: BillingApi;
@@ -75,6 +93,8 @@ describe('BillingApi', () => {
       mockNetworkService,
       fakeConfigurationService,
       httpErrorFactory,
+      mockCacheService,
+      mockLoggingService,
     );
   });
 
@@ -107,6 +127,8 @@ describe('BillingApi', () => {
           mockNetworkService,
           emptyConfigService,
           httpErrorFactory,
+          mockCacheService,
+          mockLoggingService,
         ),
     ).toThrow();
   });
@@ -657,6 +679,203 @@ describe('BillingApi', () => {
 
       await expect(target.getCheckoutSession({ sessionId })).rejects.toThrow(
         new DataSourceError('Internal server error', status),
+      );
+    });
+  });
+
+  describe('previewSubscriptionUpdate', () => {
+    it('should call the billing service API with correct URL, params and headers', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      const subscriptionId = faker.string.alphanumeric(32);
+      const planId = faker.string.alphanumeric(32);
+      const preview = subscriptionUpdatePreviewBuilder().build();
+      mockNetworkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(preview),
+      });
+
+      const result = await target.previewSubscriptionUpdate({
+        upstreamCustomerId,
+        subscriptionId,
+        planId,
+      });
+
+      expect(result).toEqual(preview);
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/subscriptions/${subscriptionId}/preview-update`,
+        networkRequest: {
+          headers: { Authorization: `Bearer ${apiToken}` },
+          params: {
+            planId,
+            prorationBehavior: DEFAULT_PRORATION_BEHAVIOR,
+          },
+          timeout: requestTimeout,
+        },
+      });
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+
+    it('should throw a ZodError on a malformed response', async () => {
+      mockNetworkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({ malformed: true }),
+      });
+
+      await expect(
+        target.previewSubscriptionUpdate({
+          upstreamCustomerId: faker.string.uuid(),
+          subscriptionId: faker.string.alphanumeric(32),
+          planId: faker.string.alphanumeric(32),
+        }),
+      ).rejects.toThrow(ZodError);
+    });
+
+    it('should forward network errors', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/api/v1/customers`),
+        { status } as Response,
+        { message: 'Internal server error' },
+      );
+      mockNetworkService.get.mockRejectedValueOnce(error);
+
+      await expect(
+        target.previewSubscriptionUpdate({
+          upstreamCustomerId: faker.string.uuid(),
+          subscriptionId: faker.string.alphanumeric(32),
+          planId: faker.string.alphanumeric(32),
+        }),
+      ).rejects.toThrow(new DataSourceError('Internal server error', status));
+    });
+  });
+
+  describe('updateSubscription', () => {
+    it('should call the billing service API with correct URL, headers and body', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      const subscriptionId = faker.string.alphanumeric(32);
+      const planId = faker.string.alphanumeric(32);
+      const paymentLinkId = faker.string.alphanumeric(32);
+      const updateResult = updateSubscriptionResultBuilder().build();
+      mockNetworkService.patch.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(updateResult),
+      });
+
+      const result = await target.updateSubscription({
+        upstreamCustomerId,
+        subscriptionId,
+        planId,
+        paymentLinkId,
+      });
+
+      expect(result).toEqual(updateResult);
+      expect(mockNetworkService.patch).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/customers/${stripDashes(upstreamCustomerId)}/subscriptions/${subscriptionId}`,
+        data: {
+          planId,
+          paymentLinkId,
+          prorationBehavior: DEFAULT_PRORATION_BEHAVIOR,
+        },
+        networkRequest: {
+          headers: { Authorization: `Bearer ${apiToken}` },
+          timeout: requestTimeout,
+        },
+      });
+    });
+
+    it('should invalidate the customer cached subscriptions', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      mockNetworkService.patch.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(updateSubscriptionResultBuilder().build()),
+      });
+
+      await target.updateSubscription({
+        upstreamCustomerId,
+        subscriptionId: faker.string.alphanumeric(32),
+        planId: faker.string.alphanumeric(32),
+        paymentLinkId: faker.string.alphanumeric(32),
+      });
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        CacheRouter.getBillingSubscriptionsCacheKey(upstreamCustomerId),
+      );
+    });
+
+    it('should not invalidate the cache when the update fails', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const error = new NetworkResponseError(
+        new URL(`${baseUri}/api/v1/customers`),
+        { status } as Response,
+        { message: 'Internal server error' },
+      );
+      mockNetworkService.patch.mockRejectedValueOnce(error);
+
+      await expect(
+        target.updateSubscription({
+          upstreamCustomerId: faker.string.uuid(),
+          subscriptionId: faker.string.alphanumeric(32),
+          planId: faker.string.alphanumeric(32),
+          paymentLinkId: faker.string.alphanumeric(32),
+        }),
+      ).rejects.toThrow(new DataSourceError('Internal server error', status));
+
+      expect(mockCacheService.deleteByKey).not.toHaveBeenCalled();
+    });
+
+    it('should return the result and warn when the cache refuses to clear', async () => {
+      const updateResult = updateSubscriptionResultBuilder().build();
+      mockNetworkService.patch.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(updateResult),
+      });
+      mockCacheService.deleteByKey.mockRejectedValueOnce(
+        new Error('Redis is down'),
+      );
+
+      const result = await target.updateSubscription({
+        upstreamCustomerId: faker.string.uuid(),
+        subscriptionId: faker.string.alphanumeric(32),
+        planId: faker.string.alphanumeric(32),
+        paymentLinkId: faker.string.alphanumeric(32),
+      });
+
+      // Failing here would have the client retry an applied change.
+      expect(result).toEqual(updateResult);
+      expect(mockLoggingService.warn).toHaveBeenCalled();
+    });
+
+    it('should still invalidate the cache when the response is malformed', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+      mockNetworkService.patch.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({ malformed: true }),
+      });
+
+      await expect(
+        target.updateSubscription({
+          upstreamCustomerId,
+          subscriptionId: faker.string.alphanumeric(32),
+          planId: faker.string.alphanumeric(32),
+          paymentLinkId: faker.string.alphanumeric(32),
+        }),
+      ).rejects.toThrow(ZodError);
+
+      // The change was applied; only the body is unreadable.
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
+        CacheRouter.getBillingSubscriptionsCacheKey(upstreamCustomerId),
+      );
+    });
+  });
+
+  describe('clearSubscriptions', () => {
+    it('should drop the whole subscriptions key for the customer', async () => {
+      const upstreamCustomerId = faker.string.uuid();
+
+      await target.clearSubscriptions({ upstreamCustomerId });
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledExactlyOnceWith(
+        CacheRouter.getBillingSubscriptionsCacheKey(upstreamCustomerId),
       );
     });
   });

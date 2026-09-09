@@ -109,6 +109,7 @@ describe('SubscriptionSyncService', () => {
 
     billingApi = {
       getSubscriptionsByCustomerId: vi.fn(),
+      clearSubscriptions: vi.fn(),
     } as unknown as MockedObject<IBillingApi>;
     entitlementsService = {
       materializeFromEvent: vi.fn().mockResolvedValue(true),
@@ -163,13 +164,11 @@ describe('SubscriptionSyncService', () => {
 
     await target.handleWebhook(partialWebhookEvent());
 
-    // The billing-api Redis cache is busted before the re-fetch.
-    expect(cacheService.deleteByKey).toHaveBeenCalledWith(
-      CacheRouter.getBillingSubscriptionsCacheDir({
-        upstreamCustomerId: spaceUuid,
-        status: 'all',
-      }).key,
-    );
+    // The billing-api Redis cache is busted before the re-fetch. The key is
+    // the billing datasource's, so invalidating it is its own call.
+    expect(billingApi.clearSubscriptions).toHaveBeenCalledWith({
+      upstreamCustomerId: spaceUuid,
+    });
     expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledWith({
       upstreamCustomerId: spaceUuid,
       status: 'all',
@@ -510,7 +509,7 @@ describe('SubscriptionSyncService', () => {
         }),
       );
       // Neither attempt may be served the other's snapshot.
-      expect(cacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(billingApi.clearSubscriptions).toHaveBeenCalledTimes(2);
       expect(loggingService.warn).not.toHaveBeenCalled();
     });
 

@@ -369,6 +369,87 @@ describe('FetchNetworkService', () => {
     });
   });
 
+  describe('PATCH requests', () => {
+    it(`patch uses PATCH method`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+
+      await target.patch({ url, data });
+
+      const expectedUrl = `${url}/`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'PATCH',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        },
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(loggingService.debug).toHaveBeenCalledTimes(1);
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'PATCH',
+        url: expectedUrl,
+      });
+    });
+
+    it(`patch calls fetch with request`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.word.sample()]: faker.string.alphanumeric() };
+      const networkRequest: NetworkRequest = {
+        params: { some_query_param: 'query_param' },
+        headers: { test: 'value' },
+        timeout: faker.number.int({ min: 1, max: 10_000 }),
+      };
+
+      await target.patch({ url, data, networkRequest });
+
+      const expectedUrl = `${url}/?some_query_param=query_param`;
+      expect(fetchClientMock).toHaveBeenCalledTimes(1);
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expectedUrl,
+        {
+          method: 'PATCH',
+          headers: {
+            test: 'value',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        },
+        networkRequest.timeout,
+        undefined,
+        undefined,
+      );
+    });
+
+    it(`patch logs response error`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const error = new NetworkResponseError(
+        new URL(faker.internet.url()),
+        {
+          status: 100,
+          statusText: 'Some error happened',
+        } as Response,
+        'data',
+      );
+      fetchClientMock.mockRejectedValueOnce(error);
+
+      await expect(target.patch({ url, data: {} })).rejects.toThrow(error);
+
+      expect(loggingService.debug).toHaveBeenCalledWith({
+        type: 'EXTERNAL_REQUEST',
+        method: 'PATCH',
+        url: `${url}/`,
+      });
+    });
+  });
+
   describe('POST form-urlencoded requests', () => {
     it('postForm sends URL-encoded body with correct content-type', async () => {
       const url = faker.internet.url({ appendSlash: false });
