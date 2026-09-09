@@ -1226,6 +1226,11 @@ export class CacheRouter {
     );
   }
 
+  /**
+   * The key, not a dir: the status filter is the hash *field*, so deleting this
+   * key drops every filter cached for the customer at once. A caller that needs
+   * one filter gone on its own cannot use this.
+   */
   static getBillingSubscriptionsCacheKey(upstreamCustomerId: string): string {
     return `${upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`;
   }

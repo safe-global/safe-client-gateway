@@ -49,10 +49,11 @@ import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/me
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
+// `Pick`, not the whole interface: a cast to `MockedObject<IBillingApi>` would
+// claim to implement `clearSubscriptions` too, and a method the mock never
+// declared returns `undefined` where a caller awaits a promise.
 const billingApiMock = {
-  listPlans: vi.fn(),
   getPlan: vi.fn(),
-  getCustomer: vi.fn(),
   getCustomerSessionUrl: vi.fn(),
   getSubscriptionsByCustomerId: vi.fn(),
   listPaymentLinks: vi.fn(),
@@ -60,7 +61,19 @@ const billingApiMock = {
   getCheckoutSession: vi.fn(),
   previewSubscriptionUpdate: vi.fn(),
   updateSubscription: vi.fn(),
-} as MockedObject<IBillingApi>;
+} as MockedObject<
+  Pick<
+    IBillingApi,
+    | 'getPlan'
+    | 'getCustomerSessionUrl'
+    | 'getSubscriptionsByCustomerId'
+    | 'listPaymentLinks'
+    | 'createCheckoutSession'
+    | 'getCheckoutSession'
+    | 'previewSubscriptionUpdate'
+    | 'updateSubscription'
+  >
+>;
 
 const membersRepositoryMock = {
   findOne: vi.fn(),
@@ -138,7 +151,7 @@ describe('BillingService', () => {
     });
 
     service = new BillingService(
-      billingApiMock,
+      billingApiMock as unknown as IBillingApi,
       membersRepositoryMock,
       fakeConfigurationService,
       subscriptionSyncServiceMock,
@@ -163,7 +176,7 @@ describe('BillingService', () => {
       expect(
         () =>
           new BillingService(
-            billingApiMock,
+            billingApiMock as unknown as IBillingApi,
             membersRepositoryMock,
             fakeConfigurationService,
             subscriptionSyncServiceMock,
