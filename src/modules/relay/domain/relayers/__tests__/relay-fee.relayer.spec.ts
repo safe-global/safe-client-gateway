@@ -14,6 +14,7 @@ import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denie
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
+import { rawify } from '@/validation/entities/raw.entity';
 import { RelayFeeRelayer } from '../relay-fee.relayer';
 
 const mockLoggingService = vi.mocked({
@@ -171,7 +172,7 @@ describe('RelayFeeRelayer', () => {
       );
       mockRelayTransactionHelper.isSafeTxHashValid.mockResolvedValue(true);
       mockFeeServiceApi.canRelay.mockResolvedValueOnce({ canRelay: true });
-      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+      mockRelayApi.relay.mockResolvedValueOnce(rawify({ taskId }));
 
       const result = await target.relay({
         version: '1.3.0',
@@ -182,7 +183,7 @@ describe('RelayFeeRelayer', () => {
         safeTxHash,
       });
 
-      expect(result).toEqual({ taskId });
+      expect(result).toEqual(rawify({ taskId }));
       expect(mockRelayTransactionHelper.isSafeTxHashValid).toHaveBeenCalledWith(
         {
           chainId,
@@ -273,7 +274,7 @@ describe('RelayFeeRelayer', () => {
       mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         true,
       );
-      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+      mockRelayApi.relay.mockResolvedValueOnce(rawify({ taskId }));
 
       const result = await target.relay({
         version: '1.3.0',
@@ -284,7 +285,7 @@ describe('RelayFeeRelayer', () => {
         safeTxHash,
       });
 
-      expect(result).toEqual({ taskId });
+      expect(result).toEqual(rawify({ taskId }));
       expect(
         mockRelayTransactionHelper.isSafeTxHashValid,
       ).not.toHaveBeenCalled();
@@ -302,7 +303,7 @@ describe('RelayFeeRelayer', () => {
       mockRelayTransactionHelper.isOfficialProxyFactoryDeployment.mockReturnValue(
         true,
       );
-      mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+      mockRelayApi.relay.mockResolvedValueOnce(rawify({ taskId }));
 
       const result = await target.relay({
         version: '1.3.0',
@@ -312,7 +313,7 @@ describe('RelayFeeRelayer', () => {
         gasLimit: null,
       });
 
-      expect(result).toEqual({ taskId });
+      expect(result).toEqual(rawify({ taskId }));
       expect(mockFeeServiceApi.canRelay).not.toHaveBeenCalled();
       expect(mockRelayApi.relay).toHaveBeenCalled();
     });
@@ -416,7 +417,7 @@ describe('RelayFeeRelayer', () => {
       it('skips simulation when simulationEnabled is false', async () => {
         arrangeValidExecTransaction();
         const taskId = faker.string.uuid();
-        mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+        mockRelayApi.relay.mockResolvedValueOnce(rawify({ taskId }));
 
         const result = await target.relay({
           version: '1.3.0',
@@ -428,7 +429,7 @@ describe('RelayFeeRelayer', () => {
           simulationEnabled: false,
         });
 
-        expect(result).toEqual({ taskId });
+        expect(result).toEqual(rawify({ taskId }));
         expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
         expect(mockRelayApi.relay).toHaveBeenCalledTimes(1);
       });
@@ -440,7 +441,7 @@ describe('RelayFeeRelayer', () => {
         });
         const safeAddress = fakeAddress();
         const taskId = faker.string.uuid();
-        mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+        mockRelayApi.relay.mockResolvedValueOnce(rawify({ taskId }));
 
         const result = await target.relay({
           version: '1.3.0',
@@ -452,7 +453,7 @@ describe('RelayFeeRelayer', () => {
           simulationEnabled: true,
         });
 
-        expect(result).toEqual({ taskId });
+        expect(result).toEqual(rawify({ taskId }));
         expect(mockTenderlySimulationApi.simulate).toHaveBeenCalledWith({
           chainId: simulationChainId,
           from: '0x000000000000000000000000000000000000dEaD',
@@ -529,7 +530,7 @@ describe('RelayFeeRelayer', () => {
           reason: 'Simulation could not be completed',
         });
         const taskId = faker.string.uuid();
-        mockRelayApi.relay.mockResolvedValueOnce({ taskId });
+        mockRelayApi.relay.mockResolvedValueOnce(rawify({ taskId }));
         const safeTxHash = fakeSafeTxHash();
 
         const result = await target.relay({
@@ -543,7 +544,7 @@ describe('RelayFeeRelayer', () => {
           simulationEnabled: true,
         });
 
-        expect(result).toEqual({ taskId });
+        expect(result).toEqual(rawify({ taskId }));
         expect(mockRelayApi.relay).toHaveBeenCalledTimes(1);
         expect(mockLoggingService.warn).toHaveBeenCalledWith(
           expect.objectContaining({

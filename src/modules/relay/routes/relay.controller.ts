@@ -22,6 +22,7 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
 import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
@@ -41,7 +42,6 @@ import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dt
 import { RelayService } from '@/modules/relay/routes/relay.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
@@ -140,7 +140,7 @@ export class RelayController {
     UnofficialSignerFactoryExceptionFilter,
   )
   async relay(
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(RelayDtoSchema))
     relayDto: RelayDto,
   ): Promise<Relay> {
@@ -172,7 +172,7 @@ export class RelayController {
   })
   @Get('status/:taskId')
   async getTaskStatus(
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('taskId', new ValidationPipe(OpaqueIdSchema)) taskId: string,
   ): Promise<RelayTaskStatus> {
     return await this.relayService.getTaskStatus({ chainId, taskId });
@@ -212,7 +212,7 @@ export class RelayController {
   @Get(':safeAddress')
   @UseFilters(RelayerNotAvailableExceptionFilter)
   async getRelaysRemaining(
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Query('safeTxHash', new ValidationPipe(HexSchema.optional()))

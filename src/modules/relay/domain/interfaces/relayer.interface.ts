@@ -2,6 +2,7 @@
 import type { Address, Hex } from 'viem';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 
 export const IRelayer = Symbol('IRelayer');
 
@@ -43,7 +44,7 @@ export interface IRelayer {
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
     simulationEnabled?: boolean;
-  }): Promise<Relay>;
+  }): Promise<Raw<Relay>>;
 
   /**
    * Gets the remaining relays and limit for an address
