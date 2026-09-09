@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import uniqBy from 'lodash/uniqBy';
 import type { Address } from 'viem';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { asError } from '@/logging/utils';
@@ -8,19 +9,6 @@ import { ITokenRepository } from '@/modules/tokens/domain/token.repository.inter
 
 const isNotFound = (error: unknown): boolean =>
   error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND;
-
-/** Case-insensitive de-duplication that keeps each address at its first position. */
-const uniqueAddresses = (addresses: Array<Address>): Array<Address> => {
-  const seen = new Set<string>();
-  return addresses.filter((address) => {
-    const key = address.toLowerCase();
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
-  });
-};
 
 @Injectable()
 export class TokensService {
@@ -43,8 +31,10 @@ export class TokensService {
     addresses: Array<Address>;
   }): Promise<Array<Token>> {
     const settled = await Promise.allSettled(
-      uniqueAddresses(args.addresses).map((address) =>
-        this.tokenRepository.getToken({ chainId: args.chainId, address }),
+      // Case-insensitive, keeps each address at its first position.
+      uniqBy(args.addresses, (address) => address.toLowerCase()).map(
+        (address) =>
+          this.tokenRepository.getToken({ chainId: args.chainId, address }),
       ),
     );
 
