@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
 import {
   ApiExtraModels,
   ApiNotFoundResponse,
@@ -8,10 +8,12 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnprocessableEntityResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import {
   Erc20TokenMetadata,
@@ -23,9 +25,9 @@ import {
   type TokenAddresses,
   TokenAddressesSchema,
 } from '@/modules/tokens/routes/entities/token-addresses.dto.entity';
+import { TokensRateLimitGuard } from '@/modules/tokens/routes/guards/tokens-rate-limit.guard';
 import { TokensService } from '@/modules/tokens/routes/tokens.service';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 const TOKEN_SCHEMA = {
@@ -37,6 +39,9 @@ const TOKEN_SCHEMA = {
 };
 
 @ApiTags('tokens')
+// Unauthenticated lookups: the batch route fans out one request into up to
+// MAX_TOKEN_ADDRESSES upstream calls, so it carries its own per-caller bound.
+@UseGuards(TokensRateLimitGuard)
 @ApiExtraModels(NativeTokenMetadata, Erc20TokenMetadata, Erc721TokenMetadata)
 @Controller({
   path: '',
@@ -65,12 +70,13 @@ export class TokensController {
   @ApiNotFoundResponse({
     description: 'The Transaction Service does not know this token',
   })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @ApiUnprocessableEntityResponse({
     description: 'Invalid chain ID or address',
   })
   @Get('chains/:chainId/tokens/:address')
   getToken(
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('address', new ValidationPipe(AddressSchema)) address: Address,
   ): Promise<Token> {
     return this.tokensService.getToken({ chainId, address });
@@ -97,12 +103,13 @@ export class TokensController {
     schema: { type: 'array', items: TOKEN_SCHEMA },
     description: 'Token metadata for the known addresses, in request order',
   })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @ApiUnprocessableEntityResponse({
     description: `Invalid chain ID, malformed address, empty list or more than ${MAX_TOKEN_ADDRESSES} addresses`,
   })
   @Get('chains/:chainId/tokens')
   getTokens(
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Query('addresses', new ValidationPipe(TokenAddressesSchema))
     addresses: TokenAddresses,
   ): Promise<Array<Token>> {

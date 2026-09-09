@@ -11,6 +11,7 @@ import {
 } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import configuration from '@/config/entities/__tests__/configuration';
 import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
@@ -251,6 +252,53 @@ describe('Tokens controller', () => {
         .get(`/v1/chains/${chain.chainId}/tokens`)
         .query({ addresses: `${token.address},${failing}` })
         .expect(503);
+    });
+  });
+
+  describe('rate limiting', () => {
+    let limitedApp: INestApplication<Server>;
+
+    beforeAll(async () => {
+      const defaultConfiguration = configuration();
+      const testConfiguration = (): typeof defaultConfiguration => ({
+        ...defaultConfiguration,
+        tokens: { rateLimit: { max: 1, windowSeconds: 60 } },
+      });
+      const moduleFixture = await createTestModule({
+        config: testConfiguration,
+      });
+
+      limitedApp = await new TestAppProvider().provide(moduleFixture);
+      await initTestApplication(limitedApp);
+    });
+
+    afterAll(async () => {
+      await limitedApp?.close();
+    });
+
+    it('bounds one caller to the configured number of requests', async () => {
+      const chain = chainBuilder().with('chainId', uniqueChainId()).build();
+      const url = `/v1/chains/${chain.chainId}/tokens`;
+
+      // Guards run before pipes, so even a request the ValidationPipe rejects
+      // spends the caller's budget — which is the point of the bound.
+      await request(limitedApp.getHttpServer())
+        .get(url)
+        .query({ addresses: '0xnope' })
+        .expect(422);
+
+      await request(limitedApp.getHttpServer())
+        .get(url)
+        .query({ addresses: '0xnope' })
+        .expect(429);
+    });
+
+    it('bounds the single-token route as well', async () => {
+      const chain = chainBuilder().with('chainId', uniqueChainId()).build();
+      const url = `/v1/chains/${chain.chainId}/tokens/0xnope`;
+
+      await request(limitedApp.getHttpServer()).get(url).expect(422);
+      await request(limitedApp.getHttpServer()).get(url).expect(429);
     });
   });
 });

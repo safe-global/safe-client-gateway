@@ -817,6 +817,15 @@ export default () => ({
       10,
     ),
   },
+  tokens: {
+    rateLimit: {
+      max: Number.parseInt(process.env.TOKENS_RATE_LIMIT_MAX ?? `${60}`, 10),
+      windowSeconds: Number.parseInt(
+        process.env.TOKENS_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+        10,
+      ),
+    },
+  },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },
