@@ -72,7 +72,7 @@ describe('Safe seat enforcement', () => {
       entitlements: {
         ...defaultConfiguration.entitlements,
         // Enforcing: the point of this suite is what the plan decides.
-        enforcementStartsAt: faker.date.past().toISOString(),
+        enforcementStartsAt: faker.date.past(),
       },
     });
 

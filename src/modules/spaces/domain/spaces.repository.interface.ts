@@ -69,5 +69,8 @@ export interface ISpacesRepository {
   // Resolves the internal numeric id to the client-facing UUID for response mapping.
   findUuidById(id: Space['id']): Promise<Space['uuid']>;
 
+  // The enforcement rules compare this against the go-live date.
+  findCreatedAtById(id: Space['id']): Promise<Space['createdAt']>;
+
   delete(args: { id: number; actorUserId: number }): Promise<void>;
 }

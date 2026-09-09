@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -61,7 +61,6 @@ import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
 
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the
@@ -102,15 +101,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
-    const enforcementStartsAt = DateStringSchema.safeParse(
-      configurationService.getOrThrow('entitlements.enforcementStartsAt'),
+    this.enforcementStartsAt = configurationService.getOrThrow<Date>(
+      'entitlements.enforcementStartsAt',
     );
-    if (!enforcementStartsAt.success) {
-      throw new Error(
-        'entitlements.enforcementStartsAt is not an ISO date string',
-      );
-    }
-    this.enforcementStartsAt = new Date(enforcementStartsAt.data);
     this.grantsCacheTtlSeconds = configurationService.getOrThrow<number>(
       'expirationTimeInSeconds.entitlements',
     );
@@ -303,7 +296,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
     purchased: Map<number, SubscriptionEntitlement>;
   }> {
     const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
-      this.getSpaceCreatedAtOrFail(spaceId),
+      this.spacesRepository.findCreatedAtById(spaceId),
       this.featuresRepository.getFeatures(),
       this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
     ]);
@@ -775,16 +768,5 @@ export class EntitlementsService implements IEntitlementEnforcement {
         : null,
       entitlements,
     };
-  }
-
-  private async getSpaceCreatedAtOrFail(spaceId: Space['id']): Promise<Date> {
-    const space = await this.spacesRepository.findOne({
-      where: { id: spaceId },
-      select: { createdAt: true },
-    });
-    if (!space) {
-      throw new NotFoundException('Workspace not found.');
-    }
-    return space.createdAt;
   }
 }

@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
   ForbiddenException,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
@@ -12,10 +13,15 @@ import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
 } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
+import {
+  paymentLinkBuilder,
+  trialPaymentLinkBuilder,
+} from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -24,7 +30,10 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
+import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
+import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
@@ -47,12 +56,49 @@ const subscriptionSyncServiceMock = {
   handleWebhook: vi.fn(),
 } as MockedObject<ISubscriptionSyncService>;
 
+const subscriptionsRepositoryMock = {
+  getSubscriptionSummary: vi.fn(),
+} as MockedObject<ISubscriptionsRepository>;
+
+const spacesRepositoryMock = {
+  findCreatedAtById: vi.fn(),
+} as MockedObject<ISpacesRepository>;
+
+const loggingServiceMock = {
+  warn: vi.fn(),
+  info: vi.fn(),
+  debug: vi.fn(),
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
+
+// The enforcement date the offer rule splits workspaces on, and one stamp on
+// each side of it.
+const ENFORCEMENT_STARTS_AT = '2026-10-01T00:00:00Z';
+const BEFORE_ENFORCEMENT = '2026-09-30T23:59:59Z';
+const AFTER_ENFORCEMENT = '2026-11-01T00:00:00Z';
+
 describe('BillingService', () => {
   let service: BillingService;
   let postLoginRedirectUri: string;
 
   function withinRedirectOrigin(): string {
     return new URL(faker.system.filePath(), postLoginRedirectUri).toString();
+  }
+
+  /**
+   * Serves `links` as the general catalog and nothing space-specific, which is
+   * the shape the offer filter runs on.
+   */
+  function mockCatalog(links: Array<PaymentLink>): void {
+    billingApiMock.listPaymentLinks.mockImplementation((args) =>
+      Promise.resolve(args?.upstreamCustomerId ? [] : links),
+    );
+  }
+
+  function spaceCreatedAt(createdAt: string): void {
+    spacesRepositoryMock.findCreatedAtById.mockResolvedValue(
+      new Date(createdAt),
+    );
   }
 
   beforeEach(() => {
@@ -64,13 +110,55 @@ describe('BillingService', () => {
       postLoginRedirectUri,
     );
     fakeConfigurationService.set('application.isProduction', false);
+    fakeConfigurationService.set(
+      'entitlements.enforcementStartsAt',
+      new Date(ENFORCEMENT_STARTS_AT),
+    );
+
+    // Defaults for the specs that are not about the offer filter: a workspace
+    // created after the enforcement date that has never subscribed.
+    spaceCreatedAt(AFTER_ENFORCEMENT);
+    subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+      hasEverSubscribed: false,
+      activePlanName: null,
+    });
 
     service = new BillingService(
       billingApiMock,
       membersRepositoryMock,
       fakeConfigurationService,
       subscriptionSyncServiceMock,
+      subscriptionsRepositoryMock,
+      spacesRepositoryMock,
+      loggingServiceMock,
     );
+  });
+
+  describe('constructor', () => {
+    // The date's *format* is guaranteed upstream: `configuration.ts` parses it
+    // and `RootConfigurationSchema` rejects a non-ISO env value at boot. What
+    // is still worth asserting here is that a missing key is not tolerated.
+    it('should throw when entitlements.enforcementStartsAt is not configured', () => {
+      const fakeConfigurationService = new FakeConfigurationService();
+      fakeConfigurationService.set(
+        'auth.postLoginRedirectUri',
+        faker.internet.url(),
+      );
+      fakeConfigurationService.set('application.isProduction', false);
+
+      expect(
+        () =>
+          new BillingService(
+            billingApiMock,
+            membersRepositoryMock,
+            fakeConfigurationService,
+            subscriptionSyncServiceMock,
+            subscriptionsRepositoryMock,
+            spacesRepositoryMock,
+            loggingServiceMock,
+          ),
+      ).toThrow('No value set for key entitlements.enforcementStartsAt');
+    });
   });
 
   describe('processWebhook', () => {
@@ -228,6 +316,12 @@ describe('BillingService', () => {
       const spaceLink = paymentLinkBuilder().build();
       const generalLink = paymentLinkBuilder().build();
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      // A paid link in the general catalog needs the space to have subscribed
+      // before to be offered; this test is about merge behaviour, not that.
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
       billingApiMock.listPaymentLinks.mockImplementation((args) =>
         Promise.resolve(args?.upstreamCustomerId ? [spaceLink] : [generalLink]),
       );
@@ -269,6 +363,29 @@ describe('BillingService', () => {
       expect(result).toEqual([spaceLink]);
     });
 
+    it('should always offer a space-specific link, regardless of the enforcement filter', async () => {
+      const spaceId = faker.number.int();
+      const spaceUuid = faker.string.uuid();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      // A negotiated trial with no gracePeriod tag: the general catalog filter
+      // would drop it, but a space-specific link is not subject to it.
+      const negotiatedLink = paymentLinkBuilder()
+        .with('trialPeriodDays', faker.number.int({ min: 1, max: 365 }))
+        .build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      billingApiMock.listPaymentLinks.mockImplementation((args) =>
+        Promise.resolve(args?.upstreamCustomerId ? [negotiatedLink] : []),
+      );
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId,
+        spaceUuid,
+        authPayload,
+      });
+
+      expect(result).toEqual([negotiatedLink]);
+    });
+
     it('should throw when the user is not a space member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -283,6 +400,149 @@ describe('BillingService', () => {
 
       expect(billingApiMock.listPaymentLinks).not.toHaveBeenCalled();
     });
+
+    it('should log an error when a trial link carries no recognized gracePeriod tag', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      // Tagged for neither side, so nobody is offered it: without a log the
+      // catalog would just look emptier than it should.
+      const untagged = trialPaymentLinkBuilder(true)
+        .with('metadata', {})
+        .build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      mockCatalog([untagged]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId: faker.number.int(),
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([]);
+      expect(loggingServiceMock.error).toHaveBeenCalledWith(
+        expect.stringContaining(untagged.id),
+      );
+    });
+
+    it('should not log an error when every trial link is tagged', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      mockCatalog([trialPaymentLinkBuilder(false).build()]);
+
+      await service.getSpacePaymentLinks({
+        spaceId: faker.number.int(),
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+      });
+
+      expect(loggingServiceMock.error).not.toHaveBeenCalled();
+    });
+
+    it('should offer only the legacy grace link to a space created before the enforcement date', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      const trialLink = trialPaymentLinkBuilder(false).build();
+      // A never-subscribed space is not offered paid links yet — it has to
+      // pick a trial first.
+      const paidLink = paymentLinkBuilder().build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
+      mockCatalog([graceLink, trialLink, paidLink]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId: faker.number.int(),
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([graceLink]);
+    });
+
+    it('should offer only the standard trial link to a space created from the enforcement date on', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      const trialLink = trialPaymentLinkBuilder(false).build();
+      const paidLink = paymentLinkBuilder().build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      // The boundary itself: enforcement starts at this instant.
+      spaceCreatedAt(ENFORCEMENT_STARTS_AT);
+      mockCatalog([graceLink, trialLink, paidLink]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId: faker.number.int(),
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([trialLink]);
+    });
+
+    it('should offer only paid links to a space that has ever subscribed', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      const paidLink = paymentLinkBuilder().build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
+      mockCatalog([graceLink, paidLink]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId,
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([paidLink]);
+      expect(
+        subscriptionsRepositoryMock.getSubscriptionSummary,
+      ).toHaveBeenCalledWith(spaceId);
+    });
+
+    it('should not offer the paid link matching the plan the space is already on', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const activeSubscription = spaceSubscriptionBuilder().build();
+      const currentPlanLink = paymentLinkBuilder()
+        .with('metadata', { planName: activeSubscription.planName })
+        .build();
+      const otherPlanLink = paymentLinkBuilder()
+        .with('metadata', { planName: faker.commerce.productName() })
+        .build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: activeSubscription.planName,
+      });
+      mockCatalog([currentPlanLink, otherPlanLink]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId,
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([otherPlanLink]);
+    });
+
+    it('should throw when the space no longer exists', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spacesRepositoryMock.findCreatedAtById.mockRejectedValue(
+        new NotFoundException('Workspace not found.'),
+      );
+      billingApiMock.listPaymentLinks.mockResolvedValue([]);
+
+      await expect(
+        service.getSpacePaymentLinks({
+          spaceId: faker.number.int(),
+          spaceUuid: faker.string.uuid(),
+          authPayload,
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('createCheckoutUrl', () => {
@@ -293,7 +553,16 @@ describe('BillingService', () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const returnUrl = withinRedirectOrigin();
       const checkoutSessionResult = checkoutSessionResultBuilder().build();
+      const paymentLink = paymentLinkBuilder()
+        .with('id', paymentLinkId)
+        .build();
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      // A paid link needs the space to have subscribed before to be offered.
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanName: null,
+      });
+      mockCatalog([paymentLink]);
       billingApiMock.createCheckoutSession.mockResolvedValue(
         checkoutSessionResult,
       );
@@ -346,6 +615,56 @@ describe('BillingService', () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(billingApiMock.createCheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('should throw when the payment link is not offered to the space', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      // The legacy grace, which a post-enforcement workspace is not entitled to.
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceCreatedAt(AFTER_ENFORCEMENT);
+      mockCatalog([graceLink]);
+
+      await expect(
+        service.createCheckoutUrl({
+          paymentLinkId: graceLink.id,
+          spaceId: faker.number.int(),
+          spaceUuid: faker.string.uuid(),
+          authPayload,
+          returnUrl: withinRedirectOrigin(),
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(billingApiMock.createCheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('should check out a payment link the space is offered', async () => {
+      const spaceUuid = faker.string.uuid();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const returnUrl = withinRedirectOrigin();
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      const checkoutSessionResult = checkoutSessionResultBuilder().build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
+      mockCatalog([graceLink]);
+      billingApiMock.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResult,
+      );
+
+      const result = await service.createCheckoutUrl({
+        paymentLinkId: graceLink.id,
+        spaceId: faker.number.int(),
+        spaceUuid,
+        authPayload,
+        returnUrl,
+      });
+
+      expect(result).toBe(checkoutSessionResult);
+      expect(billingApiMock.createCheckoutSession).toHaveBeenCalledWith({
+        paymentLinkId: graceLink.id,
+        upstreamCustomerId: spaceUuid,
+        returnUrl,
+      });
     });
   });
 
