@@ -23,6 +23,7 @@
 | Reviewing a PR / verifying a completed task | [docs/agents/reviewing.md](docs/agents/reviewing.md) + [docs/agents/remarks.md](docs/agents/remarks.md) |
 | Commit message, PR title, PR body, splitting a PR | [docs/agents/commits-and-prs.md](docs/agents/commits-and-prs.md) |
 | Adding a skill or a slash command for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
+| Fiat totals or tokens differ between views, Zerion data questions | [docs/agents/zerion-debugging.md](docs/agents/zerion-debugging.md) |
 
 Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Code skill that loads itself on the matching work, and a `PreToolUse` hook in `.claude/settings.json` applies the review checklist on any commit that touches `src/`. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. There are no repo-specific slash commands to remember. All three mechanisms are documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
 
