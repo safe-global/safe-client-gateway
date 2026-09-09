@@ -16,6 +16,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import type { GasToken } from '@/modules/fees/domain/entities/gas-token.entity';
 import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
@@ -71,11 +72,15 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  async getChain(chainId: string): Promise<Raw<Chain>> {
-    // Empty chainId hits the chain collection endpoint and cache-poisons the key '_chain'.
-    if (!chainId) {
+  // An invalid chainId would address another endpoint and cache-poison the chain key.
+  private assertChainId(chainId: string): void {
+    if (!ChainIdSchema.safeParse(chainId).success) {
       throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
     }
+  }
+
+  async getChain(chainId: string): Promise<Raw<Chain>> {
+    this.assertChainId(chainId);
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDir(chainId);
@@ -151,6 +156,7 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChainV2(serviceKey: string, chainId: string): Promise<Raw<Chain>> {
+    this.assertChainId(chainId);
     try {
       const url = `${this.baseUri}/api/v2/chains/${serviceKey}/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDirV2(serviceKey, chainId);

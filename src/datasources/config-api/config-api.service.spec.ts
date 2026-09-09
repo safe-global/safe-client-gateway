@@ -118,14 +118,17 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
-  it('should reject an empty chainId without addressing the chain collection', async () => {
-    await expect(service.getChain('')).rejects.toThrow(
-      new DataSourceError('Chain not found', HttpStatus.NOT_FOUND),
-    );
+  it.each(['', faker.string.alpha()])(
+    'should reject chainId %j without addressing the chain collection',
+    async (chainId) => {
+      await expect(service.getChain(chainId)).rejects.toThrow(
+        new DataSourceError('Chain not found', HttpStatus.NOT_FOUND),
+      );
 
-    expect(mockDataSource.get).not.toHaveBeenCalled();
-    expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
-  });
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+    },
+  );
 
   it('should return the gas tokens retrieved by chainId', async () => {
     const chainId = faker.string.numeric();
@@ -309,6 +312,20 @@ describe('ConfigApi', () => {
         expireTimeSeconds: expirationTimeInSeconds,
       });
     });
+
+    it.each(['', faker.string.alpha()])(
+      'should reject chainId %j without addressing the v2 chain collection',
+      async (chainId) => {
+        await expect(
+          service.getChainV2(faker.word.sample(), chainId),
+        ).rejects.toThrow(
+          new DataSourceError('Chain not found', HttpStatus.NOT_FOUND),
+        );
+
+        expect(mockDataSource.get).not.toHaveBeenCalled();
+        expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+      },
+    );
 
     it('should return the chain retrieved from v2 endpoint', async () => {
       const serviceKey = faker.word.sample();
