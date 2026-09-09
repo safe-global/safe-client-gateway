@@ -58,7 +58,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 const ReturnUrlSchema = z.url();
 const opaqueIdPipe = new ValidationPipe(OpaqueIdSchema);
 // The second binding of `spaceId`: the UUID itself, which reaches the upstream
-// customer URL, so it is validated rather than left to its neighbour's pipe.
+// customer URL.
 const uuidPipe = new ValidationPipe(UuidSchema);
 
 @ApiTags('billing')
@@ -92,7 +92,7 @@ export class BillingController {
   @Get('/spaces/:spaceId/subscriptions')
   public async getSubscriptions(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('spaceId', uuidPipe) spaceUuid: Space['uuid'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Auth() authPayload: AuthPayload,
     @Query(
       'status',
@@ -131,7 +131,7 @@ export class BillingController {
   @Get('/spaces/:spaceId/session-url')
   public async getSessionUrl(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('spaceId', uuidPipe) spaceUuid: Space['uuid'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Auth() authPayload: AuthPayload,
     @Query('returnUrl', new ValidationPipe(ReturnUrlSchema)) returnUrl: string,
   ): Promise<UrlResponse> {
@@ -157,7 +157,7 @@ export class BillingController {
   @Get('/spaces/:spaceId/payment-links')
   public async getSpacePaymentLinks(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('spaceId', uuidPipe) spaceUuid: Space['uuid'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<PaymentLink>> {
     return await this.billingService.getSpacePaymentLinks({
@@ -185,7 +185,7 @@ export class BillingController {
   @Get('/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url')
   public async getCheckoutUrl(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('spaceId', uuidPipe) spaceUuid: Space['uuid'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Param('paymentLinkId', opaqueIdPipe) paymentLinkId: string,
     @Auth() authPayload: AuthPayload,
     @Query('returnUrl', new ValidationPipe(ReturnUrlSchema)) returnUrl: string,
