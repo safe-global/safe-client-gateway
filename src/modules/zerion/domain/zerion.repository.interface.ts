@@ -5,5 +5,5 @@ export interface IZerionRepository {
   /**
    * Gets Zerion's network names keyed by chain ID for the given environment.
    */
-  getNetworksByChainId(isTestnet: boolean): Promise<Record<string, string>>;
+  getNetworkNamesByChainId(isTestnet: boolean): Promise<Record<string, string>>;
 }

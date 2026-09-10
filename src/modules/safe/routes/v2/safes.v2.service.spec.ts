@@ -42,7 +42,7 @@ const mockLoggingService = {
 } as MockedObject<ILoggingService>;
 
 const mockZerionRepository = vi.mocked({
-  getNetworksByChainId: vi.fn(),
+  getNetworkNamesByChainId: vi.fn(),
 } as MockedObject<IZerionRepository>);
 
 // Chains Zerion lists per environment, keyed by chainId; anything else is unsupported.
@@ -95,8 +95,9 @@ describe('SafesV2Service', () => {
       previous: null,
       results: [],
     });
-    mockZerionRepository.getNetworksByChainId.mockImplementation((isTestnet) =>
-      Promise.resolve(zerionNetworks[isTestnet ? 'testnet' : 'mainnet']),
+    mockZerionRepository.getNetworkNamesByChainId.mockImplementation(
+      (isTestnet) =>
+        Promise.resolve(zerionNetworks[isTestnet ? 'testnet' : 'mainnet']),
     );
   });
 
@@ -266,7 +267,7 @@ describe('SafesV2Service', () => {
   it('falls back to the balances repo (not $0) when the Zerion chain lookup fails', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
-    mockZerionRepository.getNetworksByChainId.mockRejectedValue(
+    mockZerionRepository.getNetworkNamesByChainId.mockRejectedValue(
       new Error('Zerion unavailable'),
     );
     mockBalancesRepository.getBalances.mockResolvedValue([

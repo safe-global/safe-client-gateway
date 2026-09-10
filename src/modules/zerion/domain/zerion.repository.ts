@@ -9,7 +9,7 @@ export class ZerionRepository implements IZerionRepository {
     private readonly zerionChainMappingService: ZerionChainMappingService,
   ) {}
 
-  async getNetworksByChainId(
+  async getNetworkNamesByChainId(
     isTestnet: boolean,
   ): Promise<Record<string, string>> {
     return await this.zerionChainMappingService.getChainIdToNetworkMapping(
