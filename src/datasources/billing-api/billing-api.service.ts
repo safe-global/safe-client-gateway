@@ -5,12 +5,11 @@ import type {
   CheckoutSession,
   CheckoutSessionResult,
 } from '@/datasources/billing-api/entities/checkout-session.entity';
-import type { Customer } from '@/datasources/billing-api/entities/customer.entity';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+import type { PaymentLinksResult } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import type {
-  Subscription,
   SubscriptionStatusFilter,
+  SubscriptionsResult,
 } from '@/datasources/billing-api/entities/subscription.entity';
 import type {
   SubscriptionUpdatePreview,
@@ -83,30 +82,10 @@ export class BillingApi implements IBillingApi {
       );
   }
 
-  listPlans(): Promise<Raw<Array<Plan>>> {
-    return this.request({
-      cacheDir: CacheRouter.getBillingPlansCacheDir(),
-      url: `${this.baseUri}/api/v1/plans`,
-    });
-  }
-
   getPlan(args: { planId: string }): Promise<Raw<Plan>> {
     return this.request({
       cacheDir: CacheRouter.getBillingPlanCacheDir(args.planId),
       url: `${this.baseUri}/api/v1/plans/${args.planId}`,
-    });
-  }
-
-  /**
-   * Cached with a short, dedicated TTL rather than the default one: there is
-   * no webhook-driven invalidation for customer changes yet, so this bounds
-   * how long a change (e.g. a plan change) can stay stale.
-   */
-  getCustomer(args: { upstreamCustomerId: string }): Promise<Raw<Customer>> {
-    return this.request({
-      cacheDir: CacheRouter.getBillingCustomerCacheDir(args.upstreamCustomerId),
-      url: this.customerUrl(args.upstreamCustomerId),
-      expireTimeSeconds: this.billingExpireTimeSeconds,
     });
   }
 
@@ -143,7 +122,7 @@ export class BillingApi implements IBillingApi {
   getSubscriptionsByCustomerId(args: {
     upstreamCustomerId: string;
     status?: SubscriptionStatusFilter;
-  }): Promise<Raw<Array<Subscription>>> {
+  }): Promise<Raw<SubscriptionsResult>> {
     return this.request({
       cacheDir: CacheRouter.getBillingSubscriptionsCacheDir({
         upstreamCustomerId: args.upstreamCustomerId,
@@ -157,7 +136,7 @@ export class BillingApi implements IBillingApi {
 
   listPaymentLinks(
     args: { upstreamCustomerId?: string } = {},
-  ): Promise<Raw<Array<PaymentLink>>> {
+  ): Promise<Raw<PaymentLinksResult>> {
     return this.request({
       cacheDir: CacheRouter.getBillingPaymentLinksCacheDir(
         args.upstreamCustomerId,

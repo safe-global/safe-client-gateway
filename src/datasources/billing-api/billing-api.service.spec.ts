@@ -8,7 +8,6 @@ import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
 } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { customerBuilder } from '@/datasources/billing-api/entities/__tests__/customer.builder';
 import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
@@ -132,38 +131,6 @@ describe('BillingApi', () => {
     ).toThrow();
   });
 
-  describe('listPlans', () => {
-    it('should call the billing service API with correct URL, headers and cache dir', async () => {
-      const plans = [planBuilder().build(), planBuilder().build()];
-      mockDataSource.get.mockResolvedValueOnce(rawify({ plans }));
-
-      const result = await target.listPlans();
-
-      // Raw: the envelope reaches the repository unopened.
-      expect(result).toEqual({ plans });
-      expect(mockDataSource.get).toHaveBeenCalledWith(
-        expectedGetCall({
-          cacheDir: new CacheDir('billing_plans', ''),
-          url: `${baseUri}/api/v1/plans`,
-        }),
-      );
-    });
-
-    it('should forward network errors', async () => {
-      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = new NetworkResponseError(
-        new URL(`${baseUri}/api/v1/plans`),
-        { status } as Response,
-        { message: 'Internal server error' },
-      );
-      mockDataSource.get.mockRejectedValueOnce(error);
-
-      await expect(target.listPlans()).rejects.toThrow(
-        new DataSourceError('Internal server error', status),
-      );
-    });
-  });
-
   describe('getPlan', () => {
     it('should call the billing service API with correct URL, headers and cache dir', async () => {
       const plan = planBuilder().build();
@@ -205,58 +172,6 @@ describe('BillingApi', () => {
       mockDataSource.get.mockRejectedValueOnce(error);
 
       await expect(target.getPlan({ planId })).rejects.toThrow(
-        new DataSourceError('Internal server error', status),
-      );
-    });
-  });
-
-  describe('getCustomer', () => {
-    it('should call the billing service API with correct URL, headers and cache dir', async () => {
-      const customer = customerBuilder().build();
-      mockDataSource.get.mockResolvedValueOnce(rawify({ customer }));
-
-      const result = await target.getCustomer({
-        upstreamCustomerId: customer.upstreamCustomerId,
-      });
-
-      expect(result).toEqual({ customer });
-      expect(mockDataSource.get).toHaveBeenCalledWith(
-        expectedGetCall({
-          cacheDir: new CacheDir(
-            `${customer.upstreamCustomerId}_billing_customer`,
-            '',
-          ),
-          url: `${baseUri}/api/v1/customers/${stripDashes(customer.upstreamCustomerId)}`,
-          expireTimeSeconds: billingExpireTimeSeconds,
-        }),
-      );
-    });
-
-    it('should forward a 401 as a DataSourceError', async () => {
-      const upstreamCustomerId = faker.string.uuid();
-      const error = new NetworkResponseError(
-        new URL(`${baseUri}/api/v1/customers/${upstreamCustomerId}`),
-        { status: 401 } as Response,
-        { message: 'Token expired' },
-      );
-      mockDataSource.get.mockRejectedValueOnce(error);
-
-      await expect(target.getCustomer({ upstreamCustomerId })).rejects.toThrow(
-        new DataSourceError('Token expired', 401),
-      );
-    });
-
-    it('should forward network errors', async () => {
-      const upstreamCustomerId = faker.string.uuid();
-      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
-      const error = new NetworkResponseError(
-        new URL(`${baseUri}/api/v1/customers/${upstreamCustomerId}`),
-        { status } as Response,
-        { message: 'Internal server error' },
-      );
-      mockDataSource.get.mockRejectedValueOnce(error);
-
-      await expect(target.getCustomer({ upstreamCustomerId })).rejects.toThrow(
         new DataSourceError('Internal server error', status),
       );
     });

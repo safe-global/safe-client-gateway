@@ -39,10 +39,8 @@ export class CacheRouter {
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
-  private static readonly BILLING_CUSTOMER_KEY = 'billing_customer';
   private static readonly BILLING_PAYMENT_LINKS_KEY = 'billing_payment_links';
   private static readonly BILLING_PLAN_KEY = 'billing_plan';
-  private static readonly BILLING_PLANS_KEY = 'billing_plans';
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly RELAY_KEY = 'relay';
@@ -1211,19 +1209,8 @@ export class CacheRouter {
     );
   }
 
-  static getBillingPlansCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.BILLING_PLANS_KEY, '');
-  }
-
   static getBillingPlanCacheDir(planId: string): CacheDir {
     return new CacheDir(`${planId}_${CacheRouter.BILLING_PLAN_KEY}`, '');
-  }
-
-  static getBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
-    return new CacheDir(
-      `${upstreamCustomerId}_${CacheRouter.BILLING_CUSTOMER_KEY}`,
-      '',
-    );
   }
 
   /**

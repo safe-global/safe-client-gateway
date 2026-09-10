@@ -44,3 +44,13 @@ export const SubscriptionSchema = z.object({
   currentPeriodEnd: z.number().nullish(),
   metadata: StripeMetadataSchema.nullish(),
 });
+
+/**
+ * Shape of `GET /customers/{id}/subscriptions`, mirroring the upstream's
+ * `SubscriptionsResultDto`.
+ */
+export type SubscriptionsResult = z.infer<typeof SubscriptionsResultSchema>;
+
+export const SubscriptionsResultSchema = z.object({
+  subscriptions: z.array(SubscriptionSchema),
+});

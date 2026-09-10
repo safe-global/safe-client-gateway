@@ -3,12 +3,11 @@ import type {
   CheckoutSession,
   CheckoutSessionResult,
 } from '@/datasources/billing-api/entities/checkout-session.entity';
-import type { Customer } from '@/datasources/billing-api/entities/customer.entity';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+import type { PaymentLinksResult } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import type {
-  Subscription,
   SubscriptionStatusFilter,
+  SubscriptionsResult,
 } from '@/datasources/billing-api/entities/subscription.entity';
 import type {
   SubscriptionUpdatePreview,
@@ -23,11 +22,7 @@ export const IBillingApi = Symbol('IBillingApi');
  * is the single place those become domain entities.
  */
 export interface IBillingApi {
-  listPlans(): Promise<Raw<Array<Plan>>>;
-
   getPlan(args: { planId: string }): Promise<Raw<Plan>>;
-
-  getCustomer(args: { upstreamCustomerId: string }): Promise<Raw<Customer>>;
 
   /** Not cached: returns a fresh, single-use Stripe Billing Portal URL. */
   getCustomerSessionUrl(args: {
@@ -38,7 +33,7 @@ export interface IBillingApi {
   getSubscriptionsByCustomerId(args: {
     upstreamCustomerId: string;
     status?: SubscriptionStatusFilter;
-  }): Promise<Raw<Array<Subscription>>>;
+  }): Promise<Raw<SubscriptionsResult>>;
 
   /**
    * When `args.upstreamCustomerId` is provided, only payment links associated
@@ -47,7 +42,7 @@ export interface IBillingApi {
    */
   listPaymentLinks(args?: {
     upstreamCustomerId?: string;
-  }): Promise<Raw<Array<PaymentLink>>>;
+  }): Promise<Raw<PaymentLinksResult>>;
 
   /** Not cached: this creates a new resource on every call. */
   createCheckoutSession(args: {

@@ -10,14 +10,14 @@ import {
   CheckoutSessionSchema,
 } from '@/datasources/billing-api/entities/checkout-session.entity';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
-import { PaymentLinkSchema } from '@/datasources/billing-api/entities/payment-link.entity';
+import { PaymentLinksResultSchema } from '@/datasources/billing-api/entities/payment-link.entity';
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import { PlanSchema } from '@/datasources/billing-api/entities/plan.entity';
 import type {
   Subscription,
   SubscriptionStatusFilter,
 } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionSchema } from '@/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionsResultSchema } from '@/datasources/billing-api/entities/subscription.entity';
 import type {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
@@ -28,19 +28,6 @@ import {
 } from '@/datasources/billing-api/entities/subscription-update.entity';
 import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
-
-/**
- * The upstream wraps its collections in a single-key envelope. Unwrapping is
- * part of reading the response, so it belongs to the parse rather than to the
- * transport.
- */
-const SubscriptionsSchema = z
-  .object({ subscriptions: z.array(SubscriptionSchema) })
-  .transform((body) => body.subscriptions);
-
-const PaymentLinksSchema = z
-  .object({ paymentLinks: z.array(PaymentLinkSchema) })
-  .transform((body) => body.paymentLinks);
 
 @Injectable()
 export class BillingRepository implements IBillingRepository {
@@ -64,17 +51,23 @@ export class BillingRepository implements IBillingRepository {
     upstreamCustomerId: string;
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
-    return SubscriptionsSchema.parse(
+    // Unwrapping the envelope is part of the parse: the datasource hands over
+    // the wire shape and this is where it becomes the collection.
+    const { subscriptions } = SubscriptionsResultSchema.parse(
       await this.billingApi.getSubscriptionsByCustomerId(args),
     );
+
+    return subscriptions;
   }
 
   public async listPaymentLinks(
     args: { upstreamCustomerId?: string } = {},
   ): Promise<Array<PaymentLink>> {
-    return PaymentLinksSchema.parse(
+    const { paymentLinks } = PaymentLinksResultSchema.parse(
       await this.billingApi.listPaymentLinks(args),
     );
+
+    return paymentLinks;
   }
 
   public async createCheckoutSession(args: {
