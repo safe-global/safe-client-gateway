@@ -194,12 +194,9 @@ export class SafesV2Service {
   }
 
   /**
-   * Resolves, per unique chainId, the Zerion network name that keys the wallet
-   * portfolio's per-chain distribution. Zerion's chain list is fetched once per
-   * environment (mainnet, testnet) present in the request. A chain is on the
-   * Zerion path when Zerion is enabled globally and lists the chain; a chain
-   * Zerion does not know, or a failed lookup, is absent from the map and uses
-   * the fallback.
+   * Zerion's chain list is the source of truth for which chains use the
+   * portfolio path; it is fetched once per environment in the request. A chain
+   * Zerion does not list, or a failed lookup, is absent and uses the fallback.
    */
   private async resolveZerionChainNames(
     chainsById: Map<string, Chain | null>,
@@ -211,34 +208,40 @@ export class SafesV2Service {
     const chains = [...chainsById.values()].filter(
       (chain): chain is Chain => chain !== null,
     );
-    const networksByEnvironment = new Map<boolean, Record<string, string>>();
-    await Promise.all(
-      [...new Set(chains.map((chain) => chain.isTestnet))].map(
-        async (isTestnet) => {
-          try {
-            networksByEnvironment.set(
-              isTestnet,
-              await this.zerionRepository.getNetworksByChainId(isTestnet),
-            );
-          } catch (error) {
-            this.loggingService.warn({
-              type: LogType.PortfolioRequestError,
-              source: 'SafesV2Service',
-              event: 'Zerion chain lookup failed',
-              isTestnet,
-              detail: asError(error).message,
-            });
-          }
-        },
-      ),
-    );
+    const none: Record<string, string> = {};
+    const [mainnet, testnet] = await Promise.all([
+      chains.some((chain) => !chain.isTestnet)
+        ? this.getZerionNetworkNames(false)
+        : none,
+      chains.some((chain) => chain.isTestnet)
+        ? this.getZerionNetworkNames(true)
+        : none,
+    ]);
     for (const chain of chains) {
-      const name = networksByEnvironment.get(chain.isTestnet)?.[chain.chainId];
+      const name = (chain.isTestnet ? testnet : mainnet)[chain.chainId];
       if (name) {
         names.set(chain.chainId, name);
       }
     }
     return names;
+  }
+
+  /** Empty on failure so every chain of that environment degrades to the fallback. */
+  private async getZerionNetworkNames(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>> {
+    try {
+      return await this.zerionRepository.getNetworkNamesByChainId(isTestnet);
+    } catch (error) {
+      this.loggingService.warn({
+        type: LogType.ZerionChainListError,
+        source: 'SafesV2Service',
+        event: 'Zerion chain lookup failed',
+        isTestnet,
+        detail: asError(error).message,
+      });
+      return {};
+    }
   }
 
   /**
