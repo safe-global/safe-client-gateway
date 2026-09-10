@@ -2,7 +2,15 @@
 import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
-/** Upper bound for one batch lookup. The web app's popular list is at most 8 tokens per chain. */
+/**
+ * Upper bound for one batch lookup. The web app's popular list is at most 8
+ * tokens per chain, so 20 leaves headroom without inviting amplification.
+ *
+ * Read together with `tokens.rateLimit.max`: the two multiply into the
+ * worst-case upstream fan-out per caller per window. Tightening that ceiling
+ * is a rate-limit change, not a change here, because this bound is part of
+ * the published API contract and is interpolated into the OpenAPI schema.
+ */
 export const MAX_TOKEN_ADDRESSES = 20;
 
 /**
