@@ -51,4 +51,17 @@ export interface IFeeServiceApi {
     safeAddress: Address;
     request: GtfFeesRequest;
   }): Promise<GtfFeesResponse>;
+
+  /**
+   * Gets the fee quote the fee service stored for an already-quoted transaction.
+   *
+   * @param args.chainId - Chain ID
+   * @param args.safeTxHash - Safe transaction hash the quote was stored under
+   * @returns GTF fee response with safeTxHash, txData, feeBreakdown, and pricing snapshot
+   * @throws {DataSourceError} If no quote is stored or the fee service request fails
+   */
+  getGtfFeeSnapshot(args: {
+    chainId: string;
+    safeTxHash: Hex;
+  }): Promise<GtfFeesResponse>;
 }
