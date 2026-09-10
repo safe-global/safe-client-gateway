@@ -13,7 +13,6 @@ import type { PaymentLink } from '@/datasources/billing-api/entities/payment-lin
 import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
 import type {
   Subscription,
-  SubscriptionStatus,
   SubscriptionStatusFilter,
 } from '@/datasources/billing-api/entities/subscription.entity';
 import type {
@@ -37,6 +36,7 @@ import {
   isUnclassifiedTrialLink,
   offersPlan,
 } from '@/modules/billing/domain/payment-link-offer.rules';
+import { UPDATABLE_SUBSCRIPTION_STATUSES } from '@/modules/billing/domain/subscription.constants';
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
@@ -48,16 +48,6 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-
-/**
- * Statuses whose plan the upstream will move. Not
- * `ACTIVE_SUBSCRIPTION_STATUSES`, which is frozen in lockstep with the
- * `UQ_subscriptions_active_space` index — same two values, different reason.
- */
-const UPDATABLE_SUBSCRIPTION_STATUSES: ReadonlyArray<SubscriptionStatus> = [
-  'active',
-  'trialing',
-];
 
 @Injectable()
 export class BillingService {
