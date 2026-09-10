@@ -19,7 +19,6 @@ import type {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
 } from '@/datasources/billing-api/entities/subscription-update.entity';
-import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -29,6 +28,7 @@ import {
   type RedirectConfig,
   resolveAndValidateRedirectUrl,
 } from '@/modules/auth/utils/auth-redirect.helper';
+import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-link-offer.rules';
 import {
@@ -55,8 +55,8 @@ export class BillingService {
   private readonly enforcementStartsAt: Date;
 
   public constructor(
-    @Inject(IBillingApi)
-    private readonly billingApi: IBillingApi,
+    @Inject(IBillingRepository)
+    private readonly billingRepository: IBillingRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
     @Inject(IConfigurationService)
@@ -88,14 +88,14 @@ export class BillingService {
   }): Promise<Array<Subscription>> {
     await this.assertSpaceMember(args.spaceId, args.authPayload);
 
-    return await this.billingApi.getSubscriptionsByCustomerId({
+    return await this.billingRepository.getSubscriptionsByCustomerId({
       upstreamCustomerId: args.spaceUuid,
       status: args.status,
     });
   }
 
   public async getPlan(planId: string): Promise<Plan> {
-    return await this.billingApi.getPlan({ planId });
+    return await this.billingRepository.getPlan({ planId });
   }
 
   public async getSessionUrl(args: {
@@ -106,7 +106,7 @@ export class BillingService {
   }): Promise<{ url: string }> {
     await this.assertSpaceMember(args.spaceId, args.authPayload);
 
-    const url = await this.billingApi.getCustomerSessionUrl({
+    const url = await this.billingRepository.getCustomerSessionUrl({
       upstreamCustomerId: args.spaceUuid,
       returnUrl: this.validateReturnUrl(args.returnUrl),
     });
@@ -143,7 +143,7 @@ export class BillingService {
       );
     }
 
-    return await this.billingApi.createCheckoutSession({
+    return await this.billingRepository.createCheckoutSession({
       paymentLinkId: args.paymentLinkId,
       upstreamCustomerId: args.spaceUuid,
       returnUrl,
@@ -151,7 +151,9 @@ export class BillingService {
   }
 
   public async getCheckoutSession(sessionId: string): Promise<CheckoutSession> {
-    const session = await this.billingApi.getCheckoutSession({ sessionId });
+    const session = await this.billingRepository.getCheckoutSession({
+      sessionId,
+    });
 
     return toCheckoutSessionDto(session);
   }
@@ -192,7 +194,7 @@ export class BillingService {
       );
     }
 
-    return await this.billingApi.previewSubscriptionUpdate({
+    return await this.billingRepository.previewSubscriptionUpdate({
       upstreamCustomerId: args.spaceUuid,
       subscriptionId: args.subscriptionId,
       planId: args.planId,
@@ -246,7 +248,7 @@ export class BillingService {
 
     const paymentLink = this.paymentLinkForPlanOrFail(offeredLinks, args);
 
-    const result = await this.billingApi.updateSubscription({
+    const result = await this.billingRepository.updateSubscription({
       upstreamCustomerId: args.spaceUuid,
       subscriptionId: args.subscriptionId,
       planId: args.planId,
@@ -276,10 +278,10 @@ export class BillingService {
     spaceUuid: Space['uuid'];
   }): Promise<Array<PaymentLink>> {
     const [spaceLinks, generalLinks, eligibility] = await Promise.all([
-      this.billingApi.listPaymentLinks({
+      this.billingRepository.listPaymentLinks({
         upstreamCustomerId: args.spaceUuid,
       }),
-      this.billingApi.listPaymentLinks(),
+      this.billingRepository.listPaymentLinks(),
       this.getOfferEligibility(args.spaceId),
     ]);
 
@@ -334,9 +336,10 @@ export class BillingService {
     spaceUuid: Space['uuid'];
     subscriptionId: string;
   }): Promise<Subscription | undefined> {
-    const subscriptions = await this.billingApi.getSubscriptionsByCustomerId({
-      upstreamCustomerId: args.spaceUuid,
-    });
+    const subscriptions =
+      await this.billingRepository.getSubscriptionsByCustomerId({
+        upstreamCustomerId: args.spaceUuid,
+      });
 
     return subscriptions.find(
       (candidate) => candidate.id === args.subscriptionId,

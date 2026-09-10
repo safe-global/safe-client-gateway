@@ -223,6 +223,7 @@ export class BillingController {
     description: 'Not a member, or a plan this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
+  @ApiConflictResponse({ description: 'Already on this plan' })
   @ApiUnprocessableEntityResponse({
     description: 'Malformed subscriptionId or planId',
   })

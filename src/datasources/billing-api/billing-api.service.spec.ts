@@ -2,7 +2,6 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { ZodError } from 'zod';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { BillingApi } from '@/datasources/billing-api/billing-api.service';
 import {
@@ -140,7 +139,8 @@ describe('BillingApi', () => {
 
       const result = await target.listPlans();
 
-      expect(result).toEqual(plans);
+      // Raw: the envelope reaches the repository unopened.
+      expect(result).toEqual({ plans });
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir('billing_plans', ''),
@@ -161,14 +161,6 @@ describe('BillingApi', () => {
       await expect(target.listPlans()).rejects.toThrow(
         new DataSourceError('Internal server error', status),
       );
-    });
-
-    it('should throw a ZodError on a malformed response', async () => {
-      mockDataSource.get.mockResolvedValueOnce(
-        rawify({ plans: [{ malformed: true }] }),
-      );
-
-      await expect(target.listPlans()).rejects.toThrow();
     });
   });
 
@@ -227,7 +219,7 @@ describe('BillingApi', () => {
         upstreamCustomerId: customer.upstreamCustomerId,
       });
 
-      expect(result).toEqual(customer);
+      expect(result).toEqual({ customer });
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
@@ -238,24 +230,6 @@ describe('BillingApi', () => {
           expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
-    });
-
-    it('should restore dashes in a hex-only upstreamCustomerId from the response', async () => {
-      const customer = customerBuilder().build();
-      mockDataSource.get.mockResolvedValueOnce(
-        rawify({
-          customer: {
-            ...customer,
-            upstreamCustomerId: stripDashes(customer.upstreamCustomerId),
-          },
-        }),
-      );
-
-      const result = await target.getCustomer({
-        upstreamCustomerId: customer.upstreamCustomerId,
-      });
-
-      expect(result).toEqual(customer);
     });
 
     it('should forward a 401 as a DataSourceError', async () => {
@@ -361,7 +335,7 @@ describe('BillingApi', () => {
         upstreamCustomerId,
       });
 
-      expect(result).toEqual(subscriptions);
+      expect(result).toEqual({ subscriptions });
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir(
@@ -372,52 +346,6 @@ describe('BillingApi', () => {
           expireTimeSeconds: billingExpireTimeSeconds,
         }),
       );
-    });
-
-    it('should restore dashes in a hex-only upstreamCustomerId from the response', async () => {
-      const upstreamCustomerId = faker.string.uuid();
-      const subscription = subscriptionBuilder().build();
-      mockDataSource.get.mockResolvedValueOnce(
-        rawify({
-          subscriptions: [
-            {
-              ...subscription,
-              upstreamCustomerId: stripDashes(subscription.upstreamCustomerId),
-            },
-          ],
-        }),
-      );
-
-      const result = await target.getSubscriptionsByCustomerId({
-        upstreamCustomerId,
-      });
-
-      expect(result).toEqual([subscription]);
-    });
-
-    it('should accept a plan with absent name/description/billingCycle and a null originalPrice', async () => {
-      const upstreamCustomerId = faker.string.uuid();
-      const subscription = subscriptionBuilder().build();
-      const { name, description, billingCycle, ...planWithoutOptionals } =
-        subscription.plan;
-      const rawSubscription = {
-        ...subscription,
-        plan: { ...planWithoutOptionals, originalPrice: null },
-      };
-      mockDataSource.get.mockResolvedValueOnce(
-        rawify({ subscriptions: [rawSubscription] }),
-      );
-
-      const result = await target.getSubscriptionsByCustomerId({
-        upstreamCustomerId,
-      });
-
-      expect(result).toEqual([
-        {
-          ...subscription,
-          plan: { ...planWithoutOptionals, originalPrice: null },
-        },
-      ]);
     });
 
     it('should forward the status filter as a query param and cache field', async () => {
@@ -492,7 +420,7 @@ describe('BillingApi', () => {
 
       const result = await target.listPaymentLinks();
 
-      expect(result).toEqual(paymentLinks);
+      expect(result).toEqual({ paymentLinks });
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir('billing_payment_links', ''),
@@ -508,7 +436,7 @@ describe('BillingApi', () => {
 
       const result = await target.listPaymentLinks({ upstreamCustomerId });
 
-      expect(result).toEqual(paymentLinks);
+      expect(result).toEqual({ paymentLinks });
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expectedGetCall({
           cacheDir: new CacheDir('billing_payment_links', upstreamCustomerId),
@@ -516,14 +444,6 @@ describe('BillingApi', () => {
           params: { customerId: stripDashes(upstreamCustomerId) },
         }),
       );
-    });
-
-    it('should throw a ZodError on a malformed response', async () => {
-      mockDataSource.get.mockResolvedValueOnce(
-        rawify({ paymentLinks: [{ malformed: true }] }),
-      );
-
-      await expect(target.listPaymentLinks()).rejects.toThrow();
     });
 
     it('should forward network errors', async () => {
@@ -571,21 +491,6 @@ describe('BillingApi', () => {
         },
       });
       expect(mockDataSource.post).not.toHaveBeenCalled();
-    });
-
-    it('should throw a ZodError on a malformed response', async () => {
-      mockNetworkService.post.mockResolvedValueOnce({
-        status: 201,
-        data: rawify({ malformed: true }),
-      });
-
-      await expect(
-        target.createCheckoutSession({
-          paymentLinkId: faker.string.uuid(),
-          upstreamCustomerId: faker.string.uuid(),
-          returnUrl: faker.internet.url(),
-        }),
-      ).rejects.toThrow();
     });
 
     it('should forward network errors', async () => {
@@ -656,17 +561,6 @@ describe('BillingApi', () => {
       });
     });
 
-    it('should throw a ZodError on a malformed response', async () => {
-      mockNetworkService.get.mockResolvedValueOnce({
-        status: 200,
-        data: rawify({ malformed: true }),
-      });
-
-      await expect(
-        target.getCheckoutSession({ sessionId: faker.string.uuid() }),
-      ).rejects.toThrow();
-    });
-
     it('should forward network errors', async () => {
       const sessionId = faker.string.alphanumeric(32);
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
@@ -713,21 +607,6 @@ describe('BillingApi', () => {
         },
       });
       expect(mockDataSource.get).not.toHaveBeenCalled();
-    });
-
-    it('should throw a ZodError on a malformed response', async () => {
-      mockNetworkService.get.mockResolvedValueOnce({
-        status: 200,
-        data: rawify({ malformed: true }),
-      });
-
-      await expect(
-        target.previewSubscriptionUpdate({
-          upstreamCustomerId: faker.string.uuid(),
-          subscriptionId: faker.string.alphanumeric(32),
-          planId: faker.string.alphanumeric(32),
-        }),
-      ).rejects.toThrow(ZodError);
     });
 
     it('should forward network errors', async () => {
@@ -843,28 +722,6 @@ describe('BillingApi', () => {
       // Failing here would have the client retry an applied change.
       expect(result).toEqual(updateResult);
       expect(mockLoggingService.warn).toHaveBeenCalled();
-    });
-
-    it('should still invalidate the cache when the response is malformed', async () => {
-      const upstreamCustomerId = faker.string.uuid();
-      mockNetworkService.patch.mockResolvedValueOnce({
-        status: 200,
-        data: rawify({ malformed: true }),
-      });
-
-      await expect(
-        target.updateSubscription({
-          upstreamCustomerId,
-          subscriptionId: faker.string.alphanumeric(32),
-          planId: faker.string.alphanumeric(32),
-          paymentLinkId: faker.string.alphanumeric(32),
-        }),
-      ).rejects.toThrow(ZodError);
-
-      // The change was applied; only the body is unreadable.
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
-        CacheRouter.getBillingSubscriptionsCacheKey(upstreamCustomerId),
-      );
     });
   });
 
