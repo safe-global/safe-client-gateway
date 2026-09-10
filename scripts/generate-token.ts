@@ -9,21 +9,23 @@
  * running app verifies incoming tokens offline with the matching public key
  * (BILLING_WEBHOOK_JWT_PUBLIC_KEY); it never signs.
  *
- * Two signing modes (the issuer is resolved from app config either way, so a
- * minted token always matches what the guard verifies):
+ * Two signing modes. Both read the issuer from BILLING_WEBHOOK_JWT_ISSUER, which
+ * must match the verifying app's value or the guard rejects `iss`/`aud`:
  *   - **KMS** — set BILLING_WEBHOOK_JWT_KMS_KEY_ID (asymmetric ECC_NIST_P256
  *     key). The private key never leaves KMS. Also prints the public key PEM to
- *     configure the verifier. Requires AWS_REGION + credentials (AWS_WEB_IDENTITY_TOKEN_FILE).
+ *     configure the verifier. Needs AWS_REGION and a principal holding
+ *     `kms:Sign` + `kms:GetPublicKey` on the key — never the CGW's runtime
+ *     role, so don't run this inside an app pod.
  *   - **Local PEM** — set BILLING_WEBHOOK_JWT_PRIVATE_KEY (ES256 EC P-256 PEM).
- *     For dev/CI only; rejected when CGW_ENV is production or staging (KMS is
- *     required there).
+ *     Local development only; rejected when CGW_ENV is production or staging
+ *     (KMS is required there).
  *
  * Usage:
  *   # local key
  *   BILLING_WEBHOOK_JWT_PRIVATE_KEY="$(cat ec-priv.pem)" \
  *     yarn generate-token --sub billing-service --expires-in 1825
  *   # KMS
- *   BILLING_WEBHOOK_JWT_KMS_KEY_ID=<arn> \
+ *   AWS_REGION=<region> BILLING_WEBHOOK_JWT_KMS_KEY_ID=<arn> \
  *     yarn generate-token --sub billing-service
  *
  * See src/modules/billing/README.md for the full usage and provisioning guide.
@@ -107,10 +109,11 @@ async function mintViaKms(
     keyId: kms.keyId,
     webIdentityTokenFile: kms.webIdentityTokenFile,
   });
-  const token = await BillingAuthService.mintViaSigner(claimsArgs, (input) =>
-    signer.sign(input),
-  );
-  // Return the matching public key so ops can set BILLING_WEBHOOK_JWT_PUBLIC_KEY.
+  // Read the public key first: provisioning needs both `kms:GetPublicKey` and
+  // `kms:Sign`, so probing the read action up front fails a
+  // half-authorized principal before a `Sign` call is spent on a token that
+  // couldn't be provisioned anyway. Returned so ops can set
+  // BILLING_WEBHOOK_JWT_PUBLIC_KEY.
   const spkiDer = await signer.getPublicKey();
   const publicKeyPem = createPublicKey({
     key: spkiDer,
@@ -119,6 +122,10 @@ async function mintViaKms(
   })
     .export({ format: 'pem', type: 'spki' })
     .toString();
+
+  const token = await BillingAuthService.mintViaSigner(claimsArgs, (input) =>
+    signer.sign(input),
+  );
   return { token, publicKeyPem };
 }
 
