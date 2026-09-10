@@ -19,8 +19,10 @@ import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
 @Injectable()
 export class TokensRateLimitGuard extends RateLimitGuard {
   constructor(
+    // Read only to build `rateLimits` below, never after construction, so it is
+    // a plain parameter like `cacheService`/`loggingService` rather than a field.
     @Inject(IConfigurationService)
-    readonly configurationService: IConfigurationService,
+    configurationService: IConfigurationService,
     @Inject(CacheService) cacheService: ICacheService,
     @Inject(LoggingService) loggingService: ILoggingService,
   ) {
