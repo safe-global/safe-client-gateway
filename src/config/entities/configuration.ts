@@ -64,6 +64,10 @@ export default () => ({
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
     allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
+    allowedSiweDomains:
+      process.env.AUTH_ALLOWED_SIWE_DOMAINS?.split(',')
+        .map((domain) => domain.trim())
+        .filter((domain) => domain.length > 0) ?? [],
     auth0: {
       domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,

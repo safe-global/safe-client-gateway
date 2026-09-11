@@ -96,6 +96,16 @@ export const RootConfigurationSchema = z
     AUTH_TOKEN: z.string(),
     AUTH_POST_LOGIN_REDIRECT_URI: z.url(),
     AUTH_ALLOWED_REDIRECT_DOMAIN: DomainSchema.optional(),
+    AUTH_ALLOWED_SIWE_DOMAINS: z
+      .string()
+      .refine(
+        (value) =>
+          value
+            .split(',')
+            .every((domain) => DomainSchema.safeParse(domain.trim()).success),
+        { message: 'Must be a comma-separated list of valid domains' },
+      )
+      .optional(),
     AUTH0_API_AUDIENCE: z.string().optional(),
     AUTH0_DOMAIN: DomainSchema.optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
@@ -288,6 +298,7 @@ export const RootConfigurationSchema = z
       requiredWhen = true,
       message = 'is required in production and staging environments',
     } of [
+      { field: 'AUTH_ALLOWED_SIWE_DOMAINS' },
       { field: 'AWS_ACCESS_KEY_ID' },
       { field: 'AWS_KMS_ENCRYPTION_KEY_ID' },
       { field: 'AWS_SECRET_ACCESS_KEY' },

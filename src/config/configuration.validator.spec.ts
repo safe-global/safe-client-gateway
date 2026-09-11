@@ -17,6 +17,7 @@ describe('Configuration validator', () => {
     ...JSON.parse(fakeJson()),
     AUTH_TOKEN: faker.string.uuid(),
     AUTH_POST_LOGIN_REDIRECT_URI: faker.internet.url(),
+    AUTH_ALLOWED_SIWE_DOMAINS: faker.internet.domainName(),
     AWS_ACCESS_KEY_ID: faker.string.uuid(),
     AWS_KMS_ENCRYPTION_KEY_ID: faker.string.uuid(),
     AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
@@ -231,6 +232,7 @@ describe('Configuration validator', () => {
 
   describe.each(['staging', 'production'])('%s environment', (env) => {
     it.each([
+      { key: 'AUTH_ALLOWED_SIWE_DOMAINS' },
       { key: 'AWS_ACCESS_KEY_ID' },
       { key: 'AWS_KMS_ENCRYPTION_KEY_ID' },
       { key: 'AWS_SECRET_ACCESS_KEY' },

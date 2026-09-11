@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { buildSiweMessageSchema } from '@/modules/siwe/domain/entities/siwe-message.entity';
 
 describe('buildSiweMessageSchema', () => {
   const SKEW_SECONDS = 30;
-  const schema = buildSiweMessageSchema(SKEW_SECONDS);
+  const schema = buildSiweMessageSchema({ clockSkewSeconds: SKEW_SECONDS });
 
   function issues(s: typeof schema, message: unknown): Array<string> {
     const result = s.safeParse(message);
@@ -81,12 +82,61 @@ describe('buildSiweMessageSchema', () => {
         .with('issuedAt', new Date(Date.now() + 20_000))
         .build();
 
-      expect(issues(buildSiweMessageSchema(30), message)).not.toContain(
-        'Message not yet issued',
-      );
-      expect(issues(buildSiweMessageSchema(5), message)).toContain(
-        'Message not yet issued',
-      );
+      expect(
+        issues(buildSiweMessageSchema({ clockSkewSeconds: 30 }), message),
+      ).not.toContain('Message not yet issued');
+      expect(
+        issues(buildSiweMessageSchema({ clockSkewSeconds: 5 }), message),
+      ).toContain('Message not yet issued');
+    });
+  });
+
+  // A signature is only meaningful for the origin that requested it, so a
+  // message bound to another origin is rejected where the allow list is set.
+  describe('domain binding', () => {
+    const allowedDomain = faker.internet.domainName();
+    const boundSchema = buildSiweMessageSchema({
+      clockSkewSeconds: SKEW_SECONDS,
+      allowedDomains: [allowedDomain],
+    });
+
+    it('accepts a message bound to an allowed domain', () => {
+      const message = siweMessageBuilder()
+        .with('domain', allowedDomain)
+        .with('uri', `https://${allowedDomain}/login`)
+        .build();
+
+      expect(boundSchema.safeParse(message).success).toBe(true);
+    });
+
+    it('rejects a message bound to another domain', () => {
+      const message = siweMessageBuilder().build();
+
+      expect(issues(boundSchema, message)).toContain('Invalid domain');
+    });
+
+    it('rejects a URI pointing at another domain', () => {
+      const message = siweMessageBuilder()
+        .with('domain', allowedDomain)
+        .with('uri', faker.internet.url({ appendSlash: false }))
+        .build();
+
+      expect(issues(boundSchema, message)).toContain('Invalid URI');
+    });
+
+    it('rejects a URI that is not a valid URL', () => {
+      const message = siweMessageBuilder()
+        .with('domain', allowedDomain)
+        .with('uri', faker.string.alphanumeric({ length: 10 }))
+        .build();
+
+      expect(issues(boundSchema, message)).toContain('Invalid URI');
+    });
+
+    it('does not check the domain when no domain is allow listed', () => {
+      const message = siweMessageBuilder().build();
+
+      expect(issues(schema, message)).toHaveLength(0);
     });
   });
 });
