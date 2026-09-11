@@ -571,7 +571,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: 'Value must be less than or euqal to 78',
+          message: 'Value must be less than or equal to 78',
           path: ['safes', 0, 'chainId'],
         });
     });
@@ -1327,7 +1327,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: 'Value must be less than or euqal to 78',
+          message: 'Value must be less than or equal to 78',
           path: ['safes', 0, 'chainId'],
         });
     });

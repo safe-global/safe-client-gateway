@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '@/datasources/cache/cache.router';
@@ -9,12 +9,14 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { Page } from '@/domain/entities/page.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import type { GasToken } from '@/modules/fees/domain/entities/gas-token.entity';
 import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
 import type { Raw } from '@/validation/entities/raw.entity';
@@ -71,6 +73,7 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChain(chainId: string): Promise<Raw<Chain>> {
+    this.assertChainId(chainId);
     try {
       const url = `${this.baseUri}/api/v1/chains/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDir(chainId);
@@ -146,6 +149,7 @@ export class ConfigApi implements IConfigApi {
   }
 
   async getChainV2(serviceKey: string, chainId: string): Promise<Raw<Chain>> {
+    this.assertChainId(chainId);
     try {
       const url = `${this.baseUri}/api/v2/chains/${serviceKey}/${chainId}`;
       const cacheDir = CacheRouter.getChainCacheDirV2(serviceKey, chainId);
@@ -208,5 +212,13 @@ export class ConfigApi implements IConfigApi {
   async clearSafeApps(chainId: string): Promise<void> {
     const key = CacheRouter.getSafeAppsKey(chainId);
     await this.cacheService.deleteByKey(key);
+  }
+
+  // A non-numeric chainId such as '' resolves to the chain collection endpoint, whose
+  // page payload fails Chain validation and is then cached under the chain key.
+  private assertChainId(chainId: string): void {
+    if (!ChainIdSchema.safeParse(chainId).success) {
+      throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
+    }
   }
 }

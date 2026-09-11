@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
@@ -13,6 +14,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
@@ -116,6 +118,18 @@ describe('ConfigApi', () => {
     });
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
+
+  it.each(['', faker.string.alpha(), '1'.repeat(CHAIN_ID_MAXLENGTH + 1)])(
+    'should reject chainId %j without addressing the chain collection',
+    async (chainId) => {
+      await expect(service.getChain(chainId)).rejects.toThrow(
+        new DataSourceError('Chain not found', HttpStatus.NOT_FOUND),
+      );
+
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+      expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+    },
+  );
 
   it('should return the gas tokens retrieved by chainId', async () => {
     const chainId = faker.string.numeric();
@@ -299,6 +313,20 @@ describe('ConfigApi', () => {
         expireTimeSeconds: expirationTimeInSeconds,
       });
     });
+
+    it.each(['', faker.string.alpha(), '1'.repeat(CHAIN_ID_MAXLENGTH + 1)])(
+      'should reject chainId %j without addressing the v2 chain collection',
+      async (chainId) => {
+        await expect(
+          service.getChainV2(faker.word.sample(), chainId),
+        ).rejects.toThrow(
+          new DataSourceError('Chain not found', HttpStatus.NOT_FOUND),
+        );
+
+        expect(mockDataSource.get).not.toHaveBeenCalled();
+        expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
+      },
+    );
 
     it('should return the chain retrieved from v2 endpoint', async () => {
       const serviceKey = faker.word.sample();
