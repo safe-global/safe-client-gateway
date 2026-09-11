@@ -14,6 +14,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
 import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
@@ -118,7 +119,7 @@ describe('ConfigApi', () => {
     expect(mockHttpErrorFactory.from).toHaveBeenCalledTimes(0);
   });
 
-  it.each(['', faker.string.alpha()])(
+  it.each(['', faker.string.alpha(), '1'.repeat(CHAIN_ID_MAXLENGTH + 1)])(
     'should reject chainId %j without addressing the chain collection',
     async (chainId) => {
       await expect(service.getChain(chainId)).rejects.toThrow(
@@ -313,7 +314,7 @@ describe('ConfigApi', () => {
       });
     });
 
-    it.each(['', faker.string.alpha()])(
+    it.each(['', faker.string.alpha(), '1'.repeat(CHAIN_ID_MAXLENGTH + 1)])(
       'should reject chainId %j without addressing the v2 chain collection',
       async (chainId) => {
         await expect(

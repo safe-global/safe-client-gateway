@@ -72,13 +72,6 @@ export class ConfigApi implements IConfigApi {
     }
   }
 
-  // An invalid chainId would address another endpoint and cache-poison the chain key.
-  private assertChainId(chainId: string): void {
-    if (!ChainIdSchema.safeParse(chainId).success) {
-      throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
-    }
-  }
-
   async getChain(chainId: string): Promise<Raw<Chain>> {
     this.assertChainId(chainId);
     try {
@@ -219,5 +212,13 @@ export class ConfigApi implements IConfigApi {
   async clearSafeApps(chainId: string): Promise<void> {
     const key = CacheRouter.getSafeAppsKey(chainId);
     await this.cacheService.deleteByKey(key);
+  }
+
+  // A non-numeric chainId such as '' resolves to the chain collection endpoint, whose
+  // page payload fails Chain validation and is then cached under the chain key.
+  private assertChainId(chainId: string): void {
+    if (!ChainIdSchema.safeParse(chainId).success) {
+      throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
+    }
   }
 }
