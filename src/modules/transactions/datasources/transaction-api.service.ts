@@ -1053,7 +1053,7 @@ export class TransactionApi implements ITransactionApi {
 
   async getMessageByHash(messageHash: string): Promise<Raw<Message>> {
     try {
-      const url = `${this.baseUrl}/api/v1/messages/${messageHash}`;
+      const url = `${this.baseUrl}/api/v1/messages/${messageHash}/`;
       const cacheDir = CacheRouter.getMessageByHashCacheDir({
         chainId: this.chainId,
         messageHash,

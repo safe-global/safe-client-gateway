@@ -108,7 +108,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -176,7 +176,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -241,7 +241,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -309,7 +309,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -374,7 +374,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -439,7 +439,7 @@ describe('Messages controller', () => {
         switch (url) {
           case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
             return Promise.resolve({ data: rawify(chain), status: 200 });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -928,7 +928,7 @@ describe('Messages controller', () => {
           case `${chain.transactionService}/api/v1/safes/${safe.address}`:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           // The message is indexed asynchronously and not yet readable
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.reject(
               new NetworkResponseError(
                 new URL(url),
@@ -1342,7 +1342,7 @@ describe('Messages controller', () => {
               data: rawify(safe),
               status: 200,
             });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -1406,7 +1406,7 @@ describe('Messages controller', () => {
               data: rawify(safe),
               status: 200,
             });
-          case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+          case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
             return Promise.resolve({
               data: rawify(messageToJson(message)),
               status: 200,
@@ -1484,7 +1484,7 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
               return Promise.resolve({
                 data: rawify(messageToJson(message)),
                 status: 200,
@@ -1545,7 +1545,7 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
               return Promise.resolve({
                 data: rawify(messageToJson(message)),
                 status: 200,
@@ -1679,7 +1679,7 @@ describe('Messages controller', () => {
                   data: rawify(safe),
                   status: 200,
                 });
-              case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+              case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
                 return Promise.resolve({
                   data: rawify(messageToJson(message)),
                   status: 200,
@@ -1746,7 +1746,7 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
               return Promise.resolve({
                 data: rawify(messageToJson(message)),
                 status: 200,
@@ -1819,7 +1819,7 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
               return Promise.resolve({
                 data: rawify(messageToJson(message)),
                 status: 200,
@@ -1871,7 +1871,7 @@ describe('Messages controller', () => {
                 data: rawify(safe),
                 status: 200,
               });
-            case `${chain.transactionService}/api/v1/messages/${message.messageHash}`:
+            case `${chain.transactionService}/api/v1/messages/${message.messageHash}/`:
               return Promise.resolve({
                 data: rawify(messageToJson(message)),
                 status: 200,

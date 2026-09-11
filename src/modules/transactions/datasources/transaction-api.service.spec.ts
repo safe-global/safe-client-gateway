@@ -2553,7 +2553,7 @@ describe('TransactionApi', () => {
   describe('getMessageByHash', () => {
     it('should return the message hash received', async () => {
       const messageHash = faker.string.hexadecimal();
-      const getMessageByHashUrl = `${baseUrl}/api/v1/messages/${messageHash}`;
+      const getMessageByHashUrl = `${baseUrl}/api/v1/messages/${messageHash}/`;
       const message = messageBuilder().build();
       const cacheDir = new CacheDir(`${chainId}_message_${messageHash}`, '');
       mockDataSource.get.mockResolvedValueOnce(rawify(message));
@@ -2581,7 +2581,7 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const messageHash = faker.string.hexadecimal();
-      const getMessageByHashUrl = `${baseUrl}/api/v1/messages/${messageHash}`;
+      const getMessageByHashUrl = `${baseUrl}/api/v1/messages/${messageHash}/`;
       const statusCode = errorStatusCodeExcluding(
         UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
       );
