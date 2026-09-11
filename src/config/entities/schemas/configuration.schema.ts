@@ -282,6 +282,16 @@ export const RootConfigurationSchema = z
       });
     }
 
+    // Production binds SiWe messages to the origins it serves; staging and
+    // other environments may leave the list unset, which skips the check.
+    if (config.CGW_ENV === 'production' && !config.AUTH_ALLOWED_SIWE_DOMAINS) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required in the production environment',
+        path: ['AUTH_ALLOWED_SIWE_DOMAINS'],
+      });
+    }
+
     // Field encryption validation runs regardless of environment: enabling it
     // without its dependencies is always broken, deployed or not.
     validateFieldEncryptionConfig(config, ctx);
@@ -298,7 +308,6 @@ export const RootConfigurationSchema = z
       requiredWhen = true,
       message = 'is required in production and staging environments',
     } of [
-      { field: 'AUTH_ALLOWED_SIWE_DOMAINS' },
       { field: 'AWS_ACCESS_KEY_ID' },
       { field: 'AWS_KMS_ENCRYPTION_KEY_ID' },
       { field: 'AWS_SECRET_ACCESS_KEY' },

@@ -232,7 +232,6 @@ describe('Configuration validator', () => {
 
   describe.each(['staging', 'production'])('%s environment', (env) => {
     it.each([
-      { key: 'AUTH_ALLOWED_SIWE_DOMAINS' },
       { key: 'AWS_ACCESS_KEY_ID' },
       { key: 'AWS_KMS_ENCRYPTION_KEY_ID' },
       { key: 'AWS_SECRET_ACCESS_KEY' },
@@ -321,6 +320,52 @@ describe('Configuration validator', () => {
 
       expect(configurationValidator(config, RootConfigurationSchema)).toBe(
         config,
+      );
+    });
+  });
+
+  describe('AUTH_ALLOWED_SIWE_DOMAINS', () => {
+    it('should require AUTH_ALLOWED_SIWE_DOMAINS in the production environment', () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...omit(validConfiguration, 'AUTH_ALLOWED_SIWE_DOMAINS'),
+        CGW_ENV: 'production',
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: AUTH_ALLOWED_SIWE_DOMAINS is required in the production environment',
+      );
+    });
+
+    it.each(['staging', 'development'])(
+      'should not require AUTH_ALLOWED_SIWE_DOMAINS in %s environment',
+      (env) => {
+        process.env.NODE_ENV = 'production';
+        const config = {
+          ...omit(validConfiguration, 'AUTH_ALLOWED_SIWE_DOMAINS'),
+          CGW_ENV: env,
+        };
+
+        expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+          config,
+        );
+      },
+    );
+
+    it('should reject a value that is not a list of domains', () => {
+      process.env.NODE_ENV = 'production';
+      const config = {
+        ...validConfiguration,
+        CGW_ENV: 'production',
+        AUTH_ALLOWED_SIWE_DOMAINS: faker.internet.url(),
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'Configuration is invalid: AUTH_ALLOWED_SIWE_DOMAINS Must be a comma-separated list of valid domains',
       );
     });
   });

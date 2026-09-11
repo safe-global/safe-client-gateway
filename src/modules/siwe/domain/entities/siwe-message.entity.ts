@@ -4,18 +4,6 @@ import { z } from 'zod';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 /**
- * Returns the authority (host and, if present, port) of {@link uri}, or `null`
- * if it cannot be parsed as a URL.
- */
-function getUriAuthority(uri: string): string | null {
-  try {
-    return new URL(uri).host;
-  } catch {
-    return null;
-  }
-}
-
-/**
  * viem provides both parseSiweMessage (used here) and validatedSiweMessage
  * functions but the former returns a Partial<SiweMessage> and the latter
  * does not validate issuedAt as of writing this.
@@ -39,13 +27,21 @@ function getUriAuthority(uri: string): string | null {
  * independently enforced by the single-use, TTL-bound nonce, so this tolerance
  * does not weaken those guarantees.
  * @param args.allowedDomains - Authorities (host, optionally with port) a
- * message may be bound to. An empty list disables the check.
+ * message may be bound to, as EIP-4361 scopes a signature to the origin that
+ * requested it. An empty list disables the check, since the API is also used
+ * locally and across environments.
  */
 export function buildSiweMessageSchema(args?: {
   clockSkewSeconds?: number;
   allowedDomains?: Array<string>;
 }) {
-  const allowedDomains = new Set(args?.allowedDomains ?? []);
+  // An empty allow list disables both checks below.
+  const allowedDomains = args?.allowedDomains ?? [];
+  const isAllowedDomain = (domain: string): boolean =>
+    allowedDomains.length === 0 || allowedDomains.includes(domain);
+  const isAllowedUri = (uri: string): boolean =>
+    allowedDomains.length === 0 ||
+    (URL.canParse(uri) && allowedDomains.includes(new URL(uri).host));
 
   return z
     .preprocess(
@@ -54,10 +50,10 @@ export function buildSiweMessageSchema(args?: {
       // e.g. scheme, domain and uri should be RFC 3986 compliant.
       z.object({
         scheme: z.string().optional(),
-        domain: z.string(),
+        domain: z.string().refine(isAllowedDomain, 'Invalid domain'),
         address: AddressSchema,
         statement: z.string().optional(),
-        uri: z.string(),
+        uri: z.string().refine(isAllowedUri, 'Invalid URI'),
         version: z.literal('1'),
         chainId: z.coerce.number(),
         nonce: z.string(),
@@ -69,30 +65,6 @@ export function buildSiweMessageSchema(args?: {
       }),
     )
     .superRefine((message, ctx) => {
-      /**
-       * EIP-4361 scopes a signature to the origin that requested it, so we
-       * only accept a message whose `domain` and `uri` refer to one of the
-       * configured origins. The list is empty where the API is used locally or
-       * across environments, which disables the check, and is required in
-       * deployed environments.
-       */
-      if (allowedDomains.size > 0) {
-        if (!allowedDomains.has(message.domain)) {
-          ctx.addIssue({
-            code: 'custom',
-            message: 'Invalid domain',
-          });
-        }
-
-        const uriAuthority = getUriAuthority(message.uri);
-        if (!(uriAuthority && allowedDomains.has(uriAuthority))) {
-          ctx.addIssue({
-            code: 'custom',
-            message: 'Invalid URI',
-          });
-        }
-      }
-
       const now = Date.now();
       const skewMs = args?.clockSkewSeconds ? args.clockSkewSeconds * 1_000 : 0;
 
