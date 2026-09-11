@@ -214,6 +214,7 @@ See `src/modules/csv-export/v1/csv-export.service.ts` for the full pipeline.
 
 SIWE (Sign-In with Ethereum) is the primary wallet-based login (`src/modules/siwe/domain/siwe.repository.ts`): the server generates a single-use nonce (`generateSiweNonce`), stores it in cache, and deletes it the moment it is looked up for verification, so a nonce cannot be replayed regardless of whether the signature check that follows succeeds.
 Nonce/message validity is additionally capped by `auth.clockSkewSeconds` and the SIWE message's own expiry.
+The message's `domain` and the authority of its `uri` are checked against `auth.allowedSiweDomains`, which is required in production and empty (check skipped) elsewhere.
 
 A successful login sets a JWT in an `httpOnly` cookie named `access_token` (`ACCESS_TOKEN_COOKIE_NAME`, `src/modules/auth/utils/auth-cookie.utils.ts`); `secure` is always `true`, and `sameSite` is `lax` in production, `none` otherwise.
 The signing algorithm is pinned to `HS256` (`JWT_HS_ALGORITHM`, `src/datasources/jwt/jwt.service.ts`) for both `sign` and `verify` — a token asserting any other algorithm is rejected.

@@ -33,6 +33,7 @@ export default (): ReturnType<typeof configuration> => ({
     elevationWindowSeconds: faker.number.int({ min: 60, max: 1_800 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,
+    allowedSiweDomains: [],
     auth0: {
       domain: faker.internet.domainName(),
       clientId: faker.string.uuid(),

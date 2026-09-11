@@ -21,7 +21,13 @@ export class SiweRepository implements ISiweRepository {
     const clockSkewSeconds = this.configurationService.getOrThrow<number>(
       'auth.clockSkewSeconds',
     );
-    this.siweMessageSchema = buildSiweMessageSchema(clockSkewSeconds);
+    const allowedDomains = this.configurationService.getOrThrow<Array<string>>(
+      'auth.allowedSiweDomains',
+    );
+    this.siweMessageSchema = buildSiweMessageSchema({
+      clockSkewSeconds,
+      allowedDomains,
+    });
   }
 
   /**

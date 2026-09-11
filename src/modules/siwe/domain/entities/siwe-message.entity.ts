@@ -17,17 +17,32 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  *
  * @see https://eips.ethereum.org/EIPS/eip-4361
  *
- * @param clockSkewSeconds - Tolerated clock skew, in seconds, between the client
- * that produced the message and this server when validating its time bounds
- * (`issuedAt`, `expirationTime`, `notBefore`). Client and server wall clocks are
- * never perfectly aligned, so without a small allowance a freshly-signed message
- * whose `issuedAt` is a few seconds ahead of the server clock would be wrongly
- * rejected as "Message yet issued". This mirrors the leeway used by JWT/OIDC
- * validators. Replay protection and freshness are independently enforced by the
- * single-use, TTL-bound nonce, so this tolerance does not weaken those
- * guarantees.
+ * @param args.clockSkewSeconds - Tolerated clock skew, in seconds, between the
+ * client that produced the message and this server when validating its time
+ * bounds (`issuedAt`, `expirationTime`, `notBefore`). Client and server wall
+ * clocks are never perfectly aligned, so without a small allowance a
+ * freshly-signed message whose `issuedAt` is a few seconds ahead of the server
+ * clock would be wrongly rejected as "Message yet issued". This mirrors the
+ * leeway used by JWT/OIDC validators. Replay protection and freshness are
+ * independently enforced by the single-use, TTL-bound nonce, so this tolerance
+ * does not weaken those guarantees.
+ * @param args.allowedDomains - Authorities (host, optionally with port) a
+ * message may be bound to, as EIP-4361 scopes a signature to the origin that
+ * requested it. An empty list disables the check, since the API is also used
+ * locally and across environments.
  */
-export function buildSiweMessageSchema(clockSkewSeconds?: number) {
+export function buildSiweMessageSchema(args?: {
+  clockSkewSeconds?: number;
+  allowedDomains?: Array<string>;
+}) {
+  // An empty allow list disables both checks below.
+  const allowedDomains = args?.allowedDomains ?? [];
+  const isAllowedDomain = (domain: string): boolean =>
+    allowedDomains.length === 0 || allowedDomains.includes(domain);
+  const isAllowedUri = (uri: string): boolean =>
+    allowedDomains.length === 0 ||
+    (URL.canParse(uri) && allowedDomains.includes(new URL(uri).host));
+
   return z
     .preprocess(
       (value) => (typeof value === 'string' ? parseSiweMessage(value) : value),
@@ -35,10 +50,10 @@ export function buildSiweMessageSchema(clockSkewSeconds?: number) {
       // e.g. scheme, domain and uri should be RFC 3986 compliant.
       z.object({
         scheme: z.string().optional(),
-        domain: z.string(),
+        domain: z.string().refine(isAllowedDomain, 'Invalid domain'),
         address: AddressSchema,
         statement: z.string().optional(),
-        uri: z.string(),
+        uri: z.string().refine(isAllowedUri, 'Invalid URI'),
         version: z.literal('1'),
         chainId: z.coerce.number(),
         nonce: z.string(),
@@ -50,13 +65,8 @@ export function buildSiweMessageSchema(clockSkewSeconds?: number) {
       }),
     )
     .superRefine((message, ctx) => {
-      /**
-       * According to the spec., we should also compare the scheme, domain and uri
-       * of the message against the request but as our API is often used either
-       * locally or across environments, those checks would fail.
-       */
       const now = Date.now();
-      const skewMs = clockSkewSeconds ? clockSkewSeconds * 1_000 : 0;
+      const skewMs = args?.clockSkewSeconds ? args.clockSkewSeconds * 1_000 : 0;
 
       if (!message.issuedAt || message.issuedAt.getTime() > now + skewMs) {
         ctx.addIssue({
