@@ -28,6 +28,7 @@ export interface IAddressBookRequestsRepository {
   findOneOrFail(args: {
     id: AddressBookRequest['id'];
     spaceId: Space['id'];
+    entityManager?: EntityManager;
   }): Promise<AddressBookRequest>;
 
   countPending(args: {
@@ -40,6 +41,12 @@ export interface IAddressBookRequestsRepository {
     requestedById: User['id'];
     item: AddressBookItem;
   }): Promise<AddressBookRequest>;
+
+  reject(args: {
+    id: AddressBookRequest['id'];
+    spaceId: Space['id'];
+    reviewedBy: User['id'];
+  }): Promise<boolean>;
 
   transitionFromPending(args: {
     id: AddressBookRequest['id'];

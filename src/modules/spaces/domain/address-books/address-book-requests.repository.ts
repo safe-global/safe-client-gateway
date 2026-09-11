@@ -6,12 +6,15 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
+import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type {
   AddressBookRequest,
   AddressBookRequestStatus,
 } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type { User } from '@/modules/users/domain/entities/user.entity';
@@ -24,6 +27,8 @@ export class AddressBookRequestsRepository
     private readonly db: PostgresDatabaseService,
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
+    @Inject(ISpaceAuditRepository)
+    private readonly spaceAuditRepository: ISpaceAuditRepository,
   ) {}
 
   public async findBySpaceId(args: {
@@ -77,8 +82,11 @@ export class AddressBookRequestsRepository
   public async findOneOrFail(args: {
     id: AddressBookRequest['id'];
     spaceId: Space['id'];
+    entityManager?: EntityManager;
   }): Promise<AddressBookRequest> {
-    const repository = await this.db.getRepository(DbAddressBookRequest);
+    const repository = args.entityManager
+      ? args.entityManager.getRepository(DbAddressBookRequest)
+      : await this.db.getRepository(DbAddressBookRequest);
     const request = await repository.findOne({
       where: {
         id: args.id,
@@ -117,7 +125,6 @@ export class AddressBookRequestsRepository
     requestedById: User['id'];
     item: AddressBookItem;
   }): Promise<AddressBookRequest> {
-    const repository = await this.db.getRepository(DbAddressBookRequest);
     // The owning space id is known up front, so ciphertext + blind index are
     // computed before insert — no two-phase dance.
     const encrypted =
@@ -125,26 +132,44 @@ export class AddressBookRequestsRepository
         args.spaceId,
         { address: args.item.address, name: args.item.name },
       );
-    let result: InsertResult;
-    try {
-      result = await repository.insert({
-        space: { id: args.spaceId },
-        requestedBy: { id: args.requestedById },
-        address: encrypted.address as DbAddressBookRequest['address'],
-        addressIndex: encrypted.addressIndex,
-        name: encrypted.name,
-        chainIds: args.item.chainIds,
-        status: 'PENDING',
-      });
-    } catch (err) {
-      if (isUniqueConstraintError(err)) {
-        throw new UniqueConstraintError(
-          'A pending request for this address already exists.',
-        );
+
+    const insertedId = await this.db.transaction(async (entityManager) => {
+      let result: InsertResult;
+
+      const { id: spaceId, uuid: spaceUuid } =
+        await this.findSpaceForAuditOrFail(entityManager, args.spaceId);
+      try {
+        result = await entityManager.insert(DbAddressBookRequest, {
+          space: { id: spaceId },
+          requestedBy: { id: args.requestedById },
+          address: encrypted.address as DbAddressBookRequest['address'],
+          addressIndex: encrypted.addressIndex,
+          name: encrypted.name,
+          chainIds: args.item.chainIds,
+          status: 'PENDING',
+        });
+      } catch (err) {
+        if (isUniqueConstraintError(err)) {
+          throw new UniqueConstraintError(
+            'A pending request for this address already exists.',
+          );
+        }
+        throw err;
       }
-      throw err;
-    }
-    const insertedId = result.identifiers[0].id;
+
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId,
+        spaceUuid,
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_REQUEST_CREATED,
+        actorUserId: args.requestedById,
+        payload: {
+          address: args.item.address,
+          name: args.item.name,
+        },
+      });
+      return result.identifiers[0].id;
+    });
+
     return this.findOneOrFail({ id: insertedId, spaceId: args.spaceId });
   }
 
@@ -163,5 +188,56 @@ export class AddressBookRequestsRepository
       { status: args.toStatus, reviewedBy: args.reviewedBy },
     );
     return (result.affected ?? 0) > 0;
+  }
+
+  public async reject(args: {
+    id: AddressBookRequest['id'];
+    spaceId: Space['id'];
+    reviewedBy: User['id'];
+  }): Promise<boolean> {
+    return await this.db.transaction(async (entityManager) => {
+      const { id: spaceId, uuid: spaceUuid } =
+        await this.findSpaceForAuditOrFail(entityManager, args.spaceId);
+
+      const { address, name } = await this.findOneOrFail({
+        id: args.id,
+        spaceId: args.spaceId,
+        entityManager,
+      });
+
+      const rejected = await this.transitionFromPending({
+        id: args.id,
+        spaceId: spaceId,
+        toStatus: 'REJECTED',
+        reviewedBy: args.reviewedBy,
+        entityManager,
+      });
+
+      if (rejected) {
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId,
+          spaceUuid,
+          eventType: SpaceAuditEventType.ADDRESS_BOOK_REQUEST_REJECTED,
+          actorUserId: args.reviewedBy,
+          payload: { address, name },
+        });
+      }
+
+      return rejected;
+    });
+  }
+
+  private async findSpaceForAuditOrFail(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+  ): Promise<Pick<DbSpace, 'id' | 'uuid'>> {
+    const space = await entityManager.findOne(DbSpace, {
+      where: { id: spaceId },
+      select: { id: true, uuid: true },
+    });
+    if (!space) {
+      throw new NotFoundException('Workspace not found.');
+    }
+    return space;
   }
 }
