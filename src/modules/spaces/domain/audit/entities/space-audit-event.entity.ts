@@ -30,6 +30,8 @@ export enum SpaceAuditEventType {
   SAFE_REMOVED = 'SAFE_REMOVED',
   ADDRESS_BOOK_UPSERTED = 'ADDRESS_BOOK_UPSERTED',
   ADDRESS_BOOK_DELETED = 'ADDRESS_BOOK_DELETED',
+  ADDRESS_BOOK_REQUEST_CREATED = 'ADDRESS_BOOK_REQUEST_CREATED',
+  ADDRESS_BOOK_REQUEST_REJECTED = 'ADDRESS_BOOK_REQUEST_REJECTED',
 }
 
 export const SpaceAuditEventTypeSchema = z.enum(
@@ -143,10 +145,17 @@ export const AddressBookUpsertedEventSchema = z.object({
 
 export const AddressBookDeletedEventSchema = z.object({
   eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_DELETED),
-  payload: z.object({
-    address: AddressSchema,
-    name: z.string(),
-  }),
+  payload: AddressBookEntrySchema,
+});
+
+export const AddressBookRequestCreatedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_REQUEST_CREATED),
+  payload: AddressBookEntrySchema,
+});
+
+export const AddressBookRequestRejectedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_REQUEST_REJECTED),
+  payload: AddressBookEntrySchema,
 });
 
 export const SpaceAuditEventSchema = z.discriminatedUnion('eventType', [
@@ -165,6 +174,8 @@ export const SpaceAuditEventSchema = z.discriminatedUnion('eventType', [
   SafeRemovedEventSchema,
   AddressBookUpsertedEventSchema,
   AddressBookDeletedEventSchema,
+  AddressBookRequestCreatedEventSchema,
+  AddressBookRequestRejectedEventSchema,
 ]);
 
 export type SpaceAuditEvent = z.infer<typeof SpaceAuditEventSchema>;

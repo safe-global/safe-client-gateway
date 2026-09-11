@@ -53,4 +53,26 @@ describe('SpaceAuditEventSchema — plaintext addresses', () => {
     });
     expect(result.success).toBe(true);
   });
+
+  it('accepts plaintext addresses in an ADDRESS_BOOK_REQUEST_CREATED payload', () => {
+    const result = SpaceAuditEventSchema.safeParse({
+      eventType: 'ADDRESS_BOOK_REQUEST_CREATED',
+      payload: {
+        address: plaintext,
+        name: faker.person.fullName(),
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts plaintext addresses in an ADDRESS_BOOK_REQUEST_REJECTED payload', () => {
+    const result = SpaceAuditEventSchema.safeParse({
+      eventType: 'ADDRESS_BOOK_REQUEST_REJECTED',
+      payload: {
+        address: plaintext,
+        name: faker.person.fullName(),
+      },
+    });
+    expect(result.success).toBe(true);
+  });
 });
