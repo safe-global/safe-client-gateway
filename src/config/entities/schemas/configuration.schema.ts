@@ -151,6 +151,10 @@ export const RootConfigurationSchema = z
       .min(1)
       .max(100)
       .optional(),
+    // Per-caller bound on the unauthenticated token metadata routes. A zero or
+    // negative budget would reject every caller, so fail at boot instead.
+    TOKENS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    TOKENS_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])

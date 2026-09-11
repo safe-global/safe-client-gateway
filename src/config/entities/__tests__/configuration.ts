@@ -454,6 +454,12 @@ export default (): ReturnType<typeof configuration> => ({
       max: 300_000,
     }),
   },
+  tokens: {
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
+  },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
