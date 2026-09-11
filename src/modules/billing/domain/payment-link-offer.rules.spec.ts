@@ -2,12 +2,14 @@
 import { faker } from '@faker-js/faker';
 import {
   paymentLinkBuilder,
+  paymentLinkPricedAt,
   trialPaymentLinkBuilder,
 } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import {
   gracePeriodOf,
   isOfferedToSpace,
+  offersPlan,
   planNameOf,
 } from '@/modules/billing/domain/payment-link-offer.rules';
 
@@ -205,6 +207,29 @@ describe('payment-link offer rules', () => {
           activePlanName: null,
         }),
       ).toBe(false);
+    });
+  });
+
+  describe('offersPlan', () => {
+    it('should match a link priced at the plan', () => {
+      const planId = faker.string.alphanumeric(32);
+
+      expect(offersPlan(paymentLinkPricedAt(planId).build(), planId)).toBe(
+        true,
+      );
+    });
+
+    it('should not match a link priced at another plan', () => {
+      const link = paymentLinkPricedAt(faker.string.alphanumeric(32)).build();
+
+      expect(offersPlan(link, faker.string.alphanumeric(32))).toBe(false);
+    });
+
+    it('should not match a link whose line items the upstream omitted', () => {
+      const planId = faker.string.alphanumeric(32);
+      const link = paymentLinkBuilder().with('lineItems', undefined).build();
+
+      expect(offersPlan(link, planId)).toBe(false);
     });
   });
 });

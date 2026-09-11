@@ -107,6 +107,15 @@ const GATED_ROUTES: Array<Route> = [
     method: 'put',
     path: (id) => `/v1/spaces/${id}/address-book/requests/1/approve`,
   },
+  // Changes what the whole Workspace is billed, so gated like the rest despite
+  // living under /v1/billing. Its sibling billing routes — the checkout URL,
+  // and the Stripe portal that can cancel — are not gated yet; that is pending.
+  {
+    name: 'PATCH /v1/billing/spaces/:spaceId/subscriptions/:subscriptionId',
+    method: 'patch',
+    path: (id) => `/v1/billing/spaces/${id}/subscriptions/sub_1`,
+    body: { planId: 'price_1' },
+  },
 ];
 
 /**
@@ -230,6 +239,16 @@ describe('Workspace step-up elevation (ElevationGuard)', () => {
         // Explicit rather than inherited: with the flag off the guard admits
         // everything, and every assertion below would pass vacuously.
         mfaStepUp: true,
+        // Without it the gated plan change below would 404.
+        billingService: true,
+      },
+      billing: {
+        ...defaultConfiguration.billing,
+        webhook: {
+          ...defaultConfiguration.billing.webhook,
+          // The app refuses to boot with the flag on and no key.
+          publicKey: 'dummy-public-key',
+        },
       },
     });
 
