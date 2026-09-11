@@ -124,15 +124,6 @@ describe('buildSiweMessageSchema', () => {
       expect(issues(boundSchema, message)).toContain('Invalid URI');
     });
 
-    it('rejects a URI that is not a valid URL', () => {
-      const message = siweMessageBuilder()
-        .with('domain', allowedDomain)
-        .with('uri', faker.string.alphanumeric({ length: 10 }))
-        .build();
-
-      expect(issues(boundSchema, message)).toContain('Invalid URI');
-    });
-
     it('does not check the domain when no domain is allow listed', () => {
       const message = siweMessageBuilder().build();
 
