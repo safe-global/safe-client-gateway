@@ -207,6 +207,7 @@ export default (): ReturnType<typeof configuration> => ({
     rpc: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
+    policyIndexer: faker.number.int({ min: 1, max: 60 }),
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
@@ -441,6 +442,11 @@ export default (): ReturnType<typeof configuration> => ({
       maxSequentialPages: faker.number.int(),
     },
     cgwServiceKey: 'CGW',
+  },
+  policies: {
+    indexer: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+    },
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),
