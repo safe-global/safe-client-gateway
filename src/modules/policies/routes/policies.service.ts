@@ -2,7 +2,6 @@
 import {
   Inject,
   Injectable,
-  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type { Address } from 'viem';
@@ -31,8 +30,6 @@ type SpacePolicyRequest = {
 
 /** An active policy plus the Safe it applies to. */
 export type SpaceActivePolicy = ActivePolicy & { safe: SafeRef };
-
-const MILLISECONDS_IN_SECOND = 1000;
 
 @Injectable()
 export class PoliciesService {
@@ -133,14 +130,12 @@ export class PoliciesService {
       this.policyIndexerRepository.getState({ safes }),
       Promise.all(safes.map((safe) => this.enabledModules(safe))),
     ]);
-    const now = Math.floor(Date.now() / MILLISECONDS_IN_SECOND);
 
     return safes.map((safe, index) => {
       const context = {
         safe,
         state: policyStateForSafe(state, safe),
         enabledModules: enabledModules[index],
-        now,
       };
 
       return {
