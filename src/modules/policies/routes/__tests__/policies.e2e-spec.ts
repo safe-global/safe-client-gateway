@@ -392,7 +392,9 @@ describe('Policies routes (e2e)', () => {
         .with('target', token)
         .with('selector', '0xa9059cbb')
         .with('kind', 'ERC20_TRANSFER')
-        .with('state', { recipients: [recipient] })
+        .with('state', {
+          recipients: [{ account: recipient, permission: 'ALWAYS' }],
+        })
         .build();
       mockUpstream();
       mockIndexer(rawPolicyIndexerResponse({ SafePolicy: [binding] }));
@@ -409,7 +411,6 @@ describe('Policies routes (e2e)', () => {
         count: 1,
         results: [
           {
-            id: `0xa9059cbb00000000${'0'.repeat(8)}${token.slice(2).toLowerCase()}`,
             type: PolicyType.Erc20Transfer,
             enforcement: {
               via: 'guard',
@@ -423,7 +424,12 @@ describe('Policies routes (e2e)', () => {
             enabled: true,
             safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
             data: {
-              allowlist: [{ token_address: token, recipients: [recipient] }],
+              allowlist: [
+                {
+                  token_address: token,
+                  recipients: [{ account: recipient, permission: 'ALWAYS' }],
+                },
+              ],
             },
           },
         ],

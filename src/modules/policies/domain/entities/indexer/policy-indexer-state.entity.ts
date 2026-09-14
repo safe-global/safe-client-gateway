@@ -212,7 +212,6 @@ export type PolicyIndexerSafePolicy = z.infer<
   typeof PolicyIndexerSafePolicySchema
 >;
 
-
 /**
  * Indexing progress, one entry per chain - `_meta` is a list, not an object.
  *

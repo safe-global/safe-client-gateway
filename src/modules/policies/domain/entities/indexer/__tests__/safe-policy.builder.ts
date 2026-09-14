@@ -19,20 +19,28 @@ export type RawIndexerSafePolicy = {
 };
 
 export function rawIndexerSafePolicyBuilder(): IBuilder<RawIndexerSafePolicy> {
-  return new Builder<RawIndexerSafePolicy>()
-    .with('chainId', 11155111)
-    .with('safe', getAddress(faker.finance.ethereumAddress()))
-    .with('guard', getAddress(faker.finance.ethereumAddress()))
-    .with('target', getAddress(faker.finance.ethereumAddress()))
-    .with('selector', '0xa9059cbb')
-    .with('operation', 'CALL')
-    .with('kind', 'ERC20_TRANSFER')
-    .with('policy', getAddress(faker.finance.ethereumAddress()))
-    .with('active', true)
-    .with('isFallback', false)
-    .with('state', {
-      recipients: [getAddress(faker.finance.ethereumAddress())],
-    });
+  return (
+    new Builder<RawIndexerSafePolicy>()
+      .with('chainId', 11155111)
+      .with('safe', getAddress(faker.finance.ethereumAddress()))
+      .with('guard', getAddress(faker.finance.ethereumAddress()))
+      .with('target', getAddress(faker.finance.ethereumAddress()))
+      .with('selector', '0xa9059cbb')
+      .with('operation', 'CALL')
+      .with('kind', 'ERC20_TRANSFER')
+      .with('policy', getAddress(faker.finance.ethereumAddress()))
+      .with('active', true)
+      .with('isFallback', false)
+      // An allowlist entry is an address plus how far its grant reaches.
+      .with('state', {
+        recipients: [
+          {
+            account: getAddress(faker.finance.ethereumAddress()),
+            permission: 'ALWAYS',
+          },
+        ],
+      })
+  );
 }
 
 /**

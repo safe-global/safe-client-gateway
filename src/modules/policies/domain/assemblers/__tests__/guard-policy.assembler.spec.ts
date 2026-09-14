@@ -12,7 +12,6 @@ import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities
 import { policyIndexerSafePolicyBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-policy.builder';
 import type { PolicyIndexerSafePolicy } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { guardPolicyId } from '@/modules/policies/domain/utils/policy-id.utils';
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -48,7 +47,6 @@ describe('GuardPolicyAssembler', () => {
         overrides?.transactionGuard === undefined
           ? guard
           : overrides.transactionGuard,
-      now: 1_800_000_000,
     });
   }
 
@@ -70,24 +68,81 @@ describe('GuardPolicyAssembler', () => {
         .with('kind', 'ERC20_TRANSFER')
         .with('target', token)
         .with('selector', TRANSFER_SELECTOR)
-        .with('state', { recipients: [recipient] })
+        .with('state', {
+          recipients: [{ account: recipient, permission: 'ALWAYS' }],
+        })
         .build();
 
       const [result] = assemble([policy]);
 
       expect(result.type).toBe(PolicyType.Erc20Transfer);
       expect(result.data as Erc20TransferPolicyData).toStrictEqual({
-        allowlist: [{ token_address: token, recipients: [recipient] }],
+        allowlist: [
+          {
+            token_address: token,
+            recipients: [{ account: recipient, permission: 'ALWAYS' }],
+          },
+        ],
       });
+    });
+
+    it.each([['ONCE'], ['ALWAYS']])(
+      'should report a %s grant as the policy holds it',
+      (permission) => {
+        const account = getAddress(faker.finance.ethereumAddress());
+        const policy = binding()
+          .with('kind', 'ERC20_TRANSFER')
+          .with('state', { recipients: [{ account, permission }] })
+          .build();
+
+        const [result] = assemble([policy]);
+
+        expect(
+          (result.data as Erc20TransferPolicyData).allowlist[0].recipients,
+        ).toStrictEqual([{ account, permission }]);
+      },
+    );
+
+    it('should skip an allowlist whose permission it does not know', () => {
+      // `permission` is inside the indexer's jsonb, so a new value arrives with
+      // no schema signal. Guessing between a single-use and an open-ended grant
+      // would misreport what the Safe actually permits.
+      const policy = binding()
+        .with('kind', 'ERC20_TRANSFER')
+        .with('state', {
+          recipients: [
+            {
+              account: getAddress(faker.finance.ethereumAddress()),
+              permission: 'TWICE',
+            },
+          ],
+        })
+        .build();
+
+      expect(assemble([policy])).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Could not read the state of a policy',
+        }),
+      );
     });
 
     it('should report the accumulated recipient list as the indexer folded it', () => {
       // `configure` is an upsert of deltas, so only the folded sequence is the
       // allowlist - and the indexer has already folded it.
       const recipients = [
-        getAddress(faker.finance.ethereumAddress()),
-        getAddress(faker.finance.ethereumAddress()),
-        getAddress(faker.finance.ethereumAddress()),
+        {
+          account: getAddress(faker.finance.ethereumAddress()),
+          permission: 'ALWAYS',
+        },
+        {
+          account: getAddress(faker.finance.ethereumAddress()),
+          permission: 'ONCE',
+        },
+        {
+          account: getAddress(faker.finance.ethereumAddress()),
+          permission: 'ALWAYS',
+        },
       ];
       const policy = binding()
         .with('kind', 'ERC20_TRANSFER')
@@ -180,23 +235,6 @@ describe('GuardPolicyAssembler', () => {
   });
 
   describe('identity and enforcement', () => {
-    it('should identify a binding by its access word', () => {
-      const policy = binding()
-        .with('selector', TRANSFER_SELECTOR)
-        .with('state', { recipients: [] })
-        .build();
-
-      const [result] = assemble([policy]);
-
-      expect(result.id).toBe(
-        guardPolicyId({
-          target: policy.target,
-          selector: policy.selector,
-          operation: policy.operation,
-        }),
-      );
-    });
-
     it('should report the guard and the policy contract inline', () => {
       const policy = binding().with('state', { recipients: [] }).build();
 
@@ -243,7 +281,9 @@ describe('GuardPolicyAssembler', () => {
       expect(result.enabled).toBe(true);
     });
 
-    it('should report the fallback binding by its all-zero access word', () => {
+    it('should report the catch-all binding like any other', () => {
+      // The fallback covers every call the specific bindings do not, so it is a
+      // policy of the Safe rather than a row to filter out.
       const fallback = binding()
         .with('kind', 'ALLOW')
         .with('target', zeroAddress)
@@ -254,9 +294,11 @@ describe('GuardPolicyAssembler', () => {
 
       const [result] = assemble([fallback]);
 
-      expect(result.id).toBe(
-        '0x0000000000000000000000000000000000000000000000000000000000000000',
-      );
+      expect(result).toMatchObject({
+        type: PolicyType.AllowPolicy,
+        enabled: true,
+        data: {},
+      });
     });
 
     it('should report one item per binding, even when they share a list', () => {
@@ -264,7 +306,12 @@ describe('GuardPolicyAssembler', () => {
       // indexer writes the folded list to both rows.
       const token = getAddress(faker.finance.ethereumAddress());
       const state = {
-        recipients: [getAddress(faker.finance.ethereumAddress())],
+        recipients: [
+          {
+            account: getAddress(faker.finance.ethereumAddress()),
+            permission: 'ALWAYS',
+          },
+        ],
       };
       const transfer = binding()
         .with('target', token)
@@ -280,7 +327,12 @@ describe('GuardPolicyAssembler', () => {
       const result = assemble([transfer, transferFrom]);
 
       expect(result).toHaveLength(2);
-      expect(result[0].id).not.toBe(result[1].id);
+      expect(
+        result.map((item) => (item.data as Erc20TransferPolicyData).allowlist),
+      ).toStrictEqual([
+        [{ token_address: token, recipients: state.recipients }],
+        [{ token_address: token, recipients: state.recipients }],
+      ]);
     });
 
     it('should report an empty list for a safe with no bindings', () => {

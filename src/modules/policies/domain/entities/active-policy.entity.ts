@@ -48,12 +48,69 @@ export type SpendingLimitAllowance = {
 };
 
 /**
- * The configuration a policy reports, discriminated by the item's `type`.
+ * How far a guard-enforced grant reaches.
  *
- * Only the allowance module's spending limits are reported today; the remaining
- * policy types join the union as the code reading them lands.
+ * The policy contract carries it per entry rather than per policy, so one
+ * allowlist can hold a single-use grant beside an open-ended one. Only `ALWAYS`
+ * occurs in the dev indexer's data today.
  */
-export type ActivePolicyData = SpendingLimitPolicyData;
+export const PolicyPermission = {
+  /** Spent by the first matching call. */
+  Once: 'ONCE',
+  /** Applies to every matching call. */
+  Always: 'ALWAYS',
+} as const;
+
+export type PolicyPermission =
+  (typeof PolicyPermission)[keyof typeof PolicyPermission];
+
+/** One entry of an ERC-20 allowlist: who, and for how long. */
+export type Erc20TransferRecipient = {
+  account: Address;
+  permission: PolicyPermission;
+};
+
+/**
+ * `ERC20TransferPolicy`: per token, the recipients the Safe may send to.
+ *
+ * Addresses only, on both sides: the client resolves token metadata and display
+ * names itself. The recipient list is the indexer's accumulated one - the policy
+ * contract's `configure` is an upsert of deltas, so only the folded sequence
+ * describes the allowlist.
+ */
+export type Erc20TransferPolicyData = {
+  allowlist: Array<{
+    token_address: Address;
+    recipients: Array<Erc20TransferRecipient>;
+  }>;
+};
+
+/**
+ * `CoSignerPolicy`: the cosigner the policy requires.
+ *
+ * The whole payload, since that is all the state encodes - no threshold is
+ * derivable from it.
+ */
+export type CosignerPolicyData = {
+  cosigner_address: Address;
+};
+
+/**
+ * The stateless policies - allow, deny and native transfer.
+ *
+ * Which calls they cover is already carried by the item's `enforcement`, and the
+ * policy contract holds no configuration, so there is nothing left to report.
+ */
+export type StatelessPolicyData = Record<string, never>;
+
+/**
+ * The configuration a policy reports, discriminated by the item's `type`.
+ */
+export type ActivePolicyData =
+  | SpendingLimitPolicyData
+  | Erc20TransferPolicyData
+  | CosignerPolicyData
+  | StatelessPolicyData;
 
 /**
  * A policy in effect on a Safe.

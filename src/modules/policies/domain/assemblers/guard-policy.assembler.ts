@@ -9,9 +9,10 @@ import type {
   PolicyAssembler,
   PolicyAssemblerContext,
 } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
-import type {
-  ActivePolicy,
-  ActivePolicyData,
+import {
+  type ActivePolicy,
+  type ActivePolicyData,
+  PolicyPermission,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type {
   PolicyIndexerPolicyKind,
@@ -21,7 +22,6 @@ import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
-import { guardPolicyId } from '@/modules/policies/domain/utils/policy-id.utils';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 /**
@@ -31,9 +31,20 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  * The policy contracts' `configure` is an upsert of deltas, so only the folded
  * sequence describes the state - which the indexer has already folded. CGW
  * parses the result rather than replaying anything.
+ *
+ * An allowlist entry is an address plus how far its grant reaches. `permission`
+ * lives inside the indexer's `jsonb` rather than in a column, so it carries no
+ * schema signal and CGW validates the value set itself - rejecting rather than
+ * defaulting, since guessing between a single-use and an open-ended grant is the
+ * wrong way to be wrong about a permission.
  */
 const Erc20TransferStateSchema = z.object({
-  recipients: z.array(AddressSchema),
+  recipients: z.array(
+    z.object({
+      account: AddressSchema,
+      permission: z.enum(PolicyPermission),
+    }),
+  ),
 });
 
 const CosignerStateSchema = z.object({
@@ -144,11 +155,6 @@ export class GuardPolicyAssembler implements PolicyAssembler {
 
     return [
       {
-        id: guardPolicyId({
-          target: binding.target,
-          selector: binding.selector,
-          operation: binding.operation,
-        }),
         type: payload.type,
         enforcement: {
           via: PolicyEnforcementKind.Guard,

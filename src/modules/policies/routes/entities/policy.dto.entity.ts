@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type {
-  ActivePolicy,
-  ActivePolicyData,
-  CosignerPolicyData,
-  Erc20TransferPolicyData,
-  SpendingLimitAllowance,
-  SpendingLimitPolicyData,
-  StatelessPolicyData,
+import {
+  type ActivePolicy,
+  type ActivePolicyData,
+  type CosignerPolicyData,
+  type Erc20TransferPolicyData,
+  type Erc20TransferRecipient,
+  PolicyPermission,
+  type SpendingLimitAllowance,
+  type SpendingLimitPolicyData,
+  type StatelessPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type {
   GuardSlots,
@@ -143,18 +145,29 @@ export class SpendingLimitPolicyDataDto implements SpendingLimitPolicyData {
   public readonly spenders!: SpendingLimitPolicyData['spenders'];
 }
 
+export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
+  @ApiProperty({ description: 'An address the Safe may send this token to' })
+  public readonly account!: Address;
+  @ApiProperty({
+    enum: Object.values(PolicyPermission),
+    description:
+      'ONCE is spent by the first matching transfer; ALWAYS applies to every one',
+  })
+  public readonly permission!: PolicyPermission;
+}
+
 export class Erc20TransferAllowlistEntryDto {
   @ApiProperty({
     description: 'The token the allowlist applies to; zero address for native',
   })
   public readonly token_address!: Address;
   @ApiProperty({
-    type: String,
+    type: Erc20TransferRecipientDto,
     isArray: true,
     description:
-      'Addresses the Safe may send this token to, accumulated across every configure call',
+      'Who the Safe may send this token to, accumulated across every configure call',
   })
-  public readonly recipients!: Array<Address>;
+  public readonly recipients!: Array<Erc20TransferRecipient>;
 }
 
 export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
@@ -194,6 +207,7 @@ const PolicyDataSchema = {
   GuardEnforcementDto,
   OffChainEnforcementDto,
   SpendingLimitPolicyDataDto,
+  Erc20TransferRecipientDto,
   Erc20TransferPolicyDataDto,
   CosignerPolicyDataDto,
   StatelessPolicyDataDto,
