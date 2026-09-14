@@ -9,6 +9,7 @@
 export const PolicyOperation = {
   Call: 'CALL',
   DelegateCall: 'DELEGATECALL',
+};
 
 export type PolicyOperation =
   (typeof PolicyOperation)[keyof typeof PolicyOperation];
