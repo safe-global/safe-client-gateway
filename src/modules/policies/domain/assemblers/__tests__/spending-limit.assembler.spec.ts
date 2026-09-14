@@ -4,13 +4,17 @@ import { getAddress, zeroAddress } from 'viem';
 import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
 import type { SpendingLimitPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerStateBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
-import { indexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { IndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import {
+  indexerSafeAllowanceBuilder,
+  indexerSafeDelegateBuilder,
+} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type {
+  IndexerSafeAllowance,
+  IndexerSafeDelegate,
+} from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { modulePolicyId } from '@/modules/policies/domain/utils/policy-id.utils';
 
 const SEPOLIA = '11155111';
-const NOW = 1_800_000_000;
 
 describe('SpendingLimitAssembler', () => {
   const target = new SpendingLimitAssembler();
@@ -22,14 +26,30 @@ describe('SpendingLimitAssembler', () => {
 
   function assemble(
     allowances: Array<IndexerSafeAllowance>,
-    overrides?: { enabledModules?: Array<`0x${string}`>; now?: number },
+    overrides?: {
+      enabledModules?: Array<`0x${string}`>;
+      delegates?: Array<IndexerSafeDelegate>;
+    },
   ) {
     return target.assemble({
       safe,
-      state: policyIndexerStateBuilder().with('allowances', allowances).build(),
+      state: policyIndexerStateBuilder()
+        .with('allowances', allowances)
+        .with('delegates', overrides?.delegates ?? allowances.map(registered))
+        .build(),
       enabledModules: overrides?.enabledModules ?? [allowanceModule],
-      now: overrides?.now ?? NOW,
     });
+  }
+
+  /** The registration that lets `allowance`'s spender spend right now. */
+  function registered(allowance: IndexerSafeAllowance): IndexerSafeDelegate {
+    return indexerSafeDelegateBuilder()
+      .with('chainId', allowance.chainId)
+      .with('safe', allowance.safe)
+      .with('module', allowance.module)
+      .with('delegate', allowance.delegate)
+      .with('active', true)
+      .build();
   }
 
   /** An allowance of `safe` on `allowanceModule`, spendable by default. */
@@ -39,8 +59,7 @@ describe('SpendingLimitAssembler', () => {
       .with('safe', safe.address)
       .with('module', allowanceModule)
       .with('amount', '1000')
-      .with('spent', '0')
-      .with('remaining', '1000');
+      .with('spent', '0');
   }
 
   function dataOf(policy: { data: unknown }): SpendingLimitPolicyData {
@@ -80,15 +99,10 @@ describe('SpendingLimitAssembler', () => {
       ).toStrictEqual([usdc.token, zeroAddress]);
     });
 
-    it('should identify the policy by its module and safe', () => {
+    it('should report the policy as enforced by its module', () => {
       const [policy] = assemble([allowance().build()]);
 
       expect(policy).toMatchObject({
-        id: modulePolicyId({
-          type: PolicyType.SpendingLimit,
-          moduleAddress: allowanceModule,
-          safe,
-        }),
         type: PolicyType.SpendingLimit,
         enforcement: { via: 'module', moduleAddress: allowanceModule },
       });
@@ -115,10 +129,10 @@ describe('SpendingLimitAssembler', () => {
       });
 
       expect(result).toHaveLength(2);
-      expect(
-        result.map((policy) => dataOf(policy).moduleVersion),
-      ).toStrictEqual(['0.1.0', '0.1.1']);
-      expect(result[0].id).not.toBe(result[1].id);
+      expect(result.map((policy) => dataOf(policy).module)).toStrictEqual([
+        allowanceModule,
+        otherModule,
+      ]);
     });
 
     it('should report a limit on a module the safe has not enabled as not enforced', () => {
@@ -136,40 +150,20 @@ describe('SpendingLimitAssembler', () => {
     });
   });
 
-  describe('the pending reset', () => {
-    it('should report the full amount once the window has rolled', () => {
-      // The module zeroes `spent` lazily and emits nothing, so the row still
-      // says it was spent. Without this rule a reset allowance reads as spent
-      // out.
-      const rolled = allowance()
-        .with('amount', '1000')
-        .with('spent', '900')
-        .with('remaining', '100')
+  describe('the reset window', () => {
+    it('should derive the next reset from the window start', () => {
+      // The indexer serves `lastResetMin` - minutes since the epoch - and no
+      // longer the boundary itself, so the API computes it.
+      const daily = allowance()
         .with('resetTimeMinutes', 1440)
-        .with('nextResetAt', NOW - 1)
+        .with('lastResetMin', 29_793_086)
         .build();
 
-      const [policy] = assemble([rolled]);
+      const [policy] = assemble([daily]);
 
-      expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
-        spent: '900',
-        remaining: '100',
-        available: '1000',
-      });
-    });
-
-    it('should report what is left while the window is open', () => {
-      const open = allowance()
-        .with('amount', '1000')
-        .with('spent', '900')
-        .with('remaining', '100')
-        .with('resetTimeMinutes', 1440)
-        .with('nextResetAt', NOW + 1)
-        .build();
-
-      const [policy] = assemble([open]);
-
-      expect(dataOf(policy).spenders[0].allowances[0].available).toBe('100');
+      expect(dataOf(policy).spenders[0].allowances[0].resetsAt).toBe(
+        (29_793_086 + 1440) * 60,
+      );
     });
 
     it('should never reset a one-time allowance', () => {
@@ -178,15 +172,12 @@ describe('SpendingLimitAssembler', () => {
       const oneTime = allowance()
         .with('amount', '1000')
         .with('spent', '1000')
-        .with('remaining', '0')
         .with('resetTimeMinutes', 0)
-        .with('nextResetAt', 0)
         .build();
 
       const [policy] = assemble([oneTime]);
 
       expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
-        available: '0',
         resetPeriodSeconds: 0,
         resetsAt: null,
       });
@@ -203,15 +194,15 @@ describe('SpendingLimitAssembler', () => {
     });
 
     it('should flag a boundary that could not be recovered exactly', () => {
-      // An ASSUMED boundary can be up to a whole period out; the amount is
+      // An UNKNOWN boundary can be up to a whole period out; the amount is
       // still right, so the allowance is reported with the caveat rather than
       // dropped.
-      const assumed = allowance()
+      const unknown = allowance()
         .with('resetTimeMinutes', 1440)
-        .with('resetPhase', 'ASSUMED')
+        .with('resetPhase', 'UNKNOWN')
         .build();
 
-      const [policy] = assemble([assumed]);
+      const [policy] = assemble([unknown]);
 
       expect(
         dataOf(policy).spenders[0].allowances[0].resetBoundaryIsExact,
@@ -223,11 +214,7 @@ describe('SpendingLimitAssembler', () => {
     it('should drop a row that was never configured', () => {
       // resetAllowance and deleteAllowance have no registered-delegate check,
       // so an all-zero row can exist for a pair nobody configured.
-      const zeroed = allowance()
-        .with('amount', '0')
-        .with('spent', '0')
-        .with('remaining', '0')
-        .build();
+      const zeroed = allowance().with('amount', '0').with('spent', '0').build();
 
       expect(assemble([zeroed])).toStrictEqual([]);
     });
@@ -235,9 +222,19 @@ describe('SpendingLimitAssembler', () => {
     it('should keep a deregistered spender, marked inactive', () => {
       // RemoveDelegate deletes a linked-list node only: the allowance survives
       // and returns to effect if the delegate is re-added.
-      const revoked = allowance().with('delegateActive', false).build();
+      const revoked = allowance().build();
 
-      const [policy] = assemble([revoked]);
+      const [policy] = assemble([revoked], {
+        delegates: [
+          indexerSafeDelegateBuilder()
+            .with('chainId', revoked.chainId)
+            .with('safe', revoked.safe)
+            .with('module', revoked.module)
+            .with('delegate', revoked.delegate)
+            .with('active', false)
+            .build(),
+        ],
+      });
 
       expect(dataOf(policy).spenders[0]).toMatchObject({
         spender: revoked.delegate,
@@ -245,20 +242,25 @@ describe('SpendingLimitAssembler', () => {
       });
     });
 
+    it('should mark a spender with no registration at all inactive', () => {
+      // The row outlives the registration, so "no delegate row" is a removed
+      // delegate rather than a reason to drop the limit.
+      const orphaned = allowance().build();
+
+      const [policy] = assemble([orphaned], { delegates: [] });
+
+      expect(dataOf(policy).spenders[0].isActive).toBe(false);
+    });
+
     it('should keep base units as strings beyond the safe integer range', () => {
       const huge = (10n ** 24n).toString();
-      const large = allowance()
-        .with('amount', huge)
-        .with('spent', '0')
-        .with('remaining', huge)
-        .build();
+      const large = allowance().with('amount', huge).with('spent', '0').build();
 
       const [policy] = assemble([large]);
 
       expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
         amount: huge,
-        remaining: huge,
-        available: huge,
+        spent: '0',
       });
     });
 

@@ -3,9 +3,10 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { z } from 'zod';
 import { Builder, type IBuilder } from '@/__tests__/builder';
-import {
-  type PolicyIndexerSafeAllowance,
+import type {
+  PolicyIndexerSafeAllowance,
   PolicyIndexerSafeAllowanceSchema,
+  PolicyIndexerSafeDelegate,
   PolicyIndexerSafeDelegateSchema,
 } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
@@ -102,4 +103,19 @@ export function policyIndexerSafeAllowanceBuilder(): IBuilder<PolicyIndexerSafeA
       // Folded in by the repository, not served by the indexer.
       .with('isDelegateActive', true)
   );
+}
+
+/** A parsed delegate registration, as a repository returns it. */
+export function policyIndexerSafeDelegateBuilder(): IBuilder<PolicyIndexerSafeDelegate> {
+  const raw = rawIndexerSafeDelegateBuilder().build();
+
+  return new Builder<PolicyIndexerSafeDelegate>()
+    .with('chainId', String(raw.chainId))
+    .with('safe', getAddress(raw.safe))
+    .with('module', getAddress(raw.module))
+    .with('moduleVersion', raw.moduleVersion)
+    .with('delegate', getAddress(raw.delegate))
+    .with('active', raw.active)
+    .with('addedAt', Number(raw.addedAt))
+    .with('updatedAt', Number(raw.updatedAt));
 }
