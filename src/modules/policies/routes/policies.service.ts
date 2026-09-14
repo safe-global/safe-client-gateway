@@ -2,6 +2,7 @@
 import {
   Inject,
   Injectable,
+  NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type { Address } from 'viem';
