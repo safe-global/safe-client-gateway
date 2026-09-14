@@ -23,42 +23,48 @@ export type RawIndexerSafeAllowance = {
   spent: string;
   remaining: string;
   resetTimeMinutes: string;
-  lastResetAt: string;
-  nextResetAt: string;
+  lastResetMin: string;
   resetPhase: string;
   nonce: string;
+  updatedAt: string;
 };
 
 export function rawIndexerSafeAllowanceBuilder(): IBuilder<RawIndexerSafeAllowance> {
   const amount = faker.number.bigInt({ min: 1n, max: 10n ** 24n });
   const spent = faker.number.bigInt({ min: 0n, max: amount });
   const resetTimeMinutes = faker.helpers.arrayElement([0, 60, 1440, 10080]);
-  const lastResetAt = faker.number.int({
-    min: 1_700_000_000,
-    max: 1_800_000_000,
+  // Minutes since the epoch, as the module stores it - roughly 2023 to 2027.
+  const lastResetMin = faker.number.int({
+    min: 28_000_000,
+    max: 30_000_000,
   });
 
-  return new Builder<RawIndexerSafeAllowance>()
-    .with('chainId', 11155111)
-    .with('safe', getAddress(faker.finance.ethereumAddress()))
-    .with('module', getAddress(faker.finance.ethereumAddress()))
-    .with('moduleVersion', faker.helpers.arrayElement(['0.1.0', '0.1.1']))
-    .with('delegate', getAddress(faker.finance.ethereumAddress()))
-    .with('token', getAddress(faker.finance.ethereumAddress()))
-    .with('delegateActive', true)
-    .with('amount', amount.toString())
-    .with('spent', spent.toString())
-    .with('remaining', (amount - spent).toString())
-    .with('resetTimeMinutes', resetTimeMinutes.toString())
-    .with('lastResetAt', lastResetAt.toString())
-    .with(
-      'nextResetAt',
-      resetTimeMinutes === 0
-        ? '0'
-        : (lastResetAt + resetTimeMinutes * 60).toString(),
-    )
-    .with('resetPhase', resetTimeMinutes === 0 ? 'NONE' : 'EXACT')
-    .with('nonce', faker.number.int({ min: 0, max: 65_535 }).toString());
+  return (
+    new Builder<RawIndexerSafeAllowance>()
+      .with('chainId', 11155111)
+      .with('safe', getAddress(faker.finance.ethereumAddress()))
+      .with('module', getAddress(faker.finance.ethereumAddress()))
+      .with('moduleVersion', faker.helpers.arrayElement(['0.1.0', '0.1.1']))
+      .with('delegate', getAddress(faker.finance.ethereumAddress()))
+      .with('token', getAddress(faker.finance.ethereumAddress()))
+      .with('delegateActive', true)
+      .with('amount', amount.toString())
+      .with('spent', spent.toString())
+      .with('remaining', (amount - spent).toString())
+      .with('resetTimeMinutes', resetTimeMinutes.toString())
+      .with('lastResetMin', lastResetMin.toString())
+      // Zero-period rows carry `EXACT` too: there is no boundary to be wrong about.
+      .with('resetPhase', 'EXACT')
+      .with('nonce', faker.number.int({ min: 0, max: 65_535 }).toString())
+      .with(
+        'updatedAt',
+        // Unix seconds, so at or after the window it belongs to.
+        (
+          lastResetMin * 60 +
+          faker.number.int({ min: 0, max: 3_600 })
+        ).toString(),
+      )
+  );
 }
 
 export type RawIndexerSafeDelegate = {
@@ -88,7 +94,7 @@ export function rawIndexerSafeDelegateBuilder(): IBuilder<RawIndexerSafeDelegate
 
 /**
  * A parsed allowance row, as a repository returns it: `chainId` a string, base
- * units strings, seconds and minutes numbers.
+ * units strings, minutes and seconds numbers.
  */
 export function indexerSafeAllowanceBuilder(): IBuilder<IndexerSafeAllowance> {
   const raw = rawIndexerSafeAllowanceBuilder().build();
@@ -105,8 +111,8 @@ export function indexerSafeAllowanceBuilder(): IBuilder<IndexerSafeAllowance> {
     .with('spent', raw.spent)
     .with('remaining', raw.remaining)
     .with('resetTimeMinutes', Number(raw.resetTimeMinutes))
-    .with('lastResetAt', Number(raw.lastResetAt))
-    .with('nextResetAt', Number(raw.nextResetAt))
-    .with('resetPhase', raw.resetPhase === 'NONE' ? 'NONE' : 'EXACT')
-    .with('nonce', raw.nonce);
+    .with('lastResetMin', Number(raw.lastResetMin))
+    .with('resetPhase', raw.resetPhase === 'UNKNOWN' ? 'UNKNOWN' : 'EXACT')
+    .with('nonce', raw.nonce)
+    .with('updatedAt', Number(raw.updatedAt));
 }
