@@ -36,7 +36,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     where: { _or: $allowances }
     order_by: [{ chainId: asc }, { safe: asc }, { delegate: asc }, { token: asc }]
   ) {
-    chainId safe module moduleVersion delegate token delegateActive
+    chainId safe module moduleVersion delegate token
     amount spent remaining resetTimeMinutes lastResetMin resetPhase nonce updatedAt
   }
   SafeDelegate(
