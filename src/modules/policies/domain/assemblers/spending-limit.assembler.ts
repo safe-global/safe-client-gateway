@@ -10,12 +10,14 @@ import type {
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { IndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import type {
+  IndexerSafeAllowance,
+  IndexerSafeDelegate,
+} from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
-import { modulePolicyId } from '@/modules/policies/domain/utils/policy-id.utils';
 
 const SECONDS_IN_MINUTE = 60;
 
@@ -27,9 +29,9 @@ const SECONDS_IN_MINUTE = 60;
  * nested inside it - which is what the create flow produces in one run, and what
  * the Policies page renders as one row.
  *
- * `SafeDelegate` is not read here: a delegate with no allowance is not a
- * spending limit, and each allowance row already carries the registration flag
- * it needs.
+ * `SafeDelegate` supplies nothing but the registration flag: a delegate with no
+ * allowance is not a spending limit, so the rows are read for `isActive` and
+ * never to add a spender.
  */
 @Injectable()
 export class SpendingLimitAssembler implements PolicyAssembler {
@@ -40,11 +42,6 @@ export class SpendingLimitAssembler implements PolicyAssembler {
     const perModule = groupBy(spendable, (allowance) => allowance.module);
 
     return [...perModule.entries()].map(([module, allowances]) => ({
-      id: modulePolicyId({
-        type: this.type,
-        moduleAddress: module,
-        safe: context.safe,
-      }),
       type: this.type,
       enforcement: {
         via: PolicyEnforcementKind.Module,
@@ -55,14 +52,18 @@ export class SpendingLimitAssembler implements PolicyAssembler {
       enabled: context.enabledModules.some(
         (enabled) => enabled.toLowerCase() === module.toLowerCase(),
       ),
-      data: this.toData({ module, allowances, now: context.now }),
+      data: this.toData({
+        module,
+        allowances,
+        delegates: context.state.delegates,
+      }),
     }));
   }
 
   private toData(args: {
     module: Address;
     allowances: Array<IndexerSafeAllowance>;
-    now: number;
+    delegates: ReadonlyArray<IndexerSafeDelegate>;
   }): SpendingLimitPolicyData {
     const perSpender = groupBy(
       args.allowances,
@@ -71,47 +72,56 @@ export class SpendingLimitAssembler implements PolicyAssembler {
 
     return {
       module: args.module,
-      // Every row of one deployment reports the same version.
-      moduleVersion: args.allowances[0].moduleVersion,
       spenders: [...perSpender.entries()].map(([spender, allowances]) => ({
         spender,
-        isActive: allowances.every((allowance) => allowance.delegateActive),
-        allowances: allowances.map((allowance) =>
-          this.toAllowance(allowance, args.now),
-        ),
+        isActive: this.isRegistered({
+          delegates: args.delegates,
+          module: args.module,
+          spender,
+        }),
+        allowances: allowances.map((allowance) => this.toAllowance(allowance)),
       })),
     };
   }
 
-  private toAllowance(
-    allowance: IndexerSafeAllowance,
-    now: number,
-  ): SpendingLimitAllowance {
+  /**
+   * Whether the spender may spend right now.
+   *
+   * The allowance row no longer carries this, so it comes from the delegate
+   * registration of the same `(module, delegate)`. A spender with no row at all
+   * is one whose registration was removed: `RemoveDelegate` unlinks a list node
+   * and leaves the allowances behind, so the limits are reported as
+   * present-but-unspendable rather than dropped.
+   */
+  private isRegistered(args: {
+    delegates: ReadonlyArray<IndexerSafeDelegate>;
+    module: Address;
+    spender: Address;
+  }): boolean {
+    return args.delegates.some(
+      (delegate) =>
+        delegate.module === args.module &&
+        delegate.delegate === args.spender &&
+        delegate.active,
+    );
+  }
+
+  private toAllowance(allowance: IndexerSafeAllowance): SpendingLimitAllowance {
     const resets = allowance.resetTimeMinutes > 0;
 
     return {
       token_address: allowance.token,
       amount: allowance.amount,
       spent: allowance.spent,
-      remaining: allowance.remaining,
-      available: this.available(allowance, now),
       resetPeriodSeconds: allowance.resetTimeMinutes * SECONDS_IN_MINUTE,
-      resetsAt: resets ? allowance.nextResetAt : null,
-      resetBoundaryIsExact: allowance.resetPhase !== 'ASSUMED',
-      nonce: allowance.nonce,
+      // The indexer serves the window start, not the boundary: a never-resetting
+      // allowance has no next reset to report.
+      resetsAt: resets
+        ? (allowance.lastResetMin + allowance.resetTimeMinutes) *
+          SECONDS_IN_MINUTE
+        : null,
+      resetBoundaryIsExact: allowance.resetPhase === 'EXACT',
     };
-  }
-
-  /**
-   * The rule the module applies inside `getAllowance` and the indexer leaves to
-   * its callers: a window that has rolled since the last event resets `spent`,
-   * and no event says so.
-   */
-  private available(allowance: IndexerSafeAllowance, now: number): string {
-    const hasRolled =
-      allowance.resetTimeMinutes > 0 && now >= allowance.nextResetAt;
-
-    return hasRolled ? allowance.amount : allowance.remaining;
   }
 }
 

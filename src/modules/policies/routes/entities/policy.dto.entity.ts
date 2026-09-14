@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import type { Address, Hex } from 'viem';
+import type { Address } from 'viem';
 import type {
   ActivePolicy,
   ActivePolicyData,
@@ -99,13 +99,6 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })
   public readonly spent!: string;
-  @ApiProperty({ description: 'amount - spent, clamped at zero' })
-  public readonly remaining!: string;
-  @ApiProperty({
-    description:
-      'What can be spent now: `remaining`, with a window that has already rolled applied. The module resets `spent` lazily and emits no event when it does, so this can exceed `remaining`.',
-  })
-  public readonly available!: string;
   @ApiProperty({ description: 'Window length in seconds; 0 never resets' })
   public readonly resetPeriodSeconds!: number;
   @ApiProperty({
@@ -119,8 +112,6 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
       'False when the reset boundary could not be recovered exactly, so `resetsAt` may be up to one period out. `amount` is unaffected.',
   })
   public readonly resetBoundaryIsExact!: boolean;
-  @ApiProperty({ description: 'Next allowance-transfer nonce' })
-  public readonly nonce!: string;
 }
 
 export class SpendingLimitSpenderDto {
@@ -140,8 +131,6 @@ export class SpendingLimitSpenderDto {
 export class SpendingLimitPolicyDataDto implements SpendingLimitPolicyData {
   @ApiProperty({ description: 'The allowance module holding this state' })
   public readonly module!: Address;
-  @ApiProperty({ description: 'Deployed version of that module' })
-  public readonly moduleVersion!: string;
   @ApiProperty({ type: SpendingLimitSpenderDto, isArray: true })
   public readonly spenders!: SpendingLimitPolicyData['spenders'];
 }
@@ -157,11 +146,6 @@ const PolicyDataSchema = {
   SpendingLimitPolicyDataDto,
 )
 export class ActivePolicyDto implements ActivePolicy {
-  @ApiProperty({
-    description:
-      'Opaque and stable. The on-chain access word for a guard policy; derived from the type, chain, Safe and module or grantee otherwise.',
-  })
-  public readonly id!: Hex;
   @ApiProperty({ enum: Object.values(PolicyType) })
   public readonly type!: PolicyType;
   @ApiProperty(EnforcementSchema)
