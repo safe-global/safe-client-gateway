@@ -19,17 +19,13 @@ export type PolicyIndexerVariables = {
 };
 
 /**
- * Current policy state for a set of Safes, in one round-trip.
+ * Current allowance-module state for a set of Safes, in one round-trip.
  *
- * The four root fields take separate variables because each entity has its own
- * generated `*_bool_exp` type, even though every group holds the same pairs.
+ * The two row fields take separate variables because each entity has its own
+ * generated `*_bool_exp` type, even though both groups hold the same pairs.
  *
- * `SafePolicy` is filtered to live bindings, since an unbound one is not
- * enforced. `ConfigurationRoot` is **not** filtered by status: a root that was
- * applied or invalidated is not pending, but knowing it was requested at all is
- * what tells a cancelled request apart from one that was never made - and a
- * stored configuration for a root nobody requested is exactly what `pending`
- * reports as a draft.
+ * `SafePolicy` and `ConfigurationRoot` are root fields this document does not
+ * pay for: the PRs reporting guard policies and pending configurations add them.
  */
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
@@ -41,7 +37,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     order_by: [{ chainId: asc }, { safe: asc }, { delegate: asc }, { token: asc }]
   ) {
     chainId safe module moduleVersion delegate token delegateActive
-    amount spent remaining resetTimeMinutes lastResetAt nextResetAt resetPhase nonce
+    amount spent remaining resetTimeMinutes lastResetMin resetPhase nonce updatedAt
   }
   SafeDelegate(
     where: { _or: $delegates }

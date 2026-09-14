@@ -34,7 +34,7 @@ export const IndexerSafeAllowanceSchema = z.object({
   delegateActive: z.boolean(),
   /** Per-window ceiling. `0` means deleted, or never set. */
   amount: IndexerBaseUnitsSchema,
-  /** Spent in the window beginning at `lastResetAt`. */
+  /** Spent in the window beginning at `lastResetMin`. */
   spent: IndexerBaseUnitsSchema,
   /** `max(0, amount - spent)`, already clamped by the indexer. */
   remaining: IndexerBaseUnitsSchema,
@@ -44,11 +44,17 @@ export const IndexerSafeAllowanceSchema = z.object({
    * configured allowances on some deployments.
    */
   resetTimeMinutes: IndexerIntegerSchema,
-  lastResetAt: IndexerIntegerSchema,
-  /** `0` when the allowance never resets. */
-  nextResetAt: IndexerIntegerSchema,
+  /**
+   * Start of the current window, in **minutes since the epoch** - the contract's
+   * own unit, not unix seconds. The indexer no longer serves the next boundary,
+   * so a caller derives it as `(lastResetMin + resetTimeMinutes) * 60`, and only
+   * when `resetTimeMinutes` is non-zero.
+   */
+  lastResetMin: IndexerIntegerSchema,
   resetPhase: IndexerResetPhaseSchema,
   nonce: IndexerBaseUnitsSchema,
+  /** Unix seconds of the last event that moved this row. */
+  updatedAt: IndexerIntegerSchema,
 });
 
 export type IndexerSafeAllowance = z.infer<typeof IndexerSafeAllowanceSchema>;

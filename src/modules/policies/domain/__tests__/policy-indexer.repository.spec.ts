@@ -151,11 +151,11 @@ describe('PolicyIndexerRepository', () => {
       expect(result.allowances[0].remaining).toBe(amount);
     });
 
-    it('should convert seconds and minutes to numbers', async () => {
+    it('should convert minutes and seconds to numbers', async () => {
       const allowance = rawIndexerSafeAllowanceBuilder()
         .with('resetTimeMinutes', '1440')
-        .with('lastResetAt', '1787585160')
-        .with('nextResetAt', '1787671560')
+        .with('lastResetMin', '29793086')
+        .with('updatedAt', '1787585160')
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
@@ -167,15 +167,15 @@ describe('PolicyIndexerRepository', () => {
 
       expect(result.allowances[0]).toMatchObject({
         resetTimeMinutes: 1440,
-        lastResetAt: 1787585160,
-        nextResetAt: 1787671560,
+        lastResetMin: 29793086,
+        updatedAt: 1787585160,
       });
     });
 
     it('should drop a row whose integer column exceeds the safe range', async () => {
       // Truncating it would produce a plausible, wrong reset boundary.
       const allowance = rawIndexerSafeAllowanceBuilder()
-        .with('lastResetAt', (2n ** 64n).toString())
+        .with('lastResetMin', (2n ** 64n).toString())
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
@@ -225,7 +225,7 @@ describe('PolicyIndexerRepository', () => {
       );
     });
 
-    it('should read a reset phase it does not know as ASSUMED', async () => {
+    it('should read a reset phase it does not know as UNKNOWN', async () => {
       // Pessimistic: an unverified boundary is not reported as exact.
       const allowance = rawIndexerSafeAllowanceBuilder()
         .with('resetPhase', 'SOMETHING_NEW')
@@ -238,7 +238,7 @@ describe('PolicyIndexerRepository', () => {
         safes: [{ chainId: SEPOLIA, address: safe }],
       });
 
-      expect(result.allowances[0].resetPhase).toBe('ASSUMED');
+      expect(result.allowances[0].resetPhase).toBe('UNKNOWN');
     });
 
     it('should fail the read when the envelope itself is unreadable', async () => {
