@@ -12,6 +12,11 @@ import {
   PolicyIndexerResponseSchema,
   type PolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  IndexerSafeAllowance,
+  IndexerSafeAllowanceRow,
+  IndexerSafeDelegate,
+} from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import {
   IndexerSafeAllowanceSchema,
   IndexerSafeDelegateSchema,
@@ -39,19 +44,46 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     const raw = await this.policyIndexerApi.getState({ safes });
     const response = PolicyIndexerResponseSchema.parse(raw);
 
+    const delegates = this.parseRows(
+      IndexerSafeDelegateSchema,
+      response.SafeDelegate,
+      'SafeDelegate',
+    );
+
     return {
       meta: this.parseRows(IndexerMetaSchema, response._meta, '_meta'),
       allowances: this.parseRows(
         IndexerSafeAllowanceSchema,
         response.SafeAllowance,
         'SafeAllowance',
-      ),
-      delegates: this.parseRows(
-        IndexerSafeDelegateSchema,
-        response.SafeDelegate,
-        'SafeDelegate',
-      ),
+      ).map((allowance) => this.withRegistration(allowance, delegates)),
+      delegates,
     };
+  }
+
+  /**
+   * Folds the delegate's registration onto an allowance.
+   *
+   * The indexer stopped mirroring it onto the allowance row, but the wire still
+   * reports per allowance whether its spender can spend now - so the join lives
+   * here, once, rather than in each consumer of the state.
+   *
+   * Both sides come from one response and both addresses are checksummed by
+   * `AddressSchema`, so the comparison needs no normalising.
+   */
+  private withRegistration(
+    allowance: IndexerSafeAllowanceRow,
+    delegates: ReadonlyArray<IndexerSafeDelegate>,
+  ): IndexerSafeAllowance {
+    const registration = delegates.find(
+      (delegate) =>
+        delegate.chainId === allowance.chainId &&
+        delegate.safe === allowance.safe &&
+        delegate.module === allowance.module &&
+        delegate.delegate === allowance.delegate,
+    );
+
+    return { ...allowance, isDelegateActive: registration?.active ?? false };
   }
 
   public async clearState(args: {
