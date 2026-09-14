@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 /**
  * The operation of a guarded call, as the wire reports it.
@@ -15,11 +16,15 @@ export type PolicyOperation =
   (typeof PolicyOperation)[keyof typeof PolicyOperation];
 
 /**
- * Numeric value of an operation as encoded in the access word - one byte, so the
- * return type is narrowed to the two values the guard defines.
+ * Numeric value of an operation as encoded in the access word.
+ *
+ * The guard's byte is the Safe's own operation encoding, so the values come from
+ * {@link Operation} rather than from literals repeated here.
  */
-export function operationValue(operation: PolicyOperation): 0 | 1 {
-  return operation === PolicyOperation.DelegateCall ? 1 : 0;
+export function operationValue(operation: PolicyOperation): Operation {
+  return operation === PolicyOperation.DelegateCall
+    ? Operation.DELEGATE
+    : Operation.CALL;
 }
 
 /**
@@ -28,6 +33,8 @@ export function operationValue(operation: PolicyOperation): 0 | 1 {
  * Needed wherever CGW holds the numeric form - the guard's encoding, and so the
  * stored configurations - but reports the named one.
  */
-export function policyOperationFromValue(value: 0 | 1): PolicyOperation {
-  return value === 1 ? PolicyOperation.DelegateCall : PolicyOperation.Call;
+export function policyOperationFromValue(value: Operation): PolicyOperation {
+  return value === Operation.DELEGATE
+    ? PolicyOperation.DelegateCall
+    : PolicyOperation.Call;
 }
