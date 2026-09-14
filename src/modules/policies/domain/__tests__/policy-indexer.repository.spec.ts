@@ -251,6 +251,107 @@ describe('PolicyIndexerRepository', () => {
     });
   });
 
+  describe('the delegate registration', () => {
+    /** A raw allowance and the raw delegate row that registers its spender. */
+    function pair(active: boolean): {
+      allowance: ReturnType<typeof rawIndexerSafeAllowanceBuilder>;
+      delegate: ReturnType<typeof rawIndexerSafeDelegateBuilder>;
+    } {
+      const allowance = rawIndexerSafeAllowanceBuilder()
+        .with('chainId', Number(SEPOLIA))
+        .with('safe', safe);
+
+      return {
+        allowance,
+        delegate: rawIndexerSafeDelegateBuilder()
+          .with('chainId', Number(SEPOLIA))
+          .with('safe', safe)
+          .with('module', allowance.build().module)
+          .with('delegate', allowance.build().delegate)
+          .with('active', active),
+      };
+    }
+
+    it('should fold an active registration onto the allowance', async () => {
+      // The indexer stopped mirroring it onto the allowance row, so the flag is
+      // CGW's own join of the two root fields.
+      const { allowance, delegate } = pair(true);
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(
+          rawPolicyIndexerState({
+            SafeAllowance: [allowance.build()],
+            SafeDelegate: [delegate.build()],
+          }),
+        ),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+      });
+
+      expect(result.allowances[0].isDelegateActive).toBe(true);
+    });
+
+    it('should fold a deregistered delegate onto the allowance', async () => {
+      const { allowance, delegate } = pair(false);
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(
+          rawPolicyIndexerState({
+            SafeAllowance: [allowance.build()],
+            SafeDelegate: [delegate.build()],
+          }),
+        ),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+      });
+
+      expect(result.allowances[0].isDelegateActive).toBe(false);
+    });
+
+    it('should read an allowance with no registration at all as inactive', async () => {
+      // RemoveDelegate unlinks the node and leaves the limit behind, so a
+      // missing row is a removed delegate rather than an unknown one.
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(
+          rawPolicyIndexerState({
+            SafeAllowance: [rawIndexerSafeAllowanceBuilder().build()],
+          }),
+        ),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+      });
+
+      expect(result.allowances[0].isDelegateActive).toBe(false);
+    });
+
+    it('should not borrow the registration of another module deployment', async () => {
+      // Two deployments hold independent state, so a delegate registered on one
+      // says nothing about the same address on the other.
+      const { allowance, delegate } = pair(true);
+      const elsewhere = delegate
+        .with('module', getAddress(faker.finance.ethereumAddress()))
+        .build();
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(
+          rawPolicyIndexerState({
+            SafeAllowance: [allowance.build()],
+            SafeDelegate: [elsewhere],
+          }),
+        ),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+      });
+
+      expect(result.allowances[0].isDelegateActive).toBe(false);
+    });
+  });
+
   describe('fields', () => {
     it('should report the indexing progress of every chain', async () => {
       mockPolicyIndexerApi.getState.mockResolvedValue(
