@@ -15,8 +15,6 @@ export type PolicyAssemblerContext = {
   state: PolicyIndexerState;
   /** The Safe's enabled modules, which is what makes a module policy enforced. */
   enabledModules: ReadonlyArray<Address>;
-  /** Unix seconds, passed in so an assembler stays a pure function. */
-  now: number;
 };
 
 /**
