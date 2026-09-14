@@ -18,6 +18,12 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  * merged.
  *
  * `token` is the zero address for the native currency.
+ *
+ * Whether the delegate may spend right now is **not** on this row: the indexer
+ * no longer mirrors it here, so a caller reads it from the `SafeDelegate` of the
+ * same `(chainId, safe, module, delegate)`. An allowance outlives a delegate's
+ * removal - `RemoveDelegate` unlinks a list node only - so an allowance with no
+ * active delegate is unspendable rather than gone.
  */
 export const IndexerSafeAllowanceSchema = z.object({
   chainId: IndexerChainIdSchema,
@@ -26,12 +32,6 @@ export const IndexerSafeAllowanceSchema = z.object({
   moduleVersion: z.string(),
   delegate: AddressSchema,
   token: AddressSchema,
-  /**
-   * Mirrors the delegate's registration. `false` means nothing is spendable
-   * *now* - `RemoveDelegate` deletes a linked-list node only, so the allowance
-   * survives and returns to effect if the delegate is re-added.
-   */
-  delegateActive: z.boolean(),
   /** Per-window ceiling. `0` means deleted, or never set. */
   amount: IndexerBaseUnitsSchema,
   /** Spent in the window beginning at `lastResetMin`. */
