@@ -21,6 +21,7 @@ export const PolicyType = {
   AllowPolicy: 'AllowPolicy',
   NativeTransfer: 'NativeTransferPolicy',
   Deny: 'DenyPolicy',
+};
 
 export type PolicyType = (typeof PolicyType)[keyof typeof PolicyType];
 
@@ -42,6 +43,7 @@ export const PolicyEnforcementKind = {
   Module: 'module',
   Guard: 'guard',
   OffChain: 'offchain',
+};
 
 export type PolicyEnforcementKind =
   (typeof PolicyEnforcementKind)[keyof typeof PolicyEnforcementKind];
