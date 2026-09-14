@@ -91,25 +91,30 @@ export function rawIndexerSafeDelegateBuilder(): IBuilder<RawIndexerSafeDelegate
 }
 
 /**
- * A parsed allowance row, as a repository returns it: `chainId` a string, base
- * units strings, minutes and seconds numbers.
+ * An allowance as a repository returns it: `chainId` a string, base units
+ * strings, minutes and seconds numbers, and the delegate's registration folded
+ * in.
  */
 export function indexerSafeAllowanceBuilder(): IBuilder<IndexerSafeAllowance> {
   const raw = rawIndexerSafeAllowanceBuilder().build();
 
-  return new Builder<IndexerSafeAllowance>()
-    .with('chainId', String(raw.chainId))
-    .with('safe', getAddress(raw.safe))
-    .with('module', getAddress(raw.module))
-    .with('moduleVersion', raw.moduleVersion)
-    .with('delegate', getAddress(raw.delegate))
-    .with('token', getAddress(raw.token))
-    .with('amount', raw.amount)
-    .with('spent', raw.spent)
-    .with('remaining', raw.remaining)
-    .with('resetTimeMinutes', Number(raw.resetTimeMinutes))
-    .with('lastResetMin', Number(raw.lastResetMin))
-    .with('resetPhase', raw.resetPhase === 'UNKNOWN' ? 'UNKNOWN' : 'EXACT')
-    .with('nonce', raw.nonce)
-    .with('updatedAt', Number(raw.updatedAt));
+  return (
+    new Builder<IndexerSafeAllowance>()
+      .with('chainId', String(raw.chainId))
+      .with('safe', getAddress(raw.safe))
+      .with('module', getAddress(raw.module))
+      .with('moduleVersion', raw.moduleVersion)
+      .with('delegate', getAddress(raw.delegate))
+      .with('token', getAddress(raw.token))
+      .with('amount', raw.amount)
+      .with('spent', raw.spent)
+      .with('remaining', raw.remaining)
+      .with('resetTimeMinutes', Number(raw.resetTimeMinutes))
+      .with('lastResetMin', Number(raw.lastResetMin))
+      .with('resetPhase', raw.resetPhase === 'UNKNOWN' ? 'UNKNOWN' : 'EXACT')
+      .with('nonce', raw.nonce)
+      .with('updatedAt', Number(raw.updatedAt))
+      // Folded in by the repository, not served by the indexer.
+      .with('isDelegateActive', true)
+  );
 }

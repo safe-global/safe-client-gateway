@@ -19,11 +19,9 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  *
  * `token` is the zero address for the native currency.
  *
- * Whether the delegate may spend right now is **not** on this row: the indexer
- * no longer mirrors it here, so a caller reads it from the `SafeDelegate` of the
- * same `(chainId, safe, module, delegate)`. An allowance outlives a delegate's
- * removal - `RemoveDelegate` unlinks a list node only - so an allowance with no
- * active delegate is unspendable rather than gone.
+ * The indexer no longer mirrors the delegate's registration onto this row, so
+ * `isDelegateActive` is absent here and folded in by the repository - see
+ * {@link IndexerSafeAllowance}.
  */
 export const IndexerSafeAllowanceSchema = z.object({
   chainId: IndexerChainIdSchema,
@@ -57,7 +55,26 @@ export const IndexerSafeAllowanceSchema = z.object({
   updatedAt: IndexerIntegerSchema,
 });
 
-export type IndexerSafeAllowance = z.infer<typeof IndexerSafeAllowanceSchema>;
+/** One allowance exactly as the indexer serves it. */
+export type IndexerSafeAllowanceRow = z.infer<
+  typeof IndexerSafeAllowanceSchema
+>;
+
+/**
+ * An allowance with the delegate's registration folded in.
+ *
+ * `isDelegateActive` is CGW's, not the indexer's: the repository reads it from
+ * the `SafeDelegate` of the same `(chainId, safe, module, delegate)` in the same
+ * response. An allowance outlives its delegate - `RemoveDelegate` unlinks a list
+ * node and leaves the limit behind - so `false` means unspendable now, never
+ * gone, and the limit returns to effect if the delegate is re-added.
+ *
+ * A row with no registration at all is `false` for the same reason: no
+ * registration is a removed delegate, not a missing one.
+ */
+export type IndexerSafeAllowance = IndexerSafeAllowanceRow & {
+  isDelegateActive: boolean;
+};
 
 /**
  * A delegate registration of the `AllowanceModule`, per
