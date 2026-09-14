@@ -39,6 +39,12 @@ export type SpendingLimitAllowance = {
    * call, so `resetsAt` may be up to one period out.
    */
   resetBoundaryIsExact: boolean;
+  /**
+   * `false` when the spender's delegate registration was removed: nothing is
+   * spendable now, but the allowance survives and returns to effect if the
+   * delegate is re-added.
+   */
+  isDelegateActive: boolean;
 };
 
 /**
