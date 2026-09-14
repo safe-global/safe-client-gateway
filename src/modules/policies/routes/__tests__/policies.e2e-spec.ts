@@ -25,7 +25,14 @@ import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
-import { rawIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type {
+  RawIndexerSafeAllowance,
+  RawIndexerSafeDelegate,
+} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import {
+  rawIndexerSafeAllowanceBuilder,
+  rawIndexerSafeDelegateBuilder,
+} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
@@ -150,8 +157,28 @@ describe('Policies routes (e2e)', () => {
       .with('spent', '250')
       .with('remaining', '750')
       .with('resetTimeMinutes', '1440')
-      .with('nextResetAt', '4000000000')
+      .with('lastResetMin', '29793086')
       .with('resetPhase', 'EXACT');
+  }
+
+  /**
+   * The registrations that let the spenders of {@link allowances} spend now.
+   *
+   * The allowance row no longer carries the flag, so a state with allowances and
+   * no delegates reports every spender as inactive.
+   */
+  function registrationsFor(
+    allowances: ReadonlyArray<RawIndexerSafeAllowance>,
+  ): Array<RawIndexerSafeDelegate> {
+    return allowances.map((allowance) =>
+      rawIndexerSafeDelegateBuilder()
+        .with('chainId', allowance.chainId)
+        .with('safe', allowance.safe)
+        .with('module', allowance.module)
+        .with('delegate', allowance.delegate)
+        .with('active', true)
+        .build(),
+    );
   }
 
   beforeEach(async () => {
@@ -220,6 +247,7 @@ describe('Policies routes (e2e)', () => {
               .build(),
           ],
           SafeAllowance: [sepolia, polygon],
+          SafeDelegate: registrationsFor([sepolia, polygon]),
         }),
       );
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -247,8 +275,12 @@ describe('Policies routes (e2e)', () => {
 
     it('should narrow the read to the requested safes', async () => {
       mockUpstream();
+      const allowance = anAllowance().build();
       mockIndexer(
-        rawPolicyIndexerState({ SafeAllowance: [anAllowance().build()] }),
+        rawPolicyIndexerState({
+          SafeAllowance: [allowance],
+          SafeDelegate: registrationsFor([allowance]),
+        }),
       );
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -296,7 +328,12 @@ describe('Policies routes (e2e)', () => {
     it('should return the spending limit of a safe in the space', async () => {
       const allowance = anAllowance().build();
       mockUpstream();
-      mockIndexer(rawPolicyIndexerState({ SafeAllowance: [allowance] }));
+      mockIndexer(
+        rawPolicyIndexerState({
+          SafeAllowance: [allowance],
+          SafeDelegate: registrationsFor([allowance]),
+        }),
+      );
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -312,14 +349,12 @@ describe('Policies routes (e2e)', () => {
         previous: null,
         results: [
           {
-            id: expect.any(String),
             type: PolicyType.SpendingLimit,
             enforcement: { via: 'module', moduleAddress: allowanceModule },
             enabled: true,
             safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
             data: {
               module: allowanceModule,
-              moduleVersion: '0.1.0',
               spenders: [
                 {
                   spender: getAddress(allowance.delegate),
@@ -329,12 +364,9 @@ describe('Policies routes (e2e)', () => {
                       token_address: getAddress(allowance.token),
                       amount: '1000',
                       spent: '250',
-                      remaining: '750',
-                      available: '750',
                       resetPeriodSeconds: 86_400,
-                      resetsAt: 4_000_000_000,
+                      resetsAt: (29_793_086 + 1440) * 60,
                       resetBoundaryIsExact: true,
-                      nonce: allowance.nonce,
                     },
                   ],
                 },
@@ -347,8 +379,12 @@ describe('Policies routes (e2e)', () => {
 
     it('should report a limit as unenforced when the module is not enabled', async () => {
       mockUpstream({ modules: [] });
+      const allowance = anAllowance().build();
       mockIndexer(
-        rawPolicyIndexerState({ SafeAllowance: [anAllowance().build()] }),
+        rawPolicyIndexerState({
+          SafeAllowance: [allowance],
+          SafeDelegate: registrationsFor([allowance]),
+        }),
       );
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
