@@ -18,7 +18,6 @@ export type RawIndexerSafeAllowance = {
   moduleVersion: string;
   delegate: string;
   token: string;
-  delegateActive: boolean;
   amount: string;
   spent: string;
   remaining: string;
@@ -47,7 +46,6 @@ export function rawIndexerSafeAllowanceBuilder(): IBuilder<RawIndexerSafeAllowan
       .with('moduleVersion', faker.helpers.arrayElement(['0.1.0', '0.1.1']))
       .with('delegate', getAddress(faker.finance.ethereumAddress()))
       .with('token', getAddress(faker.finance.ethereumAddress()))
-      .with('delegateActive', true)
       .with('amount', amount.toString())
       .with('spent', spent.toString())
       .with('remaining', (amount - spent).toString())
@@ -106,7 +104,6 @@ export function indexerSafeAllowanceBuilder(): IBuilder<IndexerSafeAllowance> {
     .with('moduleVersion', raw.moduleVersion)
     .with('delegate', getAddress(raw.delegate))
     .with('token', getAddress(raw.token))
-    .with('delegateActive', raw.delegateActive)
     .with('amount', raw.amount)
     .with('spent', raw.spent)
     .with('remaining', raw.remaining)
