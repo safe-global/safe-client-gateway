@@ -49,12 +49,20 @@ export const IndexerIntegerSchema = IndexerBaseUnitsSchema.transform(
  * CGW therefore validates the value sets itself.
  *
  * Where a fallback exists it is the pessimistic one: an unrecognised reset phase
- * is treated as `ASSUMED` (boundary not to be trusted) and an unrecognised
- * policy kind as `UNKNOWN` (not rendered), rather than guessing.
+ * and an unrecognised policy kind both become `UNKNOWN` - a boundary not to be
+ * trusted, and a policy not rendered - rather than a guess.
+ */
+
+/**
+ * Whether the window boundary was recovered from the configuring call.
+ *
+ * `UNKNOWN` means it was not, so `lastResetMin` may be up to one period out.
+ * A never-resetting allowance is `EXACT`: there is no boundary to be wrong
+ * about.
  */
 export const IndexerResetPhaseSchema = z
-  .enum(['NONE', 'EXACT', 'ASSUMED'])
-  .catch('ASSUMED');
+  .enum(['EXACT', 'UNKNOWN'])
+  .catch('UNKNOWN');
 
 export type IndexerResetPhase = z.infer<typeof IndexerResetPhaseSchema>;
 
