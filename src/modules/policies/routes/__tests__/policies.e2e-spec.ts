@@ -367,6 +367,7 @@ describe('Policies routes (e2e)', () => {
                       resetPeriodSeconds: 86_400,
                       resetsAt: (29_793_086 + 1440) * 60,
                       resetBoundaryIsExact: true,
+                      isDelegateActive: true,
                     },
                   ],
                 },

@@ -4,14 +4,8 @@ import { getAddress, zeroAddress } from 'viem';
 import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
 import type { SpendingLimitPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerStateBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
-import {
-  indexerSafeAllowanceBuilder,
-  indexerSafeDelegateBuilder,
-} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type {
-  IndexerSafeAllowance,
-  IndexerSafeDelegate,
-} from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import { indexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { IndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 
 const SEPOLIA = '11155111';
@@ -26,30 +20,13 @@ describe('SpendingLimitAssembler', () => {
 
   function assemble(
     allowances: Array<IndexerSafeAllowance>,
-    overrides?: {
-      enabledModules?: Array<`0x${string}`>;
-      delegates?: Array<IndexerSafeDelegate>;
-    },
+    overrides?: { enabledModules?: Array<`0x${string}`> },
   ) {
     return target.assemble({
       safe,
-      state: policyIndexerStateBuilder()
-        .with('allowances', allowances)
-        .with('delegates', overrides?.delegates ?? allowances.map(registered))
-        .build(),
+      state: policyIndexerStateBuilder().with('allowances', allowances).build(),
       enabledModules: overrides?.enabledModules ?? [allowanceModule],
     });
-  }
-
-  /** The registration that lets `allowance`'s spender spend right now. */
-  function registered(allowance: IndexerSafeAllowance): IndexerSafeDelegate {
-    return indexerSafeDelegateBuilder()
-      .with('chainId', allowance.chainId)
-      .with('safe', allowance.safe)
-      .with('module', allowance.module)
-      .with('delegate', allowance.delegate)
-      .with('active', true)
-      .build();
   }
 
   /** An allowance of `safe` on `allowanceModule`, spendable by default. */
@@ -222,19 +199,9 @@ describe('SpendingLimitAssembler', () => {
     it('should keep a deregistered spender, marked inactive', () => {
       // RemoveDelegate deletes a linked-list node only: the allowance survives
       // and returns to effect if the delegate is re-added.
-      const revoked = allowance().build();
+      const revoked = allowance().with('isDelegateActive', false).build();
 
-      const [policy] = assemble([revoked], {
-        delegates: [
-          indexerSafeDelegateBuilder()
-            .with('chainId', revoked.chainId)
-            .with('safe', revoked.safe)
-            .with('module', revoked.module)
-            .with('delegate', revoked.delegate)
-            .with('active', false)
-            .build(),
-        ],
-      });
+      const [policy] = assemble([revoked]);
 
       expect(dataOf(policy).spenders[0]).toMatchObject({
         spender: revoked.delegate,
@@ -242,14 +209,16 @@ describe('SpendingLimitAssembler', () => {
       });
     });
 
-    it('should mark a spender with no registration at all inactive', () => {
-      // The row outlives the registration, so "no delegate row" is a removed
-      // delegate rather than a reason to drop the limit.
-      const orphaned = allowance().build();
+    it('should report the registration on the allowance too', () => {
+      // The client renders the limit itself as unspendable, so the flag travels
+      // with the allowance rather than only with the spender.
+      const revoked = allowance().with('isDelegateActive', false).build();
 
-      const [policy] = assemble([orphaned], { delegates: [] });
+      const [policy] = assemble([revoked]);
 
-      expect(dataOf(policy).spenders[0].isActive).toBe(false);
+      expect(dataOf(policy).spenders[0].allowances[0].isDelegateActive).toBe(
+        false,
+      );
     });
 
     it('should keep base units as strings beyond the safe integer range', () => {
