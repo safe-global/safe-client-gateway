@@ -112,6 +112,11 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
       'False when the reset boundary could not be recovered exactly, so `resetsAt` may be up to one period out. `amount` is unaffected.',
   })
   public readonly resetBoundaryIsExact!: boolean;
+  @ApiProperty({
+    description:
+      "False when the spender's delegate registration was removed: nothing is spendable now, but the allowance returns to effect if the delegate is re-added",
+  })
+  public readonly isDelegateActive!: boolean;
 }
 
 export class SpendingLimitSpenderDto {
