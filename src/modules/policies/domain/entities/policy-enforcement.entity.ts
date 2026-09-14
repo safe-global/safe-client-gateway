@@ -31,12 +31,20 @@ export type GuardEnforcement = {
 };
 
 /**
- * A proposer grant. `source` names where the grant is held, so a second
- * off-chain source is a new value rather than a new variant.
+ * Where an off-chain policy data is held.
  */
+export const OffChainSource = {
+  /** A delegate of the Transaction Service. */
+  Delegates: 'delegates',
+} as const;
+
+export type OffChainSource =
+  (typeof OffChainSource)[keyof typeof OffChainSource];
+
+/** A proposer grant, and the store it is held in. */
 export type OffChainEnforcement = {
   via: typeof PolicyEnforcementKind.OffChain;
-  source: 'delegates';
+  source: OffChainSource;
 };
 
 export type PolicyEnforcement =
