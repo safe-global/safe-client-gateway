@@ -71,19 +71,18 @@ describe('getSafeQueueAuthHeaders', () => {
       useVpcUrl: true,
       apiKey: 'test-key',
     },
-  ])('should return undefined when $description', ({
-    isDevelopment,
-    useVpcUrl,
-    apiKey,
-  }) => {
-    const config = configuration();
-    config.application.isDevelopment = isDevelopment;
-    config.safeQueueService.useVpcUrl = useVpcUrl;
-    config.safeQueueService.apiKey = apiKey;
-    initTarget(() => config);
+  ])(
+    'should return undefined when $description',
+    ({ isDevelopment, useVpcUrl, apiKey }) => {
+      const config = configuration();
+      config.application.isDevelopment = isDevelopment;
+      config.safeQueueService.useVpcUrl = useVpcUrl;
+      config.safeQueueService.apiKey = apiKey;
+      initTarget(() => config);
 
-    const result = getSafeQueueAuthHeaders(mockConfigurationService);
+      const result = getSafeQueueAuthHeaders(mockConfigurationService);
 
-    expect(result).toBeUndefined();
-  });
+      expect(result).toBeUndefined();
+    },
+  );
 });
