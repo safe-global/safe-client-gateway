@@ -5,6 +5,7 @@ import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-de
 import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
@@ -12,7 +13,6 @@ import {
 import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { MultisigTransactionExecutionInfoMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
 import { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
@@ -59,7 +59,8 @@ export class MultisigTransactionMapper {
     );
     const safeAppInfo = await this.safeAppInfoMapper.mapSafeAppInfo(
       chainId,
-      transaction,
+      transaction.origin,
+      transaction.safeTxHash,
     );
     const note = this.noteMapper.mapTxNote(transaction);
 

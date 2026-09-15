@@ -6,8 +6,8 @@ import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.e
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import {
+  NullableAddressSchema,
   NullableHexSchema,
-  NullableNumberSchema,
   NullableStringSchema,
 } from '@/validation/entities/schemas/nullable.schema';
 
@@ -19,8 +19,7 @@ export const MessageSchema = z.object({
   safe: AddressSchema,
   messageHash: HexSchema,
   message: z.union([z.string(), TypedDataSchema]),
-  proposedBy: AddressSchema,
-  safeAppId: NullableNumberSchema,
+  proposedBy: NullableAddressSchema,
   confirmations: z.array(MessageConfirmationSchema),
   preparedSignature: NullableHexSchema,
   origin: NullableStringSchema,

@@ -13,6 +13,7 @@ import { SafesController } from '@/modules/safe/routes/safes.controller';
 import { SafesService } from '@/modules/safe/routes/safes.service';
 import { SafesV2Controller } from '@/modules/safe/routes/v2/safes.v2.controller';
 import { SafesV2Service } from '@/modules/safe/routes/v2/safes.v2.service';
+import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
 import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { AddressInfoModule } from '@/routes/common/address-info/address-info.module';
 
@@ -26,6 +27,7 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     DelegatesV2RepositoryModule,
     ContractsModule,
     FeatureFlagsModule,
+    SafeQueueModule,
   ],
   controllers: [SafesController, SafesV2Controller],
   providers: [
