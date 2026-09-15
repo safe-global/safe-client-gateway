@@ -2,7 +2,26 @@
 import type { Address, Hash, Hex } from 'viem';
 import type { z } from 'zod';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
+import type {
+  NestedTransactionDtoSchema,
+  ProposeTransactionDtoSchema,
+} from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
+
+export class NestedTransactionDto
+  implements z.infer<typeof NestedTransactionDtoSchema>
+{
+  to!: Address | null;
+  value!: string;
+  data!: Hex | null;
+  operation!: Operation;
+  safeTxGas!: string;
+  baseGas!: string;
+  gasPrice!: string;
+  gasToken!: Address | null;
+  refundReceiver!: Address | null;
+  nonce!: string;
+  notes!: string | null;
+}
 
 export class ProposeTransactionDto
   implements z.infer<typeof ProposeTransactionDtoSchema>
@@ -21,4 +40,5 @@ export class ProposeTransactionDto
   sender!: Address;
   signature!: Hex | null;
   origin!: string | null;
+  nestedTransaction!: NestedTransactionDto | null;
 }

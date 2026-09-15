@@ -239,6 +239,49 @@ describe('Messages controller', () => {
         });
     });
 
+    it('Get a message whose proposer could not be recovered', async () => {
+      const chain = chainBuilder().build();
+      const safeApps: Array<SafeApp> = [];
+      const messageConfirmations = faker.helpers.multiple(
+        () => messageConfirmationBuilder().build(),
+        { count: { min: 2, max: 5 } },
+      );
+      const message = messageBuilder()
+        .with('confirmations', messageConfirmations)
+        .with('proposedBy', null)
+        .build();
+      const safe = safeBuilder()
+        .with(
+          'threshold',
+          faker.number.int({ max: messageConfirmations.length }),
+        )
+        .build();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${queueBaseUri}/api/v1/messages/${message.messageHash}`:
+            return Promise.resolve({
+              data: rawify(toQueueMessageJson(message, chain.chainId)),
+              status: 200,
+            });
+          case `${chain.transactionService}/api/v1/safes/${message.safe}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case `${safeConfigUrl}/api/v1/safe-apps/`:
+            return Promise.resolve({ data: rawify(safeApps), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chain.chainId}/messages/${message.messageHash}`)
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.proposedBy).toBeNull();
+        });
+    });
+
     it('Get a confirmed message with a safe app associated', async () => {
       const chain = chainBuilder().build();
       const safeApps = faker.helpers.multiple(() => safeAppBuilder().build(), {

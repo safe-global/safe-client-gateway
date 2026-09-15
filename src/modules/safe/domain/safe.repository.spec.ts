@@ -31,7 +31,10 @@ import { createMockSafeQueueService } from '@/modules/safe-queue/__tests__/safe-
 import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import {
+  nestedTransactionDtoBuilder,
+  proposeTransactionDtoBuilder,
+} from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -1412,6 +1415,53 @@ describe('SafeRepository', () => {
       expect(
         mockSafeQueueService.clearMultisigTransaction,
       ).not.toHaveBeenCalled();
+    });
+
+    it('should forward a nested transaction to the queue service untouched', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('nestedTransaction', nestedTransactionDtoBuilder().build())
+        .build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+
+      await repository.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(mockSafeQueueService.proposeTransaction).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+    });
+
+    it('should reject a nested transaction when FF_SAFE_QUEUE_SERVICE is off instead of silently dropping it', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder()
+        .with('nestedTransaction', nestedTransactionDtoBuilder().build())
+        .build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+
+      await expect(
+        repo.proposeTransaction({
+          chainId,
+          safeAddress,
+          proposeTransactionDto,
+        }),
+      ).rejects.toThrow('Nested transactions are not supported');
+
+      expect(mockTransactionApi.postMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.proposeTransaction).not.toHaveBeenCalled();
     });
   });
 

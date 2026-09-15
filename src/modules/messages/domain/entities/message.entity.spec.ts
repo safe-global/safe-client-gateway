@@ -91,6 +91,14 @@ describe('Message entity schemas', () => {
       expect(result.success && result.data.preparedSignature).toBe(null);
     });
 
+    it('should allow null proposedBy', () => {
+      const message = messageBuilder().with('proposedBy', null).build();
+
+      const result = MessageSchema.safeParse(message);
+
+      expect(result.success && result.data.proposedBy).toBe(null);
+    });
+
     it('should allow empty confirmations', () => {
       const message = messageBuilder().with('confirmations', []).build();
 
@@ -105,7 +113,6 @@ describe('Message entity schemas', () => {
       'safe' as const,
       'messageHash' as const,
       'message' as const,
-      'proposedBy' as const,
       'confirmations' as const,
     ])('should not allow %s to be undefined', (key) => {
       const message = messageBuilder().build();
