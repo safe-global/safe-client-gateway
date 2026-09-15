@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
 import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -900,6 +901,16 @@ export class SafeRepository implements ISafeRepository {
         safeAddress: args.safeAddress,
         proposeTransactionDto: args.proposeTransactionDto,
       });
+    }
+    // The tx service has no notion of nested transactions: forwarding would
+    // store the parent without its child, and the queue service's
+    // conflict-on-either-hash means that parent could never gain the child
+    // later. Reject rather than silently dropping the child.
+    if (args.proposeTransactionDto.nestedTransaction) {
+      throw new HttpExceptionNoLog(
+        'Nested transactions are not supported',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
     }
     return transactionService.postMultisigTransaction({
       address: args.safeAddress,

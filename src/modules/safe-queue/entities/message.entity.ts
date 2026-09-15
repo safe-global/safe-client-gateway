@@ -11,7 +11,10 @@ import {
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
-import { NullableHexSchema } from '@/validation/entities/schemas/nullable.schema';
+import {
+  NullableAddressSchema,
+  NullableHexSchema,
+} from '@/validation/entities/schemas/nullable.schema';
 
 export type QueueMessageConfirmation = z.infer<
   typeof QueueMessageConfirmationSchema
@@ -32,7 +35,9 @@ export const SafeQueueMessageSchema = z.object({
   chainId: z.coerce.number(),
   safe: AddressSchema,
   message: z.union([z.string(), TypedDataSchema]),
-  proposedBy: AddressSchema,
+  // The queue service derives the proposer from the submitted signature and
+  // returns null when it cannot recover one, unlike the Transaction Service.
+  proposedBy: NullableAddressSchema,
   preparedSignature: NullableHexSchema,
   originName: OriginNameSchema,
   originUrl: OriginUrlSchema,

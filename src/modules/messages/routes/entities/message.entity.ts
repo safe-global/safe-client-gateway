@@ -4,7 +4,7 @@ import type { Hash, Hex } from 'viem';
 import { MessageConfirmation } from '@/modules/messages/routes/entities/message-confirmation.entity';
 import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
 import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
-import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { AddressInfo } from '@/routes/common/entities/address-info.entity';
 
 export enum MessageStatus {
   NeedsConfirmation = 'NEEDS_CONFIRMATION',
@@ -35,8 +35,8 @@ export class Message {
   confirmationsSubmitted: number;
   @ApiProperty()
   confirmationsRequired: number;
-  @ApiProperty()
-  proposedBy: AddressInfo;
+  @ApiProperty({ type: AddressInfo, nullable: true })
+  proposedBy: AddressInfo | null;
   @ApiProperty({ type: MessageConfirmation, isArray: true })
   confirmations: Array<MessageConfirmation>;
   @ApiProperty({ type: String, nullable: true })
@@ -59,7 +59,7 @@ export class Message {
     modifiedTimestamp: number,
     confirmationsSubmitted: number,
     confirmationsRequired: number,
-    proposedBy: AddressInfo,
+    proposedBy: AddressInfo | null,
     confirmations: Array<MessageConfirmation>,
     preparedSignature: Hex | null,
     origin: string | null,

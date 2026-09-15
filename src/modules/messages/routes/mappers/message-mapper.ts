@@ -64,11 +64,11 @@ export class MessageMapper {
       message.confirmations.length >= safe.threshold
         ? MessageStatus.Confirmed
         : MessageStatus.NeedsConfirmation;
-    const proposedBy = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      message.proposedBy,
-      ['CONTRACT'],
-    );
+    const proposedBy = message.proposedBy
+      ? await this.addressInfoHelper.getOrDefault(chainId, message.proposedBy, [
+          'CONTRACT',
+        ])
+      : null;
     const confirmations = await this.mapConfirmations(
       chainId,
       message.confirmations,

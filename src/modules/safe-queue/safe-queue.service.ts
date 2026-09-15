@@ -80,6 +80,7 @@ export class SafeQueueService implements ISafeQueueService {
     try {
       const dto = args.proposeTransactionDto;
       const { originName, originUrl, note } = parseOrigin(dto.origin);
+      const nested = dto.nestedTransaction;
 
       const url = `${this.baseUri}/api/v1/multisig-transactions`;
       const { data } = await this.networkService.post({
@@ -101,6 +102,24 @@ export class SafeQueueService implements ISafeQueueService {
           originUrl,
           notes: note ?? null,
           signatures: dto.signature ? [dto.signature] : [],
+          // Mapped field-by-field: the queue service forbids unknown keys on
+          // this object, and `safe`/`chainId`/`origin*` are inherited from
+          // the parent rather than sent again.
+          nestedTransaction: nested
+            ? {
+                to: nested.to,
+                value: nested.value,
+                data: nested.data,
+                operation: nested.operation,
+                safeTxGas: nested.safeTxGas,
+                baseGas: nested.baseGas,
+                gasPrice: nested.gasPrice,
+                gasToken: nested.gasToken,
+                refundReceiver: nested.refundReceiver,
+                nonce: Number(nested.nonce),
+                notes: nested.notes,
+              }
+            : null,
         },
         networkRequest: {
           circuitBreaker: {

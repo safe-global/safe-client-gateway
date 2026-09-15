@@ -14,7 +14,10 @@ import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/de
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { SafeQueueService } from '@/modules/safe-queue/safe-queue.service';
-import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import {
+  nestedTransactionDtoBuilder,
+  proposeTransactionDtoBuilder,
+} from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const dataSource = {
@@ -403,6 +406,67 @@ describe('SafeQueueService', () => {
       expect(networkService.post).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ notes: null }),
+        }),
+      );
+    });
+  });
+
+  describe('proposeTransaction nestedTransaction handling', () => {
+    it('sends the nested transaction field-by-field with a numeric nonce', async () => {
+      const nested = nestedTransactionDtoBuilder().build();
+      const dto = proposeTransactionDtoBuilder()
+        .with('nestedTransaction', nested)
+        .build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify(safeQueueMultisigTransactionBuilder().build()),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            nestedTransaction: {
+              to: nested.to,
+              value: nested.value,
+              data: nested.data,
+              operation: nested.operation,
+              safeTxGas: nested.safeTxGas,
+              baseGas: nested.baseGas,
+              gasPrice: nested.gasPrice,
+              gasToken: nested.gasToken,
+              refundReceiver: nested.refundReceiver,
+              nonce: Number(nested.nonce),
+              notes: nested.notes,
+            },
+          }),
+        }),
+      );
+    });
+
+    it('sends a null nestedTransaction when the proposal has no child', async () => {
+      const dto = proposeTransactionDtoBuilder()
+        .with('nestedTransaction', null)
+        .build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify(safeQueueMultisigTransactionBuilder().build()),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ nestedTransaction: null }),
         }),
       );
     });
