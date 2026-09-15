@@ -10,17 +10,13 @@ import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-
 import {
   PolicyIndexerMetaSchema,
   PolicyIndexerResponseSchema,
+  type PolicyIndexerSafeAllowance,
+  type PolicyIndexerSafeAllowanceRow,
+  PolicyIndexerSafeAllowanceSchema,
+  type PolicyIndexerSafeDelegate,
+  PolicyIndexerSafeDelegateSchema,
   type PolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type {
-  PolicyIndexerSafeAllowance,
-  PolicyIndexerSafeAllowanceRow,
-  PolicyIndexerSafeDelegate,
-} from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
-import {
-  PolicyIndexerSafeAllowanceSchema,
-  PolicyIndexerSafeDelegateSchema,
-} from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 
