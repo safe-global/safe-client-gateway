@@ -3,10 +3,6 @@ import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity
 
 /**
  * One filter group per chain, as the indexer's generated `*_bool_exp` types.
- *
- * A flat `chainId: {_in: […]}` combined with `safe: {_in: […]}` is a
- * **cross-product**: it also returns rows for a Safe on a chain it is not held
- * on. Grouping per chain under `_or` is what keeps a Space's pairs exact.
  */
 type IndexerPairFilter = {
   chainId: { _eq: number };
@@ -19,13 +15,7 @@ export type PolicyIndexerVariables = {
 };
 
 /**
- * Current allowance-module state for a set of Safes, in one round-trip.
- *
- * The two row fields take separate variables because each entity has its own
- * generated `*_bool_exp` type, even though both groups hold the same pairs.
- *
- * `SafePolicy` and `ConfigurationRoot` are root fields this document does not
- * pay for: the PRs reporting guard policies and pending configurations add them.
+ * Current allowance-module state for a set of Safes.
  */
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
@@ -49,26 +39,21 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
 
 /**
  * Groups {@link safes} per chain into the query's filter variables.
- *
- * Addresses are passed through as given, which is why callers hand this
- * checksummed ones: the indexer stores addresses checksummed and a lower-cased
- * address in a filter matches nothing **and returns no error**, so the failure
- * mode is an empty, entirely plausible list.
  */
 export function toPolicyIndexerVariables(
   safes: ReadonlyArray<SafeRef>,
 ): PolicyIndexerVariables {
-  const perChain = new Map<string, Array<string>>();
+  const safesPerChain = new Map<string, Array<string>>();
 
   for (const safe of safes) {
-    const addresses = perChain.get(safe.chainId) ?? [];
+    const addresses = safesPerChain.get(safe.chainId) ?? [];
     if (!addresses.includes(safe.address)) {
       addresses.push(safe.address);
     }
-    perChain.set(safe.chainId, addresses);
+    safesPerChain.set(safe.chainId, addresses);
   }
 
-  const groups = [...perChain.entries()].map(([chainId, addresses]) => ({
+  const groups = [...safesPerChain.entries()].map(([chainId, addresses]) => ({
     chainId: { _eq: Number(chainId) },
     safe: { _in: addresses },
   }));
