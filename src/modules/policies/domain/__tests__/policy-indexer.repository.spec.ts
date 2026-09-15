@@ -7,7 +7,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
 import {
   rawIndexerMetaBuilder,
-  rawPolicyIndexerState,
+  rawPolicyIndexerResponse,
 } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerSafeAllowanceBuilder,
@@ -37,7 +37,7 @@ describe('PolicyIndexerRepository', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockPolicyIndexerApi.getState.mockResolvedValue(
-      rawify(rawPolicyIndexerState()),
+      rawify(rawPolicyIndexerResponse()),
     );
     target = new PolicyIndexerRepository(
       mockPolicyIndexerApi,
@@ -121,7 +121,7 @@ describe('PolicyIndexerRepository', () => {
         .with('chainId', 137)
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
-        rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
+        rawify(rawPolicyIndexerResponse({ SafeAllowance: [allowance] })),
       );
 
       const result = await target.getState({
@@ -140,7 +140,7 @@ describe('PolicyIndexerRepository', () => {
         .with('remaining', amount)
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
-        rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
+        rawify(rawPolicyIndexerResponse({ SafeAllowance: [allowance] })),
       );
 
       const result = await target.getState({
@@ -158,7 +158,7 @@ describe('PolicyIndexerRepository', () => {
         .with('updatedAt', '1787585160')
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
-        rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
+        rawify(rawPolicyIndexerResponse({ SafeAllowance: [allowance] })),
       );
 
       const result = await target.getState({
@@ -178,7 +178,7 @@ describe('PolicyIndexerRepository', () => {
         .with('lastResetMin', (2n ** 64n).toString())
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
-        rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
+        rawify(rawPolicyIndexerResponse({ SafeAllowance: [allowance] })),
       );
 
       const result = await target.getState({
@@ -194,7 +194,7 @@ describe('PolicyIndexerRepository', () => {
       const readable = rawIndexerSafeDelegateBuilder().build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             SafeDelegate: [readable, { safe: 'not-an-address' }],
           }),
         ),
@@ -210,7 +210,7 @@ describe('PolicyIndexerRepository', () => {
 
     it('should log what it dropped, and from which field', async () => {
       mockPolicyIndexerApi.getState.mockResolvedValue(
-        rawify(rawPolicyIndexerState({ SafeDelegate: [{ nope: true }] })),
+        rawify(rawPolicyIndexerResponse({ SafeDelegate: [{ nope: true }] })),
       );
 
       await target.getState({ safes: [{ chainId: SEPOLIA, address: safe }] });
@@ -231,7 +231,7 @@ describe('PolicyIndexerRepository', () => {
         .with('resetPhase', 'SOMETHING_NEW')
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
-        rawify(rawPolicyIndexerState({ SafeAllowance: [allowance] })),
+        rawify(rawPolicyIndexerResponse({ SafeAllowance: [allowance] })),
       );
 
       const result = await target.getState({
@@ -278,7 +278,7 @@ describe('PolicyIndexerRepository', () => {
       const { allowance, delegate } = pair(true);
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             SafeAllowance: [allowance.build()],
             SafeDelegate: [delegate.build()],
           }),
@@ -296,7 +296,7 @@ describe('PolicyIndexerRepository', () => {
       const { allowance, delegate } = pair(false);
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             SafeAllowance: [allowance.build()],
             SafeDelegate: [delegate.build()],
           }),
@@ -315,7 +315,7 @@ describe('PolicyIndexerRepository', () => {
       // missing row is a removed delegate rather than an unknown one.
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             SafeAllowance: [rawIndexerSafeAllowanceBuilder().build()],
           }),
         ),
@@ -337,7 +337,7 @@ describe('PolicyIndexerRepository', () => {
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             SafeAllowance: [allowance.build()],
             SafeDelegate: [elsewhere],
           }),
@@ -356,7 +356,7 @@ describe('PolicyIndexerRepository', () => {
     it('should report the indexing progress of every chain', async () => {
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             _meta: [
               rawIndexerMetaBuilder().with('chainId', 11155111).build(),
               rawIndexerMetaBuilder()
