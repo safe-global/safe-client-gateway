@@ -122,7 +122,7 @@ describe('PolicyIndexerApi', () => {
     return target.getState({ safes: [safeRef(SEPOLIA)] });
   }
 
-  describe('the request', () => {
+  describe('get policies request', () => {
     it('should post the state query to the GraphQL endpoint', async () => {
       await readOneSafe();
 
