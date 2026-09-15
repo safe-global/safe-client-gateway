@@ -23,7 +23,7 @@ export function rawIndexerMetaBuilder(): IBuilder<RawIndexerMeta> {
 /**
  * The `data` object of a well-formed indexer response.
  */
-export function rawPolicyIndexerState(
+export function rawPolicyIndexerResponse(
   overrides: Partial<{
     _meta: Array<unknown>;
     SafeAllowance: Array<unknown>;
@@ -44,7 +44,7 @@ export function rawPolicyIndexerState(
  * Assemblers consume the parsed form, so their specs build this rather than the
  * raw rows the datasource sees.
  */
-export function policyIndexerStateBuilder(): IBuilder<PolicyIndexerState> {
+export function policyIndexerResponseBuilder(): IBuilder<PolicyIndexerState> {
   return new Builder<PolicyIndexerState>()
     .with('meta', [])
     .with('allowances', [])

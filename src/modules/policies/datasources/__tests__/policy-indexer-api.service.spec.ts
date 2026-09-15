@@ -12,7 +12,7 @@ import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-
 import type { RawIndexerMeta } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerMetaBuilder,
-  rawPolicyIndexerState,
+  rawPolicyIndexerResponse,
 } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerSafeAllowanceBuilder,
@@ -45,7 +45,7 @@ const baseUri = 'https://indexer.example';
 const expirationTimeSeconds = 60;
 
 type RawPolicyIndexerStateOverrides = Parameters<
-  typeof rawPolicyIndexerState
+  typeof rawPolicyIndexerResponse
 >[0];
 
 function safeRef(chainId: string): SafeRef {
@@ -82,7 +82,7 @@ function meta(chainId: string): RawIndexerMeta {
 function mockIndexerState(rows?: RawPolicyIndexerStateOverrides): void {
   mockNetworkService.post.mockResolvedValue({
     status: 200,
-    data: rawify({ data: rawPolicyIndexerState(rows) }),
+    data: rawify({ data: rawPolicyIndexerResponse(rows) }),
   });
 }
 
@@ -228,7 +228,7 @@ describe('PolicyIndexerApi', () => {
 
   describe('caching', () => {
     it('should read a cached safe without calling indexer service', async () => {
-      const slice = rawPolicyIndexerState({
+      const slice = rawPolicyIndexerResponse({
         SafeDelegate: [rawIndexerSafeDelegateBuilder().build()],
       });
       mockCacheService.hGet.mockResolvedValue(JSON.stringify(slice));
@@ -247,7 +247,7 @@ describe('PolicyIndexerApi', () => {
       mockCacheService.hGet.mockImplementation((cacheDir: CacheDir) =>
         Promise.resolve(
           cacheDir.key === cacheKey(cached)
-            ? JSON.stringify(rawPolicyIndexerState())
+            ? JSON.stringify(rawPolicyIndexerResponse())
             : null,
         ),
       );
@@ -298,7 +298,7 @@ describe('PolicyIndexerApi', () => {
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         new CacheDir(cacheKey(mine), ''),
         JSON.stringify(
-          rawPolicyIndexerState({
+          rawPolicyIndexerResponse({
             _meta: [sepoliaMeta],
             SafeAllowance: [myRow],
           }),
@@ -318,7 +318,7 @@ describe('PolicyIndexerApi', () => {
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         new CacheDir(cacheKey(safe), ''),
-        JSON.stringify(rawPolicyIndexerState({ _meta: [sepoliaMeta] })),
+        JSON.stringify(rawPolicyIndexerResponse({ _meta: [sepoliaMeta] })),
         expirationTimeSeconds,
       );
     });
