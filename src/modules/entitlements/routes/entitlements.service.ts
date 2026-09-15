@@ -75,7 +75,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
    * Exhaustive like `stockCounters`: a new published feature does not compile
    * until its pre-enforcement limit is named. Goes away after the date.
    */
-  private readonly preEnforcementQuotas: Record<FeatureKey, number>;
+  private readonly preEnforcementQuotas: Record<FeatureKey, number | null>;
 
   public constructor(
     @Inject(IFeaturesRepository)
@@ -111,6 +111,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
       safe_seats: configurationService.getOrThrow<number>(
         'spaces.maxSafesPerSpace',
       ),
+      // Binary, not metered — unlimited until enforcement decides for real.
+      copilot_scans: null,
     };
   }
 
@@ -251,8 +253,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
     spaceId: Space['id'];
     featureKey: FeatureKey;
   }): Promise<number> {
-    if (isStockMeteredFeature({ key: args.featureKey })) {
-      return await this.stockCounters[args.featureKey](args.spaceId);
+    const feature = { key: args.featureKey };
+    if (isStockMeteredFeature(feature)) {
+      return await this.stockCounters[feature.key](args.spaceId);
     }
     // TODO: read `space_feature_usage` here for event-metered features, once
     // one is gated and its consumption is counted.
