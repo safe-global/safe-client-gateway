@@ -210,12 +210,11 @@ export class SafesV2Service {
     );
     const hasMainnet = chains.some((chain) => !chain.isTestnet);
     const hasTestnet = chains.some((chain) => chain.isTestnet);
-    const [mainnet, testnet]: Array<Record<string, string>> = await Promise.all(
-      [
+    const [mainnet, testnet]: [Record<string, string>, Record<string, string>] =
+      await Promise.all([
         hasMainnet ? this.getZerionNetworkNames(false) : {},
         hasTestnet ? this.getZerionNetworkNames(true) : {},
-      ],
-    );
+      ]);
     for (const chain of chains) {
       const name = (chain.isTestnet ? testnet : mainnet)[chain.chainId];
       if (name) {
