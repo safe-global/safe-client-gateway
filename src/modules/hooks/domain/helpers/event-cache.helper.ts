@@ -29,6 +29,7 @@ import {
   TransactionEventType,
 } from '@/modules/hooks/routes/entities/event-type.entity';
 import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
@@ -56,6 +57,8 @@ export class EventCacheHelper {
     private readonly delegatesRepository: IDelegatesV2Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
+    @Inject(IPolicyIndexerRepository)
+    private readonly policyIndexerRepository: IPolicyIndexerRepository,
     private readonly zerionCache: ZerionCacheService,
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: ISafeAppsRepository,
@@ -263,7 +266,13 @@ export class EventCacheHelper {
     // - the list of module transactions for the safe
     // - the safe configuration
     // - the Zerion-backed portfolio caches
+    // - the policy state: an allowance transfer moves what a spending limit has
+    //   left, without changing any configuration
     return [
+      this.policyIndexerRepository.clearState({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
       this.zerionCache.invalidate(event.address, event.type),
       this.safeRepository.clearAllExecutedTransactions({
         chainId: event.chainId,
@@ -295,6 +304,7 @@ export class EventCacheHelper {
     >,
   ): Array<Promise<void>> {
     // A new executed multisig transaction affects:
+    // - the policy state: every policy change is a Safe transaction
     // - the collectibles that the safe has
     // - the list of all executed transactions for the safe
     // - the transfers for that safe
@@ -304,6 +314,10 @@ export class EventCacheHelper {
     // - the stakes of a safe
     // - the Zerion-backed portfolio caches
     const promises = [
+      this.policyIndexerRepository.clearState({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
       this.zerionCache.invalidate(event.address, event.type),
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
