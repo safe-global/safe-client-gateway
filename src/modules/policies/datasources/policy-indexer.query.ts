@@ -4,14 +4,14 @@ import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity
 /**
  * One filter group per chain, as the indexer's generated `*_bool_exp` types.
  */
-type IndexerPairFilter = {
+type PolicyIndexerPairFilter = {
   chainId: { _eq: number };
   safe: { _in: Array<string> };
 };
 
 export type PolicyIndexerVariables = {
-  allowances: Array<IndexerPairFilter>;
-  delegates: Array<IndexerPairFilter>;
+  allowances: Array<PolicyIndexerPairFilter>;
+  delegates: Array<PolicyIndexerPairFilter>;
 };
 
 /**

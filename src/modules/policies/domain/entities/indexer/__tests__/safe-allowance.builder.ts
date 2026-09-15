@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { Builder, type IBuilder } from '@/__tests__/builder';
-import type { IndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 
 /**
  * Builders for the Policy Indexer's rows **as served**, not as parsed: `chainId`
@@ -95,11 +95,11 @@ export function rawIndexerSafeDelegateBuilder(): IBuilder<RawIndexerSafeDelegate
  * strings, minutes and seconds numbers, and the delegate's registration folded
  * in.
  */
-export function indexerSafeAllowanceBuilder(): IBuilder<IndexerSafeAllowance> {
+export function policyIndexerSafeAllowanceBuilder(): IBuilder<PolicyIndexerSafeAllowance> {
   const raw = rawIndexerSafeAllowanceBuilder().build();
 
   return (
-    new Builder<IndexerSafeAllowance>()
+    new Builder<PolicyIndexerSafeAllowance>()
       .with('chainId', String(raw.chainId))
       .with('safe', getAddress(raw.safe))
       .with('module', getAddress(raw.module))
