@@ -60,8 +60,8 @@ import type {
 } from '@/modules/entitlements/routes/entities/entitlements-response.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 /**

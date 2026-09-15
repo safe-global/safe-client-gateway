@@ -6,7 +6,7 @@ import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.rela
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import type { SpaceRelayDto } from '@/modules/relay/routes/entities/space-relay.dto.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()

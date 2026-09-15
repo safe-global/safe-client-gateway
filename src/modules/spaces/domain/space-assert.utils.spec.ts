@@ -4,11 +4,11 @@ import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   assertAdmin,
   assertMember,
-} from '@/modules/spaces/routes/utils/space-assert.utils';
+} from '@/modules/spaces/domain/space-assert.utils';
+import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
