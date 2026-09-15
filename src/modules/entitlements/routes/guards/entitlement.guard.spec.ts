@@ -37,6 +37,7 @@ describe('EntitlementGuard', () => {
     entitlementEnforcement = {
       assertWithinQuota: vi.fn(),
       prepareQuotaCheck: vi.fn(),
+      recordUsage: vi.fn(),
     };
     spacesRepository = { findIdByUuid: vi.fn().mockResolvedValue(spaceId) };
     target = new TestEntitlementGuard(

@@ -37,6 +37,7 @@ import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/enti
 import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
+  isEventMeteredFeature,
   isStockMeteredFeature,
   ordersAfter,
 } from '@/modules/entitlements/domain/entitlements.constants';
@@ -44,6 +45,7 @@ import {
   effectiveEntitlement,
   eventPeriodStart,
   fitsWithinQuota,
+  hasClosedWindow,
   isEnforcementActive,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
@@ -73,9 +75,10 @@ export class EntitlementsService implements IEntitlementEnforcement {
   private readonly grantsCacheTtlSeconds: number;
   /**
    * Exhaustive like `stockCounters`: a new published feature does not compile
-   * until its pre-enforcement limit is named. Goes away after the date.
+   * until its pre-enforcement limit is named, NULL saying it has none and is
+   * left to the plan. Goes away after the date.
    */
-  private readonly preEnforcementQuotas: Record<FeatureKey, number>;
+  private readonly preEnforcementQuotas: Record<FeatureKey, number | null>;
 
   public constructor(
     @Inject(IFeaturesRepository)
@@ -111,6 +114,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
       safe_seats: configurationService.getOrThrow<number>(
         'spaces.maxSafesPerSpace',
       ),
+      // NULL: nothing has ever been relayed at a workspace's expense, so the
+      // date protects no behaviour here and the plan decides from the start.
+      sponsored_transactions: null,
     };
   }
 
@@ -164,7 +170,11 @@ export class EntitlementsService implements IEntitlementEnforcement {
     if (grant.quota === null) {
       return;
     }
-    this.admit({ ...args, grant, used: await this.countFeatureUsage(args) });
+    this.admit({
+      ...args,
+      grant,
+      used: await this.countFeatureUsage({ ...args, grant }),
+    });
   }
 
   public async prepareQuotaCheck(args: {
@@ -174,6 +184,27 @@ export class EntitlementsService implements IEntitlementEnforcement {
   }): Promise<(used: number) => void> {
     const grant = await this.resolveGrant(args);
     return (used: number): void => this.admit({ ...args, grant, used });
+  }
+
+  public async recordUsage(args: {
+    spaceId: Space['id'];
+    featureKey: Exclude<FeatureKey, StockMeteredFeature>;
+    delta: number;
+  }): Promise<void> {
+    const grant = await this.resolveGrant(args);
+    if (grant.counter === null) {
+      // Nowhere to record it, and the action it pays for has already
+      // happened: saying so is all that is left.
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no usage counter; space ${args.spaceId}'s consumption went unrecorded`,
+      );
+      return;
+    }
+    await this.spaceFeatureUsageRepository.incrementUsage({
+      spaceId: args.spaceId,
+      period: grant.counter,
+      delta: args.delta,
+    });
   }
 
   /** Pure, so a caller can run it under its own lock. */
@@ -211,52 +242,84 @@ export class EntitlementsService implements IEntitlementEnforcement {
   /**
    * The workspace's entitlements decide from the enforcement date on; until
    * then the feature's static limit does, so deploying this enforces nothing.
+   * A feature with no static limit has nothing the date could break, and is
+   * decided by the plan from the day it ships.
    */
   private async resolveGrant(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
   }): Promise<FeatureGrant> {
+    const staticQuota = this.preEnforcementQuotas[args.featureKey];
     if (
+      staticQuota !== null &&
       !isEnforcementActive({
         now: new Date(),
         startsAt: this.enforcementStartsAt,
       })
     ) {
-      return this.staticGrant(args.featureKey);
+      return this.staticGrant(staticQuota);
     }
 
     const grants = await this.getCachedGrants(args.spaceId);
     const grant = grants[args.featureKey];
     if (grant === undefined) {
-      // A catalog gap must not block the action.
+      // A catalog gap must not block an action a static limit still covers,
+      // and must not hand out one it does not.
       this.loggingService.warn(
         `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} keeps the static limit`,
       );
-      return this.staticGrant(args.featureKey);
+      return this.staticGrant(staticQuota ?? 0);
     }
     return grant;
   }
 
-  /** The feature's own limit until enforcement begins, as a grant. */
-  private staticGrant(featureKey: FeatureKey): FeatureGrant {
-    return { quota: this.preEnforcementQuotas[featureKey], resetsAt: null };
+  /** A limit that predates enforcement, as a grant. */
+  private staticGrant(quota: number): FeatureGrant {
+    return { quota, resetsAt: null, counter: null };
   }
 
   /**
    * Usage measured against a quota, read live so a stale count cannot gate
    * wrongly: a stock feature counts rows in the table its own module owns,
-   * anything else has no counter and reports zero.
+   * anything else reads the counter its grant names.
    */
   private async countFeatureUsage(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
+    grant: FeatureGrant;
   }): Promise<number> {
-    if (isStockMeteredFeature({ key: args.featureKey })) {
-      return await this.stockCounters[args.featureKey](args.spaceId);
+    // Bound, so the guard narrows the key rather than a throwaway literal.
+    const feature = { key: args.featureKey };
+    return isStockMeteredFeature(feature)
+      ? await this.stockCounters[feature.key](args.spaceId)
+      : await this.countEventUsage(args.spaceId, args.featureKey, args.grant);
+  }
+
+  /** One counter, for the period its grant names. */
+  private async countEventUsage(
+    spaceId: Space['id'],
+    featureKey: FeatureKey,
+    grant: FeatureGrant,
+  ): Promise<number> {
+    const counter = grant.counter;
+    // Unmeasurable — a catalog row whose type stopped matching, say. Reporting
+    // zero would admit every call forever, so refuse instead.
+    if (counter === null) {
+      this.loggingService.warn(
+        `Feature '${featureKey}' has no usage counter; space ${spaceId} cannot be admitted against it`,
+      );
+      throw new QuotaExceededError({
+        feature: featureKey,
+        quota: grant.quota ?? 0,
+        used: 0,
+        resetsAt: grant.resetsAt,
+      });
     }
-    // TODO: read `space_feature_usage` here for event-metered features, once
-    // one is gated and its consumption is counted.
-    return 0;
+    const usage = await this.spaceFeatureUsageRepository.getUsageByFeatureId({
+      spaceId,
+      periods: [counter],
+    });
+    return usage.get(counter.featureId) ?? 0;
   }
 
   /**
@@ -269,7 +332,12 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached !== null) {
-      return CachedGrantsSchema.parse(JSON.parse(cached));
+      const grants = CachedGrantsSchema.parse(JSON.parse(cached));
+      // A window that has since rolled over leaves these naming the previous
+      // period's counter, which nothing reads or reports any more.
+      if (!hasClosedWindow(grants, new Date())) {
+        return grants;
+      }
     }
 
     const startTimeMs = Date.now();
@@ -343,14 +411,25 @@ export class EntitlementsService implements IEntitlementEnforcement {
             // A feature the plan does not grant has no allowance at all.
             quota: effective.enabled ? effective.quota : 0,
             // Cached: only a webhook moves it, and that invalidates this.
-            // A Free `freePeriod` rolling over on its own can lag by a TTL —
-            // wire that when a feature metered that way is first gated.
+            // A Free `freePeriod` rolling over on its own can lag by a TTL.
             resetsAt: resetsAt({
               feature,
               spaceCreatedAt,
               cycle: activeSubscription,
               now,
             }),
+            // Stock usage is counted elsewhere; nothing else is measured.
+            counter: isEventMeteredFeature(feature)
+              ? {
+                  featureId: feature.id,
+                  periodStart: eventPeriodStart({
+                    feature,
+                    spaceCreatedAt,
+                    cycle: activeSubscription,
+                    now,
+                  }),
+                }
+              : null,
           },
         ];
       }),
@@ -688,9 +767,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
     activeSubscription: SpaceSubscription | null;
     now: Date;
   }): Promise<Map<number, number>> {
-    const eventMetered = args.features.filter(
-      (feature) => !isStockMeteredFeature(feature),
-    );
+    const eventMetered = args.features.filter(isEventMeteredFeature);
 
     return await this.spaceFeatureUsageRepository.getUsageByFeatureId({
       spaceId: args.spaceId,

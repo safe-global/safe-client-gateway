@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
-import { FEATURE_KEYS } from '@/modules/entitlements/domain/entities/feature.entity';
+import {
+  FEATURE_KEYS,
+  FeatureType,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 
@@ -26,6 +29,15 @@ export function isStockMeteredFeature<T extends { key: string }>(
 ): feature is T & { key: StockMeteredFeature } {
   return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(
     feature.key,
+  );
+}
+
+/** The other half: metered, and counted in `space_feature_usage`. */
+export function isEventMeteredFeature<T extends { key: string; type: string }>(
+  feature: T,
+): boolean {
+  return (
+    feature.type === FeatureType.Metered && !isStockMeteredFeature(feature)
   );
 }
 
