@@ -214,8 +214,10 @@ export class ConfigApi implements IConfigApi {
     await this.cacheService.deleteByKey(key);
   }
 
-  // A non-numeric chainId such as '' resolves to the chain collection endpoint, whose
-  // page payload fails Chain validation and is then cached under the chain key.
+  /**
+   * A non-numeric chainId such as '' resolves to the chain collection endpoint,
+   * whose page payload fails Chain validation and is then cached under the chain key.
+   */
   private assertChainId(chainId: string): void {
     if (!ChainIdSchema.safeParse(chainId).success) {
       throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
