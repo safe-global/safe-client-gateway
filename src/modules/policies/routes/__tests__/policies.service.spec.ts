@@ -6,8 +6,8 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
 import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
-import { policyIndexerStateBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
-import { indexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
@@ -66,12 +66,12 @@ describe('PoliciesService', () => {
       safeBuilder().with('modules', [allowanceModule]).build(),
     );
     mockPolicyIndexerRepository.getState.mockResolvedValue(
-      policyIndexerStateBuilder().build(),
+      policyIndexerResponseBuilder().build(),
     );
   });
 
   function allowanceOf(safe: string) {
-    return indexerSafeAllowanceBuilder()
+    return policyIndexerSafeAllowanceBuilder()
       .with('chainId', SEPOLIA)
       .with('safe', getAddress(safe))
       .with('module', allowanceModule)
@@ -119,7 +119,7 @@ describe('PoliciesService', () => {
 
     it('should return the policies its assemblers built', async () => {
       mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerStateBuilder()
+        policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
           .build(),
       );
@@ -137,7 +137,7 @@ describe('PoliciesService', () => {
       // The indexer answers for every Safe of a request, so an unscoped
       // assembler would report another Safe's limits on this one.
       mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerStateBuilder()
+        policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(faker.finance.ethereumAddress())])
           .build(),
       );
@@ -152,7 +152,7 @@ describe('PoliciesService', () => {
         safeBuilder().with('modules', []).build(),
       );
       mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerStateBuilder()
+        policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
           .build(),
       );
@@ -167,7 +167,7 @@ describe('PoliciesService', () => {
         safeBuilder().with('modules', null).build(),
       );
       mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerStateBuilder()
+        policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
           .build(),
       );
@@ -232,7 +232,7 @@ describe('PoliciesService', () => {
 
     it('should carry the safe on every item, so nothing merges across chains', async () => {
       mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerStateBuilder()
+        policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
           .build(),
       );
