@@ -8,6 +8,7 @@ export const PoliciesStateSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
+  SafePolicy: z.array(z.unknown()),
 });
 
 export type PoliciesState = z.infer<typeof PoliciesStateSchema>;
@@ -31,4 +32,5 @@ export const RowLocationSchema = z.object({
 export const ROW_FIELDS = [
   'SafeAllowance',
   'SafeDelegate',
+  'SafePolicy',
 ] as const satisfies ReadonlyArray<keyof PoliciesState>;

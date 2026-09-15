@@ -89,6 +89,7 @@ describe('PolicyIndexerRepository', () => {
         meta: [],
         allowances: [],
         delegates: [],
+        policies: [],
       });
       expect(mockPolicyIndexerApi.getState).not.toHaveBeenCalled();
     });

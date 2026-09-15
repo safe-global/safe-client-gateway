@@ -28,6 +28,7 @@ describe('SpendingLimitAssembler', () => {
         .with('allowances', allowances)
         .build(),
       enabledModules: overrides?.enabledModules ?? [allowanceModule],
+      transactionGuard: null,
     });
   }
 
