@@ -56,26 +56,21 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         IndexerSafeAllowanceSchema,
         response.SafeAllowance,
         'SafeAllowance',
-      ).map((allowance) => this.withRegistration(allowance, delegates)),
+      ).map((allowance) =>
+        this.withAllowanceDelegateStatus(allowance, delegates),
+      ),
       delegates,
     };
   }
 
   /**
    * Folds the delegate's registration onto an allowance.
-   *
-   * The indexer stopped mirroring it onto the allowance row, but the wire still
-   * reports per allowance whether its spender can spend now - so the join lives
-   * here, once, rather than in each consumer of the state.
-   *
-   * Both sides come from one response and both addresses are checksummed by
-   * `AddressSchema`, so the comparison needs no normalising.
    */
-  private withRegistration(
+  private withAllowanceDelegateStatus(
     allowance: IndexerSafeAllowanceRow,
     delegates: ReadonlyArray<IndexerSafeDelegate>,
   ): IndexerSafeAllowance {
-    const registration = delegates.find(
+    const allowanceDelegateStatus = delegates.find(
       (delegate) =>
         delegate.chainId === allowance.chainId &&
         delegate.safe === allowance.safe &&
@@ -83,7 +78,10 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         delegate.delegate === allowance.delegate,
     );
 
-    return { ...allowance, isDelegateActive: registration?.active ?? false };
+    return {
+      ...allowance,
+      isDelegateActive: allowanceDelegateStatus?.active ?? false,
+    };
   }
 
   public async clearState(args: {
