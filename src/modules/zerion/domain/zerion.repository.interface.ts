@@ -3,7 +3,9 @@ export const IZerionRepository = Symbol('IZerionRepository');
 
 export interface IZerionRepository {
   /**
-   * Gets Zerion's network names keyed by chain ID for the given environment.
+   * Gets Zerion's chain ID to network name mapping for the given environment.
    */
-  getNetworkNamesByChainId(isTestnet: boolean): Promise<Record<string, string>>;
+  getChainIdToNetworkMapping(
+    isTestnet: boolean,
+  ): Promise<Record<string, string>>;
 }
