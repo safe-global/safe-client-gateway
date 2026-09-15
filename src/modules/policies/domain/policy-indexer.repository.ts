@@ -8,18 +8,18 @@ import {
 } from '@/logging/logging.interface';
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
 import {
-  IndexerMetaSchema,
+  PolicyIndexerMetaSchema,
   PolicyIndexerResponseSchema,
   type PolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type {
-  IndexerSafeAllowance,
-  IndexerSafeAllowanceRow,
-  IndexerSafeDelegate,
+  PolicyIndexerSafeAllowance,
+  PolicyIndexerSafeAllowanceRow,
+  PolicyIndexerSafeDelegate,
 } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import {
-  IndexerSafeAllowanceSchema,
-  IndexerSafeDelegateSchema,
+  PolicyIndexerSafeAllowanceSchema,
+  PolicyIndexerSafeDelegateSchema,
 } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
@@ -45,15 +45,15 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     const response = PolicyIndexerResponseSchema.parse(raw);
 
     const delegates = this.parseRows(
-      IndexerSafeDelegateSchema,
+      PolicyIndexerSafeDelegateSchema,
       response.SafeDelegate,
       'SafeDelegate',
     );
 
     return {
-      meta: this.parseRows(IndexerMetaSchema, response._meta, '_meta'),
+      meta: this.parseRows(PolicyIndexerMetaSchema, response._meta, '_meta'),
       allowances: this.parseRows(
-        IndexerSafeAllowanceSchema,
+        PolicyIndexerSafeAllowanceSchema,
         response.SafeAllowance,
         'SafeAllowance',
       ).map((allowance) =>
@@ -67,9 +67,9 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
    * Folds the delegate's registration onto an allowance.
    */
   private withAllowanceDelegateStatus(
-    allowance: IndexerSafeAllowanceRow,
-    delegates: ReadonlyArray<IndexerSafeDelegate>,
-  ): IndexerSafeAllowance {
+    allowance: PolicyIndexerSafeAllowanceRow,
+    delegates: ReadonlyArray<PolicyIndexerSafeDelegate>,
+  ): PolicyIndexerSafeAllowance {
     const allowanceDelegateStatus = delegates.find(
       (delegate) =>
         delegate.chainId === allowance.chainId &&
