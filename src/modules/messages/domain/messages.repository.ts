@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
@@ -59,6 +60,12 @@ export class MessagesRepository implements IMessagesRepository {
     }
     const message = await this.safeQueueService.getMessageByHash(args);
     const parsed = SafeQueueMessageSchema.parse(message);
+    if (parsed.chainId !== Number(args.chainId)) {
+      this.loggingService.warn(
+        `Queue service returned message for chainId=${parsed.chainId}, expected=${args.chainId}, messageHash=${args.messageHash}`,
+      );
+      throw new HttpExceptionNoLog('Message not found', HttpStatus.NOT_FOUND);
+    }
     return mapSafeQueueMessageToMessage(parsed);
   }
 
@@ -81,8 +88,27 @@ export class MessagesRepository implements IMessagesRepository {
     }
     const page = await this.safeQueueService.getMessagesBySafe(args);
     const parsed = SafeQueueMessagePageSchema.parse(page);
-    const results = parsed.results.map(mapSafeQueueMessageToMessage);
-    return { ...parsed, results };
+    const expectedChainId = Number(args.chainId);
+    const results: Array<Message> = [];
+    for (const message of parsed.results) {
+      if (message.chainId !== expectedChainId) {
+        this.loggingService.warn(
+          `Queue service returned message for chainId=${message.chainId}, expected=${expectedChainId}, messageHash=${message.messageHash}`,
+        );
+        continue;
+      }
+      results.push(mapSafeQueueMessageToMessage(message));
+    }
+    // Best-effort: keep `count` consistent with what we actually return on
+    // this page when wrong-chain messages are filtered out. This only corrects
+    // for rows filtered on the current page — if `count` is a total across all
+    // pages and earlier pages also dropped rows, it can still over-report. The
+    // queue is queried with the chain id, so cross-chain results should be rare
+    // to begin with.
+    const filteredOut = parsed.results.length - results.length;
+    const count =
+      parsed.count === null ? null : Math.max(0, parsed.count - filteredOut);
+    return { ...parsed, count, results };
   }
 
   async createMessage(args: {
