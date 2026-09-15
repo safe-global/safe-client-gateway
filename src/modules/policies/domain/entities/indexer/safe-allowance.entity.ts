@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import {
-  IndexerBaseUnitsSchema,
-  IndexerChainIdSchema,
-  IndexerIntegerSchema,
-  IndexerAllowanceResetPhaseSchema,
+  PolicyIndexerAllowanceResetPhaseSchema,
+  PolicyIndexerBaseUnitsSchema,
+  PolicyIndexerChainIdSchema,
+  PolicyIndexerIntegerSchema,
 } from '@/modules/policies/domain/entities/indexer/indexer-scalars.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
@@ -21,43 +21,43 @@ import { AddressSchema } from '@/validation/entities/schemas/address.schema';
  *
  * The indexer no longer mirrors the delegate's registration onto this row, so
  * `isDelegateActive` is absent here and folded in by the repository - see
- * {@link IndexerSafeAllowance}.
+ * {@link PolicyIndexerSafeAllowance}.
  */
-export const IndexerSafeAllowanceSchema = z.object({
-  chainId: IndexerChainIdSchema,
+export const PolicyIndexerSafeAllowanceSchema = z.object({
+  chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   module: AddressSchema,
   moduleVersion: z.string(),
   delegate: AddressSchema,
   token: AddressSchema,
   /** Per-window ceiling. `0` means deleted, or never set. */
-  amount: IndexerBaseUnitsSchema,
+  amount: PolicyIndexerBaseUnitsSchema,
   /** Spent in the window beginning at `lastResetMin`. */
-  spent: IndexerBaseUnitsSchema,
+  spent: PolicyIndexerBaseUnitsSchema,
   /** `max(0, amount - spent)`, already clamped by the indexer. */
-  remaining: IndexerBaseUnitsSchema,
+  remaining: PolicyIndexerBaseUnitsSchema,
   /**
    * Window length in **minutes**, matching the contract's unit. `0` never
    * resets, and is a real value rather than absence - it is the majority of
    * configured allowances on some deployments.
    */
-  resetTimeMinutes: IndexerIntegerSchema,
+  resetTimeMinutes: PolicyIndexerIntegerSchema,
   /**
    * Start of the current window, in **minutes since the epoch** - the contract's
    * own unit, not unix seconds. The indexer no longer serves the next boundary,
    * so a caller derives it as `(lastResetMin + resetTimeMinutes) * 60`, and only
    * when `resetTimeMinutes` is non-zero.
    */
-  lastResetMin: IndexerIntegerSchema,
-  resetPhase: IndexerAllowanceResetPhaseSchema,
-  nonce: IndexerBaseUnitsSchema,
+  lastResetMin: PolicyIndexerIntegerSchema,
+  resetPhase: PolicyIndexerAllowanceResetPhaseSchema,
+  nonce: PolicyIndexerBaseUnitsSchema,
   /** Unix seconds of the last event that moved this row. */
-  updatedAt: IndexerIntegerSchema,
+  updatedAt: PolicyIndexerIntegerSchema,
 });
 
 /** One allowance exactly as the indexer serves it. */
-export type IndexerSafeAllowanceRow = z.infer<
-  typeof IndexerSafeAllowanceSchema
+export type PolicyIndexerSafeAllowanceRow = z.infer<
+  typeof PolicyIndexerSafeAllowanceSchema
 >;
 
 /**
@@ -72,7 +72,7 @@ export type IndexerSafeAllowanceRow = z.infer<
  * A row with no registration at all is `false` for the same reason: no
  * registration is a removed delegate, not a missing one.
  */
-export type IndexerSafeAllowance = IndexerSafeAllowanceRow & {
+export type PolicyIndexerSafeAllowance = PolicyIndexerSafeAllowanceRow & {
   isDelegateActive: boolean;
 };
 
@@ -82,16 +82,18 @@ export type IndexerSafeAllowance = IndexerSafeAllowanceRow & {
  *
  * `active` cycles: it means "cannot spend now", never "has no allowance".
  */
-export const IndexerSafeDelegateSchema = z.object({
-  chainId: IndexerChainIdSchema,
+export const PolicyIndexerSafeDelegateSchema = z.object({
+  chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   module: AddressSchema,
   moduleVersion: z.string(),
   delegate: AddressSchema,
   active: z.boolean(),
   /** First registration; never moves. */
-  addedAt: IndexerIntegerSchema,
-  updatedAt: IndexerIntegerSchema,
+  addedAt: PolicyIndexerIntegerSchema,
+  updatedAt: PolicyIndexerIntegerSchema,
 });
 
-export type IndexerSafeDelegate = z.infer<typeof IndexerSafeDelegateSchema>;
+export type PolicyIndexerSafeDelegate = z.infer<
+  typeof PolicyIndexerSafeDelegateSchema
+>;
