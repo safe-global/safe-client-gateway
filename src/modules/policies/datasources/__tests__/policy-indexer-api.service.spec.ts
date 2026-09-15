@@ -2,13 +2,14 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '@/datasources/cache/cache.service.interface';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
+import type { RawIndexerMeta } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerState,
@@ -18,6 +19,7 @@ import {
   rawIndexerSafeDelegateBuilder,
 } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { Raw } from '@/validation/entities/raw.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const mockNetworkService = {
@@ -37,15 +39,14 @@ const mockLoggingService = {
   debug: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockConfigurationService = {
-  get: vi.fn(),
-  getOrThrow: vi.fn(),
-} as MockedObject<IConfigurationService>;
-
 const SEPOLIA = '11155111';
 const POLYGON = '137';
 const baseUri = 'https://indexer.example';
 const expirationTimeSeconds = 60;
+
+type RawPolicyIndexerStateOverrides = Parameters<
+  typeof rawPolicyIndexerState
+>[0];
 
 function safeRef(chainId: string): SafeRef {
   return { chainId, address: getAddress(faker.finance.ethereumAddress()) };
@@ -72,23 +73,43 @@ function cacheKey(safe: SafeRef): string {
   return `${safe.chainId}_policy_indexer_state_${safe.address}`;
 }
 
+/** The indexing-progress row of one chain. */
+function meta(chainId: string): RawIndexerMeta {
+  return rawIndexerMetaBuilder().with('chainId', Number(chainId)).build();
+}
+
+/** A well-formed 200, carrying the state the indexer would have served. */
+function mockIndexerState(rows?: RawPolicyIndexerStateOverrides): void {
+  mockNetworkService.post.mockResolvedValue({
+    status: 200,
+    data: rawify({ data: rawPolicyIndexerState(rows) }),
+  });
+}
+
+/** A 200 whose body carries GraphQL errors in place of data. */
+function mockGraphQlErrors(...messages: Array<string>): void {
+  mockNetworkService.post.mockResolvedValue({
+    status: 200,
+    data: rawify({ errors: messages.map((message) => ({ message })) }),
+  });
+}
+
 describe('PolicyIndexerApi', () => {
   let target: PolicyIndexerApi;
 
   beforeEach(() => {
-    mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'policies.indexer.baseUri') return baseUri;
-      if (key === 'expirationTimeInSeconds.policyIndexer')
-        return expirationTimeSeconds;
-      throw new Error(`Unexpected key: ${key}`);
-    });
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('policies.indexer.baseUri', baseUri);
+    fakeConfigurationService.set(
+      'expirationTimeInSeconds.policyIndexer',
+      expirationTimeSeconds,
+    );
+
     mockCacheService.hGet.mockResolvedValue(null);
-    mockNetworkService.post.mockResolvedValue({
-      status: 200,
-      data: rawify({ data: rawPolicyIndexerState() }),
-    });
+    mockIndexerState();
+
     target = new PolicyIndexerApi(
-      mockConfigurationService,
+      fakeConfigurationService,
       mockNetworkService,
       mockCacheService,
       mockLoggingService,
@@ -96,9 +117,14 @@ describe('PolicyIndexerApi', () => {
     );
   });
 
+  /** A read of one Sepolia Safe, for the cases that do not care which. */
+  function readOneSafe(): Promise<Raw<unknown>> {
+    return target.getState({ safes: [safeRef(SEPOLIA)] });
+  }
+
   describe('the request', () => {
     it('should post the state query to the GraphQL endpoint', async () => {
-      await target.getState({ safes: [safeRef(SEPOLIA)] });
+      await readOneSafe();
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -112,7 +138,7 @@ describe('PolicyIndexerApi', () => {
     it('should request the allowance-module fields in one document', async () => {
       // Guard bindings are a field this client does not pay for; the PR that
       // reports them adds it.
-      await target.getState({ safes: [safeRef(SEPOLIA)] });
+      await readOneSafe();
 
       expect(mockNetworkService.post).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -157,40 +183,20 @@ describe('PolicyIndexerApi', () => {
         ]),
       );
     });
-
-    it('should reject a request without safes instead of asking for everything', async () => {
-      // `_or: []` is false in the filter language, so an empty request would
-      // return nothing and look like a set of Safes with no policies.
-      await expect(target.getState({ safes: [] })).rejects.toThrow(
-        'At least one Safe is required to read policy state',
-      );
-      expect(mockNetworkService.post).not.toHaveBeenCalled();
-    });
   });
 
   describe('failures', () => {
     it('should fail on a GraphQL errors body served with a 200', async () => {
       // The transport succeeded, so nothing below this layer would notice.
-      mockNetworkService.post.mockResolvedValue({
-        status: 200,
-        data: rawify({ errors: [{ message: 'field "safe" not found' }] }),
-      });
+      mockGraphQlErrors('field "safe" not found');
 
-      await expect(
-        target.getState({ safes: [safeRef(SEPOLIA)] }),
-      ).rejects.toThrow('Service unavailable');
+      await expect(readOneSafe()).rejects.toThrow('Service unavailable');
     });
 
     it('should log the GraphQL messages, which the funnel does not carry', async () => {
-      mockNetworkService.post.mockResolvedValue({
-        status: 200,
-        data: rawify({ errors: [{ message: 'field "safe" not found' }] }),
-      });
+      mockGraphQlErrors('field "safe" not found');
 
-      await expect(
-        target.getState({ safes: [safeRef(SEPOLIA)] }),
-      ).rejects.toThrow('Service unavailable');
-
+      await expect(readOneSafe()).rejects.toThrow('Service unavailable');
       expect(mockLoggingService.error).toHaveBeenCalledWith({
         message: 'Policy indexer query failed',
         errors: ['field "safe" not found'],
@@ -203,37 +209,31 @@ describe('PolicyIndexerApi', () => {
         data: rawify({}),
       });
 
-      await expect(
-        target.getState({ safes: [safeRef(SEPOLIA)] }),
-      ).rejects.toThrow('Service unavailable');
+      await expect(readOneSafe()).rejects.toThrow('Service unavailable');
     });
 
     it('should propagate a network failure', async () => {
       mockNetworkService.post.mockRejectedValue(new Error('ECONNREFUSED'));
 
-      await expect(
-        target.getState({ safes: [safeRef(SEPOLIA)] }),
-      ).rejects.toThrow('Service unavailable');
+      await expect(readOneSafe()).rejects.toThrow('Service unavailable');
     });
 
     it('should not cache a failed read', async () => {
       mockNetworkService.post.mockRejectedValue(new Error('ECONNREFUSED'));
 
-      await expect(
-        target.getState({ safes: [safeRef(SEPOLIA)] }),
-      ).rejects.toThrow('Service unavailable');
+      await expect(readOneSafe()).rejects.toThrow('Service unavailable');
       expect(mockCacheService.hSet).not.toHaveBeenCalled();
     });
   });
 
   describe('caching', () => {
-    it('should read a cached safe without going upstream', async () => {
+    it('should read a cached safe without calling indexer service', async () => {
       const slice = rawPolicyIndexerState({
         SafeDelegate: [rawIndexerSafeDelegateBuilder().build()],
       });
       mockCacheService.hGet.mockResolvedValue(JSON.stringify(slice));
 
-      const result = await target.getState({ safes: [safeRef(SEPOLIA)] });
+      const result = await readOneSafe();
 
       expect(mockNetworkService.post).not.toHaveBeenCalled();
       expect(result).toStrictEqual(slice);
@@ -281,34 +281,28 @@ describe('PolicyIndexerApi', () => {
       // serving them after that Safe changed.
       const mine = safeRef(SEPOLIA);
       const other = safeRef(SEPOLIA);
-      const meta = rawIndexerMetaBuilder().with('chainId', 11155111).build();
+      const sepoliaMeta = meta(SEPOLIA);
       const myRow = rawIndexerSafeAllowanceBuilder()
         .with('safe', mine.address)
         .build();
-      mockNetworkService.post.mockResolvedValue({
-        status: 200,
-        data: rawify({
-          data: rawPolicyIndexerState({
-            _meta: [meta],
-            SafeAllowance: [
-              myRow,
-              rawIndexerSafeAllowanceBuilder()
-                .with('safe', other.address)
-                .build(),
-            ],
-          }),
-        }),
+      mockIndexerState({
+        _meta: [sepoliaMeta],
+        SafeAllowance: [
+          myRow,
+          rawIndexerSafeAllowanceBuilder().with('safe', other.address).build(),
+        ],
       });
 
       await target.getState({ safes: [mine, other] });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         new CacheDir(cacheKey(mine), ''),
-        JSON.stringify({
-          _meta: [meta],
-          SafeAllowance: [myRow],
-          SafeDelegate: [],
-        }),
+        JSON.stringify(
+          rawPolicyIndexerState({
+            _meta: [sepoliaMeta],
+            SafeAllowance: [myRow],
+          }),
+        ),
         expirationTimeSeconds,
       );
     });
@@ -317,53 +311,33 @@ describe('PolicyIndexerApi', () => {
       // The negative cache: without it every read for an unconfigured Safe goes
       // upstream again.
       const safe = safeRef(SEPOLIA);
-      const meta = rawIndexerMetaBuilder().with('chainId', 11155111).build();
-      mockNetworkService.post.mockResolvedValue({
-        status: 200,
-        data: rawify({ data: rawPolicyIndexerState({ _meta: [meta] }) }),
-      });
+      const sepoliaMeta = meta(SEPOLIA);
+      mockIndexerState({ _meta: [sepoliaMeta] });
 
       await target.getState({ safes: [safe] });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         new CacheDir(cacheKey(safe), ''),
-        JSON.stringify({ _meta: [meta], SafeAllowance: [], SafeDelegate: [] }),
+        JSON.stringify(rawPolicyIndexerState({ _meta: [sepoliaMeta] })),
         expirationTimeSeconds,
       );
     });
 
     it('should give a safe the indexing progress of its own chain only', async () => {
-      const sepolia = rawIndexerMetaBuilder().with('chainId', 11155111).build();
-      mockNetworkService.post.mockResolvedValue({
-        status: 200,
-        data: rawify({
-          data: rawPolicyIndexerState({
-            _meta: [
-              sepolia,
-              rawIndexerMetaBuilder().with('chainId', 137).build(),
-            ],
-          }),
-        }),
-      });
+      const sepoliaMeta = meta(SEPOLIA);
+      mockIndexerState({ _meta: [sepoliaMeta, meta(POLYGON)] });
 
-      const result = await target.getState({ safes: [safeRef(SEPOLIA)] });
+      const result = await readOneSafe();
 
       expect(result).toStrictEqual(
-        expect.objectContaining({ _meta: [sepolia] }),
+        expect.objectContaining({ _meta: [sepoliaMeta] }),
       );
     });
 
     it('should report the progress of every chain it was asked about', async () => {
-      const sepoliaMeta = rawIndexerMetaBuilder()
-        .with('chainId', 11155111)
-        .build();
-      const polygonMeta = rawIndexerMetaBuilder().with('chainId', 137).build();
-      mockNetworkService.post.mockResolvedValue({
-        status: 200,
-        data: rawify({
-          data: rawPolicyIndexerState({ _meta: [sepoliaMeta, polygonMeta] }),
-        }),
-      });
+      const sepoliaMeta = meta(SEPOLIA);
+      const polygonMeta = meta(POLYGON);
+      mockIndexerState({ _meta: [sepoliaMeta, polygonMeta] });
 
       const result = await target.getState({
         safes: [safeRef(SEPOLIA), safeRef(POLYGON)],
@@ -374,20 +348,16 @@ describe('PolicyIndexerApi', () => {
       );
     });
 
-    it('should treat a cached entry of an older shape as a miss', async () => {
-      mockCacheService.hGet.mockResolvedValue(
-        JSON.stringify({ shape: 'from an older release' }),
-      );
+    it.each([
+      [
+        'an entry of an older shape',
+        JSON.stringify({ shape: 'older release' }),
+      ],
+      ['malformed JSON', '{not json'],
+    ])('should treat %s as a miss', async (_, cached) => {
+      mockCacheService.hGet.mockResolvedValue(cached);
 
-      await target.getState({ safes: [safeRef(SEPOLIA)] });
-
-      expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
-    });
-
-    it('should treat malformed cached JSON as a miss', async () => {
-      mockCacheService.hGet.mockResolvedValue('{not json');
-
-      await target.getState({ safes: [safeRef(SEPOLIA)] });
+      await readOneSafe();
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
     });

@@ -23,10 +23,10 @@ import {
   toPolicyIndexerVariables,
 } from '@/modules/policies/datasources/policy-indexer.query';
 import {
-  mergeSlices,
-  type PolicyStateSlice,
-  PolicyStateSliceSchema,
-  sliceForSafe,
+  type PoliciesState,
+  PoliciesStateSchema,
+  ROW_FIELDS,
+  RowLocationSchema,
 } from '@/modules/policies/datasources/policy-state.slice';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
@@ -36,7 +36,7 @@ import { type Raw, rawify } from '@/validation/entities/raw.entity';
  * modelled as a domain entity: `data` stays opaque for the repository to parse.
  */
 const GraphQlResponseSchema = z.object({
-  data: PolicyStateSliceSchema.optional(),
+  data: PoliciesStateSchema.optional(),
   errors: z
     .array(z.object({ message: z.string().optional() }))
     .nonempty()
@@ -46,14 +46,11 @@ const GraphQlResponseSchema = z.object({
 /**
  * Reads current policy state from the Policy Indexer.
  *
- * The indexer aggregates the `SafePolicyGuard` and `AllowanceModule` logs into
+ * The indexer aggregates the `AllowanceModule` logs into
  * current-state rows, so this client fetches state and never events: no log
  * replay, no payload decoding, no contract call.
  *
- * Reads are cached **per Safe** but fetched **in one request**: a Space-level
- * read of ten Safes with nine of them cached fetches one. Caching the set
- * instead would be simpler and could not be invalidated - a policy change on one
- * Safe has no way to name every cached set that contains it.
+ * Reads are cached **per Safe** but fetched **in one request**.
  */
 @Injectable()
 export class PolicyIndexerApi {
@@ -80,42 +77,35 @@ export class PolicyIndexerApi {
   }
 
   /**
-   * Current policy state for {@link safes}, unvalidated.
+   * Current policy state for {@link args.safes}.
    *
-   * @throws when the indexer is unreachable, answers non-2xx, or answers `200`
-   * with a GraphQL `errors` body. A Safe that simply holds no policies is an
-   * empty slice, which is cached like any other answer.
+   * Looks up each Safe's cache first. Otherwise the Safes that missed are fetched from the indexer
+   * in **one** request. Each Safe's policy state is cached under
+   * its own key, so a later change to one Safe's policies invalidates only its entry.
    */
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
   }): Promise<Raw<unknown>> {
-    if (args.safes.length === 0) {
-      // `_or: []` is false in the indexer's filter language, so an empty request
-      // would return nothing rather than failing - indistinguishable from a set
-      // of Safes that hold no policies. Callers must not ask.
-      throw new Error('At least one Safe is required to read policy state');
-    }
-
-    const cached = await Promise.all(
+    const cacheHits = await Promise.all(
       args.safes.map((safe) => this.cachedSlice(safe)),
     );
-    const misses = args.safes.filter((_, index) => cached[index] === null);
-    const fetched = misses.length > 0 ? await this.fetch(misses) : null;
+    const misses = args.safes.filter((_, index) => cacheHits[index] === null);
+
+    const fetched = await this.fetch(misses);
     const slices = await Promise.all(
       args.safes.map(async (safe, index) => {
-        const hit = cached[index];
+        const hit = cacheHits[index];
         if (hit) {
           return hit;
         }
-        // `fetched` is non-null whenever a Safe missed the cache, since that is
-        // what made `misses` non-empty.
-        const slice = sliceForSafe(fetched ?? emptySlice(), safe);
+
+        const slice = this.filterPoliciesStateBySafe(fetched, safe);
         await this.cache(safe, slice);
         return slice;
       }),
     );
 
-    return rawify(mergeSlices(slices));
+    return rawify(this.mergePoliciesStates(slices));
   }
 
   /**
@@ -137,9 +127,7 @@ export class PolicyIndexerApi {
   /**
    * One request for every Safe that missed the cache.
    */
-  private async fetch(
-    safes: ReadonlyArray<SafeRef>,
-  ): Promise<PolicyStateSlice> {
+  private async fetch(safes: ReadonlyArray<SafeRef>): Promise<PoliciesState> {
     try {
       const { data } = await this.networkService.post<unknown>({
         url: `${this.baseUri}/v1/graphql`,
@@ -166,7 +154,7 @@ export class PolicyIndexerApi {
    * upstream fault, so the caller gets the funnel's generic error while the
    * detail that identifies the fault stays in the logs.
    */
-  private queried(body: unknown): PolicyStateSlice {
+  private queried(body: unknown): PoliciesState {
     const response = GraphQlResponseSchema.parse(body);
 
     if (response.errors) {
@@ -186,14 +174,14 @@ export class PolicyIndexerApi {
     return response.data;
   }
 
-  private async cachedSlice(safe: SafeRef): Promise<PolicyStateSlice | null> {
+  private async cachedSlice(safe: SafeRef): Promise<PoliciesState | null> {
     const cached = await this.cacheService.hGet(this.cacheDir(safe));
 
     if (!cached) {
       return null;
     }
 
-    const parsed = PolicyStateSliceSchema.safeParse(this.parseJson(cached));
+    const parsed = PoliciesStateSchema.safeParse(this.parseJson(cached));
 
     if (!parsed.success) {
       // A shape written by an older release. Treat it as a miss rather than
@@ -209,7 +197,7 @@ export class PolicyIndexerApi {
     return parsed.data;
   }
 
-  private async cache(safe: SafeRef, slice: PolicyStateSlice): Promise<void> {
+  private async cache(safe: SafeRef, slice: PoliciesState): Promise<void> {
     await this.cacheService.hSet(
       this.cacheDir(safe),
       JSON.stringify(slice),
@@ -233,8 +221,68 @@ export class PolicyIndexerApi {
       return null;
     }
   }
-}
 
-function emptySlice(): PolicyStateSlice {
-  return { _meta: [], SafeAllowance: [], SafeDelegate: [] };
+  /**
+   * Reassembles slices into one response.
+   *
+   * `_meta` is deduplicated by chain, since every slice of a chain carries it.
+   */
+  private mergePoliciesStates(
+    slices: ReadonlyArray<PoliciesState>,
+  ): PoliciesState {
+    const merged: PoliciesState = {
+      _meta: [],
+      SafeAllowance: [],
+      SafeDelegate: [],
+    };
+    const chains = new Set<number>();
+
+    for (const slice of slices) {
+      for (const meta of slice._meta) {
+        const location = RowLocationSchema.safeParse(meta);
+        if (location.success && !chains.has(location.data.chainId)) {
+          chains.add(location.data.chainId);
+          merged._meta.push(meta);
+        }
+      }
+      for (const field of ROW_FIELDS) {
+        merged[field].push(...slice[field]);
+      }
+    }
+
+    return merged;
+  }
+
+  /**
+   * The row(s) of {@link response} belonging to {@link safe}.
+   */
+  private filterPoliciesStateBySafe(
+    response: PoliciesState,
+    safe: SafeRef,
+  ): PoliciesState {
+    const belongsToChain = (row: unknown): boolean => {
+      const location = RowLocationSchema.safeParse(row);
+      return location.success && String(location.data.chainId) === safe.chainId;
+    };
+    const belongsToSafe = (row: unknown): boolean => {
+      const location = RowLocationSchema.safeParse(row);
+      return (
+        location.success &&
+        String(location.data.chainId) === safe.chainId &&
+        location.data.safe?.toLowerCase() === safe.address.toLowerCase()
+      );
+    };
+
+    const slice: PoliciesState = {
+      _meta: response._meta.filter(belongsToChain),
+      SafeAllowance: [],
+      SafeDelegate: [],
+    };
+
+    for (const field of ROW_FIELDS) {
+      slice[field] = response[field].filter(belongsToSafe);
+    }
+
+    return slice;
+  }
 }
