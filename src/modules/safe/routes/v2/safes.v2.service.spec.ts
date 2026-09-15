@@ -42,7 +42,7 @@ const mockLoggingService = {
 } as MockedObject<ILoggingService>;
 
 const mockZerionRepository = vi.mocked({
-  getNetworkNamesByChainId: vi.fn(),
+  getChainIdToNetworkMapping: vi.fn(),
 } as MockedObject<IZerionRepository>);
 
 // Chains Zerion lists per environment, keyed by chainId; anything else is unsupported.
@@ -95,7 +95,7 @@ describe('SafesV2Service', () => {
       previous: null,
       results: [],
     });
-    mockZerionRepository.getNetworkNamesByChainId.mockImplementation(
+    mockZerionRepository.getChainIdToNetworkMapping.mockImplementation(
       (isTestnet) =>
         Promise.resolve(zerionNetworks[isTestnet ? 'testnet' : 'mainnet']),
     );
@@ -128,6 +128,27 @@ describe('SafesV2Service', () => {
     expect(result.find((o) => o.chainId === '1')?.fiatTotal).toBe('100');
     expect(result.find((o) => o.chainId === '137')?.fiatTotal).toBe('50');
     expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
+  });
+
+  it('looks up only the testnet chain list for a testnet-only request', async () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    mockChainsRepository.getChain.mockResolvedValue(
+      buildChain('11155111', true),
+    );
+    mockZerionWalletPortfolioApi.getPortfolio.mockResolvedValue(
+      buildPortfolio({ sepolia: 5 }),
+    );
+
+    const result = await service.getSafeOverview({
+      currency: 'USD',
+      addresses: [{ chainId: '11155111', address }],
+      trusted: false,
+    });
+
+    expect(
+      mockZerionRepository.getChainIdToNetworkMapping,
+    ).toHaveBeenCalledExactlyOnceWith(true);
+    expect(result[0].fiatTotal).toBe('5');
   });
 
   it('fetches two portfolios for the same address across mainnet and testnet', async () => {
@@ -267,7 +288,7 @@ describe('SafesV2Service', () => {
   it('falls back to the balances repo (not $0) when the Zerion chain lookup fails', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
-    mockZerionRepository.getNetworkNamesByChainId.mockRejectedValue(
+    mockZerionRepository.getChainIdToNetworkMapping.mockRejectedValue(
       new Error('Zerion unavailable'),
     );
     mockBalancesRepository.getBalances.mockResolvedValue([

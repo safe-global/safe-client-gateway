@@ -208,15 +208,14 @@ export class SafesV2Service {
     const chains = [...chainsById.values()].filter(
       (chain): chain is Chain => chain !== null,
     );
-    const none: Record<string, string> = {};
-    const [mainnet, testnet] = await Promise.all([
-      chains.some((chain) => !chain.isTestnet)
-        ? this.getZerionNetworkNames(false)
-        : none,
-      chains.some((chain) => chain.isTestnet)
-        ? this.getZerionNetworkNames(true)
-        : none,
-    ]);
+    const hasMainnet = chains.some((chain) => !chain.isTestnet);
+    const hasTestnet = chains.some((chain) => chain.isTestnet);
+    const [mainnet, testnet]: Array<Record<string, string>> = await Promise.all(
+      [
+        hasMainnet ? this.getZerionNetworkNames(false) : {},
+        hasTestnet ? this.getZerionNetworkNames(true) : {},
+      ],
+    );
     for (const chain of chains) {
       const name = (chain.isTestnet ? testnet : mainnet)[chain.chainId];
       if (name) {
@@ -231,7 +230,7 @@ export class SafesV2Service {
     isTestnet: boolean,
   ): Promise<Record<string, string>> {
     try {
-      return await this.zerionRepository.getNetworkNamesByChainId(isTestnet);
+      return await this.zerionRepository.getChainIdToNetworkMapping(isTestnet);
     } catch (error) {
       this.loggingService.warn({
         type: LogType.ZerionChainListError,

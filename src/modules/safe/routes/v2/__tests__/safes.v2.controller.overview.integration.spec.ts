@@ -722,7 +722,7 @@ describe('Safes V2 Controller Overview', () => {
         });
     });
 
-    it('should handle Zerion API failures gracefully and continue with other Safes', async () => {
+    it('should degrade a Safe whose Zerion portfolio fails to the balances repository and keep the others', async () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
@@ -749,6 +749,16 @@ describe('Safes V2 Controller Overview', () => {
         .with('results', [])
         .with('count', 0)
         .build();
+      const transactionApiBalancesResponse = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '1000000000000000000')
+          .with('token', null)
+          .build(),
+      ];
+      const nativeCoinPriceProviderResponse = {
+        [chain.pricesProvider.nativeCoin as string]: { usd: 100 },
+      };
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -764,6 +774,18 @@ describe('Safes V2 Controller Overview', () => {
           case `${zerionBaseUri}/v1/wallets/${safeInfo1.address}/portfolio`: {
             // Simulate Zerion API failure for first Safe
             return Promise.reject(new Error('Zerion API error'));
+          }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
+            return Promise.resolve({
+              data: rawify(transactionApiBalancesResponse),
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/price`: {
+            return Promise.resolve({
+              data: rawify(nativeCoinPriceProviderResponse),
+              status: 200,
+            });
           }
           case `${zerionBaseUri}/v1/wallets/${safeInfo2.address}/portfolio`: {
             return Promise.resolve({
@@ -796,10 +818,11 @@ describe('Safes V2 Controller Overview', () => {
         )
         .expect(200)
         .expect(({ body }) => {
-          // Should only return safeInfo2 since safeInfo1 failed
-          expect(body.length).toBe(1);
-          expect(body[0].address.value).toBe(safeInfo2.address);
-          expect(body[0].fiatTotal).toBe('2500');
+          // safeInfo1 degrades to the balances fallback, safeInfo2 keeps its Zerion value
+          expect(body).toMatchObject([
+            { address: { value: safeInfo1.address }, fiatTotal: '100' },
+            { address: { value: safeInfo2.address }, fiatTotal: '2500' },
+          ]);
         });
     });
 
