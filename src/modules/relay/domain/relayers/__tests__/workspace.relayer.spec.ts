@@ -345,9 +345,10 @@ describe('WorkspaceRelayer', () => {
   it('should not charge a submission that never happened', async () => {
     const args = relayArgs();
     recognises(null);
-    mockRelayApi.relay.mockRejectedValue(new Error(faker.lorem.sentence()));
+    const submissionFailed = new Error(faker.lorem.sentence());
+    mockRelayApi.relay.mockRejectedValue(submissionFailed);
 
-    await expect(target.relay(args)).rejects.toThrow();
+    await expect(target.relay(args)).rejects.toThrow(submissionFailed);
 
     expect(mockEntitlementEnforcement.recordUsage).not.toHaveBeenCalled();
   });

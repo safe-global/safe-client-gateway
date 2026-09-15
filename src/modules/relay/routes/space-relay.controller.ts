@@ -85,6 +85,10 @@ export class SpaceRelayController {
     description:
       "The workspace's sponsored-transaction allowance is spent. The body carries `quota`, `used` and `resetsAt` so a client can offer to pay for the transaction itself.",
   })
+  @ApiResponse({
+    status: HttpStatus.NOT_IMPLEMENTED,
+    description: "The chain's relayer type is not supported",
+  })
   @ApiUnprocessableEntityResponse({
     description:
       'Request failed schema validation, or the transaction was simulated and would revert (SIMULATION_FAILED) or could not be simulated (INDETERMINATE_SIMULATION)',
