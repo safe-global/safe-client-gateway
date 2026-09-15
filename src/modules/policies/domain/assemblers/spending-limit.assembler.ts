@@ -10,7 +10,7 @@ import type {
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { IndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
@@ -55,7 +55,7 @@ export class SpendingLimitAssembler implements PolicyAssembler {
 
   private toData(args: {
     module: Address;
-    allowances: Array<IndexerSafeAllowance>;
+    allowances: Array<PolicyIndexerSafeAllowance>;
   }): SpendingLimitPolicyData {
     const perSpender = groupBy(
       args.allowances,
@@ -73,7 +73,9 @@ export class SpendingLimitAssembler implements PolicyAssembler {
     };
   }
 
-  private toAllowance(allowance: IndexerSafeAllowance): SpendingLimitAllowance {
+  private toAllowance(
+    allowance: PolicyIndexerSafeAllowance,
+  ): SpendingLimitAllowance {
     const resets = allowance.resetTimeMinutes > 0;
 
     return {
@@ -97,7 +99,7 @@ export class SpendingLimitAssembler implements PolicyAssembler {
  * `resetAllowance` and `deleteAllowance` have no registered-delegate check, so
  * an all-zero row can exist for a pair that was never configured.
  */
-function isConfigured(allowance: IndexerSafeAllowance): boolean {
+function isConfigured(allowance: PolicyIndexerSafeAllowance): boolean {
   return BigInt(allowance.amount) > 0n;
 }
 
