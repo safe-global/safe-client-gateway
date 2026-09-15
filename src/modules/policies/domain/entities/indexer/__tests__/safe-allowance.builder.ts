@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { Builder, type IBuilder } from '@/__tests__/builder';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
 /**
  * Builders for the Policy Indexer's rows **as served**, not as parsed: `chainId`
