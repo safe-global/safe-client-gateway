@@ -23,7 +23,7 @@ import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import {
   rawIndexerMetaBuilder,
-  rawPolicyIndexerState,
+  rawPolicyIndexerResponse,
 } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type {
   RawIndexerSafeAllowance,
@@ -237,7 +237,7 @@ describe('Policies routes (e2e)', () => {
         .build();
       mockUpstream();
       mockIndexer(
-        rawPolicyIndexerState({
+        rawPolicyIndexerResponse({
           _meta: [
             rawIndexerMetaBuilder()
               .with('chainId', Number(SEPOLIA_CHAIN_ID))
@@ -277,7 +277,7 @@ describe('Policies routes (e2e)', () => {
       mockUpstream();
       const allowance = anAllowance().build();
       mockIndexer(
-        rawPolicyIndexerState({
+        rawPolicyIndexerResponse({
           SafeAllowance: [allowance],
           SafeDelegate: registrationsFor([allowance]),
         }),
@@ -298,7 +298,7 @@ describe('Policies routes (e2e)', () => {
 
     it('should reject a safe outside the space', async () => {
       mockUpstream();
-      mockIndexer(rawPolicyIndexerState());
+      mockIndexer(rawPolicyIndexerResponse());
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -329,7 +329,7 @@ describe('Policies routes (e2e)', () => {
       const allowance = anAllowance().build();
       mockUpstream();
       mockIndexer(
-        rawPolicyIndexerState({
+        rawPolicyIndexerResponse({
           SafeAllowance: [allowance],
           SafeDelegate: registrationsFor([allowance]),
         }),
@@ -382,7 +382,7 @@ describe('Policies routes (e2e)', () => {
       mockUpstream({ modules: [] });
       const allowance = anAllowance().build();
       mockIndexer(
-        rawPolicyIndexerState({
+        rawPolicyIndexerResponse({
           SafeAllowance: [allowance],
           SafeDelegate: registrationsFor([allowance]),
         }),
@@ -402,7 +402,7 @@ describe('Policies routes (e2e)', () => {
     it('should return an empty page for a safe with no policies', async () => {
       mockUpstream();
       mockIndexer(
-        rawPolicyIndexerState({
+        rawPolicyIndexerResponse({
           _meta: [
             rawIndexerMetaBuilder()
               .with('chainId', Number(SEPOLIA_CHAIN_ID))

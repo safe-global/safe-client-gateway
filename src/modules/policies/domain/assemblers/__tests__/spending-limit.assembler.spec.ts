@@ -3,9 +3,9 @@ import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
 import type { SpendingLimitPolicyData } from '@/modules/policies/domain/entities/active-policy.entity';
-import { policyIndexerStateBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
-import { indexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { IndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/safe-allowance.entity';
+import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 
 const SEPOLIA = '11155111';
@@ -19,19 +19,21 @@ describe('SpendingLimitAssembler', () => {
   const allowanceModule = getAddress(faker.finance.ethereumAddress());
 
   function assemble(
-    allowances: Array<IndexerSafeAllowance>,
+    allowances: Array<PolicyIndexerSafeAllowance>,
     overrides?: { enabledModules?: Array<`0x${string}`> },
   ) {
     return target.assemble({
       safe,
-      state: policyIndexerStateBuilder().with('allowances', allowances).build(),
+      state: policyIndexerResponseBuilder()
+        .with('allowances', allowances)
+        .build(),
       enabledModules: overrides?.enabledModules ?? [allowanceModule],
     });
   }
 
   /** An allowance of `safe` on `allowanceModule`, spendable by default. */
-  function allowance(): ReturnType<typeof indexerSafeAllowanceBuilder> {
-    return indexerSafeAllowanceBuilder()
+  function allowance(): ReturnType<typeof policyIndexerSafeAllowanceBuilder> {
+    return policyIndexerSafeAllowanceBuilder()
       .with('chainId', SEPOLIA)
       .with('safe', safe.address)
       .with('module', allowanceModule)
