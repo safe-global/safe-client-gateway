@@ -155,6 +155,15 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'get',
     path: (id) => `/v1/spaces/${id}/safes`,
   },
+  // Spends an allowance the Workspace already bought; it changes nothing
+  // anyone else can see, and a second factor per transaction would make
+  // sponsored relaying unusable.
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/relay',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/chains/1/relay`,
+    body: {},
+  },
   {
     name: 'GET /v1/spaces/:spaceId/address-book',
     method: 'get',

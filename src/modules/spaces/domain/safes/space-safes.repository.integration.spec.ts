@@ -685,6 +685,84 @@ describe('SpaceSafesRepository', () => {
     });
   });
 
+  describe('existsInSpace', () => {
+    async function spaceHolding(
+      payload: Array<{ chainId: string; address: `0x${string}` }>,
+    ): Promise<Space['id']> {
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      await addSafes({
+        spaceId,
+        actorUserId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        payload,
+      });
+      return spaceId;
+    }
+
+    it('should find a Safe the space holds', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const spaceId = await spaceHolding([safe]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({ spaceId, ...safe }),
+      ).resolves.toBe(true);
+    });
+
+    it('should not find the same address on another chain', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const spaceId = await spaceHolding([safe]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({
+          spaceId,
+          chainId: `${safe.chainId}1`,
+          address: safe.address,
+        }),
+      ).resolves.toBe(false);
+    });
+
+    it('should not find a Safe held by another space', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      await spaceHolding([safe]);
+      // Same Safe, a space that does not hold it: what stops a member of one
+      // workspace spending its allowance on someone else's Safe.
+      const otherSpaceId = await spaceHolding([]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({ spaceId: otherSpaceId, ...safe }),
+      ).resolves.toBe(false);
+    });
+
+    it('should not find an address the space never held', async () => {
+      const spaceId = await spaceHolding([
+        {
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({
+          spaceId,
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+      ).resolves.toBe(false);
+    });
+  });
+
   describe('delete', () => {
     it('should delete a SpaceSafe', async () => {
       const space = await dbSpaceRepository.insert({

@@ -11,11 +11,11 @@ import {
 import { ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
 import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
 import { RecoveryService } from '@/modules/recovery/routes/recovery.service';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 

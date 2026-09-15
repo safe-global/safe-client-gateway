@@ -13,6 +13,7 @@ import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { RelayFeeRelayer } from '../relay-fee.relayer';
 
@@ -63,11 +64,18 @@ describe('RelayFeeRelayer', () => {
 
     chainId = faker.string.numeric();
 
+    // Real, over a mocked simulator: these cases predate the extraction and
+    // assert the same behaviour, which a double would stop covering.
+    const relaySimulationService = new RelaySimulationService(
+      mockLoggingService,
+      mockTenderlySimulationApi,
+    );
+
     target = new RelayFeeRelayer(
       mockLoggingService,
       mockRelayApi,
       mockFeeServiceApi,
-      mockTenderlySimulationApi,
+      relaySimulationService,
       mockRelayTransactionHelper,
     );
   });
