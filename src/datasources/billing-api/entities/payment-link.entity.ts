@@ -41,3 +41,10 @@ export const PaymentLinkSchema = z.object({
   /** The offer's free length; `null`/absent means the link bills immediately. */
   trialPeriodDays: z.number().int().nullish(),
 });
+
+/** Shape of `GET /payment-links`, mirroring the upstream's `PaymentLinksResultDto`. */
+export type PaymentLinksResult = z.infer<typeof PaymentLinksResultSchema>;
+
+export const PaymentLinksResultSchema = z.object({
+  paymentLinks: z.array(PaymentLinkSchema),
+});

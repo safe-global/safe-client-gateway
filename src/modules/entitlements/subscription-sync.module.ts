@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
-import { BillingApiModule } from '@/datasources/billing-api/billing-api.module';
+import { BillingRepositoryModule } from '@/modules/billing/domain/billing-repository.module';
 import { EntitlementsRepositoryModule } from '@/modules/entitlements/domain/entitlements-repository.module';
 import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
@@ -9,7 +9,7 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
 
 /**
  * What `BillingModule`'s webhook handler consumes, kept apart from
- * `EntitlementsModule` because it pulls `BillingApiModule`: that client
+ * `EntitlementsModule` because it reaches the billing service: that client
  * requires the billing service's API token at construction, a secret only
  * environments running the integration hold, so a module gating a plan limit
  * must not depend on it.
@@ -17,7 +17,7 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
 @Module({
   imports: [
     EntitlementsModule,
-    BillingApiModule,
+    BillingRepositoryModule,
     EntitlementsRepositoryModule,
     forwardRef(() => SpacesModule),
   ],

@@ -64,6 +64,10 @@ export default () => ({
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
     allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
+    allowedSiweDomains:
+      process.env.AUTH_ALLOWED_SIWE_DOMAINS?.split(',')
+        .map((domain) => domain.trim())
+        .filter((domain) => domain.length > 0) ?? [],
     auth0: {
       domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,
@@ -816,6 +820,15 @@ export default () => ({
       process.env.TRANSACTION_STATUS_INDEXING_GRACE_PERIOD_MS ?? `${60 * 1000}`,
       10,
     ),
+  },
+  tokens: {
+    rateLimit: {
+      max: Number.parseInt(process.env.TOKENS_RATE_LIMIT_MAX ?? `${60}`, 10),
+      windowSeconds: Number.parseInt(
+        process.env.TOKENS_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+        10,
+      ),
+    },
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',

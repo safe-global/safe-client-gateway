@@ -16,6 +16,12 @@ export interface INetworkService {
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>>;
 
+  patch<T>(args: {
+    url: string;
+    data?: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>>;
+
   /**
    * Sends a POST request with a URL-encoded form body.
    */

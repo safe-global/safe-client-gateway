@@ -96,6 +96,7 @@ export const RootConfigurationSchema = z
     AUTH_TOKEN: z.string(),
     AUTH_POST_LOGIN_REDIRECT_URI: z.url(),
     AUTH_ALLOWED_REDIRECT_DOMAIN: DomainSchema.optional(),
+    AUTH_ALLOWED_SIWE_DOMAINS: z.string().optional(),
     AUTH0_API_AUDIENCE: z.string().optional(),
     AUTH0_DOMAIN: DomainSchema.optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
@@ -151,6 +152,10 @@ export const RootConfigurationSchema = z
       .min(1)
       .max(100)
       .optional(),
+    // Per-caller bound on the unauthenticated token metadata routes. A zero or
+    // negative budget would reject every caller, so fail at boot instead.
+    TOKENS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    TOKENS_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
@@ -269,6 +274,16 @@ export const RootConfigurationSchema = z
         message:
           'must not be set in production and staging environments; sign via KMS (BILLING_WEBHOOK_JWT_KMS_KEY_ID) instead',
         path: ['BILLING_WEBHOOK_JWT_PRIVATE_KEY'],
+      });
+    }
+
+    // Production binds SiWe messages to the origins it serves; staging and
+    // other environments may leave the list unset, which skips the check.
+    if (config.CGW_ENV === 'production' && !config.AUTH_ALLOWED_SIWE_DOMAINS) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required in the production environment',
+        path: ['AUTH_ALLOWED_SIWE_DOMAINS'],
       });
     }
 
