@@ -1,23 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 
 /**
  * Scalars of the Policy Indexer's read contract.
  *
- * Four of its column types need converting rather than accepting as they
+ * Several of its column types need converting rather than accepting as they
  * arrive, and each conversion has a failure mode that is silent if skipped -
  * see the notes on the individual schemas.
  */
 
 /**
  * `chainId` is an `Int` in the indexer and a decimal string everywhere in CGW.
- * Converted here so no repository, service or route ever sees the numeric form.
+ * Converted to a string here, then validated by the same `ChainIdSchema` every
+ * other chain id in CGW goes through, so no repository, service or route ever
+ * sees the numeric form or a chain id this schema wouldn't otherwise accept.
  */
 export const IndexerChainIdSchema = z
   .number()
   .int()
   .nonnegative()
-  .transform(String);
+  .transform(String)
+  .pipe(ChainIdSchema);
 
 /**
  * The indexer's `numeric` columns serialise as decimal **strings**, not numbers.
@@ -43,14 +47,19 @@ export const IndexerIntegerSchema = IndexerBaseUnitsSchema.transform(
 });
 
 /**
- * `resetphase`, `policykind`, `policyoperation` and `rootstatus` are exposed as
- * **custom scalars, not GraphQL enums** - introspection reports `SCALAR` with no
- * `enumValues`, so a new indexer release can add a value with no schema signal.
- * CGW therefore validates the value sets itself.
+ * `resetphase` is exposed as a **custom scalar, not a GraphQL enum** -
+ * introspection reports `SCALAR` with no `enumValues`, so a new indexer
+ * release can add a value with no schema signal. CGW therefore validates the
+ * value set itself.
  *
- * Where a fallback exists it is the pessimistic one: an unrecognised reset phase
- * and an unrecognised policy kind both become `UNKNOWN` - a boundary not to be
- * trusted, and a policy not rendered - rather than a guess.
+ * `policykind`, `policyoperation` and `rootstatus` are the indexer's other
+ * custom scalars, exposed the same way - but they describe guard-enforced
+ * policies and pending configuration requests, neither of which this branch
+ * reads, so their schemas are not here.
+ *
+ * Where a fallback exists it is the pessimistic one: an unrecognised reset
+ * phase becomes `UNKNOWN` - a boundary not to be trusted - rather than a
+ * guess.
  */
 
 /**
@@ -60,43 +69,10 @@ export const IndexerIntegerSchema = IndexerBaseUnitsSchema.transform(
  * A never-resetting allowance is `EXACT`: there is no boundary to be wrong
  * about.
  */
-export const IndexerResetPhaseSchema = z
+export const IndexerAllowanceResetPhaseSchema = z
   .enum(['EXACT', 'UNKNOWN'])
   .catch('UNKNOWN');
 
-export type IndexerResetPhase = z.infer<typeof IndexerResetPhaseSchema>;
-
-export const IndexerPolicyKindSchema = z
-  .enum([
-    'ERC20_TRANSFER',
-    'ERC20_APPROVE',
-    'ALLOWED_MODULE',
-    'COSIGNER',
-    'ALLOW',
-    'DENY',
-    'MULTISEND',
-    'NATIVE_TRANSFER',
-    'NONE',
-    'UNKNOWN',
-  ])
-  .catch('UNKNOWN');
-
-export type IndexerPolicyKind = z.infer<typeof IndexerPolicyKindSchema>;
-
-/**
- * No fallback: an operation CGW cannot place is not a policy it can report, so
- * the row is dropped by the caller instead of being mis-attributed to `CALL`.
- */
-export const IndexerPolicyOperationSchema = z.enum(['CALL', 'DELEGATECALL']);
-
-export type IndexerPolicyOperation = z.infer<
-  typeof IndexerPolicyOperationSchema
+export type IndexerAllowanceResetPhase = z.infer<
+  typeof IndexerAllowanceResetPhaseSchema
 >;
-
-export const IndexerRootStatusSchema = z.enum([
-  'PENDING',
-  'APPLIED',
-  'INVALIDATED',
-]);
-
-export type IndexerRootStatus = z.infer<typeof IndexerRootStatusSchema>;
