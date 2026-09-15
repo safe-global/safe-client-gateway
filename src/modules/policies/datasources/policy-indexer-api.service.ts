@@ -79,9 +79,9 @@ export class PolicyIndexerApi {
   /**
    * Current policy state for {@link args.safes}.
    *
-   * Looks up each Safe's cache first. Otherwise the Safes that missed are fetched from the indexer
-   * in **one** request. Each Safe's policy state is cached under
-   * its own key, so a later change to one Safe's policies invalidates only its entry.
+   * Looks up each Safe's cache first. Otherwise the Safes that missed are fetched from the indexer in
+   * **one** request. Each Safe's policy state is cached under its own key, so
+   * a later change to one Safe's policies invalidates only its entry.
    */
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
@@ -91,21 +91,29 @@ export class PolicyIndexerApi {
     );
     const misses = args.safes.filter((_, index) => cacheHits[index] === null);
 
+    if (misses.length === 0) {
+      return rawify(
+        this.mergePoliciesStates(
+          cacheHits.filter((hit): hit is PoliciesState => hit !== null),
+        ),
+      );
+    }
+
     const fetched = await this.fetch(misses);
-    const slices = await Promise.all(
+    const policiesStates = await Promise.all(
       args.safes.map(async (safe, index) => {
         const hit = cacheHits[index];
         if (hit) {
           return hit;
         }
 
-        const slice = this.filterPoliciesStateBySafe(fetched, safe);
-        await this.cache(safe, slice);
-        return slice;
+        const policiesState = this.filterPoliciesStateBySafe(fetched, safe);
+        await this.cache(safe, policiesState);
+        return policiesState;
       }),
     );
 
-    return rawify(this.mergePoliciesStates(slices));
+    return rawify(this.mergePoliciesStates(policiesStates));
   }
 
   /**
