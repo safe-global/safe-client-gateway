@@ -1,0 +1,171 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+name: Mirror Docker Hub tags to GHCR
+
+# One-off migration helper. Delete once the Docker Hub migration is signed off.
+#
+# Copies tags already published to Docker Hub into this repo's GHCR package
+# without rebuilding, so each manifest digest is preserved exactly. Production
+# pins `v1.124.0@sha256:ab9c0a7626968ff220d2484c96e9b1ffe78b689becd6d11af033c6a5a660ac74`,
+# and a successful run must report that digest for the v1.124.0 tag.
+#
+# Pushing with the repository's GITHUB_TOKEN is what links the new package to
+# this repo so it inherits repository access. Reads Docker Hub with the shared
+# credential, so run this before that credential is revoked.
+
+on:
+  workflow_dispatch:
+    inputs:
+      tags:
+        description: 'Space-separated tags to mirror'
+        type: string
+        default: >-
+          staging latest v1.124.0 v1.123.0 v1.122.0 v1.121.0 v1.120.0 v1.119.0
+          v1.118.0 v1.117.0 v1.116.0 v1.115.2 v1.115.0 v1.114.0 v1.113.0 v1.112.0
+          v1.111.0 v1.110.0 v1.109.0 v1.108.0 v1.107.0 v1.106.0 v1.105.0 v1.104.0
+          v1.103.0 v1.102.0 v1.101.0 v1.100.0 v1.99.0 v1.98.0 v1.97.0 v1.96.0
+          v1.95.0 v1.94.1 v1.94.0 v1.93.0 v1.92.0 v1.91.0 v1.90.1 v1.90.0
+          v1.89.0 v1.88.2 v1.88.1 v1.88.0 v1.87.0 v1.86.0 v1.85.2 v1.85.1
+          v1.85.0 v1.84.0 v1.83.0 v1.82.0 v1.81.0 v1.80.0 v1.79.1 v1.79.0
+          v1.78.0 v1.77.0 v1.76.0 v1.75.2 v1.75.1 v1.75.0 v1.74.6 v1.74.5
+          v1.74.4 v1.74.3 v1.74.2 v1.74.1 v1.74.0 v1.73.0 v1.72.0 v1.71.1
+          v1.71.0 v1.70.0 v1.69.1 v1.69.0 v1.68.1 v1.68.0 v1.67.0 v1.66.0
+          v1.65.0 v1.64.0 v1.63.0 v1.62.0 v1.61.0 v1.60.1 v1.60.0 v1.59.0
+          v1.58.0 v1.57.0 v1.56.0 v1.55.0 v1.54.0 v1.53.0 v1.52.0 v1.51.0
+          v1.50.0 v1.49.0 v1.48.0 v1.47.0 v1.46.0 v1.45.0 v1.44.0 v1.43.1
+          v1.43.0 v1.42.0 v1.41.0 v1.40.0 v1.39.0 v1.38.0 v1.37.0 v1.36.0
+          v1.35.0 v1.34.0 v1.33.0 v1.32.0 v1.31.0 v1.30.0 v1.29.0 v1.28.0
+          v1.27.0 v1.26.0 v1.25.0 v1.24.0 v1.23.0 v1.22.0 v1.21.0 v1.20.0
+          v1.19.0 v1.18.1 v1.18.0 v1.17.0 v1.16.0 v1.15.1 v1.15.0 v1.14.0
+          v1.13.1 v1.13.0 v1.12.0 v1.11.2 v1.11.1 v1.10.1 v1.10.0 v1.9.0
+          v1.8.1 v1.8.0 v1.7.0 v1.6.0 v1.5.0 v1.4.0 v1.3.0 v1.2.0
+          v1.1.0 v1.0.1 v1.0.0 v0.4.1 v0.4.0 v0.3.1 v0.3.0 v0.2.5
+          v0.2.4 v0.2.3 v0.2.2 v0.2.1 v0.2.0 v0.1.1 v0.1.0
+      dry_run:
+        description: 'Resolve and report digests without writing to GHCR'
+        type: boolean
+        default: true
+
+permissions: {}
+
+concurrency: ${{ github.workflow }}
+
+env:
+  SRC: docker.io/safeglobal/safe-client-gateway-nest
+  DST: ghcr.io/safe-global/safe-client-gateway
+  CRANE_VERSION: v0.22.1
+  CRANE_SHA256: 0ab7a1d6932a213aed964ce97666c3077fe691c8606413674a8b3e0b9ec4cda0
+
+jobs:
+  mirror:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install crane (pinned, checksum verified)
+        run: |
+          set -euo pipefail
+          curl -sSfL -o crane.tgz \
+            "https://github.com/google/go-containerregistry/releases/download/${CRANE_VERSION}/go-containerregistry_Linux_x86_64.tar.gz"
+          echo "${CRANE_SHA256}  crane.tgz" | sha256sum -c -
+          tar -xzf crane.tgz crane
+          sudo install -m 0755 crane /usr/local/bin/crane
+          crane version
+
+      - name: Log in to Docker Hub (source, read-only)
+        env:
+          DOCKER_USER: ${{ secrets.DOCKER_USER }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$DOCKER_PASSWORD" | crane auth login docker.io -u "$DOCKER_USER" --password-stdin
+
+      - name: Log in to GHCR (destination)
+        env:
+          GH_ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | crane auth login ghcr.io -u "$GH_ACTOR" --password-stdin
+
+      - name: Mirror tags
+        env:
+          INPUT_TAGS: ${{ inputs.tags }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+
+          read -r -a TAGS <<< "$INPUT_TAGS"
+
+          # GHCR throttles sustained blob writes with a 403, not a 429, which
+          # crane treats as fatal. Serialising blob uploads stays under the
+          # threshold; retrying the whole copy recovers if it is crossed anyway,
+          # since blobs already uploaded are skipped.
+          copy_with_retry() {
+            local src="$1" dst="$2" attempt=1 max=4 backoff
+            while :; do
+              if crane copy -j 1 "$src" "$dst"; then
+                return 0
+              fi
+              if [ "$attempt" -ge "$max" ]; then
+                return 1
+              fi
+              backoff=$((attempt * 20))
+              echo "  attempt $attempt failed - retrying in ${backoff}s"
+              sleep "$backoff"
+              attempt=$((attempt + 1))
+            done
+          }
+
+          {
+            echo "### \`$SRC\` → \`$DST\`"
+            echo
+            echo "| tag | digest | result |"
+            echo "| --- | ------ | ------ |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          failed=0
+
+          for tag in "${TAGS[@]}"; do
+            [ -n "$tag" ] || continue
+
+            if ! src_digest=$(crane digest "$SRC:$tag" 2>/dev/null); then
+              echo "FAIL  $tag - cannot read source manifest"
+              echo "| \`$tag\` | | **failed** - unreadable source |" >> "$GITHUB_STEP_SUMMARY"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            if [ "$DRY_RUN" = "true" ]; then
+              echo "would copy  $tag  $src_digest"
+              echo "| \`$tag\` | \`$src_digest\` | dry run |" >> "$GITHUB_STEP_SUMMARY"
+              continue
+            fi
+
+            if ! copy_with_retry "$SRC:$tag" "$DST:$tag"; then
+              echo "FAIL  $tag - copy did not complete after retries"
+              echo "| \`$tag\` | \`$src_digest\` | **failed** - copy error |" >> "$GITHUB_STEP_SUMMARY"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            dst_digest=$(crane digest "$DST:$tag")
+
+            if [ "$src_digest" != "$dst_digest" ]; then
+              echo "DIGEST MISMATCH on $tag"
+              echo "  src $src_digest"
+              echo "  dst $dst_digest"
+              echo "| \`$tag\` | \`$src_digest\` | **DIGEST MISMATCH** |" >> "$GITHUB_STEP_SUMMARY"
+              failed=$((failed + 1))
+              continue
+            fi
+
+            echo "ok    $tag  $src_digest"
+            echo "| \`$tag\` | \`$src_digest\` | copied, digest preserved |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          if [ "$failed" -gt 0 ]; then
+            echo "::error::$failed tag(s) failed to mirror"
+            exit 1
+          fi
