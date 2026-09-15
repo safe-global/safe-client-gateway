@@ -4,7 +4,7 @@ import {
   IndexerBaseUnitsSchema,
   IndexerChainIdSchema,
   IndexerIntegerSchema,
-  IndexerResetPhaseSchema,
+  IndexerAllowanceResetPhaseSchema,
 } from '@/modules/policies/domain/entities/indexer/indexer-scalars.entity';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
@@ -49,7 +49,7 @@ export const IndexerSafeAllowanceSchema = z.object({
    * when `resetTimeMinutes` is non-zero.
    */
   lastResetMin: IndexerIntegerSchema,
-  resetPhase: IndexerResetPhaseSchema,
+  resetPhase: IndexerAllowanceResetPhaseSchema,
   nonce: IndexerBaseUnitsSchema,
   /** Unix seconds of the last event that moved this row. */
   updatedAt: IndexerIntegerSchema,
