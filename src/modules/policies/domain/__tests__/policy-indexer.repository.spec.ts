@@ -45,7 +45,7 @@ describe('PolicyIndexerRepository', () => {
     );
   });
 
-  describe('the request', () => {
+  describe('get policies request', () => {
     it('should read the state of every requested safe in one call', async () => {
       await target.getState({
         safes: [
