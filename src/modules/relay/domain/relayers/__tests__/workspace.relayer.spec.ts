@@ -4,6 +4,7 @@ import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -363,6 +364,12 @@ describe('WorkspaceRelayer', () => {
     );
 
     await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
-    expect(mockLoggingService.warn).toHaveBeenCalled();
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: LogType.QuotaNotRecorded,
+        spaceId: args.spaceId,
+        feature: 'sponsored_transactions',
+      }),
+    );
   });
 });

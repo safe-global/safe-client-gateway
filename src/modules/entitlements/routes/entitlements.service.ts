@@ -39,6 +39,7 @@ import {
   isActiveSubscriptionStatus,
   isEventMeteredFeature,
   isStockMeteredFeature,
+  isStockMeteredFeatureKey,
   ordersAfter,
 } from '@/modules/entitlements/domain/entitlements.constants';
 import {
@@ -192,13 +193,12 @@ export class EntitlementsService implements IEntitlementEnforcement {
     delta: number;
   }): Promise<void> {
     const grant = await this.resolveGrant(args);
+    // Unexpected: the signature excludes what is counted elsewhere. Returning
+    // quietly would leave the feature unmetered for as long as it lasts.
     if (grant.counter === null) {
-      // Nowhere to record it, and the action it pays for has already
-      // happened: saying so is all that is left.
-      this.loggingService.warn(
-        `Feature '${args.featureKey}' has no usage counter; space ${args.spaceId}'s consumption went unrecorded`,
+      throw new Error(
+        `Feature '${args.featureKey}' has no usage counter to record against`,
       );
-      return;
     }
     await this.spaceFeatureUsageRepository.incrementUsage({
       spaceId: args.spaceId,
@@ -288,10 +288,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
     featureKey: FeatureKey;
     grant: FeatureGrant;
   }): Promise<number> {
-    // Bound, so the guard narrows the key rather than a throwaway literal.
-    const feature = { key: args.featureKey };
-    return isStockMeteredFeature(feature)
-      ? await this.stockCounters[feature.key](args.spaceId)
+    return isStockMeteredFeatureKey(args.featureKey)
+      ? await this.stockCounters[args.featureKey](args.spaceId)
       : await this.countEventUsage(args.spaceId, args.featureKey, args.grant);
   }
 

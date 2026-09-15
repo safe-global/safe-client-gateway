@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
@@ -117,9 +118,13 @@ export class WorkspaceRelayer {
         delta: RELAYS_PER_CALL,
       })
       .catch((error: unknown) => {
-        this.loggingService.warn(
-          `Failed to record a sponsored transaction for space ${args.spaceId}: ${asError(error).message}`,
-        );
+        // Its own type, so an alert can key on it: we paid and did not charge.
+        this.loggingService.error({
+          type: LogType.QuotaNotRecorded,
+          spaceId: args.spaceId,
+          feature: SPONSORED_TRANSACTIONS,
+          message: asError(error).message,
+        });
       });
 
     return relay;

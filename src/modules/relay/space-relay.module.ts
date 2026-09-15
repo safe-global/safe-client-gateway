@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { forwardRef, Module } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
@@ -28,9 +28,9 @@ import { UsersModule } from '@/modules/users/users.module';
     RelayDomainModule,
     ChainsModule,
     EntitlementsModule,
-    forwardRef(() => AuthModule),
-    forwardRef(() => SpacesModule),
-    forwardRef(() => UsersModule),
+    AuthModule,
+    SpacesModule,
+    UsersModule,
   ],
   providers: [WorkspaceRelayer, SpaceRelayService],
   controllers: [SpaceRelayController],
