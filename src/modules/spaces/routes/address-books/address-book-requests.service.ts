@@ -148,10 +148,9 @@ export class AddressBookRequestsService {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertAdmin(this.spacesRepository, spaceId, userId);
 
-    const rejected = await this.requestsRepository.transitionFromPending({
+    const rejected = await this.requestsRepository.reject({
       id: requestId,
       spaceId,
-      toStatus: 'REJECTED',
       reviewedBy: userId,
     });
     if (!rejected) {
