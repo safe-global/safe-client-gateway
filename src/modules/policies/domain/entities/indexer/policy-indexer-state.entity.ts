@@ -160,14 +160,17 @@ export type PolicyIndexerMeta = z.infer<typeof PolicyIndexerMetaSchema>;
  * Rows are validated one by one by `PolicyIndexerRepository`, which drops and
  * logs the ones it cannot read. A single unreadable row - a policy kind added by
  * a newer indexer release, say - must not blank a Safe's policies.
+ *
+ * `PolicyIndexerApi` parses the same shape to slice and cache a response per
+ * Safe, so it is defined once, here.
  */
-export const PolicyIndexerResponseSchema = z.object({
+export const PolicyIndexerRowsSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
 });
 
-export type PolicyIndexerResponse = z.infer<typeof PolicyIndexerResponseSchema>;
+export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
 
 /**
  * The validated read: current policy state for the requested Safes.

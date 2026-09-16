@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -23,25 +22,16 @@ import {
   toPolicyIndexerVariables,
 } from '@/modules/policies/datasources/policy-indexer.query';
 import {
-  type PoliciesState,
-  PoliciesStateSchema,
+  PolicyIndexerResponseSchema,
   ROW_FIELDS,
   RowLocationSchema,
-} from '@/modules/policies/datasources/policy-state.schema';
+} from '@/modules/policies/datasources/policy-indexer-response.schema';
+import {
+  type PolicyIndexerRows,
+  PolicyIndexerRowsSchema,
+} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
-
-/**
- * A GraphQL response envelope. Transport-level, so it is parsed here rather than
- * modelled as a domain entity: `data` stays opaque for the repository to parse.
- */
-const GraphQlResponseSchema = z.object({
-  data: PoliciesStateSchema.optional(),
-  errors: z
-    .array(z.object({ message: z.string().optional() }))
-    .nonempty()
-    .optional(),
-});
 
 /**
  * Reads current policy state from the Policy Indexer.
@@ -93,8 +83,8 @@ export class PolicyIndexerApi {
 
     if (misses.length === 0) {
       return rawify(
-        this.mergePoliciesStates(
-          cacheHits.filter((hit): hit is PoliciesState => hit !== null),
+        this.mergePolicyIndexerRowss(
+          cacheHits.filter((hit): hit is PolicyIndexerRows => hit !== null),
         ),
       );
     }
@@ -107,13 +97,13 @@ export class PolicyIndexerApi {
           return hit;
         }
 
-        const policiesState = this.filterPoliciesStateBySafe(fetched, safe);
+        const policiesState = this.filterPolicyIndexerRowsBySafe(fetched, safe);
         await this.cache(safe, policiesState);
         return policiesState;
       }),
     );
 
-    return rawify(this.mergePoliciesStates(policiesStates));
+    return rawify(this.mergePolicyIndexerRowss(policiesStates));
   }
 
   /**
@@ -135,7 +125,9 @@ export class PolicyIndexerApi {
   /**
    * One request for every Safe that missed the cache.
    */
-  private async fetch(safes: ReadonlyArray<SafeRef>): Promise<PoliciesState> {
+  private async fetch(
+    safes: ReadonlyArray<SafeRef>,
+  ): Promise<PolicyIndexerRows> {
     try {
       const { data } = await this.networkService.post<unknown>({
         url: `${this.baseUri}/v1/graphql`,
@@ -162,8 +154,8 @@ export class PolicyIndexerApi {
    * upstream fault, so the caller gets the funnel's generic error while the
    * detail that identifies the fault stays in the logs.
    */
-  private queried(body: unknown): PoliciesState {
-    const response = GraphQlResponseSchema.parse(body);
+  private queried(body: unknown): PolicyIndexerRows {
+    const response = PolicyIndexerResponseSchema.parse(body);
 
     if (response.errors) {
       this.loggingService.error({
@@ -182,14 +174,14 @@ export class PolicyIndexerApi {
     return response.data;
   }
 
-  private async cachedSlice(safe: SafeRef): Promise<PoliciesState | null> {
+  private async cachedSlice(safe: SafeRef): Promise<PolicyIndexerRows | null> {
     const cached = await this.cacheService.hGet(this.cacheDir(safe));
 
     if (!cached) {
       return null;
     }
 
-    const parsed = PoliciesStateSchema.safeParse(this.parseJson(cached));
+    const parsed = PolicyIndexerRowsSchema.safeParse(this.parseJson(cached));
 
     if (!parsed.success) {
       // A shape written by an older release. Treat it as a miss rather than
@@ -205,7 +197,7 @@ export class PolicyIndexerApi {
     return parsed.data;
   }
 
-  private async cache(safe: SafeRef, slice: PoliciesState): Promise<void> {
+  private async cache(safe: SafeRef, slice: PolicyIndexerRows): Promise<void> {
     await this.cacheService.hSet(
       this.cacheDir(safe),
       JSON.stringify(slice),
@@ -235,10 +227,10 @@ export class PolicyIndexerApi {
    *
    * `_meta` is deduplicated by chain, since every slice of a chain carries it.
    */
-  private mergePoliciesStates(
-    slices: ReadonlyArray<PoliciesState>,
-  ): PoliciesState {
-    const merged: PoliciesState = {
+  private mergePolicyIndexerRowss(
+    slices: ReadonlyArray<PolicyIndexerRows>,
+  ): PolicyIndexerRows {
+    const merged: PolicyIndexerRows = {
       _meta: [],
       SafeAllowance: [],
       SafeDelegate: [],
@@ -264,10 +256,10 @@ export class PolicyIndexerApi {
   /**
    * The row(s) of {@link response} belonging to {@link safe}.
    */
-  private filterPoliciesStateBySafe(
-    response: PoliciesState,
+  private filterPolicyIndexerRowsBySafe(
+    response: PolicyIndexerRows,
     safe: SafeRef,
-  ): PoliciesState {
+  ): PolicyIndexerRows {
     const belongsToChain = (row: unknown): boolean => {
       const location = RowLocationSchema.safeParse(row);
       return location.success && String(location.data.chainId) === safe.chainId;
@@ -281,7 +273,7 @@ export class PolicyIndexerApi {
       );
     };
 
-    const slice: PoliciesState = {
+    const slice: PolicyIndexerRows = {
       _meta: response._meta.filter(belongsToChain),
       SafeAllowance: [],
       SafeDelegate: [],
