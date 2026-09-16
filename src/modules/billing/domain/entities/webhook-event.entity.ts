@@ -16,13 +16,23 @@ export const WALLET_WEB_CUSTOMER_GROUP = 'wallet_web';
  */
 const SUBSCRIPTION_EVENT_TYPE_PREFIX = 'customer.subscription.';
 
+/**
+ * Sometimes the only event a new subscription produces: upstream drops
+ * `customer.subscription.created` while the customer is not resolvable yet.
+ */
+const CHECKOUT_SESSION_COMPLETED = 'checkout.session.completed';
+
 export const WebhookPaymentLinkEventTypes = [
   'payment_link.created',
   'payment_link.updated',
 ] as const;
 
-export function isSubscriptionEventType(type: string): boolean {
-  return type.startsWith(SUBSCRIPTION_EVENT_TYPE_PREFIX);
+/** Whether the event is reason to re-read the workspace's subscriptions. */
+export function triggersSubscriptionSync(type: string): boolean {
+  return (
+    type.startsWith(SUBSCRIPTION_EVENT_TYPE_PREFIX) ||
+    type === CHECKOUT_SESSION_COMPLETED
+  );
 }
 
 export function isPaymentLinkEventType(type: string): boolean {
