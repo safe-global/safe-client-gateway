@@ -7,11 +7,11 @@ import {
 } from '@/datasources/cache/cache.service.interface';
 import { isForeignKeyViolationError } from '@/datasources/errors/helpers/is-foreign-key-violation-error.helper';
 import { fromSecondsTimestamp } from '@/domain/common/utils/time';
-import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
 import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
 import {
   isPaymentLinkEventType,
   isSubscriptionEventType,
@@ -61,8 +61,8 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 @Injectable()
 export class SubscriptionSyncService implements ISubscriptionSyncService {
   public constructor(
-    @Inject(IBillingApi)
-    private readonly billingApi: IBillingApi,
+    @Inject(IBillingRepository)
+    private readonly billingRepository: IBillingRepository,
     @Inject(EntitlementsService)
     private readonly entitlementsService: EntitlementsService,
     @Inject(ISpacesRepository)
@@ -252,7 +252,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     );
     await this.clearSubscriptionsCache(args.upstreamCustomerId);
     const subscriptions = mapUpstreamSubscriptions({
-      subscriptions: await this.billingApi.getSubscriptionsByCustomerId({
+      subscriptions: await this.billingRepository.getSubscriptionsByCustomerId({
         upstreamCustomerId: args.upstreamCustomerId,
         status: 'all',
       }),
@@ -265,12 +265,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
   private async clearSubscriptionsCache(
     upstreamCustomerId: string,
   ): Promise<void> {
-    await this.cacheService.deleteByKey(
-      CacheRouter.getBillingSubscriptionsCacheDir({
-        upstreamCustomerId,
-        status: 'all',
-      }).key,
-    );
+    await this.billingRepository.clearSubscriptions({ upstreamCustomerId });
   }
 
   /**

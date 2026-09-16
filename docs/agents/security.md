@@ -23,7 +23,7 @@ A pipe failure throws `ZodErrorWithCode`, not a generic `BadRequestException` â€
 
 **Why:** an unvalidated value spliced into an upstream request path is a path-traversal vector into the internal services CGW proxies to.
 
-**Canonical example:** `src/datasources/network/fetch.network.service.ts`'s private `buildUrl` constructs a `URL` object from the base and appends each parameter with `urlObject.searchParams.append(key, String(value))`; every `get`/`post`/`postForm`/`delete` method routes through it, so no call site hand-builds a query string.
+**Canonical example:** `src/datasources/network/fetch.network.service.ts`'s private `buildUrl` constructs a `URL` object from the base and appends each parameter with `urlObject.searchParams.append(key, String(value))`; every `get`/`post`/`patch`/`postForm`/`delete` method routes through it, so no call site hand-builds a query string.
 
 This applies whether the datasource is module-owned (`src/modules/*/datasources/`) or still central (`src/datasources/*-api/`) â€” the trust boundary is the value's provenance, not which tree the client happens to live in.
 

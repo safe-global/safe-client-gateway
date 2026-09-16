@@ -51,23 +51,24 @@ export class FetchNetworkService implements INetworkService {
       throw error;
     }
   }
-  private async postWithBody<T>(args: {
+  private async sendWithBody<T>(args: {
+    method: 'POST' | 'PATCH';
     url: string;
     body?: string;
     contentType: string;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    const { url, body, contentType, networkRequest } = args;
+    const { method, url, body, contentType, networkRequest } = args;
     const requestUrl = this.buildUrl(url, networkRequest?.params);
 
-    this.logRequest(requestUrl, 'POST');
+    this.logRequest(requestUrl, method);
     const startTimeMs = performance.now();
 
     try {
       return await this.client<T>(
         requestUrl,
         {
-          method: 'POST',
+          method,
           body,
           headers: this.mergeHeaders(networkRequest?.headers, {
             'Content-Type': contentType,
@@ -88,7 +89,22 @@ export class FetchNetworkService implements INetworkService {
     data?: object;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    return this.postWithBody<T>({
+    return this.sendWithBody<T>({
+      method: 'POST',
+      url: args.url,
+      body: JSON.stringify(args.data),
+      contentType: 'application/json',
+      networkRequest: args.networkRequest,
+    });
+  }
+
+  patch<T>(args: {
+    url: string;
+    data?: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    return this.sendWithBody<T>({
+      method: 'PATCH',
       url: args.url,
       body: JSON.stringify(args.data),
       contentType: 'application/json',
@@ -101,7 +117,8 @@ export class FetchNetworkService implements INetworkService {
     data: Record<string, string>;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    return this.postWithBody<T>({
+    return this.sendWithBody<T>({
+      method: 'POST',
       url: args.url,
       body: new URLSearchParams(args.data).toString(),
       contentType: 'application/x-www-form-urlencoded',
