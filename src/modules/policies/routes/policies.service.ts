@@ -5,7 +5,6 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
@@ -14,17 +13,17 @@ import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import { policyStateForSafe } from '@/modules/policies/domain/utils/policy-state.utils';
 import { POLICY_ASSEMBLERS } from '@/modules/policies/policies.constants';
-import type { SafeId } from '@/modules/policies/routes/entities/safe-id.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
 
 type SpacePolicyRequest = {
   spaceId: Space['id'];
   /** Narrows the read to a subset of the Space's Safes. */
-  safes?: ReadonlyArray<SafeId>;
+  safes?: ReadonlyArray<Caip10Address>;
   authPayload: AuthPayload;
 };
 
@@ -48,25 +47,17 @@ export class PoliciesService {
 
   /**
    * The policies in effect on every Safe of the Space, in one request.
-   *
-   * The Space names the set, so nothing has to be passed in: the caller's
-   * membership is checked against this Space, and the Space's Safes *are* the
-   * query. `safes` narrows that set - it can only ever be a subset, so this
-   * never becomes a cross-Safe read of Safes the caller has no claim on.
+   * `safes` narrows that set of Safes from the Space - it can only ever be a subset.
    */
   public async getSpaceActivePolicies(
     request: SpacePolicyRequest,
-  ): Promise<Page<SpaceActivePolicy>> {
+  ): Promise<Array<SpaceActivePolicy>> {
     const spaceSafes = await this.spaceSafes(request);
     const resolved = await this.resolveActivePolicies(spaceSafes);
-    const results = resolved.flatMap(({ safe, policies }) =>
+
+    return resolved.flatMap(({ safe, policies }) =>
       policies.map((policy) => ({ ...policy, safe })),
     );
-
-    // Unpaginated for now: a Space holds at most a handful of Safes, so the
-    // whole set fits one response. The envelope is the paginated one so adding
-    // a cursor later is not a breaking change.
-    return { count: results.length, next: null, previous: null, results };
   }
 
   /**
