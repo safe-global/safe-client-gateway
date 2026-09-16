@@ -4,7 +4,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
@@ -89,7 +89,7 @@ export class PoliciesService {
       const match = all.find(
         (safe) =>
           safe.chainId === requested.chainId &&
-          safe.address.toLowerCase() === requested.address.toLowerCase(),
+          isAddressEqual(safe.address, requested.address),
       );
 
       if (!match) {
