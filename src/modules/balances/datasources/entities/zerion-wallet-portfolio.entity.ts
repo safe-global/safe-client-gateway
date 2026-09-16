@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Schema for the Zerion wallet portfolio endpoint response.
  * Reference: https://api.zerion.io/v1/wallets/{address}/portfolio
