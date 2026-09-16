@@ -21,13 +21,13 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { GetSpaceActivePoliciesPage } from '@/modules/policies/routes/entities/policy.dto.entity';
-import {
-  type SafeIds,
-  SafeIdsSchema,
-} from '@/modules/policies/routes/entities/safe-id.entity';
+import { SpaceActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import {
+  type Caip10Addresses,
+  Caip10AddressesSchema,
+} from '@/validation/entities/schemas/caip-10-addresses.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 /**
@@ -50,9 +50,9 @@ export class SpacePoliciesController {
   ) {}
 
   @ApiOperation({
-    summary: 'Get the policies in effect across a Space',
+    summary: 'Get the active policies on Safes in a Space',
     description:
-      'Returns the policies of every Safe in the Space, each item carrying the Safe it applies to so nothing merges across chains. All of them load or the request fails - a partial list would report a Safe as unrestricted when its state is merely unknown.',
+      'Returns the policies of every Safe in the Space. All of them load or the request fails.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -67,10 +67,10 @@ export class SpacePoliciesController {
       "Narrow the read to a subset of the Space's Safes, comma-separated as `{chainId}:{safeAddress}`",
     example: '11155111:0x0000000000000000000000000000000000000000',
   })
-  @ApiOkResponse({ type: GetSpaceActivePoliciesPage })
+  @ApiOkResponse({ type: SpaceActivePolicyDto, isArray: true })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
-    description: 'Invalid Safe identifier, or a Safe outside this space',
+    description: 'Invalid CAIP-10 address, or a Safe outside this space',
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
@@ -80,9 +80,9 @@ export class SpacePoliciesController {
   public async getActivePolicies(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
-    @Query('safes', new ValidationPipe(SafeIdsSchema.optional()))
-    safes?: SafeIds,
-  ): Promise<GetSpaceActivePoliciesPage> {
+    @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
+    safes?: Caip10Addresses,
+  ): Promise<Array<SpaceActivePolicyDto>> {
     return await this.policiesService.getSpaceActivePolicies({
       spaceId,
       safes,

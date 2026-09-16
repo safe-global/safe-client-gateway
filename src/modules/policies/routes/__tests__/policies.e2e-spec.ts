@@ -260,12 +260,10 @@ describe('Policies routes (e2e)', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
-      const page = body as {
-        count: number;
-        results: Array<{ safe: { chainId: string; address: string } }>;
-      };
-      expect(page.count).toBe(2);
-      expect(page.results.map((item) => item.safe)).toStrictEqual([
+      const policies = body as Array<{
+        safe: { chainId: string; address: string };
+      }>;
+      expect(policies.map((item) => item.safe)).toStrictEqual([
         { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
         { chainId: POLYGON_CHAIN_ID, address: polygonSafeAddress },
       ]);
@@ -293,7 +291,7 @@ describe('Policies routes (e2e)', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
-      expect(body).toMatchObject({ count: 1 });
+      expect(body).toHaveLength(1);
     });
 
     it('should reject a safe outside the space', async () => {
@@ -322,7 +320,7 @@ describe('Policies routes (e2e)', () => {
         .get(`/v1/spaces/${spaceId}/policies/active`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
-        .expect({ count: 0, next: null, previous: null, results: [] });
+        .expect([]);
     });
 
     it('should return the spending limit of a safe in the space', async () => {
@@ -343,39 +341,34 @@ describe('Policies routes (e2e)', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
-      expect(body).toStrictEqual({
-        count: 1,
-        next: null,
-        previous: null,
-        results: [
-          {
-            type: PolicyType.SpendingLimit,
-            enforcement: { via: 'module', moduleAddress: allowanceModule },
-            enabled: true,
-            safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
-            data: {
-              module: allowanceModule,
-              spenders: [
-                {
-                  spender: getAddress(allowance.delegate),
-                  isActive: true,
-                  allowances: [
-                    {
-                      token_address: getAddress(allowance.token),
-                      amount: '1000',
-                      spent: '250',
-                      resetPeriodSeconds: 86_400,
-                      resetsAt: (29_793_086 + 1440) * 60,
-                      resetBoundaryIsExact: true,
-                      isDelegateActive: true,
-                    },
-                  ],
-                },
-              ],
-            },
+      expect(body).toStrictEqual([
+        {
+          type: PolicyType.SpendingLimit,
+          enforcement: { via: 'module', moduleAddress: allowanceModule },
+          enabled: true,
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          data: {
+            module: allowanceModule,
+            spenders: [
+              {
+                spender: getAddress(allowance.delegate),
+                isActive: true,
+                allowances: [
+                  {
+                    token_address: getAddress(allowance.token),
+                    amount: '1000',
+                    spent: '250',
+                    resetPeriodSeconds: 86_400,
+                    resetsAt: (29_793_086 + 1440) * 60,
+                    resetBoundaryIsExact: true,
+                    isDelegateActive: true,
+                  },
+                ],
+              },
+            ],
           },
-        ],
-      });
+        },
+      ]);
     });
 
     it('should report a limit as unenforced when the module is not enabled', async () => {
@@ -396,7 +389,7 @@ describe('Policies routes (e2e)', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
-      expect(body).toMatchObject({ results: [{ enabled: false }] });
+      expect(body).toMatchObject([{ enabled: false }]);
     });
 
     it('should return an empty page for a safe with no policies', async () => {
@@ -418,7 +411,7 @@ describe('Policies routes (e2e)', () => {
         .get(`/v1/spaces/${spaceId}/policies/active`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
-        .expect({ count: 0, next: null, previous: null, results: [] });
+        .expect([]);
     });
 
     it('should fail when the indexer is unavailable', async () => {
