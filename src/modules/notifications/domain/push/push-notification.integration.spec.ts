@@ -793,7 +793,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
@@ -857,7 +857,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(messageBuilder().build()),
@@ -924,7 +924,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
@@ -994,7 +994,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
@@ -1075,7 +1075,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
@@ -1158,7 +1158,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
@@ -1249,7 +1249,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
@@ -1525,7 +1525,7 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}`
+          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
         ) {
           return Promise.resolve({
             data: rawify(message),
