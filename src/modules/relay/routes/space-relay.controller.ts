@@ -25,14 +25,7 @@ import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.en
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
-import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
-import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
-import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
-import { RelayerNotAvailableExceptionFilter } from '@/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
-import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
-import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
-import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
-import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-signer-factory.exception-filter';
+import { RelayCalldataExceptionFilters } from '@/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import {
   SpaceRelayDto,
@@ -95,17 +88,8 @@ export class SpaceRelayController {
   })
   @Post()
   @UseGuards(AuthGuard)
-  @UseFilters(
-    QuotaExceededExceptionFilter,
-    RelayDeniedExceptionFilter,
-    RelayerNotAvailableExceptionFilter,
-    InvalidMultiSendExceptionFilter,
-    InvalidTransferExceptionFilter,
-    UnofficialMasterCopyExceptionFilter,
-    UnofficialMultiSendExceptionFilter,
-    UnofficialProxyFactoryExceptionFilter,
-    UnofficialSignerFactoryExceptionFilter,
-  )
+  @RelayCalldataExceptionFilters()
+  @UseFilters(QuotaExceededExceptionFilter)
   public async relay(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
