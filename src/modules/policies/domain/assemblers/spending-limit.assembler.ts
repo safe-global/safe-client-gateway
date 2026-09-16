@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
+import { Injectable } from "@nestjs/common";
+import { type Address, isAddressEqual } from "viem";
 import type {
   PolicyAssembler,
   PolicyAssemblerContext,
-} from '@/modules/policies/domain/assemblers/policy-assembler.interface';
+} from "@/modules/policies/domain/assemblers/policy-assembler.interface";
 import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+} from "@/modules/policies/domain/entities/active-policy.entity";
+import type { PolicyIndexerSafeAllowance } from "@/modules/policies/domain/entities/indexer/policy-indexer-state.entity";
 import {
   PolicyEnforcementKind,
   PolicyType,
-} from '@/modules/policies/domain/entities/policy-type.entity';
+} from "@/modules/policies/domain/entities/policy-type.entity";
 
 const SECONDS_IN_MINUTE = 60;
 
@@ -25,18 +25,14 @@ const SECONDS_IN_MINUTE = 60;
  * One policy per `(safe, module deployment)`, with every spender and every token
  * nested inside it - which is what the create flow produces in one run, and what
  * the Policies page renders as one row.
- *
- * `SafeDelegate` is not read here: a delegate with no allowance is not a
- * spending limit, and the repository has already folded each registration onto
- * the allowance it belongs to.
  */
 @Injectable()
 export class SpendingLimitAssembler implements PolicyAssembler {
   private readonly type = PolicyType.SpendingLimit;
 
   public assemble(context: PolicyAssemblerContext): Array<ActivePolicy> {
-    const spendable = context.state.allowances.filter(isConfigured);
-    const perModule = groupBy(spendable, (allowance) => allowance.module);
+    const spendable = context.state.allowances.filter(this.isConfigured);
+    const perModule = this.groupBy(spendable, (allowance) => allowance.module);
 
     return [...perModule.entries()].map(([module, allowances]) => ({
       type: this.type,
@@ -46,8 +42,8 @@ export class SpendingLimitAssembler implements PolicyAssembler {
       },
       // Configured on the module, but only enforced while the Safe has it
       // enabled - a limit on a disabled module is not a limit.
-      enabled: context.enabledModules.some(
-        (enabled) => enabled.toLowerCase() === module.toLowerCase(),
+      enabled: context.enabledModules.some((enabled) =>
+        isAddressEqual(enabled, module),
       ),
       data: this.toData({ module, allowances }),
     }));
@@ -57,7 +53,7 @@ export class SpendingLimitAssembler implements PolicyAssembler {
     module: Address;
     allowances: Array<PolicyIndexerSafeAllowance>;
   }): SpendingLimitPolicyData {
-    const perSpender = groupBy(
+    const perSpender = this.groupBy(
       args.allowances,
       (allowance) => allowance.delegate,
     );
@@ -89,35 +85,35 @@ export class SpendingLimitAssembler implements PolicyAssembler {
         ? (allowance.lastResetMin + allowance.resetTimeMinutes) *
           SECONDS_IN_MINUTE
         : null,
-      resetBoundaryIsExact: allowance.resetPhase === 'EXACT',
+      resetBoundaryIsExact: allowance.resetPhase === "EXACT",
       isDelegateActive: allowance.isDelegateActive,
     };
   }
-}
 
-/**
- * `resetAllowance` and `deleteAllowance` have no registered-delegate check, so
- * an all-zero row can exist for a pair that was never configured.
- */
-function isConfigured(allowance: PolicyIndexerSafeAllowance): boolean {
-  return BigInt(allowance.amount) > 0n;
-}
-
-/**
- * Groups by a checksummed address key, preserving first-seen order so the
- * indexer's ordering survives into the response.
- */
-function groupBy<T>(
-  items: ReadonlyArray<T>,
-  key: (item: T) => Address,
-): Map<Address, Array<T>> {
-  const grouped = new Map<Address, Array<T>>();
-
-  for (const item of items) {
-    const group = grouped.get(key(item)) ?? [];
-    group.push(item);
-    grouped.set(key(item), group);
+  /**
+   * `resetAllowance` and `deleteAllowance` have no registered-delegate check, so
+   * an all-zero row can exist for a pair that was never configured.
+   */
+  private isConfigured(allowance: PolicyIndexerSafeAllowance): boolean {
+    return BigInt(allowance.amount) > 0n;
   }
 
-  return grouped;
+  /**
+   * Groups by a checksummed address key, preserving first-seen order so the
+   * indexer's ordering survives into the response.
+   */
+  private groupBy<T>(
+    items: ReadonlyArray<T>,
+    key: (item: T) => Address,
+  ): Map<Address, Array<T>> {
+    const grouped = new Map<Address, Array<T>>();
+
+    for (const item of items) {
+      const group = grouped.get(key(item)) ?? [];
+      group.push(item);
+      grouped.set(key(item), group);
+    }
+
+    return grouped;
+  }
 }
