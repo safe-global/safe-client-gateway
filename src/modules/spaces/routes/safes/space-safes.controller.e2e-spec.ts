@@ -574,7 +574,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: `Value must be less than or equal to ${CHAIN_ID_MAXLENGTH}`,
+          message: `Value must be at most ${CHAIN_ID_MAXLENGTH} characters long`,
           path: ['safes', 0, 'chainId'],
         });
     });
@@ -1329,7 +1329,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: `Value must be less than or equal to ${CHAIN_ID_MAXLENGTH}`,
+          message: `Value must be at most ${CHAIN_ID_MAXLENGTH} characters long`,
           path: ['safes', 0, 'chainId'],
         });
     });
