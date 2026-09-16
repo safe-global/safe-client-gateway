@@ -6,7 +6,6 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
-import { getAddress } from 'viem';
 import { TestDbFactory } from '@/__tests__/db.factory';
 import {
   initTestApplication,
@@ -14,11 +13,15 @@ import {
 } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
+import {
+  addSafes as addSafesFixture,
+  createSpaceForSigner as createSpaceForSignerFixture,
+  safePayload,
+} from '@/__tests__/util/space-fixtures';
 import configuration from '@/config/entities/__tests__/configuration';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
@@ -168,42 +171,6 @@ describe('EntitlementsController', () => {
       faker.number.int({ min: 69420, max: DB_MAX_SAFE_INTEGER }),
     );
 
-  // Registers a fresh user and creates a space they administer.
-  async function createSpaceForSigner(): Promise<{
-    accessToken: string;
-    spaceId: string;
-  }> {
-    const walletResponse = await request(app.getHttpServer())
-      .post('/v1/users/wallet')
-      .set('Cookie', [
-        `access_token=${jwtService.sign(siweAuthPayloadDtoBuilder().build())}`,
-      ])
-      .expect(201);
-    const accessToken = accessTokenForUserId(walletResponse.body.id);
-    const createSpaceResponse = await request(app.getHttpServer())
-      .post('/v1/spaces')
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({ name: nameBuilder() })
-      .expect(201);
-    return { accessToken, spaceId: createSpaceResponse.body.uuid };
-  }
-
-  async function addSafe(
-    spaceId: string,
-    accessToken: string,
-  ): Promise<{ chainId: string; address: `0x${string}` }> {
-    const safe = {
-      chainId: '1',
-      address: getAddress(faker.finance.ethereumAddress()),
-    };
-    await request(app.getHttpServer())
-      .post(`/v1/spaces/${spaceId}/safes`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({ safes: [safe] })
-      .expect(201);
-    return safe;
-  }
-
   it('should require authentication for every endpoint', () => {
     const endpoints = [EntitlementsController.prototype.getEntitlements];
     for (const fn of endpoints) {
@@ -213,7 +180,11 @@ describe('EntitlementsController', () => {
 
   describe('GET /v1/spaces/:spaceId/entitlements', () => {
     it('returns 400 for a malformed spaceId', async () => {
-      const { accessToken } = await createSpaceForSigner();
+      const { accessToken } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
 
       await request(app.getHttpServer())
         .get('/v1/spaces/not-a-uuid/entitlements')
@@ -222,7 +193,11 @@ describe('EntitlementsController', () => {
     });
 
     it('returns 403 without an access token', async () => {
-      const { spaceId } = await createSpaceForSigner();
+      const { spaceUuid: spaceId } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/entitlements`)
@@ -230,7 +205,11 @@ describe('EntitlementsController', () => {
     });
 
     it('returns 403 for a non-member', async () => {
-      const { spaceId } = await createSpaceForSigner();
+      const { spaceUuid: spaceId } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/entitlements`)
@@ -239,7 +218,12 @@ describe('EntitlementsController', () => {
     });
 
     it('returns the Free-tier entitlements for a member', async () => {
-      const { accessToken, spaceId } = await createSpaceForSigner();
+      const { accessToken, spaceUuid: spaceId } =
+        await createSpaceForSignerFixture({
+          app,
+          jwtService,
+          postgresDatabaseService,
+        });
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/entitlements`)
@@ -262,10 +246,20 @@ describe('EntitlementsController', () => {
     });
 
     it('counts the workspace Safes as seat usage', async () => {
-      const { accessToken, spaceId } = await createSpaceForSigner();
-      await addSafe(spaceId, accessToken);
-      await addSafe(spaceId, accessToken);
-      await addSafe(spaceId, accessToken);
+      const { accessToken, spaceUuid: spaceId } =
+        await createSpaceForSignerFixture({
+          app,
+          jwtService,
+          postgresDatabaseService,
+        });
+      for (const safe of safePayload(3)) {
+        await addSafesFixture({
+          app,
+          spaceUuid: spaceId,
+          accessToken,
+          safes: [safe],
+        }).then((response) => expect(response.status).toBe(201));
+      }
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/entitlements`)

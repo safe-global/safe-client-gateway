@@ -6,26 +6,26 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import type postgres from 'postgres';
-import request from 'supertest';
-import { getAddress } from 'viem';
 import { TestDbFactory } from '@/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
 } from '@/__tests__/test-app.provider';
 import { createTestModule } from '@/__tests__/testing-module';
+import {
+  addSafes as addSafesFixture,
+  createSpaceForSigner as createSpaceForSignerFixture,
+  grantEntitlement,
+  safePayload,
+} from '@/__tests__/util/space-fixtures';
 import configuration from '@/config/entities/__tests__/configuration';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { materializedSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
 import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
 /**
@@ -107,89 +107,25 @@ describe('Safe seat enforcement', () => {
     await testDbFactory.destroyTestDatabase(testDatabase);
   });
 
-  /** Registers a user and the space they administer, as a client would. */
-  async function createSpaceForSigner(): Promise<{
-    accessToken: string;
-    spaceUuid: string;
-    spaceId: number;
-  }> {
-    const walletResponse = await request(app.getHttpServer())
-      .post('/v1/users/wallet')
-      .set('Cookie', [
-        `access_token=${jwtService.sign(siweAuthPayloadDtoBuilder().build())}`,
-      ])
-      .expect(201);
-    const accessToken = jwtService.sign(
-      siweAuthPayloadDtoBuilder()
-        .with('sub', String(walletResponse.body.id))
-        .build(),
-    );
-    const spaceResponse = await request(app.getHttpServer())
-      .post('/v1/spaces')
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({ name: nameBuilder() })
-      .expect(201);
-
-    const spaceRepository = await postgresDatabaseService.getRepository(Space);
-    const space = await spaceRepository.findOneOrFail({
-      where: { uuid: spaceResponse.body.uuid },
-      select: { id: true },
-    });
-
-    return {
-      accessToken,
-      spaceUuid: spaceResponse.body.uuid,
-      spaceId: space.id,
-    };
-  }
-
-  /** A plan granting `quota` Safe seats, materialized as a webhook would. */
-  async function grantSeats(spaceId: number, quota: number): Promise<void> {
-    await entitlementsService.materializeFromEvent({
-      spaceId,
-      subscription: materializedSubscriptionBuilder()
-        .with('status', 'active')
-        .with('entitlements', [
-          { featureKey: 'safe_seats', enabled: true, quota, value: null },
-        ])
-        .build(),
-      eventAt: new Date(),
-    });
-  }
-
-  function safePayload(count: number): Array<{
-    chainId: string;
-    address: `0x${string}`;
-  }> {
-    return faker.helpers.multiple(
-      () => ({
-        chainId: '1',
-        address: getAddress(faker.finance.ethereumAddress()),
-      }),
-      { count },
-    );
-  }
-
-  async function addSafes(
-    spaceUuid: string,
-    accessToken: string,
-    count: number,
-  ): Promise<request.Response> {
-    return await request(app.getHttpServer())
-      .post(`/v1/spaces/${spaceUuid}/safes`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({ safes: safePayload(count) });
-  }
-
   async function countSafes(spaceId: number): Promise<number> {
     const repository = await postgresDatabaseService.getRepository(SpaceSafe);
     return await repository.count({ where: { space: { id: spaceId } } });
   }
 
   it('rejects the first Safe when the plan grants no seats', async () => {
-    const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
+    const { accessToken, spaceUuid, spaceId } =
+      await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
 
-    const response = await addSafes(spaceUuid, accessToken, 1);
+    const response = await addSafesFixture({
+      app,
+      spaceUuid,
+      accessToken,
+      safes: safePayload(1),
+    });
 
     expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
     expect(response.body).toMatchObject({
@@ -202,17 +138,32 @@ describe('Safe seat enforcement', () => {
   });
 
   it('admits Safes up to the purchased quota and rejects the next one', async () => {
-    const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
-    await grantSeats(spaceId, 2);
-
-    await expect(addSafes(spaceUuid, accessToken, 1)).resolves.toMatchObject({
-      status: HttpStatus.CREATED,
+    const { accessToken, spaceUuid, spaceId } =
+      await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+    await grantEntitlement({
+      entitlementsService,
+      spaceId,
+      featureKey: 'safe_seats',
+      quota: 2,
     });
-    await expect(addSafes(spaceUuid, accessToken, 1)).resolves.toMatchObject({
-      status: HttpStatus.CREATED,
-    });
 
-    const rejected = await addSafes(spaceUuid, accessToken, 1);
+    await expect(
+      addSafesFixture({ app, spaceUuid, accessToken, safes: safePayload(1) }),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+    await expect(
+      addSafesFixture({ app, spaceUuid, accessToken, safes: safePayload(1) }),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+
+    const rejected = await addSafesFixture({
+      app,
+      spaceUuid,
+      accessToken,
+      safes: safePayload(1),
+    });
 
     expect(rejected.status).toBe(HttpStatus.PAYMENT_REQUIRED);
     expect(rejected.body).toMatchObject({ quota: 2, used: 2 });
@@ -220,12 +171,27 @@ describe('Safe seat enforcement', () => {
   });
 
   it('rejects a batch that would overshoot the quota, writing nothing', async () => {
-    const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
-    await grantSeats(spaceId, 2);
+    const { accessToken, spaceUuid, spaceId } =
+      await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+    await grantEntitlement({
+      entitlementsService,
+      spaceId,
+      featureKey: 'safe_seats',
+      quota: 2,
+    });
 
     // The guard admits this (nothing used yet); the check inside the write is
     // what sees the batch size.
-    const response = await addSafes(spaceUuid, accessToken, 3);
+    const response = await addSafesFixture({
+      app,
+      spaceUuid,
+      accessToken,
+      safes: safePayload(3),
+    });
 
     expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
     expect(response.body).toMatchObject({ quota: 2, used: 0 });
