@@ -1414,8 +1414,8 @@ describe('EntitlementsService', () => {
     });
   });
 
-  // The pair the relay path uses, in that order.
-  describe('recordUsage / assertWithinQuota', () => {
+  // What the relay path uses: one reserves and admits, the other gives back.
+  describe('consumeQuota / refundQuota', () => {
     async function sponsoredPlan(args: {
       spaceId: number;
       quota: number | null;
@@ -1448,23 +1448,15 @@ describe('EntitlementsService', () => {
         : undefined;
     }
 
-    function record(spaceId: number, delta: number): Promise<void> {
-      return enforcingService.recordUsage({
+    function consume(spaceId: number, delta: number): Promise<void> {
+      return enforcingService.consumeQuota({
         spaceId,
         featureKey: 'sponsored_transactions',
         delta,
       });
     }
 
-    function admits(spaceId: number, delta: number): Promise<void> {
-      return enforcingService.assertWithinQuota({
-        spaceId,
-        featureKey: 'sponsored_transactions',
-        delta,
-      });
-    }
-
-    it('records what was spent', async () => {
+    it('spends the allowance and records it', async () => {
       const spaceId = await createSpace();
       const delta = faker.number.int({ min: 1, max: 5 });
       await sponsoredPlan({
@@ -1473,7 +1465,7 @@ describe('EntitlementsService', () => {
         periodStart: faker.date.recent(),
       });
 
-      await expect(record(spaceId, delta)).resolves.toBeUndefined();
+      await expect(consume(spaceId, delta)).resolves.toBeUndefined();
 
       await expect(usedOf(spaceId)).resolves.toBe(delta);
     });
@@ -1486,13 +1478,35 @@ describe('EntitlementsService', () => {
         periodStart: faker.date.recent(),
       });
 
-      await record(spaceId, 1);
-      await record(spaceId, 1);
+      await consume(spaceId, 1);
+      await consume(spaceId, 1);
 
       await expect(usedOf(spaceId)).resolves.toBe(2);
     });
 
-    it('admits against what was recorded before', async () => {
+    it('spends nothing when the allowance would be overshot', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota,
+        periodStart: faker.date.recent(),
+      });
+
+      await expect(consume(spaceId, quota + 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'sponsored_transactions',
+          quota,
+          used: 0,
+        },
+      });
+      // Rolled back with the rejection.
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+    });
+
+    it('gives back what was reserved but not used', async () => {
       const spaceId = await createSpace();
       const quota = faker.number.int({ min: 2, max: 5 });
       await sponsoredPlan({
@@ -1500,20 +1514,15 @@ describe('EntitlementsService', () => {
         quota,
         periodStart: faker.date.recent(),
       });
-      await record(spaceId, quota - 1);
+      await consume(spaceId, 1);
 
-      await expect(admits(spaceId, 1)).resolves.toBeUndefined();
-
-      await record(spaceId, 1);
-      await expect(admits(spaceId, 1)).rejects.toMatchObject({
-        status: HttpStatus.PAYMENT_REQUIRED,
-        response: {
-          code: QUOTA_EXCEEDED_ERROR_CODE,
-          feature: 'sponsored_transactions',
-          quota,
-          used: quota,
-        },
+      await enforcingService.refundQuota({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        delta: 1,
       });
+
+      await expect(usedOf(spaceId)).resolves.toBe(0);
     });
 
     it('records usage the plan does not cap', async () => {
@@ -1525,7 +1534,7 @@ describe('EntitlementsService', () => {
         periodStart: faker.date.recent(),
       });
 
-      await record(spaceId, delta);
+      await consume(spaceId, delta);
 
       // Unlimited bills nothing, but the endpoint still reports consumption.
       await expect(usedOf(spaceId)).resolves.toBe(delta);
@@ -1536,7 +1545,7 @@ describe('EntitlementsService', () => {
       const spaceId = await createSpace();
 
       await expect(
-        service.assertWithinQuota({
+        service.consumeQuota({
           spaceId,
           featureKey: 'sponsored_transactions',
           delta: 1,
@@ -1559,7 +1568,7 @@ describe('EntitlementsService', () => {
       // `service`, not `enforcingService`: a paying workspace must not wait
       // for a date that exists for someone else's grandfathering.
       await expect(
-        service.assertWithinQuota({
+        service.consumeQuota({
           spaceId,
           featureKey: 'sponsored_transactions',
           delta,

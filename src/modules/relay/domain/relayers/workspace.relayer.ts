@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
@@ -84,6 +85,7 @@ export class WorkspaceRelayer {
       await this.assertHoldsSafe({ ...args, safe });
     }
 
+    // Refused early; `consumeQuota` below is what decides.
     await this.entitlementEnforcement.assertWithinQuota({
       spaceId: args.spaceId,
       featureKey: SPONSORED_TRANSACTIONS,
@@ -101,33 +103,44 @@ export class WorkspaceRelayer {
       });
     }
 
-    const relay = await this.relayApi.relay({
-      chainId: args.chainId,
-      to: args.to,
-      data: args.data,
-      safeTxHash: args.safeTxHash,
+    await this.entitlementEnforcement.consumeQuota({
+      spaceId: args.spaceId,
+      featureKey: SPONSORED_TRANSACTIONS,
+      delta: RELAYS_PER_CALL,
     });
 
-    // Recorded after the fact, as the daily-limit relayer counts, so nothing
-    // is charged for a submission that never happened. A relay already made
-    // cannot fail because the counter did.
+    try {
+      return await this.relayApi.relay({
+        chainId: args.chainId,
+        to: args.to,
+        data: args.data,
+        safeTxHash: args.safeTxHash,
+      });
+    } catch (error) {
+      // No `taskId` came back, so nothing says it was submitted.
+      if (error instanceof DataSourceError) {
+        await this.refundAllowance(args.spaceId);
+      }
+      throw error;
+    }
+  }
+
+  /** Best effort: the error that sent us here is the one worth surfacing. */
+  private async refundAllowance(spaceId: Space['id']): Promise<void> {
     await this.entitlementEnforcement
-      .recordUsage({
-        spaceId: args.spaceId,
+      .refundQuota({
+        spaceId,
         featureKey: SPONSORED_TRANSACTIONS,
         delta: RELAYS_PER_CALL,
       })
       .catch((error: unknown) => {
-        // Its own type, so an alert can key on it: we paid and did not charge.
         this.loggingService.error({
-          type: LogType.QuotaNotRecorded,
-          spaceId: args.spaceId,
+          type: LogType.QuotaNotRefunded,
+          spaceId,
           feature: SPONSORED_TRANSACTIONS,
           message: asError(error).message,
         });
       });
-
-    return relay;
   }
 
   /**

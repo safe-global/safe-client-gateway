@@ -187,24 +187,65 @@ export class EntitlementsService implements IEntitlementEnforcement {
     return (used: number): void => this.admit({ ...args, grant, used });
   }
 
-  public async recordUsage(args: {
+  public async consumeQuota(args: {
     spaceId: Space['id'];
     featureKey: Exclude<FeatureKey, StockMeteredFeature>;
     delta: number;
   }): Promise<void> {
     const grant = await this.resolveGrant(args);
-    // Unexpected: the signature excludes what is counted elsewhere. Returning
-    // quietly would leave the feature unmetered for as long as it lasts.
-    if (grant.counter === null) {
-      throw new Error(
-        `Feature '${args.featureKey}' has no usage counter to record against`,
+    const counter = this.getCounterOrFail({ ...args, grant });
+
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const total = await this.spaceFeatureUsageRepository.incrementUsage(
+        { spaceId: args.spaceId, period: counter, delta: args.delta },
+        entityManager,
       );
+      // Admitted against what the row now holds; rejecting rolls it back.
+      this.admit({ ...args, grant, used: total - args.delta });
+    });
+  }
+
+  public async refundQuota(args: {
+    spaceId: Space['id'];
+    featureKey: Exclude<FeatureKey, StockMeteredFeature>;
+    delta: number;
+  }): Promise<void> {
+    const { counter } = await this.resolveGrant(args);
+    // Nothing was counted, so there is nothing to give back.
+    if (counter === null) {
+      return;
     }
+
     await this.spaceFeatureUsageRepository.incrementUsage({
       spaceId: args.spaceId,
-      period: grant.counter,
-      delta: args.delta,
+      period: counter,
+      delta: -args.delta,
     });
+  }
+
+  /**
+   * The counter a grant names, or a refusal. No counter means the catalog has
+   * no event-metered row for the key, so the feature cannot be measured at
+   * all: admitting on a usage we cannot read or write would leave it unmetered
+   * for as long as that lasts.
+   */
+  private getCounterOrFail(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    grant: FeatureGrant;
+  }): NonNullable<FeatureGrant['counter']> {
+    if (args.grant.counter === null) {
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no usage counter; space ${args.spaceId} cannot be measured against it`,
+      );
+      throw new QuotaExceededError({
+        feature: args.featureKey,
+        quota: args.grant.quota ?? 0,
+        used: 0,
+        resetsAt: args.grant.resetsAt,
+      });
+    }
+    return args.grant.counter;
   }
 
   /** Pure, so a caller can run it under its own lock. */
@@ -299,20 +340,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
     featureKey: FeatureKey,
     grant: FeatureGrant,
   ): Promise<number> {
-    const counter = grant.counter;
-    // Unmeasurable — a catalog row whose type stopped matching, say. Reporting
-    // zero would admit every call forever, so refuse instead.
-    if (counter === null) {
-      this.loggingService.warn(
-        `Feature '${featureKey}' has no usage counter; space ${spaceId} cannot be admitted against it`,
-      );
-      throw new QuotaExceededError({
-        feature: featureKey,
-        quota: grant.quota ?? 0,
-        used: 0,
-        resetsAt: grant.resetsAt,
-      });
-    }
+    const counter = this.getCounterOrFail({ spaceId, featureKey, grant });
     const usage = await this.spaceFeatureUsageRepository.getUsageByFeatureId({
       spaceId,
       periods: [counter],

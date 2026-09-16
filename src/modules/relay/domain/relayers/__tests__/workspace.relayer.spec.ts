@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { LogType } from '@/domain/common/entities/log-type.entity';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
 import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -40,7 +42,8 @@ const mockRelayApi = vi.mocked({
 const mockEntitlementEnforcement = vi.mocked({
   assertWithinQuota: vi.fn(),
   prepareQuotaCheck: vi.fn(),
-  recordUsage: vi.fn(),
+  consumeQuota: vi.fn(),
+  refundQuota: vi.fn(),
 } as MockedObject<IEntitlementEnforcement>);
 
 const mockLoggingService = vi.mocked({
@@ -110,7 +113,7 @@ describe('WorkspaceRelayer', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     simulationEnabled(false);
-    mockEntitlementEnforcement.recordUsage.mockResolvedValue(undefined);
+    mockEntitlementEnforcement.refundQuota.mockResolvedValue(undefined);
     // Real, over a mocked simulator: the cases below are about what a
     // simulation result does to a relay, which a double would not decide.
     const relaySimulationService = new RelaySimulationService(
@@ -139,7 +142,7 @@ describe('WorkspaceRelayer', () => {
 
     await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
 
-    expect(mockEntitlementEnforcement.recordUsage).toHaveBeenCalledWith({
+    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledWith({
       spaceId: args.spaceId,
       featureKey: 'sponsored_transactions',
       delta: 1,
@@ -154,7 +157,7 @@ describe('WorkspaceRelayer', () => {
 
     await target.relay(args);
 
-    expect(mockEntitlementEnforcement.recordUsage).toHaveBeenCalledTimes(1);
+    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
   });
 
   it('should deny a Safe the workspace does not hold', async () => {
@@ -172,7 +175,7 @@ describe('WorkspaceRelayer', () => {
       chainId: args.chainId,
       address: safe,
     });
-    expect(mockEntitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
@@ -186,7 +189,7 @@ describe('WorkspaceRelayer', () => {
     await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
 
     expect(mockSpaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
-    expect(mockEntitlementEnforcement.recordUsage).toHaveBeenCalledTimes(1);
+    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
   });
 
   it('should not relay once the allowance is spent', async () => {
@@ -204,8 +207,10 @@ describe('WorkspaceRelayer', () => {
 
     await expect(target.relay(args)).rejects.toThrow(quotaExceeded);
 
+    // Refused before the simulation and before anything is spent.
+    expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
-    expect(mockEntitlementEnforcement.recordUsage).not.toHaveBeenCalled();
   });
 
   it('should refuse a chain with no relayer before spending', async () => {
@@ -215,7 +220,7 @@ describe('WorkspaceRelayer', () => {
 
     await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
 
-    expect(mockEntitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
@@ -228,7 +233,7 @@ describe('WorkspaceRelayer', () => {
       RelayerTypeNotImplementedError,
     );
 
-    expect(mockEntitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
   });
 
   it('should simulate the transaction against the Safe itself', async () => {
@@ -269,7 +274,7 @@ describe('WorkspaceRelayer', () => {
     await target.relay(args);
 
     expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
-    expect(mockEntitlementEnforcement.recordUsage).toHaveBeenCalledTimes(1);
+    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
   });
 
   it('should not simulate where the chain has it switched off', async () => {
@@ -297,7 +302,7 @@ describe('WorkspaceRelayer', () => {
       RelaySimulationFailedError,
     );
 
-    expect(mockEntitlementEnforcement.recordUsage).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
@@ -339,34 +344,48 @@ describe('WorkspaceRelayer', () => {
 
     await expect(target.relay(args)).rejects.toThrow(invalid);
 
-    expect(mockEntitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
-  it('should not charge a submission that never happened', async () => {
+  it('should give the allowance back when the relay fails', async () => {
     const args = relayArgs();
     recognises(null);
-    const submissionFailed = new Error(faker.lorem.sentence());
-    mockRelayApi.relay.mockRejectedValue(submissionFailed);
+    // Whatever it answered, no taskId came back.
+    const failed = new DataSourceError(
+      faker.lorem.sentence(),
+      faker.helpers.arrayElement([
+        HttpStatus.BAD_REQUEST,
+        HttpStatus.BAD_GATEWAY,
+        HttpStatus.SERVICE_UNAVAILABLE,
+      ]),
+    );
+    mockRelayApi.relay.mockRejectedValue(failed);
 
-    await expect(target.relay(args)).rejects.toThrow(submissionFailed);
+    await expect(target.relay(args)).rejects.toThrow(failed);
 
-    expect(mockEntitlementEnforcement.recordUsage).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.refundQuota).toHaveBeenCalledWith({
+      spaceId: args.spaceId,
+      featureKey: 'sponsored_transactions',
+      delta: 1,
+    });
   });
 
-  it('should keep a relay that could not be recorded', async () => {
+  it('should keep a relay whose refund could not be written', async () => {
     const args = relayArgs();
-    const taskId = faker.string.uuid();
     recognises(null);
-    mockRelayApi.relay.mockResolvedValue({ taskId });
-    mockEntitlementEnforcement.recordUsage.mockRejectedValue(
+    mockRelayApi.relay.mockRejectedValue(
+      new DataSourceError(faker.lorem.sentence()),
+    );
+    mockEntitlementEnforcement.refundQuota.mockRejectedValue(
       new Error(faker.lorem.sentence()),
     );
 
-    await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
+    await expect(target.relay(args)).rejects.toThrow(DataSourceError);
+
     expect(mockLoggingService.error).toHaveBeenCalledWith(
       expect.objectContaining({
-        type: LogType.QuotaNotRecorded,
+        type: LogType.QuotaNotRefunded,
         spaceId: args.spaceId,
         feature: 'sponsored_transactions',
       }),

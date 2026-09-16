@@ -31,17 +31,24 @@ export interface IEntitlementEnforcement {
   }): Promise<(used: number) => void>;
 
   /**
-   * Records `delta` as spent, after the action it pays for has happened.
+   * Spends `delta` of the workspace's allowance, or rejects it with
+   * {@link QuotaExceededError} having spent nothing. Reserving and admitting
+   * share one transaction, so two callers cannot pass the same count and
+   * overshoot the allowance together.
    *
-   * Deliberately not paired with a check in one transaction: the action is
-   * admitted by {@link assertWithinQuota} beforehand and recorded here
-   * afterwards, so nothing is charged for something that never happened — at
-   * the cost of concurrent callers being admitted against the same count and
-   * together overshooting the quota. A stock-metered feature is excluded by
-   * the type: its usage is a live count its own module owns, with nothing to
-   * record.
+   * The spend is committed before the action it pays for happens, so a caller
+   * that learns the action never happened gives it back with
+   * {@link refundQuota}. A stock-metered feature is excluded by the type: its
+   * usage is a live count its own module owns, with nothing to reserve.
    */
-  recordUsage(args: {
+  consumeQuota(args: {
+    spaceId: Space['id'];
+    featureKey: Exclude<FeatureKey, StockMeteredFeature>;
+    delta: number;
+  }): Promise<void>;
+
+  /** Gives back what {@link consumeQuota} reserved for something that never happened. */
+  refundQuota(args: {
     spaceId: Space['id'];
     featureKey: Exclude<FeatureKey, StockMeteredFeature>;
     delta: number;
