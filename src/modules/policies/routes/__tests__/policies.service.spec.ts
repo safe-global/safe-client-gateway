@@ -104,7 +104,7 @@ describe('PoliciesService', () => {
           ...spaceRequest,
           safes: [{ chainId: SEPOLIA, address: safeAddress }],
         }),
-      ).resolves.toMatchObject({ count: 0 });
+      ).resolves.toStrictEqual([]);
     });
   });
 
@@ -126,8 +126,8 @@ describe('PoliciesService', () => {
 
       const result = await target.getSpaceActivePolicies(spaceRequest);
 
-      expect(result.results).toHaveLength(1);
-      expect(result.results[0]).toMatchObject({
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
         type: PolicyType.SpendingLimit,
         enabled: true,
       });
@@ -144,7 +144,7 @@ describe('PoliciesService', () => {
 
       const result = await target.getSpaceActivePolicies(spaceRequest);
 
-      expect(result.results).toStrictEqual([]);
+      expect(result).toStrictEqual([]);
     });
 
     it('should report a policy as unenforced when its module is not enabled', async () => {
@@ -159,7 +159,7 @@ describe('PoliciesService', () => {
 
       const result = await target.getSpaceActivePolicies(spaceRequest);
 
-      expect(result.results[0].enabled).toBe(false);
+      expect(result[0].enabled).toBe(false);
     });
 
     it('should treat a safe with no modules as having none enabled', async () => {
@@ -174,13 +174,13 @@ describe('PoliciesService', () => {
 
       const result = await target.getSpaceActivePolicies(spaceRequest);
 
-      expect(result.results[0].enabled).toBe(false);
+      expect(result[0].enabled).toBe(false);
     });
 
     it('should return no policies for a safe that has none', async () => {
       await expect(
         target.getSpaceActivePolicies(spaceRequest),
-      ).resolves.toMatchObject({ count: 0, results: [] });
+      ).resolves.toStrictEqual([]);
     });
 
     it('should fail the request when the indexer read fails', async () => {
@@ -237,29 +237,15 @@ describe('PoliciesService', () => {
           .build(),
       );
 
-      const page = await target.getSpaceActivePolicies({
+      const policies = await target.getSpaceActivePolicies({
         spaceId,
         authPayload,
       });
 
-      expect(page.results).toHaveLength(1);
-      expect(page.results[0].safe).toStrictEqual({
+      expect(policies).toHaveLength(1);
+      expect(policies[0].safe).toStrictEqual({
         chainId: SEPOLIA,
         address: safeAddress,
-      });
-    });
-
-    it('should return a page envelope', async () => {
-      const page = await target.getSpaceActivePolicies({
-        spaceId,
-        authPayload,
-      });
-
-      expect(page).toStrictEqual({
-        count: 0,
-        next: null,
-        previous: null,
-        results: [],
       });
     });
 
@@ -304,12 +290,12 @@ describe('PoliciesService', () => {
     it('should read nothing for a space with no safes', async () => {
       mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([] as never);
 
-      const page = await target.getSpaceActivePolicies({
+      const policies = await target.getSpaceActivePolicies({
         spaceId,
         authPayload,
       });
 
-      expect(page.results).toStrictEqual([]);
+      expect(policies).toStrictEqual([]);
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
     });
 

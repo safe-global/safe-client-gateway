@@ -20,9 +20,9 @@ import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
 
 /**
  * A (chainId, address) entry whose chain and Safe have been resolved up front,
@@ -64,7 +64,7 @@ export class SafesV2Service {
 
   async getSafeOverview(args: {
     currency: string;
-    addresses: Caip10Addresses;
+    addresses: ReadonlyArray<Caip10Address>;
     trusted: boolean;
     walletAddress?: Address;
   }): Promise<Array<SafeOverview>> {
@@ -141,7 +141,7 @@ export class SafesV2Service {
    * Zerion call — so a non-Safe address never consumes the shared budget.
    */
   private async resolveSafes(
-    limitedSafes: Caip10Addresses,
+    limitedSafes: ReadonlyArray<Caip10Address>,
     chainsById: Map<string, Chain | null>,
   ): Promise<Array<ResolvedEntry>> {
     const settled = await Promise.allSettled(
@@ -174,7 +174,7 @@ export class SafesV2Service {
    * the per-entry build (as today), not the whole batch.
    */
   private async resolveChains(
-    limitedSafes: Caip10Addresses,
+    limitedSafes: ReadonlyArray<Caip10Address>,
   ): Promise<Map<string, Chain | null>> {
     const uniqueChainIds = [...new Set(limitedSafes.map((s) => s.chainId))];
     return new Map(
