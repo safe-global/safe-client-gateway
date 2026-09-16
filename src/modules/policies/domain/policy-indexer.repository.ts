@@ -9,7 +9,7 @@ import {
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
 import {
   PolicyIndexerMetaSchema,
-  PolicyIndexerResponseSchema,
+  PolicyIndexerRowsSchema,
   type PolicyIndexerSafeAllowance,
   type PolicyIndexerSafeAllowanceRow,
   PolicyIndexerSafeAllowanceSchema,
@@ -38,7 +38,7 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     }
 
     const raw = await this.policyIndexerApi.getState({ safes });
-    const response = PolicyIndexerResponseSchema.parse(raw);
+    const response = PolicyIndexerRowsSchema.parse(raw);
 
     const delegates = this.parseRows(
       PolicyIndexerSafeDelegateSchema,
