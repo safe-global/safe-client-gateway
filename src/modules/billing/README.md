@@ -1,149 +1,122 @@
 <!--
   SPDX-License-Identifier: FSL-1.1-MIT
  -->
- 
+
 # Billing Webhook Authentication
 
-The CGW receives webhooks from the **billing service** at `POST /v1/billing/webhooks` and authenticates their origin with a **service-to-service JWT bearer token**.
+The CGW receives webhooks from the **billing service** at `POST /v1/billing/webhooks` and authenticates them with a service-to-service JWT bearer token.
 
-The model is **"the receiver issues the credential it later checks."** The CGW mints a long-lived **ES256** (ECDSA P-256) token signed with its **private** key, provisions that token to the billing service as a secret, and the billing service presents it on every webhook call via the `Authorization: Bearer <token>` header. The CGW verifies each incoming token **statelessly/offline** against its own **public** key — no JWKS, no callback, no shared secret over the body.
+The model is **"the receiver issues the credential it later checks."** The CGW mints a long-lived **ES256** (ECDSA P-256) token, provisions it to the billing service as a secret, and the billing service presents it on every call as `Authorization: Bearer <token>`. The CGW verifies each token offline against its own public key — no JWKS, no callback, no shared secret.
 
-This guide covers generating that token with the `generate-token` script, which
-signs either with a **local private key** (dev/CI) or via **AWS KMS** (production).
+Minting is done by [`scripts/generate-token.ts`](../../../scripts/generate-token.ts), which signs either with a local private key (development) or via **AWS KMS** (staging/production). A token is accepted only if its ES256 signature, `iss`, `aud` and `exp` all check out *and* its payload carries the service-token markers; the exact claim set lives in [`billing-service-token.entity.ts`](domain/entities/billing-service-token.entity.ts).
 
-## Quick Start (development only)
+> **Enforced:** when `CGW_ENV` is `production` or `staging` the script refuses to sign with a local private key, and the app's env validation rejects `BILLING_WEBHOOK_JWT_PRIVATE_KEY` at startup. Deployed environments must sign via KMS.
+
+## Mint a token: development
 
 ```bash
-# 1. Generate an ES256 (EC P-256) keypair
+# ES256 (EC P-256) keypair
 openssl ecparam -genkey -name prime256v1 -noout -out ec-priv.pem
 openssl ec -in ec-priv.pem -pubout -out ec-pub.pem
 
-# 2. Mint a token with the private key (default subject + ~5y expiry)
+# Mint (defaults: --sub billing-service, --expires-in 1825)
 BILLING_WEBHOOK_JWT_PRIVATE_KEY="$(cat ec-priv.pem)" yarn generate-token
-
-# Custom subject and expiry (in days)
-BILLING_WEBHOOK_JWT_PRIVATE_KEY="$(cat ec-priv.pem)" \
-  yarn generate-token --sub billing-service --expires-in 1825
 ```
 
-Then configure the **running CGW** with the matching public key (see [Deploying](#deploying-the-receiver)) and hand the minted token to the billing service.
+Run the CGW with `FF_BILLING_SERVICE=true` and `BILLING_WEBHOOK_JWT_PUBLIC_KEY="$(cat ec-pub.pem)"`, then hand the minted token to the billing service. The app only ever needs the **public** key — keep the private key out of it.
 
-## Signing with KMS (production)
+## Mint a token: staging / production
 
-In production, sign via an asymmetric AWS KMS key so the private key never exists on disk or in the environment.
+Signing happens inside AWS KMS, so the private key never exists on disk. **Mint before deploying the receiver:** the mint output is the only place the public key appears, since there is no keypair to read it from.
 
-1. Create a KMS key: type **asymmetric**, spec **`ECC_NIST_P256`**, usage **`SIGN_VERIFY`**.
-2. Grant **`kms:Sign`** and **`kms:GetPublicKey`** on that key to the principal that **runs the mint** (see [IAM](#iam-which-principal-signs) below).
-3. Mint — this signs via KMS and also prints the public key PEM to configure the verifier:
-   ```bash
-   BILLING_WEBHOOK_JWT_KMS_KEY_ID=<arn> \
-     yarn generate-token --sub billing-service --expires-in 1825
-   ```
-   Credentials come from whatever AWS principal runs the script (its IRSA role, an assumed role, or `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY`); region from `AWS_REGION`.
-4. Set the printed public key as `BILLING_WEBHOOK_JWT_PUBLIC_KEY` on the running CGW, and provision the token to the billing service.
+> **Never run the mint in a CGW app pod.** The image ships the compiled script, so `kubectl exec` + `node dist/scripts/generate-token.js` looks like the obvious move — but the pod's `AWS_WEB_IDENTITY_TOKEN_FILE`/`AWS_ROLE_ARN` make the SDK sign as the CGW's **runtime** IRSA role, which has no `kms:Sign` and must not be given it. Run a separate Job under its own service account.
 
-> **Enforced:** when `CGW_ENV` is `production` or `staging`, the script requires `BILLING_WEBHOOK_JWT_KMS_KEY_ID` and refuses to mint with a local private key, and the app's env validation rejects `BILLING_WEBHOOK_JWT_PRIVATE_KEY` at startup. The local-PEM path is for dev/CI only.
+### 1. Collect the values you need
 
-### IAM: which principal signs
+```bash
+kubectl get pods -A | grep client-gateway            # namespace
+kubectl -n <ns> get deploy <cgw-deploy> -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+kubectl -n <ns> get deploy <cgw-deploy> \
+  -o jsonpath='{.spec.template.spec.imagePullSecrets}{"\n"}{.spec.template.spec.nodeSelector}{"\n"}'
+aws eks describe-cluster --name <cluster> --query 'cluster.identity.oidc.issuer' --output text
+```
 
-- **The running CGW needs *no* KMS permissions.** It verifies offline with the configured public key and never calls KMS. Do **not** add `kms:Sign` to the app's runtime IRSA role (the same role backing SES, etc.).
-- **Grant `kms:Sign` + `kms:GetPublicKey` to a dedicated mint principal** — e.g. a CI role, a bastion role, or an operator — scoped to the billing key ARN.
-- **Run the mint from that principal, outside the app pod** (CI / bastion / local). Minting is one-time provisioning, so this is the natural place, and it keeps signing capability off the app/SES role.
+The Job must reuse the deployment's `imagePullSecrets` and `nodeSelector` — a bare pod spec fails to pull the image.
 
-## Command Arguments
+Check whether the deployment overrides the issuer. If this prints nothing it is the default `safe-client-gateway` and you can ignore it:
 
-| Argument | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `--sub` | Subject (`sub`) claim — also used as `data.service_name` | No | `billing-service` |
-| `--expires-in` | Token lifetime in **days** | No | `1825` (~5 years) |
+```bash
+kubectl -n <ns> get deploy <cgw-deploy> \
+  -o jsonpath='{range .spec.template.spec.containers[*].env[?(@.name=="BILLING_WEBHOOK_JWT_ISSUER")]}{.value}{end}{"\n"}'
+```
 
-## Environment
+### 2. Create the KMS key and a mint role
 
-The signing key (local PEM **or** KMS key id) is read directly from the environment and is never stored in the running app's config. The **issuer** is resolved from the app config the same way the verifier resolves it, so a minted token always matches what the guard expects.
+Key: type **asymmetric**, spec **`ECC_NIST_P256`**, usage **`SIGN_VERIFY`**.
 
-| Variable | Used by | Description | Default |
-|----------|---------|-------------|---------|
-| `BILLING_WEBHOOK_JWT_KMS_KEY_ID` | **script only** | Asymmetric KMS key id/ARN (`ECC_NIST_P256`). When set, the script signs via KMS. Needs `AWS_REGION` + credentials. | — |
-| `BILLING_WEBHOOK_JWT_PRIVATE_KEY` | **script only** | ES256 (EC P-256) private key, PEM. Used when no KMS key is set (dev/CI). | — |
-| `BILLING_WEBHOOK_JWT_ISSUER` | script + app | The CGW's own identifier — used as both `iss` and `aud`. | `safe-client-gateway` |
+Then a dedicated `billing-token-minter` IAM role — **not** the CGW's runtime role. Permissions policy:
 
-Exactly one signing input is required: `BILLING_WEBHOOK_JWT_KMS_KEY_ID` (KMS mode, preferred) **or** `BILLING_WEBHOOK_JWT_PRIVATE_KEY` (local mode). If both are set, KMS wins.
-
-> PEM keys passed via env often arrive with escaped newlines (`\n`); the script normalizes these automatically.
-
-## Token Structure
-
-```jsonc
+```json
 {
-  "iss": "safe-client-gateway",        // issuer = the CGW
-  "sub": "billing-service",
-  "aud": ["safe-client-gateway"],      // audience = the CGW (same identifier as iss)
-  "iat": 1700000000,
-  "exp": 2015360000,                   // iat + (--expires-in days)
-  "roles": ["SERVICE_ACCESS"],
-  "data": {
-    "service_name": "billing-service", // = --sub
-    "permission_type": "SERVICE_ACCESS",
-    "user_type": "SERVICE_USER"
-  }
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Action": ["kms:Sign", "kms:GetPublicKey"],
+    "Resource": "<key-arn>"
+  }]
 }
 ```
 
-- **Algorithm:** `ES256` (ECDSA, P-256, SHA-256) — asymmetric. The CGW signs with its private key and verifies with the matching public key.
-- **Lifetime:** long-lived (multi-year), minted once and stored by the billing service as a secret. Not requested per call.
+Trust policy, scoped to the service account created in step 3 (`<oidc>` is the issuer URL from step 1 without its `https://` prefix):
 
-## How the receiver validates each request
-
-The webhook is processed only if **both** layers pass:
-
-1. **Cryptographic / standard claims** — verify the ES256 signature with the public key, and confirm `iss`, `aud`, and `exp`.
-2. **Authorization** — confirm it is a *service* token: either `roles` contains `SERVICE_ACCESS`, **or** `data` carries `permission_type = SERVICE_ACCESS`, `user_type = SERVICE_USER`, and a non-empty `service_name`.
-
-## Deploying the receiver
-
-The webhook endpoint is **gated behind a feature flag** — the same `FF_BILLING_SERVICE` flag that also enables the safe-billing-service API client — and reads its public key from config:
-
-| Variable | Description |
-|----------|-------------|
-| `FF_BILLING_SERVICE` | Set to `true` to enable the billing-service integration: the `POST /v1/billing/webhooks` endpoint + its auth guard, and the safe-billing-service API client. Off by default. |
-| `BILLING_WEBHOOK_JWT_PUBLIC_KEY` | ES256 public key (PEM) used to verify incoming tokens. |
-| `BILLING_WEBHOOK_JWT_ISSUER` | Must match the issuer used at mint time (default `safe-client-gateway`). |
-
-End-to-end provisioning flow:
-
-1. Generate the EC P-256 keypair (above).
-2. Deploy the CGW with `FF_BILLING_SERVICE=true` and `BILLING_WEBHOOK_JWT_PUBLIC_KEY` set to the **public** key.
-3. Mint a token with the **private** key using this script.
-4. Provision the token to the billing service as the bearer credential for its webhook calls.
-
-> The CGW only ever needs the **public** key at runtime. Keep the **private** key out of the running app — use it only at mint time and store it securely.
-
-### Running the token-mint in a deployed environment
-
-Run the CGW image as a **one-off workload** under the mint principal (see [IAM](#iam-which-principal-signs)) — not the app's runtime role. Invoke the compiled script `node dist/scripts/generate-token.js`.
-
-**Option A — `docker run` on a bastion, with the mint role's credentials:**
-```bash
-# temp creds for a principal that has kms:Sign + kms:GetPublicKey on the billing key
-eval "$(aws sts assume-role \
-  --role-arn arn:aws:iam::<acct>:role/billing-token-minter --role-session-name mint \
-  --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text \
-  | awk '{print "export AWS_ACCESS_KEY_ID="$1"\nexport AWS_SECRET_ACCESS_KEY="$2"\nexport AWS_SESSION_TOKEN="$3}')"
-
-docker run --rm \
-  -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_SESSION_TOKEN \
-  -e AWS_REGION=<region> \
-  -e BILLING_WEBHOOK_JWT_KMS_KEY_ID=<key-arn> \
-  <cgw-image>:<tag> \
-  node dist/scripts/generate-token.js --sub billing-service --expires-in 1825
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [{
+    "Effect": "Allow",
+    "Principal": { "Federated": "arn:aws:iam::<acct>:oidc-provider/<oidc>" },
+    "Action": "sts:AssumeRoleWithWebIdentity",
+    "Condition": { "StringEquals": {
+      "<oidc>:sub": "system:serviceaccount:<ns>:billing-token-minter",
+      "<oidc>:aud": "sts.amazonaws.com"
+    }}
+  }]
+}
 ```
 
-**Option B — a one-off Kubernetes `Job` using the same image + a mint service account:**
+Both actions are required, and both the identity policy **and** the KMS key policy must allow them.
+
+### 3. Create the service account
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: billing-token-minter
+  namespace: <ns>
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::<acct>:role/billing-token-minter
+```
+
+Verify it assumes the right role before minting — expect `assumed-role/billing-token-minter/…`, not the CGW's runtime role:
+
+```bash
+kubectl -n <ns> run mint-whoami --rm -it --restart=Never \
+  --image=amazon/aws-cli --env=AWS_REGION=<region> \
+  --overrides='{"spec":{"serviceAccountName":"billing-token-minter"}}' \
+  -- sts get-caller-identity
+```
+
+### 4. Run the mint Job
+
 ```yaml
 apiVersion: batch/v1
 kind: Job
-metadata: { name: billing-token-mint }
+metadata:
+  name: billing-token-mint
+  namespace: <ns>
 spec:
+  backoffLimit: 0
   template:
     metadata:
       annotations:
@@ -151,8 +124,12 @@ spec:
         # `kubectl logs` still works; this only stops agent collection.
         ad.datadoghq.com/mint.logs_exclude: "true"
     spec:
-      serviceAccountName: billing-token-minter   # IRSA-annotated with the mint role (kms:Sign, kms:GetPublicKey)
+      serviceAccountName: billing-token-minter
       restartPolicy: Never
+      imagePullSecrets:              # copy from the CGW deployment (step 1)
+        - name: <pull-secret>
+      nodeSelector:                  # published images are linux/arm64 only
+        kubernetes.io/arch: arm64
       containers:
         - name: mint
           image: <cgw-image>:<tag>
@@ -160,33 +137,73 @@ spec:
           env:
             - { name: BILLING_WEBHOOK_JWT_KMS_KEY_ID, value: "<key-arn>" }
             - { name: AWS_REGION, value: "<region>" }
+            # only if step 1 showed a non-default issuer:
+            # - { name: BILLING_WEBHOOK_JWT_ISSUER, value: "<issuer>" }
 ```
-Read the token + public-key PEM from `kubectl logs job/billing-token-mint`, then delete the Job.
 
-Notes:
-- **The token is a long-lived credential printed to stdout — don't let stdout be persisted anywhere.** The `logs_exclude` annotation above keeps the Job's output out of log collection; read the token, store it, and delete the Job. With Option A, run from a bastion shell rather than a CI job — CI systems retain job output, which would leave the token in build logs. If the token ever transits a log platform, rotate it.
-- **Issuer must match the verifier.** If the app overrides `BILLING_WEBHOOK_JWT_ISSUER`, set the same value on the mint workload so `iss`/`aud` line up.
-- **`CGW_ENV` is irrelevant in KMS mode** — the production/staging gate only blocks *local-PEM* signing, so the mint workload doesn't need `CGW_ENV` set.
+Those are the only variables the script needs: it builds its configuration directly and never boots the app's env validation, so no other CGW config is required. `CGW_ENV` is irrelevant here — only the local-PEM gate reads it.
+
+### 5. Read the output, then clean up
+
+```bash
+kubectl -n <ns> logs job/billing-token-mint
+```
+
+Copy **both** the token and the public key PEM, then:
+
+1. Set `BILLING_WEBHOOK_JWT_PUBLIC_KEY` to the printed PEM on the CGW deployment (with `FF_BILLING_SERVICE=true`) and redeploy.
+2. Provision the token to the billing service as its webhook bearer credential.
+3. `kubectl -n <ns> delete job billing-token-mint`.
+
+> **The token is a long-lived credential printed to stdout.** `logs_exclude` keeps it out of log collection, but `kubectl logs` serves it until the Job is deleted — hence step 3. Never mint from CI, which retains job output. If the token ever transits a log platform, rotate it.
+
+### Off-cluster alternative
+
+From a bastion, run the same image under an assumed mint role: `aws sts assume-role`, export the three `AWS_*` credentials, then `docker run … node dist/scripts/generate-token.js`. **`unset AWS_WEB_IDENTITY_TOKEN_FILE` first** — when it is set the SDK assumes `AWS_ROLE_ARN` and ignores static keys.
+
+## Configuration
+
+| Variable | Used by | Description | Default |
+|---|---|---|---|
+| `FF_BILLING_SERVICE` | app | Enables the webhook endpoint and its guard, plus the safe-billing-service API client. | `false` |
+| `BILLING_WEBHOOK_JWT_PUBLIC_KEY` | app | ES256 public key (PEM) that verifies incoming tokens. Required when the flag is on — the app fails to boot without it. | — |
+| `BILLING_WEBHOOK_JWT_ISSUER` | app + script | The CGW's own identifier, used as both `iss` and `aud`. Must match on both sides. | `safe-client-gateway` |
+| `BILLING_WEBHOOK_JWT_KMS_KEY_ID` | script | Asymmetric KMS key id/ARN (`ECC_NIST_P256`). When set, signing goes through KMS. Needs `AWS_REGION` + credentials. | — |
+| `BILLING_WEBHOOK_JWT_PRIVATE_KEY` | script | ES256 private key (PEM). Development only. Used when no KMS key is set. | — |
+
+Exactly one signing input is required — `BILLING_WEBHOOK_JWT_KMS_KEY_ID` or `BILLING_WEBHOOK_JWT_PRIVATE_KEY`; if both are set, KMS wins. PEM values arriving with escaped newlines (`\n`) are normalized automatically.
+
+Script arguments: `--sub` (the `sub` claim and `data.service_name`, default `billing-service`) and `--expires-in` (lifetime in days, default `1825`).
 
 ## Troubleshooting
 
-Script-side failures print actionable `ERROR:` messages of their own; the entries below cover runtime symptoms whose cause is not visible to the caller.
+Most script failures print their own actionable `ERROR:` line. These are the symptoms whose cause is not visible to the caller.
+
+### Mint fails with `is not authorized to perform: kms:GetPublicKey` (or `kms:Sign`)
+
+The role named in the error is the giveaway. If it is the CGW's runtime role, the mint ran with the app's identity — usually because it was launched inside an app pod. When `AWS_WEB_IDENTITY_TOKEN_FILE` is set the SDK assumes `AWS_ROLE_ARN` and ignores static keys, so the pod's identity wins even if you export mint credentials into the shell. Run the Job under the mint service account instead; do **not** fix this by granting `kms:Sign` to the runtime role.
+
+If the principal is already correct, check the KMS key policy as well as the identity policy. The script reads the public key before signing, so a principal short of `kms:GetPublicKey` fails on that action first.
+
+### The mint Job cannot pull the image
+
+Read the reason from `kubectl -n <ns> describe pod -l job-name=billing-token-mint`:
+
+- `no match for platform` — the pod landed on an amd64 node. Published images are **arm64 only** (see [`ci.yml`](../../../.github/workflows/ci.yml)), so the Job needs `nodeSelector: kubernetes.io/arch: arm64`.
+- `unauthorized` / `pull access denied` — the Job has no registry credentials. Pull secrets are often attached to the *service account*, and the new mint SA has none; copy `imagePullSecrets` from the CGW deployment.
 
 ### Webhook calls return `401 Unauthorized`
-The token failed verification. Common causes:
-- The token was signed with a private key that doesn't match the deployed `BILLING_WEBHOOK_JWT_PUBLIC_KEY`.
-- `iss`/`aud` in the token don't match the deployed `BILLING_WEBHOOK_JWT_ISSUER` (e.g. minted with a different issuer than the app is configured with).
-- The token has expired.
-- The token lacks the service-token markers (`SERVICE_ACCESS` role / `SERVICE_USER` data).
 
-The CGW logs the specific reason at `warn` level (token-present failures only).
+The token failed verification — the CGW logs the specific reason at `warn` level. Common causes: it was signed with a key that doesn't match the deployed `BILLING_WEBHOOK_JWT_PUBLIC_KEY`; its `iss`/`aud` don't match the deployed `BILLING_WEBHOOK_JWT_ISSUER`; it has expired; or it lacks the service-token markers.
 
 ### Webhook calls return `404 Not Found`
+
 The feature is disabled — set `FF_BILLING_SERVICE=true` and redeploy.
 
 ### The app fails to boot with a missing-public-key error
-`FF_BILLING_SERVICE=true` was set but `BILLING_WEBHOOK_JWT_PUBLIC_KEY` was not provisioned. Either set the public key or disable the flag. (Fail-fast is intentional — enabling the feature asserts the key is provisioned.)
+
+`FF_BILLING_SERVICE=true` was set without `BILLING_WEBHOOK_JWT_PUBLIC_KEY`. Set the public key or disable the flag; the fail-fast is intentional, since enabling the feature asserts the key is provisioned.
 
 ## Key rotation
 
-There is no JWKS/`kid` metadata — rotation is coordinated operationally: re-mint against a new keypair, then update both sides (`BILLING_WEBHOOK_JWT_PUBLIC_KEY` on the CGW and the stored bearer token on the billing service).
+There is no JWKS or `kid` metadata, so rotation is coordinated operationally: re-mint against a new key, then update both sides — `BILLING_WEBHOOK_JWT_PUBLIC_KEY` on the CGW and the stored bearer token on the billing service.

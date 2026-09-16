@@ -10,6 +10,7 @@ import {
 export const networkService: INetworkService = {
   get: vi.fn(),
   post: vi.fn(),
+  patch: vi.fn(),
   postForm: vi.fn(),
   delete: vi.fn(),
 };

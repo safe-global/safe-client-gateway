@@ -33,6 +33,7 @@ export default (): ReturnType<typeof configuration> => ({
     elevationWindowSeconds: faker.number.int({ min: 60, max: 1_800 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,
+    allowedSiweDomains: [],
     auth0: {
       domain: faker.internet.domainName(),
       clientId: faker.string.uuid(),
@@ -453,6 +454,12 @@ export default (): ReturnType<typeof configuration> => ({
       min: 60_000,
       max: 300_000,
     }),
+  },
+  tokens: {
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),

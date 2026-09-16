@@ -43,6 +43,11 @@ export function isUnclassifiedTrialLink(link: PaymentLink): boolean {
   return isTrialLink(link) && gracePeriodOf(link) === null;
 }
 
+/** Whether this link offers `planId` — a price id, held in its line items. */
+export function offersPlan(link: PaymentLink, planId: string): boolean {
+  return link.lineItems?.some((item) => item.price.id === planId) ?? false;
+}
+
 /** Whether the workspace is offered this link. */
 export function isOfferedToSpace(
   link: PaymentLink,
