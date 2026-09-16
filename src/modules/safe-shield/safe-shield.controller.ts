@@ -7,12 +7,15 @@ import {
   HttpStatus,
   Param,
   Post,
+  UseFilters,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
@@ -25,6 +28,8 @@ import {
 } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
 import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
+import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/errors/copilot-core-disabled.exception-filter';
+import { CopilotCoreGatingGuard } from '@/modules/safe-shield/guards/copilot-core-gating.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -75,6 +80,13 @@ export class SafeShieldController {
     description: 'Recipient interaction analysis results',
     type: SingleRecipientAnalysisDto,
   })
+  @ApiResponse({
+    status: HttpStatus.PAYMENT_REQUIRED,
+    description:
+      'Disabled on Core. The body carries `{ code: "COPILOT_DISABLED_ON_CORE", message }`.',
+  })
+  @UseGuards(CopilotCoreGatingGuard)
+  @UseFilters(CopilotCoreDisabledExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
   public analyzeRecipient(
@@ -119,6 +131,13 @@ export class SafeShieldController {
     description:
       'Combined counterparty analysis including recipients and contracts grouped by status group and mapped to an address.',
   })
+  @ApiResponse({
+    status: HttpStatus.PAYMENT_REQUIRED,
+    description:
+      'Disabled on Core. The body carries `{ code: "COPILOT_DISABLED_ON_CORE", message }`.',
+  })
+  @UseGuards(CopilotCoreGatingGuard)
+  @UseFilters(CopilotCoreDisabledExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/counterparty-analysis')
   public analyzeCounterparty(

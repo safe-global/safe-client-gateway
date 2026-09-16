@@ -9,6 +9,7 @@ import {
 import { asError } from '@/logging/utils';
 import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
 import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
 import type { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
 import {
@@ -45,9 +46,12 @@ import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
  * This service coordinates all analysis types (recipient, contract, threat)
  * and provides the main entry points for transaction safety checks.
  * It acts as a facade that delegates to specialized analysis services.
+ *
+ * Reached from other modules through `ISafeShieldAnalysis`, never imported
+ * directly (this class lives in `routes/`).
  */
 @Injectable()
-export class SafeShieldService {
+export class SafeShieldService implements ISafeShieldAnalysis {
   constructor(
     private readonly recipientAnalysisService: RecipientAnalysisService,
     private readonly contractAnalysisService: ContractAnalysisService,
