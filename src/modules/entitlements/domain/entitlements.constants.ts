@@ -39,7 +39,7 @@ export function isStockMeteredFeature<T extends { key: string }>(
 /** The other half: metered, and counted in `space_feature_usage`. */
 export function isEventMeteredFeature<T extends { key: string; type: string }>(
   feature: T,
-): boolean {
+): feature is T & { type: FeatureType.Metered } {
   return (
     feature.type === FeatureType.Metered && !isStockMeteredFeature(feature)
   );
