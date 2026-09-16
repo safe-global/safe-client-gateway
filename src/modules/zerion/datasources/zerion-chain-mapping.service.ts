@@ -79,7 +79,7 @@ export class ZerionChainMappingService {
     const mapping = await this.getChainIdToNetworkMapping(isTestnet);
     const network = mapping[chainId];
     if (!network) {
-      this.loggingService.debug(
+      this.loggingService.warn(
         `Unknown chain ID for Zerion mapping: "${chainId}" (isTestnet: ${isTestnet})`,
       );
     }
@@ -104,7 +104,7 @@ export class ZerionChainMappingService {
   /**
    * Gets mapping: chain ID -> network name (for positions).
    */
-  async getChainIdToNetworkMapping(
+  private async getChainIdToNetworkMapping(
     isTestnet: boolean,
   ): Promise<Record<string, string>> {
     const cached = await this._getCachedMapping(isTestnet, 'chainIdToNetwork');
