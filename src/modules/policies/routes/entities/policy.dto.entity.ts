@@ -18,18 +18,9 @@ import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
-import { Page } from '@/routes/common/entities/page.entity';
 
 /**
- * Response entities of the policies routes.
- *
- * They exist for the generated OpenAPI schema; the shapes are the domain types,
- * so there is no mapping layer to keep in sync.
- */
-
-/**
- * Which Safe an item belongs to. Carried per item rather than grouped, so
- * nothing merges across chains.
+ * Which Safe an item belongs to.
  */
 export type SafeRefResponse = { chainId: string; address: Address };
 
@@ -156,8 +147,7 @@ export class ActivePolicyDto implements ActivePolicy {
   @ApiProperty(EnforcementSchema)
   public readonly enforcement!: PolicyEnforcement;
   @ApiProperty({
-    description:
-      'False when the policy is configured but not enforced - for a module type, the module is not enabled on the Safe',
+    description: 'False when the policy is configured but not enforced',
   })
   public readonly enabled!: boolean;
   @ApiProperty(PolicyDataSchema)
@@ -171,9 +161,4 @@ export class ActivePolicyDto implements ActivePolicy {
 export class SpaceActivePolicyDto extends ActivePolicyDto {
   @ApiProperty({ type: SafeRefDto })
   public readonly safe!: SafeRefResponse;
-}
-
-export class GetSpaceActivePoliciesPage extends Page<SpaceActivePolicyDto> {
-  @ApiProperty({ type: SpaceActivePolicyDto, isArray: true })
-  public readonly results!: Array<SpaceActivePolicyDto>;
 }
