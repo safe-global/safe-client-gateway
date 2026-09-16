@@ -18,7 +18,7 @@ import { createTestModule } from '@/__tests__/testing-module';
 import {
   addSafes as addSafesFixture,
   createSpaceForSigner as createSpaceForSignerFixture,
-  grantEntitlement,
+  grantEntitlements,
 } from '@/__tests__/util/space-fixtures';
 import configuration from '@/config/entities/__tests__/configuration';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -153,11 +153,10 @@ describe('SpaceSafeShieldController', () => {
         address: getAddress(faker.finance.ethereumAddress()),
       };
       // Seats, not copilot_scans: only setting up "the Safe is registered".
-      await grantEntitlement({
+      await grantEntitlements({
         entitlementsService,
         spaceId,
-        featureKey: 'safe_seats',
-        quota: 1,
+        entitlements: [{ featureKey: 'safe_seats', quota: 1 }],
       });
       await addSafesFixture({
         app,
@@ -186,11 +185,10 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      await grantEntitlement({
+      await grantEntitlements({
         entitlementsService,
         spaceId,
-        featureKey: 'copilot_scans',
-        quota: null,
+        entitlements: [{ featureKey: 'copilot_scans', quota: null }],
       });
       const unregisteredSafe = {
         chainId: '1',
@@ -212,17 +210,13 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      await grantEntitlement({
+      await grantEntitlements({
         entitlementsService,
         spaceId,
-        featureKey: 'copilot_scans',
-        quota: null,
-      });
-      await grantEntitlement({
-        entitlementsService,
-        spaceId,
-        featureKey: 'safe_seats',
-        quota: 1,
+        entitlements: [
+          { featureKey: 'copilot_scans', quota: null },
+          { featureKey: 'safe_seats', quota: 1 },
+        ],
       });
       const safe = {
         chainId: '1',
@@ -288,11 +282,10 @@ describe('SpaceSafeShieldController', () => {
         address: getAddress(faker.finance.ethereumAddress()),
       };
       // Seats, not copilot_scans: only setting up "the Safe is registered".
-      await grantEntitlement({
+      await grantEntitlements({
         entitlementsService,
         spaceId,
-        featureKey: 'safe_seats',
-        quota: 1,
+        entitlements: [{ featureKey: 'safe_seats', quota: 1 }],
       });
       await addSafesFixture({
         app,
@@ -322,11 +315,10 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      await grantEntitlement({
+      await grantEntitlements({
         entitlementsService,
         spaceId,
-        featureKey: 'copilot_scans',
-        quota: null,
+        entitlements: [{ featureKey: 'copilot_scans', quota: null }],
       });
       const unregisteredSafe = {
         chainId: '1',
@@ -349,17 +341,13 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      await grantEntitlement({
+      await grantEntitlements({
         entitlementsService,
         spaceId,
-        featureKey: 'copilot_scans',
-        quota: null,
-      });
-      await grantEntitlement({
-        entitlementsService,
-        spaceId,
-        featureKey: 'safe_seats',
-        quota: 1,
+        entitlements: [
+          { featureKey: 'copilot_scans', quota: null },
+          { featureKey: 'safe_seats', quota: 1 },
+        ],
       });
       const safe = {
         chainId: '1',

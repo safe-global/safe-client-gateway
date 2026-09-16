@@ -74,25 +74,25 @@ export async function addSafes(args: {
     .send({ safes: args.safes });
 }
 
-/** Grants a feature entitlement, materialized as a billing webhook would. */
-export async function grantEntitlement(args: {
+/** Grants feature entitlements in one call — a second call drops the first. */
+export async function grantEntitlements(args: {
   entitlementsService: EntitlementsService;
   spaceId: number;
-  featureKey: FeatureKey;
-  quota: number | null;
+  entitlements: Array<{ featureKey: FeatureKey; quota: number | null }>;
 }): Promise<void> {
   await args.entitlementsService.materializeFromEvent({
     spaceId: args.spaceId,
     subscription: materializedSubscriptionBuilder()
       .with('status', 'active')
-      .with('entitlements', [
-        {
-          featureKey: args.featureKey,
+      .with(
+        'entitlements',
+        args.entitlements.map((entitlement) => ({
+          featureKey: entitlement.featureKey,
           enabled: true,
-          quota: args.quota,
+          quota: entitlement.quota,
           value: null,
-        },
-      ])
+        })),
+      )
       .build(),
     eventAt: new Date(),
   });

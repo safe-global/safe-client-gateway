@@ -63,6 +63,16 @@ export interface ISpaceSafesRepository {
     spaceId: Space['id'],
   ): Promise<Array<Pick<SpaceSafe, 'chainId' | 'address'>>>;
 
+  /**
+   * Confirms `(chainId, address)` is registered to the Space, throwing
+   * `NotFoundException` otherwise.
+   */
+  assertBelongsToSpace(args: {
+    spaceId: Space['id'];
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<void>;
+
   findOrFail(
     args: Parameters<SpaceSafesRepository['find']>[0],
   ): Promise<Array<SpaceSafe>>;

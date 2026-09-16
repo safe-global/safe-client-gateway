@@ -155,6 +155,36 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     return spaceSafes;
   }
 
+  public async assertBelongsToSpace(args: {
+    spaceId: Space['id'];
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<void> {
+    const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+      args.address,
+    );
+    // Encryption disabled: match plaintext with a NULL index. Otherwise
+    // match on the blind index — same pattern as `delete`.
+    const where: FindOptionsWhere<SpaceSafe> =
+      addressIndex === null
+        ? {
+            space: { id: args.spaceId },
+            chainId: args.chainId,
+            addressIndex: IsNull(),
+            address: args.address,
+          }
+        : {
+            space: { id: args.spaceId },
+            chainId: args.chainId,
+            addressIndex,
+          };
+
+    const spaceSafes = await this.find({ where });
+    if (spaceSafes.length === 0) {
+      throw new NotFoundException('Safe is not registered to this Workspace.');
+    }
+  }
+
   public async countBySpaceId(
     spaceId: Space['id'],
     entityManager?: EntityManager,

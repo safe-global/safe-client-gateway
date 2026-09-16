@@ -8,6 +8,7 @@ import { KmsEncryptionModule } from '@/datasources/kms/kms-encryption.module';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { SesEmailModule } from '@/modules/email/ses/ses-email.module';
 import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
+import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
 import { AddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { AddressBookRequest } from '@/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
@@ -32,6 +33,8 @@ import { MembersController } from '@/modules/spaces/routes/members/members.contr
 import { MembersService } from '@/modules/spaces/routes/members/members.service';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { SpaceSafeShieldController } from '@/modules/spaces/routes/safe-shield/space-safe-shield.controller';
+import { SpaceSafeShieldService } from '@/modules/spaces/routes/safe-shield/space-safe-shield.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
 import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
@@ -58,6 +61,8 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     forwardRef(() => UsersModule),
     // Plan limits: `IEntitlementEnforcement` and the route guards enforcing it.
     forwardRef(() => EntitlementsModule),
+    // Copilot's recipient/counterparty analysis, reached via `ISafeShieldAnalysis`.
+    SafeShieldModule,
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
     SpaceAuditModule,
     KmsEncryptionModule,
@@ -71,6 +76,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     SpacesController,
     SpaceAuditController,
     SpaceSafesController,
+    SpaceSafeShieldController,
     MembersController,
   ],
   providers: [
@@ -79,6 +85,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     SpacesService,
     SpaceAuditService,
     SpaceSafesService,
+    SpaceSafeShieldService,
     MembersService,
     SpaceInviteEmailService,
     SpaceEncryptionService,

@@ -56,9 +56,10 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-// The suite owns its catalog: only `safe_seats` is signed off and seeded by a
-// migration, so the branches below are exercised against fixtures rather than
-// the shipped catalog. The fixtures below cover every resolution branch
+// The suite owns its catalog: only `safe_seats` and `copilot_scans` are
+// signed off and seeded by a migration, so the branches below are exercised
+// against fixtures rather than the shipped catalog. The fixtures below cover
+// every resolution branch
 // the repository implements — binary, value, stock-metered (usage is a live
 // COUNT over an existing table) and event-metered (usage is a period-keyed
 // `space_feature_usage` counter). Keys come from the real `FeatureKey` enum
@@ -85,6 +86,11 @@ const FEATURE_FIXTURES = [
     .with('type', FeatureType.Metered)
     .with('freeEnabled', true)
     .with('freeQuota', FREE_SAFE_SEATS)
+    .build(),
+  featureBuilder()
+    .with('key', 'copilot_scans')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
     .build(),
   // Free-disabled by default so the "disabled admits no usage" path is
   // covered; the `consume` tests enable it explicitly.

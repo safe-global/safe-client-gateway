@@ -15,7 +15,7 @@ import { createTestModule } from '@/__tests__/testing-module';
 import {
   addSafes as addSafesFixture,
   createSpaceForSigner as createSpaceForSignerFixture,
-  grantEntitlement,
+  grantEntitlements,
   safePayload,
 } from '@/__tests__/util/space-fixtures';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -144,11 +144,10 @@ describe('Safe seat enforcement', () => {
         jwtService,
         postgresDatabaseService,
       });
-    await grantEntitlement({
+    await grantEntitlements({
       entitlementsService,
       spaceId,
-      featureKey: 'safe_seats',
-      quota: 2,
+      entitlements: [{ featureKey: 'safe_seats', quota: 2 }],
     });
 
     await expect(
@@ -177,11 +176,10 @@ describe('Safe seat enforcement', () => {
         jwtService,
         postgresDatabaseService,
       });
-    await grantEntitlement({
+    await grantEntitlements({
       entitlementsService,
       spaceId,
-      featureKey: 'safe_seats',
-      quota: 2,
+      entitlements: [{ featureKey: 'safe_seats', quota: 2 }],
     });
 
     // The guard admits this (nothing used yet); the check inside the write is
