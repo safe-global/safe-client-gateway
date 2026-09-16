@@ -27,7 +27,7 @@ import {
   PoliciesStateSchema,
   ROW_FIELDS,
   RowLocationSchema,
-} from '@/modules/policies/datasources/policy-state.slice';
+} from '@/modules/policies/datasources/policy-state.schema';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
