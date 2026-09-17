@@ -22,16 +22,10 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
-import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
-import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
-import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
+import { RelayCalldataExceptionFilters } from '@/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
 import { RelayerNotAvailableExceptionFilter } from '@/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
 import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
-import { UnofficialMasterCopyExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-master-copy.exception-filter';
-import { UnofficialMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-multisend.error';
-import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-proxy-factory.exception-filter';
-import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-signer-factory.exception-filter';
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayErrorResponse } from '@/modules/relay/routes/entities/relay-error-response.entity';
@@ -127,17 +121,10 @@ export class RelayController {
     description: 'Relay limit reached for this Safe',
   })
   @Post()
+  @RelayCalldataExceptionFilters()
   @UseFilters(
     RelayLimitReachedExceptionFilter,
-    RelayDeniedExceptionFilter,
     SafeTxHashMismatchExceptionFilter,
-    RelayerNotAvailableExceptionFilter,
-    InvalidMultiSendExceptionFilter,
-    InvalidTransferExceptionFilter,
-    UnofficialMasterCopyExceptionFilter,
-    UnofficialMultiSendExceptionFilter,
-    UnofficialProxyFactoryExceptionFilter,
-    UnofficialSignerFactoryExceptionFilter,
   )
   async relay(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,

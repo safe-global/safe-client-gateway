@@ -10,16 +10,16 @@ import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-boo
 import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
 import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import {
+  assertAdmin,
+  assertMember,
+  isAdmin,
+} from '@/modules/spaces/domain/space-assert.utils';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   AddressBookRequestItemDto,
   AddressBookRequestsDto,
 } from '@/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
-import {
-  assertAdmin,
-  assertMember,
-  isAdmin,
-} from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 

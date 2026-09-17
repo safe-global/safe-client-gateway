@@ -30,13 +30,13 @@ import {
 } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   getClearCookieOptions,
   getSetCookieOptions,
 } from '@/modules/auth/utils/auth-cookie.utils';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';
 import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';

@@ -34,6 +34,7 @@ export enum LogType {
   PortfolioDegradedServe = 'PORTFOLIO_DEGRADED_SERVE',
   PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
   QuotaExceeded = 'QUOTA_EXCEEDED',
+  QuotaNotRefunded = 'QUOTA_NOT_REFUNDED',
   RateLimit = 'RATE_LIMIT',
   TxRelayEligibility = 'TX_RELAY_ELIGIBILITY',
   TransactionPropose = 'TRANSACTION_PROPOSE',

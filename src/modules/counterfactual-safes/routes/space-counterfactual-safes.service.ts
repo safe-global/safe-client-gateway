@@ -15,7 +15,7 @@ import type { GetCounterfactualSafesResponse } from '@/modules/counterfactual-sa
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()

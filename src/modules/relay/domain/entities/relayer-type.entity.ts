@@ -7,3 +7,6 @@ export const RelayerType = {
 } as const;
 
 export type RelayerType = (typeof RelayerType)[keyof typeof RelayerType];
+
+/** Which relayer a simulation log line is about; only these two run the check. */
+export type SimulatedRelayer = 'relay-fee' | 'workspace';
