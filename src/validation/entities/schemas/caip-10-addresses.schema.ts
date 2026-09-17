@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 
 const Caip10AddressPartsSchema = z.object({
-  chainId: NumericStringSchema.max(CHAIN_ID_MAXLENGTH),
+  chainId: ChainIdSchema,
   address: AddressSchema,
 });
 
