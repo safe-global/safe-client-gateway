@@ -39,6 +39,8 @@ import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spa
 import { rawify } from '@/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
+const DAY_IN_MINUTES = 1440;
+const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
 
 describe('Policies routes (e2e)', () => {
@@ -147,6 +149,10 @@ describe('Policies routes (e2e)', () => {
     });
   }
 
+  function anOpenWindowStart(): number {
+    return Math.floor(Date.now() / MILLISECONDS_IN_MINUTE) - 1;
+  }
+
   function anAllowance(): ReturnType<typeof rawIndexerSafeAllowanceBuilder> {
     return rawIndexerSafeAllowanceBuilder()
       .with('chainId', Number(SEPOLIA_CHAIN_ID))
@@ -156,8 +162,7 @@ describe('Policies routes (e2e)', () => {
       .with('amount', '1000')
       .with('spent', '250')
       .with('remaining', '750')
-      .with('resetTimeMinutes', '1440')
-      .with('lastResetMin', '29793086')
+      .with('resetTimeMinutes', String(DAY_IN_MINUTES))
       .with('resetPhase', 'EXACT');
   }
 
@@ -324,7 +329,10 @@ describe('Policies routes (e2e)', () => {
     });
 
     it('should return the spending limit of a safe in the space', async () => {
-      const allowance = anAllowance().build();
+      const windowStart = anOpenWindowStart();
+      const allowance = anAllowance()
+        .with('lastResetMin', String(windowStart))
+        .build();
       mockUpstream();
       mockIndexer(
         rawPolicyIndexerResponse({
@@ -358,8 +366,8 @@ describe('Policies routes (e2e)', () => {
                     token_address: getAddress(allowance.token),
                     amount: '1000',
                     spent: '250',
-                    resetPeriodSeconds: 86_400,
-                    resetsAt: (29_793_086 + 1440) * 60,
+                    resetPeriodMinutes: DAY_IN_MINUTES,
+                    resetsAtMinute: windowStart + DAY_IN_MINUTES,
                     resetBoundaryIsExact: true,
                     isDelegateActive: true,
                   },
@@ -369,6 +377,32 @@ describe('Policies routes (e2e)', () => {
           },
         },
       ]);
+    });
+
+    it('should report a reset ahead of now', async () => {
+      const windowStart = anOpenWindowStart();
+      const allowance = anAllowance()
+        .with('lastResetMin', String(windowStart - 30 * DAY_IN_MINUTES))
+        .build();
+      mockUpstream();
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          SafeAllowance: [allowance],
+          SafeDelegate: registrationsFor([allowance]),
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body[0].data.spenders[0].allowances[0].resetsAtMinute).toBe(
+        windowStart + DAY_IN_MINUTES,
+      );
     });
 
     it('should report a limit as unenforced when the module is not enabled', async () => {
