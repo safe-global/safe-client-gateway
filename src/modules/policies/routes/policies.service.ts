@@ -19,7 +19,7 @@ import { policyStateForSafe } from '@/modules/policies/domain/utils/policy-state
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
 
