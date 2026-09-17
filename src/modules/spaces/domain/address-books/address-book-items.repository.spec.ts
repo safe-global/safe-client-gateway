@@ -226,11 +226,13 @@ describe('AddressBookItemsRepository', () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const name = 'Alice';
       spaceEncryptionService.itemAddressIndex.mockReturnValue('idx');
+
       const item = { id: 9, address: 'kms:v1:a', name: 'kms:v1:n' };
+      const decrypted = [{ id: 9, address, name }];
       entityManager.findOne.mockResolvedValue(item);
-      spaceEncryptionService.decryptAddressBookItems.mockResolvedValue([
-        { id: 9, address, name },
-      ]);
+      spaceEncryptionService.decryptAddressBookItems.mockResolvedValue(
+        decrypted,
+      );
 
       await target.deleteByAddress({ authPayload, spaceId, address });
 

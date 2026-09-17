@@ -11,11 +11,11 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { EntitlementsResponse } from '@/modules/entitlements/routes/entities/entitlements-response.entity';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { Auth } from '@/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 
 @ApiTags('entitlements')
 @Controller({

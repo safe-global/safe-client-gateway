@@ -14,13 +14,13 @@ import {
 } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import type {
   SpaceAuditLogActorDto,
   SpaceAuditLogEntryDto,
   SpaceAuditLogPage,
 } from '@/modules/spaces/routes/audit/entities/space-audit-log.dto.entity';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import {
