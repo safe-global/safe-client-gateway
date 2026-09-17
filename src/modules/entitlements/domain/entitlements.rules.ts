@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureGrant } from '@/modules/entitlements/domain/entities/feature-grant.entity';
 import type { SpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
 import type { SubscriptionEntitlement } from '@/modules/entitlements/domain/entities/subscription-entitlement.entity';
 import {
@@ -153,4 +154,19 @@ export function resetsAt(args: {
     );
   }
   return null;
+}
+
+/**
+ * Whether any grant was computed for a window that has since closed, which
+ * makes the period its counter names the previous one: enforcing on it would
+ * refuse against a count the API no longer reports, and would record usage
+ * into a row nothing reads again. `resetsAt` is when that window rolls over.
+ */
+export function hasClosedWindow(
+  grants: Record<string, FeatureGrant>,
+  now: Date,
+): boolean {
+  return Object.values(grants).some(
+    (grant) => grant.resetsAt !== null && grant.resetsAt <= now,
+  );
 }

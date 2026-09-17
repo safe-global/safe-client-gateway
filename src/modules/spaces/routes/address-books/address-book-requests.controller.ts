@@ -27,7 +27,6 @@ import {
 } from '@nestjs/swagger';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { AddressBookRequestsService } from '@/modules/spaces/routes/address-books/address-book-requests.service';
 import {
@@ -37,8 +36,9 @@ import {
   CreateAddressBookRequestSchema,
 } from '@/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
 import { SpacesAddressBookRequestsRateLimitGuard } from '@/modules/spaces/routes/address-books/guards/spaces-address-book-requests-rate-limit.guard';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')

@@ -67,6 +67,17 @@ export interface ISpaceSafesRepository {
     args: Parameters<SpaceSafesRepository['find']>[0],
   ): Promise<Array<SpaceSafe>>;
 
+  /** Whether the space holds this Safe: the membership a caller spending the
+   * workspace's allowance on it must prove. */
+  existsInSpace(
+    args: {
+      spaceId: Space['id'];
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    },
+    entityManager?: EntityManager,
+  ): Promise<boolean>;
+
   countBySpaceId(
     spaceId: Space['id'],
     entityManager?: EntityManager,
