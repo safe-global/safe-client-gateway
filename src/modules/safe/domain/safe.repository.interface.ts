@@ -6,7 +6,7 @@ import { Page } from '@/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -230,7 +230,7 @@ export interface ISafeRepository {
   imports: [
     ChainsModule,
     TransactionApiManagerModule,
-    DelegatesV2RepositoryModule,
+    DelegatesV3RepositoryModule,
     ContractsModule,
     SafeQueueModule,
   ],

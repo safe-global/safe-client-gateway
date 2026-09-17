@@ -307,12 +307,37 @@ export class SafeRepository implements ISafeRepository {
       });
       return MultisigTransactionPageSchema.parse(page);
     }
-    // The queue service can only order the queue by nonce, so we translate the
-    // tx-service ordering into a nonce direction explicitly. A leading '-'
-    // denotes descending. NOTE: getTransactionQueueByModified asks for
-    // '-modified' ordering, which the queue cannot honour — it degrades to
-    // descending nonce. Callers relying on true modified-date ordering (e.g.
-    // the queued-transaction cache tag) get a best-effort nonce-desc result.
+    // The queue service can only order by nonce, not by modification date.
+    // For '-modified' ordering, fetch the whole queue and sort by `modified`
+    // locally rather than degrading to nonce order, which would return the
+    // wrong transaction whenever a lower-nonce entry is the most recently
+    // touched one (e.g. a new confirmation on it).
+    if (args.ordering === '-modified') {
+      const page = await this.safeQueueService.getTransactionQueue({
+        chainId: args.chainId,
+        safeAddress: args.safe.address,
+        nonceOrder: 'asc',
+        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+      });
+      const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+      const sortedByModified = [...parsed.results].sort(
+        (a, b) => b.modified.getTime() - a.modified.getTime(),
+      );
+      const offset = args.offset ?? 0;
+      const sliced = sortedByModified.slice(
+        offset,
+        args.limit ? offset + args.limit : undefined,
+      );
+      return {
+        count: parsed.count,
+        next: null,
+        previous: null,
+        results: sliced.map((tx) =>
+          mapSafeQueueToMultisigTransaction(tx, args.safe),
+        ),
+      };
+    }
+
     const nonceOrder = args.ordering.startsWith('-') ? 'desc' : 'asc';
     const page = await this.safeQueueService.getTransactionQueue({
       chainId: args.chainId,
@@ -863,8 +888,37 @@ export class SafeRepository implements ISafeRepository {
       limit: 1,
     });
     const { results } = MultisigTransactionPageSchema.parse(page);
+    const lastTrusted = isEmpty(results) ? null : results[0];
 
-    return isEmpty(results) ? null : results[0];
+    if (!this.safeQueueEnabled) {
+      return lastTrusted;
+    }
+
+    // Queue-mode proposals only exist in the queue, so the tx-service result
+    // alone can miss the highest nonce. Compare both sources and keep the one
+    // with the higher nonce.
+    const [safe, queuePage] = await Promise.all([
+      this.getSafe({ chainId: args.chainId, address: args.safeAddress }),
+      this.safeQueueService.getTransactionQueue({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        nonceOrder: 'desc',
+        limit: 1,
+      }),
+    ]);
+    const { results: queueResults } =
+      SafeQueueMultisigTransactionPageSchema.parse(queuePage);
+    const lastQueued = isEmpty(queueResults)
+      ? null
+      : mapSafeQueueToMultisigTransaction(queueResults[0], safe);
+
+    if (!lastQueued) {
+      return lastTrusted;
+    }
+    if (!lastTrusted || lastQueued.nonce > lastTrusted.nonce) {
+      return lastQueued;
+    }
+    return lastTrusted;
   }
 
   async proposeTransaction(args: {

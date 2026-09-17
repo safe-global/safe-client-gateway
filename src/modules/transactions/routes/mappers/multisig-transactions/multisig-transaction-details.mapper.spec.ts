@@ -9,7 +9,7 @@ import type { IBlocklistService } from '@/config/entities/blocklist.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
+import type { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
@@ -63,7 +63,7 @@ const mockConfigurationService = vi.mocked({
 
 const mockDelegatesRepository = vi.mocked({
   getDelegates: vi.fn(),
-} as MockedObject<DelegatesV2Repository>);
+} as MockedObject<DelegatesV3Repository>);
 
 const mockLoggingService = {
   error: vi.fn(),

@@ -19,7 +19,7 @@ import {
   LoggingService,
 } from '@/logging/logging.interface';
 import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
@@ -47,8 +47,8 @@ export class TransactionVerifierHelper {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IDelegatesV2Repository)
-    private readonly delegatesV2Repository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesV3Repository: IDelegatesV3Repository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Inject(IContractsRepository)
@@ -403,7 +403,7 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    const delegates = await this.delegatesV2Repository.getDelegates({
+    const delegates = await this.delegatesV3Repository.getDelegates({
       chainId: args.chainId,
       safeAddress: args.safe.address,
     });

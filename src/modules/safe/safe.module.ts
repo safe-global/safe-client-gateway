@@ -5,7 +5,7 @@ import { BalancesModule } from '@/modules/balances/balances.module';
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { FeatureFlagsModule } from '@/modules/chains/feature-flags/feature-flags.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -24,7 +24,7 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     ChainsModule,
     MessagesModule,
     TransactionApiManagerModule,
-    DelegatesV2RepositoryModule,
+    DelegatesV3RepositoryModule,
     ContractsModule,
     FeatureFlagsModule,
     SafeQueueModule,
