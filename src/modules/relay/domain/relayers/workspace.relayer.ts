@@ -10,7 +10,10 @@ import {
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+import {
+  type ConsumedQuota,
+  IEntitlementEnforcement,
+} from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
@@ -103,7 +106,7 @@ export class WorkspaceRelayer {
       });
     }
 
-    await this.entitlementEnforcement.consumeQuota({
+    const spentQuota = await this.entitlementEnforcement.consumeQuota({
       spaceId: args.spaceId,
       featureKey: SPONSORED_TRANSACTIONS,
       delta: RELAYS_PER_CALL,
@@ -119,24 +122,20 @@ export class WorkspaceRelayer {
     } catch (error) {
       // No `taskId` came back, so nothing says it was submitted.
       if (error instanceof DataSourceError) {
-        await this.refundAllowance(args.spaceId);
+        await this.refundAllowance(spentQuota);
       }
       throw error;
     }
   }
 
   /** Best effort: the error that sent us here is the one worth surfacing. */
-  private async refundAllowance(spaceId: Space['id']): Promise<void> {
+  private async refundAllowance(spentQuota: ConsumedQuota): Promise<void> {
     await this.entitlementEnforcement
-      .refundQuota({
-        spaceId,
-        featureKey: SPONSORED_TRANSACTIONS,
-        delta: RELAYS_PER_CALL,
-      })
+      .refundQuota(spentQuota)
       .catch((error: unknown) => {
         this.loggingService.error({
           type: LogType.QuotaNotRefunded,
-          spaceId,
+          spaceId: spentQuota.spaceId,
           feature: SPONSORED_TRANSACTIONS,
           message: asError(error).message,
         });

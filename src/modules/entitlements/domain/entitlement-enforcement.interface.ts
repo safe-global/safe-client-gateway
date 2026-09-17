@@ -1,9 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import type { UsageKey } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
 export const IEntitlementEnforcement = Symbol('IEntitlementEnforcement');
+
+/**
+ * What {@link IEntitlementEnforcement.consumeQuota} wrote: which counter it
+ * charged and by how much. Everything
+ * {@link IEntitlementEnforcement.refundQuota} needs to reverse exactly that
+ * increment, so nothing about the spend is re-derived at refund time.
+ */
+export type ConsumedQuota = {
+  spaceId: Space['id'];
+  period: UsageKey;
+  delta: number;
+};
 
 /** Reached through this token so a gated module never imports the service. */
 export interface IEntitlementEnforcement {
@@ -38,19 +52,23 @@ export interface IEntitlementEnforcement {
    *
    * The spend is committed before the action it pays for happens, so a caller
    * that learns the action never happened gives it back with
-   * {@link refundQuota}. A stock-metered feature is excluded by the type: its
-   * usage is a live count its own module owns, with nothing to reserve.
+   * {@link refundQuota}, passing back what this returned. A stock-metered
+   * feature is excluded by the type: its usage is a live count its own module
+   * owns, with nothing to reserve.
    */
   consumeQuota(args: {
     spaceId: Space['id'];
     featureKey: Exclude<FeatureKey, StockMeteredFeature>;
     delta: number;
-  }): Promise<void>;
+  }): Promise<ConsumedQuota>;
 
-  /** Gives back what {@link consumeQuota} reserved for something that never happened. */
-  refundQuota(args: {
-    spaceId: Space['id'];
-    featureKey: Exclude<FeatureKey, StockMeteredFeature>;
-    delta: number;
-  }): Promise<void>;
+  /**
+   * Gives back a spend whose action never happened, as the spend itself
+   * records it. Re-deriving the counter here would credit the wrong one: the
+   * period the plan names can move while the action is in flight — a webhook
+   * advancing the billing cycle, or a Free window rolling over on its own
+   * anchor — leaving the charged period standing and driving the new one
+   * negative.
+   */
+  refundQuota(consumed: ConsumedQuota): Promise<void>;
 }

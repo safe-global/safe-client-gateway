@@ -14,7 +14,10 @@ import type { IChainsRepository } from '@/modules/chains/domain/chains.repositor
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+import type {
+  ConsumedQuota,
+  IEntitlementEnforcement,
+} from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
@@ -25,6 +28,7 @@ import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/re
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 
 const mockLimitAddressesMapper = vi.mocked({
@@ -110,9 +114,22 @@ describe('WorkspaceRelayer', () => {
     );
   }
 
+  /** What `consumeQuota` hands back: the counter it charged, and by how much. */
+  function spend(spaceId: Space['id'] = faker.number.int()): ConsumedQuota {
+    return {
+      spaceId,
+      period: {
+        featureId: faker.number.int({ min: 1, max: 1000 }),
+        periodStart: faker.date.recent(),
+      },
+      delta: 1,
+    };
+  }
+
   beforeEach(() => {
     vi.resetAllMocks();
     simulationEnabled(false);
+    mockEntitlementEnforcement.consumeQuota.mockResolvedValue(spend());
     mockEntitlementEnforcement.refundQuota.mockResolvedValue(undefined);
     // Real, over a mocked simulator: the cases below are about what a
     // simulation result does to a relay, which a double would not decide.
@@ -361,14 +378,16 @@ describe('WorkspaceRelayer', () => {
       ]),
     );
     mockRelayApi.relay.mockRejectedValue(failed);
+    // Credited to the spend itself, not to whatever period the plan names by
+    // then: the cycle can have moved while the relay was in flight.
+    const spentQuota = spend(args.spaceId);
+    mockEntitlementEnforcement.consumeQuota.mockResolvedValue(spentQuota);
 
     await expect(target.relay(args)).rejects.toThrow(failed);
 
-    expect(mockEntitlementEnforcement.refundQuota).toHaveBeenCalledWith({
-      spaceId: args.spaceId,
-      featureKey: 'sponsored_transactions',
-      delta: 1,
-    });
+    expect(
+      mockEntitlementEnforcement.refundQuota,
+    ).toHaveBeenCalledExactlyOnceWith(spentQuota);
   });
 
   it('should keep a relay whose refund could not be written', async () => {
@@ -376,6 +395,9 @@ describe('WorkspaceRelayer', () => {
     recognises(null);
     mockRelayApi.relay.mockRejectedValue(
       new DataSourceError(faker.lorem.sentence()),
+    );
+    mockEntitlementEnforcement.consumeQuota.mockResolvedValue(
+      spend(args.spaceId),
     );
     mockEntitlementEnforcement.refundQuota.mockRejectedValue(
       new Error(faker.lorem.sentence()),

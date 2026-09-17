@@ -33,7 +33,10 @@ import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
 } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
-import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+import type {
+  ConsumedQuota,
+  IEntitlementEnforcement,
+} from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
@@ -191,7 +194,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
     spaceId: Space['id'];
     featureKey: Exclude<FeatureKey, StockMeteredFeature>;
     delta: number;
-  }): Promise<void> {
+  }): Promise<ConsumedQuota> {
     const grant = await this.resolveGrant(args);
     const counter = this.getCounterOrFail({ ...args, grant });
 
@@ -203,23 +206,15 @@ export class EntitlementsService implements IEntitlementEnforcement {
       // Admitted against what the row now holds; rejecting rolls it back.
       this.admit({ ...args, grant, used: total - args.delta });
     });
+
+    return { spaceId: args.spaceId, period: counter, delta: args.delta };
   }
 
-  public async refundQuota(args: {
-    spaceId: Space['id'];
-    featureKey: Exclude<FeatureKey, StockMeteredFeature>;
-    delta: number;
-  }): Promise<void> {
-    const { counter } = await this.resolveGrant(args);
-    // Nothing was counted, so there is nothing to give back.
-    if (counter === null) {
-      return;
-    }
-
+  public async refundQuota(consumed: ConsumedQuota): Promise<void> {
     await this.spaceFeatureUsageRepository.incrementUsage({
-      spaceId: args.spaceId,
-      period: counter,
-      delta: -args.delta,
+      spaceId: consumed.spaceId,
+      period: consumed.period,
+      delta: -consumed.delta,
     });
   }
 

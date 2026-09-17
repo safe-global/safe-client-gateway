@@ -33,6 +33,7 @@ import {
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
@@ -1438,6 +1439,20 @@ describe('EntitlementsService', () => {
       });
     }
 
+    /** The row itself, to see what a refund did to a period nothing reports. */
+    async function usageOf(args: {
+      spaceId: number;
+      periodStart: Date;
+    }): Promise<number> {
+      const row = await dataSource.getRepository(SpaceFeatureUsage).findOne({
+        where: {
+          space: { id: args.spaceId },
+          periodStart: args.periodStart,
+        },
+      });
+      return row?.used ?? 0;
+    }
+
     async function usedOf(spaceId: number): Promise<number | undefined> {
       const result = await service.resolveEntitlements(spaceId);
       const entitlement = result.entitlements.find(
@@ -1448,7 +1463,7 @@ describe('EntitlementsService', () => {
         : undefined;
     }
 
-    function consume(spaceId: number, delta: number): Promise<void> {
+    function consume(spaceId: number, delta: number): Promise<ConsumedQuota> {
       return enforcingService.consumeQuota({
         spaceId,
         featureKey: 'sponsored_transactions',
@@ -1465,7 +1480,10 @@ describe('EntitlementsService', () => {
         periodStart: faker.date.recent(),
       });
 
-      await expect(consume(spaceId, delta)).resolves.toBeUndefined();
+      await expect(consume(spaceId, delta)).resolves.toMatchObject({
+        spaceId,
+        delta,
+      });
 
       await expect(usedOf(spaceId)).resolves.toBe(delta);
     });
@@ -1514,15 +1532,42 @@ describe('EntitlementsService', () => {
         quota,
         periodStart: faker.date.recent(),
       });
-      await consume(spaceId, 1);
+      const spent = await consume(spaceId, 1);
 
-      await enforcingService.refundQuota({
-        spaceId,
-        featureKey: 'sponsored_transactions',
-        delta: 1,
-      });
+      await enforcingService.refundQuota(spent);
 
       await expect(usedOf(spaceId)).resolves.toBe(0);
+    });
+
+    it('gives it back to the period it charged, not the one now current', async () => {
+      const spaceId = await createSpace();
+      await sponsoredPlan({
+        spaceId,
+        quota: 1,
+        periodStart: new Date('2026-08-01T00:00:00Z'),
+      });
+      const spent = await consume(spaceId, 1);
+
+      // A webhook advances the billing cycle while the relay is in flight.
+      await sponsoredPlan({
+        spaceId,
+        quota: 1,
+        periodStart: new Date('2026-09-01T00:00:00Z'),
+      });
+      await enforcingService.refundQuota(spent);
+
+      // The new period is untouched — a refund into it would read as -1 and
+      // hand out a second submission against a quota of 1.
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+      await expect(
+        usageOf({ spaceId, periodStart: spent.period.periodStart }),
+      ).resolves.toBe(0);
+      await expect(consume(spaceId, 1)).resolves.toMatchObject({
+        period: { periodStart: new Date('2026-09-01T00:00:00Z') },
+      });
+      await expect(consume(spaceId, 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+      });
     });
 
     it('records usage the plan does not cap', async () => {
@@ -1573,7 +1618,7 @@ describe('EntitlementsService', () => {
           featureKey: 'sponsored_transactions',
           delta,
         }),
-      ).resolves.toBeUndefined();
+      ).resolves.toMatchObject({ spaceId, delta });
     });
   });
 
