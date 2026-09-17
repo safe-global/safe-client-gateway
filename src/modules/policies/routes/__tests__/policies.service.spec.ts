@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -14,6 +14,7 @@ import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 const mockPolicyIndexerRepository = {
@@ -58,10 +59,10 @@ describe('PoliciesService', () => {
     );
 
     // authorised by default: active member, Safe in the space
-    mockMembersRepository.findOne.mockResolvedValue({ id: 1 } as never);
+    mockMembersRepository.findOne.mockResolvedValue(memberBuilder().build());
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId: SEPOLIA, address: safeAddress },
-    ] as never);
+    ]);
     mockSafeRepository.getSafe.mockResolvedValue(
       safeBuilder().with('modules', [allowanceModule]).build(),
     );
@@ -96,8 +97,8 @@ describe('PoliciesService', () => {
       // The Space stores what the client sent; a casing difference must not read
       // as a Safe outside the Space.
       mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
-        { chainId: SEPOLIA, address: safeAddress.toLowerCase() },
-      ] as never);
+        { chainId: SEPOLIA, address: safeAddress.toLowerCase() as Address },
+      ]);
 
       await expect(
         target.getSpaceActivePolicies({
@@ -211,7 +212,7 @@ describe('PoliciesService', () => {
       mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
         { chainId: SEPOLIA, address: safeAddress },
         { chainId: '137', address: otherSafe },
-      ] as never);
+      ]);
     });
 
     it('should read every safe of the space in one indexer call', async () => {
@@ -303,7 +304,7 @@ describe('PoliciesService', () => {
     });
 
     it('should reject a caller who is not a member of the space', async () => {
-      mockMembersRepository.findOne.mockResolvedValue(null as never);
+      mockMembersRepository.findOne.mockResolvedValue(null);
 
       await expect(
         target.getSpaceActivePolicies({
@@ -314,7 +315,7 @@ describe('PoliciesService', () => {
     });
 
     it('should read nothing for a space with no safes', async () => {
-      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([] as never);
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
 
       const policies = await target.getSpaceActivePolicies({
         spaceId,
