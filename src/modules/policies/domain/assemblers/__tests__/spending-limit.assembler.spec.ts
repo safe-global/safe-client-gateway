@@ -130,18 +130,90 @@ describe('SpendingLimitAssembler', () => {
   });
 
   describe('the reset window', () => {
-    it('should derive the next reset from the window start', () => {
+    const DAY_IN_MINUTES = 1440;
+    /** Pins now to `minutes` since the epoch, so a boundary can be placed. */
+    function nowAtMinute(minutes: number): void {
+      vi.useFakeTimers().setSystemTime(minutes * 60 * 1000);
+    }
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should derive the reset from the window start', () => {
       // The indexer serves `lastResetMin` - minutes since the epoch - and no
       // longer the boundary itself, so the API computes it.
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + 1);
+
       const daily = allowance()
-        .with('resetTimeMinutes', 1440)
-        .with('lastResetMin', 29_793_086)
+        .with('resetTimeMinutes', DAY_IN_MINUTES)
+        .with('lastResetMin', windowStart)
         .build();
 
       const [policy] = assemble([daily]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].resetsAt).toBe(
-        (29_793_086 + 1440) * 60,
+      expect(dataOf(policy).spenders[0].allowances[0].resetsAtMinute).toBe(
+        windowStart + DAY_IN_MINUTES,
+      );
+    });
+
+    it('should report a reset ahead of now', () => {
+      // Only a transfer rewrites `lastResetMin`, so an untouched allowance
+      // carries a window start whole periods back - its next reset is still
+      // ahead of now, not on the stale window it was left on.
+      const windowStart = 29_793_086;
+      const now = windowStart + 10 * DAY_IN_MINUTES;
+      nowAtMinute(now);
+
+      const daily = allowance()
+        .with('resetTimeMinutes', DAY_IN_MINUTES)
+        .with('lastResetMin', windowStart)
+        .build();
+
+      const [policy] = assemble([daily]);
+
+      const resetsAtMinute =
+        dataOf(policy).spenders[0].allowances[0].resetsAtMinute;
+      expect(resetsAtMinute).toBe(windowStart + 11 * DAY_IN_MINUTES);
+      expect(resetsAtMinute).toBeGreaterThan(now);
+    });
+
+    it('should keep the next reset on the boundaries the module resets on', () => {
+      // The module snaps a stale window forward by whole periods, so every
+      // boundary sits on that lattice - a reset is never reported at now plus
+      // one period from an arbitrary minute.
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + 3 * DAY_IN_MINUTES + 617);
+
+      const daily = allowance()
+        .with('resetTimeMinutes', DAY_IN_MINUTES)
+        .with('lastResetMin', windowStart)
+        .build();
+
+      const [policy] = assemble([daily]);
+
+      const resetsAtMinute =
+        dataOf(policy).spenders[0].allowances[0].resetsAtMinute;
+      expect(resetsAtMinute).toBe(windowStart + 4 * DAY_IN_MINUTES);
+      expect((resetsAtMinute! - windowStart) % DAY_IN_MINUTES).toBe(0);
+    });
+
+    it('should report the following boundary when one falls on this minute', () => {
+      // The module resets on reaching a boundary, so the one landing on this
+      // minute has elapsed rather than being the next.
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + 2 * DAY_IN_MINUTES);
+
+      const daily = allowance()
+        .with('resetTimeMinutes', DAY_IN_MINUTES)
+        .with('lastResetMin', windowStart)
+        .build();
+
+      const [policy] = assemble([daily]);
+
+      expect(dataOf(policy).spenders[0].allowances[0].resetsAtMinute).toBe(
+        windowStart + 3 * DAY_IN_MINUTES,
       );
     });
 
@@ -157,18 +229,20 @@ describe('SpendingLimitAssembler', () => {
       const [policy] = assemble([oneTime]);
 
       expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
-        resetPeriodSeconds: 0,
-        resetsAt: null,
+        resetPeriodMinutes: 0,
+        resetsAtMinute: null,
       });
     });
 
-    it('should report the reset period in seconds', () => {
-      const daily = allowance().with('resetTimeMinutes', 1440).build();
+    it('should report the reset period in minutes', () => {
+      const daily = allowance()
+        .with('resetTimeMinutes', DAY_IN_MINUTES)
+        .build();
 
       const [policy] = assemble([daily]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].resetPeriodSeconds).toBe(
-        86_400,
+      expect(dataOf(policy).spenders[0].allowances[0].resetPeriodMinutes).toBe(
+        DAY_IN_MINUTES,
       );
     });
 

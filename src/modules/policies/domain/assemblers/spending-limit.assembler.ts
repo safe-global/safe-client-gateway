@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from "@nestjs/common";
-import { type Address, isAddressEqual } from "viem";
+import { Injectable } from '@nestjs/common';
+import { type Address, isAddressEqual } from 'viem';
 import type {
   PolicyAssembler,
   PolicyAssemblerContext,
-} from "@/modules/policies/domain/assemblers/policy-assembler.interface";
+} from '@/modules/policies/domain/assemblers/policy-assembler.interface';
 import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-} from "@/modules/policies/domain/entities/active-policy.entity";
-import type { PolicyIndexerSafeAllowance } from "@/modules/policies/domain/entities/indexer/policy-indexer-state.entity";
+} from '@/modules/policies/domain/entities/active-policy.entity';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
-} from "@/modules/policies/domain/entities/policy-type.entity";
+} from '@/modules/policies/domain/entities/policy-type.entity';
 
-const SECONDS_IN_MINUTE = 60;
+const MILLISECONDS_IN_MINUTE = 60_000;
 
 /**
  * Builds the spending limits of a Safe from the allowance module's aggregated
@@ -78,16 +78,27 @@ export class SpendingLimitAssembler implements PolicyAssembler {
       token_address: allowance.token,
       amount: allowance.amount,
       spent: allowance.spent,
-      resetPeriodSeconds: allowance.resetTimeMinutes * SECONDS_IN_MINUTE,
+      resetPeriodMinutes: allowance.resetTimeMinutes,
       // The indexer serves the window start, not the boundary: a never-resetting
       // allowance has no next reset to report.
-      resetsAt: resets
-        ? (allowance.lastResetMin + allowance.resetTimeMinutes) *
-          SECONDS_IN_MINUTE
-        : null,
-      resetBoundaryIsExact: allowance.resetPhase === "EXACT",
+      resetsAtMinute: resets ? this.nextResetMinute(allowance) : null,
+      resetBoundaryIsExact: allowance.resetPhase === 'EXACT',
       isDelegateActive: allowance.isDelegateActive,
     };
+  }
+
+  /**
+   * The minute the window next rolls over.
+   *
+   * `lastResetMin` is only rewritten by a transfer: the AllowanceModule updates the
+   * value lazily, inside `_updateAllowance`.
+   */
+  private nextResetMinute(allowance: PolicyIndexerSafeAllowance): number {
+    const nowMinutes = Math.floor(Date.now() / MILLISECONDS_IN_MINUTE);
+    const elapsed = nowMinutes - allowance.lastResetMin;
+    const periods = Math.floor(elapsed / allowance.resetTimeMinutes) + 1;
+
+    return allowance.lastResetMin + periods * allowance.resetTimeMinutes;
   }
 
   /**
