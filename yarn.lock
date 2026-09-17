@@ -6323,7 +6323,7 @@ __metadata:
     ts-loader: "npm:9.6.2"
     ts-node: "npm:10.9.2"
     tsconfig-paths: "npm:4.2.0"
-    typeorm: "npm:1.1.0"
+    typeorm: "npm:1.1.1"
     typescript: "npm:6.0.3"
     undici: "npm:8.10.0"
     unplugin-swc: "npm:1.6.0"
@@ -7038,9 +7038,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typeorm@npm:1.1.0":
-  version: 1.1.0
-  resolution: "typeorm@npm:1.1.0"
+"typeorm@npm:1.1.1":
+  version: 1.1.1
+  resolution: "typeorm@npm:1.1.1"
   dependencies:
     "@sqltools/formatter": "npm:^1.2.5"
     ansis: "npm:^4.3.1"
@@ -7103,7 +7103,7 @@ __metadata:
     typeorm: cli.js
     typeorm-ts-node-commonjs: cli-ts-node-commonjs.js
     typeorm-ts-node-esm: cli-ts-node-esm.js
-  checksum: 10/4f442af7bd6b5c2a63565ca599fdf8894be4baea1eb8434eccbc1c38076d155c7007a90e81955c22caeff61c2e3dd12ca8cfa3d6212acfc498f763592aaa0de3
+  checksum: 10/29840afe29a2128ba63be2bf6c2168cf4a945998d0840ac426469255bd45d0ba1a1dd4a0c57b97b9155d072d9c7dbd7f2df4cac7f6d3c70a649e650f11670226
   languageName: node
   linkType: hard
 
