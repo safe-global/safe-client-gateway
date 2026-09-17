@@ -2,12 +2,6 @@
 
 /**
  * The policy types CGW reports.
- *
- * The values are the wire format shared with the wallet and double as the
- * discriminator of the active-policy union. Module-enforced and off-chain types
- * are named for what the product calls them; guard-enforced ones carry the
- * policy contract's own name, which is also the name the indexer's registry
- * resolves a policy address to.
  */
 export const PolicyType = {
   /** Allowance module. */
@@ -16,11 +10,11 @@ export const PolicyType = {
   Recovery: 'recovery',
   /** A delegate of the Transaction Service; enforced by no contract. */
   Proposer: 'proposer',
-  Erc20Transfer: 'ERC20TransferPolicy',
+  Erc20Transfer: 'erc20-transfer',
   Cosigner: 'cosigner',
-  AllowPolicy: 'AllowPolicy',
-  NativeTransfer: 'NativeTransferPolicy',
-  Deny: 'DenyPolicy',
+  Allow: 'allow',
+  NativeTransfer: 'native-transfer',
+  Deny: 'deny',
 };
 
 export type PolicyType = (typeof PolicyType)[keyof typeof PolicyType];
