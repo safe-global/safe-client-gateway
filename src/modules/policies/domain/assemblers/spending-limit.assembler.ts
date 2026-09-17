@@ -92,6 +92,9 @@ export class SpendingLimitAssembler implements PolicyAssembler {
    *
    * `lastResetMin` is only rewritten by a transfer: the AllowanceModule updates the
    * value lazily, inside `_updateAllowance`.
+   *
+   * `lastResetMin` is always <= now.
+   * @see https://github.com/safe-fndn/safe-modules/blob/8076191f93e88eefaae3508efa8b12a091158c68/modules/allowances/contracts/AllowanceModule.sol#L93
    */
   private nextResetMinute(allowance: PolicyIndexerSafeAllowance): number {
     const nowMinutes = Math.floor(Date.now() / MILLISECONDS_IN_MINUTE);
