@@ -7,12 +7,15 @@ import {
 import { type Address, isAddressEqual } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
+import {
+  POLICY_ASSEMBLERS,
+  type PolicyAssembler,
+} from '@/modules/policies/domain/assemblers/policy-assembler.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import { policyStateForSafe } from '@/modules/policies/domain/utils/policy-state.utils';
-import { POLICY_ASSEMBLERS } from '@/modules/policies/policies.constants';
+
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';

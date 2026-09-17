@@ -75,7 +75,7 @@ export class SpendingLimitAssembler implements PolicyAssembler {
     const resets = allowance.resetTimeMinutes > 0;
 
     return {
-      token_address: allowance.token,
+      tokenAddress: allowance.token,
       amount: allowance.amount,
       spent: allowance.spent,
       resetPeriodMinutes: allowance.resetTimeMinutes,

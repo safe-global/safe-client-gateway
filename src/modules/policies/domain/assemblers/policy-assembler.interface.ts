@@ -22,3 +22,8 @@ export type PolicyAssemblerContext = {
 export interface PolicyAssembler {
   assemble(context: PolicyAssemblerContext): Array<ActivePolicy>;
 }
+
+/**
+ * The registered {@link PolicyAssembler}s.
+ */
+export const POLICY_ASSEMBLERS = Symbol('POLICY_ASSEMBLERS');

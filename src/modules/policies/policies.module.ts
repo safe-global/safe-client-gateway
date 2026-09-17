@@ -3,11 +3,14 @@ import { forwardRef, Module } from '@nestjs/common';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
-import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
+import {
+  POLICY_ASSEMBLERS,
+  type PolicyAssembler,
+} from '@/modules/policies/domain/assemblers/policy-assembler.interface';
 import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
 import { PolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
-import { POLICY_ASSEMBLERS } from '@/modules/policies/policies.constants';
+
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { SpacePoliciesController } from '@/modules/policies/routes/space-policies.controller';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
