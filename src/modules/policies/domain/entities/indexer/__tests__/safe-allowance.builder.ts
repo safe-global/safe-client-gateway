@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
+import type { z } from 'zod';
 import { Builder, type IBuilder } from '@/__tests__/builder';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import {
+  type PolicyIndexerSafeAllowance,
+  PolicyIndexerSafeAllowanceSchema,
+  PolicyIndexerSafeDelegateSchema,
+} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
 /**
  * Builders for the Policy Indexer's rows **as served**, not as parsed: `chainId`
@@ -11,22 +16,9 @@ import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entit
  * the conversions those two facts exist for.
  */
 
-export type RawIndexerSafeAllowance = {
-  chainId: number;
-  safe: string;
-  module: string;
-  moduleVersion: string;
-  delegate: string;
-  token: string;
-  amount: string;
-  spent: string;
-  remaining: string;
-  resetTimeMinutes: string;
-  lastResetMin: string;
-  resetPhase: string;
-  nonce: string;
-  updatedAt: string;
-};
+export type RawIndexerSafeAllowance = z.input<
+  typeof PolicyIndexerSafeAllowanceSchema
+>;
 
 export function rawIndexerSafeAllowanceBuilder(): IBuilder<RawIndexerSafeAllowance> {
   const amount = faker.number.bigInt({ min: 1n, max: 10n ** 24n });
@@ -65,16 +57,9 @@ export function rawIndexerSafeAllowanceBuilder(): IBuilder<RawIndexerSafeAllowan
   );
 }
 
-export type RawIndexerSafeDelegate = {
-  chainId: number;
-  safe: string;
-  module: string;
-  moduleVersion: string;
-  delegate: string;
-  active: boolean;
-  addedAt: string;
-  updatedAt: string;
-};
+export type RawIndexerSafeDelegate = z.input<
+  typeof PolicyIndexerSafeDelegateSchema
+>;
 
 export function rawIndexerSafeDelegateBuilder(): IBuilder<RawIndexerSafeDelegate> {
   const addedAt = faker.number.int({ min: 1_700_000_000, max: 1_800_000_000 });

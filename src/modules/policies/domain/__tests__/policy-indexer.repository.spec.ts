@@ -227,9 +227,11 @@ describe('PolicyIndexerRepository', () => {
 
     it('should read a reset phase it does not know as UNKNOWN', async () => {
       // Pessimistic: an unverified boundary is not reported as exact.
-      const allowance = rawIndexerSafeAllowanceBuilder()
-        .with('resetPhase', 'SOMETHING_NEW')
-        .build();
+      // A phase no release of CGW knows, so it cannot come from the builder.
+      const allowance = {
+        ...rawIndexerSafeAllowanceBuilder().build(),
+        resetPhase: 'SOMETHING_NEW',
+      };
       mockPolicyIndexerApi.getState.mockResolvedValue(
         rawify(rawPolicyIndexerResponse({ SafeAllowance: [allowance] })),
       );
