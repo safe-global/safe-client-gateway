@@ -73,7 +73,7 @@ describe('SpendingLimitAssembler', () => {
       expect(dataOf(policy).spenders).toHaveLength(1);
       expect(
         dataOf(policy).spenders[0].allowances.map(
-          (entry) => entry.token_address,
+          (entry) => entry.tokenAddress,
         ),
       ).toStrictEqual([usdc.token, zeroAddress]);
     });
@@ -314,7 +314,7 @@ describe('SpendingLimitAssembler', () => {
 
       const [policy] = assemble([native]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].token_address).toBe(
+      expect(dataOf(policy).spenders[0].allowances[0].tokenAddress).toBe(
         zeroAddress,
       );
     });

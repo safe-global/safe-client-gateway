@@ -25,7 +25,7 @@ export type SpendingLimitPolicyData = {
 
 export type SpendingLimitAllowance = {
   /** The zero address is the native currency. */
-  token_address: Address;
+  tokenAddress: Address;
   /** Per-window ceiling, in base units. */
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */
