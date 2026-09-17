@@ -112,22 +112,24 @@ describe('CircuitBreakerService', () => {
       expect(service.canProceed('test-circuit')).toBe(false);
     });
 
-    it('should transition to HALF_OPEN after timeout', (done) => {
+    it('should transition to HALF_OPEN after timeout', () => {
       const service = createService({ threshold: 2, timeout: 1000 });
       const circuit = service.getOrRegisterCircuit('test-circuit');
       service.recordFailure(circuit.name);
       service.recordFailure(circuit.name);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
 
-      setTimeout(() => {
-        expect(service.canProceed('test-circuit')).toBe(true);
-        const updatedCircuit = service.get('test-circuit');
-        expect(updatedCircuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
-        done();
-      }, 1100);
+      const original = Date.now;
+      Date.now = vi.fn(() => original() + 1100);
+
+      expect(service.canProceed('test-circuit')).toBe(true);
+      const updatedCircuit = service.get('test-circuit');
+      expect(updatedCircuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
+
+      Date.now = original;
     });
 
-    it('should not allow requests before timeout', (done) => {
+    it('should not allow requests before timeout', () => {
       const service = createService({ threshold: 2, timeout: 1000 });
       const circuit = service.getOrRegisterCircuit('test-circuit');
       service.recordFailure(circuit.name);
@@ -135,12 +137,14 @@ describe('CircuitBreakerService', () => {
 
       expect(service.canProceed('test-circuit')).toBe(false);
 
-      setTimeout(() => {
-        expect(service.canProceed('test-circuit')).toBe(false);
-        const c = service.get('test-circuit');
-        expect(c?.metrics.state).toBe(CircuitState.OPEN);
-        done();
-      }, 500);
+      const original = Date.now;
+      Date.now = vi.fn(() => original() + 500);
+
+      expect(service.canProceed('test-circuit')).toBe(false);
+      const c = service.get('test-circuit');
+      expect(c?.metrics.state).toBe(CircuitState.OPEN);
+
+      Date.now = original;
     });
   });
 
@@ -161,58 +165,67 @@ describe('CircuitBreakerService', () => {
       return svc;
     }
 
-    it('should allow all requests in HALF_OPEN state', (done) => {
+    it('should allow all requests in HALF_OPEN state', () => {
       const service = createHalfOpenService();
-      setTimeout(() => {
-        expect(service.canProceed('test-circuit')).toBe(true);
-        const circuit = service.get('test-circuit');
-        expect(circuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
 
-        expect(service.canProceed('test-circuit')).toBe(true);
-        expect(service.canProceed('test-circuit')).toBe(true);
-        expect(service.canProceed('test-circuit')).toBe(true);
-        done();
-      }, 150);
+      const original = Date.now;
+      Date.now = vi.fn(() => original() + 150);
+
+      expect(service.canProceed('test-circuit')).toBe(true);
+      const circuit = service.get('test-circuit');
+      expect(circuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
+
+      expect(service.canProceed('test-circuit')).toBe(true);
+      expect(service.canProceed('test-circuit')).toBe(true);
+      expect(service.canProceed('test-circuit')).toBe(true);
+
+      Date.now = original;
     });
 
-    it('should transition to CLOSED after consecutive successes', (done) => {
+    it('should transition to CLOSED after consecutive successes', () => {
       const service = createHalfOpenService();
-      setTimeout(() => {
-        service.canProceed('test-circuit'); // Transition to HALF_OPEN
-        const circuit = service.get('test-circuit');
-        expect(circuit).toBeDefined();
 
-        if (circuit) {
-          // Need 5 consecutive successes (threshold=5)
-          for (let i = 0; i < 4; i++) {
-            service.recordSuccess(circuit.name);
-            expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
-          }
+      const original = Date.now;
+      Date.now = vi.fn(() => original() + 150);
 
+      service.canProceed('test-circuit'); // Transition to HALF_OPEN
+      const circuit = service.get('test-circuit');
+      expect(circuit).toBeDefined();
+
+      if (circuit) {
+        // Need 5 consecutive successes (threshold=5)
+        for (let i = 0; i < 4; i++) {
           service.recordSuccess(circuit.name);
-          expect(service.get('test-circuit')).toBeUndefined();
+          expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
         }
-        done();
-      }, 150);
+
+        service.recordSuccess(circuit.name);
+        expect(service.get('test-circuit')).toBeUndefined();
+      }
+
+      Date.now = original;
     });
 
-    it('should transition back to OPEN when half-open failure threshold is reached', (done) => {
+    it('should transition back to OPEN when half-open failure threshold is reached', () => {
       const service = createHalfOpenService();
-      setTimeout(() => {
-        service.canProceed('test-circuit'); // Transition to HALF_OPEN
-        const circuit = service.get('test-circuit');
-        expect(circuit).toBeDefined();
 
-        if (circuit) {
-          // Effective threshold = ceil(5 * 40 / 100) = 2
-          service.recordFailure(circuit.name);
-          expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      const original = Date.now;
+      Date.now = vi.fn(() => original() + 150);
 
-          service.recordFailure(circuit.name);
-          expect(circuit.metrics.state).toBe(CircuitState.OPEN);
-        }
-        done();
-      }, 150);
+      service.canProceed('test-circuit'); // Transition to HALF_OPEN
+      const circuit = service.get('test-circuit');
+      expect(circuit).toBeDefined();
+
+      if (circuit) {
+        // Effective threshold = ceil(5 * 40 / 100) = 2
+        service.recordFailure(circuit.name);
+        expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+
+        service.recordFailure(circuit.name);
+        expect(circuit.metrics.state).toBe(CircuitState.OPEN);
+      }
+
+      Date.now = original;
     });
   });
 
@@ -260,7 +273,7 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.failureCount).toBe(2);
     });
 
-    it('should track consecutive successes in HALF_OPEN state', (done) => {
+    it('should track consecutive successes in HALF_OPEN state', () => {
       const service = createService({ threshold: 5, timeout: 100 });
       const circuit = service.getOrRegisterCircuit('test-circuit');
 
@@ -268,18 +281,20 @@ describe('CircuitBreakerService', () => {
         service.recordFailure(circuit.name);
       }
 
-      setTimeout(() => {
-        service.canProceed('test-circuit');
-        expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      const original = Date.now;
+      Date.now = vi.fn(() => original() + 150);
 
-        service.recordSuccess(circuit.name);
-        service.recordSuccess(circuit.name);
-        expect(circuit.metrics.consecutiveSuccesses).toBe(2);
+      service.canProceed('test-circuit');
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
 
-        service.recordFailure(circuit.name);
-        expect(circuit.metrics.consecutiveSuccesses).toBe(0);
-        done();
-      }, 150);
+      service.recordSuccess(circuit.name);
+      service.recordSuccess(circuit.name);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
+
+      service.recordFailure(circuit.name);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(0);
+
+      Date.now = original;
     });
   });
 
