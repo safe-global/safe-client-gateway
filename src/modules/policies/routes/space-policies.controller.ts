@@ -14,16 +14,16 @@ import {
   ApiOperation,
   ApiParam,
   ApiQuery,
+  ApiServiceUnavailableResponse,
   ApiTags,
-  ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { SpaceActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { Auth } from '@/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
@@ -72,9 +72,12 @@ export class SpacePoliciesController {
   @ApiUnprocessableEntityResponse({
     description: 'Invalid CAIP-10 address, or a Safe outside this space',
   })
-  @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
-    description: 'Access forbidden - user is not a member of this space',
+    description:
+      'Access forbidden - authentication missing or invalid, or user is not a member of this space',
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'The policy api is unavailable',
   })
   @Get('active')
   public async getActivePolicies(
