@@ -30,13 +30,17 @@ export type SpendingLimitAllowance = {
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */
   spent: string;
-  /** `0` never resets. */
-  resetPeriodSeconds: number;
-  /** Unix seconds of the next reset; `null` when it never resets. */
-  resetsAt: number | null;
+  /** Window length in minutes, the module's own unit. `0` never resets. */
+  resetPeriodMinutes: number;
+  /**
+   * The next reset, in minutes since the epoch - the module counts windows in
+   * whole minutes, so a boundary is never finer than one. `null` when it never
+   * resets.
+   */
+  resetsAtMinute: number | null;
   /**
    * `false` when the reset boundary could not be recovered from the configuring
-   * call, so `resetsAt` may be up to one period out.
+   * call, so `resetsAtMinute` may be up to one period out.
    */
   resetBoundaryIsExact: boolean;
   /**
