@@ -1,20 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
+import { ForbiddenException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { UUID_REGEX } from '@/domain/common/constants';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { EntitlementGuard } from '@/modules/entitlements/routes/guards/entitlement.guard';
 import { SpaceIdParamSchema } from '@/modules/entitlements/routes/guards/space-id-param.schema';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('EntitlementGuard', () => {
   const spaceUuid = fakeUuid();
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
+  const userId = faker.number.int({ min: 1, max: 100_000 });
   let entitlementEnforcement: MockedObject<IEntitlementEnforcement>;
   let spacesRepository: MockedObject<Pick<ISpacesRepository, 'findIdByUuid'>>;
+  let membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>>;
   let target: EntitlementGuard;
 
   /** The base is only reachable through a per-feature subclass. */
@@ -22,14 +29,22 @@ describe('EntitlementGuard', () => {
     public constructor(
       enforcement: IEntitlementEnforcement,
       spaces: ISpacesRepository,
+      members: IMembersRepository,
     ) {
-      super(enforcement, spaces, 'safe_seats');
+      super(enforcement, spaces, members, 'safe_seats');
     }
   }
 
-  function context(params: unknown): ExecutionContext {
+  /** A request as `AuthGuard` leaves it: the verified session payload attached. */
+  function context(params: unknown, authenticated = true): ExecutionContext {
+    const request: Record<string, unknown> = { params };
+    if (authenticated) {
+      request[AUTH_PAYLOAD_REQUEST_PROPERTY] = siweAuthPayloadDtoBuilder()
+        .with('sub', String(userId))
+        .build();
+    }
     return {
-      switchToHttp: () => ({ getRequest: () => ({ params }) }),
+      switchToHttp: () => ({ getRequest: () => request }),
     } as ExecutionContext;
   }
 
@@ -39,9 +54,13 @@ describe('EntitlementGuard', () => {
       prepareQuotaCheck: vi.fn(),
     };
     spacesRepository = { findIdByUuid: vi.fn().mockResolvedValue(spaceId) };
+    membersRepository = {
+      findOne: vi.fn().mockResolvedValue({ id: userId } as Member),
+    };
     target = new TestEntitlementGuard(
       entitlementEnforcement,
       spacesRepository as MockedObject<ISpacesRepository>,
+      membersRepository as MockedObject<IMembersRepository>,
     );
   });
 
@@ -61,6 +80,16 @@ describe('EntitlementGuard', () => {
       // Unvalidated payload here: it can only ask about the current limit.
       delta: 0,
     });
+  });
+
+  it('rejects a non-member before revealing anything about the entitlement', async () => {
+    membersRepository.findOne.mockResolvedValue(null);
+
+    await expect(
+      target.canActivate(context({ spaceId: spaceUuid })),
+    ).rejects.toThrow(ForbiddenException);
+
+    expect(entitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
   });
 
   it('rejects a space at or over its limit', async () => {
