@@ -90,17 +90,18 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })
   public readonly spent!: string;
-  @ApiProperty({ description: 'Window length in seconds; 0 never resets' })
-  public readonly resetPeriodSeconds!: number;
+  @ApiProperty({ description: 'Window length in minutes; 0 never resets' })
+  public readonly resetPeriodMinutes!: number;
   @ApiProperty({
     type: Number,
     nullable: true,
-    description: 'Unix seconds of the next reset; null when it never resets',
+    description:
+      'Minutes since the epoch of the next reset, the unit the module counts windows in; null when it never resets',
   })
-  public readonly resetsAt!: number | null;
+  public readonly resetsAtMinute!: number | null;
   @ApiProperty({
     description:
-      'False when the reset boundary could not be recovered exactly, so `resetsAt` may be up to one period out. `amount` is unaffected.',
+      'False when the reset boundary could not be recovered exactly, so `resetsAtMinute` may be up to one period out. `amount` is unaffected.',
   })
   public readonly resetBoundaryIsExact!: boolean;
   @ApiProperty({

@@ -261,6 +261,32 @@ describe('PoliciesService', () => {
       });
     });
 
+    it('should read a safe requested more than once only once', async () => {
+      // A repeated `?safes=` entry - the same Safe in another casing included -
+      // is one Safe, not two: duplicating it would duplicate its policies in
+      // the response and read the Safe twice.
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        spaceId,
+        safes: [
+          { chainId: SEPOLIA, address: safeAddress },
+          { chainId: SEPOLIA, address: getAddress(safeAddress.toLowerCase()) },
+        ],
+        authPayload,
+      });
+
+      expect(policies).toHaveLength(1);
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [{ chainId: SEPOLIA, address: safeAddress }],
+      });
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);
+    });
+
     it('should reject a requested safe that is not in the space', async () => {
       // Narrowing to nothing would look like a Space whose Safes hold no
       // policies, rather than a request for a Safe the caller cannot read.

@@ -73,33 +73,41 @@ export class PoliciesService {
     const userId = getAuthenticatedUserIdOrFail(request.authPayload);
     await assertMember(this.membersRepository, request.spaceId, userId);
 
-    const inSpace = await this.spaceSafesRepository.findBySpaceId(
-      request.spaceId,
-    );
-    const all = inSpace.map((safe) => ({
+    const safesInSpace = (
+      await this.spaceSafesRepository.findBySpaceId(request.spaceId)
+    ).map((safe) => ({
       chainId: safe.chainId,
       address: safe.address,
     }));
 
-    if (!request.safes) {
-      return all;
+    const requested = request.safes;
+
+    // If no specific Safes requested in Space, return all.
+    if (!requested) {
+      return safesInSpace;
     }
 
-    return request.safes.map((requested) => {
-      const match = all.find(
-        (safe) =>
-          safe.chainId === requested.chainId &&
-          isAddressEqual(safe.address, requested.address),
+    const safesNotInSpace = requested.find(
+      (requestedSafe) =>
+        !safesInSpace.some((safe) => this.compareSafes(safe, requestedSafe)),
+    );
+
+    if (safesNotInSpace) {
+      throw new UnprocessableEntityException(
+        `Safe ${safesNotInSpace.chainId}:${safesNotInSpace.address} is not in this space`,
       );
+    }
 
-      if (!match) {
-        throw new UnprocessableEntityException(
-          `Safe ${requested.chainId}:${requested.address} is not in this space`,
-        );
-      }
+    // Narrowing filters the Space's own Safes rather than mapping the request,
+    // so a Safe asked for twice - repeated outright, or in another casing - is
+    // still read once and its policies reported once.
+    return safesInSpace.filter((safe) =>
+      requested.some((wanted) => this.compareSafes(safe, wanted)),
+    );
+  }
 
-      return match;
-    });
+  private compareSafes(a: SafeRef, b: SafeRef): boolean {
+    return a.chainId === b.chainId && isAddressEqual(a.address, b.address);
   }
 
   /**
