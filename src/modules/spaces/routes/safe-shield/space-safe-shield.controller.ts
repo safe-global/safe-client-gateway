@@ -11,12 +11,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBadRequestResponse,
   ApiBody,
+  ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -28,6 +32,7 @@ import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entitie
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import { SingleRecipientAnalysisDto } from '@/modules/safe-shield/entities/dtos/single-recipient-analysis.dto';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
@@ -70,6 +75,12 @@ export class SpaceSafeShieldController {
     description: 'Recipient interaction analysis results',
     type: SingleRecipientAnalysisDto,
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Not a member of this Space' })
+  @ApiNotFoundResponse({
+    description: 'Safe is not registered to this Space',
+  })
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
     description:
@@ -80,7 +91,7 @@ export class SpaceSafeShieldController {
   @HttpCode(HttpStatus.OK)
   @Get('recipient/:recipientAddress')
   public analyzeRecipient(
-    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -124,6 +135,12 @@ export class SpaceSafeShieldController {
     description:
       'Combined counterparty analysis including recipients and contracts grouped by status group and mapped to an address.',
   })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @ApiUnauthorizedResponse({ description: 'Authentication required' })
+  @ApiForbiddenResponse({ description: 'Not a member of this Space' })
+  @ApiNotFoundResponse({
+    description: 'Safe is not registered to this Space',
+  })
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
     description:
@@ -134,7 +151,7 @@ export class SpaceSafeShieldController {
   @HttpCode(HttpStatus.OK)
   @Post('counterparty-analysis')
   public analyzeCounterparty(
-    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
