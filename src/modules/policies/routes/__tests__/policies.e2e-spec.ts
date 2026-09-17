@@ -363,7 +363,7 @@ describe('Policies routes (e2e)', () => {
                 isActive: true,
                 allowances: [
                   {
-                    token_address: getAddress(allowance.token),
+                    tokenAddress: getAddress(allowance.token),
                     amount: '1000',
                     spent: '250',
                     resetPeriodMinutes: DAY_IN_MINUTES,

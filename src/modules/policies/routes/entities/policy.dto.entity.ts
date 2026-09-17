@@ -85,7 +85,7 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   @ApiProperty({
     description: 'The token the limit applies to; zero address for native',
   })
-  public readonly token_address!: Address;
+  public readonly tokenAddress!: Address;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })
