@@ -7,7 +7,11 @@ import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
  * is data and its `key` column a plain string, so the response is narrowed to
  * this list and a seeded-but-unpublished key never ships.
  */
-export const FEATURE_KEYS = ['safe_seats', 'copilot_scans'] as const;
+export const FEATURE_KEYS = [
+  'safe_seats',
+  'copilot_scans',
+  'sponsored_transactions',
+] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 

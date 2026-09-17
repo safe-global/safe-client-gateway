@@ -105,9 +105,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-kms@npm:3.1124.0":
-  version: 3.1124.0
-  resolution: "@aws-sdk/client-kms@npm:3.1124.0"
+"@aws-sdk/client-kms@npm:3.1127.0":
+  version: 3.1127.0
+  resolution: "@aws-sdk/client-kms@npm:3.1127.0"
   dependencies:
     "@aws-sdk/core": "npm:^3.977.9"
     "@aws-sdk/credential-provider-node": "npm:^3.972.82"
@@ -117,13 +117,13 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.11.3"
     "@smithy/types": "npm:^4.17.2"
     tslib: "npm:^2.6.2"
-  checksum: 10/ce3f80d924dfe7ddd09bf0970bb21e2a631607d4f18a936c70ec33350f89cfa974962cf031160c438ad760ee379a84e36880afe36faa49b26bc4f3b489367e4a
+  checksum: 10/505e2e1ce352b9253b73573d53193f0f33449cd76d60c943068e113f356581df8d640e110412a48122d97ce91caf1c12c5e925f3c7b7db53143f26d2bb779584
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:3.1124.0":
-  version: 3.1124.0
-  resolution: "@aws-sdk/client-s3@npm:3.1124.0"
+"@aws-sdk/client-s3@npm:3.1127.0":
+  version: 3.1127.0
+  resolution: "@aws-sdk/client-s3@npm:3.1127.0"
   dependencies:
     "@aws-sdk/checksums": "npm:^3.1000.29"
     "@aws-sdk/core": "npm:^3.977.9"
@@ -136,13 +136,13 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.11.3"
     "@smithy/types": "npm:^4.17.2"
     tslib: "npm:^2.6.2"
-  checksum: 10/c0ef8626fffb9a7e3554764951fc6b0ca1fe10e75e07955da1e9f9da92aa9bb69fa3fd7e0f82e659f2d123d79ad1e6ae0828adb8bdbdeb15ec897b2207342110
+  checksum: 10/2977766e425a9c864278f04f4eae2556dfde1ab8802f7ab2209d835a62e10025d7536cbf4d809c73de94b59a441be7d23db90a9bba06445887273a826b1f49c7
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-sesv2@npm:3.1124.0":
-  version: 3.1124.0
-  resolution: "@aws-sdk/client-sesv2@npm:3.1124.0"
+"@aws-sdk/client-sesv2@npm:3.1127.0":
+  version: 3.1127.0
+  resolution: "@aws-sdk/client-sesv2@npm:3.1127.0"
   dependencies:
     "@aws-sdk/core": "npm:^3.977.9"
     "@aws-sdk/credential-provider-node": "npm:^3.972.82"
@@ -153,7 +153,7 @@ __metadata:
     "@smithy/node-http-handler": "npm:^4.11.3"
     "@smithy/types": "npm:^4.17.2"
     tslib: "npm:^2.6.2"
-  checksum: 10/cf457601dc4591a3b80b33972ec03c162d84d4a7249e286bfce22b055f7d4177eecff1b7cbfcb2d4b01f3868187bec9b8605ec2136979beee6a685e8995493bc
+  checksum: 10/92d90b77cefb6a24b58f5bcc29443b09a00ca5845fdffec61088f81dc96d1247e50d7f09f5035ba935fc1d54cc8b48ca76d343df5113de63cf38b319ff2ff51b
   languageName: node
   linkType: hard
 
@@ -297,9 +297,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/lib-storage@npm:3.1124.0":
-  version: 3.1124.0
-  resolution: "@aws-sdk/lib-storage@npm:3.1124.0"
+"@aws-sdk/lib-storage@npm:3.1127.0":
+  version: 3.1127.0
+  resolution: "@aws-sdk/lib-storage@npm:3.1127.0"
   dependencies:
     "@smithy/core": "npm:^3.33.3"
     "@smithy/types": "npm:^4.17.2"
@@ -308,8 +308,8 @@ __metadata:
     stream-browserify: "npm:3.0.0"
     tslib: "npm:^2.6.2"
   peerDependencies:
-    "@aws-sdk/client-s3": ^3.1124.0
-  checksum: 10/2f7eff9c9d7665830a30187773014224a9cdb16bb871d70a313359649a52a5e995f85d255d4be9019aed09c57f1b1e9881b2d74abe79e43d17eece41a3f1dfb5
+    "@aws-sdk/client-s3": ^3.1127.0
+  checksum: 10/400e4641577b236a35d4e3145cb882ad71a0903dd02576806e8c9926807414dc61a80d68273d958fa8b065ff4c9d044c540e0de753fa4c7216fe2b1bd906878c
   languageName: node
   linkType: hard
 
@@ -343,9 +343,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/s3-request-presigner@npm:3.1124.0":
-  version: 3.1124.0
-  resolution: "@aws-sdk/s3-request-presigner@npm:3.1124.0"
+"@aws-sdk/s3-request-presigner@npm:3.1127.0":
+  version: 3.1127.0
+  resolution: "@aws-sdk/s3-request-presigner@npm:3.1127.0"
   dependencies:
     "@aws-sdk/core": "npm:^3.977.9"
     "@aws-sdk/signature-v4-multi-region": "npm:^3.996.46"
@@ -353,7 +353,7 @@ __metadata:
     "@smithy/core": "npm:^3.33.3"
     "@smithy/types": "npm:^4.17.2"
     tslib: "npm:^2.6.2"
-  checksum: 10/3f005ab6c48252e67a73648f2eb76760c207bd8c82407eecc42243240737d696a42d85ef5858fca3f3522ff63f894885bbbf1237a58867432bf41f510ec6894c
+  checksum: 10/e2dc5edd9459ce8802720bf59a52e96a81b6eefa39f6b3fe828e77a818d205faac4a045949c411177632d2e48e8793a8cd56c77abe4faccdb9c06cfb0473857a
   languageName: node
   linkType: hard
 
@@ -2234,106 +2234,106 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-arm64@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-darwin-arm64@npm:1.16.1"
+"@swc/core-darwin-arm64@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-darwin-arm64@npm:1.16.2"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-darwin-x64@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-darwin-x64@npm:1.16.1"
+"@swc/core-darwin-x64@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-darwin-x64@npm:1.16.2"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm-gnueabihf@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.16.1"
+"@swc/core-linux-arm-gnueabihf@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-arm-gnueabihf@npm:1.16.2"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-gnu@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-arm64-gnu@npm:1.16.1"
+"@swc/core-linux-arm64-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-arm64-gnu@npm:1.16.2"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-arm64-musl@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-arm64-musl@npm:1.16.1"
+"@swc/core-linux-arm64-musl@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-arm64-musl@npm:1.16.2"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-linux-ppc64-gnu@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-ppc64-gnu@npm:1.16.1"
+"@swc/core-linux-ppc64-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-ppc64-gnu@npm:1.16.2"
   conditions: os=linux & cpu=ppc64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-s390x-gnu@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-s390x-gnu@npm:1.16.1"
+"@swc/core-linux-s390x-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-s390x-gnu@npm:1.16.2"
   conditions: os=linux & cpu=s390x & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-gnu@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-x64-gnu@npm:1.16.1"
+"@swc/core-linux-x64-gnu@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-x64-gnu@npm:1.16.2"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@swc/core-linux-x64-musl@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-linux-x64-musl@npm:1.16.1"
+"@swc/core-linux-x64-musl@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-linux-x64-musl@npm:1.16.2"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@swc/core-win32-arm64-msvc@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-win32-arm64-msvc@npm:1.16.1"
+"@swc/core-win32-arm64-msvc@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-win32-arm64-msvc@npm:1.16.2"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@swc/core-win32-ia32-msvc@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-win32-ia32-msvc@npm:1.16.1"
+"@swc/core-win32-ia32-msvc@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-win32-ia32-msvc@npm:1.16.2"
   conditions: os=win32 & cpu=ia32
   languageName: node
   linkType: hard
 
-"@swc/core-win32-x64-msvc@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core-win32-x64-msvc@npm:1.16.1"
+"@swc/core-win32-x64-msvc@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core-win32-x64-msvc@npm:1.16.2"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
 
-"@swc/core@npm:1.16.1":
-  version: 1.16.1
-  resolution: "@swc/core@npm:1.16.1"
+"@swc/core@npm:1.16.2":
+  version: 1.16.2
+  resolution: "@swc/core@npm:1.16.2"
   dependencies:
-    "@swc/core-darwin-arm64": "npm:1.16.1"
-    "@swc/core-darwin-x64": "npm:1.16.1"
-    "@swc/core-linux-arm-gnueabihf": "npm:1.16.1"
-    "@swc/core-linux-arm64-gnu": "npm:1.16.1"
-    "@swc/core-linux-arm64-musl": "npm:1.16.1"
-    "@swc/core-linux-ppc64-gnu": "npm:1.16.1"
-    "@swc/core-linux-s390x-gnu": "npm:1.16.1"
-    "@swc/core-linux-x64-gnu": "npm:1.16.1"
-    "@swc/core-linux-x64-musl": "npm:1.16.1"
-    "@swc/core-win32-arm64-msvc": "npm:1.16.1"
-    "@swc/core-win32-ia32-msvc": "npm:1.16.1"
-    "@swc/core-win32-x64-msvc": "npm:1.16.1"
+    "@swc/core-darwin-arm64": "npm:1.16.2"
+    "@swc/core-darwin-x64": "npm:1.16.2"
+    "@swc/core-linux-arm-gnueabihf": "npm:1.16.2"
+    "@swc/core-linux-arm64-gnu": "npm:1.16.2"
+    "@swc/core-linux-arm64-musl": "npm:1.16.2"
+    "@swc/core-linux-ppc64-gnu": "npm:1.16.2"
+    "@swc/core-linux-s390x-gnu": "npm:1.16.2"
+    "@swc/core-linux-x64-gnu": "npm:1.16.2"
+    "@swc/core-linux-x64-musl": "npm:1.16.2"
+    "@swc/core-win32-arm64-msvc": "npm:1.16.2"
+    "@swc/core-win32-ia32-msvc": "npm:1.16.2"
+    "@swc/core-win32-x64-msvc": "npm:1.16.2"
     "@swc/counter": "npm:^0.1.3"
     "@swc/types": "npm:^0.1.28"
   peerDependencies:
@@ -2366,7 +2366,7 @@ __metadata:
   peerDependenciesMeta:
     "@swc/helpers":
       optional: true
-  checksum: 10/787701e0d814628e5ffd6a7d03be393b5e878a15f01e8b3a706a03cc553e3e151cf1e44a119c8f8692f046d9a306493d973dc4e5da17a6f425209bb1071d0cb1
+  checksum: 10/c8a9b12e3fe071701d09735b1984a64332759f222f6697d199f9fcb338d588a9bc3dd255a7362dc6330836fbe06d13093225eb83f83395cc9399b23e08db99b0
   languageName: node
   linkType: hard
 
@@ -2568,12 +2568,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:26.3.0":
-  version: 26.3.0
-  resolution: "@types/node@npm:26.3.0"
+"@types/node@npm:26.5.0":
+  version: 26.5.0
+  resolution: "@types/node@npm:26.5.0"
   dependencies:
-    undici-types: "npm:~8.3.0"
-  checksum: 10/77a9587a3c8ce2e4bf1547d70706f262ba6dca2a39012091df36f1729132c06485833fe6f74ffbd5271d12966d6b729f6343d5af95681b7a08d437115b125015
+    undici-types: "npm:~8.9.0"
+  checksum: 10/db4b0ac5289abaf7fa6f280610853a3a9c88cd60ef686513fb773badf77bbf6089cafc9522bc99d0765f13b43cde3109b37a8183859a2adeec00ae07f0a4710d
   languageName: node
   linkType: hard
 
@@ -4901,10 +4901,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jose@npm:6.2.10":
-  version: 6.2.10
-  resolution: "jose@npm:6.2.10"
-  checksum: 10/232fccd0d98105242fa5455b729a40048932e2dd697442d934c39d83f4d9b4e331b5f1905971fccdacb51c0d3594fc7864a38af8d02b23cf7182317d6f38e220
+"jose@npm:6.2.12":
+  version: 6.2.12
+  resolution: "jose@npm:6.2.12"
+  checksum: 10/42ef7b598d22fe4ed0a4d0407f9dd9ae9f56dabd31cbad6cb4f67e296953a46b5d63603f8a599a3ee4c5659bf29bb14e846237f0381ea679116520b53e71e4ea
   languageName: node
   linkType: hard
 
@@ -6261,12 +6261,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "safe-client-gateway@workspace:."
   dependencies:
-    "@aws-sdk/client-kms": "npm:3.1124.0"
-    "@aws-sdk/client-s3": "npm:3.1124.0"
-    "@aws-sdk/client-sesv2": "npm:3.1124.0"
+    "@aws-sdk/client-kms": "npm:3.1127.0"
+    "@aws-sdk/client-s3": "npm:3.1127.0"
+    "@aws-sdk/client-sesv2": "npm:3.1127.0"
     "@aws-sdk/credential-provider-web-identity": "npm:3.972.76"
-    "@aws-sdk/lib-storage": "npm:3.1124.0"
-    "@aws-sdk/s3-request-presigner": "npm:3.1124.0"
+    "@aws-sdk/lib-storage": "npm:3.1127.0"
+    "@aws-sdk/s3-request-presigner": "npm:3.1127.0"
     "@biomejs/biome": "npm:2.5.10"
     "@blockaid/client": "npm:^1.7.0"
     "@faker-js/faker": "npm:10.6.0"
@@ -6289,11 +6289,11 @@ __metadata:
     "@safe-global/safe-deployments": "npm:1.37.62"
     "@safe-global/safe-modules-deployments": "npm:3.0.9"
     "@smithy/util-stream": "npm:4.8.2"
-    "@swc/core": "npm:1.16.1"
+    "@swc/core": "npm:1.16.2"
     "@types/amqplib": "npm:0"
     "@types/jsonwebtoken": "npm:9"
     "@types/lodash": "npm:4.17.25"
-    "@types/node": "npm:26.3.0"
+    "@types/node": "npm:26.5.0"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.8.0"
     "@types/supertest": "npm:7.2.1"
@@ -6307,7 +6307,7 @@ __metadata:
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
     ioredis: "npm:5.11.1"
-    jose: "npm:6.2.10"
+    jose: "npm:6.2.12"
     jsonwebtoken: "npm:9.0.3"
     lodash: "npm:4.18.1"
     nestjs-cls: "npm:6.2.1"
@@ -6323,10 +6323,10 @@ __metadata:
     ts-loader: "npm:9.6.2"
     ts-node: "npm:10.9.2"
     tsconfig-paths: "npm:4.2.0"
-    typeorm: "npm:1.1.0"
+    typeorm: "npm:1.1.1"
     typescript: "npm:6.0.3"
-    undici: "npm:8.10.0"
-    unplugin-swc: "npm:1.5.11"
+    undici: "npm:8.10.2"
+    unplugin-swc: "npm:1.6.0"
     viem: "npm:2.56.3"
     vitest: "npm:4.1.10"
     winston: "npm:3.19.0"
@@ -7038,9 +7038,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typeorm@npm:1.1.0":
-  version: 1.1.0
-  resolution: "typeorm@npm:1.1.0"
+"typeorm@npm:1.1.1":
+  version: 1.1.1
+  resolution: "typeorm@npm:1.1.1"
   dependencies:
     "@sqltools/formatter": "npm:^1.2.5"
     ansis: "npm:^4.3.1"
@@ -7103,7 +7103,7 @@ __metadata:
     typeorm: cli.js
     typeorm-ts-node-commonjs: cli-ts-node-commonjs.js
     typeorm-ts-node-esm: cli-ts-node-esm.js
-  checksum: 10/4f442af7bd6b5c2a63565ca599fdf8894be4baea1eb8434eccbc1c38076d155c7007a90e81955c22caeff61c2e3dd12ca8cfa3d6212acfc498f763592aaa0de3
+  checksum: 10/29840afe29a2128ba63be2bf6c2168cf4a945998d0840ac426469255bd45d0ba1a1dd4a0c57b97b9155d072d9c7dbd7f2df4cac7f6d3c70a649e650f11670226
   languageName: node
   linkType: hard
 
@@ -7170,14 +7170,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici-types@npm:~8.3.0":
-  version: 8.3.0
-  resolution: "undici-types@npm:8.3.0"
-  checksum: 10/6681d2837ac75a75ac1cc46090aa2b8ddc7c6b8ecc295a6cdb06838752a730da3d8afeecf05e5ab7903160eafad3a8b6ffa1927e5ded260590f4d4fef18646d5
+"undici-types@npm:~8.9.0":
+  version: 8.9.0
+  resolution: "undici-types@npm:8.9.0"
+  checksum: 10/8785591929de2b71d281c684e915c4a8c41becc225adbf42a3e89148f8b384724a21533494c30a1cbb85b4cbccd088d020788ff4f2d605013eb2863cd47a1639
   languageName: node
   linkType: hard
 
-"undici@npm:8.10.0, undici@npm:^8.4.1":
+"undici@npm:8.10.2":
+  version: 8.10.2
+  resolution: "undici@npm:8.10.2"
+  checksum: 10/90f7ba3d3e9543f25d47552282239faa395eaa66d0db7272ebf57055c8ced34e4c948923c734be5571bfce0cc56080e93c0e2f960e9c5fba163759fce112bab4
+  languageName: node
+  linkType: hard
+
+"undici@npm:^8.4.1":
   version: 8.10.0
   resolution: "undici@npm:8.10.0"
   checksum: 10/254219966d4a2fb110f565ffe73131caa82e949f207b9dd88930ebc23dfb6561db72ca187391cbd408ceeba7c647cb47d4110e8ae00df44c0c66e8a21e091dc0
@@ -7191,16 +7198,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unplugin-swc@npm:1.5.11":
-  version: 1.5.11
-  resolution: "unplugin-swc@npm:1.5.11"
+"unplugin-swc@npm:1.6.0":
+  version: 1.6.0
+  resolution: "unplugin-swc@npm:1.6.0"
   dependencies:
     "@rollup/pluginutils": "npm:^5.4.0"
     load-tsconfig: "npm:^0.2.5"
     unplugin: "npm:^3.3.0"
   peerDependencies:
     "@swc/core": ^1.2.108
-  checksum: 10/230b8c4f4edbd6d462434d32c4bf361e53fc35c7143af5e61a415e661be54096655731430ab2cb5f2e01fceadcccf80340090ba5dc9d31987031aabb74e08818
+  checksum: 10/25d711e6e65df8568dd49ca8950628e7ad06866200bcc082c2f793ac7c92931d11d090277ab810d2e18da1bdb7ff76bffb3eb0712bb4819e9d2226e3d1440038
   languageName: node
   linkType: hard
 

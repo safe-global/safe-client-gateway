@@ -5,8 +5,8 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { SpaceIdParamSchema } from '@/modules/entitlements/routes/guards/space-id-param.schema';
+import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
 import type { HttpRequest } from '@/routes/common/http/http-request.utils';

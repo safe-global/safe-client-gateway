@@ -22,7 +22,6 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import {
   SiweDto,
   SiweDtoSchema,
@@ -32,6 +31,7 @@ import { CreatedUserWithWallet } from '@/modules/users/routes/entities/created-u
 import { UserWithWallets } from '@/modules/users/routes/entities/user-with-wallets.entity';
 import { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-to-user.entity';
 import { UsersService } from '@/modules/users/routes/users.service';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 

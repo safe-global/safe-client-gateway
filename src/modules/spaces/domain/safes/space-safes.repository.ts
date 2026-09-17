@@ -155,34 +155,61 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     return spaceSafes;
   }
 
+  /**
+   * Matches one Safe within a space. Encryption disabled: the address is
+   * plaintext and the index NULL. Otherwise `address` is non-deterministic
+   * ciphertext and only the blind index can be compared.
+   */
+  private safeMatch(
+    spaceId: Space['id'],
+    safe: { chainId: SpaceSafe['chainId']; address: SpaceSafe['address'] },
+  ): FindOptionsWhere<SpaceSafe> {
+    const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+      safe.address,
+    );
+    return addressIndex === null
+      ? {
+          space: { id: spaceId },
+          chainId: safe.chainId,
+          addressIndex: IsNull(),
+          address: safe.address,
+        }
+      : {
+          space: { id: spaceId },
+          chainId: safe.chainId,
+          addressIndex,
+        };
+  }
+
   public async assertBelongsToSpace(args: {
     spaceId: Space['id'];
     chainId: SpaceSafe['chainId'];
     address: SpaceSafe['address'];
   }): Promise<void> {
-    const addressIndex = this.spaceEncryptionService.safeAddressIndex(
-      args.address,
-    );
-    // Encryption disabled: match plaintext with a NULL index. Otherwise
-    // match on the blind index — same pattern as `delete`.
-    const where: FindOptionsWhere<SpaceSafe> =
-      addressIndex === null
-        ? {
-            space: { id: args.spaceId },
-            chainId: args.chainId,
-            addressIndex: IsNull(),
-            address: args.address,
-          }
-        : {
-            space: { id: args.spaceId },
-            chainId: args.chainId,
-            addressIndex,
-          };
-
-    const spaceSafes = await this.find({ where });
+    const spaceSafes = await this.find({
+      where: this.safeMatch(args.spaceId, args),
+    });
     if (spaceSafes.length === 0) {
       throw new NotFoundException('Safe is not registered to this Workspace.');
     }
+  }
+
+  public async existsInSpace(
+    args: {
+      spaceId: Space['id'];
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    },
+    entityManager?: EntityManager,
+  ): Promise<boolean> {
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
+    return await repository.exists({
+      where: this.safeMatch(args.spaceId, args),
+    });
   }
 
   public async countBySpaceId(
@@ -247,25 +274,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     }>;
   }): Promise<void> {
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
-      args.payload.map((safe) => {
-        const addressIndex = this.spaceEncryptionService.safeAddressIndex(
-          safe.address,
-        );
-        // Encryption disabled: match plaintext with a NULL index. Otherwise
-        // match on the blind index.
-        return addressIndex === null
-          ? {
-              space: { id: args.spaceId },
-              chainId: safe.chainId,
-              addressIndex: IsNull(),
-              address: safe.address,
-            }
-          : {
-              space: { id: args.spaceId },
-              chainId: safe.chainId,
-              addressIndex,
-            };
-      });
+      args.payload.map((safe) => this.safeMatch(args.spaceId, safe));
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       const spaceSafes = await entityManager.find(SpaceSafe, {

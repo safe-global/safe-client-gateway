@@ -21,9 +21,7 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SurveySlugSchema } from '@/modules/surveys/domain/entities/survey.entity';
 import {
   SubmitSurveyResponseDto,
@@ -32,6 +30,8 @@ import {
 } from '@/modules/surveys/routes/entities/submit-survey-response.dto.entity';
 import { SurveyStateDto } from '@/modules/surveys/routes/entities/survey-state.dto.entity';
 import { SurveysService } from '@/modules/surveys/routes/surveys.service';
+import { Auth } from '@/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('surveys')

@@ -8,22 +8,53 @@ import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unoff
 import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 
+/**
+ * What a relayed call was recognised to act on. Internal to the mapper: no
+ * boundary parses it, so it stays a type beside its producer rather than a
+ * schema under `domain/entities/`.
+ */
+export type RelayTarget = {
+  /**
+   * The Safe the call acts on, or `null` where none exists yet: a Safe
+   * creation limits its owners, and a passkey signer deployment its signer.
+   */
+  safe: Address | null;
+  /** The addresses a per-address limit is counted against. */
+  addresses: ReadonlyArray<Address>;
+};
+
 @Injectable()
 export class LimitAddressesMapper {
   constructor(
     private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {}
 
+  /** The addresses a per-address limit is counted against. */
   async getLimitAddresses(args: {
     version: string;
     chainId: string;
     to: Address;
     data: Hex;
   }): Promise<ReadonlyArray<Address>> {
+    return (await this.resolveTarget(args)).addresses;
+  }
+
+  /**
+   * The same recognition, keeping what each branch knew it had found: which
+   * Safe the call acts on, where there is one. Every rejection below is what
+   * makes a relay safe to pay for, so a caller that only needs the Safe still
+   * goes through here.
+   */
+  async resolveTarget(args: {
+    version: string;
+    chainId: string;
+    to: Address;
+    data: Hex;
+  }): Promise<RelayTarget> {
     const safeBeingRecovered =
       await this.relayTransactionHelper.getSafeBeingRecovered(args);
     if (safeBeingRecovered) {
-      return [safeBeingRecovered];
+      return { safe: safeBeingRecovered, addresses: [safeBeingRecovered] };
     }
 
     // Calldata matches that of execTransaction and meets validity requirements
@@ -45,7 +76,7 @@ export class LimitAddressesMapper {
         throw new UnofficialMasterCopyError();
       }
 
-      return [args.to];
+      return { safe: args.to, addresses: [args.to] };
     }
 
     if (this.relayTransactionHelper.isMultiSend(args.data)) {
@@ -76,7 +107,7 @@ export class LimitAddressesMapper {
       }
 
       // Safe targeted in batch will be limited
-      return [safeAddress];
+      return { safe: safeAddress, addresses: [safeAddress] };
     }
 
     // Calldata matches that of createProxyWithNonce and meets validity requirements
@@ -96,10 +127,15 @@ export class LimitAddressesMapper {
       ) {
         throw new UnofficialProxyFactoryError();
       }
-      // Owners of safe-to-be-created will be limited
-      return this.relayTransactionHelper.getOwnersFromCreateProxyWithNonce(
-        args.data,
-      );
+      // Owners of safe-to-be-created will be limited; the Safe does not exist
+      // yet, so there is none to attribute the call to.
+      return {
+        safe: null,
+        addresses:
+          this.relayTransactionHelper.getOwnersFromCreateProxyWithNonce(
+            args.data,
+          ),
+      };
     }
 
     // Calldata matches createSigner on an official SafeWebAuthnSignerFactory.
@@ -121,7 +157,7 @@ export class LimitAddressesMapper {
         // Selector matched but the args failed to decode (malformed payload).
         throw new InvalidTransferError();
       }
-      return [signerLimitAddress];
+      return { safe: null, addresses: [signerLimitAddress] };
     }
 
     throw new InvalidTransferError();

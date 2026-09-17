@@ -33,6 +33,7 @@ import {
   FeatureType,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
 import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
@@ -323,6 +324,7 @@ describe('EntitlementsService', () => {
     spaceId: number;
     featureKey: string;
     used: number;
+    periodStart?: Date;
   }): Promise<void> {
     const space = await dataSource
       .getRepository(Space)
@@ -333,7 +335,8 @@ describe('EntitlementsService', () => {
     await dataSource.getRepository(SpaceFeatureUsage).insert({
       space: { id: args.spaceId },
       feature: { id: feature.id },
-      periodStart: space.createdAt,
+      // A Free workspace's window anchors on its creation date.
+      periodStart: args.periodStart ?? space.createdAt,
       used: args.used,
     });
   }
@@ -1185,6 +1188,91 @@ describe('EntitlementsService', () => {
       ).rejects.toMatchObject({ response: { quota: 4, used: 3 } });
     });
 
+    // The other flavour of metered: counted in `space_feature_usage` rather
+    // than live from another module's table.
+    async function sponsoredSubscription(args: {
+      spaceId: number;
+      quota: number | null;
+      periodStart: Date;
+    }): Promise<void> {
+      await materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', args.periodStart)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota: args.quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    function assertSponsored(spaceId: number, delta: number): Promise<void> {
+      return enforcingService.assertWithinQuota({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        delta,
+      });
+    }
+
+    it('counts an event-metered feature from its period counter', async () => {
+      const spaceId = await createSpace();
+      const periodStart = faker.date.recent();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await sponsoredSubscription({ spaceId, quota, periodStart });
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart,
+      });
+
+      await expect(assertSponsored(spaceId, 1)).rejects.toMatchObject({
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'sponsored_transactions',
+          quota,
+          used: quota,
+        },
+      });
+    });
+
+    it('admits an event-metered feature below its quota', async () => {
+      const spaceId = await createSpace();
+      const periodStart = faker.date.recent();
+      const quota = faker.number.int({ min: 2, max: 10 });
+      await sponsoredSubscription({ spaceId, quota, periodStart });
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota - 1,
+        periodStart,
+      });
+
+      await expect(assertSponsored(spaceId, 1)).resolves.toBeUndefined();
+    });
+
+    it('ignores a counter belonging to another period', async () => {
+      const spaceId = await createSpace();
+      const periodStart = faker.date.recent();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await sponsoredSubscription({ spaceId, quota, periodStart });
+      // Spent in full, but in the window before this one.
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: faker.date.past(),
+      });
+
+      await expect(assertSponsored(spaceId, 1)).resolves.toBeUndefined();
+    });
+
     it('blocks a space already over its seats, even asking for nothing', async () => {
       const spaceId = await createSpace();
       await addSafes(spaceId, 8);
@@ -1315,6 +1403,26 @@ describe('EntitlementsService', () => {
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
+    it('recomputes a cached grant this version cannot read', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      // The shape the previous version wrote: no `counter`. It outlives the
+      // deploy that added the field, and a rolling one keeps writing it.
+      await fakeCacheService.hSet(
+        CacheRouter.getSpaceEntitlementsCacheDir(spaceId),
+        JSON.stringify({ safe_seats: { quota: 1, resetsAt: null } }),
+        60,
+      );
+
+      // Recomputed, so the plan's quota answers instead of a 500.
+      await expect(
+        assertSeats(enforcingService, spaceId, 4),
+      ).resolves.toBeUndefined();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Unreadable cached entitlements'),
+      );
+    });
+
     it('drops the cached grant when a new package is materialized', async () => {
       const spaceId = await createSpace();
       await addSafes(spaceId, 5);
@@ -1330,6 +1438,213 @@ describe('EntitlementsService', () => {
       await expect(
         assertSeats(enforcingService, spaceId, 1),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  // What the relay path uses: one reserves and admits, the other gives back.
+  describe('consumeQuota / refundQuota', () => {
+    async function sponsoredPlan(args: {
+      spaceId: number;
+      quota: number | null;
+      periodStart: Date;
+    }): Promise<void> {
+      await materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', args.periodStart)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota: args.quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    /** The row itself, to see what a refund did to a period nothing reports. */
+    async function usageOf(args: {
+      spaceId: number;
+      periodStart: Date;
+    }): Promise<number> {
+      const row = await dataSource.getRepository(SpaceFeatureUsage).findOne({
+        where: {
+          space: { id: args.spaceId },
+          periodStart: args.periodStart,
+        },
+      });
+      return row?.used ?? 0;
+    }
+
+    async function usedOf(spaceId: number): Promise<number | undefined> {
+      const result = await service.resolveEntitlements(spaceId);
+      const entitlement = result.entitlements.find(
+        (candidate) => candidate.feature === 'sponsored_transactions',
+      );
+      return entitlement?.type === FeatureType.Metered
+        ? entitlement.used
+        : undefined;
+    }
+
+    function consume(spaceId: number, delta: number): Promise<ConsumedQuota> {
+      return enforcingService.consumeQuota({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        delta,
+      });
+    }
+
+    it('spends the allowance and records it', async () => {
+      const spaceId = await createSpace();
+      const delta = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota: delta + 1,
+        periodStart: faker.date.recent(),
+      });
+
+      await expect(consume(spaceId, delta)).resolves.toMatchObject({
+        spaceId,
+        delta,
+      });
+
+      await expect(usedOf(spaceId)).resolves.toBe(delta);
+    });
+
+    it('accumulates across calls', async () => {
+      const spaceId = await createSpace();
+      await sponsoredPlan({
+        spaceId,
+        quota: 2,
+        periodStart: faker.date.recent(),
+      });
+
+      await consume(spaceId, 1);
+      await consume(spaceId, 1);
+
+      await expect(usedOf(spaceId)).resolves.toBe(2);
+    });
+
+    it('spends nothing when the allowance would be overshot', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota,
+        periodStart: faker.date.recent(),
+      });
+
+      await expect(consume(spaceId, quota + 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'sponsored_transactions',
+          quota,
+          used: 0,
+        },
+      });
+      // Rolled back with the rejection.
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+    });
+
+    it('gives back what was reserved but not used', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 2, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota,
+        periodStart: faker.date.recent(),
+      });
+      const spent = await consume(spaceId, 1);
+
+      await enforcingService.refundQuota(spent);
+
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+    });
+
+    it('gives it back to the period it charged, not the one now current', async () => {
+      const spaceId = await createSpace();
+      await sponsoredPlan({
+        spaceId,
+        quota: 1,
+        periodStart: new Date('2026-08-01T00:00:00Z'),
+      });
+      const spent = await consume(spaceId, 1);
+
+      // A webhook advances the billing cycle while the relay is in flight.
+      await sponsoredPlan({
+        spaceId,
+        quota: 1,
+        periodStart: new Date('2026-09-01T00:00:00Z'),
+      });
+      await enforcingService.refundQuota(spent);
+
+      // The new period is untouched — a refund into it would read as -1 and
+      // hand out a second submission against a quota of 1.
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+      await expect(
+        usageOf({ spaceId, periodStart: spent.period.periodStart }),
+      ).resolves.toBe(0);
+      await expect(consume(spaceId, 1)).resolves.toMatchObject({
+        period: { periodStart: new Date('2026-09-01T00:00:00Z') },
+      });
+      await expect(consume(spaceId, 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+      });
+    });
+
+    it('records usage the plan does not cap', async () => {
+      const spaceId = await createSpace();
+      const delta = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota: null,
+        periodStart: faker.date.recent(),
+      });
+
+      await consume(spaceId, delta);
+
+      // Unlimited bills nothing, but the endpoint still reports consumption.
+      await expect(usedOf(spaceId)).resolves.toBe(delta);
+    });
+
+    // This feature ignores the enforcement date in both directions.
+    it('refuses a workspace on no plan, enforcement date or not', async () => {
+      const spaceId = await createSpace();
+
+      await expect(
+        service.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: { feature: 'sponsored_transactions', quota: 0 },
+      });
+    });
+
+    it('admits what a plan grants before the enforcement date', async () => {
+      const spaceId = await createSpace();
+      const delta = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota: delta,
+        periodStart: faker.date.recent(),
+      });
+
+      // `service`, not `enforcingService`: a paying workspace must not wait
+      // for a date that exists for someone else's grandfathering.
+      await expect(
+        service.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta,
+        }),
+      ).resolves.toMatchObject({ spaceId, delta });
     });
   });
 

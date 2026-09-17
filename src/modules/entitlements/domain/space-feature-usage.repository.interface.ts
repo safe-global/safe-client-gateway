@@ -19,4 +19,16 @@ export interface ISpaceFeatureUsageRepository {
     args: { spaceId: Space['id']; periods: Array<UsageKey> },
     entityManager?: EntityManager,
   ): Promise<Map<number, number>>;
+
+  /**
+   * Adds `delta` to one counter, creating it when the period has none yet, and
+   * returns what it holds afterwards — subtract `delta` for the `used` a quota
+   * check expects. Creating and incrementing are one statement, so concurrent
+   * callers queue on the row instead of overshooting a quota together; a
+   * caller that passes its `entityManager` releases the count by rolling back.
+   */
+  incrementUsage(
+    args: { spaceId: Space['id']; period: UsageKey; delta: number },
+    entityManager?: EntityManager,
+  ): Promise<number>;
 }

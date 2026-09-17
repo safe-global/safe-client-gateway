@@ -14,7 +14,7 @@ import {
 import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
 import {
   isPaymentLinkEventType,
-  isSubscriptionEventType,
+  triggersSubscriptionSync,
   WALLET_WEB_CUSTOMER_GROUP,
   type WebhookEvent,
 } from '@/modules/billing/domain/entities/webhook-event.entity';
@@ -84,7 +84,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       );
       return;
     }
-    if (!isSubscriptionEventType(event.type)) {
+    if (!triggersSubscriptionSync(event.type)) {
       this.loggingService.debug(
         `Ignoring billing webhook event type ${event.type} (event ${event.id}): it is not about a subscription`,
       );

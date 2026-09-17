@@ -252,24 +252,47 @@ describe('SubscriptionSyncService', () => {
     ).not.toHaveBeenCalled();
   });
 
-  // These describe a session or an invoice, never a subscription: acting on
-  // them could only re-fetch, overwriting the snapshot a
-  // `customer.subscription.*` event already materialized.
-  it.each([
-    'checkout.session.completed',
-    'invoice.payment_succeeded',
-    'invoice.payment_failed',
-  ])('acks and ignores %s without re-fetching', async (type) => {
-    await target.handleWebhook(webhookEvent({ type }));
+  // An invoice describes a charge, never a subscription.
+  it.each(['invoice.payment_succeeded', 'invoice.payment_failed'])(
+    'acks and ignores %s without re-fetching',
+    async (type) => {
+      await target.handleWebhook(webhookEvent({ type }));
+
+      expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
+      expect(
+        billingRepository.getSubscriptionsByCustomerId,
+      ).not.toHaveBeenCalled();
+      // Debug, not info: upstream forwards every invoice and charge it sees.
+      expect(loggingService.debug).toHaveBeenCalled();
+      expect(loggingService.info).not.toHaveBeenCalled();
+    },
+  );
+
+  // Carries no plan, so it can only be a trigger.
+  it('re-fetches upstream state on a completed checkout', async () => {
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
+      subscriptionBuilder()
+        .with('status', 'active')
+        .with('metadata', { FEATURE_SAFE_SEATS: '10' })
+        .build(),
+    ]);
+
+    // As upstream forwards it: no plan, no billing period.
+    await target.handleWebhook(
+      webhookEvent({
+        type: 'checkout.session.completed',
+        data: { planId: null, currentPeriodStart: null },
+      }),
+    );
 
     expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
-    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
-    expect(
-      billingRepository.getSubscriptionsByCustomerId,
-    ).not.toHaveBeenCalled();
-    // Debug, not info: upstream forwards every invoice and charge it sees.
-    expect(loggingService.debug).toHaveBeenCalled();
-    expect(loggingService.info).not.toHaveBeenCalled();
+    expect(billingRepository.getSubscriptionsByCustomerId).toHaveBeenCalledWith(
+      { upstreamCustomerId: spaceUuid, status: 'all' },
+    );
+    expect(entitlementsService.materializeAuthoritative).toHaveBeenCalled();
   });
 
   it('invalidates the payment links cache and skips materialization for payment_link events', async () => {

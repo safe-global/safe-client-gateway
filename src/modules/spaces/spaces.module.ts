@@ -32,7 +32,6 @@ import { SpaceAuditService } from '@/modules/spaces/routes/audit/space-audit.ser
 import { MembersController } from '@/modules/spaces/routes/members/members.controller';
 import { MembersService } from '@/modules/spaces/routes/members/members.service';
 import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
 import { SpaceSafeShieldController } from '@/modules/spaces/routes/safe-shield/space-safe-shield.controller';
 import { SpaceSafeShieldService } from '@/modules/spaces/routes/safe-shield/space-safe-shield.service';
 import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
@@ -44,6 +43,7 @@ import { MemberEncryptionModule } from '@/modules/users/domain/members/member-en
 import { UserIdentityResolverModule } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.module';
 import { UsersModule } from '@/modules/users/users.module';
 import { WalletsModule } from '@/modules/wallets/wallets.module';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 
 const isSesEmailFeatureEnabled = configuration().features.sesEmail;
 

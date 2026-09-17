@@ -24,7 +24,6 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
 import { CopilotScansGuard } from '@/modules/entitlements/routes/guards/copilot-scans.guard';
@@ -33,7 +32,8 @@ import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/cou
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import { SingleRecipientAnalysisDto } from '@/modules/safe-shield/entities/dtos/single-recipient-analysis.dto';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { Auth } from '@/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';

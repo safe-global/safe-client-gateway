@@ -7,7 +7,7 @@ import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repositor
 import {
   INVALID_SPACE_IDENTIFIER_MESSAGE,
   SpaceIdPipe,
-} from '@/modules/spaces/routes/pipes/space-id.pipe';
+} from '@/routes/common/pipes/space-id.pipe';
 
 const spacesRepositoryMock = {
   findIdByUuid: vi.fn(),

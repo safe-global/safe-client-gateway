@@ -28,7 +28,6 @@ import { z } from 'zod';
 import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
 import { SubscriptionStatusFilterSchema } from '@/datasources/billing-api/entities/subscription.entity';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import { WebhookEventSchema } from '@/modules/billing/domain/entities/webhook-event.entity';
@@ -49,8 +48,9 @@ import {
 import { UrlResponse } from '@/modules/billing/routes/entities/url.entity';
 import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceIdPipe } from '@/modules/spaces/routes/pipes/space-id.pipe';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
