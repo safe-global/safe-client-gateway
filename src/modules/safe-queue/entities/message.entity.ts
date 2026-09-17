@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
+import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
 import {
   OriginNameSchema,
   OriginUrlSchema,
@@ -35,9 +36,9 @@ export const SafeQueueMessageSchema = z.object({
   chainId: z.coerce.number(),
   safe: AddressSchema,
   message: z.union([z.string(), TypedDataSchema]),
-  // The queue service derives the proposer from the submitted signature and
-  // returns null when it cannot recover one, unlike the Transaction Service.
+  proposer: NullableAddressSchema,
   proposedBy: NullableAddressSchema,
+  proposedVia: z.enum(ProposalRoute),
   preparedSignature: NullableHexSchema,
   originName: OriginNameSchema,
   originUrl: OriginUrlSchema,

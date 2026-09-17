@@ -10,6 +10,7 @@ import type {
   SafeQueueConfirmation,
   SafeQueueMultisigTransactionEntity,
 } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
 import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
 
 // Pick only domain fields explicitly. Spreading the queue entity would leak
@@ -44,7 +45,8 @@ export function mapSafeQueueToMultisigTransaction(
     gasPrice: tx.gasPrice,
     refundReceiver: tx.refundReceiver,
     proposer: tx.proposer,
-    proposedByDelegate: tx.proposedByDelegate,
+    proposedByDelegate:
+      tx.proposedVia === ProposalRoute.Delegate ? tx.proposedBy : null,
     nonce: tx.nonce,
     modified: tx.modified,
     safeTxHash: tx.safeTxHash,

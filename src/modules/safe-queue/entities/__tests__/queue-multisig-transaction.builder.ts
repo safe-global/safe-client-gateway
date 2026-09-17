@@ -6,6 +6,7 @@ import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
 
 export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisigTransactionEntity> {
   return new Builder<SafeQueueMultisigTransactionEntity>()
@@ -14,7 +15,8 @@ export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisi
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('nonce', faker.number.int({ min: 0, max: 100 }))
     .with('proposer', getAddress(faker.finance.ethereumAddress()))
-    .with('proposedByDelegate', null)
+    .with('proposedBy', null)
+    .with('proposedVia', ProposalRoute.Owner)
     .with('to', getAddress(faker.finance.ethereumAddress()))
     .with('value', faker.string.numeric())
     .with('data', null)

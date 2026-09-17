@@ -16,6 +16,7 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import { createMockSafeQueueService } from '@/modules/safe-queue/__tests__/safe-queue-service.mock';
 import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
+import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
 import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -25,7 +26,9 @@ function safeQueueMessageBuilder(chainId: number): SafeQueueMessage {
     chainId,
     safe: getAddress(faker.finance.ethereumAddress()),
     message: faker.word.words({ count: { min: 1, max: 5 } }),
-    proposedBy: getAddress(faker.finance.ethereumAddress()),
+    proposer: getAddress(faker.finance.ethereumAddress()),
+    proposedBy: null,
+    proposedVia: ProposalRoute.Owner,
     preparedSignature: faker.string.hexadecimal({ length: 130 }) as Hash,
     originName: faker.word.words(),
     originUrl: faker.internet.url({ protocol: 'https', appendSlash: false }),

@@ -15,7 +15,7 @@ export function mapSafeQueueMessageToMessage(msg: SafeQueueMessage): Message {
     safe: msg.safe,
     messageHash: msg.messageHash,
     message: msg.message,
-    proposedBy: msg.proposedBy,
+    proposedBy: msg.proposer,
     confirmations: msg.confirmations,
     preparedSignature: msg.preparedSignature,
     origin: buildOrigin(msg.originName, msg.originUrl),

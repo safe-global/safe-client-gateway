@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
 import {
   OriginNameSchema,
   OriginUrlSchema,
@@ -39,7 +40,8 @@ export const SafeQueueMultisigTransactionSchema = z.object({
   safe: AddressSchema,
   nonce: CoercedNumberSchema,
   proposer: NullableAddressSchema,
-  proposedByDelegate: NullableAddressSchema,
+  proposedBy: NullableAddressSchema,
+  proposedVia: z.enum(ProposalRoute),
   to: AddressSchema,
   value: NumericStringSchema,
   data: NullableHexSchema,
