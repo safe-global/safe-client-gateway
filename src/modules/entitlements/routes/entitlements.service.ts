@@ -13,6 +13,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
@@ -353,10 +354,10 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
     const cached = await this.cacheService.hGet(cacheDir);
     if (cached !== null) {
-      const grants = CachedGrantsSchema.parse(JSON.parse(cached));
+      const grants = this.readCachedGrants(spaceId, cached);
       // A window that has since rolled over leaves these naming the previous
       // period's counter, which nothing reads or reports any more.
-      if (!hasClosedWindow(grants, new Date())) {
+      if (grants !== null && !hasClosedWindow(grants, new Date())) {
         return grants;
       }
     }
@@ -374,6 +375,25 @@ export class EntitlementsService implements IEntitlementEnforcement {
       );
     }
     return grants;
+  }
+
+  /**
+   * An entry this version cannot read is a miss, not a failure: a deploy that
+   * changes the grant's shape leaves the previous one under the key for the
+   * whole TTL, and a rolling one has older instances still writing it.
+   */
+  private readCachedGrants(
+    spaceId: Space['id'],
+    cached: string,
+  ): Record<string, FeatureGrant> | null {
+    try {
+      return CachedGrantsSchema.parse(JSON.parse(cached));
+    } catch (error) {
+      this.loggingService.warn(
+        `Unreadable cached entitlements for space ${spaceId}, recomputing: ${asError(error).message}`,
+      );
+      return null;
+    }
   }
 
   /** Read once for both consumers: the API response and the cached grants. */

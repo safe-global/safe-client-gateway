@@ -1397,6 +1397,26 @@ describe('EntitlementsService', () => {
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
     });
 
+    it('recomputes a cached grant this version cannot read', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      // The shape the previous version wrote: no `counter`. It outlives the
+      // deploy that added the field, and a rolling one keeps writing it.
+      await fakeCacheService.hSet(
+        CacheRouter.getSpaceEntitlementsCacheDir(spaceId),
+        JSON.stringify({ safe_seats: { quota: 1, resetsAt: null } }),
+        60,
+      );
+
+      // Recomputed, so the plan's quota answers instead of a 500.
+      await expect(
+        assertSeats(enforcingService, spaceId, 4),
+      ).resolves.toBeUndefined();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Unreadable cached entitlements'),
+      );
+    });
+
     it('drops the cached grant when a new package is materialized', async () => {
       const spaceId = await createSpace();
       await addSafes(spaceId, 5);
