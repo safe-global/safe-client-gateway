@@ -50,8 +50,16 @@ type FastifyAdapterConfiguration = {
   trustProxy: string;
 };
 
-export function parseTrustProxy(value: string): string | number {
-  return /^[0-9]+$/.test(value) ? Number.parseInt(value, 10) : value;
+export function parseTrustProxy(value: string): string | boolean {
+  if (!/^[0-9]+$/.test(value)) {
+    return value;
+  }
+  if (Number.parseInt(value, 10) === 0) {
+    return false;
+  }
+  throw new Error(
+    `Invalid trust proxy hop count: ${value}. Set trusted subnets or presets instead, e.g. 'loopback, uniquelocal'.`,
+  );
 }
 
 export function parseBodyLimit(value: string | undefined): number | undefined {
