@@ -59,6 +59,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
+  private readonly testnetsEnabled: boolean;
 
   constructor(
     @Inject(NetworkService) private readonly networkService: INetworkService,
@@ -79,6 +80,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
     );
+    this.testnetsEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.zerionTestnets',
+    );
   }
 
   public async getPortfolio(args: {
@@ -96,8 +100,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       );
     }
 
-    const positions = await this._fetchPositions(args);
     const isTestnet = args.isTestnet ?? false;
+    // Zerion prices no testnet asset, so an empty portfolio lets the caller
+    // fall back instead of serving a zero-valued one.
+    const positions =
+      isTestnet && !this.testnetsEnabled
+        ? []
+        : await this._fetchPositions(args);
     return await this._buildPortfolio(positions, isTestnet);
   }
 
