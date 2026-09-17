@@ -64,6 +64,9 @@ export class CircuitBreakerService {
         this.configurationService.getOrThrow<number>(
           'circuitBreaker.halfOpenFailureRateThreshold',
         ),
+      halfOpenMaxInFlight: this.configurationService.getOrThrow<number>(
+        'circuitBreaker.halfOpenMaxInFlight',
+      ),
     };
   }
 
@@ -102,6 +105,10 @@ export class CircuitBreakerService {
       return this.canProceedInOpenState(circuit);
     }
 
+    if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      return this.canProceedInHalfOpenState(circuit);
+    }
+
     return true;
   }
 
@@ -120,11 +127,15 @@ export class CircuitBreakerService {
   /**
    * Gets an existing circuit or registers a new one if it doesn't exist
    *
+   * Only reachable from {@link recordFailure}, which has already checked
+   * that the circuit breaker is enabled, so a disabled breaker never
+   * registers (or logs) a circuit.
+   *
    * @param {string} name - Unique identifier for the circuit
    *
    * @returns {ICircuit} The circuit instance for the given name
    */
-  public getOrRegisterCircuit(name: string): ICircuit {
+  private getOrRegisterCircuit(name: string): ICircuit {
     const existing = this.circuits.get(name);
     if (existing) {
       return existing;
@@ -135,6 +146,7 @@ export class CircuitBreakerService {
       metrics: {
         failureCount: 0,
         consecutiveSuccesses: 0,
+        halfOpenInFlight: 0,
         state: CircuitState.CLOSED,
         lastFailureTime: undefined,
         lastActivityTime: undefined,
@@ -158,7 +170,8 @@ export class CircuitBreakerService {
    * Handles circuit logic when in OPEN state
    *
    * Checks if enough time has elapsed to transition to HALF_OPEN state.
-   * If the timeout has passed, transitions to HALF_OPEN and allows a test request.
+   * If the timeout has passed, transitions to HALF_OPEN and admits the
+   * request as the first probe.
    *
    * @param {ICircuit} circuit - The circuit instance
    *
@@ -172,7 +185,7 @@ export class CircuitBreakerService {
     ) {
       this.transitionToHalfOpen(circuit);
 
-      return true;
+      return this.canProceedInHalfOpenState(circuit);
     }
 
     const timeUntilRetry = circuit.metrics.nextAttemptTime
@@ -192,6 +205,52 @@ export class CircuitBreakerService {
   }
 
   /**
+   * Handles circuit logic when in HALF_OPEN state
+   *
+   * Admits a request only while fewer than {@link ICircuitConfig.halfOpenMaxInFlight}
+   * probes are in flight. Every admitted probe is released again by
+   * {@link recordSuccess} or {@link recordFailure}, so a hanging upstream
+   * holds at most that many requests per half-open window instead of
+   * every request that arrives while the circuit waits for its verdict.
+   *
+   * @param {ICircuit} circuit - The circuit instance
+   *
+   * @returns {boolean} True if the request is admitted as a probe, false otherwise
+   */
+  private canProceedInHalfOpenState(circuit: ICircuit): boolean {
+    if (circuit.metrics.halfOpenInFlight < this.config.halfOpenMaxInFlight) {
+      circuit.metrics.halfOpenInFlight++;
+
+      return true;
+    }
+
+    this.loggingService.warn({
+      type: LogType.CircuitBreakerRequestBlocked,
+      circuit: circuit.name,
+      state: CircuitState.HALF_OPEN,
+      inFlight: circuit.metrics.halfOpenInFlight,
+      maxInFlight: this.config.halfOpenMaxInFlight,
+      message: `Request blocked: Circuit "${circuit.name}" is HALF_OPEN with ${circuit.metrics.halfOpenInFlight}/${this.config.halfOpenMaxInFlight} probe(s) in flight`,
+    });
+
+    return false;
+  }
+
+  /**
+   * Releases one HALF_OPEN probe slot once its request has completed
+   *
+   * @param {ICircuit} circuit - The circuit instance
+   *
+   * @returns {void}
+   */
+  private releaseHalfOpenProbe(circuit: ICircuit): void {
+    circuit.metrics.halfOpenInFlight = Math.max(
+      0,
+      circuit.metrics.halfOpenInFlight - 1,
+    );
+  }
+
+  /**
    * Transitions a circuit from OPEN to HALF_OPEN state
    *
    * In HALF_OPEN state, the circuit allows a limited number of test requests
@@ -204,6 +263,7 @@ export class CircuitBreakerService {
   private transitionToHalfOpen(circuit: ICircuit): void {
     circuit.metrics.consecutiveSuccesses = 0;
     circuit.metrics.failureCount = 0;
+    circuit.metrics.halfOpenInFlight = 0;
     circuit.metrics.state = CircuitState.HALF_OPEN;
 
     this.loggingService.info({
@@ -218,8 +278,8 @@ export class CircuitBreakerService {
   /**
    * Records a successful request for the circuit
    *
-   * Only processes success if circuit is being tracked (has had failures).
-   * Updates success metrics and handles state transitions:
+   * No-op when the circuit breaker is disabled or the circuit is not being
+   * tracked (has had no failures). Updates success metrics and handles state transitions:
    * - In HALF_OPEN: Transitions to CLOSED when the success threshold is reached and removes the circuit from memory
    *
    * @param {string} name - Circuit identifier
@@ -228,13 +288,14 @@ export class CircuitBreakerService {
    */
   public recordSuccess(name: string): void {
     const circuit = this.circuits.get(name);
-    if (!circuit) {
+    if (!(this.enabled && circuit)) {
       return;
     }
 
     circuit.metrics.lastActivityTime = Date.now();
 
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      this.releaseHalfOpenProbe(circuit);
       circuit.metrics.consecutiveSuccesses++;
 
       this.loggingService.debug({
@@ -297,7 +358,9 @@ export class CircuitBreakerService {
   /**
    * Records a failed request for the circuit
    *
-   * Updates failure metrics and handles state transitions:
+   * No-op when the circuit breaker is disabled. Otherwise registers the
+   * circuit on its first failure, then updates failure metrics and handles
+   * state transitions:
    * - In HALF_OPEN: Reopens the circuit when the effective threshold is reached
    * - In CLOSED: Opens circuit if failure threshold is exceeded
    *
@@ -306,17 +369,20 @@ export class CircuitBreakerService {
    * @returns {void}
    */
   public recordFailure(name: string): void {
-    const circuit = this.circuits.get(name);
-    if (
-      !(this.enabled && circuit) ||
-      circuit.metrics.state === CircuitState.OPEN
-    ) {
+    if (!this.enabled) {
+      return;
+    }
+
+    const circuit = this.getOrRegisterCircuit(name);
+    if (circuit.metrics.state === CircuitState.OPEN) {
       return;
     }
 
     const now = Date.now();
 
-    if (circuit.metrics.state !== CircuitState.HALF_OPEN) {
+    if (circuit.metrics.state === CircuitState.HALF_OPEN) {
+      this.releaseHalfOpenProbe(circuit);
+    } else {
       this.discardOldFailures(circuit, now);
     }
 
@@ -391,6 +457,7 @@ export class CircuitBreakerService {
     const previousState = circuit.metrics.state;
     const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
     circuit.metrics.state = CircuitState.OPEN;
+    circuit.metrics.halfOpenInFlight = 0;
     circuit.metrics.nextAttemptTime = Date.now() + this.config.timeout;
 
     const timeoutSeconds = Math.ceil(this.config.timeout / 1000);

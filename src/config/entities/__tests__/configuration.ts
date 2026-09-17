@@ -268,6 +268,7 @@ export default (): ReturnType<typeof configuration> => ({
     timeout: faker.number.int({ min: 500, max: 2000 }),
     rollingWindow: faker.number.int({ min: 60_000, max: 300_000 }),
     halfOpenFailureRateThreshold: faker.number.int({ min: 10, max: 100 }),
+    halfOpenMaxInFlight: faker.number.int({ min: 1, max: 3 }),
   },
   locking: {
     baseUri: faker.internet.url({ appendSlash: false }),

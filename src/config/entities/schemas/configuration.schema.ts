@@ -152,6 +152,11 @@ export const RootConfigurationSchema = z
       .min(1)
       .max(100)
       .optional(),
+    CIRCUIT_BREAKER_HALF_OPEN_MAX_IN_FLIGHT: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     // Per-caller bound on the unauthenticated token metadata routes. A zero or
     // negative budget would reject every caller, so fail at boot instead.
     TOKENS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),

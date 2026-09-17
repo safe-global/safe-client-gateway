@@ -257,7 +257,7 @@ All three filters are registered globally as `APP_FILTER`s in `src/app.module.ts
 
 All outbound HTTP goes through `INetworkService` (`src/datasources/network/network.service.interface.ts`) — there is no direct `fetch`/HTTP client usage inside a datasource.
 Requests default to a 5-second timeout (`httpClient.requestTimeout`) with no automatic retries.
-A circuit breaker (`src/datasources/circuit-breaker/`) is opt-in per request via a `circuitBreaker.key`, and trips after `circuitBreaker.threshold` consecutive failures within `circuitBreaker.rollingWindow`.
+A circuit breaker (`src/datasources/circuit-breaker/`) is opt-in per request via a `circuitBreaker.key`, and trips after `circuitBreaker.threshold` consecutive failures within `circuitBreaker.rollingWindow`. While HALF_OPEN it admits at most `circuitBreaker.halfOpenMaxInFlight` concurrent probes and rejects the rest, so a hanging upstream never receives a burst of probes that each wait out the full request timeout.
 
 Per-chain external APIs share a common shape: `IApiManager<T>` (`src/domain/interfaces/api.manager.interface.ts`) declares `getApi(chainId)`/`destroyApi(chainId)`, and is implemented once per API family — `IBalancesApiManager`, `ITransactionApiManager`, `IStakingApiManager`, `IBlockchainApiManager`, and others.
 The rest of the codebase asks its manager for "the client for this chain" rather than juggling per-chain client instances itself.

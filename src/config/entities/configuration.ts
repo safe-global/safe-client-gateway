@@ -552,6 +552,14 @@ export default () => ({
       process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
       10,
     ),
+    // Maximum number of concurrent in-flight probe requests while HALF_OPEN.
+    // Defaults to the number of failures that re-open the circuit
+    // (threshold * halfOpenFailureRateThreshold / 100), so one round of probes
+    // is enough to reach a verdict either way.
+    halfOpenMaxInFlight: Number.parseInt(
+      process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_IN_FLIGHT ?? `${3}`,
+      10,
+    ),
   },
   jwt: {
     issuer: process.env.JWT_ISSUER,
