@@ -15,7 +15,7 @@ import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity
  * `meta` is per chain rather than per Safe, so the Safe's chain travels with it:
  * the indexing progress beside a Safe's rows is the progress that produced them.
  *
- * `delegates` is droppe - see {@link PolicyAssemblerState}.
+ * `delegates` is dropped - see {@link PolicyAssemblerState}.
  */
 export function policyStateForSafe(
   state: PolicyIndexerState,
