@@ -90,14 +90,14 @@ export class PoliciesService {
       return safesInSpace;
     }
 
-    const safesNotInSpace = requested.find(
+    const safeNotInSpace = requested.find(
       (requestedSafe) =>
         !safesInSpace.some((safe) => this.compareSafes(safe, requestedSafe)),
     );
 
-    if (safesNotInSpace) {
+    if (safeNotInSpace) {
       throw new UnprocessableEntityException(
-        `Safe ${safesNotInSpace.chainId}:${safesNotInSpace.address} is not in this space`,
+        `Safe ${safeNotInSpace.chainId}:${safeNotInSpace.address} is not in this space`,
       );
     }
 
