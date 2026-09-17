@@ -8,23 +8,10 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
+import type { SimulatedRelayer } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
 import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-
-/** Which relayer a log line is about; only these two run the check. */
-const SIMULATED_RELAYERS = ['relay-fee', 'workspace'] as const;
-
-export type SimulatedRelayer = (typeof SIMULATED_RELAYERS)[number];
-
-/**
- * Placeholder EOA used as `from` when simulating a relayed transaction.
- * On-chain the caller is the relay provider's dispatcher; using a non-Safe
- * sentinel keeps `msg.sender`/`tx.origin` distinct from the Safe so
- * refund-receiver-zero flows debit the Safe to a third party (as they would in
- * production).
- */
-const SIMULATION_SENDER_SENTINEL: Address =
-  '0x000000000000000000000000000000000000dEaD';
+import { SIMULATION_SENDER_SENTINEL } from '@/modules/relay/domain/relay.constants';
 
 /**
  * The pre-relay Tenderly check, shared by every relayer that pays for what it

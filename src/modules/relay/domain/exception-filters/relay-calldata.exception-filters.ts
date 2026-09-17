@@ -10,9 +10,17 @@ import { UnofficialProxyFactoryExceptionFilter } from '@/modules/relay/domain/ex
 import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/exception-filters/unofficial-signer-factory.exception-filter';
 
 /**
- * What any route that relays rejects: calldata we cannot recognise, and
- * deployments that are not official. Each route adds the filters for what only
- * it can refuse, which is why those stay on the handler.
+ * Exception filters shared by every relay endpoint (`RelayController` and
+ * `SpaceRelayController`). They map the errors thrown while the relay service
+ * validates the calldata to HTTP responses:
+ *
+ * - the relayer refused the request or is unavailable,
+ * - the calldata is not a recognised Safe transaction (multiSend, transfer),
+ * - the calldata targets a contract that is not an official Safe deployment
+ *   (master copy, MultiSend, ProxyFactory, signer factory).
+ *
+ * Errors specific to one endpoint (e.g. rate limits or space quotas) are not
+ * included here; each controller adds those with its own `@UseFilters`.
  */
 export const RelayCalldataExceptionFilters = (): MethodDecorator &
   ClassDecorator =>
