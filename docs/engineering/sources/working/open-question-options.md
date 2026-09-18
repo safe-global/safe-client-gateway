@@ -538,3 +538,52 @@ Choose this when:
 Open until the team decides whether provider-format assumptions must be
 enforced by a schema/test when they are relied on, or normalized at the
 boundary regardless.
+
+## OQ-TEST-01 How Service Specs Type Their Collaborator Mocks
+
+Question: should a service spec type a collaborator mock as
+`MockedObject<IFace>`, or narrow it to the methods the spec actually uses with
+`MockedObject<Pick<IFace, 'a' | 'b'>>`?
+
+Raised in PR #3420, where the same PR went both ways. The author added the
+narrowed form on one review comment, reverted it on another (review comments
+3978886193 and 3978942901: "why not have `as MockedObject<IBillingApi>`?",
+"then we don't need `as unknown as IBillingApi`"), and restored it for a third
+(issue comment 5601447708). The narrowed form needs `as unknown as IFace` at
+the construction sites, which the repo otherwise treats as a smell.
+
+### Option A: Whole-Interface Mock
+
+Existing example:
+
+- `src/modules/billing/routes/billing.service.spec.ts` (`as MockedObject<IBillingApi>`)
+
+Choose this when:
+
+- Construction should stay cast-free; `as unknown as` is the thing being avoided.
+- The mock object is expected to track the interface as it grows.
+
+Trade-off: a method the service starts calling later is silently `undefined`
+rather than a clear failure, and on a `Promise`-returning method that surfaces
+far from the cause.
+
+### Option B: Narrowed `Pick` Mock
+
+Existing example:
+
+- `src/modules/entitlements/routes/subscription-sync.service.spec.ts`
+
+Choose this when:
+
+- The spec should state which collaborators it exercises, and an unlisted call
+  should fail loudly.
+- Declaring `vi.fn()` entries nothing calls is considered worse (an arch-review
+  in this same PR asked for exactly such an entry to be deleted).
+
+Trade-off: needs `as unknown as IFace` at each construction site.
+
+Open until the team decides which cost it prefers — a silently-undefined method
+on the wide form, or the `as unknown as` cast the narrow form requires. Note the
+repo-wide position on `as unknown as` (see `best-practices.md` baselines) likely
+settles this, and whichever wins should be stated in the testing guide so a
+review cannot ask for both in one PR.

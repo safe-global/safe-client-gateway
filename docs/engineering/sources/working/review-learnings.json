@@ -665,12 +665,15 @@
     "prNumbers": [
       2850,
       3334,
-      3373
+      3373,
+      3420
     ],
     "prState": "closed",
     "reviewCommentIds": [
       2619982037,
-      2620243381
+      2620243381,
+      3980136825,
+      3980622752
     ],
     "reviewIds": [],
     "issueCommentIds": [
@@ -678,7 +681,7 @@
       5370151787,
       5370217749
     ],
-    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone.",
+    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone. Fourth occurrence, in #3420: asked whether `listPlans` and `getCustomer` were dead or merely unwired, the author deleted both — \"if they are needed, we can always add them back\".",
     "ruleIds": [
       "MOD-04"
     ]
@@ -1999,7 +2002,8 @@
       3196,
       3214,
       3247,
-      2831
+      2831,
+      3420
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2012,11 +2016,14 @@
       3570893940,
       3570897035,
       2593329101,
-      2596323738
+      2596323738,
+      3978886193,
+      3978942901,
+      3979731594
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast.",
+    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast. #3420 shows the tension has not settled: the author added `MockedObject<Pick<IBillingApi, ...>>` on one review comment, reverted it on another (\"it did not add anything\", and it forced `as unknown as IBillingApi`), then restored it for a third. See OQ-TEST-01.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2564,7 +2571,8 @@
       2831,
       2824,
       3290,
-      3250
+      3250,
+      3420
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2573,7 +2581,10 @@
       2601146383,
       3637104653,
       3637109208,
-      3637110787
+      3637110787,
+      3968411702,
+      3968415799,
+      3968805241
     ],
     "reviewIds": [
       4762810977
@@ -2581,7 +2592,7 @@
     "issueCommentIds": [
       4971530091
     ],
-    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why.",
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot.",
     "ruleIds": [
       "STYLE-01"
     ],
@@ -3192,5 +3203,65 @@
       "CHANGE-04"
     ],
     "sourceWindowId": "CLOSED-20260821-20260904"
+  },
+  {
+    "id": "RL-20260911-001",
+    "title": "Raw<T> return type claimed an unwrapped array while the body carried an envelope",
+    "prNumbers": [
+      3420
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3979949917,
+      3980136825,
+      3980623457
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`listPaymentLinks` was typed `Raw<Array<PaymentLink>>` while the upstream body is `{ paymentLinks: [...] }`, and the repository unwrapped the envelope on the way out. Review tabulated four methods with the same mismatch, each provable from the spec's own mock. `Raw<T>` is an unchecked assertion about a payload nobody has parsed yet — nothing compiles against it, so a wrong `T` survives until a human compares the declaration with the fixture. When declaring a `Raw<T>`, read the mock in the datasource spec and make `T` the shape the body actually has, envelope included.",
+    "ruleIds": [
+      "TYPE-04"
+    ],
+    "sourceWindowId": "CLOSED-20260904-20260911"
+  },
+  {
+    "id": "RL-20260911-002",
+    "title": "Pre-existing boundary deviation stopped being out of scope once the PR added to it",
+    "prNumbers": [
+      3420
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3978935263,
+      3979734246
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5600498834,
+      5600755328
+    ],
+    "learning": "The billing datasource parsed upstream payloads and returned domain objects with no repository owning the boundary. The author skipped it deliberately — the deviation is the whole class, not the two methods this PR adds — and argued converting two of nine buys a half-seam for most of the price. Two independent reviewers flagged it anyway, and it was converted. The line this draws: a mechanical pattern repeated across the repo is fixed on the lines you touch and no further, but an architectural boundary your PR adds new cases to is different — each new method through the gap makes the eventual fix larger and the deviation more precedented. Ask which of the two you have before reaching for \"pre-existing\".",
+    "ruleIds": [
+      "MOD-02"
+    ],
+    "sourceWindowId": "CLOSED-20260904-20260911"
+  },
+  {
+    "id": "RL-20260907-001",
+    "title": "Status cases listed literally rather than derived from the constant they exist to pin",
+    "prNumbers": [
+      3399
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3881282141
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Several near-identical specs asserting how each subscription status is classified were collapsed into one `it.each`, with the statuses written out literally and a comment saying why: the point is to pin which side of `ACTIVE_SUBSCRIPTION_STATUSES` each status falls on, and a case list computed from that constant would move with it and assert nothing. Derive test data from the source of truth, except when the constant is the thing under test — then write the cases out, and say so, or the test silently agrees with whatever the constant becomes.",
+    "ruleIds": [
+      "TEST-08"
+    ],
+    "sourceWindowId": "CLOSED-20260904-20260911"
   }
 ]
