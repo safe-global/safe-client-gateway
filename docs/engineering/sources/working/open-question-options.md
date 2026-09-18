@@ -535,9 +535,17 @@ Choose this when:
 - The normalization is one cheap idempotent branch
   (`description.endsWith('.') ? description : \`${description}.\``).
 
+Recurred in PR #3423 (review comment thread on `@claude review`, author reply
+5678546872): Zerion's chain list is lower-cased on write while the portfolio
+distribution is read with the same key, and a mixed-case key from upstream
+would silently miss and degrade every Safe on that chain. The author chose
+Option A again — "we trust the Zerion API to return valid data" — so the
+repo has now taken the same side twice without writing it down.
+
 Open until the team decides whether provider-format assumptions must be
 enforced by a schema/test when they are relied on, or normalized at the
-boundary regardless.
+boundary regardless. Two data points now favour Option A; what is missing is
+the rule that says so, and whether the assumption gets a pinning test.
 
 ## OQ-TEST-01 How Service Specs Type Their Collaborator Mocks
 

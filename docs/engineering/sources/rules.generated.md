@@ -1716,10 +1716,10 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003`
+> **general** · database · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001`
 
 **📜 Rule**\
-Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it.
+Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.
 
 **✅ Check**\
 > Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?
@@ -2153,10 +2153,10 @@ with per-field conditions and messages.
 <a id="config-03"></a>
 ### `CONFIG-03` TTLs are config
 
-> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003`
+> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003` · `RL-20260911-004`
 
 **📜 Rule**\
-TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs.
+TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name.
 
 **✅ Check**\
 > Are TTLs/timeouts/tunables configured?
@@ -2352,10 +2352,10 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005`
+> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003`
 
 **📜 Rule**\
-Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate.
+Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees.
 
 **✅ Check**\
 > Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?
@@ -2808,10 +2808,10 @@ Test descriptions and generated data reflect the actual assertion: `it('should r
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002`
+> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Widening a gated list (versions, chains, providers) is covered by the negative case proving the gate still rejects, not only the positive one.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Widening a gated list (versions, chains, providers) is covered by the negative case proving the gate still rejects, not only the positive one. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
 
 **✅ Check**\
 > Do tests cover edge cases, side effects, and deterministic behavior?
@@ -3411,10 +3411,10 @@ stops paging. Links must describe the page that was actually served.
 <a id="resilience-01"></a>
 ### `RESILIENCE-01` Resilience policy semantics
 
-> resilience · 4 examples · ↩ `RL-20251215-002` · `RL-20260626-002` · `RL-20260818-001`
+> resilience · 4 examples · ↩ `RL-20251215-002` · `RL-20260626-002` · `RL-20260818-001` · `RL-20260917-002`
 
 **📜 Rule**\
-Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open.
+Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs "rejected" separated from "outcome unknown"; one error funnel per layer serves callers that only fail, not callers that undo.
 
 **✅ Check**\
 > For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?

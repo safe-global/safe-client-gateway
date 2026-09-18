@@ -257,7 +257,8 @@
     "sourceWindowId": "CLOSED-20260115-20260122",
     "prNumbers": [
       2863,
-      2869
+      2869,
+      3437
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -265,11 +266,13 @@
       2690910432,
       2690923158,
       2690917832,
-      2690960629
+      2690960629,
+      4035201737,
+      4036361493
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Changing a cache payload format under the same key can crash or misroute cache-hit callers after deploy; version or invalidate the key, and do not silently return plausible empty data when cold-cache fetches fail.",
+    "learning": "Changing a cache payload format under the same key can crash or misroute cache-hit callers after deploy; version or invalidate the key, and do not silently return plausible empty data when cold-cache fetches fail. Recurred in #3437 with the subtler nullable case: adding a `counter` object to the cached grant schema kept it `.nullable()`, but nullable still requires the key to exist, so entries written before the deploy failed `parse()` and every quota check — Safe-seat checks included — broke until the key expired. During a rolling deploy old instances keep writing the old shape while new ones read, so the reader tolerates both or the key is versioned.",
     "ruleIds": [
       "CACHE-02",
       "CACHE-03",
@@ -1424,17 +1427,22 @@
     "prNumbers": [
       3163,
       3105,
-      3200
+      3200,
+      3223
     ],
     "prState": "merged",
     "reviewCommentIds": [
       3403368538,
       3442038620,
-      3514171620
+      3514171620,
+      3644510744,
+      3644514022,
+      3644514778,
+      3644570951
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`. The same mistake recurred with a chain `relayer` field that is always present but nullable (#3105). Conversely, genuinely optional fields must be `@ApiPropertyOptional`, not `@ApiProperty` (#3200).",
+    "learning": "A DTO field that is always present in the response (explicitly `null` when absent semantically) was decorated `@ApiPropertyOptional`, which claims the key itself can be missing. The fix is `@ApiProperty({ nullable: true })` — required-but-nullable. Choose the decorator by the actual wire shape: optional means the key may be absent; nullable means the key is always there and may be `null`. The same mistake recurred with a chain `relayer` field that is always present but nullable (#3105). Conversely, genuinely optional fields must be `@ApiPropertyOptional`, not `@ApiProperty` (#3200). Recurred four times in one diff on #3223: fields decorated `@ApiPropertyOptional({ nullable: true })` and typed `T | null` with no `undefined` anywhere — \"nullable is not optional, and I do not see `undefined` allowed on these values\".",
     "ruleIds": [
       "TYPE-04"
     ]
@@ -1664,18 +1672,22 @@
     "title": "Same field validated at two layers gave inconsistent 400/422 error contracts",
     "sourceWindowId": "CLOSED-20260623-20260630",
     "prNumbers": [
-      3201
+      3201,
+      3397
     ],
     "prState": "merged",
     "reviewCommentIds": [
-      3490916863
+      3490916863,
+      4013226718,
+      4014712394,
+      4024186252
     ],
     "reviewIds": [],
     "issueCommentIds": [
       4810367757,
       4810657315
     ],
-    "learning": "A new `nonce` field was validated both by a class-validator-style layer (`nonce=-12` → 400 with one message shape) and a Zod schema (`nonce=0x12` → 422 with another), so clients saw two different error contracts for the same field; manual testing caught it and the author unified the validation. Validate a field once, at one boundary. For simple shapes prefer `z.string().regex(/^\\d+$/)` over a custom `.refine(predicate)` — same behavior, less code.",
+    "learning": "A new `nonce` field was validated both by a class-validator-style layer (`nonce=-12` → 400 with one message shape) and a Zod schema (`nonce=0x12` → 422 with another), so clients saw two different error contracts for the same field; manual testing caught it and the author unified the validation. Validate a field once, at one boundary. For simple shapes prefer `z.string().regex(/^\\d+$/)` over a custom `.refine(predicate)` — same behavior, less code. The same shape without the contract mismatch, in #3397: an empty `chainId` reaching an upstream collection endpoint and caching a 502 was first fixed by a guard inside the datasource. Review asked why it was not validated at the controller instead; the datasource guard came out and validation stayed at the boundary only, with the remaining bare `@Param('chainId')` routes tracked separately. Validate once at the boundary and let lower layers trust their callers — a second guard downstream is a new error contract for the same input.",
     "ruleIds": [
       "ROUTE-02"
     ]
@@ -2572,7 +2584,9 @@
       2824,
       3290,
       3250,
-      3420
+      3420,
+      3397,
+      3437
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2584,7 +2598,11 @@
       3637110787,
       3968411702,
       3968415799,
-      3968805241
+      3968805241,
+      4013229994,
+      4014723657,
+      4035345441,
+      4036363451
     ],
     "reviewIds": [
       4762810977
@@ -2592,7 +2610,7 @@
     "issueCommentIds": [
       4971530091
     ],
-    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot.",
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight.",
     "ruleIds": [
       "STYLE-01"
     ],
@@ -3263,5 +3281,101 @@
       "TEST-08"
     ],
     "sourceWindowId": "CLOSED-20260904-20260911"
+  },
+  {
+    "id": "RL-20260917-001",
+    "title": "Refund re-resolved the grant instead of reversing the record the charge wrote",
+    "prNumbers": [
+      3437
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4035152595,
+      4036354085
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A sponsored-relay allowance was charged by `consumeQuota()` and released by a `refundQuota()` that resolved the grant again. If a subscription webhook advanced the billing period while the relay was in flight, the refund credited the new period: period A stayed charged at 1 and period B went to -1, so a quota of one permitted two further submissions. The fix returns a `ConsumedQuota { spaceId, period, delta }` from the charge and takes it back on the refund, with a test for the interleaving. A compensating action reverses the exact record the original wrote — never a freshly resolved one, because anything that can move between the two will.",
+    "ruleIds": [
+      "DB-02"
+    ],
+    "sourceWindowId": "CLOSED-20260911-20260918"
+  },
+  {
+    "id": "RL-20260917-002",
+    "title": "One error funnel made a confirmed rejection indistinguishable from an unknown outcome",
+    "prNumbers": [
+      3437
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4035177282,
+      4036359390
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The relay refunded the allowance whenever the provider call threw `DataSourceError`, on the reasoning that no `taskId` came back so nothing was submitted. But the datasource funnels timeouts and unparseable responses into that same error, and the provider may well have accepted the transaction before the response was lost — so the refund can return an allowance that was actually spent. The author kept it, for parity with the pre-existing public relay route which counts the same way, and offered a ticket to change both. The lesson stands regardless: a single error funnel per layer is good for callers who only need to fail, and wrong for a caller deciding whether to compensate — those need \"rejected\" separated from \"outcome unknown\" before they undo anything.",
+    "ruleIds": [
+      "RESILIENCE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260911-20260918"
+  },
+  {
+    "id": "RL-20260917-003",
+    "title": "Sequential reject-capable checks are ordered cheapest-first on purpose, not awaiting in series by oversight",
+    "prNumbers": [
+      3437
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4024151933,
+      4025149105
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Review asked why three independent awaits were not a `Promise.all`. They are independent, but each can reject and they run cheapest to most expensive: a Safe outside the workspace or an exhausted allowance is refused before Tenderly is ever called. Running them together would pay for the external simulation on requests that are going to be rejected, would not cancel the siblings when one fails, and would make the response code depend on which check settled first — the same request could return 403 or 402. In the happy path the simulation dominates anyway, so the parallelism buys almost nothing. Before parallelizing a chain of guards, check whether the order is load-bearing: rejection order determines both cost and which status the caller sees.",
+    "ruleIds": [
+      "PERF-01"
+    ],
+    "sourceWindowId": "CLOSED-20260911-20260918"
+  },
+  {
+    "id": "RL-20260911-004",
+    "title": "A bound published in the API contract cannot also be environment-tunable",
+    "prNumbers": [
+      3419
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5603220884,
+      5616878529,
+      5617316634
+    ],
+    "learning": "An arch-review asked for a batch-size cap to come from configuration, per the rule that fan-out bounds are config-driven. The author pushed back and the review accepted it: the number is interpolated into three Swagger descriptions and reaches a generated client in another repo whose CI compares a sha256 of the whole staging spec, so an ops-side tweak would turn that check red with no code change on either side, and the published spec would advertise a bound some deployment does not honour. The rule's own canonical example is a `private static readonly` literal too. What the author did take from the finding was to record that the cap and the rate-limit window multiply into the worst-case fan-out, and point at the rate limit as the knob — it is config-driven and not part of the contract. A value that appears in the published contract is part of the contract: keep it a constant, and put the tunability on something the contract does not name.",
+    "ruleIds": [
+      "CONFIG-03"
+    ],
+    "sourceWindowId": "CLOSED-20260911-20260918"
+  },
+  {
+    "id": "RL-20260916-001",
+    "title": "Upstream behaviour verified against the public edge, not the host CGW actually resolves",
+    "prNumbers": [
+      3398
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5450053460,
+      5451132069
+    ],
+    "learning": "A redirect-handling fix was challenged on the grounds that the endpoint answers 200 without a trailing slash — verified against `api.safe.global` and `api.5afe.dev`, both of which do. Deployed CGW does not call those: it resolves `transactionService` to the in-cluster host, and that one issues a 301, shown by a production span. Both parties had run the same check and drawn opposite conclusions from it. A claim about upstream behaviour is only settled by the host the deployed service resolves, so cite a trace or the in-cluster URL rather than a curl against the public edge.",
+    "ruleIds": [
+      "TEST-09"
+    ],
+    "sourceWindowId": "CLOSED-20260911-20260918"
   }
 ]
