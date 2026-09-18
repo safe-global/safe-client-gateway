@@ -84,10 +84,7 @@ export const PolicyIndexerSafeAllowanceSchema = z.object({
    */
   resetTimeMinutes: PolicyIndexerIntegerSchema,
   /**
-   * Start of the current window, in **minutes since the epoch** - the contract's
-   * own unit, not unix seconds. The indexer no longer serves the next boundary,
-   * so a caller derives it as `(lastResetMin + resetTimeMinutes) * 60`, and only
-   * when `resetTimeMinutes` is non-zero.
+   * Start of a window, in **minutes since the epoch**.
    */
   lastResetMin: PolicyIndexerIntegerSchema,
   resetPhase: PolicyIndexerAllowanceResetPhaseSchema,
