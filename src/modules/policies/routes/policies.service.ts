@@ -7,14 +7,11 @@ import {
 import { type Address, isAddressEqual } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import {
-  POLICY_ASSEMBLERS,
-  type PolicyAssembler,
-} from '@/modules/policies/domain/assemblers/policy-assembler.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
-import { policyStateForSafe } from '@/modules/policies/domain/utils/policy-state.utils';
+import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -30,9 +27,6 @@ type SpacePolicyRequest = {
   authPayload: AuthPayload;
 };
 
-/** An active policy plus the Safe it applies to. */
-export type SpaceActivePolicy = ActivePolicy & { safe: SafeRef };
-
 @Injectable()
 export class PoliciesService {
   constructor(
@@ -44,8 +38,7 @@ export class PoliciesService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
-    @Inject(POLICY_ASSEMBLERS)
-    private readonly assemblers: ReadonlyArray<PolicyAssembler>,
+    private readonly spendingLimitMapper: SpendingLimitMapper,
   ) {}
 
   /**
@@ -54,13 +47,10 @@ export class PoliciesService {
    */
   public async getSpaceActivePolicies(
     request: SpacePolicyRequest,
-  ): Promise<Array<SpaceActivePolicy>> {
+  ): Promise<Array<ActivePolicy>> {
     const spaceSafes = await this.spaceSafes(request);
-    const resolved = await this.resolveActivePolicies(spaceSafes);
 
-    return resolved.flatMap(({ safe, policies }) =>
-      policies.map((policy) => ({ ...policy, safe })),
-    );
+    return await this.resolveActivePolicies(spaceSafes);
   }
 
   /**
@@ -123,7 +113,7 @@ export class PoliciesService {
    */
   private async resolveActivePolicies(
     safes: ReadonlyArray<SafeRef>,
-  ): Promise<Array<{ safe: SafeRef; policies: Array<ActivePolicy> }>> {
+  ): Promise<Array<ActivePolicy>> {
     if (safes.length === 0) {
       return [];
     }
@@ -133,20 +123,19 @@ export class PoliciesService {
       Promise.all(safes.map((safe) => this.enabledModules(safe))),
     ]);
 
-    return safes.map((safe, index) => {
-      const context = {
-        safe,
-        state: policyStateForSafe(state, safe),
-        enabledModules: enabledModules[index],
-      };
+    const policies: Array<ActivePolicy> = [];
 
-      return {
-        safe,
-        policies: this.assemblers.flatMap((assembler) =>
-          assembler.assemble(context),
-        ),
-      };
-    });
+    for (const [index, safe] of safes.entries()) {
+      policies.push(
+        ...this.spendingLimitMapper.map({
+          safe,
+          allowances: this.getAllowancesBySafe(state.allowances, safe),
+          enabledModules: enabledModules[index],
+        }),
+      );
+    }
+
+    return policies;
   }
 
   /**
@@ -163,5 +152,22 @@ export class PoliciesService {
     });
 
     return modules ?? [];
+  }
+
+  /**
+   * The allowance rows belonging to {@link safe}.
+   *
+   * One indexer read covers every Safe of a request, so an unscoped read would
+   * report another Safe's policies on this one.
+   */
+  private getAllowancesBySafe(
+    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+    safe: SafeRef,
+  ): Array<PolicyIndexerSafeAllowance> {
+    return allowances.filter(
+      (allowance) =>
+        allowance.chainId === safe.chainId &&
+        isAddressEqual(allowance.safe, safe.address),
+    );
   }
 }

@@ -4,12 +4,13 @@ import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { PolicyAssembler } from '@/modules/policies/domain/assemblers/policy-assembler.interface';
-import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
+import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -38,7 +39,6 @@ const SEPOLIA = '11155111';
 
 describe('PoliciesService', () => {
   let target: PoliciesService;
-  let assemblers: Array<PolicyAssembler>;
   const spaceId = faker.number.int({ min: 1, max: 100 });
   const safeAddress = getAddress(faker.finance.ethereumAddress());
   const allowanceModule = getAddress(faker.finance.ethereumAddress());
@@ -49,13 +49,12 @@ describe('PoliciesService', () => {
   const spaceRequest = { spaceId, authPayload };
 
   beforeEach(() => {
-    assemblers = [new SpendingLimitAssembler()];
     target = new PoliciesService(
       mockPolicyIndexerRepository,
       mockSafeRepository,
       mockSpaceSafesRepository,
       mockMembersRepository,
-      assemblers,
+      new SpendingLimitMapper(),
     );
 
     // authorised by default: active member, Safe in the space
@@ -71,7 +70,8 @@ describe('PoliciesService', () => {
     );
   });
 
-  function allowanceOf(safe: string) {
+  /** An allowance of `safe` on `allowanceModule`, spendable by default. */
+  function allowanceOf(safe: string): PolicyIndexerSafeAllowance {
     return policyIndexerSafeAllowanceBuilder()
       .with('chainId', SEPOLIA)
       .with('safe', getAddress(safe))
@@ -80,6 +80,24 @@ describe('PoliciesService', () => {
       .with('spent', '0')
       .with('remaining', '1000')
       .build();
+  }
+
+  /** The policies of the Space, over the given allowance rows. */
+  async function activePolicies(
+    allowances: Array<PolicyIndexerSafeAllowance>,
+  ): Promise<Array<ActivePolicy>> {
+    mockPolicyIndexerRepository.getState.mockResolvedValue(
+      policyIndexerResponseBuilder().with('allowances', allowances).build(),
+    );
+
+    return await target.getSpaceActivePolicies(spaceRequest);
+  }
+
+  /** Reports `modules` as the ones the Safe has enabled. */
+  function withEnabledModules(modules: Array<Address>): void {
+    mockSafeRepository.getSafe.mockResolvedValue(
+      safeBuilder().with('modules', modules).build(),
+    );
   }
 
   describe('authorisation', () => {
@@ -118,14 +136,8 @@ describe('PoliciesService', () => {
       });
     });
 
-    it('should return the policies its assemblers built', async () => {
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('allowances', [allowanceOf(safeAddress)])
-          .build(),
-      );
-
-      const result = await target.getSpaceActivePolicies(spaceRequest);
+    it('should return the policies it built', async () => {
+      const result = await activePolicies([allowanceOf(safeAddress)]);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
@@ -134,31 +146,20 @@ describe('PoliciesService', () => {
       });
     });
 
-    it('should give an assembler only the rows of the safe it is assembling', async () => {
-      // The indexer answers for every Safe of a request, so an unscoped
-      // assembler would report another Safe's limits on this one.
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('allowances', [allowanceOf(faker.finance.ethereumAddress())])
-          .build(),
-      );
-
-      const result = await target.getSpaceActivePolicies(spaceRequest);
+    it('should use only the rows of the safe it is building', async () => {
+      // The indexer answers for every Safe of a request, so an unscoped read
+      // would report another Safe's limits on this one.
+      const result = await activePolicies([
+        allowanceOf(faker.finance.ethereumAddress()),
+      ]);
 
       expect(result).toStrictEqual([]);
     });
 
     it('should report a policy as unenforced when its module is not enabled', async () => {
-      mockSafeRepository.getSafe.mockResolvedValue(
-        safeBuilder().with('modules', []).build(),
-      );
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('allowances', [allowanceOf(safeAddress)])
-          .build(),
-      );
+      withEnabledModules([]);
 
-      const result = await target.getSpaceActivePolicies(spaceRequest);
+      const result = await activePolicies([allowanceOf(safeAddress)]);
 
       expect(result[0].enabled).toBe(false);
     });
@@ -167,13 +168,8 @@ describe('PoliciesService', () => {
       mockSafeRepository.getSafe.mockResolvedValue(
         safeBuilder().with('modules', null).build(),
       );
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('allowances', [allowanceOf(safeAddress)])
-          .build(),
-      );
 
-      const result = await target.getSpaceActivePolicies(spaceRequest);
+      const result = await activePolicies([allowanceOf(safeAddress)]);
 
       expect(result[0].enabled).toBe(false);
     });

@@ -3,14 +3,10 @@ import { forwardRef, Module } from '@nestjs/common';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { AuthModule } from '@/modules/auth/auth.module';
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
-import {
-  POLICY_ASSEMBLERS,
-  type PolicyAssembler,
-} from '@/modules/policies/domain/assemblers/policy-assembler.interface';
-import { SpendingLimitAssembler } from '@/modules/policies/domain/assemblers/spending-limit.assembler';
 import { PolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 
+import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { SpacePoliciesController } from '@/modules/policies/routes/space-policies.controller';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
@@ -34,17 +30,8 @@ import { UsersModule } from '@/modules/users/users.module';
     HttpErrorFactory,
     PolicyIndexerApi,
     PoliciesService,
-    SpendingLimitAssembler,
+    SpendingLimitMapper,
     { provide: IPolicyIndexerRepository, useClass: PolicyIndexerRepository },
-    {
-      // Registering an assembler here is all it takes to report another policy
-      // mechanism: the route service never names one.
-      provide: POLICY_ASSEMBLERS,
-      useFactory: (
-        spendingLimit: SpendingLimitAssembler,
-      ): ReadonlyArray<PolicyAssembler> => [spendingLimit],
-      inject: [SpendingLimitAssembler],
-    },
   ],
   exports: [IPolicyIndexerRepository],
 })

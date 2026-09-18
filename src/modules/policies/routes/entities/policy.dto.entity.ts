@@ -153,13 +153,9 @@ export class ActivePolicyDto implements ActivePolicy {
   public readonly enabled!: boolean;
   @ApiProperty(PolicyDataSchema)
   public readonly data!: ActivePolicyData;
-}
-
-/**
- * An active policy plus the Safe it applies to, for the Space-level route where
- * one list spans several Safes and chains.
- */
-export class SpaceActivePolicyDto extends ActivePolicyDto {
-  @ApiProperty({ type: SafeRefDto })
+  @ApiProperty({
+    type: SafeRefDto,
+    description: 'The Safe the policy is in effect on',
+  })
   public readonly safe!: SafeRefResponse;
 }
