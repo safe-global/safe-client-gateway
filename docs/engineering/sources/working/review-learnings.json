@@ -1209,15 +1209,18 @@
     "title": "Environment-specific invite URL hardcoded as a constant",
     "sourceWindowId": "CLOSED-20260602-20260609",
     "prNumbers": [
-      3135
+      3135,
+      3284
     ],
     "prState": "merged",
     "reviewCommentIds": [
-      3362171539
+      3362171539,
+      3646125938,
+      3654894455
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "An email template hardcoded `SPACE_INVITE_URL = 'http://localhost:3001/...'` with a TODO; review blocked the merge until it was configurable. Environment-specific URLs (like TTLs and other tunables) go through configuration from the first commit — a TODO does not ship.",
+    "learning": "An email template hardcoded `SPACE_INVITE_URL = 'http://localhost:3001/...'` with a TODO; review blocked the merge until it was configurable. Environment-specific URLs (like TTLs and other tunables) go through configuration from the first commit — a TODO does not ship. Recurred in #3284 with a `MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS` class constant — review asked for config and the author moved it.",
     "ruleIds": [
       "CONFIG-03"
     ]
@@ -2232,7 +2235,8 @@
     "title": "Module mixed errors, types, interfaces, and helpers into service files",
     "sourceWindowId": "CLOSED-20260711-20260714",
     "prNumbers": [
-      3078
+      3078,
+      3284
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -2243,11 +2247,13 @@
       3274966634,
       3275248418,
       3310410509,
-      3310414423
+      3310414423,
+      3646208991,
+      3654913703
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class.",
+    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it.",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -2527,7 +2533,8 @@
     "prNumbers": [
       2831,
       2824,
-      3290
+      3290,
+      3250
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2541,8 +2548,10 @@
     "reviewIds": [
       4762810977
     ],
-    "issueCommentIds": [],
-    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line.",
+    "issueCommentIds": [
+      4971530091
+    ],
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why.",
     "ruleIds": [
       "STYLE-01"
     ],
@@ -2689,16 +2698,18 @@
     "id": "RL-20260723-003",
     "title": "Catch degraded a decode failure to an empty object with no log",
     "prNumbers": [
-      3245
+      3245,
+      3250
     ],
     "prState": "merged",
     "reviewCommentIds": [],
     "reviewIds": [],
     "issueCommentIds": [
       4969156657,
-      4969304856
+      4969304856,
+      4971530091
     ],
-    "learning": "The audit reader wrapped payload decode in `catch { return {}; }`, so KMS failures, key/context mismatches, schema drift and un-backfilled plaintext rows all surfaced identically as an empty payload with no operator signal; the author added a `warn` carrying the space/log/event ids (never the decrypted payload) plus tests for both degrade paths. A catch that degrades to a default must log why — silent degradation turns an incident into a mystery, and the log must carry identifiers without carrying the sensitive value.",
+    "learning": "The audit reader wrapped payload decode in `catch { return {}; }`, so KMS failures, key/context mismatches, schema drift and un-backfilled plaintext rows all surfaced identically as an empty payload with no operator signal; the author added a `warn` carrying the space/log/event ids (never the decrypted payload) plus tests for both degrade paths. A catch that degrades to a default must log why — silent degradation turns an incident into a mystery, and the log must carry identifiers without carrying the sensitive value. Recurred a week later in #3250: the counterfactual deployment guard failed open with a bare `catch {}`, so a degraded transaction service silently disabled the check. The merged fix logs a `warn` with chain id and address — same shape, same fix.",
     "ruleIds": [
       "LOG-01"
     ],
@@ -2760,5 +2771,60 @@
       "PR-02"
     ],
     "sourceWindowId": "CLOSED-20260717-20260724"
+  },
+  {
+    "id": "RL-20260729-001",
+    "title": "Zod stripped the removed key, so stale specs kept passing while sending nothing",
+    "prNumbers": [
+      3312
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3666935520
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Dropping the legacy `failed` key from an event schema did not break the ~20 specs still building `failed: 'true'` — Zod strips unknown keys by default, so those payloads kept parsing while carrying nothing, and the suite stayed green asserting a field the schema no longer had. The author found it and switched them all to `isFailed`. Removing a field from a schema will not fail the tests that still set it: grep the old key across specs and fixtures as part of the removal, because a stripping parser turns a stale test into a silently vacuous one.",
+    "ruleIds": [
+      "TEST-08"
+    ],
+    "sourceWindowId": "CLOSED-20260724-20260731"
+  },
+  {
+    "id": "RL-20260729-002",
+    "title": "Event field weakened to optional so malformed events would not be rejected",
+    "prNumbers": [
+      3312
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3667413309
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A queue event's `isFailed` was declared optional so that a missing flag could never fail validation — the author's reasoning being that a rejected event leaves every cache for that Safe, nonce included, stale until its TTL. Review pushed back that an event without the field is simply malformed, and the shipped schema is `z.boolean()`, required. Do not weaken a consumer-boundary schema to keep bad events flowing: a field the event's meaning depends on stays required, and the cost of dropping malformed events is handled by fixing the producer or by alerting, not by making the contract vaguer.",
+    "ruleIds": [
+      "TYPE-03"
+    ],
+    "sourceWindowId": "CLOSED-20260724-20260731"
+  },
+  {
+    "id": "RL-20260729-003",
+    "title": "Compatibility alias kept although its replacement had shipped six weeks earlier",
+    "prNumbers": [
+      3312
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3666839749,
+      3666935520
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A schema fix carried both the new `isFailed` boolean and the legacy `failed` string enum; review pointed out `isFailed` had been deployed months earlier, and the author confirmed from history that it landed in #2907 six weeks prior, so nothing had been sending only `failed`. The alias was dropped. A backward-compatible alias has a defined life: when adding one, note when it can go, and when touching the schema again, check the deploy date and delete it rather than carrying it forward by default.",
+    "ruleIds": [
+      "CHANGE-04"
+    ],
+    "sourceWindowId": "CLOSED-20260724-20260731"
   }
 ]
