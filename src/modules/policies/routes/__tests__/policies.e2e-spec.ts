@@ -17,8 +17,11 @@ import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import {
@@ -97,9 +100,15 @@ describe('Policies routes (e2e)', () => {
     return { accessToken, spaceId };
   }
 
-  /** The chains, and Safes with the allowance module enabled. */
-  function mockUpstream(args: { modules?: Array<`0x${string}`> } = {}): void {
+  /**
+   * The chains, the Safes with the allowance module enabled, and the delegate
+   * registrations the Transaction Service holds for them.
+   */
+  function mockUpstream(
+    args: { modules?: Array<`0x${string}`>; delegates?: Array<Delegate> } = {},
+  ): void {
     const modules = args.modules ?? [allowanceModule];
+    const delegates = args.delegates ?? [];
     const safe = safeBuilder()
       .with('address', safeAddress)
       .with('modules', modules)
@@ -134,6 +143,16 @@ describe('Policies routes (e2e)', () => {
         `${polygonChain.transactionService}/api/v1/safes/${polygonSafeAddress}`
       ) {
         return Promise.resolve({ data: rawify(polygonSafe), status: 200 });
+      }
+      // The proposer half. Both delegates APIs land here while the Queue
+      // Service is switched off, which is what the test configuration sets.
+      if (url.endsWith('/api/v2/delegates/')) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder<Delegate>().with('results', delegates).build(),
+          ),
+          status: 200,
+        });
       }
       return Promise.reject(new Error(`No matching rule for url: ${url}`));
     });
@@ -377,6 +396,84 @@ describe('Policies routes (e2e)', () => {
           },
         },
       ]);
+    });
+
+    it('should report the proposers of a safe, once per delegates api', async () => {
+      // Both APIs read the same upstream while the Queue Service is off, so the
+      // same grant is reported once per version rather than merged - a client
+      // revokes a grant through the API holding it.
+      const proposer = delegateBuilder().with('safe', safeAddress).build();
+      mockUpstream({ delegates: [proposer] });
+      mockIndexer(rawPolicyIndexerResponse({}));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      const enforcement = { via: 'offchain', source: 'delegates' };
+      const proposers = [
+        {
+          proposer: proposer.delegate,
+          delegatedBy: [
+            { delegator: proposer.delegator, label: proposer.label },
+          ],
+        },
+      ];
+      expect(body).toStrictEqual([
+        {
+          type: PolicyType.Proposer,
+          enforcement,
+          enabled: true,
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          data: { version: 'v2', proposers },
+        },
+        {
+          type: PolicyType.Proposer,
+          enforcement,
+          enabled: true,
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          data: { version: 'v3', proposers },
+        },
+      ]);
+    });
+
+    it('should report no proposer policy for a safe with no delegates', async () => {
+      mockUpstream({ delegates: [] });
+      mockIndexer(rawPolicyIndexerResponse({}));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect([]);
+    });
+
+    it('should fail when the delegates api is unavailable', async () => {
+      // Atomic, like the rest of the page: a Safe whose proposers could not be
+      // read must not report as having none.
+      mockUpstream();
+      networkService.get.mockImplementation(({ url }) => {
+        if (url.endsWith('/api/v2/delegates/')) {
+          return Promise.reject(new Error('Service unavailable'));
+        }
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      });
+      mockIndexer(rawPolicyIndexerResponse({}));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(503);
     });
 
     it('should report a reset ahead of now', async () => {
