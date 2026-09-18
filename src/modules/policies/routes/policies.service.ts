@@ -119,10 +119,11 @@ export class PoliciesService {
   /**
    * The policies in effect on every Safe of {@link safes}.
    *
-   * One indexer read covers all of them, and the Safe reads that say whether a
-   * module is enabled run concurrently. All of it or nothing: a page whose
-   * purpose is saying what controls a set of Safes must not answer "nothing"
-   * where the answer is "unknown".
+   * One indexer read covers all of them; the per-Safe reads that follow - what
+   * the Safe has enabled, and who may propose on it - run one at a time, to stay
+   * under the Transaction Service's concurrency limit. All of it or nothing: a
+   * page whose purpose is saying what controls a set of Safes must not answer
+   * "nothing" where the answer is "unknown".
    */
   private async resolveActivePolicies(
     safes: ReadonlyArray<SafeRef>,
@@ -131,25 +132,24 @@ export class PoliciesService {
       return [];
     }
 
-    const [state, enabledModules, delegatesPerSafe] = await Promise.all([
-      this.policyIndexerRepository.getState({ safes }),
-      Promise.all(safes.map((safe) => this.enabledModules(safe))),
-      Promise.all(safes.map((safe) => this.delegatesByVersion(safe))),
-    ]);
+    // One upstream read at a time, rather than one `Promise.all` covering every
+    // Safe. This is to avoid 429 errors.
+    //
+    const state = await this.policyIndexerRepository.getState({ safes });
 
     const policies: Array<ActivePolicy> = [];
 
-    for (const [index, safe] of safes.entries()) {
+    for (const safe of safes) {
+      const enabledModules = await this.enabledModules(safe);
+      const delegatesByVersion = await this.delegatesByVersion(safe);
+
       policies.push(
         ...this.spendingLimitMapper.map({
           safe,
           allowances: this.getAllowancesBySafe(state.allowances, safe),
-          enabledModules: enabledModules[index],
+          enabledModules,
         }),
-        ...this.proposerMapper.map({
-          safe,
-          delegatesByVersion: delegatesPerSafe[index],
-        }),
+        ...this.proposerMapper.map({ safe, delegatesByVersion }),
       );
     }
 
@@ -174,10 +174,12 @@ export class PoliciesService {
       limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
     };
 
-    const [v2, v3] = await Promise.all([
-      this.delegatesV2Repository.getDelegates(args),
-      this.delegatesV3Repository.getDelegates(args),
-    ]);
+    // Sequential for the same reason as the loop in `resolveActivePolicies`:
+    // while the Queue Service is switched off both repositories call the very
+    // same Transaction Service endpoint, so issuing them together is two
+    // concurrent requests to one rate-limited host.
+    const v2 = await this.delegatesV2Repository.getDelegates(args);
+    const v3 = await this.delegatesV3Repository.getDelegates(args);
 
     return [
       { version: DelegateApiVersion.V2, delegates: v2.results },
