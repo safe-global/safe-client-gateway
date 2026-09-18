@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { zeroAddress } from 'viem';
 import { z } from 'zod';
 import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
@@ -42,7 +43,7 @@ export const SafeQueueMultisigTransactionSchema = z.object({
   proposer: NullableAddressSchema,
   proposedBy: NullableAddressSchema,
   proposedVia: z.enum(ProposalRoute),
-  to: AddressSchema,
+  to: AddressSchema.nullish().transform((to) => to ?? zeroAddress),
   value: NumericStringSchema,
   data: NullableHexSchema,
   operation: z.enum(Operation),
