@@ -197,9 +197,31 @@ describe('parseSafeSeatQuota', () => {
   });
 
   it.each(['ten', '-1', '1.5', `${DB_MAX_SAFE_INTEGER + 1}`])(
-    'returns null for the unparseable quota %s',
+    'returns null and warns for the unparseable quota %s',
     (quota) => {
-      expect(parseSafeSeatQuota({ FEATURE_SAFE_SEATS: quota })).toBeNull();
+      const onWarning = vi.fn<(message: string) => void>();
+
+      expect(
+        parseSafeSeatQuota({ FEATURE_SAFE_SEATS: quota }, onWarning),
+      ).toBeNull();
+
+      expect(onWarning).toHaveBeenCalledTimes(1);
     },
   );
+
+  it('does not warn for an unlimited quota', () => {
+    const onWarning = vi.fn<(message: string) => void>();
+
+    parseSafeSeatQuota({ FEATURE_SAFE_SEATS: 'unlimited' }, onWarning);
+
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when the key is absent', () => {
+    const onWarning = vi.fn<(message: string) => void>();
+
+    parseSafeSeatQuota({}, onWarning);
+
+    expect(onWarning).not.toHaveBeenCalled();
+  });
 });

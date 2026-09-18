@@ -430,7 +430,11 @@ export class BillingService {
     paymentLink: PaymentLink;
   }): Promise<void> {
     // Skip the count query for a link with no seat quota to enforce.
-    if (parseSafeSeatQuota(args.paymentLink.metadata) === null) {
+    if (
+      parseSafeSeatQuota(args.paymentLink.metadata, (message) =>
+        this.loggingService.warn(message),
+      ) === null
+    ) {
       return;
     }
 

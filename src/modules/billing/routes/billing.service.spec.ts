@@ -759,6 +759,36 @@ describe('BillingService', () => {
 
       expect(result).toBe(checkoutSessionResult);
     });
+
+    it('should warn and check out unhindered when FEATURE_SAFE_SEATS is malformed', async () => {
+      const paymentLinkId = faker.string.uuid();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const checkoutSessionResult = checkoutSessionResultBuilder().build();
+      const paymentLink = paymentLinkBuilder()
+        .with('id', paymentLinkId)
+        .with('metadata', { FEATURE_SAFE_SEATS: 'ten' })
+        .build();
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      });
+      mockCatalog([paymentLink]);
+      billingRepositoryMock.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResult,
+      );
+
+      const result = await service.createCheckoutUrl({
+        paymentLinkId,
+        spaceId: faker.number.int(),
+        spaceUuid: faker.string.uuid(),
+        authPayload,
+        returnUrl: withinRedirectOrigin(),
+      });
+
+      expect(result).toBe(checkoutSessionResult);
+      expect(spaceSafesRepositoryMock.countBySpaceId).not.toHaveBeenCalled();
+      expect(loggingServiceMock.warn).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('getCheckoutSession', () => {

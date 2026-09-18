@@ -90,19 +90,26 @@ describe('payment-link offer rules', () => {
     });
 
     it("should offer a sibling plan sharing the active one's catalog name but not its price", () => {
-      const planId = faker.string.alphanumeric(32);
       const activePlanId = faker.string.alphanumeric(32);
-      const link = paymentLinkPricedAt(planId)
-        .with('metadata', { planName: 'Business' })
+      const siblingPlanId = faker.string.alphanumeric(32);
+      const planName = faker.commerce.productName();
+      const eligibility = {
+        createdBeforeEnforcement: faker.datatype.boolean(),
+        hasEverSubscribed: true,
+        activePlanId,
+      };
+      // The active plan's own link — same catalog name, its own price.
+      const activeLink = paymentLinkPricedAt(activePlanId)
+        .with('metadata', { planName })
+        .build();
+      // A sibling tier sharing that name at a different price: PLA-2003's bug
+      // excluded this one too, matching by name instead of price.
+      const siblingLink = paymentLinkPricedAt(siblingPlanId)
+        .with('metadata', { planName })
         .build();
 
-      expect(
-        isOfferedToSpace(link, {
-          createdBeforeEnforcement: faker.datatype.boolean(),
-          hasEverSubscribed: true,
-          activePlanId,
-        }),
-      ).toBe(true);
+      expect(isOfferedToSpace(activeLink, eligibility)).toBe(false);
+      expect(isOfferedToSpace(siblingLink, eligibility)).toBe(true);
     });
 
     it('should offer the legacy grace to a space created before enforcement', () => {
