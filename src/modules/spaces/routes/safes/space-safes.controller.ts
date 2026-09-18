@@ -29,7 +29,6 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
-import { SafeSeatsGuard } from '@/modules/entitlements/routes/guards/safe-seats.guard';
 import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
@@ -91,7 +90,7 @@ export class SpaceSafesController {
       'The space is at its plan\'s Safe seat limit. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
   })
   @Post()
-  @UseGuards(ElevationGuard, SafeSeatsGuard)
+  @UseGuards(ElevationGuard)
   @UseFilters(QuotaExceededExceptionFilter)
   public async create(
     @Body(new ValidationPipe(SpaceSafesSchema))

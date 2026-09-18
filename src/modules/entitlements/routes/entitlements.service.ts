@@ -185,10 +185,10 @@ export class EntitlementsService implements IEntitlementEnforcement {
   public async prepareQuotaCheck(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
-    delta: number;
-  }): Promise<(used: number) => void> {
+  }): Promise<(args: { used: number; delta: number }) => void> {
     const grant = await this.resolveGrant(args);
-    return (used: number): void => this.admit({ ...args, grant, used });
+    return ({ used, delta }): void =>
+      this.admit({ ...args, grant, used, delta });
   }
 
   public async consumeQuota(args: {
@@ -847,7 +847,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
     StockMeteredFeature,
     (spaceId: Space['id']) => Promise<number>
   > = {
-    safe_seats: (spaceId) => this.spaceSafesRepository.countBySpaceId(spaceId),
+    safe_seats: (spaceId) =>
+      this.spaceSafesRepository.countSeatsBySpaceId(spaceId),
   };
 
   /**
