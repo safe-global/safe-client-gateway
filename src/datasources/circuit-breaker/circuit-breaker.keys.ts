@@ -11,6 +11,7 @@ export class CircuitBreakerKeys {
     TRANSACTION_SERVICE: 'txs-service',
     DATA_DECODER_SERVICE: 'data-decoder-service',
     SAFE_QUEUE_SERVICE: 'safe-queue-service',
+    POLICY_INDEXER: 'policy-indexer',
   };
 
   /**
@@ -46,5 +47,17 @@ export class CircuitBreakerKeys {
    */
   static getSafeQueueServiceKey(): string {
     return CircuitBreakerKeys.SERVICE_PREFIX.SAFE_QUEUE_SERVICE;
+  }
+
+  /**
+   * Generates the circuit breaker key for the Policy Indexer
+   *
+   * The Policy Indexer is a single deployment serving all chains, so the key is
+   * not chain-scoped.
+   *
+   * @returns Circuit breaker key: `policy-indexer`
+   */
+  static getPolicyIndexerKey(): string {
+    return CircuitBreakerKeys.SERVICE_PREFIX.POLICY_INDEXER;
   }
 }
