@@ -32,6 +32,7 @@ import { IBillingRepository } from '@/modules/billing/domain/billing.repository.
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-link-offer.rules';
 import {
+  hasSeatCapacity,
   isOfferedToSpace,
   isUnclassifiedTrialLink,
   offersPlan,
@@ -42,9 +43,11 @@ import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
 import { GRACE_PERIOD_METADATA_KEY } from '@/modules/entitlements/domain/entitlements.constants';
 import { predatesEnforcement } from '@/modules/entitlements/domain/entitlements.rules';
+import { parseSafeSeatQuota } from '@/modules/entitlements/domain/feature-package.mapper';
 import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -67,6 +70,8 @@ export class BillingService {
     private readonly subscriptionsRepository: ISubscriptionsRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
@@ -137,11 +142,18 @@ export class BillingService {
     // A link the workspace is not offered is not checkable out either, or the
     // filtered list would only be a hint.
     const offeredLinks = await this.listOfferedPaymentLinks(args);
-    if (!offeredLinks.some((link) => link.id === args.paymentLinkId)) {
+    const paymentLink = offeredLinks.find(
+      (link) => link.id === args.paymentLinkId,
+    );
+    if (!paymentLink) {
       throw new ForbiddenException(
         'This subscription is not available for this workspace',
       );
     }
+    await this.assertSafeSeatCapacity({
+      spaceId: args.spaceId,
+      paymentLink,
+    });
 
     return await this.billingRepository.createCheckoutSession({
       paymentLinkId: args.paymentLinkId,
@@ -247,6 +259,10 @@ export class BillingService {
     }
 
     const paymentLink = this.paymentLinkForPlanOrFail(offeredLinks, args);
+    await this.assertSafeSeatCapacity({
+      spaceId: args.spaceId,
+      paymentLink,
+    });
 
     const result = await this.billingRepository.updateSubscription({
       upstreamCustomerId: args.spaceUuid,
@@ -395,6 +411,27 @@ export class BillingService {
     }
 
     return linksOfferingPlan[0];
+  }
+
+  /**
+   * Refuses a plan whose `FEATURE_SAFE_SEATS` is below the workspace's
+   * current Safe count
+   */
+  private async assertSafeSeatCapacity(args: {
+    spaceId: Space['id'];
+    paymentLink: PaymentLink;
+  }): Promise<void> {
+    // Skip the count query for a link with no seat quota to enforce.
+    if (parseSafeSeatQuota(args.paymentLink.metadata) === null) {
+      return;
+    }
+
+    const used = await this.spaceSafesRepository.countBySpaceId(args.spaceId);
+    if (!hasSeatCapacity(args.paymentLink, used)) {
+      throw new ConflictException(
+        "This plan doesn't offer enough Safe seats for the workspace's current Safes",
+      );
+    }
   }
 
   private validateReturnUrl(returnUrl: string): string {

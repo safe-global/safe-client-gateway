@@ -6,6 +6,7 @@ import type { ParsedEntitlement } from '@/modules/entitlements/domain/entities/m
 import {
   FEATURE_METADATA_PREFIX,
   MAX_ENTITLEMENT_VALUE_LENGTH,
+  SAFE_SEATS_METADATA_KEY,
   UNLIMITED_METADATA_VALUE,
 } from '@/modules/entitlements/domain/entitlements.constants';
 import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
@@ -21,6 +22,26 @@ export function hasFeaturePackageMetadata(
   return Object.keys(metadata ?? {}).some((key) =>
     key.startsWith(FEATURE_METADATA_PREFIX),
   );
+}
+
+/**
+ * The plan's Safe seat quota from its `FEATURE_SAFE_SEATS` metadata, ahead of
+ * a subscription change — before a webhook would otherwise materialize it.
+ * `null` covers unlimited, absent, and unparseable alike: none of them bound
+ * the seat count, so none block a caller comparing against it.
+ */
+export function parseSafeSeatQuota(
+  metadata: StripeMetadata | null | undefined,
+): number | null {
+  const raw = metadata?.[SAFE_SEATS_METADATA_KEY];
+  if (raw == null) {
+    return null;
+  }
+  const value = raw.trim();
+  if (value.toLowerCase() === UNLIMITED_METADATA_VALUE) {
+    return null;
+  }
+  return QuotaSchema.safeParse(value).success ? Number(value) : null;
 }
 
 /**

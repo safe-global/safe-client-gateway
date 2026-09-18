@@ -43,6 +43,7 @@ import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -75,6 +76,10 @@ const subscriptionsRepositoryMock = {
 const spacesRepositoryMock = {
   findCreatedAtById: vi.fn(),
 } as MockedObject<ISpacesRepository>;
+
+const spaceSafesRepositoryMock = {
+  countBySpaceId: vi.fn(),
+} as MockedObject<ISpaceSafesRepository>;
 
 const loggingServiceMock = {
   warn: vi.fn(),
@@ -134,6 +139,10 @@ describe('BillingService', () => {
       hasEverSubscribed: false,
       activePlanId: null,
     });
+    // Payment links in these specs carry no `FEATURE_SAFE_SEATS` metadata, so
+    // assertSafeSeatCapacity no-ops without reading this — set for the specs
+    // that do give a link that metadata.
+    spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(0);
 
     service = new BillingService(
       billingRepositoryMock,
@@ -142,6 +151,7 @@ describe('BillingService', () => {
       subscriptionSyncServiceMock,
       subscriptionsRepositoryMock,
       spacesRepositoryMock,
+      spaceSafesRepositoryMock,
       loggingServiceMock,
     );
   });
@@ -167,6 +177,7 @@ describe('BillingService', () => {
             subscriptionSyncServiceMock,
             subscriptionsRepositoryMock,
             spacesRepositoryMock,
+            spaceSafesRepositoryMock,
             loggingServiceMock,
           ),
       ).toThrow('No value set for key entitlements.enforcementStartsAt');
@@ -688,6 +699,67 @@ describe('BillingService', () => {
         returnUrl,
       });
     });
+
+    it("should throw when the plan's seats are fewer than the workspace's current Safes", async () => {
+      const paymentLinkId = faker.string.uuid();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const paymentLink = paymentLinkBuilder()
+        .with('id', paymentLinkId)
+        .with('metadata', { FEATURE_SAFE_SEATS: '2' })
+        .build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      });
+      mockCatalog([paymentLink]);
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+
+      await expect(
+        service.createCheckoutUrl({
+          paymentLinkId,
+          spaceId: faker.number.int(),
+          spaceUuid: faker.string.uuid(),
+          authPayload,
+          returnUrl: withinRedirectOrigin(),
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(
+        billingRepositoryMock.createCheckoutSession,
+      ).not.toHaveBeenCalled();
+    });
+
+    it("should check out a plan whose seats cover the workspace's current Safes", async () => {
+      const paymentLinkId = faker.string.uuid();
+      const spaceUuid = faker.string.uuid();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const checkoutSessionResult = checkoutSessionResultBuilder().build();
+      const paymentLink = paymentLinkBuilder()
+        .with('id', paymentLinkId)
+        .with('metadata', { FEATURE_SAFE_SEATS: '3' })
+        .build();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      });
+      mockCatalog([paymentLink]);
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+      billingRepositoryMock.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResult,
+      );
+
+      const result = await service.createCheckoutUrl({
+        paymentLinkId,
+        spaceId: faker.number.int(),
+        spaceUuid,
+        authPayload,
+        returnUrl: withinRedirectOrigin(),
+      });
+
+      expect(result).toBe(checkoutSessionResult);
+    });
   });
 
   describe('getCheckoutSession', () => {
@@ -711,7 +783,10 @@ describe('BillingService', () => {
    * A subscribed workspace, offered a paid link priced at `planId`. Neither
    * plan-change endpoint is reachable without all three.
    */
-  function subscribedSpace(args?: { planId?: string }): {
+  function subscribedSpace(args?: {
+    planId?: string;
+    metadata?: Record<string, string>;
+  }): {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];
     planId: string;
@@ -719,7 +794,10 @@ describe('BillingService', () => {
     subscription: Subscription;
   } {
     const planId = args?.planId ?? faker.string.alphanumeric(32);
-    const paymentLink = paymentLinkPricedAt(planId).build();
+    const linkBuilder = paymentLinkPricedAt(planId);
+    const paymentLink = (
+      args?.metadata ? linkBuilder.with('metadata', args.metadata) : linkBuilder
+    ).build();
     const subscription = subscriptionBuilder().with('status', 'active').build();
 
     subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
@@ -860,6 +938,50 @@ describe('BillingService', () => {
         // Derived, never taken from the caller.
         paymentLinkId: paymentLink.id,
       });
+    });
+
+    it("should throw when the target plan's seats are fewer than the workspace's current Safes", async () => {
+      const { spaceId, spaceUuid, planId, subscription } = subscribedSpace({
+        metadata: { FEATURE_SAFE_SEATS: '2' },
+      });
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      asMember();
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+
+      await expect(
+        service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          authPayload,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(billingRepositoryMock.updateSubscription).not.toHaveBeenCalled();
+    });
+
+    it("should move onto a plan whose seats cover the workspace's current Safes", async () => {
+      const { spaceId, spaceUuid, planId, paymentLink, subscription } =
+        subscribedSpace({ metadata: { FEATURE_SAFE_SEATS: '3' } });
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const updateResult = updateSubscriptionResultBuilder().build();
+      asMember();
+      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+      billingRepositoryMock.updateSubscription.mockResolvedValue(updateResult);
+
+      const result = await service.updateSubscription({
+        spaceId,
+        spaceUuid,
+        subscriptionId: subscription.id,
+        planId,
+        authPayload,
+      });
+
+      expect(result).toBe(updateResult);
+      expect(billingRepositoryMock.updateSubscription).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentLinkId: paymentLink.id }),
+      );
     });
 
     it('should throw when the user is not a space member', async () => {

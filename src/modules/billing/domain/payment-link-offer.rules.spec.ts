@@ -8,6 +8,7 @@ import {
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
 import {
   gracePeriodOf,
+  hasSeatCapacity,
   isOfferedToSpace,
   offersPlan,
 } from '@/modules/billing/domain/payment-link-offer.rules';
@@ -214,6 +215,38 @@ describe('payment-link offer rules', () => {
       const link = paymentLinkBuilder().with('lineItems', undefined).build();
 
       expect(offersPlan(link, planId)).toBe(false);
+    });
+  });
+
+  describe('hasSeatCapacity', () => {
+    it('should have capacity when the link carries no seat quota', () => {
+      const link = paymentLinkBuilder().with('metadata', {}).build();
+
+      expect(hasSeatCapacity(link, faker.number.int())).toBe(true);
+    });
+
+    it('should have capacity when the link is tagged unlimited', () => {
+      const link = paymentLinkBuilder()
+        .with('metadata', { FEATURE_SAFE_SEATS: 'unlimited' })
+        .build();
+
+      expect(hasSeatCapacity(link, faker.number.int())).toBe(true);
+    });
+
+    it('should have capacity when the used count is within quota', () => {
+      const link = paymentLinkBuilder()
+        .with('metadata', { FEATURE_SAFE_SEATS: '3' })
+        .build();
+
+      expect(hasSeatCapacity(link, 3)).toBe(true);
+    });
+
+    it('should not have capacity when the used count exceeds quota', () => {
+      const link = paymentLinkBuilder()
+        .with('metadata', { FEATURE_SAFE_SEATS: '3' })
+        .build();
+
+      expect(hasSeatCapacity(link, 4)).toBe(false);
     });
   });
 });

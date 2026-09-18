@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { MAX_ENTITLEMENT_VALUE_LENGTH } from '@/modules/entitlements/domain/entitlements.constants';
-import { mapFeaturePackage } from '@/modules/entitlements/domain/feature-package.mapper';
+import {
+  mapFeaturePackage,
+  parseSafeSeatQuota,
+} from '@/modules/entitlements/domain/feature-package.mapper';
 
 const featureTypeByKey: Map<string, FeatureType> = new Map([
   ['security_hub', FeatureType.Binary],
@@ -170,4 +174,32 @@ describe('mapFeaturePackage', () => {
       }),
     ).toStrictEqual([]);
   });
+});
+
+describe('parseSafeSeatQuota', () => {
+  it('returns the parsed quota', () => {
+    const quota = faker.number.int({ min: 0, max: DB_MAX_SAFE_INTEGER });
+
+    expect(parseSafeSeatQuota({ FEATURE_SAFE_SEATS: `${quota}` })).toBe(quota);
+  });
+
+  it('returns null for an unlimited quota', () => {
+    expect(parseSafeSeatQuota({ FEATURE_SAFE_SEATS: 'unlimited' })).toBeNull();
+  });
+
+  it('returns null when the key is absent', () => {
+    expect(parseSafeSeatQuota({})).toBeNull();
+  });
+
+  it('returns null for null or undefined metadata', () => {
+    expect(parseSafeSeatQuota(null)).toBeNull();
+    expect(parseSafeSeatQuota(undefined)).toBeNull();
+  });
+
+  it.each(['ten', '-1', '1.5', `${DB_MAX_SAFE_INTEGER + 1}`])(
+    'returns null for the unparseable quota %s',
+    (quota) => {
+      expect(parseSafeSeatQuota({ FEATURE_SAFE_SEATS: quota })).toBeNull();
+    },
+  );
 });
