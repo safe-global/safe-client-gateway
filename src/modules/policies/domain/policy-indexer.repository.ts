@@ -15,6 +15,7 @@ import {
   PolicyIndexerSafeAllowanceSchema,
   type PolicyIndexerSafeDelegate,
   PolicyIndexerSafeDelegateSchema,
+  PolicyIndexerSafePolicySchema,
   type PolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
@@ -34,7 +35,7 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     const safes = this.checksum(args.safes);
 
     if (safes.length === 0) {
-      return { meta: [], allowances: [], delegates: [] };
+      return { meta: [], allowances: [], delegates: [], policies: [] };
     }
 
     const raw = await this.policyIndexerApi.getState({ safes });
@@ -56,6 +57,11 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         this.withAllowanceDelegateStatus(allowance, delegates),
       ),
       delegates,
+      policies: this.parseRows(
+        PolicyIndexerSafePolicySchema,
+        response.SafePolicy,
+        'SafePolicy',
+      ),
     };
   }
 

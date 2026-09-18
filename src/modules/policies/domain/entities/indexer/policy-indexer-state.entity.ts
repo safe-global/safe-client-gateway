@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { HexSchema } from '@/validation/entities/schemas/hex.schema';
 
 /**
  * `chainId` is an `Int` in the indexer and a decimal string everywhere in CGW.
@@ -137,6 +138,78 @@ export type PolicyIndexerSafeDelegate = z.infer<
 >;
 
 /**
+ * `policykind` and `policyoperation` are exposed as **custom scalars, not
+ * GraphQL enums** - introspection reports `SCALAR` with no `enumValues`, so a
+ * new indexer release can add a value with no schema signal. CGW therefore
+ * validates the value sets itself.
+ */
+export const PolicyIndexerPolicyKindSchema = z
+  .enum([
+    'ERC20_TRANSFER',
+    'ERC20_APPROVE',
+    'ALLOWED_MODULE',
+    'COSIGNER',
+    'ALLOW',
+    'DENY',
+    'MULTISEND',
+    'NATIVE_TRANSFER',
+    'NONE',
+    'UNKNOWN',
+  ])
+  .catch('UNKNOWN');
+
+export type PolicyIndexerPolicyKind = z.infer<
+  typeof PolicyIndexerPolicyKindSchema
+>;
+
+/**
+ * No fallback: an operation CGW cannot place is not a policy it can report, so
+ * the row is dropped by the caller instead of being mis-attributed to `CALL`.
+ */
+export const PolicyIndexerPolicyOperationSchema = z.enum([
+  'CALL',
+  'DELEGATECALL',
+]);
+
+export type PolicyIndexerPolicyOperation = z.infer<
+  typeof PolicyIndexerPolicyOperationSchema
+>;
+
+/**
+ * One `SafePolicyGuard` binding, aggregated by the indexer per
+ * `(guard, safe, target, selector, operation)`.
+ *
+ * `state` is the *accumulated* configuration, already folded from the payload
+ * deltas of every `PolicyConfirmed` for the access - which is why CGW no longer
+ * replays events. Its shape is decided by `kind`, so it is carried as `unknown`
+ * here and parsed by the assembler that owns the kind.
+ */
+export const PolicyIndexerSafePolicySchema = z.object({
+  chainId: PolicyIndexerChainIdSchema,
+  safe: AddressSchema,
+  guard: AddressSchema,
+  target: AddressSchema,
+  /** Trimmed to four bytes by the indexer; the event carries 32. */
+  selector: HexSchema,
+  operation: PolicyIndexerPolicyOperationSchema,
+  kind: PolicyIndexerPolicyKindSchema,
+  policy: AddressSchema,
+  /**
+   * `false` once unbound. The binding keeps its `policy`, `kind` and `state`,
+   * because the policy contract's own storage is untouched by an unbind and the
+   * retained configuration returns to effect if the access is rebound.
+   */
+  active: z.boolean(),
+  /** `target` and `selector` both zeroed - the catch-all binding. */
+  isFallback: z.boolean(),
+  state: z.unknown(),
+});
+
+export type PolicyIndexerSafePolicy = z.infer<
+  typeof PolicyIndexerSafePolicySchema
+>;
+
+/**
  * Indexing progress, one entry per chain - `_meta` is a list, not an object.
  *
  * `isReady` only records that a chain caught up *once*, so it stays `true` while
@@ -165,6 +238,7 @@ export const PolicyIndexerRowsSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
+  SafePolicy: z.array(z.unknown()),
 });
 
 export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
@@ -176,4 +250,5 @@ export type PolicyIndexerState = {
   meta: Array<PolicyIndexerMeta>;
   allowances: Array<PolicyIndexerSafeAllowance>;
   delegates: Array<PolicyIndexerSafeDelegate>;
+  policies: Array<PolicyIndexerSafePolicy>;
 };
