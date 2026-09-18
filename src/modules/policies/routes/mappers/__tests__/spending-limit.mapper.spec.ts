@@ -15,21 +15,6 @@ import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-
 const SEPOLIA = '11155111';
 const DAY_IN_MINUTES = 1440;
 
-/**
- * The spending-limit configuration of {@link policy}.
- *
- * `ActivePolicy.data` is a union across policy types and the discriminating
- * `type` sits on the policy rather than on the data, so the shape is narrowed
- * here by the field only a spending limit carries.
- */
-function spendingLimitData(policy: ActivePolicy): SpendingLimitPolicyData {
-  if (!('spenders' in policy.data)) {
-    throw new Error(`Expected a spending-limit policy, got ${policy.type}`);
-  }
-
-  return policy.data;
-}
-
 describe('SpendingLimitMapper', () => {
   let target: SpendingLimitMapper;
   const safe: SafeRef = {
@@ -60,6 +45,16 @@ describe('SpendingLimitMapper', () => {
     return target.map({ safe, allowances, enabledModules });
   }
 
+  /**
+   * The spending-limit payload of a policy.
+   *
+   * `ActivePolicyData` is a union once guard policies join it, and every policy
+   * this mapper builds is a spending limit.
+   */
+  function dataOf(policy: ActivePolicy): SpendingLimitPolicyData {
+    return policy.data as SpendingLimitPolicyData;
+  }
+
   describe('nesting the indexer rows into one policy per module', () => {
     it('should report one policy carrying every spender of the module', () => {
       const first = allowance().build();
@@ -71,7 +66,7 @@ describe('SpendingLimitMapper', () => {
 
       expect(policies).toHaveLength(1);
       expect(
-        spendingLimitData(policies[0]).spenders.map((entry) => entry.spender),
+        dataOf(policies[0]).spenders.map((entry) => entry.spender),
       ).toStrictEqual([first.delegate, second.delegate]);
     });
 
@@ -85,9 +80,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([usdc, native]);
 
-      expect(spendingLimitData(policy).spenders).toHaveLength(1);
+      expect(dataOf(policy).spenders).toHaveLength(1);
       expect(
-        spendingLimitData(policy).spenders[0].allowances.map(
+        dataOf(policy).spenders[0].allowances.map(
           (entry) => entry.tokenAddress,
         ),
       ).toStrictEqual([usdc.token, zeroAddress]);
@@ -129,9 +124,10 @@ describe('SpendingLimitMapper', () => {
 
       const policies = map([onV1, onV2], [allowanceModule, otherModule]);
 
-      expect(
-        policies.map((policy) => spendingLimitData(policy).module),
-      ).toStrictEqual([allowanceModule, otherModule]);
+      expect(policies.map((policy) => dataOf(policy).module)).toStrictEqual([
+        allowanceModule,
+        otherModule,
+      ]);
     });
   });
 
@@ -169,7 +165,7 @@ describe('SpendingLimitMapper', () => {
     function onlyAllowance(
       rows: Array<PolicyIndexerSafeAllowance>,
     ): SpendingLimitPolicyData['spenders'][number]['allowances'][number] {
-      return spendingLimitData(map(rows)[0]).spenders[0].allowances[0];
+      return dataOf(map(rows)[0]).spenders[0].allowances[0];
     }
 
     afterEach(() => {
@@ -276,7 +272,7 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([revoked]);
 
-      expect(spendingLimitData(policy).spenders[0]).toMatchObject({
+      expect(dataOf(policy).spenders[0]).toMatchObject({
         spender: revoked.delegate,
         isActive: false,
       });
@@ -289,9 +285,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([revoked]);
 
-      expect(
-        spendingLimitData(policy).spenders[0].allowances[0].isDelegateActive,
-      ).toBe(false);
+      expect(dataOf(policy).spenders[0].allowances[0].isDelegateActive).toBe(
+        false,
+      );
     });
   });
 
@@ -302,12 +298,10 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([large]);
 
-      expect(spendingLimitData(policy).spenders[0].allowances[0]).toMatchObject(
-        {
-          amount: huge,
-          spent: '0',
-        },
-      );
+      expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
+        amount: huge,
+        spent: '0',
+      });
     });
 
     it('should report the native currency by the zero address', () => {
@@ -315,9 +309,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([native]);
 
-      expect(
-        spendingLimitData(policy).spenders[0].allowances[0].tokenAddress,
-      ).toBe(zeroAddress);
+      expect(dataOf(policy).spenders[0].allowances[0].tokenAddress).toBe(
+        zeroAddress,
+      );
     });
   });
 });

@@ -12,9 +12,13 @@ import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PolicyIndexerSafeAllowance,
+  PolicyIndexerSafePolicy,
+} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import {
   type DelegatesOfVersion,
   ProposerMapper,
@@ -52,6 +56,7 @@ export class PoliciesService {
     private readonly delegatesV3Repository: IDelegatesV3Repository,
     private readonly spendingLimitMapper: SpendingLimitMapper,
     private readonly proposerMapper: ProposerMapper,
+    private readonly guardPolicyMapper: GuardPolicyMapper,
   ) {}
 
   /**
@@ -120,10 +125,10 @@ export class PoliciesService {
    * The policies in effect on every Safe of {@link safes}.
    *
    * One indexer read covers all of them; the per-Safe reads that follow - what
-   * the Safe has enabled, and who may propose on it - run one at a time, to stay
-   * under the Transaction Service's concurrency limit. All of it or nothing: a
-   * page whose purpose is saying what controls a set of Safes must not answer
-   * "nothing" where the answer is "unknown".
+   * the Safe itself has switched on, and who may propose on it - run one at a
+   * time, to stay under the Transaction Service's concurrency limit. All of it
+   * or nothing: a page whose purpose is saying what controls a set of Safes must
+   * not answer "nothing" where the answer is "unknown".
    */
   private async resolveActivePolicies(
     safes: ReadonlyArray<SafeRef>,
@@ -140,7 +145,7 @@ export class PoliciesService {
     const policies: Array<ActivePolicy> = [];
 
     for (const safe of safes) {
-      const enabledModules = await this.enabledModules(safe);
+      const { enabledModules, transactionGuard } = await this.enforcers(safe);
       const delegatesByVersion = await this.delegatesByVersion(safe);
 
       policies.push(
@@ -150,6 +155,11 @@ export class PoliciesService {
           enabledModules,
         }),
         ...this.proposerMapper.map({ safe, delegatesByVersion }),
+        ...this.guardPolicyMapper.map({
+          safe,
+          policies: this.getPoliciesBySafe(state.policies, safe),
+          transactionGuard,
+        }),
       );
     }
 
@@ -188,19 +198,23 @@ export class PoliciesService {
   }
 
   /**
-   * The modules the Safe has enabled, which is what turns a configured
-   * module policy into an enforced one.
+   * What the Safe itself has switched on: the modules it has enabled and the
+   * guard it has set. Both are what turn a configured policy into an enforced
+   * one.
    *
    * Read from the Safe rather than the indexer: enablement lives in the Safe's
    * own storage, and CGW already serves it.
    */
-  private async enabledModules(safe: SafeRef): Promise<Array<Address>> {
-    const { modules } = await this.safeRepository.getSafe({
+  private async enforcers(safe: SafeRef): Promise<{
+    enabledModules: Array<Address>;
+    transactionGuard: Address | null;
+  }> {
+    const { modules, guard } = await this.safeRepository.getSafe({
       chainId: safe.chainId,
       address: safe.address,
     });
 
-    return modules ?? [];
+    return { enabledModules: modules ?? [], transactionGuard: guard };
   }
 
   /**
@@ -217,6 +231,23 @@ export class PoliciesService {
       (allowance) =>
         allowance.chainId === safe.chainId &&
         isAddressEqual(allowance.safe, safe.address),
+    );
+  }
+
+  /**
+   * The guard bindings belonging to {@link safe}.
+   *
+   * Scoped for the same reason as {@link getAllowancesBySafe}: one read covers
+   * every Safe of a request.
+   */
+  private getPoliciesBySafe(
+    policies: ReadonlyArray<PolicyIndexerSafePolicy>,
+    safe: SafeRef,
+  ): Array<PolicyIndexerSafePolicy> {
+    return policies.filter(
+      (policy) =>
+        policy.chainId === safe.chainId &&
+        isAddressEqual(policy.safe, safe.address),
     );
   }
 }
