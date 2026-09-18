@@ -1249,15 +1249,18 @@
     "title": "UUID fields typed as plain string instead of the nominal UUID type",
     "sourceWindowId": "CLOSED-20260609-20260616",
     "prNumbers": [
-      3117
+      3117,
+      2824
     ],
     "prState": "merged",
     "reviewCommentIds": [
-      3349578796
+      3349578796,
+      2598396149,
+      2598402257
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A new `uuid` field was typed `string`; review switched it to the nominal `UUID` type from `node:crypto` so `Space['uuid']` is a distinct type and lookups like `findIdByUuid(uuid: Space['uuid'])` are type-checked end to end. Use the nominal `UUID` type for UUID-shaped fields, not `string`.",
+    "learning": "A new `uuid` field was typed `string`; review switched it to the nominal `UUID` type from `node:crypto` so `Space['uuid']` is a distinct type and lookups like `findIdByUuid(uuid: Space['uuid'])` are type-checked end to end. Use the nominal `UUID` type for UUID-shaped fields, not `string`. The same rule covers address-shaped fields: in #2824 a new threat-issue `address` was declared `z.string().optional()` on the Zod schema and `address?: string` on the DTO; review replaced both with `HexSchema` and `Hex` so the branded type is enforced on the wire shape and the entity together.",
     "ruleIds": [
       "TYPE-01"
     ]
@@ -1971,7 +1974,8 @@
       3241,
       3196,
       3214,
-      3247
+      3247,
+      2831
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -1982,11 +1986,13 @@
       3506958656,
       3570889198,
       3570893940,
-      3570897035
+      3570897035,
+      2593329101,
+      2596323738
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly).",
+    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2116,7 +2122,8 @@
     "title": "Test values: literals where faker belongs, randomization demanded where a contract constant belongs",
     "sourceWindowId": "CLOSED-20260707-20260711",
     "prNumbers": [
-      3217
+      3217,
+      2831
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2126,11 +2133,12 @@
       3527067664,
       3527073174,
       3535099400,
-      3535257009
+      3535257009,
+      2593322786
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins.",
+    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2468,5 +2476,165 @@
     "ruleIds": [
       "CACHE-02"
     ]
+  },
+  {
+    "id": "RL-20251204-001",
+    "title": "Response-shape change held until the consuming frontend PR was ready",
+    "prNumbers": [
+      2827,
+      2824
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      3538884867
+    ],
+    "issueCommentIds": [
+      3608184310,
+      3612849840
+    ],
+    "learning": "A Blockaid endpoint change had to be reverted once already, and the re-land was gated on a minimal compatibility PR in `safe-wallet-monorepo` being merged first; in the same window an approval on #2824 was explicitly qualified with \"let's wait for the FE PR to be completed\". A CGW response-shape change is not done when CI is green — identify the consuming client, land or confirm its compatibility change, and say so on the PR before merging.",
+    "ruleIds": [
+      "CHANGE-04"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251208-001",
+    "title": "Per-request timeout crossed the seam as a pre-built AbortSignal",
+    "prNumbers": [
+      2831
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2593239087,
+      2593319208,
+      2594974240
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Per-request timeout support was first threaded through as a caller-constructed `options.signal`, which both widened `RequestInit` and left `AbortSignal.timeout()` being built in two places; review asked for the plain timeout number instead so the signal is constructed in exactly one place, and the author settled on a third argument. Pass the plain value across an internal seam and let the single owner construct the platform object — a caller-supplied signal/handle spreads a cross-cutting concern over every call site.",
+    "ruleIds": [
+      "REUSE-01"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251208-002",
+    "title": "Comments used to restate a line or excuse code that should be restructured",
+    "prNumbers": [
+      2831,
+      2824
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2593321216,
+      2598392785,
+      2601146383
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead.",
+    "ruleIds": [
+      "STYLE-01"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251208-003",
+    "title": "Mid-PR redesign left one sibling method untested and a superseded test behind",
+    "prNumbers": [
+      2831
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2593332219,
+      2596319416
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The timeout behavior was tested only on `get` although `post` and `delete` share the code path, and after the signal-to-timeout redesign the original `uses custom signal when provided` spec was still in the file asserting the abandoned API. When a behavior lands on one method of a sibling set, cover every sibling; when the approach changes during review, re-derive the specs and delete the ones written for the superseded design rather than leaving them to pass vacuously.",
+    "ruleIds": [
+      "TEST-09"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251209-001",
+    "title": "Reduce result cast to its target type instead of typing the accumulator",
+    "prNumbers": [
+      2824
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2598386226,
+      2601148941
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A severity-grouping pipeline built a `Partial<Record<...>>` accumulator and cast the result `as ThreatIssues`; review asked twice to remove the cast, noting the code compiles without it once the accumulator is typed via the generic (`reduce<ThreatIssues>((groups, x) => ..., {})`). Type the accumulator through the `reduce` generic or the seed, not the result — a trailing `as T` on a fold usually means the accumulator type was never declared.",
+    "ruleIds": [
+      "TYPE-06"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251209-002",
+    "title": "Fallback address used a `0x` literal the address schema would reject",
+    "prNumbers": [
+      2824
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2599062877,
+      2599078205
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Missing `before`/`after` addresses on a proxy-upgrade result defaulted to `'0x' as Address`, which is not a 20-byte address and would fail `AddressSchema`/`getAddress()` downstream; the author accepted the finding and switched to `NULL_ADDRESS`. A defensive fallback must satisfy the same schema as a real value — reach for the domain's canonical constant, and treat any `as Address`/`as Hex` on a hand-written literal as a sign the value was never validated.",
+    "ruleIds": [
+      "TYPE-03",
+      "TYPE-06"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251209-003",
+    "title": "Swagger description restated the enum members it documents",
+    "prNumbers": [
+      2824
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2602851936
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An `@ApiPropertyOptional` description spelled out the severity enum members inline (\"keys should be one of the Severity enum (OK | INFO | WARN | CRITICAL)\"); review flagged that the list silently goes stale the next time the enum changes. Describe the contract in prose and let the schema or `enum` metadata carry the members — a hand-copied value list in a description is documentation that drifts without failing anything.",
+    "ruleIds": [
+      "PR-02"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
+  },
+  {
+    "id": "RL-20251210-001",
+    "title": "Dropped cache-key dimension left its parameter in the call chain",
+    "prNumbers": [
+      2839
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      2601900912
+    ],
+    "reviewIds": [
+      3556479139
+    ],
+    "issueCommentIds": [],
+    "learning": "Zerion cache keys moved to address-only, but `chainId` stayed a parameter further up the call tree where nothing read it any more; review asked for it to be removed \"for consistency, too\" and the author did. When a key or signature loses a dimension, follow it up the call chain and delete the now-unused parameter in the same PR — a leftover argument reads as a live cache dimension to the next person.",
+    "ruleIds": [
+      "CACHE-02",
+      "STYLE-01"
+    ],
+    "sourceWindowId": "CLOSED-20251204-20251211"
   }
 ]

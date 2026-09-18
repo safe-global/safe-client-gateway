@@ -163,10 +163,10 @@ Tooling work (lint, formatter, build, CI, test runner) must preserve previous be
 <a id="change-04"></a>
 ### `CHANGE-04` External contracts versioned
 
-> **general** · scope · 1 example · ↩ `RL-20260108-001`
+> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001`
 
 **📜 Rule**\
-Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release.
+Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release. A response-shape change identifies its consuming client and lands only once that client's compatibility change is merged or confirmed on the PR.
 
 **✅ Check**\
 > If this changes an external contract, is it versioned or explicitly backward-compatible?
@@ -245,10 +245,10 @@ New files, providers, interfaces, helpers, factories, injection tokens, or modul
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001`
+> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003`
 
 **📜 Rule**\
-Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR.
+Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list.
 
 **✅ Check**\
 > Are docs, samples, and runbooks aligned with the final behavior?
@@ -492,10 +492,10 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004`
+> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001`
 
 **📜 Rule**\
-Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates.
+Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms), not a caller-constructed platform object (an `AbortSignal`), so the object is built in exactly one place.
 
 **✅ Check**\
 > Did I reuse existing helpers, constants homes, and utilities?
@@ -613,16 +613,16 @@ someone remembered to add the string.
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001`
+> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain.
 
 **✅ Check**\
 > Did I document public/non-trivial logic and remove dead code?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/error-handling.md</code> § <em>style-01-log-04-internal-errors-do-not-leak-into-user-responses</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/error-handling.md</code> § <em>style-01-log-04-internal-errors-do-not-leak-into-user-responses</em></summary>
 
 <br>
 
@@ -680,7 +680,7 @@ contract.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/style.md</code> § <em>style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/style.md</code> § <em>style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</em></summary>
 
 <br>
 
@@ -732,6 +732,64 @@ fixtures. Renaming in the destructure makes the assignment to the outer
 binding explicit and impossible to forget.
 
 <sub>Source: <a href="examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding">examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/style.md</code> § <em>style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold</em></summary>
+
+<br>
+
+**STYLE-01 / TYPE-06 — Name the accumulator instead of commenting the fold**
+
+Source: PR #2824, #2831 (RL-20251208-002, RL-20251209-001)
+
+### Avoid
+
+A narrating comment kept in place to explain a fold whose accumulator was
+never typed:
+
+```ts
+// Group issues by severity: map the type to a severity, create the bucket
+// if it does not exist yet, then push the issue into it.
+const grouped = items
+  .filter(({ type }) => FLAGGED_TYPES.includes(type))
+  .reduce((acc, { type, description, address }) => {
+    const key = SEVERITY_MAP[type]
+    if (!acc[key]) {
+      acc[key] = []
+    }
+    acc[key].push({ description, address })
+    return acc
+  }, {} as Partial<Record<Severity, Array<Issue>>>) as GroupedIssues
+```
+
+### Prefer
+
+```ts
+const grouped = items
+  .filter(({ type }) => FLAGGED_TYPES.includes(type))
+  .reduce<GroupedIssues>((groups, { type, description, address }) => {
+    const severity = SEVERITY_MAP[type]
+
+    groups[severity] ??= []
+    groups[severity].push({ description, address })
+
+    return groups
+  }, {})
+```
+
+### Why
+
+The comment existed to carry what the code did not say: an untyped
+accumulator, a conditional-key push, and a trailing cast to paper over both.
+Declaring the accumulator through the `reduce<T>` generic makes the seed and
+the result type-check on their own, and `??=` states the create-if-absent step
+in one line. Both casts and the comment disappear together. An offer to
+"add a comment explaining it step by step" is a restructure request — and a
+comment that merely restates the line beneath it is deleted outright.
+
+<sub>Source: <a href="examples/style.md#style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold">examples/style.md#style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold</a></sub>
 
 </details>
 
@@ -818,16 +876,16 @@ same notion of absence.
 <a id="type-03"></a>
 ### `TYPE-03` Validate external inputs
 
-> **general** · types · 1 example · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002`
+> **general** · types · 2 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002`
 
 **📜 Rule**\
-Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message.
+Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`.
 
 **✅ Check**\
 > Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
 
 <br>
 
@@ -873,6 +931,48 @@ either gets a non-empty string or `undefined`, never both shapes for the
 same notion of absence.
 
 <sub>Source: <a href="examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence">examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-03-fallback-values-satisfy-the-same-schema-as-real-values</em></summary>
+
+<br>
+
+**TYPE-03 — Fallback values satisfy the same schema as real values**
+
+Source: PR #2824 (RL-20251209-002)
+
+### Avoid
+
+A placeholder that the address schema would reject, cast into place:
+
+```ts
+return {
+  before: before ?? ('0x' as Address),
+  after: after ?? ('0x' as Address),
+}
+```
+
+### Prefer
+
+```ts
+return {
+  before: before ?? NULL_ADDRESS,
+  after: after ?? NULL_ADDRESS,
+}
+```
+
+### Why
+
+`'0x'` is not a 20-byte address, so `AddressSchema` and viem's `getAddress()`
+reject it the moment the value is validated or re-parsed downstream — the cast
+only defers the failure to a consumer. A defensive default has to be a legal
+value of its own type; the domain's canonical constant already is one. Treat
+any `as Address` / `as Hex` on a hand-written literal as a sign the value never
+passed through a schema.
+
+<sub>Source: <a href="examples/schemas-and-validation.md#type-03-fallback-values-satisfy-the-same-schema-as-real-values">examples/schemas-and-validation.md#type-03-fallback-values-satisfy-the-same-schema-as-real-values</a></sub>
 
 </details>
 
@@ -1124,16 +1224,16 @@ Parser/decode generics include every field the code reads downstream. Thread the
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 1 example · ↩ `RL-20260506-005` · `RL-20260612-004`
+> **general** · types · 2 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002`
 
 **📜 Rule**\
-Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes.
+Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`.
 
 **✅ Check**\
 > Did I avoid unsafe casts, `any`, and silent type drift?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/style.md</code> § <em>style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/style.md</code> § <em>style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</em></summary>
 
 <br>
 
@@ -1185,6 +1285,64 @@ fixtures. Renaming in the destructure makes the assignment to the outer
 binding explicit and impossible to forget.
 
 <sub>Source: <a href="examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding">examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/style.md</code> § <em>style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold</em></summary>
+
+<br>
+
+**STYLE-01 / TYPE-06 — Name the accumulator instead of commenting the fold**
+
+Source: PR #2824, #2831 (RL-20251208-002, RL-20251209-001)
+
+### Avoid
+
+A narrating comment kept in place to explain a fold whose accumulator was
+never typed:
+
+```ts
+// Group issues by severity: map the type to a severity, create the bucket
+// if it does not exist yet, then push the issue into it.
+const grouped = items
+  .filter(({ type }) => FLAGGED_TYPES.includes(type))
+  .reduce((acc, { type, description, address }) => {
+    const key = SEVERITY_MAP[type]
+    if (!acc[key]) {
+      acc[key] = []
+    }
+    acc[key].push({ description, address })
+    return acc
+  }, {} as Partial<Record<Severity, Array<Issue>>>) as GroupedIssues
+```
+
+### Prefer
+
+```ts
+const grouped = items
+  .filter(({ type }) => FLAGGED_TYPES.includes(type))
+  .reduce<GroupedIssues>((groups, { type, description, address }) => {
+    const severity = SEVERITY_MAP[type]
+
+    groups[severity] ??= []
+    groups[severity].push({ description, address })
+
+    return groups
+  }, {})
+```
+
+### Why
+
+The comment existed to carry what the code did not say: an untyped
+accumulator, a conditional-key push, and a trailing cast to paper over both.
+Declaring the accumulator through the `reduce<T>` generic makes the seed and
+the result type-check on their own, and `??=` states the create-if-absent step
+in one line. Both casts and the comment disappear together. An offer to
+"add a comment explaining it step by step" is a restructure request — and a
+comment that merely restates the line beneath it is deleted outright.
+
+<sub>Source: <a href="examples/style.md#style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold">examples/style.md#style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold</a></sub>
 
 </details>
 
@@ -1723,10 +1881,10 @@ Redis pipelines and cache marker writes must validate every meaningful result. H
 <a id="cache-02"></a>
 ### `CACHE-02` Cache keys cover all inputs
 
-> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008` · `RL-20260715-001`
+> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008` · `RL-20260715-001` · `RL-20251210-001`
 
 **📜 Rule**\
-Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix. In-memory get-or-create maps store the creation `Promise` so concurrent callers share in-flight work; failed creations self-evict behind an identity guard, synchronous factory throws become rejections, and the destroy-during-pending branch gets a test.
+Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix. In-memory get-or-create maps store the creation `Promise` so concurrent callers share in-flight work; failed creations self-evict behind an identity guard, synchronous factory throws become rejections, and the destroy-during-pending branch gets a test. Removing a dimension from a key is followed up the call chain so no caller still passes it.
 
 **✅ Check**\
 > Are cache keys, bounded caches, and TTL semantics tested?
@@ -2318,16 +2476,16 @@ independent I/O concurrent and fails fast on the first rejection.
 <a id="test-01"></a>
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 1 example · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009`
+> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009`
 
 **📜 Rule**\
-Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol.
+Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast.
 
 **✅ Check**\
 > Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-01-use-a-builder-for-repeated-entity-fixtures</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/testing.md</code> § <em>test-01-use-a-builder-for-repeated-entity-fixtures</em></summary>
 
 <br>
 
@@ -2368,6 +2526,47 @@ assertions. The repo's `Builder<T>` pattern keeps a single source of truth
 for each shape and lets a test override only what matters to that case.
 
 <sub>Source: <a href="examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures">examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/testing.md</code> § <em>test-01-use-rawify-for-mocked-raw-network-payloads</em></summary>
+
+<br>
+
+**TEST-01 — Use rawify for mocked raw network payloads**
+
+Source: PR #2831 (RL-20260710-003)
+
+### Avoid
+
+Casting a mocked response body because `NetworkResponse<T>.data` is a
+`Raw<T>`:
+
+```ts
+fetchClientMock.mockResolvedValueOnce({
+  status: 200,
+  data: {} as never,
+})
+```
+
+### Prefer
+
+```ts
+fetchClientMock.mockResolvedValueOnce({
+  status: 200,
+  data: rawify({}),
+})
+```
+
+### Why
+
+`as never` silences the branded `Raw<T>` wrapper rather than producing one, so
+the mock stops resembling what the datasource actually receives and any later
+shape change goes unnoticed. `rawify()` is the repo's helper for exactly this
+wrapping and keeps the fixture type-checked against the real response type.
+
+<sub>Source: <a href="examples/testing.md#test-01-use-rawify-for-mocked-raw-network-payloads">examples/testing.md#test-01-use-rawify-for-mocked-raw-network-payloads</a></sub>
 
 </details>
 
@@ -2608,10 +2807,10 @@ Test descriptions and generated data reflect the actual assertion: `it('should r
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004`
+> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously.
 
 **✅ Check**\
 > Do tests cover edge cases, side effects, and deterministic behavior?

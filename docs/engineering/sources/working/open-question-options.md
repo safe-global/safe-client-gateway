@@ -499,3 +499,42 @@ Choose this when:
 
 Open until someone compares the library's trigger set against the in-house
 one and the team picks a side.
+
+## OQ-TYPE-02 Defensive Normalization Of Third-Party Display Text
+
+Question: when a provider's field is documented (or observed) to arrive in a
+fixed shape, should CGW normalize it defensively anyway, or depend on the
+provider's guarantee?
+
+Raised in PR #2824 (review comments 2581880992 by `cursor[bot]` and 2598411023
+by PooyaRaki). `prepareDescription` appends a period unconditionally
+(`return \`${description}.\``). Both reviewers asked for a conditional append;
+the author answered that Blockaid returns descriptions without punctuation, and
+the unconditional form merged and is still in `main`.
+
+### Option A: Trust The Provider Contract
+
+Existing example:
+
+- `src/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants.ts`
+  (`prepareDescription` appends `.` unconditionally)
+
+Choose this when:
+
+- The provider's output shape is verified and a change would be caught by the
+  response schema or a test.
+- The defensive branch would be untestable against real data and would
+  silently diverge from the provider's actual behavior.
+
+### Option B: Normalize Defensively At The Boundary
+
+Choose this when:
+
+- The field is display text with no schema enforcing its shape, so a provider
+  change degrades the UI instead of failing loudly.
+- The normalization is one cheap idempotent branch
+  (`description.endsWith('.') ? description : \`${description}.\``).
+
+Open until the team decides whether provider-format assumptions must be
+enforced by a schema/test when they are relied on, or normalized at the
+boundary regardless.

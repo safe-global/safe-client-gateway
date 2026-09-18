@@ -2,19 +2,19 @@
   "dateField": "closedAt",
   "state": "closed",
   "coveredClosedAtRange": {
-    "start": "2025-12-11T00:00:00Z",
+    "start": "2025-12-04T02:00:00Z",
     "end": "2026-07-17T10:03:26Z"
   },
   "overlapHours": 2,
   "lastRun": {
-    "mode": "compound",
+    "mode": "backfill",
     "repo": "safe-global/safe-client-gateway",
-    "sourceWindowId": "CLOSED-20260714-20260717",
-    "since": "2026-07-14T14:20:42Z",
-    "until": "2026-07-17T10:03:26Z",
-    "prs": 6,
-    "comments": 37,
-    "learnings": 6,
-    "fetchedAt": "2026-07-17T10:03:26Z"
+    "sourceWindowId": "CLOSED-20251204-20251211",
+    "since": "2025-12-04T02:00:00Z",
+    "until": "2025-12-11T02:00:00Z",
+    "prs": 7,
+    "comments": 57,
+    "learnings": 11,
+    "fetchedAt": "2026-09-11T09:55:47Z"
   }
 }

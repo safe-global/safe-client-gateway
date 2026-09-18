@@ -215,3 +215,36 @@ const InviteUserSchema = z.union([
 The union shows the API contract directly, gives better type narrowing to the
 service/repository layer, and avoids misleading validation paths such as
 pointing an email-only failure at `address`.
+
+## TYPE-03 — Fallback values satisfy the same schema as real values
+
+Source: PR #2824 (RL-20251209-002)
+
+### Avoid
+
+A placeholder that the address schema would reject, cast into place:
+
+```ts
+return {
+  before: before ?? ('0x' as Address),
+  after: after ?? ('0x' as Address),
+}
+```
+
+### Prefer
+
+```ts
+return {
+  before: before ?? NULL_ADDRESS,
+  after: after ?? NULL_ADDRESS,
+}
+```
+
+### Why
+
+`'0x'` is not a 20-byte address, so `AddressSchema` and viem's `getAddress()`
+reject it the moment the value is validated or re-parsed downstream — the cast
+only defers the failure to a consumer. A defensive default has to be a legal
+value of its own type; the domain's canonical constant already is one. Treat
+any `as Address` / `as Hex` on a hand-written literal as a sign the value never
+passed through a schema.

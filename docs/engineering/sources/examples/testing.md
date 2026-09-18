@@ -193,3 +193,35 @@ test slip through and reach a downstream branch that assumes shape." Each
 negative-path test pins one of those slipping inputs, including the
 official-handler false-positive path that exists specifically to suppress
 noise.
+
+## TEST-01 — Use rawify for mocked raw network payloads
+
+Source: PR #2831 (RL-20260710-003)
+
+### Avoid
+
+Casting a mocked response body because `NetworkResponse<T>.data` is a
+`Raw<T>`:
+
+```ts
+fetchClientMock.mockResolvedValueOnce({
+  status: 200,
+  data: {} as never,
+})
+```
+
+### Prefer
+
+```ts
+fetchClientMock.mockResolvedValueOnce({
+  status: 200,
+  data: rawify({}),
+})
+```
+
+### Why
+
+`as never` silences the branded `Raw<T>` wrapper rather than producing one, so
+the mock stops resembling what the datasource actually receives and any later
+shape change goes unnoticed. `rawify()` is the repo's helper for exactly this
+wrapping and keeps the fixture type-checked against the real response type.
