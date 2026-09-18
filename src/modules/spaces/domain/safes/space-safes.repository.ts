@@ -249,12 +249,17 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
   public async countNewSeats(
     args: {
       spaceId: Space['id'];
-      rowsToInsert: Array<Pick<PreparedSpaceSafe, 'address' | 'addressIndex'>>;
+      addresses: Array<SpaceSafe['address']>;
     },
     entityManager?: EntityManager,
   ): Promise<number> {
+    // Keyed as `SEAT_KEY` keys a stored row. The Set is load-bearing: one
+    // address on several chains is one seat, and `unnest` counts duplicates.
     const seatKeys = new Set(
-      args.rowsToInsert.map((row) => row.addressIndex ?? row.address),
+      args.addresses.map(
+        (address) =>
+          this.spaceEncryptionService.safeAddressIndex(address) ?? address,
+      ),
     );
     const repository = await getScopedRepository(
       this.postgresDatabaseService,

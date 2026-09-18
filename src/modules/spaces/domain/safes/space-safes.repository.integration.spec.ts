@@ -39,6 +39,7 @@ describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
   let auditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
+  let encryptionService: ReturnType<typeof createMockSpaceEncryptionService>;
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
   let dbSpaceRepository: Repository<Space>;
@@ -142,10 +143,11 @@ describe('SpaceSafesRepository', () => {
     await migrator.migrate();
 
     auditRepository = createMockSpaceAuditRepository();
+    encryptionService = createMockSpaceEncryptionService();
     spaceSafesRepo = new SpaceSafesRepository(
       postgresDatabaseService,
       auditRepository,
-      createMockSpaceEncryptionService(),
+      encryptionService,
     );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
@@ -617,15 +619,11 @@ describe('SpaceSafesRepository', () => {
       await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
         1,
       );
+      encryptionService.safeAddressIndex.mockReturnValueOnce(addressIndex);
       await expect(
         spaceSafesRepo.countNewSeats({
           spaceId,
-          rowsToInsert: [
-            {
-              address: getAddress(faker.finance.ethereumAddress()),
-              addressIndex,
-            },
-          ],
+          addresses: [getAddress(faker.finance.ethereumAddress())],
         }),
       ).resolves.toBe(0);
     });
@@ -668,14 +666,6 @@ describe('SpaceSafesRepository', () => {
     });
 
     describe('countNewSeats', () => {
-      /** What `encryptRows` hands back with encryption disabled. */
-      const row = (
-        address: `0x${string}`,
-      ): { address: `0x${string}`; addressIndex: null } => ({
-        address,
-        addressIndex: null,
-      });
-
       it('adds a seat only for an address the space does not hold', async () => {
         const held = getAddress(faker.finance.ethereumAddress());
         const added = getAddress(faker.finance.ethereumAddress());
@@ -688,7 +678,7 @@ describe('SpaceSafesRepository', () => {
         await expect(
           spaceSafesRepo.countNewSeats({
             spaceId,
-            rowsToInsert: [row(held), row(added), row(added)],
+            addresses: [held, added, added],
           }),
         ).resolves.toBe(1);
       });
@@ -700,19 +690,19 @@ describe('SpaceSafesRepository', () => {
         ]);
 
         await expect(
-          spaceSafesRepo.countNewSeats({ spaceId, rowsToInsert: [row(held)] }),
+          spaceSafesRepo.countNewSeats({ spaceId, addresses: [held] }),
         ).resolves.toBe(0);
       });
 
       it('counts every address as new for a space holding none', async () => {
         const spaceId = await spaceHolding([]);
-        const rowsToInsert = faker.helpers.multiple(
-          () => row(getAddress(faker.finance.ethereumAddress())),
+        const addresses = faker.helpers.multiple(
+          () => getAddress(faker.finance.ethereumAddress()),
           { count: 3 },
         );
 
         await expect(
-          spaceSafesRepo.countNewSeats({ spaceId, rowsToInsert }),
+          spaceSafesRepo.countNewSeats({ spaceId, addresses }),
         ).resolves.toBe(3);
       });
     });

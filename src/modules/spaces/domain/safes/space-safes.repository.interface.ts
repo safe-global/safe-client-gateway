@@ -95,13 +95,14 @@ export interface ISpaceSafesRepository {
   ): Promise<Map<Space['id'], number>>;
 
   /**
-   * How many new seats `rowsToInsert` would take: a row whose Safe the space
-   * already holds on another chain takes none.
+   * How many new seats `addresses` would take: one the space already holds on
+   * another chain takes none. Plaintext addresses, as the request carries
+   * them; the seat key is derived here, so a caller cannot key them wrong.
    */
   countNewSeats(
     args: {
       spaceId: Space['id'];
-      rowsToInsert: Array<Pick<PreparedSpaceSafe, 'address' | 'addressIndex'>>;
+      addresses: Array<SpaceSafe['address']>;
     },
     entityManager?: EntityManager,
   ): Promise<number>;

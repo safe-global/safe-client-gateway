@@ -192,7 +192,7 @@ describe('SpaceSafesService', () => {
       expect(
         spaceSafesRepositoryMock.countNewSeats,
       ).toHaveBeenCalledExactlyOnceWith(
-        { spaceId, rowsToInsert: rows },
+        { spaceId, addresses: payload.map(({ address }) => address) },
         entityManager,
       );
       expect(check).toHaveBeenCalledExactlyOnceWith(seats);

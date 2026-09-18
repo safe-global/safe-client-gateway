@@ -66,7 +66,10 @@ export class SpaceSafesService {
           entityManager,
         ),
         delta: await this.spaceSafesRepository.countNewSeats(
-          { spaceId: args.spaceId, rowsToInsert: rows },
+          {
+            spaceId: args.spaceId,
+            addresses: args.payload.map(({ address }) => address),
+          },
           entityManager,
         ),
       });
