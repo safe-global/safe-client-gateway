@@ -63,6 +63,7 @@
 | [`LOG-04`](#log-04) | Structured logs and asError | general / logging |
 | [`SEC-01`](#sec-01) | Validate redirect targets | general / security |
 | [`SEC-02`](#sec-02) | Bounded sensitive fields | general / security |
+| [`SEC-03`](#sec-03) | CI and dependency intake are privilege boundaries | general / security |
 | [`CACHE-03`](#cache-03) | Cached payload shape is canonical once | general / cache |
 | [`DATA-01`](#data-01) | Aggregates match returned items and signed values | general / data |
 | [`RESILIENCE-01`](#resilience-01) | Resilience policy semantics | resilience |
@@ -74,7 +75,7 @@
 <a id="change-01"></a>
 ### `CHANGE-01` Smallest correct change
 
-> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004`
+> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001`
 
 **📜 Rule**\
 A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance. Removing a provider sweeps every dependent surface (now-dead interface params, feature flags, `.env.sample.json`, devcontainer, launch.json, test overrides) and locks intentional behavior changes in with a test. Before refactoring a path, verify it is used — unused surfaces get removed, not improved.
@@ -87,10 +88,10 @@ A PR should be the smallest correct change for the behavior; avoid surrounding c
 <a id="change-02"></a>
 ### `CHANGE-02` No unrelated drive-by edits
 
-> **general** · scope · 1 example · ↩ `RL-20251211-001`
+> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003`
 
 **📜 Rule**\
-Keep unrelated docs, config, formatting, or generated changes out of feature PRs.
+Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject — squash-merge makes the subject a permanent commit subject.
 
 **✅ Check**\
 > Did I avoid unrelated docs/config/formatting/generated changes?
@@ -245,10 +246,10 @@ New files, providers, interfaces, helpers, factories, injection tokens, or modul
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006`
+> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002`
 
 **📜 Rule**\
-Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals.
+Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve.
 
 **✅ Check**\
 > Are docs, samples, and runbooks aligned with the final behavior?
@@ -2575,10 +2576,10 @@ wrapping and keeps the fixture type-checked against the real response type.
 <a id="test-02"></a>
 ### `TEST-02` Right test layer (pyramid)
 
-> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004`
+> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002`
 
 **📜 Rule**\
-Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test.
+Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test. A test that restates a constant the same diff introduced proves nothing beyond the tests that exercise it.
 
 **✅ Check**\
 > Does each assertion live at the lowest layer that can prove it, and did I avoid duplicating the same scenario across unit, integration, and e2e?
@@ -2794,10 +2795,10 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001`
+> **general** · tests · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001`
 
 **📜 Rule**\
-Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal.
+Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
@@ -2807,10 +2808,10 @@ Test descriptions and generated data reflect the actual assertion: `it('should r
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003`
+> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Widening a gated list (versions, chains, providers) is covered by the negative case proving the gate still rejects, not only the positive one.
 
 **✅ Check**\
 > Do tests cover edge cases, side effects, and deterministic behavior?
@@ -3206,6 +3207,19 @@ fields that do not include `Authorization` keeps the contract pinned.
 <sub>Source: <a href="examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys">examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys</a></sub>
 
 </details>
+
+---
+
+<a id="sec-03"></a>
+### `SEC-03` CI and dependency intake are privilege boundaries
+
+> **general** · security · ↩ `RL-20260807-001` · `RL-20260810-001`
+
+**📜 Rule**\
+A workflow holding write scopes or `id-token: write` never checks out or executes pull-request-head content — read the PR through the API (`gh pr view`/`gh pr diff`) so untrusted code never reaches the runner, and never trust a moving ref like `refs/pull/N/head`, which a force-push can swap between trigger and checkout. Agent/tool allowlists are pinned to the triggering PR number rather than left open (`gh pr comment:*`). Dependency intake gates (`npmMinimalAgeGate`, `enableHardenedMode`, `--immutable`) are not bypassed wholesale: no wildcard package pre-approval, in-house scopes included, since a compromised publish token then reaches CI immediately instead of after the cooling-off window.
+
+**✅ Check**\
+> Does this change touch a privileged workflow, an agent tool allowlist, or a dependency-intake gate? If so, does untrusted PR content stay off the runner, are tool scopes pinned, and is no install gate bypassed?
 
 ---
 

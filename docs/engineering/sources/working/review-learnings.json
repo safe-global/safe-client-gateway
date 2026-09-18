@@ -636,16 +636,20 @@
     "title": "Use safe-deployments for version lists, do not hardcode",
     "sourceWindowId": "CLOSED-20251211-20251218",
     "prNumbers": [
-      2850
+      2850,
+      3334
     ],
     "prState": "closed",
     "reviewCommentIds": [
       2620124229,
-      2620149820
+      2620149820,
+      3765654412,
+      3765658816,
+      3766695603
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "When code needs the set of supported Safe contract versions or fallback handler versions, derive it from `@safe-global/safe-deployments` rather than hardcoding the array. The deployments package is the single source of truth and is updated on every contract release; a hardcoded list silently lags behind.",
+    "learning": "When code needs the set of supported Safe contract versions or fallback handler versions, derive it from `@safe-global/safe-deployments` rather than hardcoding the array. The deployments package is the single source of truth and is updated on every contract release; a hardcoded list silently lags behind. Recurred in #3334, where 1.5.0 singleton/factory/handler addresses were pinned as literals in service specs; review asked twice to read them from the deployments helpers so a package bump cannot leave the tests asserting a stale address.",
     "ruleIds": [
       "REUSE-01"
     ]
@@ -655,7 +659,8 @@
     "title": "Do not export symbols that are not consumed externally",
     "sourceWindowId": "CLOSED-20251211-20251218",
     "prNumbers": [
-      2850
+      2850,
+      3334
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -663,8 +668,10 @@
       2620243381
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists.",
+    "issueCommentIds": [
+      5242243692
+    ],
+    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private.",
     "ruleIds": [
       "MOD-04"
     ]
@@ -2126,7 +2133,8 @@
     "sourceWindowId": "CLOSED-20260707-20260711",
     "prNumbers": [
       3217,
-      2831
+      2831,
+      3329
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2137,11 +2145,13 @@
       3527073174,
       3535099400,
       3535257009,
-      2593322786
+      2593322786,
+      3748768957,
+      3748799760
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too.",
+    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too. Recurred in #3329 on two axes: a guard address pinned to a literal, and a `chainId` pinned to a real chain although the responses were mocked — when the collaborators are mocked, the chain id is a free input too.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2826,5 +2836,130 @@
       "CHANGE-04"
     ],
     "sourceWindowId": "CLOSED-20260724-20260731"
+  },
+  {
+    "id": "RL-20260807-001",
+    "title": "Privileged review workflow checked out PR-head code and allowed unpinned gh writes",
+    "prNumbers": [
+      3328
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5216016542,
+      5216205514
+    ],
+    "learning": "The arch-review workflow checked out `refs/pull/N/head` into a runner holding `id-token: write`, and allowed `Bash(gh pr comment:*)` unpinned. Two problems: a privileged runner held untrusted code (nothing executed it, but that is a runtime property no scanner can see), and `refs/pull/N/head` is a moving pointer a force-push can swap between the trigger comment and the checkout, so the collaborator allowlist gated who triggers but not what gets analyzed. Fixed at the root — the checkout is now the default branch (for the guides only) and the PR is read via `gh pr view`/`gh pr diff`, with all three `gh` commands pinned to the triggering PR number. A privileged workflow reads untrusted input through the API; it does not put it on disk.",
+    "ruleIds": [
+      "SEC-03"
+    ],
+    "sourceWindowId": "CLOSED-20260731-20260814"
+  },
+  {
+    "id": "RL-20260810-001",
+    "title": "Wildcard in-house pre-approval bypassed the npm age gate, bundled into an unrelated PR",
+    "prNumbers": [
+      3332,
+      3329
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3736717207,
+      3736905153
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5218910292,
+      5218019396
+    ],
+    "learning": "A `safe-deployments` bump added `npmPreapprovedPackages: ['@safe-global/*']`, exempting every in-house package from the 7-day `npmMinimalAgeGate` — so a compromised `@safe-global` publish token would reach CI immediately rather than after the cooling-off window. Review's position was flat: no package is pre-approved regardless of being internal, and the exemption was reverted in a follow-up PR. The same line drew a scope-creep finding — a standing repo-wide policy change riding along in a feature PR that needed one package bumped. An install-gate exemption is a security decision that gets its own PR, and 'it is our own package' is not a reason to skip the gate.",
+    "ruleIds": [
+      "SEC-03",
+      "CHANGE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260731-20260814"
+  },
+  {
+    "id": "RL-20260810-002",
+    "title": "Widened a per-chain-gated support list without the negative case, and asserted a constant the diff just added",
+    "prNumbers": [
+      3329
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5214943840,
+      5216304820,
+      5218066866
+    ],
+    "learning": "Adding `'1.5.0'` to `MULTICHAIN_SUPPORTED_VERSIONS` was covered only by a positive test on a chain that has 1.5.0 deployments; nothing asserted that a chain without them still returns `INCOMPATIBLE_SAFE`, which is the entire reason the list is gated per chain — a later short-circuit would silently mark the version compatible everywhere. Separately, a spec asserted that `SETTINGS_CHANGE_METHODS` contains the literal the same diff had just added to it, which the two mapper tests above already implied. When widening a gated list, the negative case is the test that matters; and a test that restates a constant the diff introduced proves nothing.",
+    "ruleIds": [
+      "TEST-09",
+      "TEST-02"
+    ],
+    "sourceWindowId": "CLOSED-20260731-20260814"
+  },
+  {
+    "id": "RL-20260810-003",
+    "title": "Ticket reference placed in the PR subject, which squash-merge makes a permanent commit subject",
+    "prNumbers": [
+      3329
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5218066866,
+      5218657058
+    ],
+    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR.",
+    "ruleIds": [
+      "CHANGE-02"
+    ],
+    "sourceWindowId": "CLOSED-20260731-20260814"
+  },
+  {
+    "id": "RL-20260807-002",
+    "title": "Guide rule inverted against the code after a merge from main",
+    "prNumbers": [
+      3328
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5217063856,
+      5217161301
+    ],
+    "learning": "A merge from main pulled in the field-encryption refactor, which deleted the per-field `EmailEncryptionService` and centralised the mechanics into a shared `KmsEncryptionService` with thin per-module wrappers. The security guide still cited the deleted files as canonical, still said the pattern was 'implemented once today', and still told authors to write a new per-field service 'rather than extending or parameterizing this one' — the exact shape the merged code had adopted. A stale doc path is a broken link; a stale doc rule actively pushes the next author the wrong way. A merge that changes a pattern the guides document updates those guides in the same PR, and the check is whether the rule still describes the code, not whether the paths resolve.",
+    "ruleIds": [
+      "PR-02"
+    ],
+    "sourceWindowId": "CLOSED-20260731-20260814"
+  },
+  {
+    "id": "RL-20260812-001",
+    "title": "Test titled on an absence positively asserted a different code",
+    "prNumbers": [
+      3334
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3765672048,
+      3765710180,
+      3766715881,
+      3766718221
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5265729075
+    ],
+    "learning": "A spec titled 'should not return INCOMPATIBLE_SAFE' asserted `BRIDGE[0].type === 'MISSING_OWNERSHIP'` — if a regression made both codes coexist, or reordered them, the assertion still passes while the titled invariant silently rots. The faithful form asserts the absence over the whole collection (`.map(b => b.type)` then `.not.toContain(...)`), optionally with a separate positive assertion documenting why the array is non-empty. A sibling spec titled on an internal omission ('should omit FALLBACK_HANDLER') asserted an observable result instead. Title the test after the invariant it asserts, assert a negative invariant negatively and over the whole collection, and name the observable outcome rather than the internal step.",
+    "ruleIds": [
+      "TEST-08"
+    ],
+    "sourceWindowId": "CLOSED-20260731-20260814"
   }
 ]
