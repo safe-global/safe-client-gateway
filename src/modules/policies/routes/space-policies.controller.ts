@@ -20,7 +20,7 @@ import {
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { SpaceActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
+import { ActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { Auth } from '@/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
@@ -67,7 +67,7 @@ export class SpacePoliciesController {
       "Narrow the read to a subset of the Space's Safes, comma-separated as `{chainId}:{safeAddress}`",
     example: '11155111:0x0000000000000000000000000000000000000000',
   })
-  @ApiOkResponse({ type: SpaceActivePolicyDto, isArray: true })
+  @ApiOkResponse({ type: ActivePolicyDto, isArray: true })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description: 'Invalid CAIP-10 address, or a Safe outside this space',
@@ -85,7 +85,7 @@ export class SpacePoliciesController {
     @Auth() authPayload: AuthPayload,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
-  ): Promise<Array<SpaceActivePolicyDto>> {
+  ): Promise<Array<ActivePolicyDto>> {
     return await this.policiesService.getSpaceActivePolicies({
       spaceId,
       safes,
