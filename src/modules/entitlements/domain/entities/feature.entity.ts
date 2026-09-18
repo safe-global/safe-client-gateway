@@ -10,7 +10,10 @@ export const SAFE_SEATS_FEATURE_KEY = 'safe_seats';
  * is data and its `key` column a plain string, so the response is narrowed to
  * this list and a seeded-but-unpublished key never ships.
  */
-export const FEATURE_KEYS = [SAFE_SEATS_FEATURE_KEY] as const;
+export const FEATURE_KEYS = [
+  SAFE_SEATS_FEATURE_KEY,
+  'sponsored_transactions',
+] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
 

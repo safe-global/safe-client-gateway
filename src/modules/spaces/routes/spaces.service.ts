@@ -5,6 +5,7 @@ import { In } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { assertAdmin } from '@/modules/spaces/domain/space-assert.utils';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
@@ -13,7 +14,6 @@ import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
 } from '@/modules/spaces/routes/entities/update-space.dto.entity';
-import { assertAdmin } from '@/modules/spaces/routes/utils/space-assert.utils';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';

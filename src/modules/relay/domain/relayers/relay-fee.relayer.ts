@@ -4,7 +4,6 @@ import type { Address, Hex } from 'viem';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
 import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
 import {
   type ILoggingService,
   LoggingService,
@@ -14,23 +13,13 @@ import {
   RelaySchema,
 } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
-import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
-import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
 import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
 import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
-
-/**
- * Placeholder EOA used as `from` when simulating a relayed `execTransaction`.
- * On-chain the caller is the relay provider's dispatcher; using a non-Safe sentinel keeps
- * `msg.sender`/`tx.origin` distinct from the Safe so refund-receiver-zero
- * flows debit the Safe to a third party (as they would in production).
- */
-const SIMULATION_SENDER_SENTINEL: Address =
-  '0x000000000000000000000000000000000000dEaD';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {
@@ -38,8 +27,7 @@ export class RelayFeeRelayer implements IRelayer {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IRelayApi) private readonly relayApi: IRelayApi,
     @Inject(IFeeServiceApi) private readonly feeServiceApi: IFeeServiceApi,
-    @Inject(ITenderlySimulationApi)
-    private readonly tenderlySimulationApi: ITenderlySimulationApi,
+    private readonly relaySimulationService: RelaySimulationService,
     private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {}
 
@@ -215,21 +203,12 @@ export class RelayFeeRelayer implements IRelayer {
     // `relayer.enableTenderlySimulationBeforeRelay` flag.
     const [feeServiceResult, simulation] = await Promise.all([
       this.feeServiceApi.canRelay({ chainId, safeTxHash }),
-      simulationEnabled
-        ? this.tenderlySimulationApi.simulate({
-            chainId,
-            // Sentinel EOA — we use a non-Safe placeholder rather than the
-            // Safe itself so that `msg.sender`/`tx.origin` ≠ Safe during
-            // simulation. This surfaces issues that would only appear when
-            // relayed by an external dispatcher (most notably: when
-            // `refundReceiver` is the zero address, the refund is paid to
-            // `tx.origin`; simulating with `from = Safe` would have the Safe
-            // pay itself and hide insufficient token balance for the refund).
-            from: SIMULATION_SENDER_SENTINEL,
-            to,
-            data,
-          })
-        : Promise.resolve(null),
+      this.relaySimulationService.simulate({
+        enabled: simulationEnabled,
+        chainId,
+        to,
+        data,
+      }),
     ]);
 
     // Fee-service denial takes precedence over a simulation failure to keep
@@ -242,32 +221,14 @@ export class RelayFeeRelayer implements IRelayer {
       throw new RelayTxDeniedError(safeTxHash);
     }
 
-    if (simulation?.status === 'failed') {
-      // Tenderly confirmed the transaction would revert => Block relay
-      this.loggingService.warn({
-        type: LogType.TxRelayEligibility,
-        message: `relay-fee relay denied for ${to} on chain ${chainId}: simulation failed (${simulation.reason}) for safeTxHash ${safeTxHash}`,
-      });
-      throw new RelaySimulationFailedError(safeTxHash, simulation.reason);
-    }
-
-    if (simulation?.status === 'indeterminate') {
-      if (!acceptUnverifiedSimulation) {
-        this.loggingService.warn({
-          type: LogType.TxRelayEligibility,
-          message: `relay-fee relay deferred for ${to} on chain ${chainId}: simulation indeterminate (${simulation.reason}) for safeTxHash ${safeTxHash}`,
-        });
-        throw new RelaySimulationIndeterminateError(
-          safeTxHash,
-          simulation.reason,
-        );
-      }
-
-      this.loggingService.warn({
-        type: LogType.TxRelayEligibility,
-        message: `relay-fee relay proceeding for ${to} on chain ${chainId} despite indeterminate simulation (${simulation.reason}) for safeTxHash ${safeTxHash}: user override`,
-      });
-    }
+    this.relaySimulationService.assertRelayable({
+      simulation,
+      relayer: 'relay-fee',
+      chainId,
+      to,
+      safeTxHash,
+      acceptUnverifiedSimulation,
+    });
   }
 
   private denyInvalidExecTransaction(args: {

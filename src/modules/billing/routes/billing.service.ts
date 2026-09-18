@@ -48,11 +48,11 @@ import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscrip
 import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
   assertAdmin,
   assertMember,
-} from '@/modules/spaces/routes/utils/space-assert.utils';
+} from '@/modules/spaces/domain/space-assert.utils';
+import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()

@@ -57,6 +57,7 @@ import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
 import { PositionsModule } from '@/modules/positions/positions.module';
 import { RecoveryModule } from '@/modules/recovery/recovery.module';
 import { RelayModule } from '@/modules/relay/relay.module';
+import { SpaceRelayModule } from '@/modules/relay/space-relay.module';
 import { RootModule } from '@/modules/root/root.module';
 import { SafeModule } from '@/modules/safe/safe.module';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
@@ -123,7 +124,7 @@ export class AppModule implements NestModule {
             ]
           : []),
         ...(isBillingServiceFeatureEnabled && isUsersFeatureEnabled
-          ? [EntitlementsRoutesModule]
+          ? [EntitlementsRoutesModule, SpaceRelayModule]
           : []),
         OwnersModule,
         RelayModule,

@@ -4,6 +4,7 @@ import { type Address, getAddress } from 'viem';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
 import {
+  type Message,
   MessagePageSchema,
   MessageSchema,
 } from '@/modules/messages/domain/entities/message.entity';
@@ -81,17 +82,22 @@ describe('Message entity schemas', () => {
       expect(result.success).toBe(true);
     });
 
-    it.each(['safeAppId' as const, 'preparedSignature' as const])(
-      'should allow undefined %s, defaulting to null',
-      (key) => {
-        const message = messageBuilder().build();
-        delete message[key];
+    it('should allow undefined preparedSignature, defaulting to null', () => {
+      const message: Partial<Message> = messageBuilder().build();
+      message.preparedSignature = undefined;
 
-        const result = MessageSchema.safeParse(message);
+      const result = MessageSchema.safeParse(message);
 
-        expect(result.success && result.data[key]).toBe(null);
-      },
-    );
+      expect(result.success && result.data.preparedSignature).toBe(null);
+    });
+
+    it('should allow null proposedBy', () => {
+      const message = messageBuilder().with('proposedBy', null).build();
+
+      const result = MessageSchema.safeParse(message);
+
+      expect(result.success && result.data.proposedBy).toBe(null);
+    });
 
     it('should allow empty confirmations', () => {
       const message = messageBuilder().with('confirmations', []).build();
@@ -107,7 +113,6 @@ describe('Message entity schemas', () => {
       'safe' as const,
       'messageHash' as const,
       'message' as const,
-      'proposedBy' as const,
       'confirmations' as const,
     ])('should not allow %s to be undefined', (key) => {
       const message = messageBuilder().build();

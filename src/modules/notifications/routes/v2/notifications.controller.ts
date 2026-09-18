@@ -24,7 +24,6 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Auth } from '@/modules/auth/routes/decorators/auth.decorator';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { OptionalAuthGuard } from '@/modules/auth/routes/guards/optional-auth.guard';
 import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
@@ -33,6 +32,7 @@ import { DeleteAllSubscriptionsDto } from '@/modules/notifications/routes/v2/ent
 import { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
 import { UpsertSubscriptionsDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
 import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';

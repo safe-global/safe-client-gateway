@@ -10,6 +10,7 @@ import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.map
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
 import { RelayRepository } from '@/modules/relay/domain/relay.repository';
 import { RelayDecodersModule } from '@/modules/relay/domain/relay-decoders.module';
+import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
@@ -29,6 +30,7 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
   providers: [
     RelayTransactionHelper,
     LimitAddressesMapper,
+    RelaySimulationService,
     RelayRepository,
     DailyLimitRelayer,
     NoFeeCampaignRelayer,
@@ -38,6 +40,9 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
       useClass: RelayManager,
     },
   ],
-  exports: [RelayRepository],
+  // The mapper and the simulation gate are what a relayer outside this module
+  // — `WorkspaceRelayer`, wired under its own feature flags — reuses instead
+  // of restating.
+  exports: [RelayRepository, LimitAddressesMapper, RelaySimulationService],
 })
 export class RelayDomainModule {}

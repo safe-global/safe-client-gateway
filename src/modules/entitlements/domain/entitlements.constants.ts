@@ -2,6 +2,7 @@
 import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
 import {
   FEATURE_KEYS,
+  FeatureType,
   SAFE_SEATS_FEATURE_KEY,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 
@@ -24,11 +25,24 @@ export const STOCK_METERED_FEATURES = [
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
 
 /** Takes the row, not the key, so a filtered array narrows without a cast. */
+export function isStockMeteredFeatureKey(
+  key: string,
+): key is StockMeteredFeature {
+  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
+}
+
 export function isStockMeteredFeature<T extends { key: string }>(
   feature: T,
 ): feature is T & { key: StockMeteredFeature } {
-  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(
-    feature.key,
+  return isStockMeteredFeatureKey(feature.key);
+}
+
+/** The other half: metered, and counted in `space_feature_usage`. */
+export function isEventMeteredFeature<T extends { key: string; type: string }>(
+  feature: T,
+): feature is T & { type: FeatureType.Metered } {
+  return (
+    feature.type === FeatureType.Metered && !isStockMeteredFeature(feature)
   );
 }
 
