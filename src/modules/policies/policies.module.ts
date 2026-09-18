@@ -8,6 +8,7 @@ import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-
 import { PolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 
+import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
@@ -38,6 +39,7 @@ import { UsersModule } from '@/modules/users/users.module';
     PoliciesService,
     SpendingLimitMapper,
     ProposerMapper,
+    GuardPolicyMapper,
     { provide: IPolicyIndexerRepository, useClass: PolicyIndexerRepository },
   ],
   exports: [IPolicyIndexerRepository],

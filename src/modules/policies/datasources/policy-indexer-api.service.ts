@@ -234,6 +234,7 @@ export class PolicyIndexerApi {
       _meta: [],
       SafeAllowance: [],
       SafeDelegate: [],
+      SafePolicy: [],
     };
     const chains = new Set<number>();
 
@@ -277,6 +278,7 @@ export class PolicyIndexerApi {
       _meta: response._meta.filter(belongsToChain),
       SafeAllowance: [],
       SafeDelegate: [],
+      SafePolicy: [],
     };
 
     for (const field of ROW_FIELDS) {

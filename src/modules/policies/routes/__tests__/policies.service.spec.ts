@@ -4,6 +4,7 @@ import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
@@ -17,6 +18,7 @@ import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/ent
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
@@ -51,6 +53,13 @@ const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
 } as unknown as MockedObject<IDelegatesV3Repository>;
 
+const mockLoggingService = {
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 const SEPOLIA = '11155111';
 
 describe('PoliciesService', () => {
@@ -74,6 +83,7 @@ describe('PoliciesService', () => {
       mockDelegatesV3Repository,
       new SpendingLimitMapper(),
       new ProposerMapper(),
+      new GuardPolicyMapper(mockLoggingService),
     );
 
     // authorised by default: active member, Safe in the space
