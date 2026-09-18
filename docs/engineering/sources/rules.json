@@ -328,46 +328,6 @@
     ]
   },
   {
-    "id": "AUTH-01",
-    "project": "general",
-    "area": "auth",
-    "title": "Reuse auth assertions",
-    "rule": "Reuse existing auth assertions and predicates (`assertAuthenticated`, `getAuthenticatedUserIdOrFail`); branch signature recovery on `SignatureType` (only EOA/EthSign are recoverable).",
-    "check": "Did I reuse existing auth assertions/predicates?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
-  },
-  {
-    "id": "AUTH-02",
-    "project": "general",
-    "area": "auth",
-    "title": "Identity supports SIWE and email",
-    "rule": "Identity code handles wallet (SIWE) and OIDC/email users; do not assume `signer_address` is set.",
-    "check": "Does identity code handle wallet and email users?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
-  },
-  {
-    "id": "AUTH-03",
-    "project": "general",
-    "area": "auth",
-    "title": "Use proven auth/crypto libs",
-    "rule": "Prefer `jose` and other maintained libraries for JWKS/JWT and signature work over hand-rolled primitives.",
-    "check": "Did I use proven auth/crypto libraries instead of custom primitives?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
-  },
-  {
-    "id": "AUTH-04",
-    "project": "general",
-    "area": "auth",
-    "title": "Email exposure intentional",
-    "rule": "User-email exposure in DTOs and Swagger is intentional and consistent.",
-    "check": "Is user email exposure intentional and consistent?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
-  },
-  {
     "id": "AUTH-05",
     "project": "general",
     "area": "auth",

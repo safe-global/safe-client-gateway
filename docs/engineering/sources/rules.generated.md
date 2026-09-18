@@ -25,10 +25,6 @@
 | [`TYPE-04`](#type-04) | DTO matches wire shape | general / types |
 | [`TYPE-05`](#type-05) | Parser generics complete | general / types |
 | [`TYPE-06`](#type-06) | No unsafe casts | general / types |
-| [`AUTH-01`](#auth-01) | Reuse auth assertions | general / auth |
-| [`AUTH-02`](#auth-02) | Identity supports SIWE and email | general / auth |
-| [`AUTH-03`](#auth-03) | Use proven auth/crypto libs | general / auth |
-| [`AUTH-04`](#auth-04) | Email exposure intentional | general / auth |
 | [`AUTH-05`](#auth-05) | Space routes enforce membership before data access | general / auth |
 | [`ROUTE-01`](#route-01) | Controllers are HTTP boundary | general / routes |
 | [`ROUTE-02`](#route-02) | Inputs validated at controller | general / routes |
@@ -1367,58 +1363,6 @@ comment that merely restates the line beneath it is deleted outright.
 ---
 
 ## 🌐 general › auth
-
-<a id="auth-01"></a>
-### `AUTH-01` Reuse auth assertions
-
-> **general** · auth
-
-**📜 Rule**\
-Reuse existing auth assertions and predicates (`assertAuthenticated`, `getAuthenticatedUserIdOrFail`); branch signature recovery on `SignatureType` (only EOA/EthSign are recoverable).
-
-**✅ Check**\
-> Did I reuse existing auth assertions/predicates?
-
----
-
-<a id="auth-02"></a>
-### `AUTH-02` Identity supports SIWE and email
-
-> **general** · auth
-
-**📜 Rule**\
-Identity code handles wallet (SIWE) and OIDC/email users; do not assume `signer_address` is set.
-
-**✅ Check**\
-> Does identity code handle wallet and email users?
-
----
-
-<a id="auth-03"></a>
-### `AUTH-03` Use proven auth/crypto libs
-
-> **general** · auth
-
-**📜 Rule**\
-Prefer `jose` and other maintained libraries for JWKS/JWT and signature work over hand-rolled primitives.
-
-**✅ Check**\
-> Did I use proven auth/crypto libraries instead of custom primitives?
-
----
-
-<a id="auth-04"></a>
-### `AUTH-04` Email exposure intentional
-
-> **general** · auth
-
-**📜 Rule**\
-User-email exposure in DTOs and Swagger is intentional and consistent.
-
-**✅ Check**\
-> Is user email exposure intentional and consistent?
-
----
 
 <a id="auth-05"></a>
 ### `AUTH-05` Space routes enforce membership before data access
