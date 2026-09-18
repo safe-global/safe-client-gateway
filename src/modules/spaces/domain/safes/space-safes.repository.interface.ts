@@ -65,7 +65,7 @@ export interface ISpaceSafesRepository {
 
   /**
    * Confirms `(chainId, address)` is registered to the Space, throwing
-   * `NotFoundException` otherwise.
+   * `ForbiddenException` otherwise.
    */
   assertBelongsToSpace(args: {
     spaceId: Space['id'];

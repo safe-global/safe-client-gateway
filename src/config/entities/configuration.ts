@@ -492,7 +492,7 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
-    // Disables Core's recipient-check and counterparty-analysis endpoints.
+    // Disables Core's recipient-check endpoint.
     copilotCoreDisabled:
       process.env.FF_COPILOT_CORE_DISABLED?.toLowerCase() === 'true',
   },

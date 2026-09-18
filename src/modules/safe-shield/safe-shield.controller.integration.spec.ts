@@ -300,7 +300,7 @@ describe('SafeShieldController', () => {
         .expect({ recipient: {}, contract: {}, deadlock: {} });
     });
 
-    it('should return 402 when Copilot is disabled on Core', async () => {
+    it('should still return 200 when Copilot is disabled on Core', async () => {
       const defaultConfiguration = configuration();
       await initApp(() => ({
         ...defaultConfiguration,
@@ -312,17 +312,15 @@ describe('SafeShieldController', () => {
       const chainId = faker.string.numeric();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const requestBody = counterpartyAnalysisRequestDtoBuilder().build();
+      rejectAllNetworkCalls();
 
-      const response = await request(app.getHttpServer())
+      await request(app.getHttpServer())
         .post(
           `/v1/chains/${chainId}/security/${safeAddress}/counterparty-analysis`,
         )
-        .send(requestBody);
-
-      expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
-      expect(response.body).toMatchObject({
-        code: 'COPILOT_DISABLED_ON_CORE',
-      });
+        .send(requestBody)
+        .expect(200)
+        .expect({ recipient: {}, contract: {}, deadlock: {} });
     });
   });
 

@@ -131,13 +131,6 @@ export class SafeShieldController {
     description:
       'Combined counterparty analysis including recipients and contracts grouped by status group and mapped to an address.',
   })
-  @ApiResponse({
-    status: HttpStatus.PAYMENT_REQUIRED,
-    description:
-      'Disabled on Core. The body carries `{ code: "COPILOT_DISABLED_ON_CORE", message }`.',
-  })
-  @UseGuards(CopilotCoreGatingGuard)
-  @UseFilters(CopilotCoreDisabledExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Post('chains/:chainId/security/:safeAddress/counterparty-analysis')
   public analyzeCounterparty(

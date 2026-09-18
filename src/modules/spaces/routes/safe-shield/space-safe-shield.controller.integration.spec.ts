@@ -178,7 +178,7 @@ describe('SpaceSafeShieldController', () => {
       });
     });
 
-    it('rejects with 404 when the Safe is not registered to the Space', async () => {
+    it('rejects with 403 when the Safe is not registered to the Space', async () => {
       const { accessToken, spaceUuid, spaceId } =
         await createSpaceForSignerFixture({
           app,
@@ -200,7 +200,7 @@ describe('SpaceSafeShieldController', () => {
           `/v1/spaces/${spaceUuid}/chains/${unregisteredSafe.chainId}/security/${unregisteredSafe.address}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(HttpStatus.NOT_FOUND);
+        .expect(HttpStatus.FORBIDDEN);
     });
 
     it('returns 200 for a member of a Space with a registered Safe and copilot_scans entitlement', async () => {
@@ -308,7 +308,7 @@ describe('SpaceSafeShieldController', () => {
       });
     });
 
-    it('rejects with 404 when the Safe is not registered to the Space', async () => {
+    it('rejects with 403 when the Safe is not registered to the Space', async () => {
       const { accessToken, spaceUuid, spaceId } =
         await createSpaceForSignerFixture({
           app,
@@ -331,7 +331,7 @@ describe('SpaceSafeShieldController', () => {
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .send(counterpartyAnalysisRequestDtoBuilder().build())
-        .expect(HttpStatus.NOT_FOUND);
+        .expect(HttpStatus.FORBIDDEN);
     });
 
     it('returns 200 for a member of a Space with a registered Safe and copilot_scans entitlement', async () => {

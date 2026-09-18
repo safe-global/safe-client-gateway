@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, NotFoundException } from '@nestjs/common';
 import {
   type EntityManager,
   type FindOptionsRelations,
@@ -190,7 +190,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
       where: this.safeMatch(args.spaceId, args),
     });
     if (spaceSafes.length === 0) {
-      throw new NotFoundException('Safe is not registered to this Workspace.');
+      throw new ForbiddenException('Safe is not registered to this Workspace.');
     }
   }
 

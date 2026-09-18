@@ -362,10 +362,6 @@ describe('SafeShieldController (Unit)', () => {
   describe('Copilot Core gating', () => {
     it.each([
       ['analyzeRecipient', SafeShieldController.prototype.analyzeRecipient],
-      [
-        'analyzeCounterparty',
-        SafeShieldController.prototype.analyzeCounterparty,
-      ],
     ] as const)('gates %s on the Core disable flag', (_name, handler) => {
       expect(appliedNames(GUARDS_METADATA, handler)).toContain(
         CopilotCoreGatingGuard.name,
@@ -376,6 +372,10 @@ describe('SafeShieldController (Unit)', () => {
     });
 
     it.each([
+      [
+        'analyzeCounterparty',
+        SafeShieldController.prototype.analyzeCounterparty,
+      ],
       ['analyzeThreat', SafeShieldController.prototype.analyzeThreat],
       ['reportFalseResult', SafeShieldController.prototype.reportFalseResult],
     ] as const)(

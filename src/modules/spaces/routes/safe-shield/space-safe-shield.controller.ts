@@ -14,7 +14,6 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiForbiddenResponse,
-  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -77,9 +76,9 @@ export class SpaceSafeShieldController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
-  @ApiForbiddenResponse({ description: 'Not a member of this Space' })
-  @ApiNotFoundResponse({
-    description: 'Safe is not registered to this Space',
+  @ApiForbiddenResponse({
+    description:
+      'Not a member of this Space, or the Safe is not registered to it',
   })
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
@@ -137,9 +136,9 @@ export class SpaceSafeShieldController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
-  @ApiForbiddenResponse({ description: 'Not a member of this Space' })
-  @ApiNotFoundResponse({
-    description: 'Safe is not registered to this Space',
+  @ApiForbiddenResponse({
+    description:
+      'Not a member of this Space, or the Safe is not registered to it',
   })
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
