@@ -21,6 +21,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
 import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
 import { DelegatePage } from '@/modules/delegate/routes/entities/delegate.page.entity';
@@ -36,6 +37,7 @@ import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
 import type { Page } from '@/routes/common/entities/page.entity';
 import type { PaginationData } from '@/routes/common/pagination/pagination.data';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
@@ -90,7 +92,7 @@ export class DelegatesV3Controller {
   })
   @Get('chains/:chainId/delegates')
   getDelegates(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
     getDelegateDto: GetDelegateDto,
@@ -130,7 +132,7 @@ export class DelegatesV3Controller {
   @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(CreateDelegateDtoSchema))
     createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
@@ -163,7 +165,7 @@ export class DelegatesV3Controller {
   @HttpCode(200)
   @Patch('chains/:chainId/delegates')
   async updateDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(UpdateDelegateV3DtoSchema))
     updateDelegateV3Dto: UpdateDelegateV3Dto,
   ): Promise<void> {
@@ -199,8 +201,9 @@ export class DelegatesV3Controller {
   })
   @Delete('chains/:chainId/delegates/:delegateAddress')
   deleteDelegate(
-    @Param('chainId') chainId: string,
-    @Param('delegateAddress') delegateAddress: Address,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('delegateAddress', new ValidationPipe(AddressSchema))
+    delegateAddress: Address,
     @Body(new ValidationPipe(DeleteDelegateV3DtoSchema))
     deleteDelegateV3Dto: DeleteDelegateV3Dto,
   ): Promise<void> {
