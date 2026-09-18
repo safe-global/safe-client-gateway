@@ -245,10 +245,10 @@ New files, providers, interfaces, helpers, factories, injection tokens, or modul
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003`
+> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006`
 
 **📜 Rule**\
-Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list.
+Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals.
 
 **✅ Check**\
 > Are docs, samples, and runbooks aligned with the final behavior?
@@ -876,10 +876,10 @@ same notion of absence.
 <a id="type-03"></a>
 ### `TYPE-03` Validate external inputs
 
-> **general** · types · 2 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002`
+> **general** · types · 2 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002` · `RL-20260723-004`
 
 **📜 Rule**\
-Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`.
+Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it.
 
 **✅ Check**\
 > Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?
@@ -2054,10 +2054,10 @@ code path inside `request()`.
 <a id="config-01"></a>
 ### `CONFIG-01` Defaults safe and OSS-generic
 
-> **general** · config · ↩ `RL-20260710-007`
+> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002`
 
 **📜 Rule**\
-Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging.
+Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it.
 
 **✅ Check**\
 > Are defaults safe, minimal, and OSS-generic?
@@ -2222,10 +2222,10 @@ real config entry now, while the surrounding code is fresh.
 <a id="config-04"></a>
 ### `CONFIG-04` Pinned runtime versions
 
-> **general** · config
+> **general** · config · ↩ `RL-20260723-001`
 
 **📜 Rule**\
-Runtime dependency versions are pinned exactly; do not hardcode contract versions/addresses that exist in `safe-deployments`.
+Runtime dependency versions are pinned exactly; do not hardcode contract versions/addresses that exist in `safe-deployments`. Pin the toolchain by integrity hash, not by version alone.
 
 **✅ Check**\
 > Are runtime dependencies pinned exactly?
@@ -2351,10 +2351,10 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011`
+> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005`
 
 **📜 Rule**\
-Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them.
+Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate.
 
 **✅ Check**\
 > Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?
@@ -2866,10 +2866,10 @@ noise.
 <a id="log-01"></a>
 ### `LOG-01` Operational log levels
 
-> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002`
+> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003`
 
 **📜 Rule**\
-Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value.
+Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode.
 
 **✅ Check**\
 > Are log levels operationally appropriate?

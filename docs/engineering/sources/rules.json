@@ -73,7 +73,7 @@
     "project": "general",
     "area": "scope",
     "title": "Docs aligned with behavior",
-    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list.",
+    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals.",
     "check": "Are docs, samples, and runbooks aligned with the final behavior?",
     "exampleRefs": [],
     "reviewLearningIds": [
@@ -82,7 +82,8 @@
       "RL-20260108-002",
       "RL-20260108-003",
       "RL-20260623-001",
-      "RL-20251209-003"
+      "RL-20251209-003",
+      "RL-20260723-006"
     ]
   },
   {
@@ -260,7 +261,7 @@
     "project": "general",
     "area": "types",
     "title": "Validate external inputs",
-    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give \"empty after sanitization\" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`.",
+    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give \"empty after sanitization\" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it.",
     "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence",
@@ -273,7 +274,8 @@
       "RL-20260605-003",
       "RL-20260612-001",
       "RL-20260624-002",
-      "RL-20251209-002"
+      "RL-20251209-002",
+      "RL-20260723-004"
     ]
   },
   {
@@ -542,11 +544,12 @@
     "project": "general",
     "area": "config",
     "title": "Defaults safe and OSS-generic",
-    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging.",
+    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it.",
     "check": "Are defaults safe, minimal, and OSS-generic?",
     "exampleRefs": [],
     "reviewLearningIds": [
-      "RL-20260710-007"
+      "RL-20260710-007",
+      "RL-20260723-002"
     ]
   },
   {
@@ -588,10 +591,12 @@
     "project": "general",
     "area": "config",
     "title": "Pinned runtime versions",
-    "rule": "Runtime dependency versions are pinned exactly; do not hardcode contract versions/addresses that exist in `safe-deployments`.",
+    "rule": "Runtime dependency versions are pinned exactly; do not hardcode contract versions/addresses that exist in `safe-deployments`. Pin the toolchain by integrity hash, not by version alone.",
     "check": "Are runtime dependencies pinned exactly?",
     "exampleRefs": [],
-    "reviewLearningIds": []
+    "reviewLearningIds": [
+      "RL-20260723-001"
+    ]
   },
   {
     "id": "CONFIG-05",
@@ -616,7 +621,7 @@
     "project": "general",
     "area": "performance",
     "title": "Batch and parallelize I/O",
-    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them.",
+    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate.",
     "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page",
@@ -627,7 +632,8 @@
       "RL-20260603-001",
       "RL-20260619-001",
       "RL-20260626-001",
-      "RL-20260710-011"
+      "RL-20260710-011",
+      "RL-20260723-005"
     ]
   },
   {
@@ -771,14 +777,15 @@
     "project": "general",
     "area": "logging",
     "title": "Operational log levels",
-    "rule": "Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value.",
+    "rule": "Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode.",
     "check": "Are log levels operationally appropriate?",
     "exampleRefs": [
       "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default"
     ],
     "reviewLearningIds": [
       "RL-20260121-001",
-      "RL-20260114-002"
+      "RL-20260114-002",
+      "RL-20260723-003"
     ]
   },
   {
