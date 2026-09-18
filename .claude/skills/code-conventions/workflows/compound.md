@@ -24,6 +24,9 @@ after the currently covered range.
 - Prefer mapping to an existing `rules.json` ID and active-doc section. If a
   learning is already covered, map it or tighten the existing rule/check instead
   of adding a near-duplicate rule.
+- **Never create a new `RL-*` without searching the store first.** Unchecked,
+  this is the failure that makes `review-learnings.json` and `rules.json` grow
+  without bound. See Distill step 4.
 - Never duplicate guidance. Tighten, merge, or add examples to existing
   sections when possible.
 - Keep `rules.json` finite. It should contain durable pre-PR checks, not every
@@ -127,9 +130,17 @@ For every reusable learning extracted from the fetched comments:
 2. Apply the schema-defined review-learning boundary and ID rules.
 3. Generalize it into a reusable engineering rule that applies beyond that
    exact PR/module.
-4. Prefer updating an existing `RL-*` object when the new feedback is the same
+4. Search the existing store for the same lesson before writing anything:
+
+   ```bash
+   node .claude/skills/code-conventions/scripts/review-learning-lookup.js \
+     --search "<the lesson in a few words>"
+   ```
+
+   Prefer updating an existing `RL-*` object when the new feedback is the same
    reusable learning. Add the new PR/comment source IDs to that object instead
-   of creating a near-duplicate learning.
+   of creating a near-duplicate learning. Create a new object only when the
+   search surfaces nothing carrying the same lesson.
 5. Create a new `RL-*` object only when the feedback contains a distinct
    reusable lesson.
 6. Record the GitHub source IDs that fed this learning. The fetcher prints

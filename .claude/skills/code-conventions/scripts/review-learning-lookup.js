@@ -7,17 +7,19 @@ import path from 'node:path'
 function usage() {
   console.error(
     [
-      'Usage: review-learning-lookup.js [--root <repo-root>] (--rule <RULE-ID> | --learning <RL-ID>) [--github]',
+      'Usage: review-learning-lookup.js [--root <repo-root>]',
+      '         (--rule <RULE-ID> | --learning <RL-ID> | --search <text>) [--limit <n>] [--github]',
       '',
       'Examples:',
       '  review-learning-lookup.js --rule RTK-03',
       '  review-learning-lookup.js --learning RL-20260506-007 --github',
+      '  review-learning-lookup.js --search "cache key missing input"',
     ].join('\n'),
   )
 }
 
 function parseArgs(argv) {
-  const args = { root: process.cwd(), rule: null, learning: null, github: false }
+  const args = { root: process.cwd(), rule: null, learning: null, search: null, limit: 10, github: false }
 
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i]
@@ -30,6 +32,12 @@ function parseArgs(argv) {
     } else if (arg === '--learning') {
       args.learning = argv[i + 1]
       i += 1
+    } else if (arg === '--search') {
+      args.search = argv[i + 1]
+      i += 1
+    } else if (arg === '--limit') {
+      args.limit = Number.parseInt(argv[i + 1], 10)
+      i += 1
     } else if (arg === '--github') {
       args.github = true
     } else if (arg === '-h' || arg === '--help') {
@@ -40,8 +48,12 @@ function parseArgs(argv) {
     }
   }
 
-  if ((args.rule && args.learning) || (!args.rule && !args.learning)) {
-    throw new Error('Pass exactly one of --rule or --learning')
+  const modes = [args.rule, args.learning, args.search].filter(Boolean)
+  if (modes.length !== 1) {
+    throw new Error('Pass exactly one of --rule, --learning or --search')
+  }
+  if (!Number.isInteger(args.limit) || args.limit < 1) {
+    throw new Error('--limit must be a positive integer')
   }
 
   return args
@@ -106,6 +118,45 @@ function renderGithubCommands(repo, learning) {
   return lines
 }
 
+const SEARCH_STOPWORDS = new Set([
+  'the', 'and', 'for', 'with', 'that', 'this', 'are', 'was', 'when', 'from', 'into', 'its', 'not', 'but', 'has',
+])
+
+// Scores each learning by how many query terms it contains; title hits count
+// twice so a topic match outranks an incidental mention in the body.
+function searchLearnings(learnings, query, limit) {
+  const terms = [
+    ...new Set(
+      String(query)
+        .toLowerCase()
+        .split(/[^a-z0-9]+/)
+        .filter((term) => term.length > 2 && !SEARCH_STOPWORDS.has(term)),
+    ),
+  ]
+  if (terms.length === 0) {
+    throw new Error('--search needs at least one term longer than two characters')
+  }
+
+  return learnings
+    .map((item) => {
+      const title = String(item.title || '').toLowerCase()
+      const body = `${title} ${String(item.learning || '').toLowerCase()} ${asArray(item.ruleIds).join(' ').toLowerCase()}`
+      let score = 0
+      for (const term of terms) {
+        if (body.includes(term)) {
+          score += 1
+        }
+        if (title.includes(term)) {
+          score += 1
+        }
+      }
+      return { item, score }
+    })
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
+    .slice(0, limit)
+}
+
 function printList(label, values) {
   const list = asArray(values)
   if (list.length > 0) {
@@ -134,7 +185,7 @@ function printLearning(learning, repo, includeGithub) {
 }
 
 function main() {
-  const { root, rule, learning, github } = parseArgs(process.argv)
+  const { root, rule, learning, search, limit, github } = parseArgs(process.argv)
   const resolvedRoot = path.resolve(root)
   const rulesPath = path.join(resolvedRoot, 'docs', 'engineering', 'sources', 'rules.json')
   const learningsPath = path.join(resolvedRoot, 'docs', 'engineering', 'sources', 'working', 'review-learnings.json')
@@ -149,6 +200,24 @@ function main() {
   const rules = readJson(rulesPath)
   const learnings = readJson(learningsPath)
   const repo = detectRepo(resolvedRoot)
+
+  if (search) {
+    const matches = searchLearnings(learnings, search, limit)
+    console.log(`# Review learnings matching: ${search}`)
+    console.log('')
+    if (matches.length === 0) {
+      console.log('No existing learning matches these terms. A new RL-* object is justified.')
+      return
+    }
+    console.log(`${matches.length} candidate(s), best match first.`)
+    console.log('Extend one of these if it carries the same reusable lesson; only add a new RL-* if none does.')
+    console.log('')
+    for (const { item, score } of matches) {
+      console.log(`(match score ${score})`)
+      printLearning(item, repo, github)
+    }
+    return
+  }
 
   if (rule) {
     const selectedRule = rules.find((item) => item.id === rule)
