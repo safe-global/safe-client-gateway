@@ -664,7 +664,8 @@
     "sourceWindowId": "CLOSED-20251211-20251218",
     "prNumbers": [
       2850,
-      3334
+      3334,
+      3373
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -673,9 +674,11 @@
     ],
     "reviewIds": [],
     "issueCommentIds": [
-      5242243692
+      5242243692,
+      5370151787,
+      5370217749
     ],
-    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private.",
+    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone.",
     "ruleIds": [
       "MOD-04"
     ]
@@ -1636,16 +1639,19 @@
     "title": "Builder default randomized across routing-relevant values, seeding flaky tests",
     "sourceWindowId": "CLOSED-20260616-20260623",
     "prNumbers": [
-      3105
+      3105,
+      3346
     ],
     "prState": "merged",
     "reviewCommentIds": [],
     "reviewIds": [],
     "issueCommentIds": [
       4659753272,
-      4669586810
+      4669586810,
+      5355854201,
+      5356805135
     ],
-    "learning": "`relayerBuilder` defaulted `type` to `faker.helpers.arrayElement([...Object.values(RelayerType), null])`, so any test using `chainBuilder().build()` without overriding the field randomly routed to different relayer branches (403 vs 501 vs happy path) — a flaky-test source. Builder defaults must not randomize across semantically different, behavior-routing values; pick one stable valid default and override explicitly per test case.",
+    "learning": "`relayerBuilder` defaulted `type` to `faker.helpers.arrayElement([...Object.values(RelayerType), null])`, so any test using `chainBuilder().build()` without overriding the field randomly routed to different relayer branches (403 vs 501 vs happy path) — a flaky-test source. Builder defaults must not randomize across semantically different, behavior-routing values; pick one stable valid default and override explicitly per test case. The same hazard has a second shape, seen in #3346: swapping `nameBuilder()` for `faker.company.name()` put 7.7% of generated names over the column's `VARCHAR(30)`, so the spec failed by seed. A faker default must stay inside every constraint the system under test enforces — routing branches and column widths alike — which is what the shared builders already encode.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2142,7 +2148,9 @@
     "prNumbers": [
       3217,
       2831,
-      3329
+      3329,
+      3373,
+      3374
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2158,8 +2166,12 @@
       3748799760
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too. Recurred in #3329 on two axes: a guard address pinned to a literal, and a `chainId` pinned to a real chain although the responses were mocked — when the collaborators are mocked, the chain id is a free input too.",
+    "issueCommentIds": [
+      5370151787,
+      5408604495,
+      5411009613
+    ],
+    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too. Recurred in #3329 on two axes: a guard address pinned to a literal, and a `chainId` pinned to a real chain although the responses were mocked — when the collaborators are mocked, the chain id is a free input too. Two more in this window: #3373 hardcoded `{ status: 400, statusText: 'Bad Request' }` in three new specs whose assertions were about truncation and capping, while the sibling cases in the same file used faker; #3374 minted a prior-session cookie from a hand-written payload that re-typed what `oidcAuthPayloadDtoBuilder()` produces, in the same PR whose unit spec used the builder. Inconsistency inside one diff is the cheapest tell.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2918,7 +2930,9 @@
     "prNumbers": [
       3329,
       3368,
-      3369
+      3369,
+      3374,
+      3371
     ],
     "prState": "merged",
     "reviewCommentIds": [],
@@ -2928,9 +2942,13 @@
       5218657058,
       5340110838,
       5341012615,
-      5353685501
+      5353685501,
+      5408604495,
+      5410822900,
+      5367597989,
+      5368084173
     ],
-    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR. The same review pass surfaces the rest of the subject/body contract: a behaviour correction typed `chore` where the table reserves `chore` as a last resort and calls for `fix`; commit subjects over the 72-character budget; and a body that links no issue although the branch names one. Subject line, type, and body linking are all checked against the log, not assumed.",
+    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR. The same review pass surfaces the rest of the subject/body contract: a behaviour correction typed `chore` where the table reserves `chore` as a last resort and calls for `fix`; commit subjects over the 72-character budget; and a body that links no issue although the branch names one. Subject line, type, and body linking are all checked against the log, not assumed. Also: `fix: Session duration step up` was retitled for being a capitalised noun phrase rather than an imperative description. And the template sections are deliberately closed — a proposal to let authors add their own was rejected because unbounded sections turn a description into a book nobody reads and lose the consistency the fixed shape buys.",
     "ruleIds": [
       "CHANGE-02"
     ],
@@ -3058,5 +3076,121 @@
       "DB-02"
     ],
     "sourceWindowId": "CLOSED-20260814-20260821"
+  },
+  {
+    "id": "RL-20260826-001",
+    "title": "A required callback parameter is not enforcement; the integration test is",
+    "prNumbers": [
+      3390
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3853014224,
+      3860570564,
+      3862077109
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A seat-quota check was threaded into the repository as a required `assertSeats` callback, argued for on the grounds that a new caller then cannot insert Safes without stating a seat rule. Review disagreed on the premise: a required parameter forces you to pass something, not the right thing — the existing integration spec already passed `noSeatLimit = () => {}` and compiled — so forgetting the check and passing the wrong rule fail identically. The answer was a test that goes from the route through the guard, the real service, real entitlements and the real repository, then asserts both the 402 and the row count; no such test existed, every prior one faked one half. The author added it and then took the restructure too. A signature cannot encode 'and use it correctly' — when the argument for an abstraction is that it prevents a mistake, ask what test would catch the mistake, and write that instead.",
+    "ruleIds": [
+      "TEST-04",
+      "PR-01"
+    ],
+    "sourceWindowId": "CLOSED-20260821-20260904"
+  },
+  {
+    "id": "RL-20260826-002",
+    "title": "Invalid date env var made the enforcement comparison false, silently enabling it everywhere",
+    "prNumbers": [
+      3390
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3861434624,
+      3862059335
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Enforcement was gated on `new Date() < this.enforcementStartsAt`. Any comparison against an `Invalid Date` is false, so a typo in `ENTITLEMENTS_ENFORCEMENT_STARTS_AT` would not fail at boot — it would silently switch enforcement on in every environment, which is the opposite of the intended default. Review asked for the parse to fail fast and for the decision to move into a named domain predicate (`isEnforcementActive(now, startsAt)`, alongside `fitsWithinQuota({quota, used, delta})`). Validate a date-shaped config value at startup rather than relying on a comparison, and give a gate its own named predicate so the failure mode is testable in isolation.",
+    "ruleIds": [
+      "CONFIG-02"
+    ],
+    "sourceWindowId": "CLOSED-20260821-20260904"
+  },
+  {
+    "id": "RL-20260826-003",
+    "title": "Transaction belongs with the use case, and the KMS round-trips stay outside the lock",
+    "prNumbers": [
+      3390
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3860570564,
+      3862077109
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Nine of nine concurrent adds passed a quota of four because the count was not taken under the Space's lock inside the writing transaction. The repository owned the transaction because it encrypts first, and field encryption means a KMS round-trip per address that must not sit inside the lock. The settled shape splits the write into encrypt / lock+count / insert, with the route service opening the transaction and threading the `EntityManager` — precedented by `address-book-requests.service.ts` and by six repository interfaces that already accept one. Put the transaction where the use case lives, do the expensive I/O before taking the lock, and read the quantity you are enforcing on inside it.",
+    "ruleIds": [
+      "DB-02"
+    ],
+    "sourceWindowId": "CLOSED-20260821-20260904"
+  },
+  {
+    "id": "RL-20260821-001",
+    "title": "Hand-built Response casts replaced with real Response objects, for this diff only",
+    "prNumbers": [
+      3370
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3830062990,
+      3830120834
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Integration specs constructed `{ status } as Response` to build a `NetworkResponseError`. Review asked why it was cast at all: `new Response(null, { status })` is valid for any 4xx/5xx and carries everything `HttpErrorFactory` reads. The author converted the 13 sites this PR added and deliberately left the 169 pre-existing casts alone, to keep the diff to the PR's own lines. Build the real object when the platform gives you one; and when a review reveals a pattern repeated across the codebase, fix the lines you already touched rather than expanding the PR into a sweep.",
+    "ruleIds": [
+      "TYPE-06",
+      "CHANGE-02"
+    ],
+    "sourceWindowId": "CLOSED-20260821-20260904"
+  },
+  {
+    "id": "RL-20260821-002",
+    "title": "Pure helpers kept as private service methods could not be tested without the service",
+    "prNumbers": [
+      3373
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3830546698,
+      3831427156
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Three log-formatting helpers — collapse whitespace, truncate, cap the error list — lived as private methods on the datasource although none touched instance state, so every formatting case had to be exercised through `relay()` dragging `mockRejectedValue`, `rejects.toThrow` and a mocked logger along with it. Review asked for them to move out; the author agreed and scheduled it as a follow-up PR. A function with no instance state does not belong on the class: leaving it there prices every test of it at the cost of testing its host.",
+    "ruleIds": [
+      "STYLE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260821-20260904"
+  },
+  {
+    "id": "RL-20260827-001",
+    "title": "API contract left alone rather than changed to quiet observability noise",
+    "prNumbers": [
+      3400
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5441868504
+    ],
+    "learning": "A PR proposed answering 204 instead of 404 when a Safe is not targeted, to stop expected responses showing up as errors in Datadog. It was closed on tech-lead guidance: the 404 is the documented contract for that route (\"Safe not targeted\"), and the noise is handled by keeping those expected responses out of Datadog on the client side. An observability problem is not a reason to change a published contract — filter where the noise is measured, and keep the API saying what it means.",
+    "ruleIds": [
+      "CHANGE-04"
+    ],
+    "sourceWindowId": "CLOSED-20260821-20260904"
   }
 ]

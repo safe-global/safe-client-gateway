@@ -88,10 +88,10 @@ A PR should be the smallest correct change for the behavior; avoid surrounding c
 <a id="change-02"></a>
 ### `CHANGE-02` No unrelated drive-by edits
 
-> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003`
+> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003` · `RL-20260821-001`
 
 **📜 Rule**\
-Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject — squash-merge makes the subject a permanent commit subject.
+Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject — squash-merge makes the subject a permanent commit subject. When a review reveals a pattern repeated repo-wide, fix the lines the PR already touches rather than expanding into a sweep.
 
 **✅ Check**\
 > Did I avoid unrelated docs/config/formatting/generated changes?
@@ -164,10 +164,10 @@ Tooling work (lint, formatter, build, CI, test runner) must preserve previous be
 <a id="change-04"></a>
 ### `CHANGE-04` External contracts versioned
 
-> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001` · `RL-20260729-003`
+> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001` · `RL-20260729-003` · `RL-20260827-001`
 
 **📜 Rule**\
-Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release. A response-shape change identifies its consuming client and lands only once that client's compatibility change is merged or confirmed on the PR. A compatibility alias has a defined life — on the next touch of that schema, check the replacement's deploy date and delete the alias rather than carrying it forward.
+Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release. A response-shape change identifies its consuming client and lands only once that client's compatibility change is merged or confirmed on the PR. A compatibility alias has a defined life — on the next touch of that schema, check the replacement's deploy date and delete the alias rather than carrying it forward. An observability problem is not a reason to change a published contract: filter where the noise is measured.
 
 **✅ Check**\
 > If this changes an external contract, is it versioned or explicitly backward-compatible?
@@ -233,7 +233,7 @@ deleted with a clean PR that only touches the loader.
 <a id="pr-01"></a>
 ### `PR-01` New abstractions justified
 
-> **general** · scope · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001`
+> **general** · scope · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001`
 
 **📜 Rule**\
 New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable.
@@ -614,10 +614,10 @@ someone remembered to add the string.
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001`
+> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host.
 
 **✅ Check**\
 > Did I document public/non-trivial logic and remove dead code?
@@ -1225,10 +1225,10 @@ Parser/decode generics include every field the code reads downstream. Thread the
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 2 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001`
+> **general** · types · 2 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001`
 
 **📜 Rule**\
-Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it.
+Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it.
 
 **✅ Check**\
 > Did I avoid unsafe casts, `any`, and silent type drift?
@@ -1716,10 +1716,10 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002`
+> **general** · database · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003`
 
 **📜 Rule**\
-Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted.
+Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it.
 
 **✅ Check**\
 > Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?
@@ -2068,10 +2068,10 @@ Defaults remain conservative and OSS-generic. Dev-only feature flags require bot
 <a id="config-02"></a>
 ### `CONFIG-02` Config fails fast
 
-> **general** · config · 1 example · ↩ `RL-20260506-004` · `RL-20251219-002` · `RL-20260608-001` · `RL-20260713-002` · `RL-20260714-001`
+> **general** · config · 1 example · ↩ `RL-20260506-004` · `RL-20251219-002` · `RL-20260608-001` · `RL-20260713-002` · `RL-20260714-001` · `RL-20260826-002`
 
 **📜 Rule**\
-Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read. Conditionally required env vars extend the shared deployed-env `superRefine` required-fields list with a `requiredWhen` condition — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow`. Boolean `FF_*` flags parse strictly (`?.toLowerCase() === 'true'`, never `!!`), with a regression test that legacy carried-over values do not enable the flag.
+Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read. Conditionally required env vars extend the shared deployed-env `superRefine` required-fields list with a `requiredWhen` condition — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow`. Boolean `FF_*` flags parse strictly (`?.toLowerCase() === 'true'`, never `!!`), with a regression test that legacy carried-over values do not enable the flag. Date-shaped config is parsed and validated at startup — a comparison against an `Invalid Date` is false, so a typo silently flips the gate instead of failing — and a gate gets a named domain predicate rather than an inline comparison.
 
 **✅ Check**\
 > Does config validation fail at startup?
@@ -2647,10 +2647,10 @@ Do not mock internal query-builder chains or implementation details.
 <a id="test-04"></a>
 ### `TEST-04` Cover security paths
 
-> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001` · `RL-20260826-001`
 
 **📜 Rule**\
-Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition.
+Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.
 
 **✅ Check**\
 > Are security and negative paths covered?
