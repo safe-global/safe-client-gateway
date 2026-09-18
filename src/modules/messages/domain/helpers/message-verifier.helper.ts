@@ -197,7 +197,6 @@ export class MessageVerifierHelper {
   private logMalformedMessageHash(args: {
     chainId: string;
     safe: Safe;
-    message: Message['message'];
     source: LogSource;
   }): void {
     // We do not include the type as it is not a validity error
@@ -206,7 +205,6 @@ export class MessageVerifierHelper {
       chainId: args.chainId,
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
-      safeMessage: args.message,
       source: args.source,
     });
   }
@@ -215,7 +213,6 @@ export class MessageVerifierHelper {
     chainId: string;
     safe: Safe;
     messageHash: Hash;
-    message: Message['message'];
     source: LogSource;
   }): void {
     this.loggingService.error({
@@ -224,7 +221,6 @@ export class MessageVerifierHelper {
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
       messageHash: args.messageHash,
-      safeMessage: args.message,
       type: LogType.MessageValidity,
       source: args.source,
     });
