@@ -181,7 +181,11 @@ export class BillingController {
   })
   @ApiOkResponse({ type: CheckoutSessionResult })
   @ApiQuery({ name: 'returnUrl', required: true })
-  @UseGuards(AuthGuard)
+  @ApiForbiddenResponse({
+    description:
+      'Not an admin, or a payment link this workspace is not offered',
+  })
+  @UseGuards(AuthGuard, ElevationGuard)
   @Get('/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url')
   public async getCheckoutUrl(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
@@ -260,7 +264,7 @@ export class BillingController {
   @ApiBody({ type: UpdateSubscriptionDto })
   @ApiOkResponse({ type: UpdateSubscriptionResult })
   @ApiForbiddenResponse({
-    description: 'Not a member, or a plan this workspace is not offered',
+    description: 'Not an admin, or a plan this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
   @ApiConflictResponse({

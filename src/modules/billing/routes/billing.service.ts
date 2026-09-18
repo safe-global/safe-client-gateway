@@ -49,7 +49,10 @@ import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscrip
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
+import {
+  assertAdmin,
+  assertMember,
+} from '@/modules/spaces/routes/utils/space-assert.utils';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
@@ -129,6 +132,12 @@ export class BillingService {
     return await this.listOfferedPaymentLinks(args);
   }
 
+  /**
+   * Starts a checkout for a workspace payment link.
+   *
+   * Admin-only. A fresh second factor is also required, pinned in the gated
+   * table of `elevation.integration.spec.ts`.
+   */
   public async createCheckoutUrl(args: {
     paymentLinkId: string;
     spaceId: Space['id'];
@@ -136,7 +145,7 @@ export class BillingService {
     authPayload: AuthPayload;
     returnUrl: string;
   }): Promise<CheckoutSessionResult> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
     const returnUrl = this.validateReturnUrl(args.returnUrl);
 
     // A link the workspace is not offered is not checkable out either, or the
@@ -216,9 +225,8 @@ export class BillingService {
   /**
    * Moves the workspace onto another plan.
    *
-   * Membership, not admin, matching `createCheckoutUrl`: starting a paid
-   * subscription is open to any member. A fresh second factor is required on
-   * top, pinned in the gated table of `elevation.integration.spec.ts`.
+   * Admin-only. A fresh second factor is also required, pinned in the gated
+   * table of `elevation.integration.spec.ts`.
    *
    * Returning does not mean the entitlements have moved: those are
    * materialized when the upstream's webhook arrives, so
@@ -233,7 +241,7 @@ export class BillingService {
     paymentLinkId?: string;
     authPayload: AuthPayload;
   }): Promise<UpdateSubscriptionResult> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
 
     const [offeredLinks, subscription] = await Promise.all([
       this.listOfferedPaymentLinks(args),
@@ -444,5 +452,13 @@ export class BillingService {
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
+  }
+
+  private async assertSpaceAdmin(
+    spaceId: Space['id'],
+    authPayload: AuthPayload,
+  ): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+    await assertAdmin(this.spacesRepository, spaceId, userId);
   }
 }

@@ -42,6 +42,7 @@ import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout
 import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -75,6 +76,7 @@ const subscriptionsRepositoryMock = {
 
 const spacesRepositoryMock = {
   findCreatedAtById: vi.fn(),
+  findOne: vi.fn(),
 } as MockedObject<ISpacesRepository>;
 
 const spaceSafesRepositoryMock = {
@@ -143,6 +145,9 @@ describe('BillingService', () => {
     // assertSafeSeatCapacity no-ops without reading this — set for the specs
     // that do give a link that metadata.
     spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(0);
+    // Default for the checkout/plan-change specs, which are admin-gated: an
+    // admin found unless a spec overrides this to test the rejection.
+    spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
 
     service = new BillingService(
       billingRepositoryMock,
@@ -573,7 +578,7 @@ describe('BillingService', () => {
   });
 
   describe('createCheckoutUrl', () => {
-    it('should return the checkout session result for a space member', async () => {
+    it('should return the checkout session result for a space admin', async () => {
       const paymentLinkId = faker.string.uuid();
       const spaceId = faker.number.int();
       const spaceUuid = faker.string.uuid();
@@ -583,7 +588,6 @@ describe('BillingService', () => {
       const paymentLink = paymentLinkBuilder()
         .with('id', paymentLinkId)
         .build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       // A paid link needs the space to have subscribed before to be offered.
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
@@ -610,9 +614,9 @@ describe('BillingService', () => {
       });
     });
 
-    it('should throw when the user is not a space member', async () => {
+    it('should throw when the user is not a space admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(null);
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.createCheckoutUrl({
@@ -631,7 +635,6 @@ describe('BillingService', () => {
 
     it('should throw when returnUrl targets a disallowed origin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
 
       await expect(
         service.createCheckoutUrl({
@@ -652,7 +655,6 @@ describe('BillingService', () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       // The legacy grace, which a post-enforcement workspace is not entitled to.
       const graceLink = trialPaymentLinkBuilder(true).build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       spaceCreatedAt(AFTER_ENFORCEMENT);
       mockCatalog([graceLink]);
 
@@ -677,7 +679,6 @@ describe('BillingService', () => {
       const returnUrl = withinRedirectOrigin();
       const graceLink = trialPaymentLinkBuilder(true).build();
       const checkoutSessionResult = checkoutSessionResultBuilder().build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       spaceCreatedAt(BEFORE_ENFORCEMENT);
       mockCatalog([graceLink]);
       billingRepositoryMock.createCheckoutSession.mockResolvedValue(
@@ -707,7 +708,6 @@ describe('BillingService', () => {
         .with('id', paymentLinkId)
         .with('metadata', { FEATURE_SAFE_SEATS: '2' })
         .build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
         activePlanId: null,
@@ -739,7 +739,6 @@ describe('BillingService', () => {
         .with('id', paymentLinkId)
         .with('metadata', { FEATURE_SAFE_SEATS: '3' })
         .build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
         activePlanId: null,
@@ -909,17 +908,11 @@ describe('BillingService', () => {
   });
 
   describe('updateSubscription', () => {
-    // `assertMember` only checks that the lookup returns a row.
-    function asMember(): void {
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
-    }
-
     it('should move the subscription onto the plan, sourcing metadata from the offered link', async () => {
       const { spaceId, spaceUuid, planId, paymentLink, subscription } =
         subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const updateResult = updateSubscriptionResultBuilder().build();
-      asMember();
       billingRepositoryMock.updateSubscription.mockResolvedValue(updateResult);
 
       const result = await service.updateSubscription({
@@ -945,7 +938,6 @@ describe('BillingService', () => {
         metadata: { FEATURE_SAFE_SEATS: '2' },
       });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
       spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
 
       await expect(
@@ -966,7 +958,6 @@ describe('BillingService', () => {
         subscribedSpace({ metadata: { FEATURE_SAFE_SEATS: '3' } });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const updateResult = updateSubscriptionResultBuilder().build();
-      asMember();
       spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
       billingRepositoryMock.updateSubscription.mockResolvedValue(updateResult);
 
@@ -984,10 +975,10 @@ describe('BillingService', () => {
       );
     });
 
-    it('should throw when the user is not a space member', async () => {
+    it('should throw when the user is not a space admin', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(null);
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.updateSubscription({
@@ -1021,7 +1012,6 @@ describe('BillingService', () => {
     it('should throw when the plan is not offered to the space', async () => {
       const { spaceId, spaceUuid, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
 
       await expect(
         service.updateSubscription({
@@ -1039,7 +1029,6 @@ describe('BillingService', () => {
     it('should throw when the subscription does not belong to the space', async () => {
       const { spaceId, spaceUuid, planId } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
 
       await expect(
         service.updateSubscription({
@@ -1058,7 +1047,6 @@ describe('BillingService', () => {
       const planId = faker.string.alphanumeric(32);
       const { spaceId, spaceUuid, subscription } = subscribedSpace({ planId });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
       // The price in force is the one being asked for.
       billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
         {
@@ -1087,7 +1075,6 @@ describe('BillingService', () => {
         const authPayload = new AuthPayload(
           siweAuthPayloadDtoBuilder().build(),
         );
-        asMember();
         billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
           { ...subscription, status },
         ]);
@@ -1111,7 +1098,6 @@ describe('BillingService', () => {
         subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const updateResult = updateSubscriptionResultBuilder().build();
-      asMember();
       billingRepositoryMock.updateSubscription.mockResolvedValue(updateResult);
 
       await service.updateSubscription({
@@ -1137,7 +1123,6 @@ describe('BillingService', () => {
         faker.string.alphanumeric(32),
       ).build();
       mockCatalog([paymentLink, otherLink]);
-      asMember();
 
       await expect(
         service.updateSubscription({
@@ -1156,7 +1141,6 @@ describe('BillingService', () => {
     it('should throw when the named paymentLinkId is not offered to the space', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
 
       await expect(
         service.updateSubscription({
@@ -1183,7 +1167,6 @@ describe('BillingService', () => {
       // A second link at the same price, with its own metadata.
       const negotiatedLink = paymentLinkPricedAt(planId).build();
       mockCatalog([paymentLink, negotiatedLink]);
-      asMember();
 
       await expect(
         service.updateSubscription({
@@ -1208,7 +1191,6 @@ describe('BillingService', () => {
       const negotiatedLink = paymentLinkPricedAt(planId).build();
       const updateResult = updateSubscriptionResultBuilder().build();
       mockCatalog([paymentLink, negotiatedLink]);
-      asMember();
       billingRepositoryMock.updateSubscription.mockResolvedValue(updateResult);
 
       await service.updateSubscription({
@@ -1231,7 +1213,6 @@ describe('BillingService', () => {
         planId,
       });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
       // `isOfferedToSpace` drops the link whose plan the space already holds.
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
@@ -1257,7 +1238,6 @@ describe('BillingService', () => {
     it('should throw when the upstream reports the change as unsuccessful', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      asMember();
       billingRepositoryMock.updateSubscription.mockResolvedValue(
         updateSubscriptionResultBuilder().with('success', false).build(),
       );
@@ -1279,7 +1259,6 @@ describe('BillingService', () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const updateResult = updateSubscriptionResultBuilder().build();
-      asMember();
       billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
         { ...subscription, status: 'trialing' },
       ]);
