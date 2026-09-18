@@ -5,12 +5,20 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  type DelegatesOfVersion,
+  ProposerMapper,
+} from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -38,7 +46,12 @@ export class PoliciesService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IDelegatesV2Repository)
+    private readonly delegatesV2Repository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesV3Repository: IDelegatesV3Repository,
     private readonly spendingLimitMapper: SpendingLimitMapper,
+    private readonly proposerMapper: ProposerMapper,
   ) {}
 
   /**
@@ -118,9 +131,10 @@ export class PoliciesService {
       return [];
     }
 
-    const [state, enabledModules] = await Promise.all([
+    const [state, enabledModules, delegatesPerSafe] = await Promise.all([
       this.policyIndexerRepository.getState({ safes }),
       Promise.all(safes.map((safe) => this.enabledModules(safe))),
+      Promise.all(safes.map((safe) => this.delegatesByVersion(safe))),
     ]);
 
     const policies: Array<ActivePolicy> = [];
@@ -132,10 +146,43 @@ export class PoliciesService {
           allowances: this.getAllowancesBySafe(state.allowances, safe),
           enabledModules: enabledModules[index],
         }),
+        ...this.proposerMapper.map({
+          safe,
+          delegatesByVersion: delegatesPerSafe[index],
+        }),
       );
     }
 
     return policies;
+  }
+
+  /**
+   * The addresses registered as delegates of the Safe - what a proposer grant
+   * is - from each delegates API, kept apart rather than merged so the response
+   * can say which API holds a grant.
+   *
+   * Read at the Transaction Service's maximum page size: its default page would
+   * silently truncate a Safe with many proposers, and a policies page that
+   * under-reports who may propose is worse than none.
+   */
+  private async delegatesByVersion(
+    safe: SafeRef,
+  ): Promise<Array<DelegatesOfVersion>> {
+    const args = {
+      chainId: safe.chainId,
+      safeAddress: safe.address,
+      limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+    };
+
+    const [v2, v3] = await Promise.all([
+      this.delegatesV2Repository.getDelegates(args),
+      this.delegatesV3Repository.getDelegates(args),
+    ]);
+
+    return [
+      { version: DelegateApiVersion.V2, delegates: v2.results },
+      { version: DelegateApiVersion.V3, delegates: v3.results },
+    ];
   }
 
   /**
