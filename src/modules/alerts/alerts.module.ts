@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { ConfigFactory } from '@nestjs/config/dist/interfaces/config-factory.interface';
+import { type ConfigFactory, ConfigModule } from '@nestjs/config';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { NestConfigurationService } from '@/config/nest.configuration.service';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
