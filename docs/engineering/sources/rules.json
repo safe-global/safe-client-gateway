@@ -68,7 +68,8 @@
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260626-003",
-      "RL-20260706-001"
+      "RL-20260706-001",
+      "RL-20260818-001"
     ]
   },
   {
@@ -76,7 +77,7 @@
     "project": "general",
     "area": "scope",
     "title": "Docs aligned with behavior",
-    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve.",
+    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open.",
     "check": "Are docs, samples, and runbooks aligned with the final behavior?",
     "exampleRefs": [],
     "reviewLearningIds": [
@@ -87,7 +88,8 @@
       "RL-20260623-001",
       "RL-20251209-003",
       "RL-20260723-006",
-      "RL-20260807-002"
+      "RL-20260807-002",
+      "RL-20260820-001"
     ]
   },
   {
@@ -323,7 +325,7 @@
     "project": "general",
     "area": "types",
     "title": "No unsafe casts",
-    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`.",
+    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it.",
     "check": "Did I avoid unsafe casts, `any`, and silent type drift?",
     "exampleRefs": [
       "examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding",
@@ -333,7 +335,8 @@
       "RL-20260506-005",
       "RL-20260612-004",
       "RL-20251209-001",
-      "RL-20251209-002"
+      "RL-20251209-002",
+      "RL-20260819-001"
     ]
   },
   {
@@ -459,12 +462,13 @@
     "project": "general",
     "area": "database",
     "title": "Atomic state transitions",
-    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic.",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted.",
     "check": "Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260602-002",
-      "RL-20260605-002"
+      "RL-20260605-002",
+      "RL-20260819-002"
     ]
   },
   {
@@ -914,7 +918,7 @@
     "id": "RESILIENCE-01",
     "area": "resilience",
     "title": "Resilience policy semantics",
-    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx.",
+    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open.",
     "check": "For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?",
     "exampleRefs": [
       "examples/resilience.md#resilience-01-classify-failures-and-scope-the-policy-key",
@@ -924,7 +928,8 @@
     ],
     "reviewLearningIds": [
       "RL-20251215-002",
-      "RL-20260626-002"
+      "RL-20260626-002",
+      "RL-20260818-001"
     ]
   }
 ]

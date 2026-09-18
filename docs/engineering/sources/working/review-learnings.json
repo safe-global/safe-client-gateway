@@ -637,7 +637,8 @@
     "sourceWindowId": "CLOSED-20251211-20251218",
     "prNumbers": [
       2850,
-      3334
+      3334,
+      3368
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -648,8 +649,11 @@
       3766695603
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "When code needs the set of supported Safe contract versions or fallback handler versions, derive it from `@safe-global/safe-deployments` rather than hardcoding the array. The deployments package is the single source of truth and is updated on every contract release; a hardcoded list silently lags behind. Recurred in #3334, where 1.5.0 singleton/factory/handler addresses were pinned as literals in service specs; review asked twice to read them from the deployments helpers so a package bump cannot leave the tests asserting a stale address.",
+    "issueCommentIds": [
+      5340060330,
+      5340867147
+    ],
+    "learning": "When code needs the set of supported Safe contract versions or fallback handler versions, derive it from `@safe-global/safe-deployments` rather than hardcoding the array. The deployments package is the single source of truth and is updated on every contract release; a hardcoded list silently lags behind. Recurred in #3334, where 1.5.0 singleton/factory/handler addresses were pinned as literals in service specs; review asked twice to read them from the deployments helpers so a package bump cannot leave the tests asserting a stale address. Third occurrence, in #3368: production code was refactored to derive migration targets from the package, but a spec still gated on an inline `['1.3.0','1.4.1','1.5.0']`, which defeats the derivation the same PR introduced — the literal now reads `migrationTargetVersions`. The guard has to track the package on both sides.",
     "ruleIds": [
       "REUSE-01"
     ]
@@ -1943,7 +1947,8 @@
     "title": "Per-event handler log emitted at info instead of debug",
     "sourceWindowId": "CLOSED-20260707-20260711",
     "prNumbers": [
-      3241
+      3241,
+      3327
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -1951,8 +1956,11 @@
       3543206829
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "A cache-invalidation handler logged at `info` on every transaction event; review pointed out the AMQP event volume would flood Datadog and it moved to `debug`. Logs emitted once per queue event are `debug` — reserve `info` for low-frequency lifecycle signals.",
+    "issueCommentIds": [
+      5330122687,
+      5339540812
+    ],
+    "learning": "A cache-invalidation handler logged at `info` on every transaction event; review pointed out the AMQP event volume would flood Datadog and it moved to `debug`. Logs emitted once per queue event are `debug` — reserve `info` for low-frequency lifecycle signals. Recurred in #3327: every processed billing webhook logged at `info`, and because the upstream forwards the provider's whole catalog, the ignore paths fired for every unrelated `invoice.*`/`charge.*`/`payment_intent.*` event. Those moved to `debug`; the once-per-materialization line stayed `info`. The test is event volume, not whether the line is interesting.",
     "ruleIds": [
       "LOG-02"
     ]
@@ -2884,7 +2892,8 @@
     "id": "RL-20260810-002",
     "title": "Widened a per-chain-gated support list without the negative case, and asserted a constant the diff just added",
     "prNumbers": [
-      3329
+      3329,
+      3345
     ],
     "prState": "merged",
     "reviewCommentIds": [],
@@ -2892,9 +2901,11 @@
     "issueCommentIds": [
       5214943840,
       5216304820,
-      5218066866
+      5218066866,
+      5281528909,
+      5339889359
     ],
-    "learning": "Adding `'1.5.0'` to `MULTICHAIN_SUPPORTED_VERSIONS` was covered only by a positive test on a chain that has 1.5.0 deployments; nothing asserted that a chain without them still returns `INCOMPATIBLE_SAFE`, which is the entire reason the list is gated per chain — a later short-circuit would silently mark the version compatible everywhere. Separately, a spec asserted that `SETTINGS_CHANGE_METHODS` contains the literal the same diff had just added to it, which the two mapper tests above already implied. When widening a gated list, the negative case is the test that matters; and a test that restates a constant the diff introduced proves nothing.",
+    "learning": "Adding `'1.5.0'` to `MULTICHAIN_SUPPORTED_VERSIONS` was covered only by a positive test on a chain that has 1.5.0 deployments; nothing asserted that a chain without them still returns `INCOMPATIBLE_SAFE`, which is the entire reason the list is gated per chain — a later short-circuit would silently mark the version compatible everywhere. Separately, a spec asserted that `SETTINGS_CHANGE_METHODS` contains the literal the same diff had just added to it, which the two mapper tests above already implied. When widening a gated list, the negative case is the test that matters; and a test that restates a constant the diff introduced proves nothing. Also in #3345, where two specs with identical setup asserted the returned currencies and the absence of a CoinGecko call — two assertions about one behaviour, merged into one case.",
     "ruleIds": [
       "TEST-09",
       "TEST-02"
@@ -2905,16 +2916,21 @@
     "id": "RL-20260810-003",
     "title": "Ticket reference placed in the PR subject, which squash-merge makes a permanent commit subject",
     "prNumbers": [
-      3329
+      3329,
+      3368,
+      3369
     ],
     "prState": "merged",
     "reviewCommentIds": [],
     "reviewIds": [],
     "issueCommentIds": [
       5218066866,
-      5218657058
+      5218657058,
+      5340110838,
+      5341012615,
+      5353685501
     ],
-    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR.",
+    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR. The same review pass surfaces the rest of the subject/body contract: a behaviour correction typed `chore` where the table reserves `chore` as a last resort and calls for `fix`; commit subjects over the 72-character budget; and a body that links no issue although the branch names one. Subject line, type, and body linking are all checked against the log, not assumed.",
     "ruleIds": [
       "CHANGE-02"
     ],
@@ -2961,5 +2977,86 @@
       "TEST-08"
     ],
     "sourceWindowId": "CLOSED-20260731-20260814"
+  },
+  {
+    "id": "RL-20260820-001",
+    "title": "Guides that enumerate or duplicate what another guide owns went stale in the same PR that changed them",
+    "prNumbers": [
+      3369
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5345047254,
+      5353457383,
+      5353685501,
+      5354716440
+    ],
+    "learning": "A docs PR adding new PR-description requirements took four review rounds, each finding the same shape: a sentence enumerating \"Four guide requirements\" as a complete set while the same diff added three more; a convention stated in both ARCHITECTURE.md and module-structure.md updated in only one; a skill loader restating the enumeration the guide owns; and an example (`siwe`) contradicting the condition its own sentence stated. Each was fixed by single-sourcing — the owning guide holds the list, others point at it, and the set is declared open. A doc that enumerates or restates what another doc owns has two copies to keep in step, and the copy that goes stale is the one the next reader trusts.",
+    "ruleIds": [
+      "PR-02"
+    ],
+    "sourceWindowId": "CLOSED-20260814-20260821"
+  },
+  {
+    "id": "RL-20260818-001",
+    "title": "Fail-open sync justified a manual re-run hatch; dropping the hatch meant failing loudly instead",
+    "prNumbers": [
+      3357
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3805022811,
+      3805076115,
+      3805087186
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A release-sync workflow was `continue-on-error` and carried a `workflow_dispatch` trigger as the recovery hatch for it — if the sync silently skipped, you re-ran it by hand. Review asked why the manual trigger existed and then said to drop it; the author dropped it and flipped the sync to fail loudly in the same change, because without the hatch a fail-open sync loses releases with no way to recover. Removing the manual path also removed its inputs, their validation, and the release lookups (96 to 68 lines). Fail-open plus a manual recovery path is two mechanisms doing one job: prefer failing loudly when the automation cannot block anything downstream, and if you keep fail-open, the recovery path is what justifies it — remove one and you have to revisit the other.",
+    "ruleIds": [
+      "RESILIENCE-01",
+      "PR-01"
+    ],
+    "sourceWindowId": "CLOSED-20260814-20260821"
+  },
+  {
+    "id": "RL-20260819-001",
+    "title": "Cached getter returned the configuration array by reference",
+    "prNumbers": [
+      3345
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5281528909,
+      5339889359
+    ],
+    "learning": "A manager stored the fiat-code array from `getOrThrow` and returned that same reference on every call. Production was safe only incidentally — the repository re-parsed through a Zod array, which allocates a new array — so a future caller consuming the `Raw<T>` directly could have scribbled on live configuration. Copy on the way out (or on the way in). A value read once from configuration and handed to callers repeatedly is shared mutable state unless something downstream happens to copy it, and relying on that downstream accident is not a boundary.",
+    "ruleIds": [
+      "TYPE-06"
+    ],
+    "sourceWindowId": "CLOSED-20260814-20260821"
+  },
+  {
+    "id": "RL-20260819-002",
+    "title": "Event-ordering guard read before the lock, so a slow re-fetch could overwrite a newer event",
+    "prNumbers": [
+      3327
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3796662122,
+      3797068909,
+      3803271106
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A billing webhook sync guarded against out-of-order delivery by comparing the incoming event's timestamp with the stored one, but read the stored value before the upstream re-fetch and outside the lock, and the ordering check was gated on the payload not being authoritative. A slow re-fetch could therefore land after a newer `deleted` had already been materialized, write the space back to active, and leave the stored stamp at the newer value so nothing downstream could detect the regression. Review asked for the pre-fetch value to be passed into the critical section and re-checked inside the lock. A staleness guard read outside the lock it protects is not a guard — carry the observed value in and re-compare under the lock.",
+    "ruleIds": [
+      "DB-02"
+    ],
+    "sourceWindowId": "CLOSED-20260814-20260821"
   }
 ]
