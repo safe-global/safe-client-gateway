@@ -17,11 +17,20 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PolicyIndexerPolicyKind,
+  PolicyIndexerSafeAllowance,
+  PolicyIndexerSafePolicy,
+} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  GUARD_POLICY_TYPES,
+  GuardPolicyMapper,
+  guardPolicyKindsOf,
+} from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -41,6 +50,14 @@ type SpacePolicyRequest = {
   /** The policy types to report. Required: naming none asks for nothing. */
   types: ReadonlyArray<PolicyType>;
   authPayload: AuthPayload;
+};
+
+/**
+ * What the Safe itself has switched on - see {@link PoliciesService.enforcers}.
+ */
+type Enforcers = {
+  enabledModules: ReadonlyArray<Address>;
+  transactionGuard: Address | null;
 };
 
 @Injectable()
@@ -72,6 +89,7 @@ export class PoliciesService {
     private readonly spendingLimitMapper: SpendingLimitMapper,
     private readonly proposerMapper: ProposerMapper,
     private readonly pendingSpendingLimitMapper: PendingSpendingLimitMapper,
+    private readonly guardPolicyMapper: GuardPolicyMapper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
@@ -167,19 +185,30 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
     const proposersRequested = types.includes(PolicyType.Proposer);
+    const guardPoliciesRequested = GUARD_POLICY_TYPES.some((type) =>
+      types.includes(type),
+    );
 
     if (
       safes.length === 0 ||
-      !(spendingLimitsRequested || proposersRequested)
+      !(spendingLimitsRequested || guardPoliciesRequested || proposersRequested)
     ) {
       return [];
     }
 
-    const state = spendingLimitsRequested
-      ? await this.policyIndexerRepository.getState({ safes })
+    // One indexer read serves both halves - it answers with the allowance rows
+    // and the guard bindings alike - and so does the Safe read that follows it,
+    // for the modules and the guard slot that say which of them are enforced.
+    const guardPolicyKinds = guardPolicyKindsOf(types);
+    const indexerRequested = spendingLimitsRequested || guardPoliciesRequested;
+    const state = indexerRequested
+      ? await this.policyIndexerRepository.getState({
+          safes,
+          policyKinds: guardPolicyKinds,
+        })
       : null;
-    const enabledModulesPerSafe = spendingLimitsRequested
-      ? await this.enabledModulesPerSafe(safes)
+    const enforcersPerSafe = indexerRequested
+      ? await this.enforcersPerSafe(safes)
       : null;
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
@@ -188,19 +217,17 @@ export class PoliciesService {
     const policies: Array<ActivePolicy> = [];
 
     for (const [index, safe] of safes.entries()) {
-      if (state && enabledModulesPerSafe) {
-        const enabledModules = enabledModulesPerSafe[index];
+      // A Safe whose modules and guard could not be read is skipped.
+      const enforcers = enforcersPerSafe?.[index] ?? null;
 
-        // A Safe whose enabled modules could not be read is skipped.
-        if (enabledModules) {
-          policies.push(
-            ...this.spendingLimitMapper.map({
-              safe,
-              allowances: this.getAllowancesBySafe(state.allowances, safe),
-              enabledModules,
-            }),
-          );
-        }
+      if (state && enforcers && spendingLimitsRequested) {
+        policies.push(
+          ...this.spendingLimitMapper.map({
+            safe,
+            allowances: this.getAllowancesBySafe(state.allowances, safe),
+            enabledModules: enforcers.enabledModules,
+          }),
+        );
       }
 
       if (delegatesPerSafe) {
@@ -210,6 +237,20 @@ export class PoliciesService {
         if (delegates) {
           policies.push(...this.proposerMapper.map({ safe, delegates }));
         }
+      }
+
+      if (state && enforcers && guardPoliciesRequested) {
+        policies.push(
+          ...this.guardPolicyMapper.map({
+            safe,
+            policies: this.getPoliciesBySafe(
+              state.policies,
+              safe,
+              guardPolicyKinds,
+            ),
+            transactionGuard: enforcers.transactionGuard,
+          }),
+        );
       }
     }
 
@@ -357,18 +398,18 @@ export class PoliciesService {
   }
 
   /**
-   * The enabled modules of every Safe of {@link safes}, index-aligned with it.
+   * The {@link enforcers} of every Safe of {@link safes}, index-aligned with it.
    *
-   * Concurrency is capped at `policies.batchSize`. Unlike
-   * {@link delegatesPerSafe}, a Safe whose modules could not be read is
-   * reported as `null` rather than failing the whole request - the caller
-   * skips just that Safe's spending-limit policies instead.
+   * Concurrency is capped at `policies.batchSize`. A Safe whose modules and
+   * guard could not be read is reported as `null` rather than failing the
+   * whole request - the caller skips just that Safe's spending-limit and guard
+   * policies instead.
    */
-  private async enabledModulesPerSafe(
+  private async enforcersPerSafe(
     safes: ReadonlyArray<SafeRef>,
-  ): Promise<Array<ReadonlyArray<Address> | null>> {
+  ): Promise<Array<Enforcers | null>> {
     const settled = await batched(safes, this.batchSize, (safe) =>
-      this.enabledModules(safe),
+      this.enforcers(safe),
     );
 
     return settled.map((result, index) => {
@@ -388,19 +429,20 @@ export class PoliciesService {
   }
 
   /**
-   * The modules the Safe has enabled, which is what turns a configured
-   * module policy into an enforced one.
+   * What the Safe itself has switched on: the modules it has enabled and the
+   * guard it has set. Both are what turn a configured policy into an enforced
+   * one.
    *
    * Read from the Safe rather than the indexer: enablement lives in the Safe's
    * own storage, and CGW already serves it.
    */
-  private async enabledModules(safe: SafeRef): Promise<ReadonlyArray<Address>> {
-    const { modules } = await this.safeRepository.getSafe({
+  private async enforcers(safe: SafeRef): Promise<Enforcers> {
+    const { modules, guard } = await this.safeRepository.getSafe({
       chainId: safe.chainId,
       address: safe.address,
     });
 
-    return modules ?? [];
+    return { enabledModules: modules ?? [], transactionGuard: guard };
   }
 
   /**
@@ -417,6 +459,28 @@ export class PoliciesService {
       (allowance) =>
         allowance.chainId === safe.chainId &&
         isAddressEqual(allowance.safe, safe.address),
+    );
+  }
+
+  /**
+   * The guard bindings belonging to {@link safe} that {@link guardPolicyKinds}
+   * names.
+   *
+   * Scoped by Safe for the same reason as {@link getAllowancesBySafe}: one read
+   * covers every Safe of a request. Scoped by kind because the read is shared
+   * too - a cached slice was fetched for whatever kinds that caller asked for,
+   * so the narrowing the query already did is not something this can assume.
+   */
+  private getPoliciesBySafe(
+    policies: ReadonlyArray<PolicyIndexerSafePolicy>,
+    safe: SafeRef,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+  ): Array<PolicyIndexerSafePolicy> {
+    return policies.filter(
+      (policy) =>
+        policy.chainId === safe.chainId &&
+        isAddressEqual(policy.safe, safe.address) &&
+        guardPolicyKinds.includes(policy.kind),
     );
   }
 }

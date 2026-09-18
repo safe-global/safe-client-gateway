@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { PolicyIndexerPolicyKind } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 
 /**
@@ -12,6 +13,9 @@ type PolicyIndexerPairFilter = {
 export type PolicyIndexerVariables = {
   allowances: Array<PolicyIndexerPairFilter>;
   delegates: Array<PolicyIndexerPairFilter>;
+  policies: Array<PolicyIndexerPairFilter>;
+  /** The guard-policy kinds the caller reports, as `SafePolicy.kind` holds them. */
+  policyKinds: Array<PolicyIndexerPolicyKind>;
 };
 
 /**
@@ -20,6 +24,8 @@ export type PolicyIndexerVariables = {
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
+  $policies: [SafePolicy_bool_exp!]!
+  $policyKinds: [String!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
   SafeAllowance(
@@ -35,6 +41,12 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   ) {
     chainId safe module moduleVersion delegate active addedAt updatedAt
   }
+  SafePolicy(
+    where: { _or: $policies, active: { _eq: true }, kind: { _in: $policyKinds } }
+    order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
+  ) {
+    chainId safe guard target selector operation kind policy active isFallback state
+  }
 }`;
 
 /**
@@ -42,6 +54,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
  */
 export function toPolicyIndexerVariables(
   safes: ReadonlyArray<SafeRef>,
+  policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
 ): PolicyIndexerVariables {
   const safesPerChain = new Map<string, Array<string>>();
 
@@ -58,6 +71,13 @@ export function toPolicyIndexerVariables(
     safe: { _in: addresses },
   }));
 
-  // The same groups for both, since the pairs are the same set.
-  return { allowances: groups, delegates: groups };
+  // The same groups for each, since the pairs are the same set. `policyKinds`
+  // narrows the bindings on top of them: a request reporting no guard policy
+  // reads none, rather than paying for rows nothing renders.
+  return {
+    allowances: groups,
+    delegates: groups,
+    policies: groups,
+    policyKinds: [...policyKinds],
+  };
 }
