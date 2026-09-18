@@ -65,14 +65,17 @@
     "project": "general",
     "area": "scope",
     "title": "New abstractions justified",
-    "rule": "New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable.",
+    "rule": "New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Bind config in dynamic modules so one service can be reused. Do not merge superficially similar security guards — coupling two security paths is worse than duplication.",
     "check": "Can I justify every new abstraction or file?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/scope-and-pr-hygiene.md#pr-01-a-required-parameter-is-not-an-enforcement-mechanism"
+    ],
     "reviewLearningIds": [
       "RL-20260626-003",
       "RL-20260706-001",
       "RL-20260818-001",
-      "RL-20260826-001"
+      "RL-20260826-001",
+      "RL-20260707-001"
     ]
   },
   {
@@ -117,25 +120,13 @@
     "project": "general",
     "area": "modules",
     "title": "Persistence behind repositories",
-    "rule": "Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters. The boundary cuts both ways: repositories do not own business-rule gating — lifecycle checks such as \"only INVITED can be renewed\" live in the service layer. \"Pre-existing\" covers a mechanical pattern you merely touch, not an architectural boundary your change adds new cases to — adding through a known gap deepens it.",
+    "rule": "Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters. The boundary cuts both ways: repositories do not own business-rule gating — lifecycle checks such as \"only INVITED can be renewed\" live in the service layer. \"Pre-existing\" covers a mechanical pattern you merely touch, not an architectural boundary your change adds new cases to — adding through a known gap deepens it. Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation and fallbacks.",
     "check": "Are persistence workflows hidden behind repositories, and do business-rule/status checks stay in services?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260529-001",
       "RL-20260605-001",
       "RL-20260911-002"
-    ]
-  },
-  {
-    "id": "MOD-03",
-    "project": "general",
-    "area": "modules",
-    "title": "No single-use DI abstractions",
-    "rule": "Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Do not merge superficially similar security guards — coupling two security paths is worse than duplication.",
-    "check": "Did I avoid single-use DI abstractions?",
-    "exampleRefs": [],
-    "reviewLearningIds": [
-      "RL-20260707-001"
     ]
   },
   {
@@ -165,16 +156,6 @@
     "reviewLearningIds": [
       "RL-20260529-002"
     ]
-  },
-  {
-    "id": "MOD-06",
-    "project": "general",
-    "area": "modules",
-    "title": "Route services behind repositories",
-    "rule": "Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation/fallbacks. Validate inputs at the controller, not the service.",
-    "check": "Do route services stay behind repository boundaries?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
   },
   {
     "id": "NAME-01",
@@ -471,7 +452,9 @@
     "title": "Atomic state transitions",
     "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.",
     "check": "Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/database-migrations.md#db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one"
+    ],
     "reviewLearningIds": [
       "RL-20260602-002",
       "RL-20260605-002",
@@ -662,7 +645,7 @@
     "project": "general",
     "area": "tests",
     "title": "Use builders and fakes",
-    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast.",
+    "rule": "Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast. Do not mock internal query-builder chains or other implementation details.",
     "check": "Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?",
     "exampleRefs": [
       "examples/testing.md#test-01-use-a-builder-for-repeated-entity-fixtures",
@@ -695,16 +678,6 @@
       "RL-20260529-004",
       "RL-20260810-002"
     ]
-  },
-  {
-    "id": "TEST-03",
-    "project": "general",
-    "area": "tests",
-    "title": "No internal mock chains",
-    "rule": "Do not mock internal query-builder chains or implementation details.",
-    "check": "Did I avoid mocking internal query-builder chains?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
   },
   {
     "id": "TEST-04",
@@ -769,7 +742,9 @@
     "title": "Test names match assertions",
     "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why.",
     "check": "Do test names, fixtures, and generated data match the assertions and the domain semantics?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection"
+    ],
     "reviewLearningIds": [
       "RL-20260602-005",
       "RL-20260615-002",
@@ -805,7 +780,7 @@
     "project": "general",
     "area": "logging",
     "title": "Operational log levels",
-    "rule": "Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode.",
+    "rule": "Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode. Volume decides level as much as actionability: hot worker events and expected success paths are not noisy logs, anything emitted once per queue/AMQP event is `debug`, and new telemetry must be worth its operational cost.",
     "check": "Are log levels operationally appropriate?",
     "exampleRefs": [
       "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default"
@@ -813,30 +788,9 @@
     "reviewLearningIds": [
       "RL-20260121-001",
       "RL-20260114-002",
-      "RL-20260723-003"
-    ]
-  },
-  {
-    "id": "LOG-02",
-    "project": "general",
-    "area": "logging",
-    "title": "No noisy success logs",
-    "rule": "Hot worker events and expected success paths are not noisy logs. Logs emitted once per queue/AMQP event are `debug`.",
-    "check": "Did I avoid noisy success logs?",
-    "exampleRefs": [],
-    "reviewLearningIds": [
+      "RL-20260723-003",
       "RL-20260710-001"
     ]
-  },
-  {
-    "id": "LOG-03",
-    "project": "general",
-    "area": "logging",
-    "title": "Telemetry cost-justified",
-    "rule": "New telemetry must be worth its operational cost.",
-    "check": "Is any new telemetry worth its operational cost?",
-    "exampleRefs": [],
-    "reviewLearningIds": []
   },
   {
     "id": "LOG-04",

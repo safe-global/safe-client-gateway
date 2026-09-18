@@ -1983,7 +1983,7 @@
     ],
     "learning": "A cache-invalidation handler logged at `info` on every transaction event; review pointed out the AMQP event volume would flood Datadog and it moved to `debug`. Logs emitted once per queue event are `debug` — reserve `info` for low-frequency lifecycle signals. Recurred in #3327: every processed billing webhook logged at `info`, and because the upstream forwards the provider's whole catalog, the ignore paths fired for every unrelated `invoice.*`/`charge.*`/`payment_intent.*` event. Those moved to `debug`; the once-per-materialization line stayed `info`. The test is event volume, not whether the line is interesting.",
     "ruleIds": [
-      "LOG-02"
+      "LOG-01"
     ]
   },
   {
@@ -2157,7 +2157,7 @@
     "issueCommentIds": [],
     "learning": "A review asked a webhook guard to inject an interface like `AuthGuard` does; the author kept the concrete `BillingAuthService` — it only verifies JWTs, has no data access, has exactly one plausible implementation, and `CaptchaGuard` sets the precedent. A suggestion to merge it into the generic `AuthGuard` was also declined: the similarity was superficial and merging couples two security paths. In the same window, `KmsService` DID gain an `IKmsService` interface — justified because a disabled-mode no-op implementation replaced a `client: undefined` construct-anyway workaround. Interfaces earn their place with a real second implementation or boundary, not by convention.",
     "ruleIds": [
-      "MOD-03"
+      "PR-01"
     ]
   },
   {

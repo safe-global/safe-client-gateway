@@ -87,3 +87,40 @@ feed dashboards or routing rules that nobody re-reviews. A copy-paste from
 a different template is invisible in the diff context but rewrites who
 owns the outreach. Reading every metadata column in a migration against
 the previous run is cheap; recovering attribution after a release is not.
+
+## DB-02 — Reverse the record the charge wrote, not a freshly resolved one
+
+Source: PR #3437 (RL-20260917-001)
+
+### Avoid
+
+The compensating path resolves the target again, so anything that moved in
+between is charged one place and credited another:
+
+```ts
+await this.consumeQuota({ spaceId, featureKey, delta })
+try {
+  await this.provider.submit(payload)
+} catch {
+  // resolves the grant again — may now be a different period
+  await this.refundQuota({ spaceId, featureKey, delta })
+}
+```
+
+### Prefer
+
+```ts
+const consumed = await this.consumeQuota({ spaceId, featureKey, delta })
+try {
+  await this.provider.submit(payload)
+} catch {
+  await this.refundQuota(consumed) // { spaceId, period, delta }
+}
+```
+
+### Why
+
+A webhook advancing the billing period mid-flight left period A charged and
+period B credited to −1, so a quota of one permitted two further submissions.
+A compensating action must carry forward the identity of what it undoes; any
+value it re-derives is a value that can have changed since.

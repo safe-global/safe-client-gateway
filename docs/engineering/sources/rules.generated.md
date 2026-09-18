@@ -14,10 +14,8 @@
 | [`PR-02`](#pr-02) | Docs aligned with behavior | general / scope |
 | [`MOD-01`](#mod-01) | Behavior in the right module | general / modules |
 | [`MOD-02`](#mod-02) | Persistence behind repositories | general / modules |
-| [`MOD-03`](#mod-03) | No single-use DI abstractions | general / modules |
 | [`MOD-04`](#mod-04) | No private behavior leaks | general / modules |
 | [`MOD-05`](#mod-05) | No new forwardRef cycles | general / modules |
-| [`MOD-06`](#mod-06) | Route services behind repositories | general / modules |
 | [`NAME-01`](#name-01) | Names reveal behavior | general / naming |
 | [`REUSE-01`](#reuse-01) | Reuse existing helpers | general / naming |
 | [`STYLE-01`](#style-01) | Document non-trivial code | general / naming |
@@ -50,7 +48,6 @@
 | [`PERF-01`](#perf-01) | Batch and parallelize I/O | general / performance |
 | [`TEST-01`](#test-01) | Use builders and fakes | general / tests |
 | [`TEST-02`](#test-02) | Right test layer (pyramid) | general / tests |
-| [`TEST-03`](#test-03) | No internal mock chains | general / tests |
 | [`TEST-04`](#test-04) | Cover security paths | general / tests |
 | [`TEST-05`](#test-05) | Scoped test cleanup | general / tests |
 | [`TEST-06`](#test-06) | Fixtures fail loudly | general / tests |
@@ -58,8 +55,6 @@
 | [`TEST-08`](#test-08) | Test names match assertions | general / tests |
 | [`TEST-09`](#test-09) | Cover edges and determinism | general / tests |
 | [`LOG-01`](#log-01) | Operational log levels | general / logging |
-| [`LOG-02`](#log-02) | No noisy success logs | general / logging |
-| [`LOG-03`](#log-03) | Telemetry cost-justified | general / logging |
 | [`LOG-04`](#log-04) | Structured logs and asError | general / logging |
 | [`SEC-01`](#sec-01) | Validate redirect targets | general / security |
 | [`SEC-02`](#sec-02) | Bounded sensitive fields | general / security |
@@ -233,13 +228,61 @@ deleted with a clean PR that only touches the loader.
 <a id="pr-01"></a>
 ### `PR-01` New abstractions justified
 
-> **general** · scope · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001`
+> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001`
 
 **📜 Rule**\
-New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable.
+New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Bind config in dynamic modules so one service can be reused. Do not merge superficially similar security guards — coupling two security paths is worse than duplication.
 
 **✅ Check**\
 > Can I justify every new abstraction or file?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/scope-and-pr-hygiene.md</code> § <em>pr-01-a-required-parameter-is-not-an-enforcement-mechanism</em></summary>
+
+<br>
+
+**PR-01 — A required parameter is not an enforcement mechanism**
+
+Source: PR #3390 (RL-20260826-001)
+
+### Avoid
+
+Threading a callback through a repository so callers "cannot forget" the check:
+
+```ts
+await this.repository.create({
+  spaceId,
+  payload,
+  assertSeats: (used) => quota.assert(used), // required, so it cannot be skipped
+})
+```
+
+### Prefer
+
+Leave the signature plain, and prove the rule with a test through the real
+stack:
+
+```ts
+it('rejects a create that would exceed the quota', async () => {
+  await seedToQuota(spaceId)
+
+  await request(app.getHttpServer()).post(`/v1/spaces/${spaceId}/items`).send(payload).expect(402)
+  await expect(countRows(spaceId)).resolves.toBe(QUOTA)
+})
+```
+
+### Why
+
+The required parameter forces a caller to pass something, not the right thing —
+the spec in that very repo already passed `noSeatLimit = () => {}` and compiled.
+Forgetting the check and passing a wrong rule then fail identically, so the
+signature bought nothing while adding a callback to a repository interface. When
+the argument for an abstraction is that it prevents a mistake, ask which test
+catches the mistake and write that instead.
+
+<sub>Source: <a href="examples/scope-and-pr-hygiene.md#pr-01-a-required-parameter-is-not-an-enforcement-mechanism">examples/scope-and-pr-hygiene.md#pr-01-a-required-parameter-is-not-an-enforcement-mechanism</a></sub>
+
+</details>
 
 ---
 
@@ -277,23 +320,10 @@ New API/product behavior belongs in the matching module shape; do not bolt route
 > **general** · modules · ↩ `RL-20260529-001` · `RL-20260605-001` · `RL-20260911-002`
 
 **📜 Rule**\
-Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters. The boundary cuts both ways: repositories do not own business-rule gating — lifecycle checks such as "only INVITED can be renewed" live in the service layer. "Pre-existing" covers a mechanical pattern you merely touch, not an architectural boundary your change adds new cases to — adding through a known gap deepens it.
+Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters. The boundary cuts both ways: repositories do not own business-rule gating — lifecycle checks such as "only INVITED can be renewed" live in the service layer. "Pre-existing" covers a mechanical pattern you merely touch, not an architectural boundary your change adds new cases to — adding through a known gap deepens it. Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation and fallbacks.
 
 **✅ Check**\
 > Are persistence workflows hidden behind repositories, and do business-rule/status checks stay in services?
-
----
-
-<a id="mod-03"></a>
-### `MOD-03` No single-use DI abstractions
-
-> **general** · modules · ↩ `RL-20260707-001`
-
-**📜 Rule**\
-Do not create an interface, provider, factory, or injection token for a single-use implementation detail unless there is a real boundary, lifecycle, or testability reason; bind config in dynamic modules so the same service can be reused. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Do not merge superficially similar security guards — coupling two security paths is worse than duplication.
-
-**✅ Check**\
-> Did I avoid single-use DI abstractions?
 
 ---
 
@@ -414,19 +444,6 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 
 **✅ Check**\
 > Did I avoid adding or expanding `forwardRef` cycles, including not adding `forwardRef` where no circular dependency exists?
-
----
-
-<a id="mod-06"></a>
-### `MOD-06` Route services behind repositories
-
-> **general** · modules
-
-**📜 Rule**\
-Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation/fallbacks. Validate inputs at the controller, not the service.
-
-**✅ Check**\
-> Do route services stay behind repository boundaries?
 
 ---
 
@@ -1716,13 +1733,59 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001`
+> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001`
 
 **📜 Rule**\
 Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.
 
 **✅ Check**\
 > Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/database-migrations.md</code> § <em>db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one</em></summary>
+
+<br>
+
+**DB-02 — Reverse the record the charge wrote, not a freshly resolved one**
+
+Source: PR #3437 (RL-20260917-001)
+
+### Avoid
+
+The compensating path resolves the target again, so anything that moved in
+between is charged one place and credited another:
+
+```ts
+await this.consumeQuota({ spaceId, featureKey, delta })
+try {
+  await this.provider.submit(payload)
+} catch {
+  // resolves the grant again — may now be a different period
+  await this.refundQuota({ spaceId, featureKey, delta })
+}
+```
+
+### Prefer
+
+```ts
+const consumed = await this.consumeQuota({ spaceId, featureKey, delta })
+try {
+  await this.provider.submit(payload)
+} catch {
+  await this.refundQuota(consumed) // { spaceId, period, delta }
+}
+```
+
+### Why
+
+A webhook advancing the billing period mid-flight left period A charged and
+period B credited to −1, so a quota of one permitted two further submissions.
+A compensating action must carry forward the identity of what it undoes; any
+value it re-derives is a value that can have changed since.
+
+<sub>Source: <a href="examples/database-migrations.md#db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one">examples/database-migrations.md#db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one</a></sub>
+
+</details>
 
 ---
 
@@ -2480,7 +2543,7 @@ independent I/O concurrent and fails fast on the first rejection.
 > **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009`
 
 **📜 Rule**\
-Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast.
+Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast. Do not mock internal query-builder chains or other implementation details.
 
 **✅ Check**\
 > Did I use builders, fakes, and existing test helpers, and build a fresh builder per case rather than reusing a mutated one?
@@ -2628,19 +2691,6 @@ runs can stay fast and integration runs stay reproducible.
 <sub>Source: <a href="examples/testing.md#test-02-suffix-matches-the-test-layer">examples/testing.md#test-02-suffix-matches-the-test-layer</a></sub>
 
 </details>
-
----
-
-<a id="test-03"></a>
-### `TEST-03` No internal mock chains
-
-> **general** · tests
-
-**📜 Rule**\
-Do not mock internal query-builder chains or implementation details.
-
-**✅ Check**\
-> Did I avoid mocking internal query-builder chains?
 
 ---
 
@@ -2795,13 +2845,58 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001`
+> **general** · tests · 1 example · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001`
 
 **📜 Rule**\
 Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</em></summary>
+
+<br>
+
+**TEST-08 — Assert a negative invariant negatively, over the whole collection**
+
+Source: PR #3334 (RL-20260812-001)
+
+### Avoid
+
+A test titled on an absence that asserts some other value at index 0:
+
+```ts
+it('should not return INCOMPATIBLE_SAFE for a supported entity', async () => {
+  const result = await service.analyse(request)
+
+  expect(result[address]?.GROUP?.[0]?.type).toBe('MISSING_OWNERSHIP')
+})
+```
+
+### Prefer
+
+```ts
+it('should not return INCOMPATIBLE_SAFE for a supported entity', async () => {
+  const result = await service.analyse(request)
+
+  expect(result[address]?.GROUP?.map((issue) => issue.type) ?? []).not.toContain(
+    'INCOMPATIBLE_SAFE',
+  )
+})
+```
+
+### Why
+
+The first form passes if a regression makes both codes coexist, or reorders
+them — the titled invariant rots while the suite stays green. Asserting the
+absence over the whole collection tests what the title claims. When the setup
+is contrived to also produce a positive outcome, assert that separately rather
+than letting it stand in for the negative.
+
+<sub>Source: <a href="examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection">examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</a></sub>
+
+</details>
 
 ---
 
@@ -2867,10 +2962,10 @@ noise.
 <a id="log-01"></a>
 ### `LOG-01` Operational log levels
 
-> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003`
+> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001`
 
 **📜 Rule**\
-Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode.
+Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode. Volume decides level as much as actionability: hot worker events and expected success paths are not noisy logs, anything emitted once per queue/AMQP event is `debug`, and new telemetry must be worth its operational cost.
 
 **✅ Check**\
 > Are log levels operationally appropriate?
@@ -2929,32 +3024,6 @@ unknown case at the boundary they own.
 <sub>Source: <a href="examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default">examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default</a></sub>
 
 </details>
-
----
-
-<a id="log-02"></a>
-### `LOG-02` No noisy success logs
-
-> **general** · logging · ↩ `RL-20260710-001`
-
-**📜 Rule**\
-Hot worker events and expected success paths are not noisy logs. Logs emitted once per queue/AMQP event are `debug`.
-
-**✅ Check**\
-> Did I avoid noisy success logs?
-
----
-
-<a id="log-03"></a>
-### `LOG-03` Telemetry cost-justified
-
-> **general** · logging
-
-**📜 Rule**\
-New telemetry must be worth its operational cost.
-
-**✅ Check**\
-> Is any new telemetry worth its operational cost?
 
 ---
 

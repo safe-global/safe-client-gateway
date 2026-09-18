@@ -47,3 +47,42 @@ commit when the regression is actually in the bundled cleanup. Even
 a one-line drive-by costs more in review attention than a follow-up
 PR costs in process — especially when the cleanup itself deserves a
 focused review of why the test was flaky to begin with.
+
+## PR-01 — A required parameter is not an enforcement mechanism
+
+Source: PR #3390 (RL-20260826-001)
+
+### Avoid
+
+Threading a callback through a repository so callers "cannot forget" the check:
+
+```ts
+await this.repository.create({
+  spaceId,
+  payload,
+  assertSeats: (used) => quota.assert(used), // required, so it cannot be skipped
+})
+```
+
+### Prefer
+
+Leave the signature plain, and prove the rule with a test through the real
+stack:
+
+```ts
+it('rejects a create that would exceed the quota', async () => {
+  await seedToQuota(spaceId)
+
+  await request(app.getHttpServer()).post(`/v1/spaces/${spaceId}/items`).send(payload).expect(402)
+  await expect(countRows(spaceId)).resolves.toBe(QUOTA)
+})
+```
+
+### Why
+
+The required parameter forces a caller to pass something, not the right thing —
+the spec in that very repo already passed `noSeatLimit = () => {}` and compiled.
+Forgetting the check and passing a wrong rule then fail identically, so the
+signature bought nothing while adding a callback to a repository interface. When
+the argument for an abstraction is that it prevents a mistake, ask which test
+catches the mistake and write that instead.

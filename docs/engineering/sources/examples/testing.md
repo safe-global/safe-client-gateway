@@ -225,3 +225,39 @@ fetchClientMock.mockResolvedValueOnce({
 the mock stops resembling what the datasource actually receives and any later
 shape change goes unnoticed. `rawify()` is the repo's helper for exactly this
 wrapping and keeps the fixture type-checked against the real response type.
+
+## TEST-08 — Assert a negative invariant negatively, over the whole collection
+
+Source: PR #3334 (RL-20260812-001)
+
+### Avoid
+
+A test titled on an absence that asserts some other value at index 0:
+
+```ts
+it('should not return INCOMPATIBLE_SAFE for a supported entity', async () => {
+  const result = await service.analyse(request)
+
+  expect(result[address]?.GROUP?.[0]?.type).toBe('MISSING_OWNERSHIP')
+})
+```
+
+### Prefer
+
+```ts
+it('should not return INCOMPATIBLE_SAFE for a supported entity', async () => {
+  const result = await service.analyse(request)
+
+  expect(result[address]?.GROUP?.map((issue) => issue.type) ?? []).not.toContain(
+    'INCOMPATIBLE_SAFE',
+  )
+})
+```
+
+### Why
+
+The first form passes if a regression makes both codes coexist, or reorders
+them — the titled invariant rots while the suite stays green. Asserting the
+absence over the whole collection tests what the title claims. When the setup
+is contrived to also produce a positive outcome, assert that separately rather
+than letting it stand in for the negative.
