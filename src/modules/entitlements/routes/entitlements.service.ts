@@ -119,7 +119,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
       safe_seats: configurationService.getOrThrow<number>(
         'spaces.maxSafesPerSpace',
       ),
-      // Binary, not metered — unlimited until enforcement decides for real.
+      // NULL: no static limit predates this feature, so the date protects
+      // no behaviour here and the plan decides from the start.
       copilot_scans: null,
       // NULL: nothing has ever been relayed at a workspace's expense, so the
       // date protects no behaviour here and the plan decides from the start.
