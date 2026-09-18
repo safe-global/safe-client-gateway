@@ -124,7 +124,7 @@ const SEARCH_STOPWORDS = new Set([
 
 // Scores each learning by how many query terms it contains; title hits count
 // twice so a topic match outranks an incidental mention in the body.
-function searchLearnings(learnings, query, limit) {
+function searchTerms(query) {
   const terms = [
     ...new Set(
       String(query)
@@ -136,11 +136,41 @@ function searchLearnings(learnings, query, limit) {
   if (terms.length === 0) {
     throw new Error('--search needs at least one term longer than two characters')
   }
+  return terms
+}
+
+function searchLearnings(learnings, query, limit) {
+  const terms = searchTerms(query)
 
   return learnings
     .map((item) => {
       const title = String(item.title || '').toLowerCase()
       const body = `${title} ${String(item.learning || '').toLowerCase()} ${asArray(item.ruleIds).join(' ').toLowerCase()}`
+      let score = 0
+      for (const term of terms) {
+        if (body.includes(term)) {
+          score += 1
+        }
+        if (title.includes(term)) {
+          score += 1
+        }
+      }
+      return { item, score }
+    })
+    .filter((row) => row.score > 0)
+    .sort((a, b) => b.score - a.score || a.item.id.localeCompare(b.item.id))
+    .slice(0, limit)
+}
+
+// Same scoring over rules. A learning almost always belongs on a rule that
+// already exists; this is what makes that checkable before adding one.
+function searchRules(rules, query, limit) {
+  const terms = searchTerms(query)
+
+  return rules
+    .map((item) => {
+      const title = `${item.id} ${item.title}`.toLowerCase()
+      const body = `${title} ${String(item.rule || '').toLowerCase()} ${String(item.check || '').toLowerCase()}`
       let score = 0
       for (const term of terms) {
         if (body.includes(term)) {
@@ -202,8 +232,29 @@ function main() {
   const repo = detectRepo(resolvedRoot)
 
   if (search) {
+    console.log(`# Matching: ${search}`)
+    console.log('')
+
+    const ruleMatches = searchRules(rules, search, limit)
+    console.log('## Rules')
+    console.log('')
+    if (ruleMatches.length === 0) {
+      console.log('No existing rule matches these terms. Adding one may be justified — state why in the run summary.')
+    } else {
+      console.log('Confirm the closest rule (map the learning, leave the text alone) or advance it (tighten `rule`/`check`).')
+      console.log('Add a new rule only if none of these can honestly cover the learning.')
+      console.log('')
+      for (const { item, score } of ruleMatches) {
+        console.log(`### ${item.id} ${item.title} (match score ${score}, ${asArray(item.reviewLearningIds).length} learning(s))`)
+        console.log('')
+        console.log(`- Rule: ${item.rule}`)
+        console.log(`- Check: ${item.check}`)
+        console.log('')
+      }
+    }
+
     const matches = searchLearnings(learnings, search, limit)
-    console.log(`# Review learnings matching: ${search}`)
+    console.log('## Review learnings')
     console.log('')
     if (matches.length === 0) {
       console.log('No existing learning matches these terms. A new RL-* object is justified.')

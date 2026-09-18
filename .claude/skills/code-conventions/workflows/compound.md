@@ -27,6 +27,10 @@ after the currently covered range.
 - **Never create a new `RL-*` without searching the store first.** Unchecked,
   this is the failure that makes `review-learnings.json` and `rules.json` grow
   without bound. See Distill step 4.
+- **A rule is confirmed or advanced, not duplicated.** Adding a rule is the
+  last resort, not the default — most learnings land on a rule that already
+  exists, and the accumulated `reviewLearningIds` are what make a rule worth
+  trusting. See Distill step 7.
 - Never duplicate guidance. Tighten, merge, or add examples to existing
   sections when possible.
 - Keep `rules.json` finite. It should contain durable pre-PR checks, not every
@@ -130,7 +134,9 @@ For every reusable learning extracted from the fetched comments:
 2. Apply the schema-defined review-learning boundary and ID rules.
 3. Generalize it into a reusable engineering rule that applies beyond that
    exact PR/module.
-4. Search the existing store for the same lesson before writing anything:
+4. Search the existing store for the same lesson before writing anything. The
+   search returns matching rules first, then matching learnings — the two
+   decisions below both read off it:
 
    ```bash
    node .claude/skills/code-conventions/scripts/review-learning-lookup.js \
@@ -157,11 +163,25 @@ For every reusable learning extracted from the fetched comments:
      verify a human accepted it per the "Bot Acceptance" rules above. If
      acceptance cannot be confirmed, do not cite the bot comment, and do not
      create a learning whose only evidence is unaccepted bot feedback.
-7. Map the learning to an existing rule ID if possible. This is the default
-   target for every review learning.
-8. If the existing rule/check almost covers the learning, refine it. If no rule
-   covers it, create a general rule that would catch the same class of issue
-   before PR review. Keep the rule list short and encompassing.
+7. Decide what the learning does to a rule. There are exactly three outcomes,
+   and the first is the common one:
+
+   - **Confirm** — the rule already says it. Add the `RL-*` to that rule's
+     `reviewLearningIds` and change no text. A rule carrying several learnings
+     is a rule the repo keeps re-learning; that count is the signal, and
+     rewording it to look new destroys it.
+   - **Advance** — the rule nearly says it. Tighten `rule`/`check` with the
+     smallest clause that covers the new case, and map the learning. Do not
+     restate what the rule already carries.
+   - **Add** — no existing rule can honestly cover it. State in the run summary
+     which rules you considered and why each failed, and keep the new rule
+     general enough to catch the class rather than the instance.
+
+8. A near-duplicate rule is the failure this step exists to prevent. Two rules
+   whose `check` questions would both fire on the same diff are one rule; merge
+   them rather than letting a reviewer answer the same question twice. Keep the
+   rule list short and encompassing — it is a checklist someone runs before a
+   PR, not a catalogue of everything ever said in review.
 9. If any contributing comment includes a code diff or snippet, lift that
    shape into a generalized example in `examples/<topic>.md` (or
    `<project>/examples/<topic>.md` in monorepos) using the
