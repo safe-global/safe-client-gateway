@@ -89,9 +89,6 @@ describe('payment-link offer rules', () => {
     });
 
     it("should offer a sibling plan sharing the active one's catalog name but not its price", () => {
-      // Regression: plans of the same displayed tier (e.g. "Business" at
-      // different seat counts) must not hide one another — only the exact
-      // active price id is excluded.
       const planId = faker.string.alphanumeric(32);
       const activePlanId = faker.string.alphanumeric(32);
       const link = paymentLinkPricedAt(planId)
