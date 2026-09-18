@@ -136,25 +136,25 @@ describe('SubscriptionsRepository', () => {
   }
 
   // The status is what each case is about; the rest of the row is incidental.
-  // Returns the plan name written, so a case can assert what it reads back.
+  // Returns the plan id written, so a case can assert what it reads back.
   async function subscribe(
     spaceId: Space['id'],
     status: SubscriptionStatus,
-    planName: string | null = nameBuilder(),
-  ): Promise<string | null> {
+    planId: string = faker.string.uuid(),
+  ): Promise<string> {
     await subscriptionsRepository.upsertSubscription({
       spaceId,
       upstreamSubscriptionId: faker.string.uuid(),
       values: {
         status,
-        planId: faker.string.uuid(),
-        planName,
+        planId,
+        planName: nameBuilder(),
         currentPeriodStart: null,
         currentPeriodEnd: null,
         lastEventAt: null,
       },
     });
-    return planName;
+    return planId;
   }
 
   describe('getSubscriptionSummary', () => {
@@ -165,21 +165,21 @@ describe('SubscriptionsRepository', () => {
         subscriptionsRepository.getSubscriptionSummary(spaceId),
       ).resolves.toStrictEqual({
         hasEverSubscribed: false,
-        activePlanName: null,
+        activePlanId: null,
       });
     });
 
     it.each(['active', 'trialing'] as const)(
-      'should report the plan name of a %s subscription',
+      'should report the plan id of a %s subscription',
       async (status) => {
         const spaceId = await createSpace();
-        const planName = await subscribe(spaceId, status);
+        const planId = await subscribe(spaceId, status);
 
         await expect(
           subscriptionsRepository.getSubscriptionSummary(spaceId),
         ).resolves.toStrictEqual({
           hasEverSubscribed: true,
-          activePlanName: planName,
+          activePlanId: planId,
         });
       },
     );
@@ -204,33 +204,21 @@ describe('SubscriptionsRepository', () => {
           subscriptionsRepository.getSubscriptionSummary(spaceId),
         ).resolves.toStrictEqual({
           hasEverSubscribed: true,
-          activePlanName: null,
+          activePlanId: null,
         });
       },
     );
 
-    it('should report no plan name when the active subscription is untagged', async () => {
-      const spaceId = await createSpace();
-      await subscribe(spaceId, 'active', null);
-
-      await expect(
-        subscriptionsRepository.getSubscriptionSummary(spaceId),
-      ).resolves.toStrictEqual({
-        hasEverSubscribed: true,
-        activePlanName: null,
-      });
-    });
-
-    it('should keep the active plan name when a terminal row also exists', async () => {
+    it('should keep the active plan id when a terminal row also exists', async () => {
       const spaceId = await createSpace();
       await subscribe(spaceId, 'canceled');
-      const planName = await subscribe(spaceId, 'active');
+      const planId = await subscribe(spaceId, 'active');
 
       await expect(
         subscriptionsRepository.getSubscriptionSummary(spaceId),
       ).resolves.toStrictEqual({
         hasEverSubscribed: true,
-        activePlanName: planName,
+        activePlanId: planId,
       });
     });
 
@@ -245,7 +233,7 @@ describe('SubscriptionsRepository', () => {
         subscriptionsRepository.getSubscriptionSummary(spaceId),
       ).resolves.toStrictEqual({
         hasEverSubscribed: false,
-        activePlanName: null,
+        activePlanId: null,
       });
     });
   });

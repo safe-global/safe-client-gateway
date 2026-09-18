@@ -319,7 +319,7 @@ export class BillingService {
         startsAt: this.enforcementStartsAt,
       }),
       hasEverSubscribed: subscription.hasEverSubscribed,
-      activePlanName: subscription.activePlanName,
+      activePlanId: subscription.activePlanId,
     };
   }
 

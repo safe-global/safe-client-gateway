@@ -37,7 +37,6 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
 import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import { planNameOf } from '@/modules/billing/domain/payment-link-offer.rules';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
@@ -133,7 +132,7 @@ describe('BillingService', () => {
     spaceCreatedAt(AFTER_ENFORCEMENT);
     subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
       hasEverSubscribed: false,
-      activePlanName: null,
+      activePlanId: null,
     });
 
     service = new BillingService(
@@ -339,7 +338,7 @@ describe('BillingService', () => {
       // before to be offered; this test is about merge behaviour, not that.
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
-        activePlanName: null,
+        activePlanId: null,
       });
       billingRepositoryMock.listPaymentLinks.mockImplementation((args) =>
         Promise.resolve(args?.upstreamCustomerId ? [spaceLink] : [generalLink]),
@@ -504,7 +503,7 @@ describe('BillingService', () => {
       spaceCreatedAt(BEFORE_ENFORCEMENT);
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
-        activePlanName: null,
+        activePlanId: null,
       });
       mockCatalog([graceLink, paidLink]);
 
@@ -524,16 +523,14 @@ describe('BillingService', () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const activeSubscription = spaceSubscriptionBuilder().build();
-      const currentPlanLink = paymentLinkBuilder()
-        .with('metadata', { planName: activeSubscription.planName })
-        .build();
-      const otherPlanLink = paymentLinkBuilder()
-        .with('metadata', { planName: faker.commerce.productName() })
-        .build();
+      const currentPlanLink = paymentLinkPricedAt(
+        activeSubscription.planId,
+      ).build();
+      const otherPlanLink = paymentLinkPricedAt(faker.string.uuid()).build();
       membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
-        activePlanName: activeSubscription.planName,
+        activePlanId: activeSubscription.planId,
       });
       mockCatalog([currentPlanLink, otherPlanLink]);
 
@@ -579,7 +576,7 @@ describe('BillingService', () => {
       // A paid link needs the space to have subscribed before to be offered.
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
-        activePlanName: null,
+        activePlanId: null,
       });
       mockCatalog([paymentLink]);
       billingRepositoryMock.createCheckoutSession.mockResolvedValue(
@@ -728,7 +725,7 @@ describe('BillingService', () => {
     subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
       // A paid link is only offered to a space that has subscribed before.
       hasEverSubscribed: true,
-      activePlanName: null,
+      activePlanId: null,
     });
     mockCatalog([paymentLink]);
     billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
@@ -1108,15 +1105,15 @@ describe('BillingService', () => {
 
     it('should answer 409, not 403, when the plan in force is filtered out of the offer', async () => {
       const planId = faker.string.alphanumeric(32);
-      const { spaceId, spaceUuid, paymentLink, subscription } = subscribedSpace(
-        { planId },
-      );
+      const { spaceId, spaceUuid, subscription } = subscribedSpace({
+        planId,
+      });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       asMember();
       // `isOfferedToSpace` drops the link whose plan the space already holds.
       subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
         hasEverSubscribed: true,
-        activePlanName: planNameOf(paymentLink),
+        activePlanId: planId,
       });
       billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
         { ...subscription, plan: { ...subscription.plan, id: planId } },
