@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { HttpStatus, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { DataSource, type EntityManager, type ObjectLiteral } from 'typeorm';
+import { DataSource, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
@@ -43,7 +43,9 @@ import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscript
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 import { User } from '@/modules/users/datasources/entities/users.entity.db';
@@ -173,13 +175,6 @@ describe('EntitlementsService', () => {
     },
   } as unknown as ISpacesRepository;
 
-  const spaceSafesRepositoryStub = {
-    countBySpaceId: async (spaceId: number, entityManager?: EntityManager) =>
-      await (entityManager ?? dataSource.manager).count(SpaceSafe, {
-        where: { space: { id: spaceId } },
-      }),
-  } as unknown as ISpaceSafesRepository;
-
   const membersRepositoryStub = {
     findOne: async (where: Parameters<IMembersRepository['findOne']>[0]) =>
       await dataSource.getRepository(Member).findOne({ where }),
@@ -255,7 +250,11 @@ describe('EntitlementsService', () => {
         new SubscriptionEntitlementsRepository(postgresDatabaseService),
         new SpaceFeatureUsageRepository(postgresDatabaseService),
         spacesRepositoryStub,
-        spaceSafesRepositoryStub,
+        new SpaceSafesRepository(
+          postgresDatabaseService,
+          createMockSpaceAuditRepository(),
+          createMockSpaceEncryptionService(),
+        ),
         membersRepositoryStub,
         postgresDatabaseService,
         fakeCacheService,
@@ -1277,23 +1276,26 @@ describe('EntitlementsService', () => {
       ).rejects.toMatchObject({ response: { quota: 4, used: 8 } });
     });
 
-    it('rejects a space exactly at its limit, even asking for nothing', async () => {
+    it('admits a space exactly at its limit consuming nothing', async () => {
       const spaceId = await createSpace();
       await addSafes(spaceId, 4);
       await seatSubscription({ spaceId, quota: 4 });
 
-      // What a guard asks before the payload is parsed: room for one more?
+      // Adding a chain to a Safe it already holds takes no new seat.
       await expect(
         assertSeats(enforcingService, spaceId, 0),
+      ).resolves.toBeUndefined();
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
       ).rejects.toMatchObject({ response: { quota: 4, used: 4 } });
     });
 
-    it('grants nothing for a feature the plan switches off, asking for nothing', async () => {
+    it('grants nothing for a feature the plan switches off', async () => {
       const spaceId = await createSpace();
       await seatSubscription({ spaceId, quota: 20, enabled: false });
 
       await expect(
-        assertSeats(enforcingService, spaceId, 0),
+        assertSeats(enforcingService, spaceId, 1),
       ).rejects.toMatchObject({ response: { quota: 0, used: 0 } });
     });
 
@@ -1334,11 +1336,10 @@ describe('EntitlementsService', () => {
       const check = await enforcingService.prepareQuotaCheck({
         spaceId,
         featureKey: 'safe_seats',
-        delta: 1,
       });
 
       // Pure from here on: safe inside a caller's locked transaction.
-      expect(() => check(3)).not.toThrow();
+      expect(() => check({ used: 3, delta: 1 })).not.toThrow();
     });
 
     it('prepares a check that rejects the count the write measures', async () => {
@@ -1348,10 +1349,9 @@ describe('EntitlementsService', () => {
       const check = await enforcingService.prepareQuotaCheck({
         spaceId,
         featureKey: 'safe_seats',
-        delta: 2,
       });
 
-      expect(() => check(3)).toThrow(
+      expect(() => check({ used: 3, delta: 2 })).toThrow(
         expect.objectContaining({
           status: HttpStatus.PAYMENT_REQUIRED,
           response: expect.objectContaining({

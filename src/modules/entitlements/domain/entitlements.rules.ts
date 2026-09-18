@@ -65,9 +65,8 @@ export function predatesEnforcement(args: {
 
 /**
  * Whether an action consuming `delta` still fits the allowance. NULL quota is
- * unlimited. `delta: 0` is still an attempt to use the feature, so a workspace
- * at its limit does not fit: that is what a guard asks before the payload is
- * parsed.
+ * unlimited, and an action consuming nothing fits while the workspace is not
+ * over its limit: adding a chain to a Safe it already holds takes no new seat.
  */
 export function fitsWithinQuota(args: {
   quota: number | null;
@@ -78,7 +77,7 @@ export function fitsWithinQuota(args: {
   if (quota === null) {
     return true;
   }
-  return used < quota && used + delta <= quota;
+  return used + delta <= quota;
 }
 
 /**
