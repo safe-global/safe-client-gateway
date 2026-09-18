@@ -50,6 +50,8 @@ export const GtfFeeBreakdownSchema = z.object({
   totalUsd: z.number(),
   numberSignatures: z.number(),
   valuationDetails: z.array(GtfValuationDetailSchema),
+  // Optional: a fee service that predates the Safenet fee line omits it.
+  safenetFeeUsd: z.number().optional(),
 });
 
 export const GtfPricingContextSnapshotSchema = z.object({

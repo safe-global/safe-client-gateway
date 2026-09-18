@@ -60,6 +60,14 @@ export class FeePreviewTransactionDto
   })
   fiatCode?: string;
 
+  @ApiProperty({
+    description:
+      'Run a Safenet check on this transaction. Opt-in: defaults to false. Honoured only on chains with the SAFENET_CHECKS feature.',
+    example: true,
+    required: false,
+  })
+  safenetCheck?: boolean;
+
   constructor(dto: z.infer<typeof FeePreviewTransactionDtoSchema>) {
     this.to = dto.to;
     this.value = dto.value;
@@ -70,5 +78,6 @@ export class FeePreviewTransactionDto
     this.nonce = dto.nonce;
     this.origin = dto.origin;
     this.fiatCode = dto.fiatCode;
+    this.safenetCheck = dto.safenetCheck;
   }
 }
