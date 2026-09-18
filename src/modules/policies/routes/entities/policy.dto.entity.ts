@@ -1,11 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type {
-  ActivePolicy,
-  ActivePolicyData,
-  SpendingLimitAllowance,
-  SpendingLimitPolicyData,
+import {
+  type ActivePolicy,
+  type ActivePolicyData,
+  type CosignerPolicyData,
+  type Erc20TransferPolicyData,
+  type Erc20TransferRecipient,
+  PolicyPermission,
+  type SpendingLimitAllowance,
+  type SpendingLimitPolicyData,
+  type StatelessPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type {
   GuardSlots,
@@ -132,8 +137,61 @@ export class SpendingLimitPolicyDataDto implements SpendingLimitPolicyData {
   public readonly spenders!: SpendingLimitPolicyData['spenders'];
 }
 
+export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
+  @ApiProperty({ description: 'An address the Safe may send this token to' })
+  public readonly account!: Address;
+  @ApiProperty({
+    enum: Object.values(PolicyPermission),
+    description:
+      'ONCE is spent by the first matching transfer; ALWAYS applies to every one',
+  })
+  public readonly permission!: PolicyPermission;
+}
+
+export class Erc20TransferAllowlistEntryDto {
+  @ApiProperty({
+    description: 'The token the allowlist applies to; zero address for native',
+  })
+  public readonly token_address!: Address;
+  @ApiProperty({
+    type: Erc20TransferRecipientDto,
+    isArray: true,
+    description:
+      'Who the Safe may send this token to, accumulated across every configure call',
+  })
+  public readonly recipients!: Array<Erc20TransferRecipient>;
+}
+
+export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
+  @ApiProperty({ type: Erc20TransferAllowlistEntryDto, isArray: true })
+  public readonly allowlist!: Erc20TransferPolicyData['allowlist'];
+}
+
+export class CosignerPolicyDataDto implements CosignerPolicyData {
+  @ApiProperty({
+    description:
+      'The cosigner the policy requires. The whole payload of the event; the access it covers is the item id.',
+  })
+  public readonly cosigner_address!: Address;
+}
+
+/**
+ * Allow, deny and native transfer carry no configuration: which calls they cover
+ * is already in the item's `id` and `enforcement`.
+ */
+export class StatelessPolicyDataDto implements StatelessPolicyData {
+  // Mirrors `StatelessPolicyData`'s `Record<string, never>`: the payload carries
+  // no properties, and adding one here would have to be modelled there first.
+  [key: string]: never;
+}
+
 const PolicyDataSchema = {
-  oneOf: [{ $ref: getSchemaPath(SpendingLimitPolicyDataDto) }],
+  oneOf: [
+    { $ref: getSchemaPath(SpendingLimitPolicyDataDto) },
+    { $ref: getSchemaPath(Erc20TransferPolicyDataDto) },
+    { $ref: getSchemaPath(CosignerPolicyDataDto) },
+    { $ref: getSchemaPath(StatelessPolicyDataDto) },
+  ],
 };
 
 @ApiExtraModels(
@@ -141,6 +199,10 @@ const PolicyDataSchema = {
   GuardEnforcementDto,
   OffChainEnforcementDto,
   SpendingLimitPolicyDataDto,
+  Erc20TransferRecipientDto,
+  Erc20TransferPolicyDataDto,
+  CosignerPolicyDataDto,
+  StatelessPolicyDataDto,
 )
 export class ActivePolicyDto implements ActivePolicy {
   @ApiProperty({ enum: Object.values(PolicyType) })

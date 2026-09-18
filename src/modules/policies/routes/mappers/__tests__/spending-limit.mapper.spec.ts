@@ -2,7 +2,10 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
-import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import type {
+  ActivePolicy,
+  SpendingLimitPolicyData,
+} from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
@@ -42,6 +45,16 @@ describe('SpendingLimitMapper', () => {
     return target.map({ safe, allowances, enabledModules });
   }
 
+  /**
+   * The spending-limit payload of a policy.
+   *
+   * `ActivePolicyData` is a union once guard policies join it, and every policy
+   * this mapper builds is a spending limit.
+   */
+  function dataOf(policy: ActivePolicy): SpendingLimitPolicyData {
+    return policy.data as SpendingLimitPolicyData;
+  }
+
   describe('nesting the indexer rows into one policy per module', () => {
     it('should report one policy carrying every spender of the module', () => {
       const first = allowance().build();
@@ -53,7 +66,7 @@ describe('SpendingLimitMapper', () => {
 
       expect(policies).toHaveLength(1);
       expect(
-        policies[0].data.spenders.map((entry) => entry.spender),
+        dataOf(policies[0]).spenders.map((entry) => entry.spender),
       ).toStrictEqual([first.delegate, second.delegate]);
     });
 
@@ -67,9 +80,11 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([usdc, native]);
 
-      expect(policy.data.spenders).toHaveLength(1);
+      expect(dataOf(policy).spenders).toHaveLength(1);
       expect(
-        policy.data.spenders[0].allowances.map((entry) => entry.tokenAddress),
+        dataOf(policy).spenders[0].allowances.map(
+          (entry) => entry.tokenAddress,
+        ),
       ).toStrictEqual([usdc.token, zeroAddress]);
     });
 
@@ -109,7 +124,7 @@ describe('SpendingLimitMapper', () => {
 
       const policies = map([onV1, onV2], [allowanceModule, otherModule]);
 
-      expect(policies.map((policy) => policy.data.module)).toStrictEqual([
+      expect(policies.map((policy) => dataOf(policy).module)).toStrictEqual([
         allowanceModule,
         otherModule,
       ]);
@@ -149,8 +164,8 @@ describe('SpendingLimitMapper', () => {
     /** The single allowance of the single policy built from `rows`. */
     function onlyAllowance(
       rows: Array<PolicyIndexerSafeAllowance>,
-    ): ActivePolicy['data']['spenders'][number]['allowances'][number] {
-      return map(rows)[0].data.spenders[0].allowances[0];
+    ): SpendingLimitPolicyData['spenders'][number]['allowances'][number] {
+      return dataOf(map(rows)[0]).spenders[0].allowances[0];
     }
 
     afterEach(() => {
@@ -257,7 +272,7 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([revoked]);
 
-      expect(policy.data.spenders[0]).toMatchObject({
+      expect(dataOf(policy).spenders[0]).toMatchObject({
         spender: revoked.delegate,
         isActive: false,
       });
@@ -270,7 +285,7 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([revoked]);
 
-      expect(policy.data.spenders[0].allowances[0].isDelegateActive).toBe(
+      expect(dataOf(policy).spenders[0].allowances[0].isDelegateActive).toBe(
         false,
       );
     });
@@ -283,7 +298,7 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([large]);
 
-      expect(policy.data.spenders[0].allowances[0]).toMatchObject({
+      expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
         amount: huge,
         spent: '0',
       });
@@ -294,7 +309,7 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([native]);
 
-      expect(policy.data.spenders[0].allowances[0].tokenAddress).toBe(
+      expect(dataOf(policy).spenders[0].allowances[0].tokenAddress).toBe(
         zeroAddress,
       );
     });

@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
@@ -10,6 +11,7 @@ import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/ent
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -35,6 +37,13 @@ const mockMembersRepository = {
   findOne: vi.fn(),
 } as unknown as MockedObject<IMembersRepository>;
 
+const mockLoggingService = {
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 const SEPOLIA = '11155111';
 
 describe('PoliciesService', () => {
@@ -55,6 +64,7 @@ describe('PoliciesService', () => {
       mockSpaceSafesRepository,
       mockMembersRepository,
       new SpendingLimitMapper(),
+      new GuardPolicyMapper(mockLoggingService),
     );
 
     // authorised by default: active member, Safe in the space
