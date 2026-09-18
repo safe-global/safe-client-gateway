@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
-import {
-  GRACE_PERIOD_METADATA_KEY,
-  PLAN_NAME_METADATA_KEY,
-} from '@/modules/entitlements/domain/entitlements.constants';
+import { GRACE_PERIOD_METADATA_KEY } from '@/modules/entitlements/domain/entitlements.constants';
+import { parseSafeSeatQuota } from '@/modules/entitlements/domain/feature-package.mapper';
 
 /** What the offer filter needs to know about the workspace. */
 export type SpaceOfferEligibility = {
   createdBeforeEnforcement: boolean;
   hasEverSubscribed: boolean;
-  activePlanName: string | null;
+  activePlanId: string | null;
 };
 
 /**
@@ -29,10 +27,6 @@ export function gracePeriodOf(link: PaymentLink): boolean | null {
   return null;
 }
 
-export function planNameOf(link: PaymentLink): string | null {
-  return link.metadata[PLAN_NAME_METADATA_KEY] ?? null;
-}
-
 /** Whether the link offers a free period; a paid link bills immediately. */
 function isTrialLink(link: PaymentLink): boolean {
   return link.trialPeriodDays != null;
@@ -46,6 +40,19 @@ export function isUnclassifiedTrialLink(link: PaymentLink): boolean {
 /** Whether this link offers `planId` — a price id, held in its line items. */
 export function offersPlan(link: PaymentLink, planId: string): boolean {
   return link.lineItems?.some((item) => item.price.id === planId) ?? false;
+}
+
+/**
+ * Whether `usedSafeCount` fits within the link's `FEATURE_SAFE_SEATS`
+ * metadata; a link with no quota (or an unlimited one) is checkable out
+ * regardless of how many Safes the workspace already has.
+ */
+export function hasSeatCapacity(
+  link: PaymentLink,
+  usedSafeCount: number,
+): boolean {
+  const quota = parseSafeSeatQuota(link.metadata);
+  return quota === null || usedSafeCount <= quota;
 }
 
 /** Whether the workspace is offered this link. */
@@ -67,8 +74,6 @@ export function isOfferedToSpace(
       return false;
     // Subscribed: every paid plan is offered except the current one.
     default:
-      return (
-        args.activePlanName === null || planNameOf(link) !== args.activePlanName
-      );
+      return args.activePlanId === null || !offersPlan(link, args.activePlanId);
   }
 }

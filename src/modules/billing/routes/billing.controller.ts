@@ -181,7 +181,15 @@ export class BillingController {
   })
   @ApiOkResponse({ type: CheckoutSessionResult })
   @ApiQuery({ name: 'returnUrl', required: true })
-  @UseGuards(AuthGuard)
+  @ApiForbiddenResponse({
+    description:
+      'Not an admin, or a payment link this workspace is not offered',
+  })
+  @ApiConflictResponse({
+    description:
+      "This plan doesn't offer enough Safe seats for the workspace's current Safes",
+  })
+  @UseGuards(AuthGuard, ElevationGuard)
   @Get('/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url')
   public async getCheckoutUrl(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
@@ -260,12 +268,12 @@ export class BillingController {
   @ApiBody({ type: UpdateSubscriptionDto })
   @ApiOkResponse({ type: UpdateSubscriptionResult })
   @ApiForbiddenResponse({
-    description: 'Not a member, or a plan this workspace is not offered',
+    description: 'Not an admin, or a plan this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
   @ApiConflictResponse({
     description:
-      'Already on this plan, the subscription is not updatable, or several offered links sell the plan and none was named',
+      "Already on this plan, the subscription is not updatable, several offered links sell the plan and none was named, or the target plan doesn't offer enough Safe seats for the workspace's current Safes",
   })
   @ApiUnprocessableEntityResponse({
     description: 'The named payment link does not offer this plan',

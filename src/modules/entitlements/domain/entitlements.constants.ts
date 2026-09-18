@@ -3,6 +3,7 @@ import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subs
 import {
   FEATURE_KEYS,
   FeatureType,
+  SAFE_SEATS_FEATURE_KEY,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
@@ -18,7 +19,7 @@ export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
  * its counter is wired.
  */
 export const STOCK_METERED_FEATURES = [
-  'safe_seats',
+  SAFE_SEATS_FEATURE_KEY,
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
@@ -86,6 +87,9 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
  * seed lags the plan until each feature is signed off.
  */
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
+
+/** The `safe_seats` metadata key, e.g. a payment link's `FEATURE_SAFE_SEATS`. */
+export const SAFE_SEATS_METADATA_KEY = `${FEATURE_METADATA_PREFIX}${SAFE_SEATS_FEATURE_KEY.toUpperCase()}`;
 
 export const PLAN_NAME_METADATA_KEY = 'planName';
 
