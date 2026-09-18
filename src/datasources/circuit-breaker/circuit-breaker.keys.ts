@@ -8,10 +8,10 @@
  */
 export class CircuitBreakerKeys {
   private static readonly SERVICE_PREFIX = {
-    TRANSACTION_SERVICE: "txs-service",
-    DATA_DECODER_SERVICE: "data-decoder-service",
-    SAFE_QUEUE_SERVICE: "safe-queue-service",
-    POLICY_INDEXER: "policy-indexer",
+    TRANSACTION_SERVICE: 'txs-service',
+    DATA_DECODER_SERVICE: 'data-decoder-service',
+    SAFE_QUEUE_SERVICE: 'safe-queue-service',
+    POLICY_INDEXER: 'policy-indexer',
   };
 
   /**
