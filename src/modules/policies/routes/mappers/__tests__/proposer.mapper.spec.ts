@@ -22,16 +22,13 @@ const SEPOLIA = '11155111';
 /**
  * The proposer configuration of {@link policy}.
  *
- * `ActivePolicy.data` is a union across policy types and the discriminating
- * `type` sits on the policy rather than on the data, so the shape is narrowed
- * here by the field only a proposer policy carries.
+ * `ActivePolicy.data` is a union across policy types, and the discriminating
+ * `type` sits on the policy rather than on the data, so it cannot be narrowed
+ * structurally - `StatelessPolicyData` is `Record<string, never>` and answers to
+ * every `in` check. Every policy this mapper builds is a proposer policy.
  */
 function proposerData(policy: ActivePolicy): ProposerPolicyData {
-  if (!('proposers' in policy.data)) {
-    throw new Error(`Expected a proposer policy, got ${policy.type}`);
-  }
-
-  return policy.data;
+  return policy.data as ProposerPolicyData;
 }
 
 describe('ProposerMapper', () => {
