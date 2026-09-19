@@ -6,12 +6,16 @@ import type { IConfigurationService } from '@/config/configuration.service.inter
 import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
 import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import type { ICircuit } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 
 describe('CircuitBreakerService', () => {
   let mockLoggingService: MockedObject<ILoggingService>;
+  const circuitName = faker.string.alphanumeric();
 
   beforeEach(() => {
+    vi.useFakeTimers();
     mockLoggingService = {
       info: vi.fn(),
       debug: vi.fn(),
@@ -20,12 +24,17 @@ describe('CircuitBreakerService', () => {
     } as MockedObject<ILoggingService>;
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   function createService(overrides?: {
     enabled?: boolean;
     threshold?: number;
     timeout?: number;
     rollingWindow?: number;
     halfOpenFailureRateThreshold?: number;
+    halfOpenMaxInFlight?: number;
   }): CircuitBreakerService {
     const config: Record<string, number | boolean> = {
       'circuitBreaker.enabled': overrides?.enabled ?? true,
@@ -39,6 +48,8 @@ describe('CircuitBreakerService', () => {
       'circuitBreaker.halfOpenFailureRateThreshold':
         overrides?.halfOpenFailureRateThreshold ??
         faker.number.int({ min: 10, max: 100 }),
+      'circuitBreaker.halfOpenMaxInFlight':
+        overrides?.halfOpenMaxInFlight ?? faker.number.int({ min: 1, max: 3 }),
     };
     const mockConfigService = {
       getOrThrow: vi.fn((key: string) => config[key]),
@@ -47,56 +58,94 @@ describe('CircuitBreakerService', () => {
     return new CircuitBreakerService(mockConfigService, mockLoggingService);
   }
 
+  /**
+   * Circuits are only registered on their first failure, so tests seed one
+   * by recording a failure and then reading it back.
+   */
+  function getRegisteredCircuit(
+    service: CircuitBreakerService,
+    name: string,
+  ): ICircuit {
+    const circuit = service.get(name);
+    if (!circuit) {
+      throw new Error(`Circuit "${name}" was not registered`);
+    }
+    return circuit;
+  }
+
   describe('Circuit Registration', () => {
-    it('should register a new circuit', () => {
-      const service = createService();
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-      expect(circuit).toBeDefined();
-      expect(circuit.name).toBe('test-circuit');
+    it('should register a circuit on its first failure', () => {
+      const service = createService({ threshold: 2 });
+      expect(service.get(circuitName)).toBeUndefined();
+
+      service.recordFailure(circuitName);
+
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.name).toBe(circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.CLOSED);
+      expect(circuit.metrics.failureCount).toBe(1);
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerRegistered,
+          circuit: circuitName,
+        }),
+      );
     });
 
-    it('should not overwrite existing circuit on re-registration', () => {
-      const service = createService();
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-      service.recordFailure(circuit.name);
+    it('should reuse the existing circuit on subsequent failures', () => {
+      const service = createService({ threshold: 3 });
 
-      const sameCircuit = service.getOrRegisterCircuit('test-circuit');
-      expect(sameCircuit.metrics.failureCount).toBe(1);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.failureCount).toBe(2);
+      expect(mockLoggingService.info).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not register a circuit when disabled', () => {
+      const service = createService({ enabled: false });
+
+      service.recordFailure(circuitName);
+
+      expect(service.get(circuitName)).toBeUndefined();
+      expect(mockLoggingService.info).not.toHaveBeenCalled();
     });
   });
 
   describe('CLOSED State', () => {
     it('should start in CLOSED state', () => {
-      const service = createService();
-      const circuit = service.getOrRegisterCircuit('test-circuit');
+      const service = createService({ threshold: 2 });
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.CLOSED);
     });
 
     it('should allow requests in CLOSED state', () => {
-      const service = createService();
-      service.getOrRegisterCircuit('test-circuit');
-      expect(service.canProceed('test-circuit')).toBe(true);
+      const service = createService({ threshold: 2 });
+      service.recordFailure(circuitName);
+      expect(service.canProceed(circuitName)).toBe(true);
     });
 
     it('should transition to OPEN after threshold failures', () => {
       const service = createService({ threshold: 3 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.CLOSED);
 
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
     });
 
     it('should not increment consecutive successes in CLOSED state', () => {
       const service = createService({ threshold: 3 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
 
-      service.recordSuccess(circuit.name);
-      service.recordSuccess(circuit.name);
+      service.recordSuccess(circuitName);
+      service.recordSuccess(circuitName);
       expect(circuit.metrics.consecutiveSuccesses).toBe(0);
     });
   });
@@ -104,43 +153,38 @@ describe('CircuitBreakerService', () => {
   describe('OPEN State', () => {
     it('should block requests in OPEN state', () => {
       const service = createService({ threshold: 2 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
 
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
-      expect(service.canProceed('test-circuit')).toBe(false);
+      expect(service.canProceed(circuitName)).toBe(false);
     });
 
-    it('should transition to HALF_OPEN after timeout', (done) => {
+    it('should transition to HALF_OPEN after timeout', () => {
       const service = createService({ threshold: 2, timeout: 1000 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
 
-      setTimeout(() => {
-        expect(service.canProceed('test-circuit')).toBe(true);
-        const updatedCircuit = service.get('test-circuit');
-        expect(updatedCircuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
-        done();
-      }, 1100);
+      vi.advanceTimersByTime(1100);
+      expect(service.canProceed(circuitName)).toBe(true);
+      const updatedCircuit = service.get(circuitName);
+      expect(updatedCircuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
     });
 
-    it('should not allow requests before timeout', (done) => {
+    it('should not allow requests before timeout', () => {
       const service = createService({ threshold: 2, timeout: 1000 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
 
-      expect(service.canProceed('test-circuit')).toBe(false);
+      expect(service.canProceed(circuitName)).toBe(false);
 
-      setTimeout(() => {
-        expect(service.canProceed('test-circuit')).toBe(false);
-        const c = service.get('test-circuit');
-        expect(c?.metrics.state).toBe(CircuitState.OPEN);
-        done();
-      }, 500);
+      vi.advanceTimersByTime(500);
+      expect(service.canProceed(circuitName)).toBe(false);
+      const c = service.get(circuitName);
+      expect(c?.metrics.state).toBe(CircuitState.OPEN);
     });
   });
 
@@ -148,88 +192,139 @@ describe('CircuitBreakerService', () => {
     // threshold=5, halfOpenFailureRateThreshold=40
     // → effective HALF_OPEN failure threshold = ceil(5 * 40 / 100) = 2
     // → consecutive successes to close = 5
-    function createHalfOpenService(): CircuitBreakerService {
+    function createHalfOpenService(
+      halfOpenMaxInFlight?: number,
+    ): CircuitBreakerService {
       const svc = createService({
         threshold: 5,
         timeout: 100,
         halfOpenFailureRateThreshold: 40,
+        halfOpenMaxInFlight,
       });
-      const circuit = svc.getOrRegisterCircuit('test-circuit');
       for (let i = 0; i < 5; i++) {
-        svc.recordFailure(circuit.name);
+        svc.recordFailure(circuitName);
       }
       return svc;
     }
 
-    it('should allow all requests in HALF_OPEN state', (done) => {
+    it('should admit the transitioning request as the first probe', () => {
       const service = createHalfOpenService();
-      setTimeout(() => {
-        expect(service.canProceed('test-circuit')).toBe(true);
-        const circuit = service.get('test-circuit');
-        expect(circuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
-
-        expect(service.canProceed('test-circuit')).toBe(true);
-        expect(service.canProceed('test-circuit')).toBe(true);
-        expect(service.canProceed('test-circuit')).toBe(true);
-        done();
-      }, 150);
+      vi.advanceTimersByTime(150);
+      expect(service.canProceed(circuitName)).toBe(true);
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      expect(circuit.metrics.halfOpenInFlight).toBe(1);
     });
 
-    it('should transition to CLOSED after consecutive successes', (done) => {
-      const service = createHalfOpenService();
-      setTimeout(() => {
-        service.canProceed('test-circuit'); // Transition to HALF_OPEN
-        const circuit = service.get('test-circuit');
-        expect(circuit).toBeDefined();
+    it('should admit at most halfOpenMaxInFlight concurrent probes', () => {
+      const maxInFlight = faker.number.int({ min: 1, max: 5 });
+      const service = createHalfOpenService(maxInFlight);
+      vi.advanceTimersByTime(150);
+      for (let i = 0; i < maxInFlight; i++) {
+        expect(service.canProceed(circuitName)).toBe(true);
+      }
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.halfOpenInFlight).toBe(maxInFlight);
 
-        if (circuit) {
-          // Need 5 consecutive successes (threshold=5)
-          for (let i = 0; i < 4; i++) {
-            service.recordSuccess(circuit.name);
-            expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
-          }
-
-          service.recordSuccess(circuit.name);
-          expect(service.get('test-circuit')).toBeUndefined();
-        }
-        done();
-      }, 150);
+      expect(service.canProceed(circuitName)).toBe(false);
+      expect(() => service.canProceedOrFail(circuitName)).toThrow(
+        CircuitBreakerException,
+      );
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerRequestBlocked,
+          state: CircuitState.HALF_OPEN,
+          inFlight: maxInFlight,
+          maxInFlight,
+        }),
+      );
     });
 
-    it('should transition back to OPEN when half-open failure threshold is reached', (done) => {
+    it('should free a probe slot when the probe succeeds', () => {
+      const service = createHalfOpenService(1);
+      vi.advanceTimersByTime(150);
+      expect(service.canProceed(circuitName)).toBe(true);
+      expect(service.canProceed(circuitName)).toBe(false);
+
+      service.recordSuccess(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.halfOpenInFlight).toBe(0);
+      expect(service.canProceed(circuitName)).toBe(true);
+    });
+
+    it('should free a probe slot when the probe fails', () => {
+      const service = createHalfOpenService(1);
+      vi.advanceTimersByTime(150);
+      expect(service.canProceed(circuitName)).toBe(true);
+      expect(service.canProceed(circuitName)).toBe(false);
+
+      // Effective threshold is 2, so one failure keeps the circuit HALF_OPEN
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      expect(circuit.metrics.halfOpenInFlight).toBe(0);
+      expect(service.canProceed(circuitName)).toBe(true);
+    });
+
+    it('should reset in-flight probes when reopening', () => {
+      const service = createHalfOpenService(2);
+      vi.advanceTimersByTime(150);
+      expect(service.canProceed(circuitName)).toBe(true);
+      expect(service.canProceed(circuitName)).toBe(true);
+
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.OPEN);
+      expect(circuit.metrics.halfOpenInFlight).toBe(0);
+    });
+
+    it('should transition to CLOSED after consecutive successes', () => {
       const service = createHalfOpenService();
-      setTimeout(() => {
-        service.canProceed('test-circuit'); // Transition to HALF_OPEN
-        const circuit = service.get('test-circuit');
-        expect(circuit).toBeDefined();
+      vi.advanceTimersByTime(150);
+      service.canProceed(circuitName); // Transition to HALF_OPEN
+      const circuit = getRegisteredCircuit(service, circuitName);
 
-        if (circuit) {
-          // Effective threshold = ceil(5 * 40 / 100) = 2
-          service.recordFailure(circuit.name);
-          expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      // Need 5 consecutive successes (threshold=5)
+      for (let i = 0; i < 4; i++) {
+        service.recordSuccess(circuitName);
+        expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      }
 
-          service.recordFailure(circuit.name);
-          expect(circuit.metrics.state).toBe(CircuitState.OPEN);
-        }
-        done();
-      }, 150);
+      service.recordSuccess(circuitName);
+      expect(service.get(circuitName)).toBeUndefined();
+    });
+
+    it('should transition back to OPEN when half-open failure threshold is reached', () => {
+      const service = createHalfOpenService();
+      vi.advanceTimersByTime(150);
+      service.canProceed(circuitName); // Transition to HALF_OPEN
+      const circuit = getRegisteredCircuit(service, circuitName);
+
+      // Effective threshold = ceil(5 * 40 / 100) = 2
+      service.recordFailure(circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+
+      service.recordFailure(circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.OPEN);
     });
   });
 
   describe('OPEN state ignores late failures', () => {
     it('should not record failures when circuit is already OPEN', () => {
       const service = createService({ threshold: 3 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
       expect(circuit.metrics.failureCount).toBe(3);
 
       // Simulate late-arriving in-flight failures
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
 
       // Count should stay at 3 — not inflate to 5
       expect(circuit.metrics.failureCount).toBe(3);
@@ -238,12 +333,12 @@ describe('CircuitBreakerService', () => {
     it('should keep failure count exactly at threshold', () => {
       const threshold = 5;
       const service = createService({ threshold });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
       for (let i = 0; i < threshold + 10; i++) {
-        service.recordFailure(circuit.name);
+        service.recordFailure(circuitName);
       }
 
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
       expect(circuit.metrics.failureCount).toBe(threshold);
     });
@@ -252,34 +347,32 @@ describe('CircuitBreakerService', () => {
   describe('Metrics', () => {
     it('should track failure count', () => {
       const service = createService({ threshold: 10 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
 
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.failureCount).toBe(2);
     });
 
-    it('should track consecutive successes in HALF_OPEN state', (done) => {
+    it('should track consecutive successes in HALF_OPEN state', () => {
       const service = createService({ threshold: 5, timeout: 100 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
       for (let i = 0; i < 5; i++) {
-        service.recordFailure(circuit.name);
+        service.recordFailure(circuitName);
       }
+      const circuit = getRegisteredCircuit(service, circuitName);
 
-      setTimeout(() => {
-        service.canProceed('test-circuit');
-        expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      vi.advanceTimersByTime(150);
+      service.canProceed(circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
 
-        service.recordSuccess(circuit.name);
-        service.recordSuccess(circuit.name);
-        expect(circuit.metrics.consecutiveSuccesses).toBe(2);
+      service.recordSuccess(circuitName);
+      service.recordSuccess(circuitName);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(2);
 
-        service.recordFailure(circuit.name);
-        expect(circuit.metrics.consecutiveSuccesses).toBe(0);
-        done();
-      }, 150);
+      service.recordFailure(circuitName);
+      expect(circuit.metrics.consecutiveSuccesses).toBe(0);
     });
   });
 
@@ -290,43 +383,40 @@ describe('CircuitBreakerService', () => {
         threshold: 5,
         rollingWindow,
       });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.failureCount).toBe(2);
 
       // Advance time past rolling window
-      const original = Date.now;
-      Date.now = vi.fn(() => original() + rollingWindow + 1);
+      vi.advanceTimersByTime(rollingWindow + 1);
 
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
       // Old failures discarded, only the new one counts
       expect(circuit.metrics.failureCount).toBe(1);
-
-      Date.now = original;
     });
   });
 
   describe('Delete', () => {
     it('should delete a single circuit', () => {
       const service = createService();
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      expect(service.get(circuitName)).toBeDefined();
 
-      service.delete('test-circuit');
-      expect(service.get('test-circuit')).toBeUndefined();
+      service.delete(circuitName);
+      expect(service.get(circuitName)).toBeUndefined();
     });
 
     it('should delete all circuits', () => {
       const service = createService();
-      service.getOrRegisterCircuit('circuit-1');
-      service.getOrRegisterCircuit('circuit-2');
 
       service.recordFailure('circuit-1');
       service.recordFailure('circuit-2');
+      expect(service.get('circuit-1')).toBeDefined();
+      expect(service.get('circuit-2')).toBeDefined();
 
       service.deleteAll();
 
@@ -343,21 +433,17 @@ describe('CircuitBreakerService', () => {
         rollingWindow,
         timeout: 50,
       });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      // Record a failure to set lastFailureTime
-      service.recordFailure(circuit.name);
-      expect(service.get('test-circuit')).toBeDefined();
+      // Record a failure to register the circuit and set lastActivityTime
+      service.recordFailure(circuitName);
+      expect(service.get(circuitName)).toBeDefined();
 
       // Advance time past the stale window (rollingWindow * 10)
-      const original = Date.now;
       const pastStaleWindow = faker.number.int({ min: 11, max: 100 });
-      Date.now = vi.fn(() => original() + rollingWindow * pastStaleWindow);
+      vi.advanceTimersByTime(rollingWindow * pastStaleWindow);
 
       service.cleanupStaleCircuits();
-      expect(service.get('test-circuit')).toBeUndefined();
-
-      Date.now = original;
+      expect(service.get(circuitName)).toBeUndefined();
     });
 
     it('should not remove circuits still waiting for retry', () => {
@@ -366,34 +452,18 @@ describe('CircuitBreakerService', () => {
         timeout: 10_000,
         rollingWindow: 100,
       });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
       // Trip the circuit to OPEN
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
 
       // Advance time past rolling window but within timeout buffer
-      const original = Date.now;
-      Date.now = vi.fn(() => original() + 500);
+      vi.advanceTimersByTime(500);
 
       service.cleanupStaleCircuits();
-      expect(service.get('test-circuit')).toBeDefined();
-
-      Date.now = original;
-    });
-
-    it('should remove zero-failure circuits as stale', () => {
-      const service = createService({
-        threshold: 3,
-        rollingWindow: 100,
-        timeout: 50,
-      });
-      service.getOrRegisterCircuit('idle-circuit');
-      expect(service.get('idle-circuit')).toBeDefined();
-
-      service.cleanupStaleCircuits();
-      expect(service.get('idle-circuit')).toBeUndefined();
+      expect(service.get(circuitName)).toBeDefined();
     });
   });
 
@@ -408,6 +478,12 @@ describe('CircuitBreakerService', () => {
       service.canProceed('new-circuit');
       expect(service.get('new-circuit')).toBeUndefined();
     });
+
+    it('should not auto-create circuit on recordSuccess', () => {
+      const service = createService();
+      service.recordSuccess('new-circuit');
+      expect(service.get('new-circuit')).toBeUndefined();
+    });
   });
 
   describe('canProceedOrFail', () => {
@@ -418,19 +494,18 @@ describe('CircuitBreakerService', () => {
 
     it('should not throw when circuit is CLOSED', () => {
       const service = createService({ threshold: 5 });
-      service.getOrRegisterCircuit('test-circuit');
-      service.recordFailure('test-circuit');
-      expect(() => service.canProceedOrFail('test-circuit')).not.toThrow();
+      service.recordFailure(circuitName);
+      expect(() => service.canProceedOrFail(circuitName)).not.toThrow();
     });
 
     it('should throw CircuitBreakerException when circuit is OPEN', () => {
       const service = createService({ threshold: 2 });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
-      service.recordFailure(circuit.name);
-      service.recordFailure(circuit.name);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
 
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
-      expect(() => service.canProceedOrFail('test-circuit')).toThrow(
+      expect(() => service.canProceedOrFail(circuitName)).toThrow(
         CircuitBreakerException,
       );
     });
@@ -440,30 +515,33 @@ describe('CircuitBreakerService', () => {
     it('should enforce circuit breaker logic when enabled', () => {
       const threshold = faker.number.int({ min: 1, max: 10 });
       const service = createService({ threshold });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
-      expect(service.canProceed('test-circuit')).toBe(true);
+      expect(service.canProceed(circuitName)).toBe(true);
 
       for (let i = 0; i < threshold; i++) {
-        service.recordFailure(circuit.name);
+        service.recordFailure(circuitName);
       }
 
+      const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
-      expect(service.canProceed('test-circuit')).toBe(false);
+      expect(service.canProceed(circuitName)).toBe(false);
     });
 
     it('should bypass circuit breaker logic when disabled', () => {
       const threshold = faker.number.int({ min: 1, max: 10 });
       const service = createService({ enabled: false, threshold });
-      const circuit = service.getOrRegisterCircuit('test-circuit');
 
       for (let i = 0; i < threshold; i++) {
-        service.recordFailure(circuit.name);
+        service.recordFailure(circuitName);
       }
+      service.recordSuccess(circuitName);
 
-      expect(circuit.metrics.state).toBe(CircuitState.CLOSED);
-      expect(circuit.metrics.failureCount).toBe(0);
-      expect(service.canProceed('test-circuit')).toBe(true);
+      expect(service.get(circuitName)).toBeUndefined();
+      expect(service.canProceed(circuitName)).toBe(true);
+      expect(() => service.canProceedOrFail(circuitName)).not.toThrow();
+      expect(mockLoggingService.info).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).not.toHaveBeenCalled();
+      expect(mockLoggingService.error).not.toHaveBeenCalled();
     });
   });
 });
