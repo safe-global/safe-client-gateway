@@ -1,0 +1,340 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
+import { type Address, getAddress } from 'viem';
+import type { MockedObject } from 'vitest';
+import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
+import { PoliciesService } from '@/modules/policies/routes/policies.service';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+
+const mockPolicyIndexerRepository = {
+  getState: vi.fn(),
+  clearState: vi.fn(),
+} as MockedObject<IPolicyIndexerRepository>;
+
+const mockSafeRepository = {
+  getSafe: vi.fn(),
+} as unknown as MockedObject<ISafeRepository>;
+
+const mockSpaceSafesRepository = {
+  findBySpaceId: vi.fn(),
+} as unknown as MockedObject<ISpaceSafesRepository>;
+
+const mockMembersRepository = {
+  findOne: vi.fn(),
+} as unknown as MockedObject<IMembersRepository>;
+
+const SEPOLIA = '11155111';
+
+describe('PoliciesService', () => {
+  let target: PoliciesService;
+  const spaceId = faker.number.int({ min: 1, max: 100 });
+  const safeAddress = getAddress(faker.finance.ethereumAddress());
+  const allowanceModule = getAddress(faker.finance.ethereumAddress());
+  const userId = faker.number.int({ min: 1, max: 100 });
+  const authPayload = new AuthPayload(
+    siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
+  );
+  const spaceRequest = { spaceId, authPayload };
+
+  beforeEach(() => {
+    target = new PoliciesService(
+      mockPolicyIndexerRepository,
+      mockSafeRepository,
+      mockSpaceSafesRepository,
+      mockMembersRepository,
+      new SpendingLimitMapper(),
+    );
+
+    // authorised by default: active member, Safe in the space
+    mockMembersRepository.findOne.mockResolvedValue(memberBuilder().build());
+    mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+      { chainId: SEPOLIA, address: safeAddress },
+    ]);
+    mockSafeRepository.getSafe.mockResolvedValue(
+      safeBuilder().with('modules', [allowanceModule]).build(),
+    );
+    mockPolicyIndexerRepository.getState.mockResolvedValue(
+      policyIndexerResponseBuilder().build(),
+    );
+  });
+
+  /** An allowance of `safe` on `allowanceModule`, spendable by default. */
+  function allowanceOf(safe: string): PolicyIndexerSafeAllowance {
+    return policyIndexerSafeAllowanceBuilder()
+      .with('chainId', SEPOLIA)
+      .with('safe', getAddress(safe))
+      .with('module', allowanceModule)
+      .with('amount', '1000')
+      .with('spent', '0')
+      .with('remaining', '1000')
+      .build();
+  }
+
+  /** The policies of the Space, over the given allowance rows. */
+  async function activePolicies(
+    allowances: Array<PolicyIndexerSafeAllowance>,
+  ): Promise<Array<ActivePolicy>> {
+    mockPolicyIndexerRepository.getState.mockResolvedValue(
+      policyIndexerResponseBuilder().with('allowances', allowances).build(),
+    );
+
+    return await target.getSpaceActivePolicies(spaceRequest);
+  }
+
+  /** Reports `modules` as the ones the Safe has enabled. */
+  function withEnabledModules(modules: Array<Address>): void {
+    mockSafeRepository.getSafe.mockResolvedValue(
+      safeBuilder().with('modules', modules).build(),
+    );
+  }
+
+  describe('authorisation', () => {
+    it('should reject an unauthenticated caller', async () => {
+      await expect(
+        target.getSpaceActivePolicies({
+          ...spaceRequest,
+          authPayload: new AuthPayload(undefined),
+        }),
+      ).rejects.toThrow('Not authenticated');
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+    });
+
+    it('should match a requested safe recorded in the space in another casing', async () => {
+      // The Space stores what the client sent; a casing difference must not read
+      // as a Safe outside the Space.
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        { chainId: SEPOLIA, address: safeAddress.toLowerCase() as Address },
+      ]);
+
+      await expect(
+        target.getSpaceActivePolicies({
+          ...spaceRequest,
+          safes: [{ chainId: SEPOLIA, address: safeAddress }],
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+  });
+
+  describe('reading the state', () => {
+    it('should read the safes of the space', async () => {
+      await target.getSpaceActivePolicies(spaceRequest);
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [{ chainId: SEPOLIA, address: safeAddress }],
+      });
+    });
+
+    it('should return the policies it built', async () => {
+      const result = await activePolicies([allowanceOf(safeAddress)]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        type: PolicyType.SpendingLimit,
+        enabled: true,
+      });
+    });
+
+    it('should use only the rows of the safe it is building', async () => {
+      // The indexer answers for every Safe of a request, so an unscoped read
+      // would report another Safe's limits on this one.
+      const result = await activePolicies([
+        allowanceOf(faker.finance.ethereumAddress()),
+      ]);
+
+      expect(result).toStrictEqual([]);
+    });
+
+    it('should report a policy as unenforced when its module is not enabled', async () => {
+      withEnabledModules([]);
+
+      const result = await activePolicies([allowanceOf(safeAddress)]);
+
+      expect(result[0].enabled).toBe(false);
+    });
+
+    it('should treat a safe with no modules as having none enabled', async () => {
+      mockSafeRepository.getSafe.mockResolvedValue(
+        safeBuilder().with('modules', null).build(),
+      );
+
+      const result = await activePolicies([allowanceOf(safeAddress)]);
+
+      expect(result[0].enabled).toBe(false);
+    });
+
+    it('should return no policies for a safe that has none', async () => {
+      await expect(
+        target.getSpaceActivePolicies(spaceRequest),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should fail the request when the indexer read fails', async () => {
+      // Atomic: a page that says what controls a Safe must not answer "nothing"
+      // where the answer is "unknown".
+      mockPolicyIndexerRepository.getState.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+
+      await expect(target.getSpaceActivePolicies(spaceRequest)).rejects.toThrow(
+        'Service unavailable',
+      );
+    });
+
+    it('should fail the request when the safe cannot be read', async () => {
+      mockSafeRepository.getSafe.mockRejectedValue(new Error('Not found'));
+
+      await expect(target.getSpaceActivePolicies(spaceRequest)).rejects.toThrow(
+        'Not found',
+      );
+    });
+  });
+
+  describe('across a space', () => {
+    const otherSafe = getAddress(faker.finance.ethereumAddress());
+
+    beforeEach(() => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        { chainId: SEPOLIA, address: safeAddress },
+        { chainId: '137', address: otherSafe },
+      ]);
+    });
+
+    it('should read every safe of the space in one indexer call', async () => {
+      // The request count must not grow with the size of the Space.
+      await target.getSpaceActivePolicies({
+        spaceId,
+        authPayload,
+      });
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [
+          { chainId: SEPOLIA, address: safeAddress },
+          { chainId: '137', address: otherSafe },
+        ],
+      });
+    });
+
+    it('should carry the safe on every item, so nothing merges across chains', async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        spaceId,
+        authPayload,
+      });
+
+      expect(policies).toHaveLength(1);
+      expect(policies[0].safe).toStrictEqual({
+        chainId: SEPOLIA,
+        address: safeAddress,
+      });
+    });
+
+    it('should narrow the read to the requested subset', async () => {
+      await target.getSpaceActivePolicies({
+        spaceId,
+        safes: [{ chainId: SEPOLIA, address: safeAddress }],
+        authPayload,
+      });
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [{ chainId: SEPOLIA, address: safeAddress }],
+      });
+    });
+
+    it('should read a safe requested more than once only once', async () => {
+      // A repeated `?safes=` entry - the same Safe in another casing included -
+      // is one Safe, not two: duplicating it would duplicate its policies in
+      // the response and read the Safe twice.
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        spaceId,
+        safes: [
+          { chainId: SEPOLIA, address: safeAddress },
+          { chainId: SEPOLIA, address: getAddress(safeAddress.toLowerCase()) },
+        ],
+        authPayload,
+      });
+
+      expect(policies).toHaveLength(1);
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [{ chainId: SEPOLIA, address: safeAddress }],
+      });
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);
+    });
+
+    it('should reject a requested safe that is not in the space', async () => {
+      // Narrowing to nothing would look like a Space whose Safes hold no
+      // policies, rather than a request for a Safe the caller cannot read.
+      const outsider = getAddress(faker.finance.ethereumAddress());
+
+      await expect(
+        target.getSpaceActivePolicies({
+          spaceId,
+          safes: [{ chainId: SEPOLIA, address: outsider }],
+          authPayload,
+        }),
+      ).rejects.toThrow(`Safe ${SEPOLIA}:${outsider} is not in this space`);
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+    });
+
+    it('should reject a caller who is not a member of the space', async () => {
+      mockMembersRepository.findOne.mockResolvedValue(null);
+
+      await expect(
+        target.getSpaceActivePolicies({
+          spaceId,
+          authPayload,
+        }),
+      ).rejects.toThrow('User is not a member of this workspace');
+    });
+
+    it('should read nothing for a space with no safes', async () => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
+
+      const policies = await target.getSpaceActivePolicies({
+        spaceId,
+        authPayload,
+      });
+
+      expect(policies).toStrictEqual([]);
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+    });
+
+    it('should fail the whole request when one safe cannot be read', async () => {
+      // Atomic: one unhealthy chain fails the page rather than dropping a Safe
+      // from it silently.
+      mockSafeRepository.getSafe.mockRejectedValueOnce(
+        new Error('Service unavailable'),
+      );
+
+      await expect(
+        target.getSpaceActivePolicies({
+          spaceId,
+          authPayload,
+        }),
+      ).rejects.toThrow('Service unavailable');
+    });
+  });
+});

@@ -2,6 +2,7 @@
 import type { Address } from 'viem';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 
 /**
  * `spending-limit`: what each spender may still withdraw, and on what schedule.
@@ -25,18 +26,22 @@ export type SpendingLimitPolicyData = {
 
 export type SpendingLimitAllowance = {
   /** The zero address is the native currency. */
-  token_address: Address;
+  tokenAddress: Address;
   /** Per-window ceiling, in base units. */
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */
   spent: string;
-  /** `0` never resets. */
-  resetPeriodSeconds: number;
-  /** Unix seconds of the next reset; `null` when it never resets. */
-  resetsAt: number | null;
+  /** Window length in minutes, the module's own unit. `0` never resets. */
+  resetPeriodMinutes: number;
+  /**
+   * The next reset, in minutes since the epoch - the module counts windows in
+   * whole minutes, so a boundary is never finer than one. `null` when it never
+   * resets.
+   */
+  resetsAtMinute: number | null;
   /**
    * `false` when the reset boundary could not be recovered from the configuring
-   * call, so `resetsAt` may be up to one period out.
+   * call, so `resetsAtMinute` may be up to one period out.
    */
   resetBoundaryIsExact: boolean;
   /**
@@ -67,4 +72,5 @@ export type ActivePolicy = {
   enforcement: PolicyEnforcement;
   enabled: boolean;
   data: ActivePolicyData;
+  safe: SafeRef;
 };
