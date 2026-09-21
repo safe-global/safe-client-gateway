@@ -88,6 +88,19 @@ describe('mapFeaturePackage', () => {
     expect(onWarning).not.toHaveBeenCalled();
   });
 
+  it('uses the last matching key on a case-insensitive duplicate', () => {
+    const result = mapFeaturePackage({
+      metadata: { FEATURE_SAFE_SEATS: '2', FEATURE_safe_seats: '5' },
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([
+      { featureKey: 'safe_seats', enabled: true, quota: 5, value: null },
+    ]);
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
   it.each(['007', '01', '1.5', '-1', '1e3'])(
     'warns and skips the non-canonical metered quota %s',
     (quota) => {
@@ -223,5 +236,27 @@ describe('parseSafeSeatQuota', () => {
     parseSafeSeatQuota({}, onWarning);
 
     expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it.each(['FEATURE_safe_seats', 'FEATURE_Safe_Seats'])(
+    'matches the key case-insensitively on its suffix (%s)',
+    (key) => {
+      const quota = faker.number.int({ min: 0, max: DB_MAX_SAFE_INTEGER });
+
+      expect(parseSafeSeatQuota({ [key]: `${quota}` })).toBe(quota);
+    },
+  );
+
+  it('does not match a key whose FEATURE_ prefix itself is lowercase', () => {
+    expect(parseSafeSeatQuota({ feature_safe_seats: '3' })).toBeNull();
+  });
+
+  it('uses the last matching key on a duplicate, like mapFeaturePackage', () => {
+    expect(
+      parseSafeSeatQuota({
+        FEATURE_SAFE_SEATS: '2',
+        FEATURE_safe_seats: '5',
+      }),
+    ).toBe(5);
   });
 });

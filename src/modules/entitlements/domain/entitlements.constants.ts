@@ -88,9 +88,6 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
  */
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 
-/** The `safe_seats` metadata key, e.g. a payment link's `FEATURE_SAFE_SEATS`. */
-export const SAFE_SEATS_METADATA_KEY = `${FEATURE_METADATA_PREFIX}${SAFE_SEATS_FEATURE_KEY.toUpperCase()}`;
-
 export const PLAN_NAME_METADATA_KEY = 'planName';
 
 /**

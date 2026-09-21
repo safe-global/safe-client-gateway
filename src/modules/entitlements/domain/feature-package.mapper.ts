@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import {
+  FeatureType,
+  SAFE_SEATS_FEATURE_KEY,
+} from '@/modules/entitlements/domain/entities/feature.entity';
 import type { ParsedEntitlement } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
   FEATURE_METADATA_PREFIX,
   MAX_ENTITLEMENT_VALUE_LENGTH,
-  SAFE_SEATS_METADATA_KEY,
   UNLIMITED_METADATA_VALUE,
 } from '@/modules/entitlements/domain/entitlements.constants';
 import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
@@ -23,6 +25,24 @@ const QuotaSchema = NonNegativeNumericStringSchema.refine(
  */
 function parseQuotaValue(value: string): number | null {
   return QuotaSchema.safeParse(value).success ? Number(value) : null;
+}
+
+/** Indexes `metadata`'s `FEATURE_*` entries by feature key: prefix stripped, case folded, last duplicate wins. */
+function normalizedFeatureEntries(
+  metadata: StripeMetadata | null | undefined,
+): Map<string, { metadataKey: string; rawValue: string | null }> {
+  const entries = new Map<
+    string,
+    { metadataKey: string; rawValue: string | null }
+  >();
+  for (const [metadataKey, rawValue] of Object.entries(metadata ?? {})) {
+    if (!metadataKey.startsWith(FEATURE_METADATA_PREFIX)) {
+      continue;
+    }
+    const key = metadataKey.slice(FEATURE_METADATA_PREFIX.length).toLowerCase();
+    entries.set(key, { metadataKey, rawValue });
+  }
+  return entries;
 }
 
 export function hasFeaturePackageMetadata(
@@ -45,17 +65,18 @@ export function parseSafeSeatQuota(
   metadata: StripeMetadata | null | undefined,
   onWarning?: (message: string) => void,
 ): number | null {
-  const raw = metadata?.[SAFE_SEATS_METADATA_KEY];
-  if (raw == null) {
+  const entry = normalizedFeatureEntries(metadata).get(SAFE_SEATS_FEATURE_KEY);
+  if (!entry || entry.rawValue == null) {
     return null;
   }
-  const value = raw.trim();
+  const { metadataKey, rawValue } = entry;
+  const value = rawValue.trim();
   if (value.toLowerCase() === UNLIMITED_METADATA_VALUE) {
     return null;
   }
   const quota = parseQuotaValue(value);
   if (quota === null) {
-    onWarning?.(`Invalid ${SAFE_SEATS_METADATA_KEY} value: ${raw}`);
+    onWarning?.(`Invalid ${metadataKey} value: ${rawValue}`);
   }
   return quota;
 }
@@ -77,11 +98,9 @@ export function mapFeaturePackage(args: {
 }): Array<ParsedEntitlement> {
   const packageByKey = new Map<string, ParsedEntitlement>();
 
-  for (const [metadataKey, rawValue] of Object.entries(args.metadata ?? {})) {
-    if (!metadataKey.startsWith(FEATURE_METADATA_PREFIX)) {
-      continue;
-    }
-    const key = metadataKey.slice(FEATURE_METADATA_PREFIX.length).toLowerCase();
+  for (const [key, { metadataKey, rawValue }] of normalizedFeatureEntries(
+    args.metadata,
+  )) {
     const type = args.featureTypeByKey.get(key);
     if (type === undefined) {
       args.onWarning(`Unknown feature metadata key: ${metadataKey}`);

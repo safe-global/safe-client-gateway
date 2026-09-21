@@ -105,7 +105,6 @@ export class BillingService {
     return await this.billingRepository.getPlan({ planId });
   }
 
-  /** Admin-only. */
   public async getSessionUrl(args: {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];
@@ -135,8 +134,8 @@ export class BillingService {
   /**
    * Starts a checkout for a workspace payment link.
    *
-   * Admin-only. A fresh second factor is also required, pinned in the gated
-   * table of `elevation.integration.spec.ts`.
+   * Admin-only. Also requires a fresh second factor (a recent MFA step-up),
+   * enforced by `ElevationGuard` on the route.
    */
   public async createCheckoutUrl(args: {
     paymentLinkId: string;
@@ -225,8 +224,8 @@ export class BillingService {
   /**
    * Moves the workspace onto another plan.
    *
-   * Admin-only. A fresh second factor is also required, pinned in the gated
-   * table of `elevation.integration.spec.ts`.
+   * Admin-only. Also requires a fresh second factor (a recent MFA step-up),
+   * enforced by `ElevationGuard` on the route.
    *
    * Returning does not mean the entitlements have moved: those are
    * materialized when the upstream's webhook arrives, so
