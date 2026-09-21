@@ -119,8 +119,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
       safe_seats: configurationService.getOrThrow<number>(
         'spaces.maxSafesPerSpace',
       ),
-      // NULL: no static limit predates this feature, so the date protects
-      // no behaviour here and the plan decides from the start.
+      // NULL: no Copilot scan has ever counted against a workspace before
+      // now, so the date protects no behaviour here and the plan decides
+      // from the start.
       copilot_scans: null,
       // NULL: nothing has ever been relayed at a workspace's expense, so the
       // date protects no behaviour here and the plan decides from the start.
