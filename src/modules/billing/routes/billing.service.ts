@@ -105,13 +105,14 @@ export class BillingService {
     return await this.billingRepository.getPlan({ planId });
   }
 
+  /** Admin-only. */
   public async getSessionUrl(args: {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];
     authPayload: AuthPayload;
     returnUrl: string;
   }): Promise<{ url: string }> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
 
     const url = await this.billingRepository.getCustomerSessionUrl({
       upstreamCustomerId: args.spaceUuid,
@@ -193,7 +194,7 @@ export class BillingService {
     planId: string;
     authPayload: AuthPayload;
   }): Promise<SubscriptionUpdatePreview> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
     // No link is resolved: the upstream preview takes only the price, so a tie
     // between several links offering it cannot matter here.
     const [offeredLinks, subscription] = await Promise.all([

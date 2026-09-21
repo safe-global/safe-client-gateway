@@ -282,13 +282,12 @@ describe('BillingService', () => {
   });
 
   describe('getSessionUrl', () => {
-    it('should return the session url for a space member', async () => {
+    it('should return the session url for a space admin', async () => {
       const spaceId = faker.number.int();
       const spaceUuid = faker.string.uuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const returnUrl = withinRedirectOrigin();
       const sessionUrl = faker.internet.url();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       billingRepositoryMock.getCustomerSessionUrl.mockResolvedValue(sessionUrl);
 
       const result = await service.getSessionUrl({
@@ -305,9 +304,9 @@ describe('BillingService', () => {
       });
     });
 
-    it('should throw when the user is not a space member', async () => {
+    it('should throw when the user is not a space admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(null);
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.getSessionUrl({
@@ -325,7 +324,6 @@ describe('BillingService', () => {
 
     it('should throw when returnUrl targets a disallowed origin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
 
       await expect(
         service.getSessionUrl({
@@ -849,11 +847,10 @@ describe('BillingService', () => {
   }
 
   describe('previewSubscriptionUpdate', () => {
-    it('should return the preview for a space member', async () => {
+    it('should return the preview for a space admin', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const preview = subscriptionUpdatePreviewBuilder().build();
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
       billingRepositoryMock.previewSubscriptionUpdate.mockResolvedValue(
         preview,
       );
@@ -876,10 +873,10 @@ describe('BillingService', () => {
       });
     });
 
-    it('should throw when the user is not a space member', async () => {
+    it('should throw when the user is not a space admin', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(null);
+      spacesRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.previewSubscriptionUpdate({
@@ -899,7 +896,6 @@ describe('BillingService', () => {
     it('should throw when the plan is not offered to the space', async () => {
       const { spaceId, spaceUuid, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
 
       await expect(
         service.previewSubscriptionUpdate({
@@ -919,7 +915,6 @@ describe('BillingService', () => {
     it('should throw when the subscription does not belong to the space', async () => {
       const { spaceId, spaceUuid, planId } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
 
       await expect(
         service.previewSubscriptionUpdate({

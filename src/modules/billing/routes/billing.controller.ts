@@ -127,6 +127,7 @@ export class BillingController {
   })
   @ApiOkResponse({ type: UrlResponse })
   @ApiQuery({ name: 'returnUrl', required: true })
+  @ApiForbiddenResponse({ description: 'Not an admin' })
   @UseGuards(AuthGuard)
   @Get('/spaces/:spaceId/session-url')
   public async getSessionUrl(
@@ -228,7 +229,7 @@ export class BillingController {
   })
   @ApiOkResponse({ type: SubscriptionUpdatePreview })
   @ApiForbiddenResponse({
-    description: 'Not a member, or a plan this workspace is not offered',
+    description: 'Not an admin, or a plan this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
   @ApiConflictResponse({ description: 'Already on this plan' })
