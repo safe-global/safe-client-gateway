@@ -64,9 +64,6 @@ export class CircuitBreakerService {
         this.configurationService.getOrThrow<number>(
           'circuitBreaker.halfOpenFailureRateThreshold',
         ),
-      halfOpenMaxInFlight: this.configurationService.getOrThrow<number>(
-        'circuitBreaker.halfOpenMaxInFlight',
-      ),
     };
   }
 
@@ -207,18 +204,22 @@ export class CircuitBreakerService {
   /**
    * Handles circuit logic when in HALF_OPEN state
    *
-   * Admits a request only while fewer than {@link ICircuitConfig.halfOpenMaxInFlight}
-   * probes are in flight. Every admitted probe is released again by
-   * {@link recordSuccess} or {@link recordFailure}, so a hanging upstream
-   * holds at most that many requests per half-open window instead of
-   * every request that arrives while the circuit waits for its verdict.
+   * Admits a request only while fewer probes are in flight than the number
+   * of failures that would re-open the circuit (see
+   * {@link getEffectiveFailureThreshold}), so one round of probes is always
+   * enough to reach a verdict either way. Every admitted probe is released
+   * again by {@link recordSuccess} or {@link recordFailure}, so a hanging
+   * upstream holds at most that many requests per half-open window instead
+   * of every request that arrives while the circuit waits for its verdict.
    *
    * @param {ICircuit} circuit - The circuit instance
    *
    * @returns {boolean} True if the request is admitted as a probe, false otherwise
    */
   private canProceedInHalfOpenState(circuit: ICircuit): boolean {
-    if (circuit.metrics.halfOpenInFlight < this.config.halfOpenMaxInFlight) {
+    const maxInFlight = this.getEffectiveFailureThreshold(circuit);
+
+    if (circuit.metrics.halfOpenInFlight < maxInFlight) {
       circuit.metrics.halfOpenInFlight++;
 
       return true;
@@ -229,8 +230,8 @@ export class CircuitBreakerService {
       circuit: circuit.name,
       state: CircuitState.HALF_OPEN,
       inFlight: circuit.metrics.halfOpenInFlight,
-      maxInFlight: this.config.halfOpenMaxInFlight,
-      message: `Request blocked: Circuit "${circuit.name}" is HALF_OPEN with ${circuit.metrics.halfOpenInFlight}/${this.config.halfOpenMaxInFlight} probe(s) in flight`,
+      maxInFlight,
+      message: `Request blocked: Circuit "${circuit.name}" is HALF_OPEN with ${circuit.metrics.halfOpenInFlight}/${maxInFlight} probe(s) in flight`,
     });
 
     return false;

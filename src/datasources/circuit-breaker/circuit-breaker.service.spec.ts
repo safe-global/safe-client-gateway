@@ -34,7 +34,6 @@ describe('CircuitBreakerService', () => {
     timeout?: number;
     rollingWindow?: number;
     halfOpenFailureRateThreshold?: number;
-    halfOpenMaxInFlight?: number;
   }): CircuitBreakerService {
     const config: Record<string, number | boolean> = {
       'circuitBreaker.enabled': overrides?.enabled ?? true,
@@ -48,8 +47,6 @@ describe('CircuitBreakerService', () => {
       'circuitBreaker.halfOpenFailureRateThreshold':
         overrides?.halfOpenFailureRateThreshold ??
         faker.number.int({ min: 10, max: 100 }),
-      'circuitBreaker.halfOpenMaxInFlight':
-        overrides?.halfOpenMaxInFlight ?? faker.number.int({ min: 1, max: 3 }),
     };
     const mockConfigService = {
       getOrThrow: vi.fn((key: string) => config[key]),
@@ -191,15 +188,15 @@ describe('CircuitBreakerService', () => {
   describe('HALF_OPEN State', () => {
     // threshold=5, halfOpenFailureRateThreshold=40
     // → effective HALF_OPEN failure threshold = ceil(5 * 40 / 100) = 2
+    // → max concurrent HALF_OPEN probes = same value = 2
     // → consecutive successes to close = 5
     function createHalfOpenService(
-      halfOpenMaxInFlight?: number,
+      halfOpenFailureRateThreshold = 40,
     ): CircuitBreakerService {
       const svc = createService({
         threshold: 5,
         timeout: 100,
-        halfOpenFailureRateThreshold: 40,
-        halfOpenMaxInFlight,
+        halfOpenFailureRateThreshold,
       });
       for (let i = 0; i < 5; i++) {
         svc.recordFailure(circuitName);
@@ -216,9 +213,10 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.halfOpenInFlight).toBe(1);
     });
 
-    it('should admit at most halfOpenMaxInFlight concurrent probes', () => {
+    it('should admit at most as many concurrent probes as failures needed to reopen', () => {
+      // With threshold 5, a rate of maxInFlight * 20 % yields exactly maxInFlight
       const maxInFlight = faker.number.int({ min: 1, max: 5 });
-      const service = createHalfOpenService(maxInFlight);
+      const service = createHalfOpenService(maxInFlight * 20);
       vi.advanceTimersByTime(150);
       for (let i = 0; i < maxInFlight; i++) {
         expect(service.canProceed(circuitName)).toBe(true);
@@ -242,7 +240,8 @@ describe('CircuitBreakerService', () => {
     });
 
     it('should free a probe slot when the probe succeeds', () => {
-      const service = createHalfOpenService(1);
+      // Rate 20 % of threshold 5 → a single probe slot
+      const service = createHalfOpenService(20);
       vi.advanceTimersByTime(150);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(false);
@@ -254,21 +253,23 @@ describe('CircuitBreakerService', () => {
     });
 
     it('should free a probe slot when the probe fails', () => {
-      const service = createHalfOpenService(1);
+      // Two slots and two failures to reopen, so one failure frees a slot
+      // while the circuit stays HALF_OPEN
+      const service = createHalfOpenService();
       vi.advanceTimersByTime(150);
+      expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(false);
 
-      // Effective threshold is 2, so one failure keeps the circuit HALF_OPEN
       service.recordFailure(circuitName);
       const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
-      expect(circuit.metrics.halfOpenInFlight).toBe(0);
+      expect(circuit.metrics.halfOpenInFlight).toBe(1);
       expect(service.canProceed(circuitName)).toBe(true);
     });
 
     it('should reset in-flight probes when reopening', () => {
-      const service = createHalfOpenService(2);
+      const service = createHalfOpenService();
       vi.advanceTimersByTime(150);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(true);

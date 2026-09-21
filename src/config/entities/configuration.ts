@@ -547,17 +547,11 @@ export default () => ({
       process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
       10,
     ), // 60 seconds
-    // Percentage of threshold used in HALF_OPEN state (0–100)
+    // Percentage of threshold used in HALF_OPEN state (0–100). The resulting
+    // count is both the number of failures that re-open the circuit and the
+    // maximum number of probe requests allowed in flight at once.
     halfOpenFailureRateThreshold: Number.parseInt(
       process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
-      10,
-    ),
-    // Maximum number of concurrent in-flight probe requests while HALF_OPEN.
-    // Defaults to the number of failures that re-open the circuit
-    // (threshold * halfOpenFailureRateThreshold / 100), so one round of probes
-    // is enough to reach a verdict either way.
-    halfOpenMaxInFlight: Number.parseInt(
-      process.env.CIRCUIT_BREAKER_HALF_OPEN_MAX_IN_FLIGHT ?? `${3}`,
       10,
     ),
   },

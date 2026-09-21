@@ -24,16 +24,10 @@ export interface ICircuitConfig {
 
   /**
    * Percentage of threshold used in HALF_OPEN state (0–100)
-   * E.g. 30 with threshold 10 means 3 failures reopen the circuit
+   * E.g. 30 with threshold 10 means 3 failures reopen the circuit, and at
+   * most 3 probe requests may be in flight at once while HALF_OPEN
    */
   halfOpenFailureRateThreshold: number;
-
-  /**
-   * Maximum number of requests allowed in flight at the same time while
-   * HALF_OPEN. Requests beyond this are blocked until a probe completes,
-   * so a still-failing upstream only ever sees a bounded number of probes.
-   */
-  halfOpenMaxInFlight: number;
 }
 
 /**
