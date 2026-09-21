@@ -29,11 +29,11 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
 /**
- * The seat limit end to end: the route, its guard, the real entitlements
- * service and the real repository against a real database. Every other spec
- * fakes one half of this — the repository's own tests invent a seat rule, and
- * the entitlements specs stub the Safe count — so this is the only place that
- * proves a Safe cannot be added above the quota.
+ * The seat limit end to end: the route, the real entitlements service and the
+ * real repository against a real database. The repository's own tests invent a
+ * seat rule rather than reading a plan, so this is the only place that proves
+ * a Safe cannot be added above the quota — and that another chain of a Safe
+ * the Workspace already holds is not what a seat is spent on.
  */
 describe('Safe seat enforcement', () => {
   let app: INestApplication<Server>;
@@ -170,15 +170,23 @@ describe('Safe seat enforcement', () => {
     );
   }
 
+  async function postSafes(
+    spaceUuid: string,
+    accessToken: string,
+    safes: Array<{ chainId: string; address: `0x${string}` }>,
+  ): Promise<request.Response> {
+    return await request(app.getHttpServer())
+      .post(`/v1/spaces/${spaceUuid}/safes`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .send({ safes });
+  }
+
   async function addSafes(
     spaceUuid: string,
     accessToken: string,
     count: number,
   ): Promise<request.Response> {
-    return await request(app.getHttpServer())
-      .post(`/v1/spaces/${spaceUuid}/safes`)
-      .set('Cookie', [`access_token=${accessToken}`])
-      .send({ safes: safePayload(count) });
+    return await postSafes(spaceUuid, accessToken, safePayload(count));
   }
 
   async function countSafes(spaceId: number): Promise<number> {
@@ -223,12 +231,67 @@ describe('Safe seat enforcement', () => {
     const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
     await grantSeats(spaceId, 2);
 
-    // The guard admits this (nothing used yet); the check inside the write is
-    // what sees the batch size.
     const response = await addSafes(spaceUuid, accessToken, 3);
 
     expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
     expect(response.body).toMatchObject({ quota: 2, used: 0 });
     await expect(countSafes(spaceId)).resolves.toBe(0);
+  });
+
+  it('charges one seat for a Safe on several chains', async () => {
+    const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
+    await grantSeats(spaceId, 1);
+    const address = getAddress(faker.finance.ethereumAddress());
+
+    await expect(
+      postSafes(
+        spaceUuid,
+        accessToken,
+        ['1', '137', '8453'].map((chainId) => ({ chainId, address })),
+      ),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+
+    await expect(countSafes(spaceId)).resolves.toBe(3);
+    // Three rows, one seat: the next address has nothing left to take.
+    const rejected = await addSafes(spaceUuid, accessToken, 1);
+    expect(rejected.status).toBe(HttpStatus.PAYMENT_REQUIRED);
+    expect(rejected.body).toMatchObject({ quota: 1, used: 1 });
+  });
+
+  it('admits another chain of a held Safe at the seat limit', async () => {
+    const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
+    await grantSeats(spaceId, 1);
+    const address = getAddress(faker.finance.ethereumAddress());
+
+    await expect(
+      postSafes(spaceUuid, accessToken, [{ chainId: '1', address }]),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+
+    await expect(
+      postSafes(spaceUuid, accessToken, [{ chainId: '137', address }]),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+
+    await expect(countSafes(spaceId)).resolves.toBe(2);
+  });
+
+  it('charges only the addresses a batch adds', async () => {
+    const { accessToken, spaceUuid, spaceId } = await createSpaceForSigner();
+    await grantSeats(spaceId, 2);
+    const held = getAddress(faker.finance.ethereumAddress());
+    const added = getAddress(faker.finance.ethereumAddress());
+
+    await expect(
+      postSafes(spaceUuid, accessToken, [{ chainId: '1', address: held }]),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+
+    // Two rows, one new seat: admitted against the last free one.
+    await expect(
+      postSafes(spaceUuid, accessToken, [
+        { chainId: '137', address: held },
+        { chainId: '1', address: added },
+      ]),
+    ).resolves.toMatchObject({ status: HttpStatus.CREATED });
+
+    await expect(countSafes(spaceId)).resolves.toBe(3);
   });
 });

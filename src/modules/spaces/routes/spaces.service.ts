@@ -5,6 +5,7 @@ import { In } from 'typeorm';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertAdmin } from '@/modules/spaces/domain/space-assert.utils';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -30,6 +31,8 @@ export class SpacesService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(IWalletsRepository)
     private readonly walletsRepository: IWalletsRepository,
     private readonly walletEncryptionService: WalletEncryptionService,
@@ -102,15 +105,18 @@ export class SpacesService {
           status: true,
           user: { id: true },
         },
-        safes: { id: true },
       },
-      relations: { members: { user: true }, safes: true },
+      relations: { members: { user: true } },
     });
 
-    const invitedByNames = await this.resolveInvitedByNames(spaces);
-
-    const decryptedSpaces =
-      await this.spaceEncryptionService.decryptSpaces(spaces);
+    // Seats, not rows: the repository owns what makes two rows one Safe.
+    const [invitedByNames, decryptedSpaces, seatsBySpace] = await Promise.all([
+      this.resolveInvitedByNames(spaces),
+      this.spaceEncryptionService.decryptSpaces(spaces),
+      this.spaceSafesRepository.countSeatsBySpaceIds(
+        spaces.map((space) => space.id),
+      ),
+    ]);
 
     return await Promise.all(
       decryptedSpaces.map(async (space) => {
@@ -144,7 +150,7 @@ export class SpacesService {
           memberCount: space.members.filter(
             (member) => member.status === 'ACTIVE',
           ).length,
-          safeCount: space.safes?.length ?? 0,
+          safeCount: seatsBySpace.get(space.id) ?? 0,
         };
       }),
     );

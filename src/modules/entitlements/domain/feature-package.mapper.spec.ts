@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { MAX_ENTITLEMENT_VALUE_LENGTH } from '@/modules/entitlements/domain/entitlements.constants';
-import { mapFeaturePackage } from '@/modules/entitlements/domain/feature-package.mapper';
+import {
+  mapFeaturePackage,
+  parseSafeSeatQuota,
+} from '@/modules/entitlements/domain/feature-package.mapper';
 
 const featureTypeByKey: Map<string, FeatureType> = new Map([
   ['security_hub', FeatureType.Binary],
@@ -81,6 +85,19 @@ describe('mapFeaturePackage', () => {
     });
 
     expect(result).toStrictEqual([]);
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it('uses the last matching key on a case-insensitive duplicate', () => {
+    const result = mapFeaturePackage({
+      metadata: { FEATURE_SAFE_SEATS: '2', FEATURE_safe_seats: '5' },
+      featureTypeByKey,
+      onWarning,
+    });
+
+    expect(result).toStrictEqual([
+      { featureKey: 'safe_seats', enabled: true, quota: 5, value: null },
+    ]);
     expect(onWarning).not.toHaveBeenCalled();
   });
 
@@ -169,5 +186,77 @@ describe('mapFeaturePackage', () => {
         onWarning,
       }),
     ).toStrictEqual([]);
+  });
+});
+
+describe('parseSafeSeatQuota', () => {
+  it('returns the parsed quota', () => {
+    const quota = faker.number.int({ min: 0, max: DB_MAX_SAFE_INTEGER });
+
+    expect(parseSafeSeatQuota({ FEATURE_SAFE_SEATS: `${quota}` })).toBe(quota);
+  });
+
+  it('returns null for an unlimited quota', () => {
+    expect(parseSafeSeatQuota({ FEATURE_SAFE_SEATS: 'unlimited' })).toBeNull();
+  });
+
+  it('returns null when the key is absent', () => {
+    expect(parseSafeSeatQuota({})).toBeNull();
+  });
+
+  it('returns null for null or undefined metadata', () => {
+    expect(parseSafeSeatQuota(null)).toBeNull();
+    expect(parseSafeSeatQuota(undefined)).toBeNull();
+  });
+
+  it.each(['ten', '-1', '1.5', `${DB_MAX_SAFE_INTEGER + 1}`])(
+    'returns null and warns for the unparseable quota %s',
+    (quota) => {
+      const onWarning = vi.fn<(message: string) => void>();
+
+      expect(
+        parseSafeSeatQuota({ FEATURE_SAFE_SEATS: quota }, onWarning),
+      ).toBeNull();
+
+      expect(onWarning).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('does not warn for an unlimited quota', () => {
+    const onWarning = vi.fn<(message: string) => void>();
+
+    parseSafeSeatQuota({ FEATURE_SAFE_SEATS: 'unlimited' }, onWarning);
+
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when the key is absent', () => {
+    const onWarning = vi.fn<(message: string) => void>();
+
+    parseSafeSeatQuota({}, onWarning);
+
+    expect(onWarning).not.toHaveBeenCalled();
+  });
+
+  it.each(['FEATURE_safe_seats', 'FEATURE_Safe_Seats'])(
+    'matches the key case-insensitively on its suffix (%s)',
+    (key) => {
+      const quota = faker.number.int({ min: 0, max: DB_MAX_SAFE_INTEGER });
+
+      expect(parseSafeSeatQuota({ [key]: `${quota}` })).toBe(quota);
+    },
+  );
+
+  it('does not match a key whose FEATURE_ prefix itself is lowercase', () => {
+    expect(parseSafeSeatQuota({ feature_safe_seats: '3' })).toBeNull();
+  });
+
+  it('uses the last matching key on a duplicate, like mapFeaturePackage', () => {
+    expect(
+      parseSafeSeatQuota({
+        FEATURE_SAFE_SEATS: '2',
+        FEATURE_safe_seats: '5',
+      }),
+    ).toBe(5);
   });
 });

@@ -7,6 +7,7 @@ import {
   type FindOptionsWhere,
   IsNull,
 } from 'typeorm';
+import { z } from 'zod';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -23,6 +24,19 @@ import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption
 
 /** Own namespace: the single-int lock key space is shared process-wide. */
 const SEAT_LOCK_NAMESPACE = 1827;
+
+/**
+ * One seat per Safe address, however many chains it is on. `address` is
+ * non-deterministic ciphertext, so equality goes through the blind index
+ * where the row has one.
+ */
+const SEAT_KEY = 'COALESCE(safe.address_index, safe.address)';
+
+/** The driver hands raw rows back untyped, so both raw reads parse. */
+const SeatCountRowsSchema = z.array(
+  z.object({ spaceId: z.coerce.number(), seats: z.coerce.number() }),
+);
+const NewSeatRowsSchema = z.tuple([z.object({ newSeats: z.coerce.number() })]);
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
   public constructor(
@@ -199,16 +213,69 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     });
   }
 
-  public async countBySpaceId(
+  public async countSeatsBySpaceId(
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<number> {
+    const seats = await this.countSeatsBySpaceIds([spaceId], entityManager);
+    return seats.get(spaceId) ?? 0;
+  }
+
+  public async countSeatsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], number>> {
+    if (spaceIds.length === 0) {
+      return new Map();
+    }
     const repository = await getScopedRepository(
       this.postgresDatabaseService,
       SpaceSafe,
       entityManager,
     );
-    return await repository.count({ where: { space: { id: spaceId } } });
+    const rows = await repository
+      .createQueryBuilder('safe')
+      .select('safe.space_id', 'spaceId')
+      .addSelect(`COUNT(DISTINCT ${SEAT_KEY})`, 'seats')
+      .where('safe.space_id IN (:...spaceIds)', { spaceIds })
+      .groupBy('safe.space_id')
+      .getRawMany<unknown>();
+
+    return new Map(
+      SeatCountRowsSchema.parse(rows).map((row) => [row.spaceId, row.seats]),
+    );
+  }
+
+  public async countNewSeats(
+    args: {
+      spaceId: Space['id'];
+      addresses: Array<SpaceSafe['address']>;
+    },
+    entityManager?: EntityManager,
+  ): Promise<number> {
+    // Keyed as `SEAT_KEY` keys a stored row. The Set is load-bearing: one
+    // address on several chains is one seat, and `unnest` counts duplicates.
+    const seatKeys = new Set(
+      args.addresses.map(
+        (address) =>
+          this.spaceEncryptionService.safeAddressIndex(address) ?? address,
+      ),
+    );
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
+    const result = await repository.query<unknown>(
+      `SELECT COUNT(*) AS "newSeats"
+         FROM unnest($2::text[]) AS requested(seat_key)
+        WHERE NOT EXISTS (
+              SELECT 1 FROM "${repository.metadata.tableName}" safe
+               WHERE safe.space_id = $1
+                 AND ${SEAT_KEY} = requested.seat_key)`,
+      [args.spaceId, [...seatKeys]],
+    );
+    return NewSeatRowsSchema.parse(result)[0].newSeats;
   }
 
   public async find(args: {

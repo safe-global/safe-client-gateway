@@ -3,6 +3,7 @@ import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subs
 import {
   FEATURE_KEYS,
   FeatureType,
+  SAFE_SEATS_FEATURE_KEY,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
@@ -18,7 +19,7 @@ export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
  * its counter is wired.
  */
 export const STOCK_METERED_FEATURES = [
-  'safe_seats',
+  SAFE_SEATS_FEATURE_KEY,
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];

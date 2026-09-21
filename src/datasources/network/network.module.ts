@@ -150,7 +150,6 @@ function createCircuitBreakerRequestFunction(
         error instanceof NetworkResponseError && error.response.status >= 500;
       const isNetworkError = error instanceof NetworkRequestError;
       if (isServerError || isNetworkError) {
-        circuitBreakerService.getOrRegisterCircuit(circuitBreaker.key);
         circuitBreakerService.recordFailure(circuitBreaker.key);
       } else {
         circuitBreakerService.recordSuccess(circuitBreaker.key);

@@ -46,11 +46,9 @@ export class SpaceSafesService {
     // admits share one. What each step needs is resolved before it opens:
     // the plan (cache and database reads) and the ciphertext (a KMS round-trip
     // per Safe), leaving the locked section free of external I/O.
-    // `SafeSeatsGuard` only rejects early.
     const assertSeats = await this.entitlementEnforcement.prepareQuotaCheck({
       spaceId: args.spaceId,
       featureKey: 'safe_seats',
-      delta: args.payload.length,
     });
     const rows = await this.spaceSafesRepository.encryptRows(
       args.spaceId,
@@ -59,12 +57,22 @@ export class SpaceSafesService {
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await this.spaceSafesRepository.lockSeats(args.spaceId, entityManager);
-      assertSeats(
-        await this.spaceSafesRepository.countBySpaceId(
+      // The delta is 0 for a chain of a Safe already held, so a Workspace at
+      // its seat limit admits it. Sequential: both queries run on the one
+      // connection the transaction holds.
+      assertSeats({
+        used: await this.spaceSafesRepository.countSeatsBySpaceId(
           args.spaceId,
           entityManager,
         ),
-      );
+        delta: await this.spaceSafesRepository.countNewSeats(
+          {
+            spaceId: args.spaceId,
+            addresses: args.payload.map(({ address }) => address),
+          },
+          entityManager,
+        ),
+      });
       await this.spaceSafesRepository.insertRows({
         spaceId: args.spaceId,
         actorUserId: userId,
