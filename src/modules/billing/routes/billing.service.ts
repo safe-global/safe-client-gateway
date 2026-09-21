@@ -134,8 +134,7 @@ export class BillingService {
   /**
    * Starts a checkout for a workspace payment link.
    *
-   * Admin-only. Also requires a fresh second factor (a recent MFA step-up),
-   * enforced by `ElevationGuard` on the route.
+   * Admin-only, and gated by `ElevationGuard`.
    */
   public async createCheckoutUrl(args: {
     paymentLinkId: string;
@@ -224,8 +223,7 @@ export class BillingService {
   /**
    * Moves the workspace onto another plan.
    *
-   * Admin-only. Also requires a fresh second factor (a recent MFA step-up),
-   * enforced by `ElevationGuard` on the route.
+   * Admin-only, and gated by `ElevationGuard`.
    *
    * Returning does not mean the entitlements have moved: those are
    * materialized when the upstream's webhook arrives, so
