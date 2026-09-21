@@ -1364,8 +1364,19 @@ export class CacheRouter {
   static getPolicyIndexerStateCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    /**
+     * The guard-policy kinds the read asked the indexer for.
+     *
+     * A read narrowed to some kinds answers with only those, so it cannot serve
+     * a later read asking for more. Sorting makes the field the set rather than
+     * the order the caller happened to list it in.
+     */
+    policyKinds: ReadonlyArray<string>;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getPolicyIndexerStateCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getPolicyIndexerStateCacheKey(args),
+      [...args.policyKinds].sort().join(','),
+    );
   }
 
   static getPolicyIndexerStateCacheKey(args: {
