@@ -2,13 +2,16 @@
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 
+/** The stock Safe-seats feature's key, shared by every constant derived from it. */
+export const SAFE_SEATS_FEATURE_KEY = 'safe_seats';
+
 /**
  * The catalog keys this API publishes, as an OpenAPI enum. The `features` table
  * is data and its `key` column a plain string, so the response is narrowed to
  * this list and a seeded-but-unpublished key never ships.
  */
 export const FEATURE_KEYS = [
-  'safe_seats',
+  SAFE_SEATS_FEATURE_KEY,
   'copilot_scans',
   'sponsored_transactions',
 ] as const;

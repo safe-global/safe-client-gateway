@@ -11,7 +11,7 @@ import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.b
 import type { CollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
+import type { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
 import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { HooksRepository } from '@/modules/hooks/domain/hooks.repository';
@@ -49,7 +49,7 @@ const mockCollectiblesRepository = vi.mocked({
 
 const mockDelegatesRepository = vi.mocked({
   clearDelegates: vi.fn(),
-} as MockedObject<DelegatesV2Repository>);
+} as MockedObject<DelegatesV3Repository>);
 
 const mockMessagesRepository = vi.mocked({
   clearMessages: vi.fn(),

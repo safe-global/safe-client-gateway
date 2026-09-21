@@ -77,6 +77,14 @@ export interface ITransactionApi {
     label: string;
   }): Promise<void>;
 
+  updateDelegateV2(args: {
+    safeAddress: Address | null;
+    delegate: Address;
+    delegator: Address;
+    signature: string;
+    label: string;
+  }): Promise<void>;
+
   deleteDelegate(args: {
     delegate: Address;
     delegator: Address;

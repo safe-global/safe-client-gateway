@@ -133,7 +133,6 @@ describe('MessageVerifierHelper', () => {
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
-        safeMessage: message.message,
         source: 'PROPOSAL',
       });
     });
@@ -480,7 +479,6 @@ describe('MessageVerifierHelper', () => {
         chainId,
         safeAddress: safe.address,
         safeVersion: safe.version,
-        safeMessage: message.message,
         source: 'CONFIRMATION',
       });
     });
@@ -531,7 +529,6 @@ describe('MessageVerifierHelper', () => {
         safeAddress: safe.address,
         safeVersion: safe.version,
         messageHash: message.messageHash,
-        safeMessage: message.message,
         type: 'MESSAGE_VALIDITY',
         source: 'CONFIRMATION',
       });

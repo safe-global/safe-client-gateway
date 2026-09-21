@@ -21,6 +21,10 @@ import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
+import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+
+// Shortest chainId the schema rejects.
+const chainIdMinLength = CHAIN_ID_MAXLENGTH + 1;
 
 describe('SpaceSafesController', () => {
   let app: INestApplication<Server>;
@@ -543,7 +547,6 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if space id is bigger than the max limit', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const chainIdMinLength = 79;
       const min = BigInt(`1${'0'.repeat(chainIdMinLength - 1)}`);
       const max = BigInt('9'.repeat(chainIdMinLength));
       const chain1 = chainBuilder()
@@ -571,7 +574,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: 'Value must be less than or euqal to 78',
+          message: `Value must be at most ${CHAIN_ID_MAXLENGTH} characters long`,
           path: ['safes', 0, 'chainId'],
         });
     });
@@ -1299,7 +1302,6 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if space id is bigger than the max limit', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const chainIdMinLength = 79;
       const min = BigInt(`1${'0'.repeat(chainIdMinLength - 1)}`);
       const max = BigInt('9'.repeat(chainIdMinLength));
       const chain1 = chainBuilder()
@@ -1327,7 +1329,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: 'Value must be less than or euqal to 78',
+          message: `Value must be at most ${CHAIN_ID_MAXLENGTH} characters long`,
           path: ['safes', 0, 'chainId'],
         });
     });

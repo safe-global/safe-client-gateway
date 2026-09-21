@@ -139,7 +139,6 @@ export class MessagesService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       message: args.createMessageDto.message,
-      safeAppId: args.createMessageDto.safeAppId,
       origin: args.createMessageDto.origin,
       signature: args.createMessageDto.signature,
     });
@@ -163,7 +162,7 @@ export class MessagesService {
     this.loggingService.info({
       safeAddress: args.safeAddress,
       chainId: args.chainId,
-      message: args.createMessageDto,
+      origin: args.createMessageDto.origin,
       type: LogType.MessagePropose,
     });
   }
