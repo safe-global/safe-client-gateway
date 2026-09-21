@@ -434,7 +434,9 @@ export class BillingService {
       return;
     }
 
-    const used = await this.spaceSafesRepository.countBySpaceId(args.spaceId);
+    const used = await this.spaceSafesRepository.countSeatsBySpaceId(
+      args.spaceId,
+    );
     if (used > quota) {
       throw new ConflictException(
         "This plan doesn't offer enough Safe seats for the workspace's current Safes",
