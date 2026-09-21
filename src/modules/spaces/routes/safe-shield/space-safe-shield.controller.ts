@@ -22,14 +22,15 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
-import { CopilotScansGuard } from '@/modules/entitlements/routes/guards/copilot-scans.guard';
 import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import { SingleRecipientAnalysisDto } from '@/modules/safe-shield/entities/dtos/single-recipient-analysis.dto';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { Auth } from '@/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
@@ -83,7 +84,6 @@ export class SpaceSafeShieldController {
     description:
       'The Space has no copilot_scans entitlement. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
   })
-  @UseGuards(CopilotScansGuard)
   @UseFilters(QuotaExceededExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Get('recipient/:recipientAddress')
@@ -94,12 +94,14 @@ export class SpaceSafeShieldController {
     safeAddress: Address,
     @Param('recipientAddress', new ValidationPipe(AddressSchema))
     recipientAddress: Address,
+    @Auth() authPayload: AuthPayload,
   ): Promise<SingleRecipientAnalysisDto> {
     return this.spaceSafeShieldService.analyzeRecipient({
       spaceId,
       chainId,
       safeAddress,
       recipientAddress,
+      authPayload,
     });
   }
 
@@ -141,7 +143,6 @@ export class SpaceSafeShieldController {
     description:
       'The Space has no copilot_scans entitlement. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
   })
-  @UseGuards(CopilotScansGuard)
   @UseFilters(QuotaExceededExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Post('counterparty-analysis')
@@ -152,12 +153,14 @@ export class SpaceSafeShieldController {
     safeAddress: Address,
     @Body(new ValidationPipe(CounterpartyAnalysisRequestSchema))
     txData: CounterpartyAnalysisRequestDto,
+    @Auth() authPayload: AuthPayload,
   ): Promise<CounterpartyAnalysisDto> {
     return this.spaceSafeShieldService.analyzeCounterparty({
       spaceId,
       chainId,
       safeAddress,
       tx: txData,
+      authPayload,
     });
   }
 }

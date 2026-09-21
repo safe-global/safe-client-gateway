@@ -4,7 +4,6 @@ import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.
 import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { EntitlementsRepositoryModule } from '@/modules/entitlements/domain/entitlements-repository.module';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { CopilotScansGuard } from '@/modules/entitlements/routes/guards/copilot-scans.guard';
 import { SafeSeatsGuard } from '@/modules/entitlements/routes/guards/safe-seats.guard';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { UsersModule } from '@/modules/users/users.module';
@@ -33,13 +32,7 @@ import { UsersModule } from '@/modules/users/users.module';
     EntitlementsService,
     { provide: IEntitlementEnforcement, useExisting: EntitlementsService },
     SafeSeatsGuard,
-    CopilotScansGuard,
   ],
-  exports: [
-    EntitlementsService,
-    IEntitlementEnforcement,
-    SafeSeatsGuard,
-    CopilotScansGuard,
-  ],
+  exports: [EntitlementsService, IEntitlementEnforcement, SafeSeatsGuard],
 })
 export class EntitlementsModule {}

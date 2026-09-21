@@ -32,12 +32,6 @@ import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/dom
 import { counterpartyAnalysisRequestDtoBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
-/**
- * Copilot plan gating on Spaces end to end: the route, `CopilotScansGuard`,
- * the Safe-belongs-to-Space check, the real entitlements service and the real
- * repository against a real database — the Spaces-side counterpart to
- * `safe-shield.controller.integration.spec.ts`'s Core coverage.
- */
 describe('SpaceSafeShieldController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
@@ -138,6 +132,33 @@ describe('SpaceSafeShieldController', () => {
         .get(
           `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
         )
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('rejects a non-member of the Space before revealing its plan/quota state', async () => {
+      const { spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const { accessToken: strangerAccessToken } =
+        await createSpaceForSignerFixture({
+          app,
+          jwtService,
+          postgresDatabaseService,
+        });
+      // No entitlement granted: a member-check bug that let this through
+      // would surface as a 402, not a 200, and still prove the leak.
+      const safe = {
+        chainId: '1',
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
+        )
+        .set('Cookie', [`access_token=${strangerAccessToken}`])
         .expect(HttpStatus.FORBIDDEN);
     });
 
@@ -266,6 +287,34 @@ describe('SpaceSafeShieldController', () => {
         .post(
           `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/counterparty-analysis`,
         )
+        .send(counterpartyAnalysisRequestDtoBuilder().build())
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('rejects a non-member of the Space before revealing its plan/quota state', async () => {
+      const { spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const { accessToken: strangerAccessToken } =
+        await createSpaceForSignerFixture({
+          app,
+          jwtService,
+          postgresDatabaseService,
+        });
+      // No entitlement granted: a member-check bug that let this through
+      // would surface as a 402, not a 200, and still prove the leak.
+      const safe = {
+        chainId: '1',
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/counterparty-analysis`,
+        )
+        .set('Cookie', [`access_token=${strangerAccessToken}`])
         .send(counterpartyAnalysisRequestDtoBuilder().build())
         .expect(HttpStatus.FORBIDDEN);
     });
