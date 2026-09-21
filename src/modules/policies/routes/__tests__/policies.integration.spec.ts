@@ -111,7 +111,11 @@ describe('Space Policies Controller', () => {
    * registrations the Transaction Service holds for them.
    */
   function mockUpstream(
-    args: { modules?: Array<`0x${string}`>; delegates?: Array<Delegate> } = {},
+    args: {
+      modules?: Array<`0x${string}`>;
+      delegates?: Array<Delegate>;
+      delegatesUnavailable?: boolean;
+    } = {},
   ): void {
     const modules = args.modules ?? [allowanceModule];
     const delegates = args.delegates ?? [];
@@ -153,6 +157,9 @@ describe('Space Policies Controller', () => {
       // The proposer half. Both delegates APIs land here while the Queue
       // Service is switched off, which is what the test configuration sets.
       if (url.endsWith('/api/v2/delegates/')) {
+        if (args.delegatesUnavailable) {
+          return Promise.reject(new Error('Service unavailable'));
+        }
         return Promise.resolve({
           data: rawify(
             pageBuilder<Delegate>().with('results', delegates).build(),
@@ -258,6 +265,8 @@ describe('Space Policies Controller', () => {
   });
 
   describe('GET /v1/spaces/:spaceId/policies/active', () => {
+    const policyTypes = Object.values(PolicyType).join(',');
+
     it('should return the policies of every safe in the space, in one indexer read', async () => {
       const sepolia = anAllowance().build();
       const polygon = anAllowance()
@@ -287,6 +296,7 @@ describe('Space Policies Controller', () => {
 
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
@@ -317,7 +327,10 @@ describe('Space Policies Controller', () => {
 
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
-        .query({ safes: `${SEPOLIA_CHAIN_ID}:${safeAddress}` })
+        .query({
+          types: policyTypes,
+          safes: `${SEPOLIA_CHAIN_ID}:${safeAddress}`,
+        })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
@@ -334,6 +347,7 @@ describe('Space Policies Controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
         .query({
+          types: policyTypes,
           safes: `${SEPOLIA_CHAIN_ID}:${getAddress(faker.finance.ethereumAddress())}`,
         })
         .set('Cookie', [`access_token=${accessToken}`])
@@ -348,6 +362,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect([]);
@@ -371,6 +386,7 @@ describe('Space Policies Controller', () => {
 
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
@@ -417,6 +433,7 @@ describe('Space Policies Controller', () => {
 
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
@@ -456,6 +473,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect([]);
@@ -464,13 +482,7 @@ describe('Space Policies Controller', () => {
     it('should fail when the delegates api is unavailable', async () => {
       // Atomic, like the rest of the page: a Safe whose proposers could not be
       // read must not report as having none.
-      mockUpstream();
-      networkService.get.mockImplementation(({ url }) => {
-        if (url.endsWith('/api/v2/delegates/')) {
-          return Promise.reject(new Error('Service unavailable'));
-        }
-        return Promise.resolve({ data: rawify(chain), status: 200 });
-      });
+      mockUpstream({ delegatesUnavailable: true });
       mockIndexer(rawPolicyIndexerResponse({}));
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -478,6 +490,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(503);
     });
@@ -500,6 +513,7 @@ describe('Space Policies Controller', () => {
 
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
@@ -523,6 +537,7 @@ describe('Space Policies Controller', () => {
 
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
@@ -546,6 +561,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect([]);
@@ -560,6 +576,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(503);
     });
@@ -569,6 +586,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get('/v1/spaces/not-a-uuid/policies/active')
+        .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(400);
     });
@@ -589,7 +607,115 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/active`)
-        .query({ safes: 'not-a-safe' })
+        .query({ types: policyTypes, safes: 'not-a-safe' })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('should narrow the read to the requested policy types', async () => {
+      const proposer = delegateBuilder().with('safe', safeAddress).build();
+      const allowance = anAllowance().build();
+      mockUpstream({ delegates: [proposer] });
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          SafeAllowance: [allowance],
+          SafeDelegate: registrationsFor([allowance]),
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: PolicyType.Proposer })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(
+        (body as Array<{ type: string }>).map((policy) => policy.type),
+      ).toStrictEqual([PolicyType.Proposer, PolicyType.Proposer]);
+      // The indexer feeds spending limits only, so it is never asked.
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should report both types when both are requested', async () => {
+      const proposer = delegateBuilder().with('safe', safeAddress).build();
+      const allowance = anAllowance().build();
+      mockUpstream({ delegates: [proposer] });
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          SafeAllowance: [allowance],
+          SafeDelegate: registrationsFor([allowance]),
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({
+          types: `${PolicyType.SpendingLimit},${PolicyType.Proposer}`,
+        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(
+        new Set((body as Array<{ type: string }>).map((policy) => policy.type)),
+      ).toStrictEqual(new Set([PolicyType.SpendingLimit, PolicyType.Proposer]));
+    });
+
+    it('should return an empty page for a type nothing reports yet', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: PolicyType.Recovery })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect([]);
+    });
+
+    it('should return 422 for an unknown policy type', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: 'not-a-policy-type' })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('should return 422 when no policy types are asked for', async () => {
+      // There is no unfiltered read: omitting `types` is a malformed request
+      // rather than a request for every type.
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('should return 422 for an empty policy type filter', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: '' })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(422);
     });
