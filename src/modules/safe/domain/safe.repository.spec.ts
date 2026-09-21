@@ -1480,7 +1480,7 @@ describe('SafeRepository', () => {
         rawify(queueTx),
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
-      mockSafeQueueService.postConfirmation.mockResolvedValue(rawify({}));
+      mockSafeQueueService.postConfirmation.mockResolvedValue();
 
       await repository.addConfirmation({
         chainId,
