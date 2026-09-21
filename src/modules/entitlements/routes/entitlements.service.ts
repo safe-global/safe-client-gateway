@@ -311,8 +311,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
     featureKey: FeatureKey;
   }): Promise<FeatureGrant> {
     const staticQuota = this.preEnforcementQuotas[args.featureKey];
+    const hasStaticQuota = staticQuota !== null;
     if (
-      staticQuota !== null &&
+      hasStaticQuota &&
       !isEnforcementActive({
         now: new Date(),
         startsAt: this.enforcementStartsAt,
@@ -325,13 +326,13 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const grant = grants[args.featureKey];
     if (grant === undefined) {
       this.loggingService.warn(
-        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} ${staticQuota !== null ? 'keeps the static limit' : 'is denied'}`,
+        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} ${hasStaticQuota ? 'keeps the static limit' : 'is denied'}`,
       );
       // A catalog gap must not block an action a static limit still covers,
       // and must not hand out one it does not.
-      return staticQuota !== null
+      return hasStaticQuota
         ? this.staticGrant(staticQuota)
-        : { enabled: false, quota: 0, resetsAt: null, counter: null };
+        : this.deniedGrant();
     }
     return grant;
   }
@@ -339,6 +340,11 @@ export class EntitlementsService implements IEntitlementEnforcement {
   /** A limit that predates enforcement, as a grant. */
   private staticGrant(quota: number): FeatureGrant {
     return { enabled: true, quota, resetsAt: null, counter: null };
+  }
+
+  /** No allowance at all: the plan simply does not grant this feature. */
+  private deniedGrant(): FeatureGrant {
+    return { enabled: false, quota: 0, resetsAt: null, counter: null };
   }
 
   /**
