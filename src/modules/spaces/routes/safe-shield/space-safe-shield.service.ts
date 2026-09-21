@@ -80,10 +80,9 @@ export class SpaceSafeShieldService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    await this.entitlementEnforcement.assertWithinQuota({
+    await this.entitlementEnforcement.assertFeatureGranted({
       spaceId: args.spaceId,
       featureKey: 'copilot_scans',
-      delta: 0,
     });
 
     const belongs = await this.spaceSafesRepository.existsInSpace({

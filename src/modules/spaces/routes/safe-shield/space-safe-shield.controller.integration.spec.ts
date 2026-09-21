@@ -25,7 +25,7 @@ import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.s
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
+import { FEATURE_NOT_GRANTED_ERROR_CODE } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
@@ -194,7 +194,7 @@ describe('SpaceSafeShieldController', () => {
 
       expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
       expect(response.body).toMatchObject({
-        code: QUOTA_EXCEEDED_ERROR_CODE,
+        code: FEATURE_NOT_GRANTED_ERROR_CODE,
         feature: 'copilot_scans',
       });
     });
@@ -352,7 +352,7 @@ describe('SpaceSafeShieldController', () => {
 
       expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
       expect(response.body).toMatchObject({
-        code: QUOTA_EXCEEDED_ERROR_CODE,
+        code: FEATURE_NOT_GRANTED_ERROR_CODE,
         feature: 'copilot_scans',
       });
     });

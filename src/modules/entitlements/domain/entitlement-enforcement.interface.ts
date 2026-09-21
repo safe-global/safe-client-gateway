@@ -22,13 +22,22 @@ export type ConsumedQuota = {
 /** Reached through this token so a gated module never imports the service. */
 export interface IEntitlementEnforcement {
   /**
-   * Admits an action consuming `delta`, or rejects it with
-   * {@link QuotaExceededError}.
+   * Admits an action consuming `delta` of a metered feature's allowance, or
+   * rejects it with {@link QuotaExceededError}.
    */
   assertWithinQuota(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
     delta: number;
+  }): Promise<void>;
+
+  /**
+   * Admits a Binary feature the plan simply grants or does not, or
+   * rejects it with {@link FeatureNotGrantedError}.
+   */
+  assertFeatureGranted(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
   }): Promise<void>;
 
   /**

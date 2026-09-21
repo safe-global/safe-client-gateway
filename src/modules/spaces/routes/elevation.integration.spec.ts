@@ -169,6 +169,19 @@ const UNGATED_ROUTES: Array<Route> = [
     body: {},
   },
   {
+    name: 'GET /v1/spaces/:spaceId/chains/:chainId/security/:safeAddress/recipient/:recipientAddress',
+    method: 'get',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/1/security/${getAddress(faker.finance.ethereumAddress())}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
+  },
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/security/:safeAddress/counterparty-analysis',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/1/security/${getAddress(faker.finance.ethereumAddress())}/counterparty-analysis`,
+    body: {},
+  },
+  {
     name: 'GET /v1/spaces/:spaceId/address-book',
     method: 'get',
     path: (id) => `/v1/spaces/${id}/address-book`,

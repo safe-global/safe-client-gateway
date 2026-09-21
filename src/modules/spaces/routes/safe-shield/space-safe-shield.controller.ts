@@ -24,7 +24,7 @@ import {
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
+import { FeatureNotGrantedExceptionFilter } from '@/modules/entitlements/domain/exception-filters/feature-not-granted.exception-filter';
 import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
@@ -82,9 +82,9 @@ export class SpaceSafeShieldController {
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
     description:
-      'The Space has no copilot_scans entitlement. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
+      'The Space has no copilot_scans entitlement. The body carries `{ code: "FEATURE_NOT_GRANTED", feature }`',
   })
-  @UseFilters(QuotaExceededExceptionFilter)
+  @UseFilters(FeatureNotGrantedExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Get('recipient/:recipientAddress')
   public analyzeRecipient(
@@ -141,9 +141,9 @@ export class SpaceSafeShieldController {
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
     description:
-      'The Space has no copilot_scans entitlement. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
+      'The Space has no copilot_scans entitlement. The body carries `{ code: "FEATURE_NOT_GRANTED", feature }`',
   })
-  @UseFilters(QuotaExceededExceptionFilter)
+  @UseFilters(FeatureNotGrantedExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Post('counterparty-analysis')
   public analyzeCounterparty(

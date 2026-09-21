@@ -54,6 +54,7 @@ import {
   isEnforcementActive,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
+import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
@@ -186,6 +187,25 @@ export class EntitlementsService implements IEntitlementEnforcement {
     });
   }
 
+  /** A Binary feature's whole verdict: the plan grants it or it does not. */
+  public async assertFeatureGranted(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+  }): Promise<void> {
+    const grant = await this.resolveGrant(args);
+    if (grant.enabled) {
+      return;
+    }
+    // Expected often enough (any gated action on an ungranted feature) to
+    // keep at debug.
+    this.loggingService.debug({
+      type: LogType.FeatureNotGranted,
+      spaceId: args.spaceId,
+      feature: args.featureKey,
+    });
+    throw new FeatureNotGrantedError(args.featureKey);
+  }
+
   public async prepareQuotaCheck(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
@@ -316,7 +336,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
 
   /** A limit that predates enforcement, as a grant. */
   private staticGrant(quota: number): FeatureGrant {
-    return { quota, resetsAt: null, counter: null };
+    return { enabled: true, quota, resetsAt: null, counter: null };
   }
 
   /**
@@ -453,6 +473,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
         return [
           feature.key,
           {
+            enabled: effective.enabled,
             // A feature the plan does not grant has no allowance at all.
             quota: effective.enabled ? effective.quota : 0,
             // Cached: only a webhook moves it, and that invalidates this.

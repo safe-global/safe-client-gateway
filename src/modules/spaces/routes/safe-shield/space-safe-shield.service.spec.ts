@@ -6,7 +6,7 @@ import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
+import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import type { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { SpaceSafeShieldService } from '@/modules/spaces/routes/safe-shield/space-safe-shield.service';
@@ -29,7 +29,7 @@ describe('SpaceSafeShieldService', () => {
   >;
   let membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>>;
   let entitlementEnforcement: MockedObject<
-    Pick<IEntitlementEnforcement, 'assertWithinQuota'>
+    Pick<IEntitlementEnforcement, 'assertFeatureGranted'>
   >;
   let safeShieldAnalysis: MockedObject<ISafeShieldAnalysis>;
   let target: SpaceSafeShieldService;
@@ -39,7 +39,7 @@ describe('SpaceSafeShieldService', () => {
     membersRepository = {
       findOne: vi.fn().mockResolvedValue({ id: userId } as Member),
     };
-    entitlementEnforcement = { assertWithinQuota: vi.fn() };
+    entitlementEnforcement = { assertFeatureGranted: vi.fn() };
     safeShieldAnalysis = {
       analyzeRecipient: vi.fn(),
       analyzeCounterparty: vi.fn(),
@@ -66,19 +66,15 @@ describe('SpaceSafeShieldService', () => {
         }),
       ).rejects.toThrow(ForbiddenException);
 
-      expect(entitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
+      expect(
+        entitlementEnforcement.assertFeatureGranted,
+      ).not.toHaveBeenCalled();
       expect(spaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     });
 
-    it('rejects a Space over its copilot_scans limit before checking the Safe registry', async () => {
-      const quota = faker.number.int({ min: 1, max: 10 });
-      const quotaExceeded = new QuotaExceededError({
-        feature: 'copilot_scans',
-        quota,
-        used: quota,
-        resetsAt: null,
-      });
-      entitlementEnforcement.assertWithinQuota.mockRejectedValue(quotaExceeded);
+    it('rejects a Space without the copilot_scans entitlement before checking the Safe registry', async () => {
+      const notGranted = new FeatureNotGrantedError('copilot_scans');
+      entitlementEnforcement.assertFeatureGranted.mockRejectedValue(notGranted);
 
       await expect(
         target.analyzeRecipient({
@@ -88,14 +84,13 @@ describe('SpaceSafeShieldService', () => {
           recipientAddress: getAddress(faker.finance.ethereumAddress()),
           authPayload,
         }),
-      ).rejects.toThrow(quotaExceeded);
+      ).rejects.toThrow(notGranted);
 
       expect(
-        entitlementEnforcement.assertWithinQuota,
+        entitlementEnforcement.assertFeatureGranted,
       ).toHaveBeenCalledExactlyOnceWith({
         spaceId,
         featureKey: 'copilot_scans',
-        delta: 0,
       });
       expect(spaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     });
@@ -169,7 +164,9 @@ describe('SpaceSafeShieldService', () => {
         }),
       ).rejects.toThrow(ForbiddenException);
 
-      expect(entitlementEnforcement.assertWithinQuota).not.toHaveBeenCalled();
+      expect(
+        entitlementEnforcement.assertFeatureGranted,
+      ).not.toHaveBeenCalled();
       expect(spaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     });
 

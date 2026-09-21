@@ -15,6 +15,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -35,6 +36,7 @@ import {
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import { FEATURE_NOT_GRANTED_ERROR_CODE } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
@@ -1438,6 +1440,54 @@ describe('EntitlementsService', () => {
       await expect(
         assertSeats(enforcingService, spaceId, 1),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  // A Binary feature's own gate: on or off, nothing to count 
+  describe('assertFeatureGranted', () => {
+    function assertCopilotScans(spaceId: number): Promise<void> {
+      return enforcingService.assertFeatureGranted({
+        spaceId,
+        featureKey: 'copilot_scans',
+      });
+    }
+
+    it('rejects a Binary feature the plan does not grant, with no quota to report', async () => {
+      const spaceId = await createSpace();
+
+      await expect(assertCopilotScans(spaceId)).rejects.toMatchObject({
+        response: {
+          code: FEATURE_NOT_GRANTED_ERROR_CODE,
+          feature: 'copilot_scans',
+        },
+      });
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.FeatureNotGranted,
+          spaceId,
+          feature: 'copilot_scans',
+        }),
+      );
+    });
+
+    it('admits a Binary feature the plan grants, unlimited', async () => {
+      const spaceId = await createSpace();
+      await materializeFromEvent({
+        spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('entitlements', [
+            {
+              featureKey: 'copilot_scans',
+              enabled: true,
+              quota: null,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+
+      await expect(assertCopilotScans(spaceId)).resolves.toBeUndefined();
     });
   });
 
