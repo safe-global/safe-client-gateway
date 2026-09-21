@@ -268,12 +268,16 @@ export class BillingController {
   @ApiBody({ type: UpdateSubscriptionDto })
   @ApiOkResponse({ type: UpdateSubscriptionResult })
   @ApiForbiddenResponse({
-    description: 'Not an admin, or a plan this workspace is not offered',
+    description:
+      'Not an admin, a plan this workspace is not offered, or a named paymentLinkId this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
   @ApiConflictResponse({
-    description:
-      "Already on this plan, the subscription is not updatable, several offered links sell the plan and none was named, or the target plan doesn't offer enough Safe seats for the workspace's current Safes",
+    description: `One of:
+- Already on this plan
+- The subscription is not in an updatable state
+- Several offered links sell the plan and none was named
+- The target plan doesn't offer enough Safe seats for the workspace's current Safes`,
   })
   @ApiUnprocessableEntityResponse({
     description: 'The named payment link does not offer this plan',

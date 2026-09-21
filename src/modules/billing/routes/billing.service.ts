@@ -32,7 +32,6 @@ import { IBillingRepository } from '@/modules/billing/domain/billing.repository.
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-link-offer.rules';
 import {
-  hasSeatCapacity,
   isOfferedToSpace,
   isUnclassifiedTrialLink,
   offersPlan,
@@ -429,17 +428,16 @@ export class BillingService {
     spaceId: Space['id'];
     paymentLink: PaymentLink;
   }): Promise<void> {
-    // Skip the count query for a link with no seat quota to enforce.
-    if (
-      parseSafeSeatQuota(args.paymentLink.metadata, (message) =>
-        this.loggingService.warn(message),
-      ) === null
-    ) {
+    const quota = parseSafeSeatQuota(args.paymentLink.metadata, (message) =>
+      this.loggingService.warn(message),
+    );
+    // No quota to enforce: skip the count query entirely.
+    if (quota === null) {
       return;
     }
 
     const used = await this.spaceSafesRepository.countBySpaceId(args.spaceId);
-    if (!hasSeatCapacity(args.paymentLink, used)) {
+    if (used > quota) {
       throw new ConflictException(
         "This plan doesn't offer enough Safe seats for the workspace's current Safes",
       );
