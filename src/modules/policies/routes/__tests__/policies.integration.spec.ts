@@ -66,11 +66,17 @@ describe('Space Policies Controller', () => {
     withSafe: boolean;
     withSafeOnPolygon?: boolean;
   }): Promise<{ accessToken: string; spaceId: string }> {
-    const accessToken = jwtService.sign(siweAuthPayloadDtoBuilder().build());
-
-    await request(app.getHttpServer())
+    const walletResponse = await request(app.getHttpServer())
       .post('/v1/users/wallet')
-      .set('Cookie', [`access_token=${accessToken}`]);
+      .set('Cookie', [
+        `access_token=${jwtService.sign(siweAuthPayloadDtoBuilder().build())}`,
+      ])
+      .expect(201);
+    const accessToken = jwtService.sign(
+      siweAuthPayloadDtoBuilder()
+        .with('sub', String(walletResponse.body.id))
+        .build(),
+    );
 
     const { body } = await request(app.getHttpServer())
       .post('/v1/spaces')
