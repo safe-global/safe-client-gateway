@@ -10,6 +10,7 @@ export class CircuitBreakerKeys {
   private static readonly SERVICE_PREFIX = {
     TRANSACTION_SERVICE: 'txs-service',
     DATA_DECODER_SERVICE: 'data-decoder-service',
+    SAFE_QUEUE_SERVICE: 'safe-queue-service',
   };
 
   /**
@@ -32,5 +33,18 @@ export class CircuitBreakerKeys {
    */
   static getDataDecoderServiceKey(): string {
     return CircuitBreakerKeys.SERVICE_PREFIX.DATA_DECODER_SERVICE;
+  }
+
+  /**
+   * Generates the circuit breaker key for the Queue Service
+   *
+   * The Queue Service is a single deployment serving all chains (the chain is
+   * passed as a request parameter, not the host), so the key is not
+   * chain-scoped.
+   *
+   * @returns Circuit breaker key: `safe-queue-service`
+   */
+  static getSafeQueueServiceKey(): string {
+    return CircuitBreakerKeys.SERVICE_PREFIX.SAFE_QUEUE_SERVICE;
   }
 }

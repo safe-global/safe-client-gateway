@@ -251,6 +251,7 @@ export default (): ReturnType<typeof configuration> => ({
     cacheInFlightRequests: false,
     spaceAuditLog: true,
     mfaStepUp: true,
+    safeQueueService: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -432,6 +433,11 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
       feePreviewTtlSeconds: 60,
     },
+  },
+  safeQueueService: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),

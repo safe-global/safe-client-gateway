@@ -17,7 +17,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import type { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { DelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository';
+import type { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -31,7 +31,7 @@ const mockConfigurationService = vi.mocked({
 
 const mockDelegatesRepository = vi.mocked({
   getDelegates: vi.fn(),
-} as MockedObject<DelegatesV2Repository>);
+} as MockedObject<DelegatesV3Repository>);
 
 const mockLoggingRepository = vi.mocked({
   error: vi.fn(),

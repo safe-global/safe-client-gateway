@@ -21,7 +21,6 @@ describe('MessageSchema', () => {
     'safe' as const,
     'messageHash' as const,
     'message' as const,
-    'proposedBy' as const,
     'confirmations' as const,
   ])('should fail when %s is missing', (key) => {
     const message = messageBuilder().build();
@@ -95,7 +94,7 @@ describe('MessageSchema', () => {
   });
 
   it.each([
-    'safeAppId' as const,
+    'proposedBy' as const,
     'preparedSignature' as const,
     'origin' as const,
   ])('should default %s to null', (key) => {
@@ -174,11 +173,6 @@ describe('MessageSchema', () => {
             }),
           ],
         ],
-      }),
-      expect.objectContaining({
-        code: 'invalid_type',
-        expected: 'string',
-        path: ['proposedBy'],
       }),
       expect.objectContaining({
         code: 'invalid_type',
