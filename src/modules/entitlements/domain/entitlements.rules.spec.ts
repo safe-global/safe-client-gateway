@@ -57,15 +57,20 @@ describe('entitlements rules', () => {
       ['room for the batch', 8, 2, true],
       ['exactly filling the quota', 9, 1, true],
       ['the batch overshooting', 8, 3, false],
-      ['already at the limit, asking for nothing', 10, 0, false],
-      ['already over the limit', 12, 0, false],
+      ['at the limit and consuming nothing', 10, 0, true],
+      ['at the limit and consuming one', 10, 1, false],
+      ['over the limit and consuming nothing', 12, 0, false],
+      ['over the limit and consuming one', 12, 1, false],
     ])('is %s', (_label, used, delta, expected) => {
       expect(fitsWithinQuota({ quota: 10, used, delta })).toBe(expected);
     });
 
-    it('grants nothing on a zero quota', () => {
+    it('refuses a spend on a zero quota', () => {
       expect(fitsWithinQuota({ quota: 0, used: 0, delta: 1 })).toBe(false);
-      expect(fitsWithinQuota({ quota: 0, used: 0, delta: 0 })).toBe(false);
+    });
+
+    it('admits a zero-cost action on a zero quota', () => {
+      expect(fitsWithinQuota({ quota: 0, used: 0, delta: 0 })).toBe(true);
     });
   });
 

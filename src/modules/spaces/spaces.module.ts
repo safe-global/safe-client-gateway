@@ -56,7 +56,7 @@ const isSesEmailFeatureEnabled = configuration().features.sesEmail;
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
-    // Plan limits: `IEntitlementEnforcement` and the route guards enforcing it.
+    // Plan limits, through `IEntitlementEnforcement`.
     forwardRef(() => EntitlementsModule),
     ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
     SpaceAuditModule,

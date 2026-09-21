@@ -5,6 +5,7 @@ import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
+import type { Address } from 'viem';
 import { getAddress, maxUint256 } from 'viem';
 import type { MockedObject } from 'vitest';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -38,6 +39,7 @@ describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
   let auditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
+  let encryptionService: ReturnType<typeof createMockSpaceEncryptionService>;
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
   let dbSpaceRepository: Repository<Space>;
@@ -65,6 +67,25 @@ describe('SpaceSafesRepository', () => {
         entityManager,
       }),
     );
+  }
+
+  /** A space holding exactly these Safes. */
+  async function spaceHolding(
+    payload: Array<{ chainId: string; address: `0x${string}` }>,
+  ): Promise<Space['id']> {
+    const space = await dbSpaceRepository.insert({
+      status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+      name: faker.word.noun(),
+    });
+    const spaceId = space.identifiers[0].id as Space['id'];
+    if (payload.length > 0) {
+      await addSafes({
+        spaceId,
+        actorUserId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        payload,
+      });
+    }
+    return spaceId;
   }
 
   const dataSource = new DataSource({
@@ -122,10 +143,11 @@ describe('SpaceSafesRepository', () => {
     await migrator.migrate();
 
     auditRepository = createMockSpaceAuditRepository();
+    encryptionService = createMockSpaceEncryptionService();
     spaceSafesRepo = new SpaceSafesRepository(
       postgresDatabaseService,
       auditRepository,
-      createMockSpaceEncryptionService(),
+      encryptionService,
     );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
@@ -459,7 +481,7 @@ describe('SpaceSafesRepository', () => {
         ]);
         await postgresDatabaseService.transaction(async (entityManager) => {
           await spaceSafesRepo.lockSeats(spaceId, entityManager);
-          const used = await spaceSafesRepo.countBySpaceId(
+          const used = await spaceSafesRepo.countSeatsBySpaceId(
             spaceId,
             entityManager,
           );
@@ -535,6 +557,154 @@ describe('SpaceSafesRepository', () => {
           `A SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${chainId}, ${address}, ${spaceId}) already exists.`,
         ),
       );
+    });
+  });
+
+  describe('seats', () => {
+    const chainIds = (count: number): Array<string> =>
+      faker.helpers.uniqueArray(() => faker.string.numeric(5), count);
+
+    it('counts one seat per address, however many chains it is on', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const other = getAddress(faker.finance.ethereumAddress());
+      const [first, second, third] = chainIds(3);
+      const spaceId = await spaceHolding([
+        { chainId: first, address },
+        { chainId: second, address },
+        { chainId: third, address },
+        { chainId: first, address: other },
+      ]);
+
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        2,
+      );
+    });
+
+    it('frees the seat only once the last chain of the Safe is gone', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [first, second] = chainIds(2);
+      const spaceId = await spaceHolding([
+        { chainId: first, address },
+        { chainId: second, address },
+      ]);
+
+      await dbSpaceSafesRepository.delete({ chainId: first, address });
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        1,
+      );
+
+      await dbSpaceSafesRepository.delete({ chainId: second, address });
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        0,
+      );
+    });
+
+    it('counts an encrypted Safe by its blind index', async () => {
+      // `address` is non-deterministic ciphertext, so the same Safe on two
+      // chains carries two different values and only the index matches. Raw
+      // inserts: the encryption service is mocked out here.
+      const spaceId = await spaceHolding([]);
+      const addressIndex = faker.string.alphanumeric(43);
+      await Promise.all(
+        chainIds(2).map((chainId) =>
+          dbSpaceSafesRepository.insert({
+            chainId,
+            address: `kms:v1:${faker.string.alphanumeric(64)}` as Address,
+            addressIndex,
+            space: { id: spaceId },
+          }),
+        ),
+      );
+
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        1,
+      );
+      encryptionService.safeAddressIndex.mockReturnValueOnce(addressIndex);
+      await expect(
+        spaceSafesRepo.countNewSeats({
+          spaceId,
+          addresses: [getAddress(faker.finance.ethereumAddress())],
+        }),
+      ).resolves.toBe(0);
+    });
+
+    it('counts no seats for a space holding none', async () => {
+      await expect(
+        spaceSafesRepo.countSeatsBySpaceId(
+          faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        ),
+      ).resolves.toBe(0);
+    });
+
+    it('counts the seats of several spaces in one query', async () => {
+      const shared = getAddress(faker.finance.ethereumAddress());
+      const [first, second] = chainIds(2);
+      const oneSafeOnTwoChains = await spaceHolding([
+        { chainId: first, address: shared },
+        { chainId: second, address: shared },
+      ]);
+      const oneSafe = await spaceHolding([
+        {
+          chainId: first,
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ]);
+
+      const seats = await spaceSafesRepo.countSeatsBySpaceIds([
+        oneSafeOnTwoChains,
+        oneSafe,
+      ]);
+
+      expect(seats.get(oneSafeOnTwoChains)).toBe(1);
+      expect(seats.get(oneSafe)).toBe(1);
+    });
+
+    it('counts no seats for no spaces', async () => {
+      await expect(spaceSafesRepo.countSeatsBySpaceIds([])).resolves.toEqual(
+        new Map(),
+      );
+    });
+
+    describe('countNewSeats', () => {
+      it('adds a seat only for an address the space does not hold', async () => {
+        const held = getAddress(faker.finance.ethereumAddress());
+        const added = getAddress(faker.finance.ethereumAddress());
+        const spaceId = await spaceHolding([
+          { chainId: faker.string.numeric(5), address: held },
+        ]);
+
+        // Another chain of the held Safe, plus the same new address twice: one
+        // seat between the three of them.
+        await expect(
+          spaceSafesRepo.countNewSeats({
+            spaceId,
+            addresses: [held, added, added],
+          }),
+        ).resolves.toBe(1);
+      });
+
+      it('adds nothing for a Safe the space already holds', async () => {
+        const held = getAddress(faker.finance.ethereumAddress());
+        const spaceId = await spaceHolding([
+          { chainId: faker.string.numeric(5), address: held },
+        ]);
+
+        await expect(
+          spaceSafesRepo.countNewSeats({ spaceId, addresses: [held] }),
+        ).resolves.toBe(0);
+      });
+
+      it('counts every address as new for a space holding none', async () => {
+        const spaceId = await spaceHolding([]);
+        const addresses = faker.helpers.multiple(
+          () => getAddress(faker.finance.ethereumAddress()),
+          { count: 3 },
+        );
+
+        await expect(
+          spaceSafesRepo.countNewSeats({ spaceId, addresses }),
+        ).resolves.toBe(3);
+      });
     });
   });
 
@@ -654,19 +824,24 @@ describe('SpaceSafesRepository', () => {
         payload: spaceSafes,
       });
 
-      await expect(
-        spaceSafesRepo.find({
-          where: { space: { id: spaceId } },
-        }),
-      ).resolves.toEqual(
-        spaceSafes.map(({ chainId, address }) => ({
-          id: expect.any(Number),
-          chainId,
-          address,
-          addressIndex: null,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        })),
+      // No `ORDER BY`, so the rows come back in whatever order the plan reads
+      // them: assert the set, like `findBySpaceId` above.
+      const found = await spaceSafesRepo.find({
+        where: { space: { id: spaceId } },
+      });
+
+      expect(found).toHaveLength(spaceSafes.length);
+      expect(found).toEqual(
+        expect.arrayContaining(
+          spaceSafes.map(({ chainId, address }) => ({
+            id: expect.any(Number),
+            chainId,
+            address,
+            addressIndex: null,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          })),
+        ),
       );
     });
 
@@ -686,22 +861,6 @@ describe('SpaceSafesRepository', () => {
   });
 
   describe('existsInSpace', () => {
-    async function spaceHolding(
-      payload: Array<{ chainId: string; address: `0x${string}` }>,
-    ): Promise<Space['id']> {
-      const space = await dbSpaceRepository.insert({
-        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
-        name: faker.word.noun(),
-      });
-      const spaceId = space.identifiers[0].id as Space['id'];
-      await addSafes({
-        spaceId,
-        actorUserId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-        payload,
-      });
-      return spaceId;
-    }
-
     it('should find a Safe the space holds', async () => {
       const safe = {
         chainId: faker.string.numeric(),

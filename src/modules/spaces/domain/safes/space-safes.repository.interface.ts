@@ -78,8 +78,32 @@ export interface ISpaceSafesRepository {
     entityManager?: EntityManager,
   ): Promise<boolean>;
 
-  countBySpaceId(
+  /**
+   * Seats the space takes: one per Safe address, however many chains it is on.
+   * What makes two rows the same Safe is the repository's own rule, so every
+   * seat count goes through here rather than deriving it from loaded rows.
+   */
+  countSeatsBySpaceId(
     spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number>;
+
+  /** {@link countSeatsBySpaceId} for several spaces, in one query. */
+  countSeatsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], number>>;
+
+  /**
+   * How many new seats `addresses` would take: one the space already holds on
+   * another chain takes none. Plaintext addresses, as the request carries
+   * them; the seat key is derived here, so a caller cannot key them wrong.
+   */
+  countNewSeats(
+    args: {
+      spaceId: Space['id'];
+      addresses: Array<SpaceSafe['address']>;
+    },
     entityManager?: EntityManager,
   ): Promise<number>;
 
