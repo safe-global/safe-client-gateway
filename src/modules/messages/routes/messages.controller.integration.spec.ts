@@ -102,6 +102,7 @@ describe('Messages controller', () => {
 
     // TODO: Override module to avoid spying
     vi.spyOn(loggingService, 'error');
+    vi.spyOn(loggingService, 'info');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -1166,6 +1167,54 @@ describe('Messages controller', () => {
         });
     });
 
+    it('should not log the message or its signature when proposing', async () => {
+      const chain = chainBuilder().build();
+      const privateKey = generatePrivateKey();
+      const signer = privateKeyToAccount(privateKey);
+      const safe = safeBuilder().with('owners', [signer.address]).build();
+      const message = await messageBuilder()
+        .with('safe', safe.address)
+        .buildWithConfirmations({
+          chainId: chain.chainId,
+          safe,
+          signers: [signer],
+        });
+      const createMessageDto = createMessageDtoBuilder()
+        .with('message', message.message)
+        .with('signature', message.confirmations[0].signature)
+        .build();
+      networkService.post.mockImplementation(({ url }) =>
+        url === `${queueBaseUri}/api/v1/safes/${safe.address}/messages`
+          ? Promise.resolve({
+              data: rawify(messageToJson(message)),
+              status: 200,
+            })
+          : Promise.reject(`No matching rule for url: ${url}`),
+      );
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safe.address}`:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chain.chainId}/safes/${safe.address}/messages`)
+        .send(createMessageDto)
+        .expect(202);
+
+      expect(loggingService.info).toHaveBeenCalledWith({
+        safeAddress: safe.address,
+        chainId: chain.chainId,
+        origin: createMessageDto.origin,
+        type: 'MESSAGE_PROPOSE',
+      });
+    });
+
     describe('Verification', () => {
       it('should throw and log if the messageHash could not be calculated', async () => {
         const chain = chainBuilder().build();
@@ -1213,7 +1262,6 @@ describe('Messages controller', () => {
           chainId: chain.chainId,
           safeAddress: safe.address,
           safeVersion: safe.version,
-          safeMessage: message.message,
           source: 'PROPOSAL',
         });
       });
@@ -1706,7 +1754,6 @@ describe('Messages controller', () => {
           chainId: chain.chainId,
           safeAddress: safe.address,
           safeVersion: safe.version,
-          safeMessage: message.message,
           source: 'CONFIRMATION',
         });
       });
@@ -1767,7 +1814,6 @@ describe('Messages controller', () => {
           safeAddress: safe.address,
           safeVersion: safe.version,
           messageHash: message.messageHash,
-          safeMessage: message.message,
           type: 'MESSAGE_VALIDITY',
           source: 'CONFIRMATION',
         });

@@ -162,7 +162,7 @@ export class MessagesService {
     this.loggingService.info({
       safeAddress: args.safeAddress,
       chainId: args.chainId,
-      message: args.createMessageDto,
+      origin: args.createMessageDto.origin,
       type: LogType.MessagePropose,
     });
   }
