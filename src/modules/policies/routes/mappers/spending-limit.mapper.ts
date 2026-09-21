@@ -89,11 +89,12 @@ export class SpendingLimitMapper {
     allowance: PolicyIndexerSafeAllowance,
   ): SpendingLimitAllowance {
     const resetsPeriodically = allowance.resetTimeMinutes > 0;
+    const hasReset = resetsPeriodically && this.hasWindowElapsed(allowance);
 
     return {
       tokenAddress: allowance.token,
       amount: allowance.amount,
-      spent: allowance.spent,
+      spent: hasReset ? '0' : allowance.spent,
       resetPeriodMinutes: allowance.resetTimeMinutes,
       // The indexer serves the window start, not the boundary: a never-resetting
       // allowance has no next reset to report.
@@ -103,6 +104,21 @@ export class SpendingLimitMapper {
       resetBoundaryIsExact: allowance.resetPhase === 'EXACT',
       isDelegateActive: allowance.isDelegateActive,
     };
+  }
+
+  /**
+   * Whether a new spending period has started since the indexer last saw this
+   * allowance.
+   *
+   * The module clears `spent` on read once a period expires, but only saves it
+   * on the next transfer - so the indexer's `spent` can belong to a period that
+   * is already over.
+   * @see https://github.com/safe-fndn/safe-modules/blob/8076191f93e88eefaae3508efa8b12a091158c68/modules/allowances/contracts/AllowanceModule.sol#L93
+   */
+  private hasWindowElapsed(allowance: PolicyIndexerSafeAllowance): boolean {
+    const nowMinutes = Math.floor(Date.now() / MILLISECONDS_IN_MINUTE);
+
+    return nowMinutes - allowance.lastResetMin >= allowance.resetTimeMinutes;
   }
 
   /**

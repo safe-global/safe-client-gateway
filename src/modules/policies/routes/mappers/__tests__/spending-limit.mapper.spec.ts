@@ -237,6 +237,71 @@ describe('SpendingLimitMapper', () => {
 
       expect(onlyAllowance([unknown]).resetBoundaryIsExact).toBe(false);
     });
+
+    /** A daily allowance with `spent` against the window from `windowStart`. */
+    function dailySpent(
+      windowStart: number,
+      spent: string,
+    ): PolicyIndexerSafeAllowance {
+      return allowance()
+        .with('resetTimeMinutes', DAY_IN_MINUTES)
+        .with('lastResetMin', windowStart)
+        .with('spent', spent)
+        .build();
+    }
+
+    it('should report 0 spent once the window has rolled over', () => {
+      // The module zeroes `spent` on read, but only a transfer writes it back,
+      // so the indexer keeps serving the closed window's figure. Reporting it
+      // would show a spent-out allowance as exhausted until someone spends
+      // against it again - which they cannot, because it looks exhausted.
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + DAY_IN_MINUTES);
+
+      expect(onlyAllowance([dailySpent(windowStart, '1000')]).spent).toBe('0');
+    });
+
+    it('should keep the spent amount until the window resets', () => {
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + DAY_IN_MINUTES - 1);
+
+      expect(onlyAllowance([dailySpent(windowStart, '250')]).spent).toBe('250');
+    });
+
+    it('should report 0 spent after whole periods without a transfer', () => {
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + 10 * DAY_IN_MINUTES + 617);
+
+      expect(onlyAllowance([dailySpent(windowStart, '999')]).spent).toBe('0');
+    });
+
+    it('should keep what was spent on an allowance that never resets', () => {
+      // `resetTimeMinutes` of 0 has no window to roll over, so the figure
+      // stands however long ago it was spent.
+      const spentOnce = allowance()
+        .with('resetTimeMinutes', 0)
+        .with('lastResetMin', 29_793_086)
+        .with('spent', '250')
+        .build();
+      nowAtMinute(29_793_086 + 10 * DAY_IN_MINUTES);
+
+      const reported = onlyAllowance([spentOnce]);
+
+      expect(reported.spent).toBe('250');
+      expect(reported.resetsAtMinute).toBeNull();
+    });
+
+    it('should report nothing spent from the minute the boundary lands on', () => {
+      // The module resets on *reaching* a boundary, so the two must agree: the
+      // minute that stops being the next reset is the minute `spent` clears.
+      const windowStart = 29_793_086;
+      nowAtMinute(windowStart + 2 * DAY_IN_MINUTES);
+
+      const reported = onlyAllowance([dailySpent(windowStart, '1000')]);
+
+      expect(reported.spent).toBe('0');
+      expect(reported.resetsAtMinute).toBe(windowStart + 3 * DAY_IN_MINUTES);
+    });
   });
 
   describe('dropping rows that are not a limit', () => {
