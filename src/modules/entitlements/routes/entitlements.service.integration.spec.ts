@@ -1443,7 +1443,7 @@ describe('EntitlementsService', () => {
     });
   });
 
-  // A Binary feature's own gate: on or off, nothing to count 
+  // A Binary feature's own gate: on or off, nothing to count
   describe('assertFeatureGranted', () => {
     function assertCopilotScans(spaceId: number): Promise<void> {
       return enforcingService.assertFeatureGranted({
@@ -1488,6 +1488,21 @@ describe('EntitlementsService', () => {
       });
 
       await expect(assertCopilotScans(spaceId)).resolves.toBeUndefined();
+    });
+
+    it('denies a Binary feature missing from the catalog, with no static limit to fall back on', async () => {
+      const spaceId = await createSpace();
+      await dataSource.getRepository(Feature).delete({ key: 'copilot_scans' });
+
+      await expect(assertCopilotScans(spaceId)).rejects.toMatchObject({
+        response: {
+          code: FEATURE_NOT_GRANTED_ERROR_CODE,
+          feature: 'copilot_scans',
+        },
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Feature 'copilot_scans' has no catalog row; space ${spaceId} is denied`,
+      );
     });
   });
 

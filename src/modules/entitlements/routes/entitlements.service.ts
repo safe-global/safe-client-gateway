@@ -324,12 +324,14 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const grants = await this.getCachedGrants(args.spaceId);
     const grant = grants[args.featureKey];
     if (grant === undefined) {
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} ${staticQuota !== null ? 'keeps the static limit' : 'is denied'}`,
+      );
       // A catalog gap must not block an action a static limit still covers,
       // and must not hand out one it does not.
-      this.loggingService.warn(
-        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} keeps the static limit`,
-      );
-      return this.staticGrant(staticQuota ?? 0);
+      return staticQuota !== null
+        ? this.staticGrant(staticQuota)
+        : { enabled: false, quota: 0, resetsAt: null, counter: null };
     }
     return grant;
   }
