@@ -43,7 +43,7 @@ const DAY_IN_MINUTES = 1440;
 const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
 
-describe('Policies routes (e2e)', () => {
+describe('Space Policies Controller', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
   let networkService: MockedObject<INetworkService>;
