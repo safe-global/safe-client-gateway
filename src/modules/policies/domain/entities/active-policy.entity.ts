@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
+import type { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
@@ -53,12 +54,34 @@ export type SpendingLimitAllowance = {
 };
 
 /**
+ * `proposer`: who may propose transactions on the Safe without being able to
+ * sign or execute one. Nothing on chain enforces it - the grant is a delegate
+ * registration held by the Transaction Service.
+ *
+ * One policy per `(safe, delegates API)`. The two APIs are separate stores, so
+ * they are reported separately rather than merged: a grant is revoked through
+ * the API holding it, and merging would lose which one that is.
+ */
+export type ProposerPolicyData = {
+  /** The delegates API these grants were read from. */
+  version: DelegateApiVersion;
+  proposers: Array<{
+    proposer: Address;
+    /**
+     * The owners who granted it, each with the label they gave. The label is
+     * stored per `(delegate, delegator)` row and two owners can label the same
+     * proposer differently, so it cannot be flattened to one.
+     */
+    delegatedBy: Array<{ delegator: Address; label: string }>;
+  }>;
+};
+
+/**
  * The configuration a policy reports, discriminated by the item's `type`.
  *
- * Only the allowance module's spending limits are reported today; the remaining
- * policy types join the union as the code reading them lands.
+ * The remaining policy types join the union as the code reading them lands.
  */
-export type ActivePolicyData = SpendingLimitPolicyData;
+export type ActivePolicyData = SpendingLimitPolicyData | ProposerPolicyData;
 
 /**
  * A policy in effect on a Safe.

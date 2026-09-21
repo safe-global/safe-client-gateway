@@ -59,3 +59,9 @@ export function moduleEnforcement(moduleAddress: Address): ModuleEnforcement {
 export function guardEnforcement(guards: GuardSlots): GuardEnforcement {
   return { via: PolicyEnforcementKind.Guard, guards };
 }
+
+export function offChainEnforcement(
+  source: OffChainSource,
+): OffChainEnforcement {
+  return { via: PolicyEnforcementKind.OffChain, source };
+}

@@ -5,12 +5,21 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  type DelegatesOfVersion,
+  ProposerMapper,
+} from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
@@ -24,6 +33,8 @@ type SpacePolicyRequest = {
   spaceId: Space['id'];
   /** Narrows the read to a subset of the Space's Safes. */
   safes?: ReadonlyArray<Caip10Address>;
+  /** The policy types to report. Required: naming none asks for nothing. */
+  types: ReadonlyArray<PolicyType>;
   authPayload: AuthPayload;
 };
 
@@ -38,7 +49,12 @@ export class PoliciesService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IDelegatesV2Repository)
+    private readonly delegatesV2Repository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesV3Repository: IDelegatesV3Repository,
     private readonly spendingLimitMapper: SpendingLimitMapper,
+    private readonly proposerMapper: ProposerMapper,
   ) {}
 
   /**
@@ -50,7 +66,7 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const spaceSafes = await this.spaceSafes(request);
 
-    return await this.resolveActivePolicies(spaceSafes);
+    return await this.resolveActivePolicies(spaceSafes, request.types);
   }
 
   /**
@@ -106,36 +122,92 @@ export class PoliciesService {
   /**
    * The policies in effect on every Safe of {@link safes}.
    *
-   * One indexer read covers all of them, and the Safe reads that say whether a
-   * module is enabled run concurrently. All of it or nothing: a page whose
-   * purpose is saying what controls a set of Safes must not answer "nothing"
-   * where the answer is "unknown".
+   * One indexer read covers all of them; the per-Safe reads that follow - what
+   * the Safe has enabled, and who may propose on it - run one at a time, to stay
+   * under the Transaction Service's concurrency limit. All of it or nothing: a
+   * page whose purpose is saying what controls a set of Safes must not answer
+   * "nothing" where the answer is "unknown".
+   *
+   * `types` is the set of policy types to report. The query parameter that
+   * feeds it is required and rejects an empty value, so a caller wanting
+   * everything names everything - which is why nothing here has to decide what
+   * an unfiltered request would have meant.
    */
   private async resolveActivePolicies(
     safes: ReadonlyArray<SafeRef>,
+    types: ReadonlyArray<PolicyType>,
   ): Promise<Array<ActivePolicy>> {
-    if (safes.length === 0) {
+    const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
+    const proposersRequested = types.includes(PolicyType.Proposer);
+
+    if (
+      safes.length === 0 ||
+      !(spendingLimitsRequested || proposersRequested)
+    ) {
       return [];
     }
 
-    const [state, enabledModules] = await Promise.all([
-      this.policyIndexerRepository.getState({ safes }),
-      Promise.all(safes.map((safe) => this.enabledModules(safe))),
-    ]);
+    // One upstream read at a time, rather than one `Promise.all` covering every
+    // Safe. This is to avoid 429 errors.
+    //
+    const state = spendingLimitsRequested
+      ? await this.policyIndexerRepository.getState({ safes })
+      : null;
 
     const policies: Array<ActivePolicy> = [];
 
-    for (const [index, safe] of safes.entries()) {
-      policies.push(
-        ...this.spendingLimitMapper.map({
-          safe,
-          allowances: this.getAllowancesBySafe(state.allowances, safe),
-          enabledModules: enabledModules[index],
-        }),
-      );
+    for (const safe of safes) {
+      if (state) {
+        const enabledModules = await this.enabledModules(safe);
+
+        policies.push(
+          ...this.spendingLimitMapper.map({
+            safe,
+            allowances: this.getAllowancesBySafe(state.allowances, safe),
+            enabledModules,
+          }),
+        );
+      }
+
+      if (proposersRequested) {
+        const delegatesByVersion = await this.delegatesByVersion(safe);
+
+        policies.push(...this.proposerMapper.map({ safe, delegatesByVersion }));
+      }
     }
 
     return policies;
+  }
+
+  /**
+   * The addresses registered as delegates of the Safe - what a proposer grant
+   * is - from each delegates API, kept apart rather than merged so the response
+   * can say which API holds a grant.
+   *
+   * Read at the Transaction Service's maximum page size: its default page would
+   * silently truncate a Safe with many proposers, and a policies page that
+   * under-reports who may propose is worse than none.
+   */
+  private async delegatesByVersion(
+    safe: SafeRef,
+  ): Promise<Array<DelegatesOfVersion>> {
+    const args = {
+      chainId: safe.chainId,
+      safeAddress: safe.address,
+      limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+    };
+
+    // Sequential for the same reason as the loop in `resolveActivePolicies`:
+    // while the Queue Service is switched off both repositories call the very
+    // same Transaction Service endpoint, so issuing them together is two
+    // concurrent requests to one rate-limited host.
+    const v2 = await this.delegatesV2Repository.getDelegates(args);
+    const v3 = await this.delegatesV3Repository.getDelegates(args);
+
+    return [
+      { version: DelegateApiVersion.V2, delegates: v2.results },
+      { version: DelegateApiVersion.V3, delegates: v3.results },
+    ];
   }
 
   /**
