@@ -62,7 +62,11 @@ describe('PoliciesService', () => {
   const authPayload = new AuthPayload(
     siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
   );
-  const spaceRequest = { spaceId, authPayload };
+  const policyRequest = {
+    spaceId,
+    authPayload,
+    types: Object.values(PolicyType),
+  };
 
   beforeEach(() => {
     target = new PoliciesService(
@@ -121,7 +125,7 @@ describe('PoliciesService', () => {
       policyIndexerResponseBuilder().with('allowances', allowances).build(),
     );
 
-    return await target.getSpaceActivePolicies(spaceRequest);
+    return await target.getSpaceActivePolicies(policyRequest);
   }
 
   /** Reports `modules` as the ones the Safe has enabled. */
@@ -135,7 +139,7 @@ describe('PoliciesService', () => {
     it('should reject an unauthenticated caller', async () => {
       await expect(
         target.getSpaceActivePolicies({
-          ...spaceRequest,
+          ...policyRequest,
           authPayload: new AuthPayload(undefined),
         }),
       ).rejects.toThrow('Not authenticated');
@@ -151,7 +155,7 @@ describe('PoliciesService', () => {
 
       await expect(
         target.getSpaceActivePolicies({
-          ...spaceRequest,
+          ...policyRequest,
           safes: [{ chainId: SEPOLIA, address: safeAddress }],
         }),
       ).resolves.toStrictEqual([]);
@@ -160,7 +164,7 @@ describe('PoliciesService', () => {
 
   describe('reading the state', () => {
     it('should read the safes of the space', async () => {
-      await target.getSpaceActivePolicies(spaceRequest);
+      await target.getSpaceActivePolicies(policyRequest);
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
@@ -207,7 +211,7 @@ describe('PoliciesService', () => {
 
     it('should return no policies for a safe that has none', async () => {
       await expect(
-        target.getSpaceActivePolicies(spaceRequest),
+        target.getSpaceActivePolicies(policyRequest),
       ).resolves.toStrictEqual([]);
     });
 
@@ -218,17 +222,17 @@ describe('PoliciesService', () => {
         new Error('Service unavailable'),
       );
 
-      await expect(target.getSpaceActivePolicies(spaceRequest)).rejects.toThrow(
-        'Service unavailable',
-      );
+      await expect(
+        target.getSpaceActivePolicies(policyRequest),
+      ).rejects.toThrow('Service unavailable');
     });
 
     it('should fail the request when the safe cannot be read', async () => {
       mockSafeRepository.getSafe.mockRejectedValue(new Error('Not found'));
 
-      await expect(target.getSpaceActivePolicies(spaceRequest)).rejects.toThrow(
-        'Not found',
-      );
+      await expect(
+        target.getSpaceActivePolicies(policyRequest),
+      ).rejects.toThrow('Not found');
     });
   });
 
@@ -245,8 +249,7 @@ describe('PoliciesService', () => {
     it('should read every safe of the space in one indexer call', async () => {
       // The request count must not grow with the size of the Space.
       await target.getSpaceActivePolicies({
-        spaceId,
-        authPayload,
+        ...policyRequest,
       });
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
@@ -266,8 +269,7 @@ describe('PoliciesService', () => {
       );
 
       const policies = await target.getSpaceActivePolicies({
-        spaceId,
-        authPayload,
+        ...policyRequest,
       });
 
       expect(policies).toHaveLength(1);
@@ -279,9 +281,8 @@ describe('PoliciesService', () => {
 
     it('should narrow the read to the requested subset', async () => {
       await target.getSpaceActivePolicies({
-        spaceId,
+        ...policyRequest,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
-        authPayload,
       });
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
@@ -300,12 +301,11 @@ describe('PoliciesService', () => {
       );
 
       const policies = await target.getSpaceActivePolicies({
-        spaceId,
+        ...policyRequest,
         safes: [
           { chainId: SEPOLIA, address: safeAddress },
           { chainId: SEPOLIA, address: getAddress(safeAddress.toLowerCase()) },
         ],
-        authPayload,
       });
 
       expect(policies).toHaveLength(1);
@@ -322,9 +322,8 @@ describe('PoliciesService', () => {
 
       await expect(
         target.getSpaceActivePolicies({
-          spaceId,
+          ...policyRequest,
           safes: [{ chainId: SEPOLIA, address: outsider }],
-          authPayload,
         }),
       ).rejects.toThrow(`Safe ${SEPOLIA}:${outsider} is not in this space`);
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
@@ -335,8 +334,7 @@ describe('PoliciesService', () => {
 
       await expect(
         target.getSpaceActivePolicies({
-          spaceId,
-          authPayload,
+          ...policyRequest,
         }),
       ).rejects.toThrow('User is not a member of this workspace');
     });
@@ -345,8 +343,7 @@ describe('PoliciesService', () => {
       mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
 
       const policies = await target.getSpaceActivePolicies({
-        spaceId,
-        authPayload,
+        ...policyRequest,
       });
 
       expect(policies).toStrictEqual([]);
@@ -362,8 +359,7 @@ describe('PoliciesService', () => {
 
       await expect(
         target.getSpaceActivePolicies({
-          spaceId,
-          authPayload,
+          ...policyRequest,
         }),
       ).rejects.toThrow('Service unavailable');
     });
@@ -373,7 +369,7 @@ describe('PoliciesService', () => {
     it('should read both delegates apis for the safe, at the max page size', async () => {
       // The Transaction Service's default page would silently truncate a Safe
       // with many proposers.
-      await target.getSpaceActivePolicies(spaceRequest);
+      await target.getSpaceActivePolicies(policyRequest);
 
       const expected = {
         chainId: SEPOLIA,
@@ -389,7 +385,7 @@ describe('PoliciesService', () => {
     });
 
     it('should report no proposer policy when neither api holds a registration', async () => {
-      const policies = await target.getSpaceActivePolicies(spaceRequest);
+      const policies = await target.getSpaceActivePolicies(policyRequest);
 
       expect(policies).toStrictEqual([]);
     });
@@ -399,7 +395,7 @@ describe('PoliciesService', () => {
       const onV3 = delegateBuilder().with('safe', safeAddress).build();
       withDelegates([onV2], [onV3]);
 
-      const policies = await target.getSpaceActivePolicies(spaceRequest);
+      const policies = await target.getSpaceActivePolicies(policyRequest);
 
       expect(policies).toMatchObject([
         {
@@ -438,9 +434,92 @@ describe('PoliciesService', () => {
         new Error('Service unavailable'),
       );
 
-      await expect(target.getSpaceActivePolicies(spaceRequest)).rejects.toThrow(
-        'Service unavailable',
+      await expect(
+        target.getSpaceActivePolicies(policyRequest),
+      ).rejects.toThrow('Service unavailable');
+    });
+  });
+
+  describe('narrowing by policy type', () => {
+    it('should report every type when every type is requested', async () => {
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+
+      const policies = await activePolicies([allowanceOf(safeAddress)]);
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.SpendingLimit,
+        PolicyType.Proposer,
+      ]);
+    });
+
+    it('should report only the spending limits when only they are asked for', async () => {
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .build(),
       );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.SpendingLimit,
+      ]);
+    });
+
+    it('should not read the delegates apis when proposers are not asked for', async () => {
+      // Filtering by skipping the read, not by dropping the result - the point
+      // of the filter is the call that is never made.
+      await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(mockDelegatesV2Repository.getDelegates).not.toHaveBeenCalled();
+      expect(mockDelegatesV3Repository.getDelegates).not.toHaveBeenCalled();
+    });
+
+    it('should not read the indexer or the safe when spending limits are not asked for', async () => {
+      await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Proposer],
+      });
+
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+      expect(mockSafeRepository.getSafe).not.toHaveBeenCalled();
+    });
+
+    it('should report both types when both are asked for', async () => {
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Proposer, PolicyType.SpendingLimit],
+      });
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.SpendingLimit,
+        PolicyType.Proposer,
+      ]);
+    });
+
+    it('should read nothing for a type it does not report yet', async () => {
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Recovery],
+      });
+
+      expect(policies).toStrictEqual([]);
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+      expect(mockDelegatesV2Repository.getDelegates).not.toHaveBeenCalled();
     });
   });
 });

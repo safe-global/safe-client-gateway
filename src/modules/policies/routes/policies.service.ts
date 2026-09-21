@@ -13,6 +13,7 @@ import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import {
@@ -32,6 +33,8 @@ type SpacePolicyRequest = {
   spaceId: Space['id'];
   /** Narrows the read to a subset of the Space's Safes. */
   safes?: ReadonlyArray<Caip10Address>;
+  /** The policy types to report. Required: naming none asks for nothing. */
+  types: ReadonlyArray<PolicyType>;
   authPayload: AuthPayload;
 };
 
@@ -63,7 +66,7 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const spaceSafes = await this.spaceSafes(request);
 
-    return await this.resolveActivePolicies(spaceSafes);
+    return await this.resolveActivePolicies(spaceSafes, request.types);
   }
 
   /**
@@ -124,33 +127,53 @@ export class PoliciesService {
    * under the Transaction Service's concurrency limit. All of it or nothing: a
    * page whose purpose is saying what controls a set of Safes must not answer
    * "nothing" where the answer is "unknown".
+   *
+   * `types` is the set of policy types to report. The query parameter that
+   * feeds it is required and rejects an empty value, so a caller wanting
+   * everything names everything - which is why nothing here has to decide what
+   * an unfiltered request would have meant.
    */
   private async resolveActivePolicies(
     safes: ReadonlyArray<SafeRef>,
+    types: ReadonlyArray<PolicyType>,
   ): Promise<Array<ActivePolicy>> {
-    if (safes.length === 0) {
+    const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
+    const proposersRequested = types.includes(PolicyType.Proposer);
+
+    if (
+      safes.length === 0 ||
+      !(spendingLimitsRequested || proposersRequested)
+    ) {
       return [];
     }
 
     // One upstream read at a time, rather than one `Promise.all` covering every
     // Safe. This is to avoid 429 errors.
     //
-    const state = await this.policyIndexerRepository.getState({ safes });
+    const state = spendingLimitsRequested
+      ? await this.policyIndexerRepository.getState({ safes })
+      : null;
 
     const policies: Array<ActivePolicy> = [];
 
     for (const safe of safes) {
-      const enabledModules = await this.enabledModules(safe);
-      const delegatesByVersion = await this.delegatesByVersion(safe);
+      if (state) {
+        const enabledModules = await this.enabledModules(safe);
 
-      policies.push(
-        ...this.spendingLimitMapper.map({
-          safe,
-          allowances: this.getAllowancesBySafe(state.allowances, safe),
-          enabledModules,
-        }),
-        ...this.proposerMapper.map({ safe, delegatesByVersion }),
-      );
+        policies.push(
+          ...this.spendingLimitMapper.map({
+            safe,
+            allowances: this.getAllowancesBySafe(state.allowances, safe),
+            enabledModules,
+          }),
+        );
+      }
+
+      if (proposersRequested) {
+        const delegatesByVersion = await this.delegatesByVersion(safe);
+
+        policies.push(...this.proposerMapper.map({ safe, delegatesByVersion }));
+      }
     }
 
     return policies;
