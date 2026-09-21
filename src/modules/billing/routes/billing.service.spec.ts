@@ -80,7 +80,7 @@ const spacesRepositoryMock = {
 } as MockedObject<ISpacesRepository>;
 
 const spaceSafesRepositoryMock = {
-  countBySpaceId: vi.fn(),
+  countSeatsBySpaceId: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
 const loggingServiceMock = {
@@ -144,7 +144,7 @@ describe('BillingService', () => {
     // Payment links in these specs carry no `FEATURE_SAFE_SEATS` metadata, so
     // assertSafeSeatCapacity no-ops without reading this — set for the specs
     // that do give a link that metadata.
-    spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(0);
+    spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(0);
     // Default for the checkout/plan-change specs, which are admin-gated: an
     // admin found unless a spec overrides this to test the rejection.
     spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
@@ -711,7 +711,7 @@ describe('BillingService', () => {
         activePlanId: null,
       });
       mockCatalog([paymentLink]);
-      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(3);
 
       await expect(
         service.createCheckoutUrl({
@@ -742,7 +742,7 @@ describe('BillingService', () => {
         activePlanId: null,
       });
       mockCatalog([paymentLink]);
-      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(3);
       billingRepositoryMock.createCheckoutSession.mockResolvedValue(
         checkoutSessionResult,
       );
@@ -784,7 +784,9 @@ describe('BillingService', () => {
       });
 
       expect(result).toBe(checkoutSessionResult);
-      expect(spaceSafesRepositoryMock.countBySpaceId).not.toHaveBeenCalled();
+      expect(
+        spaceSafesRepositoryMock.countSeatsBySpaceId,
+      ).not.toHaveBeenCalled();
       expect(loggingServiceMock.warn).toHaveBeenCalledTimes(1);
     });
   });
@@ -963,7 +965,7 @@ describe('BillingService', () => {
         metadata: { FEATURE_SAFE_SEATS: '2' },
       });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(3);
 
       await expect(
         service.updateSubscription({
@@ -983,7 +985,7 @@ describe('BillingService', () => {
         subscribedSpace({ metadata: { FEATURE_SAFE_SEATS: '3' } });
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const updateResult = updateSubscriptionResultBuilder().build();
-      spaceSafesRepositoryMock.countBySpaceId.mockResolvedValue(3);
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(3);
       billingRepositoryMock.updateSubscription.mockResolvedValue(updateResult);
 
       const result = await service.updateSubscription({
