@@ -16,35 +16,25 @@ const Caip10AddressPartsSchema = z.object({
  * other address in a CGW route. Anything else that is not a valid address is
  * rejected with a 422 by the `ValidationPipe`.
  */
-export const Caip10AddressSchema = z.string().transform((value, ctx) => {
-  const parts = value.split(':');
+export const Caip10AddressSchema = z
+  .string()
+  .transform((value, ctx) => {
+    const parts = value.split(':');
 
-  if (parts.length !== 2) {
-    ctx.addIssue({
-      code: 'custom',
-      message: 'Invalid CAIP-10 address, expected {chainId}:{address}',
-    });
-    return z.NEVER;
-  }
-
-  const [chainId, address] = parts;
-  const parsed = Caip10AddressPartsSchema.safeParse({ chainId, address });
-
-  if (!parsed.success) {
-    // Re-raised as one issue per failure, so the 422 body points at the part of
-    // the identifier that is wrong.
-    for (const issue of parsed.error.issues) {
+    if (parts.length !== 2) {
       ctx.addIssue({
         code: 'custom',
-        path: issue.path,
-        message: issue.message,
+        message: 'Invalid CAIP-10 address, expected {chainId}:{address}',
       });
+      return z.NEVER;
     }
-    return z.NEVER;
-  }
 
-  return parsed.data;
-});
+    const [chainId, address] = parts;
+    return { chainId, address };
+  })
+  // Piped rather than parsed inside the transform, so each part's own issue -
+  // and its path - reaches the 422 body unaltered.
+  .pipe(Caip10AddressPartsSchema);
 
 export type Caip10Address = z.infer<typeof Caip10AddressSchema>;
 
