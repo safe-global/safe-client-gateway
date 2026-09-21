@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import configuration from '@/config/entities/configuration';
 
-describe('configuration - express.trustProxy', () => {
-  const ENV_KEY = 'EXPRESS_TRUST_PROXY';
+describe('configuration - httpServer.trustProxy', () => {
+  const ENV_KEY = 'HTTP_SERVER_TRUST_PROXY';
   const original = process.env[ENV_KEY];
 
   afterEach(() => {
@@ -16,20 +16,48 @@ describe('configuration - express.trustProxy', () => {
   it('defaults to internal subnets when unset', () => {
     delete process.env[ENV_KEY];
 
-    expect(configuration().express.trustProxy).toBe('loopback, uniquelocal');
+    expect(configuration().httpServer.trustProxy).toBe('loopback, uniquelocal');
   });
 
   it('falls back to the default when set to an empty string', () => {
     // An empty value must fall back to the default, not disable trust.
     process.env[ENV_KEY] = '';
 
-    expect(configuration().express.trustProxy).toBe('loopback, uniquelocal');
+    expect(configuration().httpServer.trustProxy).toBe('loopback, uniquelocal');
   });
 
   it('uses the provided value when set', () => {
     process.env[ENV_KEY] = '10.0.0.0/8';
 
-    expect(configuration().express.trustProxy).toBe('10.0.0.0/8');
+    expect(configuration().httpServer.trustProxy).toBe('10.0.0.0/8');
+  });
+});
+
+describe('configuration - renamed env vars', () => {
+  const RENAMED = [
+    ['EXPRESS_JSON_LIMIT', 'HTTP_SERVER_BODY_LIMIT'],
+    ['EXPRESS_TRUST_PROXY', 'HTTP_SERVER_TRUST_PROXY'],
+  ];
+
+  afterEach(() => {
+    for (const [removed] of RENAMED) {
+      delete process.env[removed];
+    }
+  });
+
+  // A stale name would otherwise be ignored and fall back to the default.
+  it.each(RENAMED)('throws when %s is still set', (removed, replacement) => {
+    process.env[removed] = 'loopback';
+
+    expect(() => configuration()).toThrow(
+      `${removed} was renamed to ${replacement}`,
+    );
+  });
+
+  it.each(RENAMED)('does not throw when %s is unset', (removed) => {
+    delete process.env[removed];
+
+    expect(() => configuration()).not.toThrow();
   });
 });
 

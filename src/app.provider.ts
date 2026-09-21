@@ -19,7 +19,7 @@ export function configureVersioning(app: INestApplication): void {
 }
 
 // Mirrors the units accepted by the `bytes` library that Express' body-parser
-// used, so a previously valid `EXPRESS_JSON_LIMIT` keeps parsing post-migration.
+// used, so a previously valid limit keeps parsing post-migration.
 const BODY_LIMIT_UNITS = {
   b: 1,
   kb: 1024,
@@ -46,7 +46,7 @@ export const FASTIFY_ROUTER_OPTIONS = {
 };
 
 type FastifyAdapterConfiguration = {
-  jsonLimit?: string;
+  bodyLimit?: string;
   trustProxy: string;
 };
 
@@ -129,7 +129,7 @@ export function configureFastifyBodyParsers(
 export function createFastifyAdapterFromConfiguration(
   config: FastifyAdapterConfiguration,
 ): FastifyAdapter {
-  const bodyLimit = parseBodyLimit(config.jsonLimit);
+  const bodyLimit = parseBodyLimit(config.bodyLimit);
 
   return configureFastifyBodyParsers(
     new FastifyAdapter({
@@ -144,8 +144,10 @@ export function createFastifyAdapter(
   configurationService: Pick<IConfigurationService, 'get' | 'getOrThrow'>,
 ): FastifyAdapter {
   return createFastifyAdapterFromConfiguration({
-    jsonLimit: configurationService.get<string>('express.jsonLimit'),
-    trustProxy: configurationService.getOrThrow<string>('express.trustProxy'),
+    bodyLimit: configurationService.get<string>('httpServer.bodyLimit'),
+    trustProxy: configurationService.getOrThrow<string>(
+      'httpServer.trustProxy',
+    ),
   });
 }
 

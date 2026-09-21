@@ -41,10 +41,10 @@ class ProbeController {
 describe('createFastifyAdapter', () => {
   let app: INestApplication;
 
-  const createApp = async (trustProxy: string, jsonLimit = '1mb') => {
+  const createApp = async (trustProxy: string, bodyLimit = '1mb') => {
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('express.trustProxy', trustProxy);
-    fakeConfigurationService.set('express.jsonLimit', jsonLimit);
+    fakeConfigurationService.set('httpServer.trustProxy', trustProxy);
+    fakeConfigurationService.set('httpServer.bodyLimit', bodyLimit);
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ProbeController],

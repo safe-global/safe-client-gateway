@@ -3,7 +3,7 @@ import type { RelayRules } from '@/modules/relay/domain/entities/relay.configura
 
 // Custom configuration for the application
 
-export default () => ({
+const configuration = () => ({
   about: {
     name: 'safe-client-gateway',
     version: process.env.APPLICATION_VERSION,
@@ -421,23 +421,6 @@ export default () => ({
       ),
     },
   },
-  express: {
-    // Controls the maximum request body size for the Fastify JSON parser. A
-    // bare number is interpreted as bytes; a string accepts an optional unit
-    // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
-    // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
-    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
-    // are retained for backwards compatibility after the Express->Fastify
-    // migration; rename deferred to avoid a breaking configuration change.
-    jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
-    // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
-    // header set by upstream proxies instead of the direct socket address.
-    // A comma-separated list of trusted subnets/presets, or an integer hop
-    // count ("0" disables it). `||` (not `??`) so an empty value falls back to
-    // the default rather than disabling it.
-    // https://expressjs.com/en/guide/behind-proxies.html
-    trustProxy: process.env.EXPRESS_TRUST_PROXY || 'loopback, uniquelocal',
-  },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
@@ -504,6 +487,21 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
       10,
     ),
+  },
+  httpServer: {
+    // Maximum inbound request body size, applied to the JSON and urlencoded
+    // parsers. A bare number is interpreted as bytes; a string accepts an
+    // optional unit suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g.
+    // '1mb'. Parsed by `parseBodyLimit` in `src/app.provider.ts`.
+    bodyLimit: process.env.HTTP_SERVER_BODY_LIMIT ?? '1mb',
+    // Fastify `trustProxy` value: resolves request.ip from the
+    // X-Forwarded-For header set by upstream proxies instead of the direct
+    // socket address. A comma-separated list of trusted subnets/presets; "0"
+    // disables it and integer hop counts are rejected by `parseTrustProxy`.
+    // `||` (not `??`) so an empty value falls back to the default rather than
+    // disabling it.
+    // https://fastify.dev/docs/latest/Reference/Server/#trustproxy
+    trustProxy: process.env.HTTP_SERVER_TRUST_PROXY || 'loopback, uniquelocal',
   },
   undici: {
     // Maximum number of connections per origin. Defaults to 100.
@@ -1112,4 +1110,21 @@ const parseRelayRules = (
       rule.limit >= 0,
   );
   return parsed;
+};
+
+// Renamed in the Express->Fastify migration. A stale name would be ignored and
+// silently fall back to the default, which for `trustProxy` drops `request.ip`
+// to the socket address and keys every client onto one rate-limit bucket.
+const RENAMED_ENV_VARS: Record<string, string> = {
+  EXPRESS_JSON_LIMIT: 'HTTP_SERVER_BODY_LIMIT',
+  EXPRESS_TRUST_PROXY: 'HTTP_SERVER_TRUST_PROXY',
+};
+
+export default (): ReturnType<typeof configuration> => {
+  for (const [removed, replacement] of Object.entries(RENAMED_ENV_VARS)) {
+    if (process.env[removed] !== undefined) {
+      throw new Error(`${removed} was renamed to ${replacement}`);
+    }
+  }
+  return configuration();
 };
