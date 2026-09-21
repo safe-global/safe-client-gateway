@@ -6,16 +6,19 @@ import { CopilotCoreDisabledError } from '@/modules/safe-shield/errors/copilot-c
 /** Rejects a Core recipient/counterparty analysis request with a typed 402. */
 @Injectable()
 export class CopilotCoreGatingGuard implements CanActivate {
+  private readonly disabled: boolean;
+
   public constructor(
     @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
-  ) {}
-
-  public canActivate(): boolean {
-    const disabled = this.configurationService.getOrThrow<boolean>(
+    configurationService: IConfigurationService,
+  ) {
+    this.disabled = configurationService.getOrThrow<boolean>(
       'features.copilotCoreDisabled',
     );
-    if (disabled) {
+  }
+
+  public canActivate(): boolean {
+    if (this.disabled) {
       throw new CopilotCoreDisabledError();
     }
     return true;
