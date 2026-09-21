@@ -127,6 +127,7 @@ export class BillingController {
   })
   @ApiOkResponse({ type: UrlResponse })
   @ApiQuery({ name: 'returnUrl', required: true })
+  @ApiForbiddenResponse({ description: 'Not an admin' })
   @UseGuards(AuthGuard)
   @Get('/spaces/:spaceId/session-url')
   public async getSessionUrl(
@@ -181,7 +182,15 @@ export class BillingController {
   })
   @ApiOkResponse({ type: CheckoutSessionResult })
   @ApiQuery({ name: 'returnUrl', required: true })
-  @UseGuards(AuthGuard)
+  @ApiForbiddenResponse({
+    description:
+      'Not an admin, or a payment link this workspace is not offered',
+  })
+  @ApiConflictResponse({
+    description:
+      "This plan doesn't offer enough Safe seats for the workspace's current Safes",
+  })
+  @UseGuards(AuthGuard, ElevationGuard)
   @Get('/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url')
   public async getCheckoutUrl(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
@@ -220,7 +229,7 @@ export class BillingController {
   })
   @ApiOkResponse({ type: SubscriptionUpdatePreview })
   @ApiForbiddenResponse({
-    description: 'Not a member, or a plan this workspace is not offered',
+    description: 'Not an admin, or a plan this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
   @ApiConflictResponse({ description: 'Already on this plan' })
@@ -260,12 +269,16 @@ export class BillingController {
   @ApiBody({ type: UpdateSubscriptionDto })
   @ApiOkResponse({ type: UpdateSubscriptionResult })
   @ApiForbiddenResponse({
-    description: 'Not a member, or a plan this workspace is not offered',
+    description:
+      'Not an admin, a plan this workspace is not offered, or a named paymentLinkId this workspace is not offered',
   })
   @ApiNotFoundResponse({ description: 'Subscription not found' })
   @ApiConflictResponse({
-    description:
-      'Already on this plan, the subscription is not updatable, or several offered links sell the plan and none was named',
+    description: `One of:
+- Already on this plan
+- The subscription is not in an updatable state
+- Several offered links sell the plan and none was named
+- The target plan doesn't offer enough Safe seats for the workspace's current Safes`,
   })
   @ApiUnprocessableEntityResponse({
     description: 'The named payment link does not offer this plan',

@@ -9,8 +9,8 @@ export const ISubscriptionsRepository = Symbol('ISubscriptionsRepository');
 export type SpaceSubscriptionSummary = {
   /** Whether the space ever subscribed, in any status — terminal rows included. */
   hasEverSubscribed: boolean;
-  /** Plan on the active subscription; `null` with none, or when untagged. */
-  activePlanName: string | null;
+  /** Price id of the plan on the active subscription; `null` with none. */
+  activePlanId: string | null;
 };
 
 /** Queries over the `subscriptions` table. */
