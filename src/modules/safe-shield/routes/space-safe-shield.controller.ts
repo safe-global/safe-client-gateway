@@ -24,6 +24,7 @@ import {
 import type { Address } from 'viem';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { FeatureNotGrantedExceptionFilter } from '@/modules/entitlements/domain/exception-filters/feature-not-granted.exception-filter';
 import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
@@ -33,7 +34,6 @@ import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { Auth } from '@/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { SpaceSafeShieldService } from './space-safe-shield.service';
 
@@ -89,7 +89,7 @@ export class SpaceSafeShieldController {
   @Get('recipient/:recipientAddress')
   public analyzeRecipient(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Param('recipientAddress', new ValidationPipe(AddressSchema))
@@ -147,7 +147,7 @@ export class SpaceSafeShieldController {
   @Post('counterparty-analysis')
   public analyzeCounterparty(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Body(new ValidationPipe(CounterpartyAnalysisRequestSchema))
