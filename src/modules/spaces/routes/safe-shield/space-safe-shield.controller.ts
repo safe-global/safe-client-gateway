@@ -43,6 +43,7 @@ import { SpaceSafeShieldService } from './space-safe-shield.service';
   version: '1',
 })
 @UseGuards(AuthGuard)
+@UseFilters(FeatureNotGrantedExceptionFilter)
 export class SpaceSafeShieldController {
   public constructor(
     private readonly spaceSafeShieldService: SpaceSafeShieldService,
@@ -84,7 +85,6 @@ export class SpaceSafeShieldController {
     description:
       'The Space has no copilot_scans entitlement. The body carries `{ code: "FEATURE_NOT_GRANTED", feature }`',
   })
-  @UseFilters(FeatureNotGrantedExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Get('recipient/:recipientAddress')
   public analyzeRecipient(
@@ -143,7 +143,6 @@ export class SpaceSafeShieldController {
     description:
       'The Space has no copilot_scans entitlement. The body carries `{ code: "FEATURE_NOT_GRANTED", feature }`',
   })
-  @UseFilters(FeatureNotGrantedExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Post('counterparty-analysis')
   public analyzeCounterparty(

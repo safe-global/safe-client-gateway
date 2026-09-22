@@ -48,7 +48,7 @@ import { mapDecodedTransactions } from './utils/transaction-mapping.utils';
  * It acts as a facade that delegates to specialized analysis services.
  *
  * Reached from other modules through `ISafeShieldAnalysis`, never imported
- * directly (this class lives in `routes/`).
+ * directly.
  */
 @Injectable()
 export class SafeShieldService implements ISafeShieldAnalysis {
