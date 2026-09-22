@@ -72,17 +72,6 @@ on:
           loudly (no revert) and a human intervenes.
         type: boolean
         default: true
-      post_deploy_checks:
-        description: >-
-          Optional bash commands run after the smoke test (whenever provided, for
-          staging and production). Any non-zero exit fails the job (and triggers
-          rollback only when health_gate and auto_rollback are both true). Useful
-          for service-specific checks such as API endpoint assertions.
-          Example: |
-            curl -fsS https://example.com/api/v1/chains/ | jq -e '.count > 0'
-            curl -fsS https://example.com/api/v1/safe-apps/ | jq -e '.count > 0'
-        type: string
-        default: ""
       aws_region:
         description: AWS region for Secrets Manager lookups.
         type: string
@@ -99,8 +88,6 @@ on:
         description: Passphrase for the GPG private key.
         required: true
       argocd_server:
-        required: false
-      argocd_token:
         required: false
       vpn_secret:
         description: AWS Secrets Manager secret name for the OpenVPN config file.
@@ -336,7 +323,7 @@ jobs:
         continue-on-error: true
         env:
           ARGOCD_SERVER: ${{ secrets.argocd_server }}
-          ARGOCD_AUTH_TOKEN: ${{ steps.argocd-secrets.outputs.token || secrets.argocd_token }}
+          ARGOCD_AUTH_TOKEN: ${{ steps.argocd-secrets.outputs.token }}
         run: |
           set -euo pipefail
           if [ -z "${ARGOCD_SERVER:-}" ] || [ -z "${ARGOCD_AUTH_TOKEN:-}" ]; then
@@ -356,12 +343,6 @@ jobs:
         run: |
           set -euo pipefail
           curl -fsS -A "$GATE_UA" --retry 6 --retry-delay 10 --retry-all-errors "${{ inputs.health_url }}"
-
-      - name: Custom post-deploy checks
-        if: ${{ inputs.post_deploy_checks != '' }}
-        run: |
-          set -euo pipefail
-          ${{ inputs.post_deploy_checks }}
 
       - name: Roll back on failed health gate
         if: ${{ failure() && steps.commit.outputs.pushed == 'true' && inputs.health_gate && inputs.auto_rollback }}
