@@ -248,7 +248,7 @@ describe('MembersController', () => {
         .expect(422);
     });
 
-    it('should throw a 403 if the signer is not an active admin of the space', async () => {
+    it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceId = faker.string.uuid();
@@ -279,11 +279,11 @@ describe('MembersController', () => {
             },
           ],
         })
-        .expect(403)
+        .expect(404)
         .expect({
-          message: 'User is not an active admin.',
-          error: 'Forbidden',
-          statusCode: 403,
+          message: 'Workspace not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
 
@@ -316,7 +316,7 @@ describe('MembersController', () => {
         })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -372,7 +372,7 @@ describe('MembersController', () => {
         })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -418,7 +418,7 @@ describe('MembersController', () => {
         })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -464,7 +464,7 @@ describe('MembersController', () => {
         })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -570,7 +570,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${nonMemberToken()}`])
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -1341,10 +1341,9 @@ describe('MembersController', () => {
         });
     });
 
-    it('should throw a 403 if the user is not a member of the space', async () => {
+    it('should throw a 404 if the space does not exist', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      // Space does not even exist
       const spaceId = faker.string.uuid();
 
       await request(app.getHttpServer())
@@ -1355,11 +1354,11 @@ describe('MembersController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/members`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(403)
+        .expect(404)
         .expect({
-          message: 'The user is not an active member of the workspace.',
-          error: 'Forbidden',
-          statusCode: 403,
+          message: 'Workspace not found.',
+          error: 'Not Found',
+          statusCode: 404,
         });
     });
   });
@@ -1675,7 +1674,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
-          message: 'No members found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });
@@ -1925,7 +1924,7 @@ describe('MembersController', () => {
         .send({ alias: newAlias })
         .expect(404)
         .expect({
-          message: 'Member not found.',
+          message: 'Workspace not found.',
           error: 'Not Found',
           statusCode: 404,
         });

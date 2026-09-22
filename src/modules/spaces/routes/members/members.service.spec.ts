@@ -284,9 +284,27 @@ describe('MembersService', () => {
       membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.inviteUsers.mockResolvedValue(invitations);
 
+      // Strict: the internal numeric `spaceId` must not reach the response.
       await expect(
         service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
-      ).resolves.toEqual(invitations);
+      ).resolves.toStrictEqual([
+        {
+          userId: emailInvitation.userId,
+          spaceUuid,
+          name: emailInvite.name,
+          role: emailInvite.role,
+          status: 'INVITED',
+          invitedBy: Number(authPayload.sub),
+        },
+        {
+          userId: walletInvitation.userId,
+          spaceUuid,
+          name: walletInvite.name,
+          role: walletInvite.role,
+          status: 'INVITED',
+          invitedBy: Number(authPayload.sub),
+        },
+      ]);
 
       expect(
         spaceInviteEmailServiceMock.enqueueInviteEmails,

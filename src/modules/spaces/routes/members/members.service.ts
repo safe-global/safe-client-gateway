@@ -68,7 +68,18 @@ export class MembersService {
       spaceId: args.spaceId,
     });
 
-    return invitations;
+    // The domain invitation carries the internal numeric space id for the
+    // audit trail; the response contract exposes the UUID only.
+    return invitations.map(
+      ({ userId, spaceUuid, name, role, status, invitedBy }) => ({
+        userId,
+        spaceUuid,
+        name,
+        role,
+        status,
+        invitedBy,
+      }),
+    );
   }
 
   public async renewInvite(args: {
