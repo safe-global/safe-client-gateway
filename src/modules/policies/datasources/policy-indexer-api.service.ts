@@ -89,6 +89,7 @@ export class PolicyIndexerApi {
       );
     }
 
+    const fetchStartTimeMs = Date.now();
     const fetched = await this.fetch(misses);
     const policiesStates = await Promise.all(
       args.safes.map(async (safe, index) => {
@@ -98,7 +99,7 @@ export class PolicyIndexerApi {
         }
 
         const policiesState = this.filterPolicyIndexerRowsBySafe(fetched, safe);
-        await this.cache(safe, policiesState);
+        await this.cache(safe, policiesState, fetchStartTimeMs);
         return policiesState;
       }),
     );
@@ -197,7 +198,33 @@ export class PolicyIndexerApi {
     return parsed.data;
   }
 
-  private async cache(safe: SafeRef, slice: PolicyIndexerRows): Promise<void> {
+  /**
+   * Caches one Safe's policy data, unless {@link clearState} ran while the fetch was
+   * in flight.
+   *
+   * A transaction hook can clear this Safe between the request going out and
+   * its response arriving. That response describes the Safe's policy state as it was *before* the
+   * transaction, so writing it would undo the invalidation and serve the
+   * pre-transaction state.
+   */
+  private async cache(
+    safe: SafeRef,
+    slice: PolicyIndexerRows,
+    fetchStartTimeMs: number,
+  ): Promise<void> {
+    const invalidationTimeMs = await this.cacheService.getInvalidationTimeMs(
+      this.cacheKey(safe),
+    );
+
+    if (invalidationTimeMs !== null && invalidationTimeMs >= fetchStartTimeMs) {
+      this.loggingService.debug({
+        message: 'Skipped caching Safe policy state',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+      });
+      return;
+    }
+
     await this.cacheService.hSet(
       this.cacheDir(safe),
       JSON.stringify(slice),
@@ -209,6 +236,13 @@ export class PolicyIndexerApi {
     safe: SafeRef,
   ): ReturnType<typeof CacheRouter.getPolicyIndexerStateCacheDir> {
     return CacheRouter.getPolicyIndexerStateCacheDir({
+      chainId: safe.chainId,
+      safeAddress: safe.address,
+    });
+  }
+
+  private cacheKey(safe: SafeRef): string {
+    return CacheRouter.getPolicyIndexerStateCacheKey({
       chainId: safe.chainId,
       safeAddress: safe.address,
     });

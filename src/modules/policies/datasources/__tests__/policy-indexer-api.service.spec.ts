@@ -30,6 +30,7 @@ const mockCacheService = {
   hGet: vi.fn(),
   hSet: vi.fn(),
   deleteByKey: vi.fn(),
+  getInvalidationTimeMs: vi.fn(),
 } as unknown as MockedObject<ICacheService>;
 
 const mockLoggingService = {
@@ -106,6 +107,7 @@ describe('PolicyIndexerApi', () => {
     );
 
     mockCacheService.hGet.mockResolvedValue(null);
+    mockCacheService.getInvalidationTimeMs.mockResolvedValue(null);
     mockIndexerState();
 
     target = new PolicyIndexerApi(
@@ -360,6 +362,68 @@ describe('PolicyIndexerApi', () => {
       await readOneSafe();
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not cache a safe cleared while its fetch was in flight', async () => {
+      // The answer in flight predates the transaction that cleared the Safe;
+      // writing it back would undo the invalidation for a full expiration
+      // window.
+      const safe = safeRef(SEPOLIA);
+      mockCacheService.getInvalidationTimeMs.mockImplementation((key: string) =>
+        Promise.resolve(key === cacheKey(safe) ? Date.now() : null),
+      );
+
+      await target.getState({ safes: [safe] });
+
+      expect(mockCacheService.hSet).not.toHaveBeenCalled();
+    });
+
+    it('should serve the fetched state of a safe cleared mid-fetch', async () => {
+      // Only the write is skipped: the caller still gets what was fetched.
+      const safe = safeRef(SEPOLIA);
+      const sepoliaMeta = meta(SEPOLIA);
+      mockIndexerState({ _meta: [sepoliaMeta] });
+      mockCacheService.getInvalidationTimeMs.mockResolvedValue(Date.now());
+
+      const result = await target.getState({ safes: [safe] });
+
+      expect(result).toStrictEqual(
+        rawPolicyIndexerResponse({ _meta: [sepoliaMeta] }),
+      );
+    });
+
+    it('should cache a safe whose last invalidation predates the fetch', async () => {
+      const safe = safeRef(SEPOLIA);
+      mockCacheService.getInvalidationTimeMs.mockResolvedValue(
+        Date.now() - faker.number.int({ min: 1000, max: 10_000 }),
+      );
+
+      await target.getState({ safes: [safe] });
+
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        new CacheDir(cacheKey(safe), ''),
+        expect.any(String),
+        expirationTimeSeconds,
+      );
+    });
+
+    it('should cache the other safes of a request when one was cleared mid-fetch', async () => {
+      // Each Safe carries its own marker, so a transaction on one does not
+      // discard the rest of the batch.
+      const cleared = safeRef(SEPOLIA);
+      const untouched = safeRef(POLYGON);
+      mockCacheService.getInvalidationTimeMs.mockImplementation((key: string) =>
+        Promise.resolve(key === cacheKey(cleared) ? Date.now() : null),
+      );
+
+      await target.getState({ safes: [cleared, untouched] });
+
+      expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        new CacheDir(cacheKey(untouched), ''),
+        expect.any(String),
+        expirationTimeSeconds,
+      );
     });
 
     it('should forget one safe on clearState', async () => {
