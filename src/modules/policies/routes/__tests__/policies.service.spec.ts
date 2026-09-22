@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -53,6 +54,7 @@ describe('PoliciesService', () => {
   const safeAddress = getAddress(faker.finance.ethereumAddress());
   const allowanceModule = getAddress(faker.finance.ethereumAddress());
   const userId = faker.number.int({ min: 1, max: 100 });
+  const batchSize = faker.number.int({ min: 1, max: 5 });
   const authPayload = new AuthPayload(
     siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
   );
@@ -63,15 +65,7 @@ describe('PoliciesService', () => {
   };
 
   beforeEach(() => {
-    target = new PoliciesService(
-      mockPolicyIndexerRepository,
-      mockSafeRepository,
-      mockSpaceSafesRepository,
-      mockMembersRepository,
-      mockDelegatesV3Repository,
-      new SpendingLimitMapper(),
-      new ProposerMapper(),
-    );
+    target = policiesService(batchSize);
 
     // authorised by default: active member, Safe in the space
     mockMembersRepository.findOne.mockResolvedValue(memberBuilder().build());
@@ -87,6 +81,23 @@ describe('PoliciesService', () => {
     // No proposers unless a case registers some.
     withDelegates([]);
   });
+
+  /** The service, reading the delegates of {@link size} safes at a time. */
+  function policiesService(size: number): PoliciesService {
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('policies.delegates.batchSize', size);
+
+    return new PoliciesService(
+      mockPolicyIndexerRepository,
+      mockSafeRepository,
+      mockSpaceSafesRepository,
+      mockMembersRepository,
+      mockDelegatesV3Repository,
+      fakeConfigurationService,
+      new SpendingLimitMapper(),
+      new ProposerMapper(),
+    );
+  }
 
   /** Reports {@link delegates} as the registrations the delegates API holds. */
   function withDelegates(delegates: Array<Delegate>): void {
@@ -410,6 +421,83 @@ describe('PoliciesService', () => {
       await expect(
         target.getSpaceActivePolicies(policyRequest),
       ).rejects.toThrow('Service unavailable');
+    });
+  });
+
+  describe('batching the delegates reads', () => {
+    const proposerRequest = {
+      ...policyRequest,
+      types: [PolicyType.Proposer],
+    };
+
+    /** Reports {@link addresses} as the safes the space holds, on Sepolia. */
+    function withSpaceSafes(addresses: ReadonlyArray<Address>): void {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue(
+        addresses.map((address) => ({ chainId: SEPOLIA, address })),
+      );
+    }
+
+    function addresses(count: number): Array<Address> {
+      return Array.from({ length: count }, () =>
+        getAddress(faker.finance.ethereumAddress()),
+      );
+    }
+
+    it('should report each safe the delegates read for it', async () => {
+      // The batches are assembled back into one answer, so a safe read in the
+      // second batch must not be reported the first batch's proposers.
+      const safes = addresses(5);
+      const registered = safes.map((safe) =>
+        delegateBuilder().with('safe', safe).build(),
+      );
+      withSpaceSafes(safes);
+      mockDelegatesV3Repository.getDelegates.mockImplementation((args) =>
+        Promise.resolve(
+          pageBuilder<Delegate>()
+            .with(
+              'results',
+              registered.filter(
+                (delegate) => delegate.safe === args.safeAddress,
+              ),
+            )
+            .build(),
+        ),
+      );
+      target = policiesService(2);
+
+      const policies = await target.getSpaceActivePolicies(proposerRequest);
+
+      expect(policies).toMatchObject(
+        safes.map((address, index) => ({
+          type: PolicyType.Proposer,
+          safe: { chainId: SEPOLIA, address },
+          data: { proposers: [{ proposer: registered[index].delegate }] },
+        })),
+      );
+    });
+
+    it('should read no more safes at once than the batch size', async () => {
+      // An unbounded fan-out over a large space is what the Transaction
+      // Service answers with 429.
+      const safes = addresses(7);
+      let inFlight = 0;
+      let mostInFlight = 0;
+      withSpaceSafes(safes);
+      mockDelegatesV3Repository.getDelegates.mockImplementation(async () => {
+        inFlight += 1;
+        mostInFlight = Math.max(mostInFlight, inFlight);
+        await Promise.resolve();
+        inFlight -= 1;
+        return pageBuilder<Delegate>().with('results', []).build();
+      });
+      target = policiesService(3);
+
+      await target.getSpaceActivePolicies(proposerRequest);
+
+      expect(mostInFlight).toBe(3);
+      expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledTimes(
+        safes.length,
+      );
     });
   });
 

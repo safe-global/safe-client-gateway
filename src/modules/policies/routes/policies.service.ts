@@ -4,7 +4,9 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import chunk from 'lodash/chunk';
 import { type Address, isAddressEqual } from 'viem';
+import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -36,6 +38,8 @@ type SpacePolicyRequest = {
 
 @Injectable()
 export class PoliciesService {
+  private readonly delegatesBatchSize: number;
+
   constructor(
     @Inject(IPolicyIndexerRepository)
     private readonly policyIndexerRepository: IPolicyIndexerRepository,
@@ -47,9 +51,15 @@ export class PoliciesService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IDelegatesV3Repository)
     private readonly delegatesV3Repository: IDelegatesV3Repository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
     private readonly spendingLimitMapper: SpendingLimitMapper,
     private readonly proposerMapper: ProposerMapper,
-  ) {}
+  ) {
+    this.delegatesBatchSize = this.configurationService.getOrThrow<number>(
+      'policies.delegates.batchSize',
+    );
+  }
 
   /**
    * The policies in effect on every Safe of the Space, in one request.
@@ -116,12 +126,6 @@ export class PoliciesService {
   /**
    * The policies in effect on every Safe of {@link safes}.
    *
-   * One indexer read covers all of them; the per-Safe reads that follow - what
-   * the Safe has enabled, and who may propose on it - run one at a time, to stay
-   * under the Transaction Service's concurrency limit. All of it or nothing: a
-   * page whose purpose is saying what controls a set of Safes must not answer
-   * "nothing" where the answer is "unknown".
-   *
    * `types` is the set of policy types to report. The query parameter that
    * feeds it is required and rejects an empty value, so a caller wanting
    * everything names everything - which is why nothing here has to decide what
@@ -141,16 +145,16 @@ export class PoliciesService {
       return [];
     }
 
-    // One upstream read at a time, rather than one `Promise.all` covering every
-    // Safe. This is to avoid 429 errors.
-    //
     const state = spendingLimitsRequested
       ? await this.policyIndexerRepository.getState({ safes })
+      : null;
+    const delegatesPerSafe = proposersRequested
+      ? await this.delegatesPerSafe(safes)
       : null;
 
     const policies: Array<ActivePolicy> = [];
 
-    for (const safe of safes) {
+    for (const [index, safe] of safes.entries()) {
       if (state) {
         const enabledModules = await this.enabledModules(safe);
 
@@ -163,14 +167,39 @@ export class PoliciesService {
         );
       }
 
-      if (proposersRequested) {
-        const delegates = await this.delegates(safe);
-
-        policies.push(...this.proposerMapper.map({ safe, delegates }));
+      if (delegatesPerSafe) {
+        policies.push(
+          ...this.proposerMapper.map({
+            safe,
+            delegates: delegatesPerSafe[index],
+          }),
+        );
       }
     }
 
     return policies;
+  }
+
+  /**
+   * The delegates of every Safe of {@link safes}, index-aligned with it.
+   *
+   * The Safes are independent reads, so they go out concurrently rather than
+   * one at a time. Concurrency is capped at `policies.delegates.batchSize`.
+   *
+   * {@link resolveActivePolicies} already had.
+   */
+  private async delegatesPerSafe(
+    safes: ReadonlyArray<SafeRef>,
+  ): Promise<Array<Array<Delegate>>> {
+    const batches: Array<Array<Array<Delegate>>> = [];
+
+    for (const batch of chunk(safes, this.delegatesBatchSize)) {
+      batches.push(
+        await Promise.all(batch.map((safe) => this.delegates(safe))),
+      );
+    }
+
+    return batches.flat();
   }
 
   /**

@@ -830,6 +830,14 @@ export default () => ({
     indexer: {
       baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
     },
+    delegates: {
+      // How many Safes' delegates are read from the Transaction Service at
+      // once.
+      batchSize: Number.parseInt(
+        process.env.POLICY_DELEGATES_BATCH_SIZE ?? `${5}`,
+        10,
+      ),
+    },
   },
   safeDataDecoder: {
     baseUri:
