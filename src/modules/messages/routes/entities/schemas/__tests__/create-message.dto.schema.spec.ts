@@ -82,46 +82,33 @@ describe('CreateMessageDtoSchema', () => {
       expect(result.success).toBe(true);
     });
 
-    it('should not validate a negative safeAppId', () => {
+    it('should default a negative safeAppId to null instead of rejecting the request', () => {
+      // The field is deprecated and ignored downstream, so an out-of-range
+      // value from a legacy client falls back to null rather than failing
+      // validation for the whole request.
       const createMessageDto = createMessageDtoBuilder()
         .with('safeAppId', -1)
         .build();
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'too_small',
-          minimum: 0,
-          inclusive: true,
-          message: 'Too small: expected number to be >=0',
-          path: ['safeAppId'],
-          origin: 'number',
-        },
-      ]);
+      expect(result.success && result.data.safeAppId).toBe(null);
     });
 
-    it('should not validate a float safeAppId', () => {
+    it('should default a float safeAppId to null instead of rejecting the request', () => {
       const createMessageDto = createMessageDtoBuilder()
         .with('safeAppId', faker.number.float())
         .build();
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
 
-      expect(!result.success && result.error.issues).toEqual([
-        {
-          code: 'invalid_type',
-          expected: 'int',
-          format: 'safeint',
-          message: 'Invalid input: expected int, received number',
-          path: ['safeAppId'],
-        },
-      ]);
+      expect(result.success && result.data.safeAppId).toBe(null);
     });
 
     it('should validate without safeAppId, defaulting to null', () => {
       const createMessageDto = createMessageDtoBuilder().build();
       // @ts-expect-error - inferred type doesn't allow optional properties
+      // eslint-disable-next-line @typescript-eslint/no-deprecated -- intentional test of deprecated field's null default
       createMessageDto.safeAppId = undefined;
 
       const result = CreateMessageDtoSchema.safeParse(createMessageDto);
@@ -196,6 +183,32 @@ describe('CreateMessageDtoSchema', () => {
       expect(result.success && result.data.origin).toBe(
         createMessageDto.origin,
       );
+    });
+
+    it('should accept an origin within the size bound', () => {
+      const createMessageDto = createMessageDtoBuilder()
+        .with('origin', 'a'.repeat(2048))
+        .build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject an origin exceeding 2048 chars', () => {
+      const createMessageDto = createMessageDtoBuilder()
+        .with('origin', 'a'.repeat(2049))
+        .build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(!result.success && result.error.issues).toEqual([
+        expect.objectContaining({
+          code: 'too_big',
+          maximum: 2048,
+          path: ['origin'],
+        }),
+      ]);
     });
   });
 });

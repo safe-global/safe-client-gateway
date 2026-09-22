@@ -14,9 +14,9 @@ import {
   siweAuthPayloadDtoBuilder,
 } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { SpacesService } from '@/modules/spaces/routes/spaces.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -44,6 +44,10 @@ const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
 
+const spaceSafesRepositoryMock = {
+  countSeatsBySpaceIds: vi.fn(),
+} as MockedObject<ISpaceSafesRepository>;
+
 const usersRepositoryMock = {
   findOneOrFail: vi.fn(),
   activateIfPending: vi.fn(),
@@ -70,10 +74,12 @@ describe('SpacesService', () => {
     walletEncryptionServiceMock = createMockWalletEncryptionService();
     spaceEncryptionServiceMock = createMockSpaceEncryptionService();
     memberEncryptionServiceMock = createMockMemberEncryptionService();
+    spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(new Map());
     service = new SpacesService(
       usersRepositoryMock,
       spacesRepositoryMock,
       membersRepositoryMock,
+      spaceSafesRepositoryMock,
       walletsRepositoryMock,
       walletEncryptionServiceMock,
       spaceEncryptionServiceMock,
@@ -101,14 +107,12 @@ describe('SpacesService', () => {
         .with('id', space.id)
         .with('name', space.name)
         .with('members', [member])
-        .with('safes', [
-          { id: 1 } as SpaceSafe,
-          { id: 2 } as SpaceSafe,
-          { id: 3 } as SpaceSafe,
-        ])
         .build();
 
       spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
+      spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+        new Map([[space.id, 3]]),
+      );
 
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
@@ -202,36 +206,6 @@ describe('SpacesService', () => {
 
         membersRepositoryMock.find.mockResolvedValue([member]);
         spacesRepositoryMock.find.mockResolvedValue([
-          spaceBuilder()
-            .with('id', space.id)
-            .with('members', [])
-            .with('safes', [])
-            .build(),
-        ]);
-
-        const result = await service.getActiveOrInvitedSpaces(authPayload);
-
-        expect(result).toHaveLength(1);
-        expect(result[0].safeCount).toBe(0);
-      },
-    );
-
-    it.each([
-      ['SIWE', siweAuthPayloadDtoBuilder],
-      ['OIDC', oidcAuthPayloadDtoBuilder],
-    ])(
-      'should return safeCount 0 when %s space.safes is undefined',
-      async (_label, builder) => {
-        const authPayload = new AuthPayload(builder().build());
-        const userId = Number(authPayload.sub);
-        const space = spaceBuilder().build();
-        const member = memberBuilder()
-          .with('user', userBuilder().with('id', userId).build())
-          .with('space', space)
-          .build();
-
-        membersRepositoryMock.find.mockResolvedValue([member]);
-        spacesRepositoryMock.find.mockResolvedValue([
           spaceBuilder().with('id', space.id).with('members', []).build(),
         ]);
 
@@ -259,6 +233,36 @@ describe('SpacesService', () => {
       },
     );
 
+    // Seats are the repository's own count: a Safe on several chains takes one,
+    // which `space-safes.repository.integration.spec.ts` proves against a
+    // database. What belongs here is that the listing asks for the spaces it
+    // loaded and reports what comes back.
+    it('reports the seats the repository counts for each space', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const userId = Number(authPayload.sub);
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', userBuilder().with('id', userId).build())
+        .with('space', space)
+        .build();
+      const seats = faker.number.int({ min: 1, max: 5 });
+
+      membersRepositoryMock.find.mockResolvedValue([member]);
+      spacesRepositoryMock.find.mockResolvedValue([
+        spaceBuilder().with('id', space.id).with('members', []).build(),
+      ]);
+      spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+        new Map([[space.id, seats]]),
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].safeCount).toBe(seats);
+      expect(
+        spaceSafesRepositoryMock.countSeatsBySpaceIds,
+      ).toHaveBeenCalledExactlyOnceWith([space.id]);
+    });
+
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
@@ -283,17 +287,15 @@ describe('SpacesService', () => {
 
         membersRepositoryMock.find.mockResolvedValue([member1, member2]);
         spacesRepositoryMock.find.mockResolvedValue([
-          spaceBuilder()
-            .with('id', space1.id)
-            .with('members', [])
-            .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
-            .build(),
-          spaceBuilder()
-            .with('id', space2.id)
-            .with('members', [])
-            .with('safes', [{ id: 3 } as SpaceSafe])
-            .build(),
+          spaceBuilder().with('id', space1.id).with('members', []).build(),
+          spaceBuilder().with('id', space2.id).with('members', []).build(),
         ]);
+        spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+          new Map([
+            [space1.id, 2],
+            [space2.id, 1],
+          ]),
+        );
 
         const result = await service.getActiveOrInvitedSpaces(authPayload);
 
@@ -332,7 +334,6 @@ describe('SpacesService', () => {
           .with('id', space.id)
           .with('name', space.name)
           .with('members', [inviterMember, callerMember])
-          .with('safes', [])
           .build(),
       ]);
       walletsRepositoryMock.find.mockResolvedValue([
@@ -380,7 +381,6 @@ describe('SpacesService', () => {
           .with('id', space.id)
           .with('name', space.name)
           .with('members', [inviterMember, callerMember])
-          .with('safes', [])
           .build(),
       ]);
       const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
@@ -430,9 +430,11 @@ describe('SpacesService', () => {
         spaceBuilder()
           .with('id', space.id)
           .with('members', [callerMember, otherMember])
-          .with('safes', [{ id: 1 } as SpaceSafe, { id: 2 } as SpaceSafe])
           .build(),
       ]);
+      spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+        new Map([[space.id, 2]]),
+      );
 
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
@@ -474,7 +476,6 @@ describe('SpacesService', () => {
           .with('id', space.id)
           .with('name', space.name)
           .with('members', [inviterMember, callerMember])
-          .with('safes', [])
           .build(),
       ]);
       walletsRepositoryMock.find.mockResolvedValue([]);
@@ -515,7 +516,6 @@ describe('SpacesService', () => {
           .with('id', space.id)
           .with('name', space.name)
           .with('members', [callerMember])
-          .with('safes', [])
           .build(),
       ]);
 
@@ -572,14 +572,12 @@ describe('SpacesService', () => {
           .with('uuid', spaceA.uuid)
           .with('name', spaceA.name)
           .with('members', [inviterMemberA, callerMemberA])
-          .with('safes', [])
           .build(),
         spaceBuilder()
           .with('id', spaceB.id)
           .with('uuid', spaceB.uuid)
           .with('name', spaceB.name)
           .with('members', [callerMemberB]) // inviter is NOT a member here
-          .with('safes', [])
           .build(),
       ]);
       walletsRepositoryMock.find.mockResolvedValue([
@@ -634,7 +632,6 @@ describe('SpacesService', () => {
           .with('id', space.id)
           .with('name', space.name)
           .with('members', [inviterMember, callerMember])
-          .with('safes', [])
           .build(),
       ]);
 
@@ -680,7 +677,6 @@ describe('SpacesService', () => {
           .with('id', space.id)
           .with('name', encryptedSpaceName)
           .with('members', [member])
-          .with('safes', [])
           .build(),
       ]);
       spaceEncryptionServiceMock.decryptSpaces.mockImplementation(
@@ -712,10 +708,7 @@ describe('SpacesService', () => {
     ])('should return a space by ID for %s user', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
       const userId = Number(authPayload.sub);
-      const space = spaceBuilder()
-        .with('members', [])
-        .with('safes', [])
-        .build();
+      const space = spaceBuilder().with('members', []).build();
       const member = memberBuilder()
         .with('user', userBuilder().with('id', userId).build())
         .with('space', space)

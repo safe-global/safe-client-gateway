@@ -6,7 +6,7 @@ import { LiFiDecoderModule } from '@/modules/bridge/domain/contracts/decoders/li
 import { ChainsModule } from '@/modules/chains/chains.module';
 import { ContractsModule } from '@/modules/contracts/contracts.module';
 import { DataDecoderModule } from '@/modules/data-decoder/data-decoder.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { EarnModule } from '@/modules/earn/earn.module';
 import { HumanDescriptionModule } from '@/modules/human-description/human-description.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
@@ -33,7 +33,6 @@ import { Erc721TransferMapper } from '@/modules/transactions/routes/mappers/comm
 import { HumanDescriptionMapper } from '@/modules/transactions/routes/mappers/common/human-description.mapper';
 import { NativeCoinTransferMapper } from '@/modules/transactions/routes/mappers/common/native-coin-transfer.mapper';
 import { NativeStakingMapper } from '@/modules/transactions/routes/mappers/common/native-staking.mapper';
-import { SafeAppInfoMapper } from '@/modules/transactions/routes/mappers/common/safe-app-info.mapper';
 import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/common/settings-change.mapper';
 import { SwapOrderMapperModule } from '@/modules/transactions/routes/mappers/common/swap-order.mapper';
 import { TransactionDataMapper } from '@/modules/transactions/routes/mappers/common/transaction-data.mapper';
@@ -70,7 +69,7 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     ChainsModule,
     ContractsModule,
     DataDecoderModule,
-    DelegatesV2RepositoryModule,
+    DelegatesV3RepositoryModule,
     EarnModule,
     GPv2DecoderModule,
     HumanDescriptionModule,
@@ -112,7 +111,6 @@ import { AddressInfoModule } from '@/routes/common/address-info/address-info.mod
     NativeCoinTransferMapper,
     NativeStakingMapper,
     QueuedItemsMapper,
-    SafeAppInfoMapper,
     SettingsChangeMapper,
     SwapTransferInfoMapper,
     TransactionDataMapper,

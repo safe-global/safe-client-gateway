@@ -58,14 +58,14 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
       .createQueryBuilder('subscription')
       .select('COUNT(*) > 0', 'hasEverSubscribed')
       .addSelect(
-        `MAX(CASE WHEN status IN (${toSqlList(ACTIVE_SUBSCRIPTION_STATUSES)}) THEN plan_name END)`,
-        'activePlanName',
+        `MAX(CASE WHEN status IN (${toSqlList(ACTIVE_SUBSCRIPTION_STATUSES)}) THEN plan_id END)`,
+        'activePlanId',
       )
       .where('space_id = :spaceId', { spaceId })
       .getRawOne<SpaceSubscriptionSummary>();
     return {
       hasEverSubscribed: summary?.hasEverSubscribed ?? false,
-      activePlanName: summary?.activePlanName ?? null,
+      activePlanId: summary?.activePlanId ?? null,
     };
   }
 

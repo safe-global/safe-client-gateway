@@ -163,6 +163,6 @@ Nothing in this guide is machine-checked today. Specifically:
 
 - `.husky/pre-commit` runs `yarn env:validate:silent`, `yarn lint`, and `yarn format` — it does not look at commit messages.
 - There is no `.husky/commit-msg` hook and no `commitlint` dependency.
-- `.github/workflows/ci.yml` has no PR-title job (its jobs are `license-headers`, `env-validation`, `biome`, `unit-tests`, `integration-tests`, `docker-publish-*`, `autodeploy`).
+- No workflow has a PR-title job. `pull-request.yml` calls `_ci-node.yml`, whose jobs are `license-headers`, `env-validation`, `biome`, `unit-tests`, `integration-tests`, `tests` and `tests-finish`; the build and deploy jobs live in `staging.yml` and `production.yml`.
 
 The gap is on the PR title, since that is what reaches `main`. Adding a `commitlint`-style PR-title check is the enforcement this guide is missing; until it exists, the check happens in review — `reviewing.md` Part 1 routes any PR-shaping change to this guide.

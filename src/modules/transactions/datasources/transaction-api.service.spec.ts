@@ -2723,7 +2723,9 @@ describe('TransactionApi', () => {
         data: proposeTransactionDto,
       });
 
-      const { safeTxHash, ...rest } = proposeTransactionDto;
+      // nestedTransaction is queue-service-only: the tx-service datasource maps
+      // fields explicitly and never forwards it.
+      const { safeTxHash, nestedTransaction, ...rest } = proposeTransactionDto;
       expect(networkService.post).toHaveBeenCalledTimes(1);
       expect(networkService.post).toHaveBeenCalledWith({
         url: postMultisigTransactionUrl,
@@ -2763,7 +2765,9 @@ describe('TransactionApi', () => {
         }),
       ).rejects.toThrow(expected);
 
-      const { safeTxHash, ...rest } = proposeTransactionDto;
+      // nestedTransaction is queue-service-only: the tx-service datasource maps
+      // fields explicitly and never forwards it.
+      const { safeTxHash, nestedTransaction, ...rest } = proposeTransactionDto;
       expect(networkService.post).toHaveBeenCalledTimes(1);
       expect(networkService.post).toHaveBeenCalledWith({
         url: postMultisigTransactionUrl,

@@ -35,6 +35,7 @@ export enum LogType {
   PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
   QuotaExceeded = 'QUOTA_EXCEEDED',
   QuotaNotRefunded = 'QUOTA_NOT_REFUNDED',
+  SafeQueueServiceBatchChunkError = 'SAFE_QUEUE_SERVICE_BATCH_CHUNK_ERROR',
   RateLimit = 'RATE_LIMIT',
   TxRelayEligibility = 'TX_RELAY_ELIGIBILITY',
   TransactionPropose = 'TRANSACTION_PROPOSE',

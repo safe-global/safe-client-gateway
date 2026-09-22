@@ -475,6 +475,8 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
+    safeQueueService:
+      process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -545,7 +547,9 @@ export default () => ({
       process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
       10,
     ), // 60 seconds
-    // Percentage of threshold used in HALF_OPEN state (0–100)
+    // Percentage of threshold used in HALF_OPEN state (0–100). The resulting
+    // count is both the number of failures that re-open the circuit and the
+    // maximum number of probe requests allowed in flight at once.
     halfOpenFailureRateThreshold: Number.parseInt(
       process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
       10,
@@ -786,6 +790,14 @@ export default () => ({
         10,
       ),
     },
+  },
+  safeQueueService: {
+    baseUri:
+      process.env.SAFE_QUEUE_SERVICE_BASE_URI ||
+      'https://api.safe.global/queue',
+    useVpcUrl:
+      process.env.USE_SAFE_QUEUE_SERVICE_VPC_URL?.toLowerCase() === 'true',
+    apiKey: process.env.SAFE_QUEUE_SERVICE_API_KEY,
   },
   safeConfig: {
     baseUri:
