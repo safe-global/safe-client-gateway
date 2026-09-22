@@ -250,6 +250,7 @@ export default (): ReturnType<typeof configuration> => ({
     cacheInFlightRequests: false,
     spaceAuditLog: true,
     mfaStepUp: true,
+    safeShieldCoreDisabled: false,
     safeQueueService: false,
   },
   httpClient: {
