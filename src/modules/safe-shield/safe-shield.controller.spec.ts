@@ -21,7 +21,7 @@ import {
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
 import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/errors/copilot-core-disabled.exception-filter';
-import { CopilotCoreGatingGuard } from '@/modules/safe-shield/guards/copilot-core-gating.guard';
+import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   counterpartyAnalysisRequestDtoBuilder,

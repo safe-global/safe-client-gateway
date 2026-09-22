@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { CopilotCoreDisabledError } from '@/modules/safe-shield/errors/copilot-core-disabled.error';
-import { CopilotCoreGatingGuard } from '@/modules/safe-shield/guards/copilot-core-gating.guard';
+import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
 
 describe('CopilotCoreGatingGuard', () => {
   function target(disabled: boolean): CopilotCoreGatingGuard {

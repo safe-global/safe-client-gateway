@@ -36,7 +36,7 @@ In a declared multi-PR rollout, `routes/` may land one PR ahead of its controlle
 
 **Canonical example:** `src/modules/spaces/`, `src/modules/chains/`.
 
-**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (no `domain/` or `routes/` at all — a controller at the module root plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts`) — do not imitate either.
+**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (a controller at the module root plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts` — its `routes/` holds only `routes/guards/`, not the controller or route services) — do not imitate either.
 
 ### Layer placement
 

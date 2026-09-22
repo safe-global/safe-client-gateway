@@ -5,8 +5,8 @@ import { ContractAnalysisModule } from '@/modules/safe-shield/contract-analysis/
 import { DeadlockAnalysisModule } from '@/modules/safe-shield/deadlock-analysis/deadlock-analysis.module';
 import { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
 import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/errors/copilot-core-disabled.exception-filter';
-import { CopilotCoreGatingGuard } from '@/modules/safe-shield/guards/copilot-core-gating.guard';
 import { RecipientAnalysisModule } from '@/modules/safe-shield/recipient-analysis/recipient-analysis.module';
+import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
 import { BlockaidApiModule } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.module';
 import { ThreatAnalysisModule } from '@/modules/safe-shield/threat-analysis/threat-analysis.module';
 import { TransactionsModule } from '@/modules/transactions/transactions.module';
