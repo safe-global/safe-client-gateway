@@ -1,0 +1,393 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# REUSABLE: GitOps deploy — bump the Helm image tag in the infra repo
+# =============================================================================
+# The deploy is a PR against the infra repo. This job mints a GitHub App token
+# scoped to the separate Terraform/Helm repo, checks it out on a deploy branch,
+# rewrites the image tag in the environment's values file, opens a PR, and
+# squash-merges it immediately. ArgoCD (watching that repo) reconciles the new
+# tag onto the cluster automatically — CI never touches kubectl/helm.
+# Each deploy leaves a merged PR in infra-tf, enabling one-click GitHub reverts.
+#
+# Optional production gate: wait for ArgoCD health + smoke-test the service.
+# On failure the bump is reverted (ArgoCD rolls back to the previous tag) ONLY
+# when both health_gate and auto_rollback are true; otherwise the job fails
+# loudly and recovery is roll-forward (never revert across a DB migration).
+# -----------------------------------------------------------------------------
+name: _deploy
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Target environment (staging | production). Also selects env-scoped secrets.
+        type: string
+        required: true
+      image_tag:
+        description: Immutable image tag to deploy (must already be pushed to the registry).
+        type: string
+        required: true
+      infra_repo:
+        description: owner/name of the Terraform/Helm/values repo (e.g. safe-global/my-service-infra).
+        type: string
+        required: true
+      values_file:
+        description: Path (within infra_repo) to the env values file to bump.
+        type: string
+        required: true
+      image_tag_path:
+        description: yq path to the image tag field inside values_file.
+        type: string
+        default: .image.tag
+      argocd_app:
+        description: ArgoCD Application name to wait on (optional; production gate).
+        type: string
+        default: ""
+      health_url:
+        description: URL to smoke-test after deploy (optional; production gate).
+        type: string
+        default: ""
+      version_check_url:
+        description: >-
+          Optional JSON endpoint exposing a `.version` field (e.g. /api/v1/about/).
+          After deploy, poll it until `.version` equals image_tag — confirms the
+          new image actually rolled out. VPN-free alternative to the ArgoCD wait
+          when the controller is unreachable (e.g. staging behind a separate VPN).
+        type: string
+        default: ""
+      health_gate:
+        description: >-
+          Enable the full production gate: ArgoCD wait + smoke test + post-deploy
+          checks. Set true for production only. For staging, set health_url
+          without health_gate to get a non-rolling smoke test.
+        type: boolean
+        default: false
+      auto_rollback:
+        description: >-
+          On a failed health gate, git-revert the image bump so ArgoCD rolls back
+          to the previous tag. Only meaningful when health_gate is true. Set FALSE
+          for services with forward-only DB migrations: reverting the image across
+          a migration leaves code and schema mismatched and breaks the service —
+          the safe recovery is to roll FORWARD with a fix, so the job just fails
+          loudly (no revert) and a human intervenes.
+        type: boolean
+        default: true
+      post_deploy_checks:
+        description: >-
+          Optional bash commands run after the smoke test (whenever provided, for
+          staging and production). Any non-zero exit fails the job (and triggers
+          rollback only when health_gate and auto_rollback are both true). Useful
+          for service-specific checks such as API endpoint assertions.
+          Example: |
+            curl -fsS https://example.com/api/v1/chains/ | jq -e '.count > 0'
+            curl -fsS https://example.com/api/v1/safe-apps/ | jq -e '.count > 0'
+        type: string
+        default: ""
+      aws_region:
+        description: AWS region for Secrets Manager lookups.
+        type: string
+        default: "eu-central-1"
+    secrets:
+      app_id:
+        required: true
+      app_private_key:
+        required: true
+      gpg_private_key:
+        description: GPG private key for signing the deploy commit (enterprise signed-commits rule).
+        required: true
+      gpg_passphrase:
+        description: Passphrase for the GPG private key.
+        required: true
+      argocd_server:
+        required: false
+      argocd_token:
+        required: false
+      vpn_secret:
+        description: AWS Secrets Manager secret name for the OpenVPN config file.
+        required: false
+      aws_role_arn:
+        description: IAM role ARN to assume via OIDC for Secrets Manager access.
+        required: false
+      argocd_token_secret:
+        description: AWS Secrets Manager secret name for the ArgoCD API token.
+        required: false
+
+# Serialise deploys per-environment so two pushes can't race the infra repo.
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      _HAS_VPN: ${{ secrets.vpn_secret != '' }}
+      _HAS_ARN: ${{ secrets.aws_role_arn != '' }}
+      _HAS_ARGOCD_SECRET: ${{ secrets.argocd_token_secret != '' }}
+      # The public hostnames sit behind CloudFront, which 403s any request whose
+      # User-Agent does not look like a browser's — `curl/8.x` included, and a
+      # plain `safe-client-gateway-ci/1.0` too. Verified against production:
+      # no UA / curl / bare "Mozilla/5.0" all 403; this value returns 200. It
+      # satisfies the WAF while still identifying the caller honestly, and both
+      # public gates below (version poll, smoke test) must send it or they fail
+      # closed on a service that is perfectly healthy.
+      GATE_UA: 'Mozilla/5.0 (compatible; safe-client-gateway-ci)'
+    steps:
+      - name: Validate AWS inputs
+        if: ${{ (env._HAS_VPN == 'true' || env._HAS_ARGOCD_SECRET == 'true') && env._HAS_ARN != 'true' }}
+        run: |
+          echo "::error::aws_role_arn is required when vpn_secret or argocd_token_secret is set"
+          exit 1
+
+      - name: Resolve infra repo name
+        id: infra
+        env:
+          INFRA: ${{ inputs.infra_repo }}
+        run: echo "name=${INFRA##*/}" >> "$GITHUB_OUTPUT"
+
+      - name: Mint GitHub App token (scoped to infra repo)
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.app_id }}
+          private-key: ${{ secrets.app_private_key }}
+          owner: ${{ github.repository_owner }}
+          repositories: ${{ steps.infra.outputs.name }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout infra repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ inputs.infra_repo }}
+          token: ${{ steps.app-token.outputs.token }}
+          path: infra
+          fetch-depth: 1
+          persist-credentials: true
+
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@2dc316deee8e90f13e1a351ab510b4d5bc0c82cd # v7.0.0
+        with:
+          gpg_private_key: ${{ secrets.gpg_private_key }}
+          passphrase: ${{ secrets.gpg_passphrase }}
+          git_user_signingkey: true
+          git_commit_gpgsign: true
+          git_config_global: true
+          git_committer_name: 'GH Signer Bot'
+          git_committer_email: 'gh-signer-bot@safe.global'
+
+      - name: Bump image tag (yq), open PR & merge
+        id: commit
+        working-directory: infra
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          IMAGE_TAG: ${{ inputs.image_tag }}
+          VALUES_FILE: ${{ inputs.values_file }}
+          TAG_PATH: ${{ inputs.image_tag_path }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          INFRA_REPO: ${{ inputs.infra_repo }}
+        run: |
+          set -euo pipefail
+          REPO="${GITHUB_REPOSITORY##*/}"
+          BRANCH="deploy/${ENVIRONMENT}/${REPO}-${IMAGE_TAG}"
+
+          git checkout -b "$BRANCH"
+          # mikefarah yq v4 is preinstalled on ubuntu-latest runners.
+          yq -i "${TAG_PATH} = strenv(IMAGE_TAG)" "$VALUES_FILE"
+          git add "$VALUES_FILE"
+          if git diff --cached --quiet; then
+            echo "Image tag already ${IMAGE_TAG} — nothing to deploy."
+            exit 0
+          fi
+          git commit -m "deploy(${ENVIRONMENT}): ${REPO} ${IMAGE_TAG}"
+          # --force handles re-runs of failed workflows where the branch already exists.
+          # Deploy branches are ephemeral and only written by this workflow.
+          git push --force origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "deploy(${ENVIRONMENT}): ${REPO} ${IMAGE_TAG}" \
+            --body "Automated deploy · [CI run #${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})")
+
+          # --squash produces a single commit on main signed by GitHub web-flow (Verified badge).
+          # Retry with backoff: right after the branch push GitHub is still recomputing
+          # the PR's branch-policy state (require_last_push_approval / dismiss_stale_reviews_
+          # on_push recompute per push), during which even a bypass-actor merge is transiently
+          # rejected with "base branch policy prohibits the merge". So wait and re-attempt the
+          # merge WITHOUT re-pushing (a force-push would reset that settle timer). Only rebase
+          # when infra main has actually advanced (real non-fast-forward / concurrent deploy).
+          for attempt in $(seq 1 8); do
+            if gh pr merge "$PR_URL" --squash --delete-branch \
+                 --subject "deploy(${ENVIRONMENT}): ${REPO} ${IMAGE_TAG}" \
+                 --body ""; then
+              break
+            fi
+            [ "$attempt" -eq 8 ] && { echo "::error::PR merge failed after 8 attempts. Open PR: ${PR_URL}"; exit 1; }
+            echo "Merge attempt ${attempt} failed — waiting 20s for the branch policy to settle"
+            sleep 20
+            git fetch origin
+            if ! git merge-base --is-ancestor origin/main HEAD; then
+              echo "infra main advanced — rebasing deploy branch"
+              git rebase origin/main || { git rebase --abort; echo "::error::Rebase conflict — manual resolution required. Open PR: ${PR_URL}"; exit 1; }
+              git push --force-with-lease origin "$BRANCH"
+            fi
+          done
+
+          # mergeCommit.oid can lag a few seconds after gh pr merge returns.
+          MERGE_SHA=""
+          for attempt in 1 2 3 4 5; do
+            MERGE_SHA=$(gh pr view "$PR_URL" --json mergeCommit --jq '.mergeCommit.oid // empty')
+            [ -n "$MERGE_SHA" ] && break
+            sleep 2
+          done
+          if [ -z "$MERGE_SHA" ]; then
+            # Fallback: find the commit by title — safe under concurrent unrelated deploys.
+            git fetch origin main
+            MERGE_SHA=$(git log origin/main --grep "^deploy(${ENVIRONMENT}): ${REPO} ${IMAGE_TAG}$" -n1 --format=%H)
+          fi
+          if [ -z "$MERGE_SHA" ]; then
+            echo "::error::Could not resolve merge SHA — rollback not possible if health gate fails."
+            exit 1
+          fi
+          echo "pushed=true" >> "$GITHUB_OUTPUT"
+          echo "sha=${MERGE_SHA}" >> "$GITHUB_OUTPUT"
+          echo "Deployed ${IMAGE_TAG} to ${ENVIRONMENT} — ${PR_URL}"
+
+      - name: Configure AWS credentials
+        if: ${{ env._HAS_ARN == 'true' }}
+        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        with:
+          role-to-assume: ${{ secrets.aws_role_arn }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Fetch ArgoCD token from Secrets Manager
+        if: ${{ env._HAS_ARGOCD_SECRET == 'true' }}
+        id: argocd-secrets
+        run: |
+          set -euo pipefail
+          TOKEN=$(aws secretsmanager get-secret-value \
+            --secret-id "${{ secrets.argocd_token_secret }}" \
+            --query SecretString --output text)
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Start VPN
+        if: ${{ env._HAS_VPN == 'true' }}
+        # Best-effort: the VPN only enables the deeper ArgoCD wait. If it fails,
+        # don't kill the deploy — the version-poll (/about/) + smoke + API checks
+        # below (all public, no VPN) are the real gate.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          aws secretsmanager get-secret-value \
+            --secret-id "${{ secrets.vpn_secret }}" \
+            --query SecretString --output text > /tmp/vpn.ovpn
+          sudo apt-get update -qq && sudo apt-get install -y -qq openvpn
+          sudo openvpn --config /tmp/vpn.ovpn --daemon \
+            --log /tmp/openvpn.log --writepid /tmp/openvpn.pid
+          # openvpn runs as root, so its log/pid are root-owned — read them with sudo.
+          for i in $(seq 1 30); do
+            sudo grep -q "Initialization Sequence Completed" /tmp/openvpn.log 2>/dev/null && break
+            sleep 2
+          done
+          sudo grep -q "Initialization Sequence Completed" /tmp/openvpn.log \
+            || { sudo cat /tmp/openvpn.log 2>/dev/null || true; echo "::error::VPN failed to initialize"; exit 1; }
+          # Route the private infra zone through the VPC resolver over the tunnel
+          # so the private ArgoCD server (athena.infra.safe.global) resolves.
+          # Raw `openvpn --daemon` brings up tun0 but does NOT wire its pushed DNS
+          # into systemd-resolved, so *.infra.safe.global has no route and the
+          # ArgoCD wait fails with "no such host". Set it explicitly (mirrors the
+          # working Terraform Workflow action's "Configure VPN DNS" step). 10.0.0.2
+          # is the shared-infra VPC resolver. Best-effort like the rest of this step.
+          sudo resolvectl dns tun0 10.0.0.2
+          sudo resolvectl domain tun0 "~infra.safe.global"
+
+      - name: Wait for version rollout
+        if: ${{ inputs.version_check_url != '' }}
+        env:
+          EXPECTED: ${{ inputs.image_tag }}
+          URL: ${{ inputs.version_check_url }}
+        run: |
+          set -euo pipefail
+          # Poll the service's version endpoint until it reports the tag we just
+          # deployed — proof that ArgoCD reconciled the NEW image (not the old
+          # pods). VPN-free readiness check for a GitOps rollout.
+          [ -n "$EXPECTED" ] || { echo "::error::empty image_tag — cannot verify rollout"; exit 1; }
+          for i in $(seq 1 40); do
+            DEPLOYED=$(curl -fsS -A "$GATE_UA" "$URL" 2>/dev/null | jq -r '.version // ""' 2>/dev/null || true)
+            echo "attempt ${i}/40 — deployed=${DEPLOYED:-<none>} expected=${EXPECTED}"
+            [ "$DEPLOYED" = "$EXPECTED" ] && { echo "Rollout confirmed: ${EXPECTED}"; exit 0; }
+            sleep 15
+          done
+          echo "::error::Timed out (10m) waiting for ${URL} to report version ${EXPECTED}"
+          exit 1
+
+      - name: Wait for ArgoCD sync & health
+        if: ${{ inputs.health_gate && inputs.argocd_app != '' }}
+        # Best-effort deeper check (needs the VPN). A failure here — including the
+        # VPN being down — must NOT fail the deploy; the version-poll + smoke + API
+        # checks are the gate. This step's failure is surfaced but non-blocking.
+        continue-on-error: true
+        env:
+          ARGOCD_SERVER: ${{ secrets.argocd_server }}
+          ARGOCD_AUTH_TOKEN: ${{ steps.argocd-secrets.outputs.token || secrets.argocd_token }}
+        run: |
+          set -euo pipefail
+          if [ -z "${ARGOCD_SERVER:-}" ] || [ -z "${ARGOCD_AUTH_TOKEN:-}" ]; then
+            echo "ArgoCD credentials not provided — skipping explicit wait, relying on smoke test."
+            exit 0
+          fi
+          # Pin the CLI version (don't pull a moving "latest" at runtime).
+          ARGOCD_VERSION="v2.13.3"
+          curl -sSL -o /tmp/argocd \
+            "https://github.com/argoproj/argo-cd/releases/download/${ARGOCD_VERSION}/argocd-linux-amd64"
+          chmod +x /tmp/argocd
+          /tmp/argocd app wait "${{ inputs.argocd_app }}" \
+            --health --sync --timeout 300 --grpc-web
+
+      - name: Smoke test
+        if: ${{ inputs.health_url != '' }}
+        run: |
+          set -euo pipefail
+          curl -fsS -A "$GATE_UA" --retry 6 --retry-delay 10 --retry-all-errors "${{ inputs.health_url }}"
+
+      - name: Custom post-deploy checks
+        if: ${{ inputs.post_deploy_checks != '' }}
+        run: |
+          set -euo pipefail
+          ${{ inputs.post_deploy_checks }}
+
+      - name: Roll back on failed health gate
+        if: ${{ failure() && steps.commit.outputs.pushed == 'true' && inputs.health_gate && inputs.auto_rollback }}
+        working-directory: infra
+        env:
+          DEPLOY_SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          set -euo pipefail
+          echo "::warning::Health gate failed — reverting ${DEPLOY_SHA}; ArgoCD will roll back."
+          # After gh pr merge --delete-branch the working tree is left on the now-deleted
+          # deploy branch. Explicitly switch to main before reverting.
+          git checkout main
+          git pull --rebase origin main
+          git revert --no-edit "$DEPLOY_SHA"
+          for attempt in 1 2 3; do
+            # On success still exit non-zero so the bad release is surfaced as a failure.
+            if git push; then exit 1; fi
+            echo "rollback push rejected (attempt ${attempt}) — rebasing"
+            git pull --rebase
+          done
+          echo "::error::Rollback push failed after 3 attempts — manual intervention required."
+          exit 1
+
+      - name: Stop VPN
+        if: ${{ always() && env._HAS_VPN == 'true' }}
+        run: |
+          # pid/log are root-owned (openvpn ran via sudo) — kill and clean up with sudo.
+          [ -f /tmp/openvpn.pid ] && sudo kill "$(sudo cat /tmp/openvpn.pid)" 2>/dev/null || true
+          sudo rm -f /tmp/vpn.ovpn /tmp/openvpn.pid /tmp/openvpn.log
