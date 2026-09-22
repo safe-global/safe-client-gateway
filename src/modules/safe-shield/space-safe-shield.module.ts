@@ -9,7 +9,7 @@ import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { UsersModule } from '@/modules/users/users.module';
 
 /**
- * Space-scoped Copilot recipient/counterparty analysis, kept apart from
+ * Space-scoped Safe Shield recipient/counterparty analysis, kept apart from
  * `SafeShieldModule` because that module is unconditional and `SpacesModule`
  * is not: importing `SpacesModule` from there would serve its controllers
  * even with `features.users` off. `AppModule` registers this one alongside

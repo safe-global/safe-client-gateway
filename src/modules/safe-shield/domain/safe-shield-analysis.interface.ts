@@ -9,7 +9,7 @@ import type {
 export const ISafeShieldAnalysis = Symbol('ISafeShieldAnalysis');
 
 /**
- * The recipient/counterparty analysis Copilot exposes free on Core and,
+ * The recipient/counterparty analysis Safe Shield exposes free on Core and,
  * gated by plan, on Spaces. Reached through this token so a gated module
  * never imports `SafeShieldService`/`safe-shield`'s `routes/` layer directly
  * (see `IEntitlementEnforcement` for the same pattern).

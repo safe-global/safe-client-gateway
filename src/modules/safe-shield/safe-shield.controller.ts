@@ -19,7 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter';
+import { SafeShieldCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import {
@@ -29,7 +29,7 @@ import {
 } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
 import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
-import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
+import { SafeShieldCoreGatingGuard } from '@/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
@@ -83,10 +83,10 @@ export class SafeShieldController {
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
     description:
-      'Disabled on Core. The body carries `{ code: "COPILOT_DISABLED_ON_CORE", message }`.',
+      'Disabled on Core. The body carries `{ code: "SAFE_SHIELD_DISABLED_ON_CORE", message }`.',
   })
-  @UseGuards(CopilotCoreGatingGuard)
-  @UseFilters(CopilotCoreDisabledExceptionFilter)
+  @UseGuards(SafeShieldCoreGatingGuard)
+  @UseFilters(SafeShieldCoreDisabledExceptionFilter)
   @HttpCode(HttpStatus.OK)
   @Get('chains/:chainId/security/:safeAddress/recipient/:recipientAddress')
   public analyzeRecipient(

@@ -6,15 +6,18 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { CopilotCoreDisabledError } from '@/modules/safe-shield/domain/errors/copilot-core-disabled.error';
+import { SafeShieldCoreDisabledError } from '@/modules/safe-shield/domain/errors/safe-shield-core-disabled.error';
 
 /**
  * Registered on the disabled Core routes so the rejection never reaches
  * `GlobalErrorFilter`, which would log a stacktrace for expected steady state.
  */
-@Catch(CopilotCoreDisabledError)
-export class CopilotCoreDisabledExceptionFilter implements ExceptionFilter {
-  public catch(exception: CopilotCoreDisabledError, host: ArgumentsHost): void {
+@Catch(SafeShieldCoreDisabledError)
+export class SafeShieldCoreDisabledExceptionFilter implements ExceptionFilter {
+  public catch(
+    exception: SafeShieldCoreDisabledError,
+    host: ArgumentsHost,
+  ): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<FastifyReply>();
 

@@ -206,13 +206,13 @@ describe('SafeShieldController', () => {
       expect(blockaidApi.scanTransaction).toHaveBeenCalled();
     });
 
-    it('should still return 200 when Copilot is disabled on Core', async () => {
+    it('should still return 200 when Safe Shield is disabled on Core', async () => {
       const defaultConfiguration = configuration();
       await initApp(() => ({
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          copilotCoreDisabled: true,
+          safeShieldCoreDisabled: true,
         },
       }));
       const chain = chainBuilder().with('features', []).build();
@@ -260,13 +260,13 @@ describe('SafeShieldController', () => {
       );
     });
 
-    it('should return 402 when Copilot is disabled on Core', async () => {
+    it('should return 402 when Safe Shield is disabled on Core', async () => {
       const defaultConfiguration = configuration();
       await initApp(() => ({
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          copilotCoreDisabled: true,
+          safeShieldCoreDisabled: true,
         },
       }));
       const chainId = faker.string.numeric();
@@ -279,7 +279,7 @@ describe('SafeShieldController', () => {
 
       expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
       expect(response.body).toMatchObject({
-        code: 'COPILOT_DISABLED_ON_CORE',
+        code: 'SAFE_SHIELD_DISABLED_ON_CORE',
       });
     });
   });
@@ -300,13 +300,13 @@ describe('SafeShieldController', () => {
         .expect({ recipient: {}, contract: {}, deadlock: {} });
     });
 
-    it('should still return 200 when Copilot is disabled on Core', async () => {
+    it('should still return 200 when Safe Shield is disabled on Core', async () => {
       const defaultConfiguration = configuration();
       await initApp(() => ({
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          copilotCoreDisabled: true,
+          safeShieldCoreDisabled: true,
         },
       }));
       const chainId = faker.string.numeric();
@@ -325,13 +325,13 @@ describe('SafeShieldController', () => {
   });
 
   describe('POST /v1/chains/:chainId/security/:safeAddress/report-false-result', () => {
-    it('should still accept reports when Copilot is disabled on Core', async () => {
+    it('should still accept reports when Safe Shield is disabled on Core', async () => {
       const defaultConfiguration = configuration();
       await initApp(() => ({
         ...defaultConfiguration,
         features: {
           ...defaultConfiguration.features,
-          copilotCoreDisabled: true,
+          safeShieldCoreDisabled: true,
         },
       }));
       const chainId = faker.string.numeric();

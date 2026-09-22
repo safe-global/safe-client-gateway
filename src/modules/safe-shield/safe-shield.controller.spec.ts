@@ -8,7 +8,7 @@ import { getAddress } from 'viem';
 import type { Mocked } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter';
+import { SafeShieldCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
@@ -21,7 +21,7 @@ import {
   ContractStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
+import { SafeShieldCoreGatingGuard } from '@/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   counterpartyAnalysisRequestDtoBuilder,
@@ -64,7 +64,7 @@ describe('SafeShieldController (Unit)', () => {
     vi.resetAllMocks();
 
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('features.copilotCoreDisabled', false);
+    fakeConfigurationService.set('features.safeShieldCoreDisabled', false);
 
     moduleRef = await Test.createTestingModule({
       controllers: [SafeShieldController],
@@ -359,15 +359,15 @@ describe('SafeShieldController (Unit)', () => {
     });
   });
 
-  describe('Copilot Core gating', () => {
+  describe('Safe Shield Core gating', () => {
     it.each([
       ['analyzeRecipient', SafeShieldController.prototype.analyzeRecipient],
     ] as const)('gates %s on the Core disable flag', (_name, handler) => {
       expect(appliedNames(GUARDS_METADATA, handler)).toContain(
-        CopilotCoreGatingGuard.name,
+        SafeShieldCoreGatingGuard.name,
       );
       expect(appliedNames(EXCEPTION_FILTERS_METADATA, handler)).toContain(
-        CopilotCoreDisabledExceptionFilter.name,
+        SafeShieldCoreDisabledExceptionFilter.name,
       );
     });
 
@@ -382,7 +382,7 @@ describe('SafeShieldController (Unit)', () => {
       'does not gate %s on the Core disable flag',
       (_name, handler) => {
         expect(appliedNames(GUARDS_METADATA, handler)).not.toContain(
-          CopilotCoreGatingGuard.name,
+          SafeShieldCoreGatingGuard.name,
         );
       },
     );
