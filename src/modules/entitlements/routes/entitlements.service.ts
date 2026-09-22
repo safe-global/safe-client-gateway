@@ -38,7 +38,10 @@ import type {
   ConsumedQuota,
   IEntitlementEnforcement,
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import type {
+  BinaryFeature,
+  StockMeteredFeature,
+} from '@/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
   isEventMeteredFeature,
@@ -172,7 +175,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
 
   public async assertWithinQuota(args: {
     spaceId: Space['id'];
-    featureKey: FeatureKey;
+    featureKey: Exclude<FeatureKey, BinaryFeature>;
     delta: number;
   }): Promise<void> {
     const grant = await this.resolveGrant(args);
@@ -190,7 +193,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
   /** A Binary feature's whole verdict: the plan grants it or it does not. */
   public async assertFeatureGranted(args: {
     spaceId: Space['id'];
-    featureKey: FeatureKey;
+    featureKey: BinaryFeature;
   }): Promise<void> {
     const grant = await this.resolveGrant(args);
     if (grant.enabled) {
