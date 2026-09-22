@@ -8,8 +8,8 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import type { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
+import { SpaceSafeShieldService } from '@/modules/safe-shield/routes/space-safe-shield.service';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceSafeShieldService } from '@/modules/spaces/routes/safe-shield/space-safe-shield.service';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 

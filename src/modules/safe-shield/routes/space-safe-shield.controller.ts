@@ -37,7 +37,7 @@ import { NumericStringSchema } from '@/validation/entities/schemas/numeric-strin
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { SpaceSafeShieldService } from './space-safe-shield.service';
 
-@ApiTags('spaces')
+@ApiTags('safe-shield')
 @Controller({
   path: 'spaces/:spaceId/chains/:chainId/security/:safeAddress',
   version: '1',
