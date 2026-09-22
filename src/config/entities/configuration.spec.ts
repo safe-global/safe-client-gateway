@@ -33,34 +33,6 @@ describe('configuration - httpServer.trustProxy', () => {
   });
 });
 
-describe('configuration - renamed env vars', () => {
-  const RENAMED = [
-    ['EXPRESS_JSON_LIMIT', 'HTTP_SERVER_BODY_LIMIT'],
-    ['EXPRESS_TRUST_PROXY', 'HTTP_SERVER_TRUST_PROXY'],
-  ];
-
-  afterEach(() => {
-    for (const [removed] of RENAMED) {
-      delete process.env[removed];
-    }
-  });
-
-  // A stale name would otherwise be ignored and fall back to the default.
-  it.each(RENAMED)('throws when %s is still set', (removed, replacement) => {
-    process.env[removed] = 'loopback';
-
-    expect(() => configuration()).toThrow(
-      `${removed} was renamed to ${replacement}`,
-    );
-  });
-
-  it.each(RENAMED)('does not throw when %s is unset', (removed) => {
-    delete process.env[removed];
-
-    expect(() => configuration()).not.toThrow();
-  });
-});
-
 describe('configuration - features.zerion', () => {
   const ENV_KEY = 'FF_ZERION_ENABLED';
   const original = process.env[ENV_KEY];

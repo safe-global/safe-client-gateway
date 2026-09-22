@@ -3,7 +3,7 @@ import type { RelayRules } from '@/modules/relay/domain/entities/relay.configura
 
 // Custom configuration for the application
 
-const configuration = () => ({
+export default () => ({
   about: {
     name: 'safe-client-gateway',
     version: process.env.APPLICATION_VERSION,
@@ -1110,21 +1110,4 @@ const parseRelayRules = (
       rule.limit >= 0,
   );
   return parsed;
-};
-
-// Renamed in the Express->Fastify migration. A stale name would be ignored and
-// silently fall back to the default, which for `trustProxy` drops `request.ip`
-// to the socket address and keys every client onto one rate-limit bucket.
-const RENAMED_ENV_VARS: Record<string, string> = {
-  EXPRESS_JSON_LIMIT: 'HTTP_SERVER_BODY_LIMIT',
-  EXPRESS_TRUST_PROXY: 'HTTP_SERVER_TRUST_PROXY',
-};
-
-export default (): ReturnType<typeof configuration> => {
-  for (const [removed, replacement] of Object.entries(RENAMED_ENV_VARS)) {
-    if (process.env[removed] !== undefined) {
-      throw new Error(`${removed} was renamed to ${replacement}`);
-    }
-  }
-  return configuration();
 };
