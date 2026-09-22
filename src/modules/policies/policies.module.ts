@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
@@ -20,8 +19,6 @@ import { UsersModule } from '@/modules/users/users.module';
   imports: [
     PolicyIndexerRepositoryModule,
     SafeRepositoryModule,
-    // The proposer grants, read from both delegates APIs
-    DelegatesV2RepositoryModule,
     DelegatesV3RepositoryModule,
     // Space membership and the Safe-in-space check
     forwardRef(() => SpacesModule),

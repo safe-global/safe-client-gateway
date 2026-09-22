@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
@@ -58,13 +57,9 @@ export type SpendingLimitAllowance = {
  * sign or execute one. Nothing on chain enforces it - the grant is a delegate
  * registration held by the Transaction Service.
  *
- * One policy per `(safe, delegates API)`. The two APIs are separate stores, so
- * they are reported separately rather than merged: a grant is revoked through
- * the API holding it, and merging would lose which one that is.
+ * One policy per Safe, built from the delegates API's registrations.
  */
 export type ProposerPolicyData = {
-  /** The delegates API these grants were read from. */
-  version: DelegateApiVersion;
   proposers: Array<{
     proposer: Address;
     /**

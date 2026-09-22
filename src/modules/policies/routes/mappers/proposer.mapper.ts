@@ -6,19 +6,12 @@ import type {
   ActivePolicy,
   ProposerPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import {
   OffChainSource,
   offChainEnforcement,
 } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-
-/** One delegates API's answer for one Safe. */
-export type DelegatesOfVersion = {
-  version: DelegateApiVersion;
-  delegates: ReadonlyArray<Delegate>;
-};
 
 /**
  * Builds the `proposer` policies of one Safe from the delegate registrations
@@ -30,38 +23,29 @@ export type DelegatesOfVersion = {
 @Injectable()
 export class ProposerMapper {
   /**
-   * One policy per delegates API that returned a registration.
-   *
-   * The two APIs are independent stores and are never merged: a client revokes
-   * a grant through the API holding it, so collapsing them would hide which one
-   * that is. While the Queue Service is switched off both APIs read the same
-   * upstream and report the same proposers twice, once per version.
+   * The one `proposer` policy of a Safe, or none when nothing is registered.
    */
   public map(args: {
     safe: SafeRef;
-    /** Each delegates API's rows, already scoped to {@link args.safe}. */
-    delegatesByVersion: ReadonlyArray<DelegatesOfVersion>;
+    /** The delegate registrations, already scoped to {@link args.safe}. */
+    delegates: ReadonlyArray<Delegate>;
   }): Array<ActivePolicy> {
-    const proposerPolicies: Array<ActivePolicy> = [];
+    // No registrations is no policy, rather than a policy granting nobody.
+    if (args.delegates.length === 0) {
+      return [];
+    }
 
-    for (const { version, delegates } of args.delegatesByVersion) {
-      // No registrations is no policy, rather than a policy granting nobody.
-      if (delegates.length === 0) {
-        continue;
-      }
-
-      proposerPolicies.push({
+    return [
+      {
         type: PolicyType.Proposer,
         enforcement: offChainEnforcement(OffChainSource.Delegates),
         // A registered delegate may propose from the moment it is registered:
         // there is no on-chain switch that could leave it configured but unused.
         enabled: true,
-        data: { version, proposers: this.toProposers(delegates) },
+        data: { proposers: this.toProposers(args.delegates) },
         safe: args.safe,
-      });
-    }
-
-    return proposerPolicies;
+      },
+    ];
   }
 
   /**

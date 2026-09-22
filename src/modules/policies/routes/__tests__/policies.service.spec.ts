@@ -8,10 +8,8 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
 import type { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
-import { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
@@ -43,10 +41,6 @@ const mockMembersRepository = {
   findOne: vi.fn(),
 } as unknown as MockedObject<IMembersRepository>;
 
-const mockDelegatesV2Repository = {
-  getDelegates: vi.fn(),
-} as unknown as MockedObject<IDelegatesV2Repository>;
-
 const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
 } as unknown as MockedObject<IDelegatesV3Repository>;
@@ -74,7 +68,6 @@ describe('PoliciesService', () => {
       mockSafeRepository,
       mockSpaceSafesRepository,
       mockMembersRepository,
-      mockDelegatesV2Repository,
       mockDelegatesV3Repository,
       new SpendingLimitMapper(),
       new ProposerMapper(),
@@ -92,16 +85,13 @@ describe('PoliciesService', () => {
       policyIndexerResponseBuilder().build(),
     );
     // No proposers unless a case registers some.
-    withDelegates([], []);
+    withDelegates([]);
   });
 
-  /** Reports `v2` and `v3` as the registrations each delegates API holds. */
-  function withDelegates(v2: Array<Delegate>, v3: Array<Delegate>): void {
-    mockDelegatesV2Repository.getDelegates.mockResolvedValue(
-      pageBuilder<Delegate>().with('results', v2).build(),
-    );
+  /** Reports {@link delegates} as the registrations the delegates API holds. */
+  function withDelegates(delegates: Array<Delegate>): void {
     mockDelegatesV3Repository.getDelegates.mockResolvedValue(
-      pageBuilder<Delegate>().with('results', v3).build(),
+      pageBuilder<Delegate>().with('results', delegates).build(),
     );
   }
 
@@ -366,34 +356,27 @@ describe('PoliciesService', () => {
   });
 
   describe('proposers', () => {
-    it('should read both delegates apis for the safe, at the max page size', async () => {
+    it('should read the delegates api for the safe, at the max page size', async () => {
       // The Transaction Service's default page would silently truncate a Safe
       // with many proposers.
       await target.getSpaceActivePolicies(policyRequest);
 
-      const expected = {
+      expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledWith({
         chainId: SEPOLIA,
         safeAddress,
         limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-      };
-      expect(mockDelegatesV2Repository.getDelegates).toHaveBeenCalledWith(
-        expected,
-      );
-      expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledWith(
-        expected,
-      );
+      });
     });
 
-    it('should report no proposer policy when neither api holds a registration', async () => {
+    it('should report no proposer policy when no registration is held', async () => {
       const policies = await target.getSpaceActivePolicies(policyRequest);
 
       expect(policies).toStrictEqual([]);
     });
 
-    it('should report one policy per api that holds a registration', async () => {
-      const onV2 = delegateBuilder().with('safe', safeAddress).build();
-      const onV3 = delegateBuilder().with('safe', safeAddress).build();
-      withDelegates([onV2], [onV3]);
+    it('should report one policy holding the registrations of the safe', async () => {
+      const registered = delegateBuilder().with('safe', safeAddress).build();
+      withDelegates([registered]);
 
       const policies = await target.getSpaceActivePolicies(policyRequest);
 
@@ -401,23 +384,13 @@ describe('PoliciesService', () => {
         {
           type: PolicyType.Proposer,
           safe: { chainId: SEPOLIA, address: safeAddress },
-          data: {
-            version: DelegateApiVersion.V2,
-            proposers: [{ proposer: onV2.delegate }],
-          },
-        },
-        {
-          type: PolicyType.Proposer,
-          data: {
-            version: DelegateApiVersion.V3,
-            proposers: [{ proposer: onV3.delegate }],
-          },
+          data: { proposers: [{ proposer: registered.delegate }] },
         },
       ]);
     });
 
     it('should report proposers alongside the spending limits of the same safe', async () => {
-      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()]);
 
       const policies = await activePolicies([allowanceOf(safeAddress)]);
 
@@ -442,7 +415,7 @@ describe('PoliciesService', () => {
 
   describe('narrowing by policy type', () => {
     it('should report every type when every type is requested', async () => {
-      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()]);
 
       const policies = await activePolicies([allowanceOf(safeAddress)]);
 
@@ -453,7 +426,7 @@ describe('PoliciesService', () => {
     });
 
     it('should report only the spending limits when only they are asked for', async () => {
-      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()]);
       mockPolicyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
@@ -470,7 +443,7 @@ describe('PoliciesService', () => {
       ]);
     });
 
-    it('should not read the delegates apis when proposers are not asked for', async () => {
+    it('should not read the delegates api when proposers are not asked for', async () => {
       // Filtering by skipping the read, not by dropping the result - the point
       // of the filter is the call that is never made.
       await target.getSpaceActivePolicies({
@@ -478,7 +451,6 @@ describe('PoliciesService', () => {
         types: [PolicyType.SpendingLimit],
       });
 
-      expect(mockDelegatesV2Repository.getDelegates).not.toHaveBeenCalled();
       expect(mockDelegatesV3Repository.getDelegates).not.toHaveBeenCalled();
     });
 
@@ -493,7 +465,7 @@ describe('PoliciesService', () => {
     });
 
     it('should report both types when both are asked for', async () => {
-      withDelegates([delegateBuilder().with('safe', safeAddress).build()], []);
+      withDelegates([delegateBuilder().with('safe', safeAddress).build()]);
       mockPolicyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
@@ -519,7 +491,7 @@ describe('PoliciesService', () => {
 
       expect(policies).toStrictEqual([]);
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
-      expect(mockDelegatesV2Repository.getDelegates).not.toHaveBeenCalled();
+      expect(mockDelegatesV3Repository.getDelegates).not.toHaveBeenCalled();
     });
   });
 });

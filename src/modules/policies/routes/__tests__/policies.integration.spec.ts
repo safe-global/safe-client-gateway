@@ -154,7 +154,7 @@ describe('Space Policies Controller', () => {
       ) {
         return Promise.resolve({ data: rawify(polygonSafe), status: 200 });
       }
-      // The proposer half. Both delegates APIs land here while the Queue
+      // The proposer half. The delegates API lands here while the Queue
       // Service is switched off, which is what the test configuration sets.
       if (url.endsWith('/api/v2/delegates/')) {
         if (args.delegatesUnavailable) {
@@ -420,10 +420,7 @@ describe('Space Policies Controller', () => {
       ]);
     });
 
-    it('should report the proposers of a safe, once per delegates api', async () => {
-      // Both APIs read the same upstream while the Queue Service is off, so the
-      // same grant is reported once per version rather than merged - a client
-      // revokes a grant through the API holding it.
+    it('should report the proposers of a safe', async () => {
       const proposer = delegateBuilder().with('safe', safeAddress).build();
       mockUpstream({ delegates: [proposer] });
       mockIndexer(rawPolicyIndexerResponse({}));
@@ -437,29 +434,22 @@ describe('Space Policies Controller', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
 
-      const enforcement = { via: 'offchain', source: 'delegates' };
-      const proposers = [
-        {
-          proposer: proposer.delegate,
-          delegatedBy: [
-            { delegator: proposer.delegator, label: proposer.label },
-          ],
-        },
-      ];
       expect(body).toStrictEqual([
         {
           type: PolicyType.Proposer,
-          enforcement,
+          enforcement: { via: 'offchain', source: 'delegates' },
           enabled: true,
           safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
-          data: { version: 'v2', proposers },
-        },
-        {
-          type: PolicyType.Proposer,
-          enforcement,
-          enabled: true,
-          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
-          data: { version: 'v3', proposers },
+          data: {
+            proposers: [
+              {
+                proposer: proposer.delegate,
+                delegatedBy: [
+                  { delegator: proposer.delegator, label: proposer.label },
+                ],
+              },
+            ],
+          },
         },
       ]);
     });
@@ -634,7 +624,7 @@ describe('Space Policies Controller', () => {
 
       expect(
         (body as Array<{ type: string }>).map((policy) => policy.type),
-      ).toStrictEqual([PolicyType.Proposer, PolicyType.Proposer]);
+      ).toStrictEqual([PolicyType.Proposer]);
       // The indexer feeds spending limits only, so it is never asked.
       expect(networkService.post).not.toHaveBeenCalled();
     });

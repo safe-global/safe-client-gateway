@@ -8,7 +8,6 @@ import type {
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
-import { DelegateApiVersion } from '@/modules/policies/domain/entities/delegate-api-version.entity';
 import type {
   GuardSlots,
   ModuleEnforcement,
@@ -157,12 +156,6 @@ export class ProposerDto {
 }
 
 export class ProposerPolicyDataDto implements ProposerPolicyData {
-  @ApiProperty({
-    enum: Object.values(DelegateApiVersion),
-    description:
-      'The delegates API these grants were read from, and the one a client revokes them through',
-  })
-  public readonly version!: DelegateApiVersion;
   @ApiProperty({ type: ProposerDto, isArray: true })
   public readonly proposers!: ProposerPolicyData['proposers'];
 }
