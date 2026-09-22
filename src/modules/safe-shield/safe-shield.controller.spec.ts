@@ -8,6 +8,7 @@ import { getAddress } from 'viem';
 import type { Mocked } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
@@ -20,7 +21,6 @@ import {
   ContractStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
-import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/errors/copilot-core-disabled.exception-filter';
 import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {

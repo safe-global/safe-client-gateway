@@ -19,6 +19,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter';
 import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
 import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import {
@@ -28,7 +29,6 @@ import {
 } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
 import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
 import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
-import { CopilotCoreDisabledExceptionFilter } from '@/modules/safe-shield/errors/copilot-core-disabled.exception-filter';
 import { CopilotCoreGatingGuard } from '@/modules/safe-shield/routes/guards/copilot-core-gating.guard';
 import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';

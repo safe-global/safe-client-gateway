@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { CopilotCoreDisabledError } from '@/modules/safe-shield/errors/copilot-core-disabled.error';
+import { CopilotCoreDisabledError } from '@/modules/safe-shield/domain/errors/copilot-core-disabled.error';
 
 /**
  * Registered on the disabled Core routes so the rejection never reaches
