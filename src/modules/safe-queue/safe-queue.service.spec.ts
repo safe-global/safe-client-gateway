@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress } from 'viem';
+import { type Address, getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
@@ -79,7 +79,7 @@ describe('SafeQueueService', () => {
   describe('getMultisigTransaction', () => {
     it('Should read the safe_queue_multisig_transaction cache key, not the tx-service multisig_transaction key', async () => {
       const tx = safeQueueMultisigTransactionBuilder()
-        .with('safeTxHash', safeTxHash as `0x${string}`)
+        .with('safeTxHash', safeTxHash as Hex)
         .build();
       mockDataSource.get.mockResolvedValueOnce(rawify(tx));
 
@@ -183,6 +183,38 @@ describe('SafeQueueService', () => {
         `${chainId}_safe_queue_delegates_${safeAddress}`,
       );
       expect(cacheDir.key).not.toBe(`${chainId}_delegates_${safeAddress}`);
+    });
+  });
+
+  describe('postConfirmation', () => {
+    const signature = faker.string.hexadecimal({ length: 130 });
+
+    it('Should post the signature without reading the transaction back', async () => {
+      networkService.post.mockResolvedValueOnce({
+        data: rawify([]),
+        status: 201,
+      });
+
+      await expect(
+        service.postConfirmation({ chainId, safeTxHash, signature }),
+      ).resolves.toBeUndefined();
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${baseUri}/api/v1/multisig-transactions/${safeTxHash}/signatures`,
+          data: { signatures: [signature] },
+        }),
+      );
+      expect(mockCacheService.deleteByKey).not.toHaveBeenCalled();
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+
+    it('Should throw when posting the signature fails', async () => {
+      networkService.post.mockRejectedValueOnce(new Error('upstream failure'));
+
+      await expect(
+        service.postConfirmation({ chainId, safeTxHash, signature }),
+      ).rejects.toThrow();
     });
   });
 
@@ -527,7 +559,7 @@ describe('SafeQueueService', () => {
 
     it('postConfirmation includes the queue circuit breaker key', async () => {
       networkService.post.mockResolvedValueOnce({
-        data: rawify(safeQueueMultisigTransactionBuilder().build()),
+        data: rawify([]),
         status: 200,
       });
 
@@ -644,7 +676,7 @@ describe('SafeQueueService', () => {
       await service.postMessageSignature({
         chainId,
         messageHash,
-        signature: faker.string.hexadecimal({ length: 16 }) as `0x${string}`,
+        signature: faker.string.hexadecimal({ length: 16 }) as Hex,
       });
 
       expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);

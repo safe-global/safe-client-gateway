@@ -42,7 +42,7 @@ export interface ISafeQueueService {
     chainId: string;
     safeTxHash: string;
     signature: string;
-  }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
+  }): Promise<void>;
 
   deleteTransaction(args: {
     chainId: string;
