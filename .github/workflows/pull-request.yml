@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# CALLER: Pull request gate
+# =============================================================================
+# The review this enables is the only human gate before anything reaches main.
+# The quality jobs themselves live in _ci-node.yml so this gate and the trunk
+# pipeline share one definition.
+#
+# architecture-check.yml, claude-code-review.yml and linear-release.yml are
+# unrelated to this pipeline and run on their own events.
+# -----------------------------------------------------------------------------
+name: Pull request
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+# Cancel superseded runs for the same PR, so rapid pushes stop hogging runners.
+# ci.yml used to do this through its own concurrency group; keeping it here
+# preserves that behaviour now that PRs no longer run ci.yml.
+concurrency:
+  group: pull-request-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_ci-node.yml
+    secrets: inherit
