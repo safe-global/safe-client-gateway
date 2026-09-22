@@ -453,3 +453,27 @@ await Promise.allSettled([
 
 **Spotted in:** #3294 ("it is better to pin against a hash").
 **Status:** active
+
+## Authorization
+
+### R-031: A private copy of the Workspace admin or member check
+
+**Pattern:** a `private async assertActiveAdmin(...)` in a service, an inline `membersRepository.findOne({ role: 'ADMIN', status: 'ACTIVE', ... })`, or a repository query that filters the space by the caller's membership — where `assertMember` / `assertAdmin` from `src/modules/spaces/domain/space-assert.utils.ts` would do.
+
+**Why it's bad:** every copy is another place a fix has to land, and they drift — the repo reached five implementations of one predicate, three 403 messages, and one endpoint answering 404. The helpers return the membership row, so a copy returning `void` also costs a second query when the caller needs the role.
+
+**Corrected form:**
+
+```ts
+// Don't
+private async assertActiveAdmin(...): Promise<void> {
+  const member = await this.membersRepository.findOne({ ..., status: 'ACTIVE', role: 'ADMIN' });
+  if (!member) throw new ForbiddenException('User is not an active admin.');
+}
+// Do
+const member = await assertMember(this.membersRepository, spaceId, userId);
+const callerIsAdmin = member.role === 'ADMIN'; // or assertAdmin(...) when admin is required
+```
+
+**Spotted in:** #2539, #3026, #3107, #3175 — one copy each, consolidated in one follow-up.
+**Status:** active — `security.md`'s "Workspace authorization through the shared assertions only" rule owns this.

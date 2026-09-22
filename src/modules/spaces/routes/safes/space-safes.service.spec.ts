@@ -14,14 +14,13 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type {
   ISpaceSafesRepository,
   PreparedSpaceSafe,
 } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
@@ -53,13 +52,12 @@ const postgresDatabaseServiceMock = {
   ),
 } as MockedObject<PostgresDatabaseService>;
 
-const spacesRepositoryMock = {
-  findOne: vi.fn(),
-} as MockedObject<ISpacesRepository>;
-
 const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+const adminMember = (): Member =>
+  memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build();
 
 const entitlementEnforcementMock = {
   assertWithinQuota: vi.fn(),
@@ -73,7 +71,6 @@ describe('SpaceSafesService', () => {
     vi.resetAllMocks();
     service = new SpaceSafesService(
       spaceSafesRepositoryMock,
-      spacesRepositoryMock,
       membersRepositoryMock,
       entitlementEnforcementMock,
       postgresDatabaseServiceMock,
@@ -101,7 +98,7 @@ describe('SpaceSafesService', () => {
         },
       ];
 
-      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
       spaceSafesRepositoryMock.encryptRows.mockResolvedValue(rows);
       spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(0);
@@ -109,7 +106,7 @@ describe('SpaceSafesService', () => {
 
       await service.create({ spaceId, authPayload, payload });
 
-      expect(spacesRepositoryMock.findOne).toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).toHaveBeenCalled();
       expect(
         spaceSafesRepositoryMock.lockSeats,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, entityManager);
@@ -132,7 +129,7 @@ describe('SpaceSafesService', () => {
         }),
       ).rejects.toThrow(UnauthorizedException);
 
-      expect(spacesRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -142,7 +139,7 @@ describe('SpaceSafesService', () => {
       'should throw when %s user is not admin',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
-        spacesRepositoryMock.findOne.mockResolvedValue(null);
+        membersRepositoryMock.findOne.mockResolvedValue(null);
 
         await expect(
           service.create({
@@ -168,7 +165,7 @@ describe('SpaceSafesService', () => {
 
       const check = vi.fn();
       const rows = payload.map(({ address }) => preparedRow(spaceId, address));
-      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
       spaceSafesRepositoryMock.encryptRows.mockResolvedValue(rows);
       spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(
@@ -207,7 +204,7 @@ describe('SpaceSafesService', () => {
       ];
       const quota = faker.number.int({ min: 1, max: 5 });
       const check = vi.fn();
-      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
       spaceSafesRepositoryMock.encryptRows.mockResolvedValue(
         payload.map(({ address }) => preparedRow(spaceId, address)),
@@ -228,7 +225,7 @@ describe('SpaceSafesService', () => {
     it('propagates a seat rejection raised inside the write', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
       const quota = faker.number.int({ min: 5, max: 10 });
       const quotaExceeded = new QuotaExceededError({
         feature: 'safe_seats',
@@ -328,11 +325,11 @@ describe('SpaceSafesService', () => {
       const chainId = faker.number.int().toString();
       const payload = [{ address: addr(), chainId }];
 
-      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
 
       await service.delete({ spaceId, authPayload, payload });
 
-      expect(spacesRepositoryMock.findOne).toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).toHaveBeenCalled();
       expect(spaceSafesRepositoryMock.delete).toHaveBeenCalledWith({
         spaceId,
         actorUserId: Number(authPayload.sub),
@@ -349,7 +346,7 @@ describe('SpaceSafesService', () => {
         }),
       ).rejects.toThrow(UnauthorizedException);
 
-      expect(spacesRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
     });
 
     it.each([
@@ -359,7 +356,7 @@ describe('SpaceSafesService', () => {
       'should throw when %s user is not admin',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
-        spacesRepositoryMock.findOne.mockResolvedValue(null);
+        membersRepositoryMock.findOne.mockResolvedValue(null);
 
         await expect(
           service.delete({

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, ForbiddenException, Inject } from '@nestjs/common';
+import { ConflictException, Inject } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { assertAdmin } from '@/modules/spaces/domain/space-assert.utils';
 import type { AcceptInviteDto } from '@/modules/spaces/routes/members/entities/accept-invite.dto.entity';
 import type { Invitation } from '@/modules/spaces/routes/members/entities/invitation.entity';
 import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
@@ -50,10 +51,7 @@ export class MembersService {
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
-    await this.assertActiveAdmin({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
+    await this.assertActiveAdmin(args);
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
@@ -78,10 +76,7 @@ export class MembersService {
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<Invitation> {
-    await this.assertActiveAdmin({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
+    await this.assertActiveAdmin(args);
     const { id, user, name, status, role, invitedBy, space } =
       await this.membersRepository.findOneOrFail(
         {
@@ -152,17 +147,18 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
-    const [members, activeAdmin] = await Promise.all([
-      this.membersRepository.findAuthorizedMembersOrFail({
-        authPayload: args.authPayload,
-        spaceId: args.spaceId,
-      }),
-      this.membersRepository.findActiveAdmin({
-        userId: getAuthenticatedUserIdOrFail(args.authPayload),
-        spaceId: args.spaceId,
-      }),
-    ]);
-    const isActiveAdmin = Boolean(activeAdmin);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const members = await this.membersRepository.findAuthorizedMembersOrFail({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+    // The roster includes the caller's own row, so no second query is needed.
+    const isActiveAdmin = members.some(
+      (member) =>
+        member.user.id === userId &&
+        member.role === 'ADMIN' &&
+        member.status === 'ACTIVE',
+    );
     return {
       members: members.map((member) => ({
         ...member,
@@ -257,12 +253,6 @@ export class MembersService {
     spaceId: Space['id'];
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const activeAdmin = await this.membersRepository.findActiveAdmin({
-      userId,
-      spaceId: args.spaceId,
-    });
-    if (!activeAdmin) {
-      throw new ForbiddenException('User is not an active admin.');
-    }
+    await assertAdmin(this.membersRepository, args.spaceId, userId);
   }
 }

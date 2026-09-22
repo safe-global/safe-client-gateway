@@ -1,39 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ForbiddenException } from '@nestjs/common';
-import { getEnumKey } from '@/domain/common/utils/enum';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
-export async function isAdmin(
-  spacesRepository: ISpacesRepository,
-  spaceId: Space['id'],
-  userId: number,
-): Promise<boolean> {
-  const space = await spacesRepository.findOne({
-    where: {
-      id: spaceId,
-      members: {
-        role: getEnumKey(MemberRole, MemberRole.ADMIN),
-        status: 'ACTIVE',
-        user: { id: userId },
-      },
-    },
-  });
-  return space !== null;
-}
-
+/**
+ * Asserts the caller is an ACTIVE ADMIN of the space. Non-members, pending
+ * (INVITED) members and active MEMBERs are all rejected alike.
+ *
+ * @returns the membership row, so callers needing it do not query twice.
+ */
 export async function assertAdmin(
-  spacesRepository: ISpacesRepository,
+  membersRepository: IMembersRepository,
   spaceId: Space['id'],
   userId: number,
-): Promise<void> {
-  if (!(await isAdmin(spacesRepository, spaceId, userId))) {
+): Promise<Member> {
+  const admin = await membersRepository.findOne({
+    user: { id: userId },
+    space: { id: spaceId },
+    status: 'ACTIVE',
+    role: 'ADMIN',
+  });
+
+  if (!admin) {
     throw new ForbiddenException('User is not an admin of this workspace');
   }
+
+  return admin;
 }
 
 /**

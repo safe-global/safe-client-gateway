@@ -143,23 +143,6 @@ export class MembersRepository implements IMembersRepository {
     return await this.decryptMemberUserEmails(members);
   }
 
-  public async findActiveAdmin(args: {
-    userId: User['id'];
-    spaceId: Space['id'];
-  }): Promise<DbMember | null> {
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-
-    return await membersRepository.findOne({
-      where: {
-        user: { id: args.userId },
-        space: { id: args.spaceId },
-        status: 'ACTIVE',
-        role: 'ADMIN',
-      },
-    });
-  }
-
   public async inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

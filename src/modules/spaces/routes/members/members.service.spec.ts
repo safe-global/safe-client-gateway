@@ -33,7 +33,7 @@ const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const membersRepositoryMock = {
-  findActiveAdmin: vi.fn(),
+  findOne: vi.fn(),
   findAuthorizedMembersOrFail: vi.fn(),
   findOneOrFail: vi.fn(),
   inviteUsers: vi.fn(),
@@ -91,7 +91,6 @@ describe('MembersService', () => {
       membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
         invitedMember,
       ]);
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
 
       await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
         members: [
@@ -104,10 +103,6 @@ describe('MembersService', () => {
             },
           },
         ],
-      });
-      expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalledWith({
-        userId: Number(authPayload.sub),
-        spaceId,
       });
     });
 
@@ -133,7 +128,6 @@ describe('MembersService', () => {
         callerMember,
         invitedMember,
       ]);
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(callerMember);
 
       await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
         members: [
@@ -175,7 +169,6 @@ describe('MembersService', () => {
       membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
         invitedMember,
       ]);
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
 
       const result = await service.get({ authPayload, spaceId });
 
@@ -192,7 +185,7 @@ describe('MembersService', () => {
       await expect(
         service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
       ).rejects.toThrow('Not authenticated');
-      expect(membersRepositoryMock.findActiveAdmin).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
       expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
     });
 
@@ -200,18 +193,18 @@ describe('MembersService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)(
-      'should throw ForbiddenException for the %s caller when findActiveAdmin returns null',
+      'should throw ForbiddenException when the %s caller is not an active admin',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
         const spaceId = faker.number.int({ min: 1 });
         const inviteUsersDto: InviteUsersDto = { users: [] };
 
-        membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+        membersRepositoryMock.findOne.mockResolvedValue(null);
 
         await expect(
           service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
         ).rejects.toThrow(
-          new ForbiddenException('User is not an active admin.'),
+          new ForbiddenException('User is not an admin of this workspace'),
         );
         expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
       },
@@ -233,14 +226,14 @@ describe('MembersService', () => {
         const now = new Date('2026-01-15T00:00:00Z');
         vi.useFakeTimers().setSystemTime(now);
 
-        membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+        membersRepositoryMock.findOne.mockResolvedValue(adminMember);
         membersRepositoryMock.inviteUsers.mockResolvedValue([]);
 
         try {
           await expect(
             service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
           ).resolves.toEqual([]);
-          expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
+          expect(membersRepositoryMock.findOne).toHaveBeenCalled();
           expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
             authPayload,
             spaceId,
@@ -288,7 +281,7 @@ describe('MembersService', () => {
         invitedBy: Number(authPayload.sub),
       };
       const invitations = [emailInvitation, walletInvitation];
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.inviteUsers.mockResolvedValue(invitations);
 
       await expect(
@@ -310,11 +303,13 @@ describe('MembersService', () => {
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.renewInvite({ authPayload, spaceId, userId }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
+      ).rejects.toThrow(
+        new ForbiddenException('User is not an admin of this workspace'),
+      );
       expect(membersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
       expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
     });
@@ -328,7 +323,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockRejectedValue(
         new NotFoundException('Member not found.'),
       );
@@ -353,7 +348,7 @@ describe('MembersService', () => {
           .build();
         const targetMember = memberBuilder().with('status', status).build();
 
-        membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+        membersRepositoryMock.findOne.mockResolvedValue(adminMember);
         membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
         await expect(
@@ -382,7 +377,7 @@ describe('MembersService', () => {
       const now = new Date('2026-01-15T00:00:00Z');
       vi.useFakeTimers().setSystemTime(now);
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       try {
@@ -419,7 +414,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       await service.renewInvite({ authPayload, spaceId, userId });
@@ -445,7 +440,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       await service.renewInvite({ authPayload, spaceId, userId });
@@ -481,7 +476,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
       memberEncryptionServiceMock.decryptName.mockResolvedValue(plaintextName);
 
@@ -519,7 +514,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       await service.renewInvite({ authPayload, spaceId, userId });

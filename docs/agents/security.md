@@ -47,6 +47,16 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 `OptionalAuthGuard` letting a request through with no cookie present is only safe when every downstream branch treats a missing `authPayload` as unauthenticated; it is never a substitute for `AuthGuard` on a route that actually requires a signed-in user.
 
+### Workspace authorization through the shared assertions only
+
+**Rule:** A Workspace-scoped handler checks the caller with `assertMember` or `assertAdmin` from `src/modules/spaces/domain/space-assert.utils.ts`, called from the route service with the injected `IMembersRepository` — never a private `assertActiveAdmin`, an inline `findOne({ role: 'ADMIN' })`, or a membership filter inside a repository query. Repositories receive the resolved `userId` and do data access only. Both helpers return the membership row, so "member, and is it an admin?" is one `assertMember` call plus `.role`. Rejections are 403, never 404.
+
+**Why:** the same predicate had grown five implementations with three different messages and one 404; a fix to one copy silently misses the others.
+
+**Canonical example:** `src/modules/spaces/routes/address-books/address-books.service.ts` asserts, then hands `userId` to the repository; `src/modules/spaces/routes/audit/space-audit.service.ts`'s `assertViewer` shows the one-query `assertMember(...).role === 'ADMIN'` form.
+
+**Anti-example:** a service-level `private async assertActiveAdmin(...)` running its own query, or a repository method taking `authPayload` to filter the space by `members: { user: { id } }`. The one check that stays in a repository is the last-admin rule in `src/modules/users/domain/members/members.repository.ts`, which needs the whole admin list.
+
 ### Ownership by signature recovery only
 
 **Rule:** An endpoint that binds a wallet/signer to an account verifies a fresh signed message — a SIWE message and signature for login/session binding, or an equivalent recovered-signature check for other wallet-binding flows — and trusts only the address the verification resolves to; a client-supplied address field is never accepted as an ownership claim on its own.

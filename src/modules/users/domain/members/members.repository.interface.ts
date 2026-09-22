@@ -33,11 +33,6 @@ export interface IMembersRepository {
 
   find(args?: FindManyOptions<DbMember>): Promise<Array<DbMember>>;
 
-  findActiveAdmin(args: {
-    userId: User['id'];
-    spaceId: Space['id'];
-  }): Promise<DbMember | null>;
-
   /**
    * Invites users to a space until the provided expiry date.
    * Existing invited members are renewed: the stored invite data is

@@ -184,7 +184,7 @@ describe('AddressBooksController', () => {
         );
     });
 
-    it('should return a 404 if the user declined the membership', async () => {
+    it('should return a 403 if the user declined the membership', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await createPendingMember({
         spaceId,
@@ -198,11 +198,11 @@ describe('AddressBooksController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/address-book`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          statusCode: 404,
-          message: 'Workspace not found.',
-          error: 'Not Found',
+          statusCode: 403,
+          message: 'User is not a member of this workspace',
+          error: 'Forbidden',
         });
     });
 
@@ -688,7 +688,7 @@ describe('AddressBooksController', () => {
         .expect(403);
     });
 
-    it('should return a 404 if the member is not an admin', async () => {
+    it('should return a 403 if the member is not an admin', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await createActiveMember({
         spaceId,
@@ -699,7 +699,12 @@ describe('AddressBooksController', () => {
         .put(`/v1/spaces/${spaceId}/address-book`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send({ items: [] })
-        .expect(404);
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'User is not an admin of this workspace',
+          error: 'Forbidden',
+        });
     });
 
     it('should return a 403 if the AuthPayload is empty', async () => {
@@ -818,7 +823,7 @@ describe('AddressBooksController', () => {
         });
     });
 
-    it('should return a 404 if the member is not an ADMIN', async () => {
+    it('should return a 403 if the member is not an ADMIN', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await createActiveMember({
         spaceId,
@@ -829,11 +834,11 @@ describe('AddressBooksController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          statusCode: 404,
-          message: 'Workspace not found.',
-          error: 'Not Found',
+          statusCode: 403,
+          message: 'User is not an admin of this workspace',
+          error: 'Forbidden',
         });
     });
 

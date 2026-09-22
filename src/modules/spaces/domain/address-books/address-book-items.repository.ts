@@ -5,8 +5,6 @@ import { EntityManager, type FindOptionsWhere, In, IsNull } from 'typeorm';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
@@ -17,7 +15,7 @@ import { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import type { User } from '@/modules/users/domain/entities/user.entity';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -39,34 +37,26 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     );
   }
 
-  public async findAllBySpaceId(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-  }): Promise<Array<AddressBookDbItem>> {
-    const space = await this.getSpaceAs({
-      ...args,
-      memberRoleIn: ['ADMIN', 'MEMBER'],
-    });
+  public async findAllBySpaceId(
+    spaceId: Space['id'],
+  ): Promise<Array<AddressBookDbItem>> {
     const repository = await this.db.getRepository(DbAddressBookItem);
-    const items = await repository.findBy({ space: { id: space.id } });
+    const items = await repository.findBy({ space: { id: spaceId } });
     return await this.spaceEncryptionService.decryptAddressBookItems(
-      space.id,
+      spaceId,
       items,
     );
   }
 
   public async upsertMany(args: {
-    authPayload: AuthPayload;
+    userId: User['id'];
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
     createdByOverride?: number;
     entityManager?: EntityManager;
   }): Promise<Array<AddressBookDbItem>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const space = await this.getSpaceAs({
-      ...args,
-      memberRoleIn: ['ADMIN'],
-    });
+    const { userId } = args;
+    const space = await this.findSpaceOrFail(args.spaceId);
 
     const run = async (
       entityManager: EntityManager,
@@ -125,15 +115,12 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }
 
   public async deleteByAddress(args: {
-    authPayload: AuthPayload;
+    userId: User['id'];
     spaceId: Space['id'];
     address: AddressBookDbItem['address'];
   }): Promise<void> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const space = await this.getSpaceAs({
-      ...args,
-      memberRoleIn: ['ADMIN'],
-    });
+    const { userId } = args;
+    const space = await this.findSpaceOrFail(args.spaceId);
 
     await this.db.transaction(async (entityManager) => {
       const addressIndex = this.spaceEncryptionService.itemAddressIndex(
@@ -172,22 +159,15 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     });
   }
 
-  private async getSpaceAs(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-    memberRoleIn: Array<keyof typeof MemberRole>;
-  }): Promise<Space> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-
+  /**
+   * The owning space, as the insert relation and the audit identifiers.
+   */
+  private async findSpaceOrFail(
+    spaceId: Space['id'],
+  ): Promise<Pick<Space, 'id' | 'uuid'>> {
     return await this.spacesRepository.findOneOrFail({
-      where: {
-        id: args.spaceId,
-        members: {
-          role: In(args.memberRoleIn),
-          user: { id: userId },
-          status: 'ACTIVE',
-        },
-      },
+      where: { id: spaceId },
+      select: { id: true, uuid: true },
     });
   }
 
@@ -199,7 +179,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   private async updateExistingAddressBookItems(args: {
     userId: number;
     addressBookItems: Array<AddressBookItem>;
-    space: Space;
+    space: Pick<Space, 'id'>;
     entityManager: EntityManager;
   }): Promise<
     Array<{
@@ -277,7 +257,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   private async createNewAddressBookItems(args: {
     userId: number;
     addressBookItems: Array<AddressBookItem>;
-    space: Space;
+    space: Pick<Space, 'id'>;
     entityManager: EntityManager;
     createdByOverride?: number;
   }): Promise<Array<{ address: AddressBookItem['address']; name: string }>> {
@@ -314,7 +294,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }
 
   private async checkItemsLimit(args: {
-    space: Space;
+    space: Pick<Space, 'id'>;
     addressBookItems: Array<AddressBookItem>;
     entityManager: EntityManager;
   }): Promise<void> {
