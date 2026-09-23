@@ -43,6 +43,7 @@ export const SubscriptionSchema = z.object({
   currentPeriodStart: z.number().nullish(),
   currentPeriodEnd: z.number().nullish(),
   metadata: StripeMetadataSchema.nullish(),
+  hasPaymentMethod: z.boolean().optional(),
 });
 
 /**

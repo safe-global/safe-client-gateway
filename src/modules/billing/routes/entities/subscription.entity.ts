@@ -30,4 +30,10 @@ export class Subscription implements DomainSubscription {
   currentPeriodEnd?: number | null;
   @ApiPropertyOptional({ type: Object, nullable: true })
   metadata?: StripeMetadata | null;
+  @ApiPropertyOptional({
+    type: Boolean,
+    description:
+      'Whether the subscription, or else its customer, has a default payment method',
+  })
+  hasPaymentMethod?: boolean;
 }

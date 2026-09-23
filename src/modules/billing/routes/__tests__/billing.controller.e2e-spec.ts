@@ -260,6 +260,7 @@ describe('BillingController', () => {
       .expect(({ body }) => {
         expect(body).toHaveLength(1);
         expect(body[0].id).toBe(subscription.id);
+        expect(body[0].hasPaymentMethod).toBe(subscription.hasPaymentMethod);
       });
   });
 
