@@ -33,7 +33,7 @@ export class Subscription implements DomainSubscription {
   @ApiPropertyOptional({
     type: Boolean,
     description:
-      'Whether the subscription, or else its customer, has a default payment method',
+      'Whether the subscription has a default payment method, or its customer does as a fallback',
   })
   hasPaymentMethod?: boolean;
 }
