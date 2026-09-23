@@ -2269,12 +2269,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:26.5.0":
-  version: 26.5.0
-  resolution: "@types/node@npm:26.5.0"
+"@types/node@npm:26.6.1":
+  version: 26.6.1
+  resolution: "@types/node@npm:26.6.1"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/db4b0ac5289abaf7fa6f280610853a3a9c88cd60ef686513fb773badf77bbf6089cafc9522bc99d0765f13b43cde3109b37a8183859a2adeec00ae07f0a4710d
+  checksum: 10/86e4bbb49b696e1183d42e1e8653b13b969146969e6e30635aa5de7d4340f06fcdd748284bcc68ea6a3f8300d9dc54569ec377f312cdeb1c1ae0a5996ec075d7
   languageName: node
   linkType: hard
 
@@ -5283,7 +5283,7 @@ __metadata:
     "@types/amqplib": "npm:0"
     "@types/jsonwebtoken": "npm:9"
     "@types/lodash": "npm:4.17.25"
-    "@types/node": "npm:26.5.0"
+    "@types/node": "npm:26.6.1"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.8.0"
     "@types/supertest": "npm:7.2.1"
