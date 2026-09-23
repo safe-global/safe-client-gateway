@@ -38,6 +38,8 @@ const membersRepositoryMock = {
   findOneOrFail: vi.fn(),
   inviteUsers: vi.fn(),
   renewInvite: vi.fn(),
+  updateRole: vi.fn(),
+  removeUser: vi.fn(),
 } as MockedObject<IMembersRepository>;
 
 const configurationServiceMock = {
@@ -541,6 +543,65 @@ describe('MembersService', () => {
       expect(
         spaceInviteEmailServiceMock.enqueueRenewalEmail,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe.each([
+    [
+      'updateRole',
+      (args: { authPayload: AuthPayload; spaceId: number; userId: number }) =>
+        service.updateRole({ ...args, updateRoleDto: { role: 'MEMBER' } }),
+      (): MockedObject<IMembersRepository>['updateRole'] =>
+        membersRepositoryMock.updateRole,
+    ],
+    [
+      'removeUser',
+      (args: { authPayload: AuthPayload; spaceId: number; userId: number }) =>
+        service.removeUser(args),
+      (): MockedObject<IMembersRepository>['removeUser'] =>
+        membersRepositoryMock.removeUser,
+    ],
+  ] as const)('%s', (_name, call, repositoryMethod) => {
+    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(call({ authPayload, spaceId, userId })).rejects.toThrow(
+        new ForbiddenException('User is not an admin of this workspace'),
+      );
+      expect(repositoryMethod()).not.toHaveBeenCalled();
+    });
+
+    it('should delegate to the repository when the caller is an active admin', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
+      );
+      repositoryMethod().mockResolvedValue(undefined);
+
+      await expect(
+        call({ authPayload, spaceId, userId }),
+      ).resolves.toBeUndefined();
+
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: Number(authPayload.sub) },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      });
+      expect(repositoryMethod()).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: Number(authPayload.sub),
+          spaceId,
+          userId,
+        }),
+      );
     });
   });
 });

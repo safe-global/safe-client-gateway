@@ -1486,7 +1486,7 @@ describe('MembersController', () => {
         .send({ role: 'ADMIN' })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -1524,7 +1524,7 @@ describe('MembersController', () => {
         .send({ role: 'ADMIN' })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -1568,7 +1568,7 @@ describe('MembersController', () => {
         .send({ role: 'ADMIN' })
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -1717,7 +1717,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });
@@ -1760,7 +1760,7 @@ describe('MembersController', () => {
         .set('Cookie', [`access_token=${inviteeAccessToken}`])
         .expect(403)
         .expect({
-          message: 'User is not an active admin.',
+          message: 'User is not an admin of this workspace',
           error: 'Forbidden',
           statusCode: 403,
         });

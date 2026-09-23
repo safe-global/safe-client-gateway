@@ -55,7 +55,7 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 **Canonical example:** `src/modules/spaces/routes/address-books/address-books.service.ts` asserts, then hands `userId` to the repository; `src/modules/spaces/routes/audit/space-audit.service.ts`'s `assertViewer` shows the one-query `assertMember(...).role === 'ADMIN'` form.
 
-**Anti-example:** a service-level `private async assertActiveAdmin(...)` running its own query, or a repository method taking `authPayload` to filter the space by `members: { user: { id } }`. The one check that stays in a repository is the last-admin rule in `src/modules/users/domain/members/members.repository.ts`, which needs the whole admin list.
+**Anti-example:** a service-level `private async assertActiveAdmin(...)` running its own query, or a repository method taking `authPayload` to filter the space by `members: { user: { id } }`. The last-admin rule in `src/modules/users/domain/members/members.repository.ts` stays in the repository because it needs the whole admin list, but it is a 409 conflict check, not authorization — the route service still calls `assertAdmin` before it.
 
 ### Ownership by signature recovery only
 

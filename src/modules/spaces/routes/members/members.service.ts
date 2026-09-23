@@ -51,7 +51,8 @@ export class MembersService {
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
-    await this.assertActiveAdmin(args);
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     if (args.inviteUsersDto.users.length > this.maxInvites) {
       throw new ConflictException('Too many invites.');
     }
@@ -87,7 +88,8 @@ export class MembersService {
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<Invitation> {
-    await this.assertActiveAdmin(args);
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     const { id, user, name, status, role, invitedBy, space } =
       await this.membersRepository.findOneOrFail(
         {
@@ -111,7 +113,7 @@ export class MembersService {
       spaceId: args.spaceId,
       spaceUuid: space.uuid,
       targetUserId: args.userId,
-      actorUserId: getAuthenticatedUserIdOrFail(args.authPayload),
+      actorUserId,
     });
 
     if (user.email) {
@@ -217,8 +219,10 @@ export class MembersService {
     userId: User['id'];
     updateRoleDto: UpdateRoleDto;
   }): Promise<void> {
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     return await this.membersRepository.updateRole({
-      authPayload: args.authPayload,
+      actorUserId,
       spaceId: args.spaceId,
       userId: args.userId,
       role: args.updateRoleDto.role,
@@ -242,8 +246,10 @@ export class MembersService {
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<void> {
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     return await this.membersRepository.removeUser({
-      authPayload: args.authPayload,
+      actorUserId,
       userId: args.userId,
       spaceId: args.spaceId,
     });
@@ -257,13 +263,5 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
-  }
-
-  private async assertActiveAdmin(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-  }): Promise<void> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.membersRepository, args.spaceId, userId);
   }
 }
