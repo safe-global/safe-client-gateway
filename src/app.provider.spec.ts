@@ -41,10 +41,10 @@ class ProbeController {
 describe('createFastifyAdapter', () => {
   let app: INestApplication;
 
-  const createApp = async (trustProxy: string, jsonLimit = '1mb') => {
+  const createApp = async (trustProxy: string, bodyLimit = '1mb') => {
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('express.trustProxy', trustProxy);
-    fakeConfigurationService.set('express.jsonLimit', jsonLimit);
+    fakeConfigurationService.set('httpServer.trustProxy', trustProxy);
+    fakeConfigurationService.set('httpServer.bodyLimit', bodyLimit);
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ProbeController],
@@ -85,14 +85,10 @@ describe('createFastifyAdapter', () => {
     expect(body.ip).toBe('203.0.113.7');
   });
 
-  it('supports a numeric hop count', async () => {
-    app = await createApp('1');
-
-    const { body } = await request(app.getHttpServer())
-      .get('/ip')
-      .set('X-Forwarded-For', '203.0.113.7');
-
-    expect(body.ip).toBe('203.0.113.7');
+  it('rejects a numeric hop count', async () => {
+    await expect(createApp('1')).rejects.toThrow(
+      'Invalid trust proxy hop count: 1',
+    );
   });
 
   it('falls back to the socket address when trust proxy is disabled', async () => {
