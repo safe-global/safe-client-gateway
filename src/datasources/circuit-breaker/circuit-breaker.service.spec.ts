@@ -33,7 +33,7 @@ describe('CircuitBreakerService', () => {
     threshold?: number;
     timeout?: number;
     rollingWindow?: number;
-    halfOpenFailureRateThreshold?: number;
+    halfOpenThresholdPercent?: number;
   }): CircuitBreakerService {
     const config: Record<string, number | boolean> = {
       'circuitBreaker.enabled': overrides?.enabled ?? true,
@@ -44,8 +44,8 @@ describe('CircuitBreakerService', () => {
       'circuitBreaker.rollingWindow':
         overrides?.rollingWindow ??
         faker.number.int({ min: 60_000, max: 300_000 }),
-      'circuitBreaker.halfOpenFailureRateThreshold':
-        overrides?.halfOpenFailureRateThreshold ??
+      'circuitBreaker.halfOpenThresholdPercent':
+        overrides?.halfOpenThresholdPercent ??
         faker.number.int({ min: 10, max: 100 }),
     };
     const mockConfigService = {
@@ -186,19 +186,20 @@ describe('CircuitBreakerService', () => {
   });
 
   describe('HALF_OPEN State', () => {
-    // threshold=5, halfOpenFailureRateThreshold=40
-    // → effective HALF_OPEN failure threshold = ceil(5 * 40 / 100) = 2
-    // → max concurrent HALF_OPEN probes = same value = 2
-    // → consecutive successes to close = 5
+    // threshold=5, halfOpenThresholdPercent=40
+    // → effective HALF_OPEN threshold = ceil(5 * 40 / 100) = 2, which is
+    //   the failure count that re-opens, the consecutive successes that
+    //   close, and the max concurrent probes alike
     function createHalfOpenService(
-      halfOpenFailureRateThreshold = 40,
+      halfOpenThresholdPercent = 40,
+      threshold = 5,
     ): CircuitBreakerService {
       const svc = createService({
-        threshold: 5,
+        threshold,
         timeout: 100,
-        halfOpenFailureRateThreshold,
+        halfOpenThresholdPercent,
       });
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < threshold; i++) {
         svc.recordFailure(circuitName);
       }
       return svc;
@@ -240,15 +241,16 @@ describe('CircuitBreakerService', () => {
     });
 
     it('should free a probe slot when the probe succeeds', () => {
-      // Rate 20 % of threshold 5 → a single probe slot
-      const service = createHalfOpenService(20);
+      const service = createHalfOpenService();
       vi.advanceTimersByTime(150);
+      expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(false);
 
       service.recordSuccess(circuitName);
       const circuit = getRegisteredCircuit(service, circuitName);
-      expect(circuit.metrics.halfOpenInFlight).toBe(0);
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
+      expect(circuit.metrics.halfOpenInFlight).toBe(1);
       expect(service.canProceed(circuitName)).toBe(true);
     });
 
@@ -287,14 +289,49 @@ describe('CircuitBreakerService', () => {
       service.canProceed(circuitName); // Transition to HALF_OPEN
       const circuit = getRegisteredCircuit(service, circuitName);
 
-      // Need 5 consecutive successes (threshold=5)
-      for (let i = 0; i < 4; i++) {
-        service.recordSuccess(circuitName);
-        expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
-      }
+      // Effective threshold = ceil(5 * 40 / 100) = 2
+      service.recordSuccess(circuitName);
+      expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
 
       service.recordSuccess(circuitName);
       expect(service.get(circuitName)).toBeUndefined();
+    });
+
+    it('should need no more successes to close than failures to re-open', () => {
+      const threshold = faker.number.int({ min: 2, max: 10 });
+      const halfOpenThresholdPercent = faker.number.int({
+        min: 10,
+        max: 100,
+      });
+      const effective = Math.ceil((threshold * halfOpenThresholdPercent) / 100);
+      const halfOpenService = (): CircuitBreakerService => {
+        const svc = createHalfOpenService(halfOpenThresholdPercent, threshold);
+        vi.advanceTimersByTime(150);
+        svc.canProceed(circuitName);
+        return svc;
+      };
+
+      const closing = halfOpenService();
+      for (let i = 0; i < effective - 1; i++) {
+        closing.recordSuccess(circuitName);
+        expect(getRegisteredCircuit(closing, circuitName).metrics.state).toBe(
+          CircuitState.HALF_OPEN,
+        );
+      }
+      closing.recordSuccess(circuitName);
+      expect(closing.get(circuitName)).toBeUndefined();
+
+      const reopening = halfOpenService();
+      for (let i = 0; i < effective - 1; i++) {
+        reopening.recordFailure(circuitName);
+        expect(getRegisteredCircuit(reopening, circuitName).metrics.state).toBe(
+          CircuitState.HALF_OPEN,
+        );
+      }
+      reopening.recordFailure(circuitName);
+      expect(getRegisteredCircuit(reopening, circuitName).metrics.state).toBe(
+        CircuitState.OPEN,
+      );
     });
 
     it('should transition back to OPEN when half-open failure threshold is reached', () => {
@@ -357,7 +394,13 @@ describe('CircuitBreakerService', () => {
     });
 
     it('should track consecutive successes in HALF_OPEN state', () => {
-      const service = createService({ threshold: 5, timeout: 100 });
+      // Any rate above 40 % of threshold 5 needs three or more successes to
+      // close, so the two recorded below accumulate without closing the circuit
+      const service = createService({
+        threshold: 5,
+        timeout: 100,
+        halfOpenThresholdPercent: faker.number.int({ min: 41, max: 100 }),
+      });
 
       for (let i = 0; i < 5; i++) {
         service.recordFailure(circuitName);

@@ -147,7 +147,7 @@ export const RootConfigurationSchema = z
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),
     CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().int().min(0).optional(),
     CIRCUIT_BREAKER_ROLLING_WINDOW: z.coerce.number().int().min(0).optional(),
-    CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD: z.coerce
+    CIRCUIT_BREAKER_HALF_OPEN_THRESHOLD_PERCENT: z.coerce
       .number()
       .int()
       .min(1)

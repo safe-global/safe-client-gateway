@@ -556,10 +556,12 @@ export default () => ({
       10,
     ), // 60 seconds
     // Percentage of threshold used in HALF_OPEN state (0–100). The resulting
-    // count is both the number of failures that re-open the circuit and the
-    // maximum number of probe requests allowed in flight at once.
-    halfOpenFailureRateThreshold: Number.parseInt(
-      process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
+    // count settles the half-open verdict in either direction: it is the
+    // number of failures that re-open the circuit, the number of consecutive
+    // successes that close it, and the maximum number of probe requests
+    // allowed in flight at once.
+    halfOpenThresholdPercent: Number.parseInt(
+      process.env.CIRCUIT_BREAKER_HALF_OPEN_THRESHOLD_PERCENT ?? `${30}`,
       10,
     ),
   },

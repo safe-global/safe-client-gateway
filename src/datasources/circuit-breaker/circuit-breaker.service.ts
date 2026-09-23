@@ -60,10 +60,9 @@ export class CircuitBreakerService {
       rollingWindow: this.configurationService.getOrThrow<number>(
         'circuitBreaker.rollingWindow',
       ),
-      halfOpenFailureRateThreshold:
-        this.configurationService.getOrThrow<number>(
-          'circuitBreaker.halfOpenFailureRateThreshold',
-        ),
+      halfOpenThresholdPercent: this.configurationService.getOrThrow<number>(
+        'circuitBreaker.halfOpenThresholdPercent',
+      ),
     };
   }
 
@@ -206,7 +205,7 @@ export class CircuitBreakerService {
    *
    * Admits a request only while fewer probes are in flight than the number
    * of failures that would re-open the circuit (see
-   * {@link getEffectiveFailureThreshold}), so one round of probes is always
+   * {@link getEffectiveThreshold}), so one round of probes is always
    * enough to reach a verdict either way. Every admitted probe is released
    * again by {@link recordSuccess} or {@link recordFailure}, so a hanging
    * upstream holds at most that many requests per half-open window instead
@@ -217,7 +216,7 @@ export class CircuitBreakerService {
    * @returns {boolean} True if the request is admitted as a probe, false otherwise
    */
   private canProceedInHalfOpenState(circuit: ICircuit): boolean {
-    const maxInFlight = this.getEffectiveFailureThreshold(circuit);
+    const maxInFlight = this.getEffectiveThreshold(circuit);
 
     if (circuit.metrics.halfOpenInFlight < maxInFlight) {
       circuit.metrics.halfOpenInFlight++;
@@ -281,7 +280,8 @@ export class CircuitBreakerService {
    *
    * No-op when the circuit breaker is disabled or the circuit is not being
    * tracked (has had no failures). Updates success metrics and handles state transitions:
-   * - In HALF_OPEN: Transitions to CLOSED when the success threshold is reached and removes the circuit from memory
+   * - In HALF_OPEN: Transitions to CLOSED once {@link getEffectiveThreshold}
+   *   consecutive successes are recorded, and removes the circuit from memory
    *
    * @param {string} name - Circuit identifier
    *
@@ -299,16 +299,18 @@ export class CircuitBreakerService {
       this.releaseHalfOpenProbe(circuit);
       circuit.metrics.consecutiveSuccesses++;
 
+      const effectiveThreshold = this.getEffectiveThreshold(circuit);
+
       this.loggingService.debug({
         type: LogType.CircuitBreakerSuccessRecorded,
         circuit: circuit.name,
         state: circuit.metrics.state,
         consecutiveSuccesses: circuit.metrics.consecutiveSuccesses,
-        threshold: this.config.threshold,
-        message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${this.config.threshold} consecutive successes)`,
+        threshold: effectiveThreshold,
+        message: `Success recorded for circuit "${circuit.name}" (${circuit.metrics.consecutiveSuccesses}/${effectiveThreshold} consecutive successes)`,
       });
 
-      if (circuit.metrics.consecutiveSuccesses >= this.config.threshold) {
+      if (circuit.metrics.consecutiveSuccesses >= effectiveThreshold) {
         this.transitionToClosed(circuit);
       }
     }
@@ -338,19 +340,19 @@ export class CircuitBreakerService {
   }
 
   /**
-   * Returns the failure threshold for the current circuit state
+   * Returns the threshold that decides a circuit's verdict in its current state
    *
-   * In HALF_OPEN state, uses a percentage of the full threshold to
-   * allow faster detection of still-failing services.
+   * In HALF_OPEN, a percentage of the full threshold applies in both
+   * directions - failures that re-open, consecutive successes that close, and
+   * the probe cap - so recovery is never harder than relapse.
    *
    * @param {ICircuit} circuit - Circuit instance
-   * @returns {number} The effective failure threshold
+   * @returns {number} The effective threshold for the circuit's current state
    */
-  private getEffectiveFailureThreshold(circuit: ICircuit): number {
+  private getEffectiveThreshold(circuit: ICircuit): number {
     if (circuit.metrics.state === CircuitState.HALF_OPEN) {
       return Math.ceil(
-        (this.config.threshold * this.config.halfOpenFailureRateThreshold) /
-          100,
+        (this.config.threshold * this.config.halfOpenThresholdPercent) / 100,
       );
     }
     return this.config.threshold;
@@ -392,7 +394,7 @@ export class CircuitBreakerService {
     circuit.metrics.lastActivityTime = now;
     circuit.metrics.consecutiveSuccesses = 0;
 
-    const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
+    const effectiveThreshold = this.getEffectiveThreshold(circuit);
 
     this.loggingService.warn({
       type: LogType.CircuitBreakerFailureRecorded,
@@ -456,7 +458,7 @@ export class CircuitBreakerService {
    */
   private transitionToOpen(circuit: ICircuit): void {
     const previousState = circuit.metrics.state;
-    const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
+    const effectiveThreshold = this.getEffectiveThreshold(circuit);
     circuit.metrics.state = CircuitState.OPEN;
     circuit.metrics.halfOpenInFlight = 0;
     circuit.metrics.nextAttemptTime = Date.now() + this.config.timeout;

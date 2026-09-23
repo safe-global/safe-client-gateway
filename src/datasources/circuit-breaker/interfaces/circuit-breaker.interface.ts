@@ -24,10 +24,11 @@ export interface ICircuitConfig {
 
   /**
    * Percentage of threshold used in HALF_OPEN state (0–100)
-   * E.g. 30 with threshold 10 means 3 failures reopen the circuit, and at
-   * most 3 probe requests may be in flight at once while HALF_OPEN
+   * E.g. 30 with threshold 10 means 3 failures reopen the circuit, 3
+   * consecutive successes close it, and at most 3 probe requests may be in
+   * flight at once while HALF_OPEN
    */
-  halfOpenFailureRateThreshold: number;
+  halfOpenThresholdPercent: number;
 }
 
 /**
