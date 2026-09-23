@@ -62,7 +62,7 @@ export class AddressBooksController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
-    description: 'User or space not found',
+    description: 'Space not found',
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
@@ -101,7 +101,7 @@ export class AddressBooksController {
     type: SpaceAddressBookDto,
   })
   @ApiNotFoundResponse({
-    description: 'User or space not found',
+    description: 'Space not found',
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
@@ -149,7 +149,7 @@ export class AddressBooksController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
-    description: 'User or space not found',
+    description: 'Space not found',
   })
   @ApiForbiddenResponse({
     description: 'Access forbidden - user is not an active admin of this space',
