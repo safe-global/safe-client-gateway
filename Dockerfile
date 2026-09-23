@@ -38,4 +38,4 @@ COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
 COPY --chown=node:node --from=base /app/assets ./assets
 COPY --chown=node:node --from=base /app/migrations ./migrations
-CMD [ "node", "dist/src/main.js" ]
+CMD [ "node", "--require", "./dist/src/register-module-aliases.js", "dist/src/main.js" ]

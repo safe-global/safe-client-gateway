@@ -124,6 +124,8 @@ This applies in both directions: neither a module's `routes/` nor its `datasourc
 
 **Anti-example:** `src/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder.ts` imports its entity via `../../analysis-requests.entity` — one of only a handful of violations — do not imitate.
 
+The alias is resolved at runtime by `src/register-module-aliases.ts`, loaded through `node --require ./dist/src/register-module-aliases.js` by every entry point (`start:*`, `typeorm`, the `dist/scripts/*` commands, the Dockerfile `CMD`). Being the file that installs the alias, it is the one file that imports its sibling `./module-aliases` relatively — not a precedent for anything else.
+
 ### New-module checklist
 
 This list is descriptive, not sequential — it states what a complete module has, not an order of steps to perform.
