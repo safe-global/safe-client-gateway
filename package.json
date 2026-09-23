@@ -91,7 +91,7 @@
   "devDependencies": {
     "@biomejs/biome": "2.5.10",
     "@faker-js/faker": "10.6.0",
-    "@nestjs/cli": "12.0.0",
+    "@nestjs/cli": "12.0.3",
     "@nestjs/schematics": "12.0.0",
     "@nestjs/testing": "12.0.1",
     "@smithy/util-stream": "4.8.2",
