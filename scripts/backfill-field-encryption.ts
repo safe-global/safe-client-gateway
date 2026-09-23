@@ -38,7 +38,7 @@
  *
  *   ENCRYPTION_INDEX_KEY=... \
  *   AWS_KMS_ENCRYPTION_KEY_ID=... AWS_REGION=... \
- *     ts-node scripts/backfill-field-encryption.ts [--verify] [--dry-run]
+ *     yarn backfill:field-encryption [--verify] [--dry-run]
  *
  *   --dry-run  Report how many rows still hold plaintext, per table; write
  *              nothing.

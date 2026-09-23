@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "incremental": false,
+    "declaration": false,
+    "sourceMap": false
+  },
+  "include": ["scripts/validate-env-json.ts", "scripts/generate-env.ts"]
+}
