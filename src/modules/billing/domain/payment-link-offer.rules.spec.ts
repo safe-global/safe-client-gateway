@@ -10,19 +10,11 @@ import {
   gracePeriodOf,
   isOfferedToSpace,
   offersPlan,
-  planNameOf,
 } from '@/modules/billing/domain/payment-link-offer.rules';
 
 /** A trial link carrying `metadata` instead of a recognized `gracePeriod` tag. */
 function trialLinkWithMetadata(metadata: Record<string, string>): PaymentLink {
   return trialPaymentLinkBuilder(true).with('metadata', metadata).build();
-}
-
-/** A paid link, optionally tagged with a `planName`. */
-function paidLinkWithPlan(planName: string | null): PaymentLink {
-  return paymentLinkBuilder()
-    .with('metadata', planName === null ? {} : { planName })
-    .build();
 }
 
 describe('payment-link offer rules', () => {
@@ -46,78 +38,77 @@ describe('payment-link offer rules', () => {
     });
   });
 
-  describe('planNameOf', () => {
-    it('should return the plan name the link carries', () => {
-      const planName = faker.commerce.productName();
-
-      expect(planNameOf(paidLinkWithPlan(planName))).toBe(planName);
-    });
-
-    it('should return null when the metadata key is absent', () => {
-      expect(planNameOf(paidLinkWithPlan(null))).toBeNull();
-    });
-  });
-
   describe('isOfferedToSpace', () => {
     it('should not offer a paid link to a space that has never subscribed', () => {
-      const link = paidLinkWithPlan(null);
+      const link = paymentLinkBuilder().build();
 
       expect(
         isOfferedToSpace(link, {
           createdBeforeEnforcement: faker.datatype.boolean(),
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(false);
     });
 
     it('should offer a paid link to a space that has subscribed, when it is on no active plan', () => {
-      const link = paidLinkWithPlan(faker.commerce.productName());
+      const link = paymentLinkBuilder().build();
 
       expect(
         isOfferedToSpace(link, {
           createdBeforeEnforcement: faker.datatype.boolean(),
           hasEverSubscribed: true,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(true);
     });
 
-    it('should offer a paid link whose plan does not match the active one', () => {
-      const link = paidLinkWithPlan('Business');
+    it('should offer a paid link whose price does not match the active plan', () => {
+      const link = paymentLinkPricedAt(faker.string.alphanumeric(32)).build();
 
       expect(
         isOfferedToSpace(link, {
           createdBeforeEnforcement: faker.datatype.boolean(),
           hasEverSubscribed: true,
-          activePlanName: 'Starter',
+          activePlanId: faker.string.alphanumeric(32),
         }),
       ).toBe(true);
     });
 
     it('should not offer the paid link matching the active plan', () => {
-      const planName = faker.commerce.productName();
-      const link = paidLinkWithPlan(planName);
+      const planId = faker.string.alphanumeric(32);
+      const link = paymentLinkPricedAt(planId).build();
 
       expect(
         isOfferedToSpace(link, {
           createdBeforeEnforcement: faker.datatype.boolean(),
           hasEverSubscribed: true,
-          activePlanName: planName,
+          activePlanId: planId,
         }),
       ).toBe(false);
     });
 
-    it('should offer an untagged paid link even when the space is on an active plan', () => {
-      const link = paidLinkWithPlan(null);
+    it("should offer a sibling plan sharing the active one's catalog name but not its price", () => {
+      const activePlanId = faker.string.alphanumeric(32);
+      const siblingPlanId = faker.string.alphanumeric(32);
+      const planName = faker.commerce.productName();
+      const eligibility = {
+        createdBeforeEnforcement: faker.datatype.boolean(),
+        hasEverSubscribed: true,
+        activePlanId,
+      };
+      // The active plan's own link — same catalog name, its own price.
+      const activeLink = paymentLinkPricedAt(activePlanId)
+        .with('metadata', { planName })
+        .build();
+      // A sibling tier sharing that name at a different price: PLA-2003's bug
+      // excluded this one too, matching by name instead of price.
+      const siblingLink = paymentLinkPricedAt(siblingPlanId)
+        .with('metadata', { planName })
+        .build();
 
-      expect(
-        isOfferedToSpace(link, {
-          createdBeforeEnforcement: faker.datatype.boolean(),
-          hasEverSubscribed: true,
-          activePlanName: faker.commerce.productName(),
-        }),
-      ).toBe(true);
+      expect(isOfferedToSpace(activeLink, eligibility)).toBe(false);
+      expect(isOfferedToSpace(siblingLink, eligibility)).toBe(true);
     });
 
     it('should offer the legacy grace to a space created before enforcement', () => {
@@ -127,7 +118,7 @@ describe('payment-link offer rules', () => {
         isOfferedToSpace(link, {
           createdBeforeEnforcement: true,
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(true);
     });
@@ -139,7 +130,7 @@ describe('payment-link offer rules', () => {
         isOfferedToSpace(link, {
           createdBeforeEnforcement: true,
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(false);
     });
@@ -151,7 +142,7 @@ describe('payment-link offer rules', () => {
         isOfferedToSpace(link, {
           createdBeforeEnforcement: false,
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(true);
     });
@@ -163,7 +154,7 @@ describe('payment-link offer rules', () => {
         isOfferedToSpace(link, {
           createdBeforeEnforcement: false,
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(false);
     });
@@ -177,14 +168,14 @@ describe('payment-link offer rules', () => {
           isOfferedToSpace(link, {
             createdBeforeEnforcement: true,
             hasEverSubscribed: true,
-            activePlanName: null,
+            activePlanId: null,
           }),
         ).toBe(false);
         expect(
           isOfferedToSpace(link, {
             createdBeforeEnforcement: false,
             hasEverSubscribed: true,
-            activePlanName: null,
+            activePlanId: null,
           }),
         ).toBe(false);
       },
@@ -197,14 +188,14 @@ describe('payment-link offer rules', () => {
         isOfferedToSpace(link, {
           createdBeforeEnforcement: true,
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(false);
       expect(
         isOfferedToSpace(link, {
           createdBeforeEnforcement: false,
           hasEverSubscribed: false,
-          activePlanName: null,
+          activePlanId: null,
         }),
       ).toBe(false);
     });

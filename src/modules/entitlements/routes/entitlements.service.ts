@@ -38,7 +38,10 @@ import type {
   ConsumedQuota,
   IEntitlementEnforcement,
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import type {
+  BinaryFeature,
+  StockMeteredFeature,
+} from '@/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
   isEventMeteredFeature,
@@ -54,6 +57,7 @@ import {
   isEnforcementActive,
   resetsAt,
 } from '@/modules/entitlements/domain/entitlements.rules';
+import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
 import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
@@ -119,6 +123,10 @@ export class EntitlementsService implements IEntitlementEnforcement {
       safe_seats: configurationService.getOrThrow<number>(
         'spaces.maxSafesPerSpace',
       ),
+      // NULL: no Copilot scan has ever counted against a workspace before
+      // now, so the date protects no behaviour here and the plan decides
+      // from the start.
+      copilot_scans: null,
       // NULL: nothing has ever been relayed at a workspace's expense, so the
       // date protects no behaviour here and the plan decides from the start.
       sponsored_transactions: null,
@@ -167,7 +175,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
 
   public async assertWithinQuota(args: {
     spaceId: Space['id'];
-    featureKey: FeatureKey;
+    featureKey: Exclude<FeatureKey, BinaryFeature>;
     delta: number;
   }): Promise<void> {
     const grant = await this.resolveGrant(args);
@@ -182,13 +190,32 @@ export class EntitlementsService implements IEntitlementEnforcement {
     });
   }
 
+  /** A Binary feature's whole verdict: the plan grants it or it does not. */
+  public async assertFeatureGranted(args: {
+    spaceId: Space['id'];
+    featureKey: BinaryFeature;
+  }): Promise<void> {
+    const grant = await this.resolveGrant(args);
+    if (grant.enabled) {
+      return;
+    }
+    // Expected often enough (any gated action on an ungranted feature) to
+    // keep at debug.
+    this.loggingService.debug({
+      type: LogType.FeatureNotGranted,
+      spaceId: args.spaceId,
+      feature: args.featureKey,
+    });
+    throw new FeatureNotGrantedError(args.featureKey);
+  }
+
   public async prepareQuotaCheck(args: {
     spaceId: Space['id'];
     featureKey: FeatureKey;
-    delta: number;
-  }): Promise<(used: number) => void> {
+  }): Promise<(args: { used: number; delta: number }) => void> {
     const grant = await this.resolveGrant(args);
-    return (used: number): void => this.admit({ ...args, grant, used });
+    return ({ used, delta }): void =>
+      this.admit({ ...args, grant, used, delta });
   }
 
   public async consumeQuota(args: {
@@ -287,8 +314,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
     featureKey: FeatureKey;
   }): Promise<FeatureGrant> {
     const staticQuota = this.preEnforcementQuotas[args.featureKey];
+    const hasStaticQuota = staticQuota !== null;
     if (
-      staticQuota !== null &&
+      hasStaticQuota &&
       !isEnforcementActive({
         now: new Date(),
         startsAt: this.enforcementStartsAt,
@@ -300,19 +328,26 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const grants = await this.getCachedGrants(args.spaceId);
     const grant = grants[args.featureKey];
     if (grant === undefined) {
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} ${hasStaticQuota ? 'keeps the static limit' : 'is denied'}`,
+      );
       // A catalog gap must not block an action a static limit still covers,
       // and must not hand out one it does not.
-      this.loggingService.warn(
-        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} keeps the static limit`,
-      );
-      return this.staticGrant(staticQuota ?? 0);
+      return hasStaticQuota
+        ? this.staticGrant(staticQuota)
+        : this.deniedGrant();
     }
     return grant;
   }
 
   /** A limit that predates enforcement, as a grant. */
   private staticGrant(quota: number): FeatureGrant {
-    return { quota, resetsAt: null, counter: null };
+    return { enabled: true, quota, resetsAt: null, counter: null };
+  }
+
+  /** No allowance at all: the plan simply does not grant this feature. */
+  private deniedGrant(): FeatureGrant {
+    return { enabled: false, quota: 0, resetsAt: null, counter: null };
   }
 
   /**
@@ -449,6 +484,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
         return [
           feature.key,
           {
+            enabled: effective.enabled,
             // A feature the plan does not grant has no allowance at all.
             quota: effective.enabled ? effective.quota : 0,
             // Cached: only a webhook moves it, and that invalidates this.
@@ -847,7 +883,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
     StockMeteredFeature,
     (spaceId: Space['id']) => Promise<number>
   > = {
-    safe_seats: (spaceId) => this.spaceSafesRepository.countBySpaceId(spaceId),
+    safe_seats: (spaceId) =>
+      this.spaceSafesRepository.countSeatsBySpaceId(spaceId),
   };
 
   /**

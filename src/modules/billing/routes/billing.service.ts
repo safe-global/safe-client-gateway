@@ -42,10 +42,15 @@ import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
 import { GRACE_PERIOD_METADATA_KEY } from '@/modules/entitlements/domain/entitlements.constants';
 import { predatesEnforcement } from '@/modules/entitlements/domain/entitlements.rules';
+import { parseSafeSeatQuota } from '@/modules/entitlements/domain/feature-package.mapper';
 import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
+import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import {
+  assertAdmin,
+  assertMember,
+} from '@/modules/spaces/domain/space-assert.utils';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
@@ -67,6 +72,8 @@ export class BillingService {
     private readonly subscriptionsRepository: ISubscriptionsRepository,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
@@ -104,7 +111,7 @@ export class BillingService {
     authPayload: AuthPayload;
     returnUrl: string;
   }): Promise<{ url: string }> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
 
     const url = await this.billingRepository.getCustomerSessionUrl({
       upstreamCustomerId: args.spaceUuid,
@@ -124,6 +131,11 @@ export class BillingService {
     return await this.listOfferedPaymentLinks(args);
   }
 
+  /**
+   * Starts a checkout for a workspace payment link.
+   *
+   * Admin-only, and gated by `ElevationGuard`.
+   */
   public async createCheckoutUrl(args: {
     paymentLinkId: string;
     spaceId: Space['id'];
@@ -131,17 +143,24 @@ export class BillingService {
     authPayload: AuthPayload;
     returnUrl: string;
   }): Promise<CheckoutSessionResult> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
     const returnUrl = this.validateReturnUrl(args.returnUrl);
 
     // A link the workspace is not offered is not checkable out either, or the
     // filtered list would only be a hint.
     const offeredLinks = await this.listOfferedPaymentLinks(args);
-    if (!offeredLinks.some((link) => link.id === args.paymentLinkId)) {
+    const paymentLink = offeredLinks.find(
+      (link) => link.id === args.paymentLinkId,
+    );
+    if (!paymentLink) {
       throw new ForbiddenException(
         'This subscription is not available for this workspace',
       );
     }
+    await this.assertSafeSeatCapacity({
+      spaceId: args.spaceId,
+      paymentLink,
+    });
 
     return await this.billingRepository.createCheckoutSession({
       paymentLinkId: args.paymentLinkId,
@@ -173,7 +192,7 @@ export class BillingService {
     planId: string;
     authPayload: AuthPayload;
   }): Promise<SubscriptionUpdatePreview> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
     // No link is resolved: the upstream preview takes only the price, so a tie
     // between several links offering it cannot matter here.
     const [offeredLinks, subscription] = await Promise.all([
@@ -204,9 +223,7 @@ export class BillingService {
   /**
    * Moves the workspace onto another plan.
    *
-   * Membership, not admin, matching `createCheckoutUrl`: starting a paid
-   * subscription is open to any member. A fresh second factor is required on
-   * top, pinned in the gated table of `elevation.integration.spec.ts`.
+   * Admin-only, and gated by `ElevationGuard`.
    *
    * Returning does not mean the entitlements have moved: those are
    * materialized when the upstream's webhook arrives, so
@@ -221,7 +238,7 @@ export class BillingService {
     paymentLinkId?: string;
     authPayload: AuthPayload;
   }): Promise<UpdateSubscriptionResult> {
-    await this.assertSpaceMember(args.spaceId, args.authPayload);
+    await this.assertSpaceAdmin(args.spaceId, args.authPayload);
 
     const [offeredLinks, subscription] = await Promise.all([
       this.listOfferedPaymentLinks(args),
@@ -247,6 +264,10 @@ export class BillingService {
     }
 
     const paymentLink = this.paymentLinkForPlanOrFail(offeredLinks, args);
+    await this.assertSafeSeatCapacity({
+      spaceId: args.spaceId,
+      paymentLink,
+    });
 
     const result = await this.billingRepository.updateSubscription({
       upstreamCustomerId: args.spaceUuid,
@@ -319,7 +340,7 @@ export class BillingService {
         startsAt: this.enforcementStartsAt,
       }),
       hasEverSubscribed: subscription.hasEverSubscribed,
-      activePlanName: subscription.activePlanName,
+      activePlanId: subscription.activePlanId,
     };
   }
 
@@ -397,6 +418,32 @@ export class BillingService {
     return linksOfferingPlan[0];
   }
 
+  /**
+   * Refuses a plan whose `FEATURE_SAFE_SEATS` is below the workspace's
+   * current Safe count
+   */
+  private async assertSafeSeatCapacity(args: {
+    spaceId: Space['id'];
+    paymentLink: PaymentLink;
+  }): Promise<void> {
+    const quota = parseSafeSeatQuota(args.paymentLink.metadata, (message) =>
+      this.loggingService.warn(message),
+    );
+    // No quota to enforce: skip the count query entirely.
+    if (quota === null) {
+      return;
+    }
+
+    const used = await this.spaceSafesRepository.countSeatsBySpaceId(
+      args.spaceId,
+    );
+    if (used > quota) {
+      throw new ConflictException(
+        "This plan doesn't offer enough Safe seats for the workspace's current Safes",
+      );
+    }
+  }
+
   private validateReturnUrl(returnUrl: string): string {
     return resolveAndValidateRedirectUrl(this.redirectConfig, returnUrl);
   }
@@ -407,5 +454,13 @@ export class BillingService {
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
+  }
+
+  private async assertSpaceAdmin(
+    spaceId: Space['id'],
+    authPayload: AuthPayload,
+  ): Promise<void> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+    await assertAdmin(this.spacesRepository, spaceId, userId);
   }
 }

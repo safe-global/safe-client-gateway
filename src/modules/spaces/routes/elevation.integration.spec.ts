@@ -108,13 +108,20 @@ const GATED_ROUTES: Array<Route> = [
     path: (id) => `/v1/spaces/${id}/address-book/requests/1/approve`,
   },
   // Changes what the whole Workspace is billed, so gated like the rest despite
-  // living under /v1/billing. Its sibling billing routes — the checkout URL,
-  // and the Stripe portal that can cancel — are not gated yet; that is pending.
+  // living under /v1/billing. Its sibling checkout-url route is gated below
+  // for the same reason; the Stripe portal that can cancel is not gated yet,
+  // that is pending.
   {
     name: 'PATCH /v1/billing/spaces/:spaceId/subscriptions/:subscriptionId',
     method: 'patch',
     path: (id) => `/v1/billing/spaces/${id}/subscriptions/sub_1`,
     body: { planId: 'price_1' },
+  },
+  {
+    name: 'GET /v1/billing/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url',
+    method: 'get',
+    path: (id) =>
+      `/v1/billing/spaces/${id}/payment-links/link_1/checkout-url?returnUrl=https://example.com`,
   },
 ];
 
@@ -159,6 +166,19 @@ const UNGATED_ROUTES: Array<Route> = [
     name: 'POST /v1/spaces/:spaceId/chains/:chainId/relay',
     method: 'post',
     path: (id) => `/v1/spaces/${id}/chains/1/relay`,
+    body: {},
+  },
+  {
+    name: 'GET /v1/spaces/:spaceId/chains/:chainId/security/:safeAddress/recipient/:recipientAddress',
+    method: 'get',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/1/security/${getAddress(faker.finance.ethereumAddress())}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
+  },
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/security/:safeAddress/counterparty-analysis',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/1/security/${getAddress(faker.finance.ethereumAddress())}/counterparty-analysis`,
     body: {},
   },
   {

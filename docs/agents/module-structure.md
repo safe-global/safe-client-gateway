@@ -36,7 +36,7 @@ In a declared multi-PR rollout, `routes/` may land one PR ahead of its controlle
 
 **Canonical example:** `src/modules/spaces/`, `src/modules/chains/`.
 
-**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (no `domain/` or `routes/` at all — a controller at the module root plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts`) — do not imitate either.
+**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (its own `safe-shield.controller.ts`/`.service.ts` sit at the module root, plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts` — `routes/` holds only the guard and the Space-scoped controller/service added after this anti-example was written, not the module's own controller) — do not imitate either.
 
 ### Layer placement
 
@@ -76,7 +76,7 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 This applies in both directions: neither a module's `routes/` nor its `datasources/` is a valid import target for anything outside that module.
 
-**One exception, guards.** A guard is applied by handing its class to `@UseGuards`, so a guard that gates another module's route is necessarily imported from where it lives — and it cannot live in `domain/`, being HTTP-layer by construction (`nestjs-patterns.md`'s "Guards: request admission only"). Two homes are therefore valid for a guard other modules apply: the owning module's `routes/guards/` (`src/modules/auth/routes/guards/auth.guard.ts`, applied by sixteen controllers; `src/modules/entitlements/routes/guards/safe-seats.guard.ts`, applied by the routes that consume a Safe seat), or `src/routes/common/` when it belongs to no feature (`src/routes/common/auth/elevation.guard.ts`). Nothing else about another module's `routes/` becomes importable: a pipe, a decorator, a DTO or a route service stays off limits, as the anti-example below shows.
+**One exception, guards.** A guard is applied by handing its class to `@UseGuards`, so a guard that gates another module's route is necessarily imported from where it lives — and it cannot live in `domain/`, being HTTP-layer by construction (`nestjs-patterns.md`'s "Guards: request admission only"). Two homes are therefore valid for a guard other modules apply: the owning module's `routes/guards/` (`src/modules/auth/routes/guards/auth.guard.ts`, applied by sixteen controllers), or `src/routes/common/` when it belongs to no feature (`src/routes/common/auth/elevation.guard.ts`). Nothing else about another module's `routes/` becomes importable: a pipe, a decorator, a DTO or a route service stays off limits, as the anti-example below shows.
 
 **Why:** importing another module's `routes/*` drags HTTP-layer concerns (controllers, DTOs, guards) into code that has no business depending on them, and it means a change to another module's controller or DTO shape can break a module that has nothing to do with HTTP.
 

@@ -283,10 +283,10 @@ export class SafeQueueService implements ISafeQueueService {
     chainId: string;
     safeTxHash: string;
     signature: string;
-  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
+  }): Promise<void> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}/signatures`;
-      const { data } = await this.networkService.post({
+      await this.networkService.post({
         url,
         data: { signatures: [args.signature] },
         networkRequest: {
@@ -295,7 +295,6 @@ export class SafeQueueService implements ISafeQueueService {
           },
         },
       });
-      return rawify(SafeQueueMultisigTransactionSchema.parse(data));
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }

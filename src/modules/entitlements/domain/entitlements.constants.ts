@@ -3,6 +3,7 @@ import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subs
 import {
   FEATURE_KEYS,
   FeatureType,
+  SAFE_SEATS_FEATURE_KEY,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
@@ -18,7 +19,7 @@ export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
  * its counter is wired.
  */
 export const STOCK_METERED_FEATURES = [
-  'safe_seats',
+  SAFE_SEATS_FEATURE_KEY,
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
@@ -29,6 +30,13 @@ export function isStockMeteredFeatureKey(
 ): key is StockMeteredFeature {
   return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
 }
+
+/** Features the plan grants or does not, with no usage to measure. */
+export const BINARY_FEATURES = [
+  'copilot_scans',
+] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
+
+export type BinaryFeature = (typeof BINARY_FEATURES)[number];
 
 export function isStockMeteredFeature<T extends { key: string }>(
   feature: T,
