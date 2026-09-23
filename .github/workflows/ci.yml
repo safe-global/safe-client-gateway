@@ -2,21 +2,20 @@
 
 name: CI
 
+# Pull requests are handled by pull-request.yml, which calls the same
+# _ci-node.yml this workflow does — one definition of the quality gate, two
+# entry points. What is left here is the trunk and release side: build the
+# staging image on a push to main, build the release image on a published
+# release, and hand staging to the autodeploy webhook.
 on:
   push:
-    # Only build on pushes to main. PRs are validated via the `pull_request`
-    # event below, so leaving `push:` unscoped made every PR commit run the
-    # whole pipeline twice. `main` pushes still run docker-publish-staging +
-    # autodeploy; releases use the `release` event.
     branches:
       - main
-  pull_request:
   release:
     types: [released]
 
-# Cancel superseded runs for the same ref (e.g. rapid PR pushes) so stale
-# builds stop hogging runners. `main` is exempt so an in-flight staging deploy
-# is never cancelled by a follow-up merge.
+# `main` is exempt from cancellation so an in-flight staging deploy is never
+# cancelled by a follow-up merge.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -31,248 +30,18 @@ env:
   DOCKER_BUILD_IMAGE_TAG: buildcache
 
 jobs:
-  license-headers:
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.14.3'
-      - run: pip install pre-commit
+  # The quality gate, shared with pull-request.yml. Job names inside a reusable
+  # are reported as `ci / <job>`.
+  ci:
+    uses: ./.github/workflows/_ci-node.yml
+    secrets: inherit
 
-      - name: Run pre-commit on changed files
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            BASE_REF="${{ github.event.pull_request.base.sha }}"
-          else
-            BASE_REF="${{ github.event.before }}"
-          fi
-
-          if [ -z "$BASE_REF" ] || [ "$BASE_REF" = "0000000000000000000000000000000000000000" ]; then
-            echo "No valid base ref; skipping."
-            exit 0
-          fi
-
-          if ! git cat-file -e "$BASE_REF^{commit}" 2>/dev/null; then
-            echo "$BASE_REF is not available locally; falling back to HEAD^."
-            BASE_REF="HEAD^"
-          fi
-
-          CHANGED_FILES=$(git diff --name-only --diff-filter=AM "$BASE_REF" HEAD)
-
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No added or modified files; skipping."
-            exit 0
-          fi
-
-          pre-commit run --files $CHANGED_FILES
-
-  env-validation:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.11.0' # Krypton
-          cache: 'yarn'
-      # Install unconditionally rather than caching the linked node_modules:
-      # `enableHardenedMode` (.yarnrc.yml) verifies the supply chain only during
-      # `yarn install`, so skipping install on a warm cache would bypass that
-      # check. The `cache: 'yarn'` download cache above keeps this fast — tarballs
-      # are already fetched, so install only re-links and re-verifies.
-      - run: yarn install --immutable
-      - run: yarn run env:validate:silent
-
-  biome:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.11.0' # Krypton
-          cache: 'yarn'
-      - run: yarn install --immutable
-      - run: yarn run format-check
-      - run: yarn run lint-check
-      # `nest build` (a full tsc compile) was dropped from the test jobs, which
-      # removed whole-program type-checking on PRs — Vitest transpiles via SWC,
-      # which strips types without type-checking them at all. Run an explicit
-      # no-emit type-check here so type errors fail the PR instead of only
-      # surfacing on the main-only Docker build. Needs the generated ABIs that
-      # the `@/abis` alias resolves to.
-      - run: yarn generate-abis
-      - run: yarn tsc --noEmit -p tsconfig.build.json
-
-  unit-tests:
-    runs-on: ubuntu-latest
-    # The suite normally finishes in ~3 min. Without an explicit cap a wedged
-    # test run (e.g. a Redis client that spins its retry loop instead of
-    # failing) inherits GitHub's 6-hour default and the check never reports at
-    # all — it just occupies a runner. Fail fast instead.
-    timeout-minutes: 20
-    env:
-      POSTGRES_TEST_DB: test-db
-      POSTGRES_TEST_USER: postgres
-      POSTGRES_TEST_PASSWORD: postgres
-      POSTGRES_TEST_PORT: 5433
-    services:
-      redis:
-        image: redis
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-      postgres:
-        image: postgres:14.8
-        env:
-          POSTGRES_DB: test-db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5433:5432
-      rabbitmq:
-        image: rabbitmq:alpine
-        ports:
-          - 5672:5672
-        options: >-
-          --health-cmd "rabbitmqctl await_startup"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.11.0' # Krypton
-          cache: 'yarn'
-      - run: yarn install --immutable
-      # Tests are transformed straight from `src` by the test runner, so the
-      # full `nest build` (compile to dist) isn't needed here — only the
-      # generated ABIs that the `@/abis` import alias resolves to.
-      - run: yarn generate-abis
-      - run: yarn run test:unit:cov
-        env:
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
-          LOG_SILENT: true
-      - name: Coveralls Parallel
-        continue-on-error: true
-        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: run-unit-tests
-          parallel: true
-
-  integration-tests:
-    runs-on: ubuntu-latest
-    # ~5 min in practice; capped for the same reason as unit-tests above.
-    timeout-minutes: 20
-    env:
-      POSTGRES_TEST_DB: test-db
-      POSTGRES_TEST_USER: postgres
-      POSTGRES_TEST_PASSWORD: postgres
-      POSTGRES_TEST_PORT: 5433
-    services:
-      redis:
-        image: redis
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
-      postgres:
-        image: postgres:14.8
-        env:
-          # Should match the env above. "Variables in the env map cannot be defined in terms of other variables in the map."
-          # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
-          POSTGRES_DB: test-db
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5433:5432
-      rabbitmq:
-        image: rabbitmq:alpine
-        ports:
-          - 5672:5672
-        options: >-
-          --health-cmd "rabbitmqctl await_startup"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24.11.0' # Krypton
-          cache: 'yarn'
-      - run: yarn install --immutable
-      # Unlike unit-tests, the integration suite runs DB migrations, and the
-      # TypeORM datasource loads them from the compiled `dist/migrations/*.js`
-      # glob (see postgres.config.ts). A full `nest build` (which `yarn build`
-      # wraps, ABIs included) is therefore required — `generate-abis` alone
-      # leaves `dist/migrations` empty, so no migrations run and the schema is
-      # never created.
-      - run: yarn run build
-      - run: yarn run test:integration:cov
-        env:
-          REDIS_HOST: localhost
-          REDIS_PORT: 6379
-          SAFE_CONFIG_BASE_URI: ${{ secrets.SAFE_CONFIG_BASE_URI }}
-          LOG_SILENT: true
-      - name: Coveralls Parallel
-        continue-on-error: true
-        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: run-integration-tests
-          parallel: true
-
-  tests:
-    name: tests (test:cov)
-    needs: [unit-tests, integration-tests]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Tests completed
-        run: echo "All tests passed"
-
-  tests-finish:
-    needs: [unit-tests, integration-tests]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Coveralls Finished
-        uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          parallel-finished: true
-          fail-on-error: false
-
-  # Production runs on arm64 only, so we build a single-arch image. We run on an
-  # arm64 runner so the build is native — no QEMU emulation needed.
   docker-publish-staging:
     # `on.push.branches` already scopes push events to main, so the ref check is
     # redundant today — but it keeps this job self-guarding (it deploys to
     # staging) if the push trigger is ever broadened.
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [biome, tests-finish]
+    needs: [ci]
     permissions:
       contents: read
       packages: write
@@ -293,7 +62,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           platforms: linux/arm64
           push: true
@@ -309,7 +78,7 @@ jobs:
 
   docker-publish-release:
     if: (github.event_name == 'release' && github.event.action == 'released')
-    needs: [biome, tests-finish]
+    needs: [ci]
     permissions:
       contents: read
       packages: write
@@ -338,7 +107,7 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           platforms: linux/arm64
           push: true
