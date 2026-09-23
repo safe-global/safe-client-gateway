@@ -10,12 +10,7 @@ services:
   db:
     image: postgres:18.6-alpine3.24
     volumes:
-      # postgres 18+ images expect a single mount at /var/lib/postgresql; the
-      # cluster itself lives in a version-specific subdirectory (18/docker),
-      # which lets `pg_upgrade --link` work across major versions.
-      - ./data/db:/var/lib/postgresql
-      # Mounted read-only outside the data volume; the entrypoint below copies
-      # the TLS material into place with the ownership Postgres requires.
+      - db-data:/var/lib/postgresql
       - ./db_config/test:/db_config:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-safe-client-gateway}
@@ -23,10 +18,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
-    # Postgres refuses a private key that is not owned by the database user or
-    # root. Bind-mounted files keep the host owner's uid, so copy the key and
-    # certificate into the container with the right owner and mode, then hand
-    # over to the image's own entrypoint.
     entrypoint:
       - /bin/sh
       - -c
@@ -56,13 +47,7 @@ services:
     ports:
       - '${POSTGRES_TEST_PORT:-5433}:5432'
     volumes:
-      # Mounted read-only outside the data volume; the entrypoint below copies
-      # the TLS material into place with the ownership Postgres requires.
       - ./db_config/test:/db_config:ro
-    # Postgres refuses a private key that is not owned by the database user or
-    # root. Bind-mounted files keep the host owner's uid, so copy the key and
-    # certificate into the container with the right owner and mode, then hand
-    # over to the image's own entrypoint.
     entrypoint:
       - /bin/sh
       - -c
@@ -146,4 +131,5 @@ services:
       - web
 
 volumes:
+  db-data:
   pgadmin-data:
