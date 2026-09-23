@@ -15,6 +15,7 @@ import { CacheRouter } from '@/datasources/cache/cache.router';
 import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { LogType } from '@/domain/common/entities/log-type.entity';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -35,6 +36,7 @@ import {
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import { FEATURE_NOT_GRANTED_ERROR_CODE } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
 import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
 import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
@@ -59,9 +61,10 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-// The suite owns its catalog: only `safe_seats` is signed off and seeded by a
-// migration, so the branches below are exercised against fixtures rather than
-// the shipped catalog. The fixtures below cover every resolution branch
+// The suite owns its catalog: only `safe_seats` and `copilot_scans` are
+// signed off and seeded by a migration, so the branches below are exercised
+// against fixtures rather than the shipped catalog. The fixtures below cover
+// every resolution branch
 // the repository implements — binary, value, stock-metered (usage is a live
 // COUNT over an existing table) and event-metered (usage is a period-keyed
 // `space_feature_usage` counter). Keys come from the real `FeatureKey` enum
@@ -88,6 +91,11 @@ const FEATURE_FIXTURES = [
     .with('type', FeatureType.Metered)
     .with('freeEnabled', true)
     .with('freeQuota', FREE_SAFE_SEATS)
+    .build(),
+  featureBuilder()
+    .with('key', 'copilot_scans')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
     .build(),
   // Free-disabled by default so the "disabled admits no usage" path is
   // covered; the `consume` tests enable it explicitly.
@@ -1432,6 +1440,69 @@ describe('EntitlementsService', () => {
       await expect(
         assertSeats(enforcingService, spaceId, 1),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  // A Binary feature's own gate: on or off, nothing to count
+  describe('assertFeatureGranted', () => {
+    function assertCopilotScans(spaceId: number): Promise<void> {
+      return enforcingService.assertFeatureGranted({
+        spaceId,
+        featureKey: 'copilot_scans',
+      });
+    }
+
+    it('rejects a Binary feature the plan does not grant, with no quota to report', async () => {
+      const spaceId = await createSpace();
+
+      await expect(assertCopilotScans(spaceId)).rejects.toMatchObject({
+        response: {
+          code: FEATURE_NOT_GRANTED_ERROR_CODE,
+          feature: 'copilot_scans',
+        },
+      });
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.FeatureNotGranted,
+          spaceId,
+          feature: 'copilot_scans',
+        }),
+      );
+    });
+
+    it('admits a Binary feature the plan grants, unlimited', async () => {
+      const spaceId = await createSpace();
+      await materializeFromEvent({
+        spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('entitlements', [
+            {
+              featureKey: 'copilot_scans',
+              enabled: true,
+              quota: null,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+
+      await expect(assertCopilotScans(spaceId)).resolves.toBeUndefined();
+    });
+
+    it('denies a Binary feature missing from the catalog, with no static limit to fall back on', async () => {
+      const spaceId = await createSpace();
+      await dataSource.getRepository(Feature).delete({ key: 'copilot_scans' });
+
+      await expect(assertCopilotScans(spaceId)).rejects.toMatchObject({
+        response: {
+          code: FEATURE_NOT_GRANTED_ERROR_CODE,
+          feature: 'copilot_scans',
+        },
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Feature 'copilot_scans' has no catalog row; space ${spaceId} is denied`,
+      );
     });
   });
 

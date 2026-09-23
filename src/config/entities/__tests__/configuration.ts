@@ -217,7 +217,7 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
+  httpServer: { bodyLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
   features: {
     email: false,
     sesEmail: false,
@@ -250,6 +250,7 @@ export default (): ReturnType<typeof configuration> => ({
     cacheInFlightRequests: false,
     spaceAuditLog: true,
     mfaStepUp: true,
+    safeShieldCoreDisabled: false,
     safeQueueService: false,
   },
   httpClient: {
