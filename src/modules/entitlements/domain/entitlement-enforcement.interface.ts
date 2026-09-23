@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+import type {
+  BinaryFeature,
+  StockMeteredFeature,
+} from '@/modules/entitlements/domain/entitlements.constants';
 import type { UsageKey } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
@@ -22,13 +25,22 @@ export type ConsumedQuota = {
 /** Reached through this token so a gated module never imports the service. */
 export interface IEntitlementEnforcement {
   /**
-   * Admits an action consuming `delta`, or rejects it with
-   * {@link QuotaExceededError}.
+   * Admits an action consuming `delta` of a metered feature's allowance, or
+   * rejects it with {@link QuotaExceededError}.
    */
   assertWithinQuota(args: {
     spaceId: Space['id'];
-    featureKey: FeatureKey;
+    featureKey: Exclude<FeatureKey, BinaryFeature>;
     delta: number;
+  }): Promise<void>;
+
+  /**
+   * Admits a Binary feature the plan simply grants or does not, or
+   * rejects it with {@link FeatureNotGrantedError}.
+   */
+  assertFeatureGranted(args: {
+    spaceId: Space['id'];
+    featureKey: BinaryFeature;
   }): Promise<void>;
 
   /**
