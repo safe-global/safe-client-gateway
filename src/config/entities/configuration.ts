@@ -492,6 +492,12 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
+    // Owner: Copilot plan gating (PLA-1964). Temporary disable of Core's
+    // recipient-check and counterparty-analysis while the plan-gated Space
+    // endpoints take over; the ticket does not yet set a removal condition
+    // for the flag or `SafeShieldCoreGatingGuard` — see PLA-1964 for status.
+    safeShieldCoreDisabled:
+      process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
     safeQueueService:
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
   },
