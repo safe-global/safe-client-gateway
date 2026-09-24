@@ -136,13 +136,15 @@ export class FeeServiceApi implements IFeeServiceApi {
       gasToken: args.request.gasToken,
       threshold: args.request.numberSignatures,
       origin: args.request.origin,
+      safenetCheck: args.request.safenetCheck,
     });
     const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/fees`;
 
     return this.postFeeRequest({
       cacheDir,
       url,
-      // origin is mandatory for this fee endpoint; parsed to strip fields outside its contract.
+      // origin is mandatory for this fee endpoint; the strict parse rejects any
+      // field outside its contract.
       data: GtfFeesRequestSchema.parse({
         ...args.request,
         origin: args.request.origin ?? Origin.NATIVE,
