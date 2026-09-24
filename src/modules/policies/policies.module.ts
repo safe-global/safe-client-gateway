@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import { AuthModule } from '@/modules/auth/auth.module';
-import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
-import { PolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository';
-import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
 
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
@@ -19,6 +16,7 @@ import { UsersModule } from '@/modules/users/users.module';
  */
 @Module({
   imports: [
+    PolicyIndexerRepositoryModule,
     SafeRepositoryModule,
     // Space membership and the Safe-in-space check
     forwardRef(() => SpacesModule),
@@ -26,13 +24,6 @@ import { UsersModule } from '@/modules/users/users.module';
     forwardRef(() => AuthModule),
   ],
   controllers: [SpacePoliciesController],
-  providers: [
-    HttpErrorFactory,
-    PolicyIndexerApi,
-    PoliciesService,
-    SpendingLimitMapper,
-    { provide: IPolicyIndexerRepository, useClass: PolicyIndexerRepository },
-  ],
-  exports: [IPolicyIndexerRepository],
+  providers: [PoliciesService, SpendingLimitMapper],
 })
 export class PoliciesModule {}
