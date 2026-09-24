@@ -159,6 +159,13 @@ jobs:
             BUILD_NUMBER=${{ steps.build_number.outputs.value }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Trade-off, taken deliberately: with provenance on, buildx pushes an
+          # OCI image index plus an attestation manifest even for a single
+          # platform. Consumers that expect a plain image manifest — including
+          # argocd-image-updater's digest strategy, which is what deploys
+          # staging today — then resolve the index digest rather than the
+          # image's. Turning it off costs SLSA provenance; revisit once nothing
+          # pins this image by digest.
           provenance: false
 
       - name: Summary

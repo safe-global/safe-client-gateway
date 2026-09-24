@@ -296,7 +296,10 @@ jobs:
           sudo resolvectl domain tun0 "~infra.safe.global"
 
       - name: Wait for version rollout
-        if: ${{ inputs.version_check_url != '' }}
+        # Also gated on `pushed`: when the values file already carried this tag
+        # the commit step exits early without deploying anything, and polling
+        # then proves nothing — it just re-confirms whatever is already live.
+        if: ${{ inputs.version_check_url != '' && steps.commit.outputs.pushed == 'true' }}
         env:
           EXPECTED: ${{ inputs.image_tag }}
           URL: ${{ inputs.version_check_url }}
