@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type {
@@ -44,11 +43,6 @@ describe('ProposerMapper', () => {
     target = new ProposerMapper();
   });
 
-  /** A delegate registration on `safe`. */
-  function delegate(): IBuilder<Delegate> {
-    return delegateBuilder().with('safe', safe.address);
-  }
-
   /** The policies built from the delegates API's rows. */
   function map(delegates: Array<Delegate>): Array<ActivePolicy> {
     return target.map({ safe, delegates });
@@ -62,8 +56,8 @@ describe('ProposerMapper', () => {
     });
 
     it('should report one policy holding every registration', () => {
-      const first = delegate().build();
-      const second = delegate().build();
+      const first = delegateBuilder().with('safe', safe.address).build();
+      const second = delegateBuilder().with('safe', safe.address).build();
 
       const policies = map([first, second]);
 
@@ -83,7 +77,9 @@ describe('ProposerMapper', () => {
 
   describe('the policy envelope', () => {
     it('should report the grant as enforced off chain by the delegates store', () => {
-      const [policy] = map([delegate().build()]);
+      const [policy] = map([
+        delegateBuilder().with('safe', safe.address).build(),
+      ]);
 
       expect(policy).toMatchObject({
         type: PolicyType.Proposer,
@@ -98,7 +94,9 @@ describe('ProposerMapper', () => {
     it('should report a registered proposer as enabled', () => {
       // Nothing on chain gates a proposer, so there is no configured-but-
       // unenforced state to report.
-      const [policy] = map([delegate().build()]);
+      const [policy] = map([
+        delegateBuilder().with('safe', safe.address).build(),
+      ]);
 
       expect(policy.enabled).toBe(true);
     });
@@ -107,8 +105,14 @@ describe('ProposerMapper', () => {
   describe('nesting the registrations by proposer', () => {
     it('should collapse one proposer granted by two owners into one entry', () => {
       const proposer = getAddress(faker.finance.ethereumAddress());
-      const byFirst = delegate().with('delegate', proposer).build();
-      const bySecond = delegate().with('delegate', proposer).build();
+      const byFirst = delegateBuilder()
+        .with('safe', safe.address)
+        .with('delegate', proposer)
+        .build();
+      const bySecond = delegateBuilder()
+        .with('safe', safe.address)
+        .with('delegate', proposer)
+        .build();
 
       const [policy] = map([byFirst, bySecond]);
 
@@ -127,11 +131,13 @@ describe('ProposerMapper', () => {
       // The Transaction Service stores the label per (delegate, delegator)
       // row, so two owners can label one proposer differently.
       const proposer = getAddress(faker.finance.ethereumAddress());
-      const byFirst = delegate()
+      const byFirst = delegateBuilder()
+        .with('safe', safe.address)
         .with('delegate', proposer)
         .with('label', 'Ops bot')
         .build();
-      const bySecond = delegate()
+      const bySecond = delegateBuilder()
+        .with('safe', safe.address)
         .with('delegate', proposer)
         .with('label', 'Finance')
         .build();
@@ -146,8 +152,8 @@ describe('ProposerMapper', () => {
     });
 
     it('should keep two proposers apart, in the order served', () => {
-      const first = delegate().build();
-      const second = delegate().build();
+      const first = delegateBuilder().with('safe', safe.address).build();
+      const second = delegateBuilder().with('safe', safe.address).build();
 
       const [policy] = map([first, second]);
 
@@ -159,7 +165,10 @@ describe('ProposerMapper', () => {
     it('should carry an unlabelled grant as an empty label', () => {
       // The Queue Service allows a null label; the repository coerces it to ''
       // so both backends represent "no label" identically.
-      const unlabelled = delegate().with('label', '').build();
+      const unlabelled = delegateBuilder()
+        .with('safe', safe.address)
+        .with('label', '')
+        .build();
 
       const [policy] = map([unlabelled]);
 
