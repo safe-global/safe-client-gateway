@@ -20,6 +20,12 @@ import { User as DbUser } from '@/modules/users/datasources/entities/users.entit
 import type { User } from '@/modules/users/domain/entities/user.entity';
 import { UserStatus } from '@/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
+import {
+  isActiveAdmin,
+  isLastActiveAdminOfSpace,
+  lockSpaceForAdminChange,
+  lockUserForAdminChange,
+} from '@/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
@@ -193,13 +199,84 @@ export class UsersRepository implements IUsersRepository {
     );
   }
 
+  /**
+   * Deleting the user cascade-deletes their `members` rows, so a space they
+   * solely administer would be left un-administrable - and its members unable
+   * to leave. Reject instead, as every member-removal flow already does: the
+   * user can promote another admin or delete the space, then retry.
+   *
+   * Locks each space before reading its admins, or READ COMMITTED would let two
+   * co-admins acting at once each still see the other. Ascending id order, so
+   * two deletions over the same spaces cannot deadlock. The caller locks this
+   * user's row first, which is what makes the space set complete.
+   */
+  private async assertIsNotLastAdminOfAnySpace(args: {
+    entityManager: EntityManager;
+    userId: User['id'];
+    memberships: Array<DbMember>;
+  }): Promise<void> {
+    const administeredSpaceIds = args.memberships
+      .filter(isActiveAdmin)
+      .map((membership) => membership.space.id)
+      .sort((a, b) => a - b);
+
+    if (administeredSpaceIds.length === 0) {
+      return;
+    }
+
+    for (const spaceId of administeredSpaceIds) {
+      await lockSpaceForAdminChange(args.entityManager, spaceId);
+    }
+
+    const activeAdmins = await args.entityManager.find(DbMember, {
+      where: {
+        space: { id: In(administeredSpaceIds) },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+      relations: { space: true, user: true },
+    });
+
+    // Grouped in one pass: promotion into other people's spaces is not capped,
+    // so the administered set has no bound to scan per space.
+    const adminsBySpace = new Map<DbMember['space']['id'], Array<DbMember>>();
+    for (const activeAdmin of activeAdmins) {
+      const group = adminsBySpace.get(activeAdmin.space.id);
+      if (group) {
+        group.push(activeAdmin);
+      } else {
+        adminsBySpace.set(activeAdmin.space.id, [activeAdmin]);
+      }
+    }
+
+    for (const members of adminsBySpace.values()) {
+      if (isLastActiveAdminOfSpace({ members, userId: args.userId })) {
+        throw new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        );
+      }
+    }
+  }
+
   public async delete(authPayload: AuthPayload): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // A `members` insert for this user takes FOR KEY SHARE on their row,
+      // which this conflicts with: a space created concurrently either waits
+      // and then fails its foreign key, or commits in time to be read below.
+      // A promotion changes no FK column, so `updateRole` takes this same lock.
+      await lockUserForAdminChange(entityManager, userId);
+
       const memberships = await entityManager.find(DbMember, {
         where: { user: { id: userId } },
         relations: { space: true },
+      });
+
+      await this.assertIsNotLastAdminOfAnySpace({
+        entityManager,
+        userId,
+        memberships,
       });
 
       for (const membership of memberships) {
