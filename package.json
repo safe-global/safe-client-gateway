@@ -69,6 +69,7 @@
     "bullmq": "^6.3.6",
     "cache-manager": "7.2.9",
     "csv-stringify": "^6.8.3",
+    "dd-trace": "5.127.0",
     "ecdsa-sig-formatter": "1.0.11",
     "ioredis": "5.11.1",
     "jose": "6.2.12",
