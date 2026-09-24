@@ -4,10 +4,15 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import chunk from 'lodash/chunk';
 import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { batched } from '@/domain/common/utils/batch';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
@@ -38,7 +43,7 @@ type SpacePolicyRequest = {
 
 @Injectable()
 export class PoliciesService {
-  private readonly delegatesBatchSize: number;
+  private readonly batchSize: number;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -53,12 +58,13 @@ export class PoliciesService {
     private readonly delegatesV3Repository: IDelegatesV3Repository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
     private readonly spendingLimitMapper: SpendingLimitMapper,
     private readonly proposerMapper: ProposerMapper,
   ) {
-    this.delegatesBatchSize = this.configurationService.getOrThrow<number>(
-      'policies.delegates.batchSize',
-    );
+    this.batchSize =
+      this.configurationService.getOrThrow<number>('policies.batchSize');
   }
 
   /**
@@ -148,6 +154,9 @@ export class PoliciesService {
     const state = spendingLimitsRequested
       ? await this.policyIndexerRepository.getState({ safes })
       : null;
+    const enabledModulesPerSafe = spendingLimitsRequested
+      ? await this.enabledModulesPerSafe(safes)
+      : null;
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
       : null;
@@ -155,25 +164,28 @@ export class PoliciesService {
     const policies: Array<ActivePolicy> = [];
 
     for (const [index, safe] of safes.entries()) {
-      if (state) {
-        const enabledModules = await this.enabledModules(safe);
+      if (state && enabledModulesPerSafe) {
+        const enabledModules = enabledModulesPerSafe[index];
 
-        policies.push(
-          ...this.spendingLimitMapper.map({
-            safe,
-            allowances: this.getAllowancesBySafe(state.allowances, safe),
-            enabledModules,
-          }),
-        );
+        // A Safe whose enabled modules could not be read is skipped.
+        if (enabledModules) {
+          policies.push(
+            ...this.spendingLimitMapper.map({
+              safe,
+              allowances: this.getAllowancesBySafe(state.allowances, safe),
+              enabledModules,
+            }),
+          );
+        }
       }
 
       if (delegatesPerSafe) {
-        policies.push(
-          ...this.proposerMapper.map({
-            safe,
-            delegates: delegatesPerSafe[index],
-          }),
-        );
+        const delegates = delegatesPerSafe[index];
+
+        // A Safe whose delegates could not be read is skipped.
+        if (delegates) {
+          policies.push(...this.proposerMapper.map({ safe, delegates }));
+        }
       }
     }
 
@@ -184,22 +196,32 @@ export class PoliciesService {
    * The delegates of every Safe of {@link safes}, index-aligned with it.
    *
    * The Safes are independent reads, so they go out concurrently rather than
-   * one at a time. Concurrency is capped at `policies.delegates.batchSize`.
-   *
-   * {@link resolveActivePolicies} already had.
+   * one at a time. Concurrency is capped at `policies.batchSize`. A Safe
+   * whose delegates could not be read is reported as `null` rather than
+   * failing the whole request - the caller skips just that Safe's proposer
+   * policy instead.
    */
   private async delegatesPerSafe(
     safes: ReadonlyArray<SafeRef>,
-  ): Promise<Array<Array<Delegate>>> {
-    const batches: Array<Array<Array<Delegate>>> = [];
+  ): Promise<Array<Array<Delegate> | null>> {
+    const settled = await batched(safes, this.batchSize, (safe) =>
+      this.delegates(safe),
+    );
 
-    for (const batch of chunk(safes, this.delegatesBatchSize)) {
-      batches.push(
-        await Promise.all(batch.map((safe) => this.delegates(safe))),
-      );
-    }
+    return settled.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      }
 
-    return batches.flat();
+      const safe = safes[index];
+      this.loggingService.warn({
+        message: 'Could not read delegates of a Safe',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        error: asError(result.reason).message,
+      });
+      return null;
+    });
   }
 
   /**
@@ -220,13 +242,44 @@ export class PoliciesService {
   }
 
   /**
+   * The enabled modules of every Safe of {@link safes}, index-aligned with it.
+   *
+   * Concurrency is capped at `policies.batchSize`. Unlike
+   * {@link delegatesPerSafe}, a Safe whose modules could not be read is
+   * reported as `null` rather than failing the whole request - the caller
+   * skips just that Safe's spending-limit policies instead.
+   */
+  private async enabledModulesPerSafe(
+    safes: ReadonlyArray<SafeRef>,
+  ): Promise<Array<ReadonlyArray<Address> | null>> {
+    const settled = await batched(safes, this.batchSize, (safe) =>
+      this.enabledModules(safe),
+    );
+
+    return settled.map((result, index) => {
+      if (result.status === 'fulfilled') {
+        return result.value;
+      }
+
+      const safe = safes[index];
+      this.loggingService.warn({
+        message: 'Could not read enabled modules of a Safe',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        error: asError(result.reason).message,
+      });
+      return null;
+    });
+  }
+
+  /**
    * The modules the Safe has enabled, which is what turns a configured
    * module policy into an enforced one.
    *
    * Read from the Safe rather than the indexer: enablement lives in the Safe's
    * own storage, and CGW already serves it.
    */
-  private async enabledModules(safe: SafeRef): Promise<Array<Address>> {
+  private async enabledModules(safe: SafeRef): Promise<ReadonlyArray<Address>> {
     const { modules } = await this.safeRepository.getSafe({
       chainId: safe.chainId,
       address: safe.address,

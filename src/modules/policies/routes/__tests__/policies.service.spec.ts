@@ -5,6 +5,7 @@ import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
@@ -46,6 +47,13 @@ const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
 } as unknown as MockedObject<IDelegatesV3Repository>;
 
+const mockLoggingService = {
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 const SEPOLIA = '11155111';
 
 describe('PoliciesService', () => {
@@ -82,10 +90,13 @@ describe('PoliciesService', () => {
     withDelegates([]);
   });
 
-  /** The service, reading the delegates of {@link size} safes at a time. */
+  /**
+   * The service, reading the delegates - or the enabled modules - of
+   * {@link size} safes at a time.
+   */
   function policiesService(size: number): PoliciesService {
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('policies.delegates.batchSize', size);
+    fakeConfigurationService.set('policies.batchSize', size);
 
     return new PoliciesService(
       mockPolicyIndexerRepository,
@@ -94,6 +105,7 @@ describe('PoliciesService', () => {
       mockMembersRepository,
       mockDelegatesV3Repository,
       fakeConfigurationService,
+      mockLoggingService,
       new SpendingLimitMapper(),
       new ProposerMapper(),
     );
@@ -228,12 +240,18 @@ describe('PoliciesService', () => {
       ).rejects.toThrow('Service unavailable');
     });
 
-    it('should fail the request when the safe cannot be read', async () => {
+    it('should skip the safe in the spending-limit results when its enabled modules cannot be read, and log it', async () => {
       mockSafeRepository.getSafe.mockRejectedValue(new Error('Not found'));
 
-      await expect(
-        target.getSpaceActivePolicies(policyRequest),
-      ).rejects.toThrow('Not found');
+      const result = await activePolicies([allowanceOf(safeAddress)]);
+
+      expect(result).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainId: SEPOLIA,
+          safeAddress,
+        }),
+      );
     });
   });
 
@@ -351,18 +369,63 @@ describe('PoliciesService', () => {
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
     });
 
-    it('should fail the whole request when one safe cannot be read', async () => {
-      // Atomic: one unhealthy chain fails the page rather than dropping a Safe
-      // from it silently.
-      mockSafeRepository.getSafe.mockRejectedValueOnce(
-        new Error('Service unavailable'),
+    it('should report the safes except the one whose modules cannot be retrived', async () => {
+      const otherSafeAllowance = policyIndexerSafeAllowanceBuilder()
+        .with('chainId', '137')
+        .with('safe', otherSafe)
+        .with('module', allowanceModule)
+        .with('amount', '1000')
+        .with('spent', '0')
+        .with('remaining', '1000')
+        .build();
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress), otherSafeAllowance])
+          .build(),
+      );
+      mockSafeRepository.getSafe.mockImplementation((args) =>
+        args.address === safeAddress
+          ? Promise.reject(new Error('Service unavailable'))
+          : Promise.resolve(
+              safeBuilder().with('modules', [allowanceModule]).build(),
+            ),
       );
 
-      await expect(
-        target.getSpaceActivePolicies({
-          ...policyRequest,
-        }),
-      ).rejects.toThrow('Service unavailable');
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+      });
+
+      expect(policies).toMatchObject([
+        { type: PolicyType.SpendingLimit, safe: { address: otherSafe } },
+      ]);
+    });
+
+    it('should report the proposers except the one whose delegates cannot be retrieved', async () => {
+      const registeredOnOther = delegateBuilder()
+        .with('safe', otherSafe)
+        .build();
+      mockDelegatesV3Repository.getDelegates.mockImplementation((args) =>
+        args.safeAddress === safeAddress
+          ? Promise.reject(new Error('Service unavailable'))
+          : Promise.resolve(
+              pageBuilder<Delegate>()
+                .with('results', [registeredOnOther])
+                .build(),
+            ),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Proposer],
+      });
+
+      expect(policies).toMatchObject([
+        {
+          type: PolicyType.Proposer,
+          safe: { address: otherSafe },
+          data: { proposers: [{ proposer: registeredOnOther.delegate }] },
+        },
+      ]);
     });
   });
 
@@ -409,16 +472,20 @@ describe('PoliciesService', () => {
       ]);
     });
 
-    it('should fail the whole request when a delegates read fails', async () => {
-      // Same atomicity as the rest of the page: a Safe whose proposers could
-      // not be read must not report as having none.
+    it('should skip the proposer policy when the delegates cannot be read, and log it', async () => {
       mockDelegatesV3Repository.getDelegates.mockRejectedValue(
         new Error('Service unavailable'),
       );
 
-      await expect(
-        target.getSpaceActivePolicies(policyRequest),
-      ).rejects.toThrow('Service unavailable');
+      const policies = await target.getSpaceActivePolicies(policyRequest);
+
+      expect(policies).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainId: SEPOLIA,
+          safeAddress,
+        }),
+      );
     });
   });
 

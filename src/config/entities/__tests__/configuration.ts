@@ -454,9 +454,7 @@ export default (): ReturnType<typeof configuration> => ({
     indexer: {
       baseUri: faker.internet.url({ appendSlash: false }),
     },
-    delegates: {
-      batchSize: faker.number.int({ min: 1, max: 10 }),
-    },
+    batchSize: faker.number.int({ min: 1, max: 10 }),
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),
