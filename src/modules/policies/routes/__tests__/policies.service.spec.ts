@@ -45,7 +45,7 @@ const mockMembersRepository = {
 
 const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
-} as unknown as MockedObject<IDelegatesV3Repository>;
+} as MockedObject<IDelegatesV3Repository>;
 
 const mockLoggingService = {
   info: vi.fn(),
