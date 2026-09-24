@@ -31,6 +31,13 @@ export function isStockMeteredFeatureKey(
   return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
 }
 
+/** Features the plan grants or does not, with no usage to measure. */
+export const BINARY_FEATURES = [
+  'copilot_scans',
+] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
+
+export type BinaryFeature = (typeof BINARY_FEATURES)[number];
+
 export function isStockMeteredFeature<T extends { key: string }>(
   feature: T,
 ): feature is T & { key: StockMeteredFeature } {

@@ -53,7 +53,7 @@ sequenceDiagram
 ```
 
 Fastify is the HTTP platform (`src/app.provider.ts`).
-`trustProxy` is read from configuration (`express.trustProxy` — a comma-separated subnet/preset list or a hop count), and the JSON body-size limit is parsed from `express.jsonLimit` (`parseBodyLimit`); the `express.*` config namespace predates the Fastify migration and is kept as-is.
+`trustProxy` is read from configuration (`httpServer.trustProxy` — a comma-separated subnet/preset list; hop counts are rejected), and the body-size limit is parsed from `httpServer.bodyLimit` (`parseBodyLimit`).
 The custom body parser preserves Fastify's default prototype-poisoning protection (`onProtoPoisoning`/`onConstructorPoisoning`) while restoring Express-compatible empty-body handling for requests with no payload.
 
 Guards (`@UseGuards`) run next — see the guard inventory under AuthN/AuthZ below.

@@ -242,7 +242,9 @@ describe('BillingController', () => {
 
   it('GET /v1/billing/spaces/:spaceId/subscriptions returns the space subscriptions', async () => {
     const { accessToken, spaceId } = await registerAndCreateSpace();
-    const subscription = subscriptionBuilder().build();
+    const subscription = subscriptionBuilder()
+      .with('hasPaymentMethod', true)
+      .build();
     networkService.get.mockImplementation(({ url }) => {
       if (url.startsWith(`${billingBaseUri}/api/v1/customers/`)) {
         return Promise.resolve({
@@ -260,6 +262,7 @@ describe('BillingController', () => {
       .expect(({ body }) => {
         expect(body).toHaveLength(1);
         expect(body[0].id).toBe(subscription.id);
+        expect(body[0].hasPaymentMethod).toBe(true);
       });
   });
 

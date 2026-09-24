@@ -96,7 +96,7 @@ The same single-use nonce lifecycle is described in `docs/agents/ARCHITECTURE.md
 
 **Canonical example:** `src/routes/common/guards/rate-limit.guard.ts` validates `req.ip` with `z.union([z.ipv4(), z.ipv6()])` and throws `BadRequestException('Invalid client IP address')` before `req.ip` is ever used to build the rate-limit cache key.
 
-`trustProxy` itself (`express.trustProxy` in configuration, despite the `express.*` namespace predating the Fastify migration) is a comma-separated subnet/preset list or a hop count — it bounds how many proxy hops Fastify trusts before it stops adjusting `request.ip`, which is what keeps the value trustworthy in the first place.
+`trustProxy` itself (`httpServer.trustProxy` in configuration) is a comma-separated subnet/preset list — it bounds which upstream addresses Fastify trusts before it stops adjusting `request.ip`, which is what keeps the value trustworthy in the first place. Hop counts are rejected at startup: they ignore the connecting address entirely.
 
 ### Constant-time secret comparison
 
