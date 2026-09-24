@@ -83,7 +83,7 @@ export class PolicyIndexerApi {
 
     if (misses.length === 0) {
       return rawify(
-        this.mergePolicyIndexerRowss(
+        this.mergePolicyIndexerRows(
           cacheHits.filter((hit): hit is PolicyIndexerRows => hit !== null),
         ),
       );
@@ -104,7 +104,7 @@ export class PolicyIndexerApi {
       }),
     );
 
-    return rawify(this.mergePolicyIndexerRowss(policiesStates));
+    return rawify(this.mergePolicyIndexerRows(policiesStates));
   }
 
   /**
@@ -261,7 +261,7 @@ export class PolicyIndexerApi {
    *
    * `_meta` is deduplicated by chain, since every slice of a chain carries it.
    */
-  private mergePolicyIndexerRowss(
+  private mergePolicyIndexerRows(
     slices: ReadonlyArray<PolicyIndexerRows>,
   ): PolicyIndexerRows {
     const merged: PolicyIndexerRows = {
