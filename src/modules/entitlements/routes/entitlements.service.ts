@@ -130,6 +130,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
       // NULL: nothing has ever been relayed at a workspace's expense, so the
       // date protects no behaviour here and the plan decides from the start.
       sponsored_transactions: null,
+      // NULL: policies were never gated before now, so the plan decides from the start.
+      policies: null,
     };
   }
 
