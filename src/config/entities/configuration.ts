@@ -834,7 +834,7 @@ export default () => ({
       // How many Safes' delegates are read from the Transaction Service at
       // once.
       batchSize: Number.parseInt(
-        process.env.POLICY_DELEGATES_BATCH_SIZE ?? `${5}`,
+        process.env.POLICY_DELEGATES_BATCH_SIZE ?? `${1}`,
         10,
       ),
     },

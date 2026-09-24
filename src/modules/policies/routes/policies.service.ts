@@ -7,7 +7,7 @@ import {
 import chunk from 'lodash/chunk';
 import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
@@ -206,15 +206,14 @@ export class PoliciesService {
    * The addresses registered as delegates of the Safe - what a proposer grant
    * is.
    *
-   * Read at the Transaction Service's maximum page size: its default page would
-   * silently truncate a Safe with many proposers, and a policies page that
-   * under-reports who may propose is worse than none.
+   * Read at the Queue Service's max page size i.e 100. That limit is lower
+   * than the Transaction Service i.e. 200.
    */
   private async delegates(safe: SafeRef): Promise<Array<Delegate>> {
     const { results } = await this.delegatesV3Repository.getDelegates({
       chainId: safe.chainId,
       safeAddress: safe.address,
-      limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
     });
 
     return results;

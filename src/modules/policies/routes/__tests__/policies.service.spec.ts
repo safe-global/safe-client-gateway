@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
@@ -367,15 +367,13 @@ describe('PoliciesService', () => {
   });
 
   describe('proposers', () => {
-    it('should read the delegates api for the safe, at the max page size', async () => {
-      // The Transaction Service's default page would silently truncate a Safe
-      // with many proposers.
+    it('should read the delegates api for the safe, at the Queue Service max page size', async () => {
       await target.getSpaceActivePolicies(policyRequest);
 
       expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledWith({
         chainId: SEPOLIA,
         safeAddress,
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
       });
     });
 
