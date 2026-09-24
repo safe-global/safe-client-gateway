@@ -79,12 +79,12 @@ const mockSafeRepository = vi.mocked({
 const mockStakingRepository = vi.mocked({
   clearApi: vi.fn(),
   clearStakes: vi.fn(),
-} as unknown as MockedObject<StakingRepository>);
+} as MockedObject<StakingRepository>);
 
 const mockEarnRepository = vi.mocked({
   clearApi: vi.fn(),
   clearStakes: vi.fn(),
-} as unknown as MockedObject<EarnRepository>);
+} as MockedObject<EarnRepository>);
 
 const mockTransactionsRepository = vi.mocked({
   clearApi: vi.fn(),

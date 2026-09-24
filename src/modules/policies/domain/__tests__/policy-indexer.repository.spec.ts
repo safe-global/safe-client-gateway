@@ -19,7 +19,7 @@ import { rawify } from '@/validation/entities/raw.entity';
 const mockPolicyIndexerApi = {
   getState: vi.fn(),
   clearState: vi.fn(),
-} as unknown as MockedObject<PolicyIndexerApi>;
+} as MockedObject<PolicyIndexerApi>;
 
 const mockLoggingService = {
   info: vi.fn(),
