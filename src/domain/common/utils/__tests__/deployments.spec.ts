@@ -2,6 +2,8 @@
 
 import { getAddress } from 'viem';
 import {
+  getAllowanceModuleAbi,
+  getAllowanceModuleDeployments,
   getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
   getSafeL2SingletonVersions,
@@ -111,6 +113,57 @@ describe('deployments', () => {
           address: EXTENSIBLE_FALLBACK_HANDLER_150,
         }),
       ).toBe(false);
+    });
+  });
+
+  describe('getAllowanceModuleDeployments', () => {
+    it('should return the addresses of every published version deployed on the chain', () => {
+      // Gnosis Chain runs both v0.1.0 and v0.1.1 of the Allowance Module, at
+      // different addresses - the union this function exists to return.
+      const GNOSIS_CHAIN_ID = '100';
+
+      expect(
+        getAllowanceModuleDeployments({ chainId: GNOSIS_CHAIN_ID }),
+      ).toEqual(
+        expect.arrayContaining([
+          getAddress('0xAA46724893dedD72658219405185Fb0Fc91e091C'), // v0.1.1
+          getAddress('0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134'), // v0.1.0
+        ]),
+      );
+    });
+
+    it('should return only the versions actually deployed on the chain', () => {
+      // Sepolia only ever received v0.1.0 - v0.1.1 was never deployed there.
+      const SEPOLIA_CHAIN_ID = '11155111';
+
+      expect(
+        getAllowanceModuleDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+      ).toEqual([getAddress('0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134')]);
+    });
+
+    it('should return an empty array for a chain with no Allowance Module deployment', () => {
+      expect(getAllowanceModuleDeployments({ chainId: '999999999' })).toEqual(
+        [],
+      );
+    });
+  });
+
+  describe('getAllowanceModuleAbi', () => {
+    it('should include the functions the pending-policies decoder depends on', () => {
+      const abi = getAllowanceModuleAbi();
+      const functionNames = abi
+        .filter((item) => item.type === 'function')
+        .map((item) => item.name);
+
+      expect(functionNames).toEqual(
+        expect.arrayContaining([
+          'addDelegate',
+          'removeDelegate',
+          'setAllowance',
+          'resetAllowance',
+          'deleteAllowance',
+        ]),
+      );
     });
   });
 });

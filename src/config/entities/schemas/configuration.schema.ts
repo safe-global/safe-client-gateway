@@ -216,6 +216,7 @@ export const RootConfigurationSchema = z
       .min(0)
       .optional(),
     POLICY_BATCH_SIZE: z.coerce.number().int().min(1).optional(),
+    POLICIES_PENDING_BATCH_SIZE: z.coerce.number().int().min(1).optional(),
     // Safe billing service configuration
     SAFE_BILLING_SERVICE_BASE_URI: z.url().optional(),
     SAFE_BILLING_SERVICE_API_TOKEN: z.string().optional(),

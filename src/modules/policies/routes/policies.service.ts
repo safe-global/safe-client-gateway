@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import chunk from 'lodash/chunk';
+import {
+  SAFE_QUEUE_SERVICE_MAX_LIMIT,
+  SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+} from '@/domain/common/constants';
 import { batched } from '@/domain/common/utils/batch';
 import {
   type ILoggingService,
@@ -19,9 +23,11 @@ import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entit
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
 
@@ -44,6 +50,8 @@ type SpacePolicyRequest = {
 @Injectable()
 export class PoliciesService {
   private readonly batchSize: number;
+  private readonly pendingBatchSize: number;
+  private readonly safeQueueServiceEnabled: boolean;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -62,9 +70,17 @@ export class PoliciesService {
     private readonly loggingService: ILoggingService,
     private readonly spendingLimitMapper: SpendingLimitMapper,
     private readonly proposerMapper: ProposerMapper,
+    private readonly pendingSpendingLimitMapper: PendingSpendingLimitMapper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
+    this.pendingBatchSize = this.configurationService.getOrThrow<number>(
+      'policies.pending.batchSize',
+    );
+    this.safeQueueServiceEnabled =
+      this.configurationService.getOrThrow<boolean>(
+        'features.safeQueueService',
+      );
   }
 
   /**
@@ -77,6 +93,18 @@ export class PoliciesService {
     const spaceSafes = await this.spaceSafes(request);
 
     return await this.resolveActivePolicies(spaceSafes, request.types);
+  }
+
+  /**
+   * The spending-limit changes sitting unexecuted in the queue of every Safe of the
+   * Space, or the requested subset of them.
+   */
+  public async getSpacePendingPolicies(
+    request: SpacePolicyRequest,
+  ): Promise<Array<PendingPolicy>> {
+    const spaceSafes = await this.spaceSafes(request);
+
+    return await this.resolvePendingPolicies(spaceSafes, request.types);
   }
 
   /**
@@ -190,6 +218,63 @@ export class PoliciesService {
     }
 
     return policies;
+  }
+
+  /**
+   * The pending spending-limit changes of every Safe of {@link safes}.
+   *
+   * `spending-limit` is the only pending type detected today - a proposer grant is
+   * off-chain and immediate, so it never has a queued state.
+   */
+  private async resolvePendingPolicies(
+    safes: ReadonlyArray<SafeRef>,
+    types: ReadonlyArray<PolicyType>,
+  ): Promise<Array<PendingPolicy>> {
+    if (safes.length === 0 || !types.includes(PolicyType.SpendingLimit)) {
+      return [];
+    }
+
+    // The Queue Service has no `to` filter yet, so the full first page of the
+    // queue is always read and decoded in-process - filtering only the
+    // Transaction Service path would make coverage depend on
+    // FF_SAFE_QUEUE_SERVICE.
+    const queueLimit = this.safeQueueServiceEnabled
+      ? SAFE_QUEUE_SERVICE_MAX_LIMIT
+      : SAFE_TRANSACTION_SERVICE_MAX_LIMIT;
+
+    const policies: Array<PendingPolicy> = [];
+
+    for (const batch of chunk(safes, this.pendingBatchSize)) {
+      const batchPolicies = await Promise.all(
+        batch.map((safe) => this.pendingPoliciesForSafe(safe, queueLimit)),
+      );
+      policies.push(...batchPolicies.flat());
+    }
+
+    return policies;
+  }
+
+  /**
+   * The pending spending-limit changes found in one Safe's transaction queue.
+   */
+  private async pendingPoliciesForSafe(
+    safe: SafeRef,
+    queueLimit: number,
+  ): Promise<Array<PendingPolicy>> {
+    const fullSafe = await this.safeRepository.getSafe({
+      chainId: safe.chainId,
+      address: safe.address,
+    });
+    const queue = await this.safeRepository.getTransactionQueue({
+      chainId: safe.chainId,
+      safe: fullSafe,
+      limit: queueLimit,
+    });
+
+    return this.pendingSpendingLimitMapper.map({
+      safe,
+      transactions: queue.results,
+    });
   }
 
   /**

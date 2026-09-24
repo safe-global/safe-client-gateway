@@ -19,7 +19,10 @@ import {
   _SAFE_MIGRATION_DEPLOYMENTS,
   _SAFE_TO_L2_SETUP_DEPLOYMENTS,
 } from '@safe-global/safe-deployments/dist/deployments';
-import { getSafeWebAuthnSignerFactoryDeployment } from '@safe-global/safe-modules-deployments';
+import {
+  getAllowanceModuleDeployment,
+  getSafeWebAuthnSignerFactoryDeployment,
+} from '@safe-global/safe-modules-deployments';
 import { type Address, getAddress, type parseAbi } from 'viem';
 
 type Filter = {
@@ -54,6 +57,26 @@ export type SignerFactoryAbi = ReturnType<
     [
       'function createSigner(uint256 x, uint256 y, uint176 verifiers) returns (address signer)',
       'function getSigner(uint256 x, uint256 y, uint176 verifiers) view returns (address signer)',
+    ]
+  >
+>;
+
+/**
+ * Type-only declaration of the Allowance Module functions the pending-policies
+ * decoder depends on. Same rationale as {@link SignerFactoryAbi}: the runtime ABI
+ * comes from `@safe-global/safe-modules-deployments`, typed `any[]` upstream, so
+ * this self-declared shape is what gives viem's `AbiDecoder` a literal Abi to work
+ * with. Verified against the package's actual ABI at load time by
+ * {@link getAllowanceModuleAbi}.
+ */
+export type AllowanceModuleAbi = ReturnType<
+  typeof parseAbi<
+    [
+      'function addDelegate(address delegate)',
+      'function removeDelegate(address delegate, bool removeAllowances)',
+      'function setAllowance(address delegate, address token, uint96 allowanceAmount, uint16 resetTimeMin, uint32 resetBaseMin)',
+      'function resetAllowance(address delegate, address token)',
+      'function deleteAllowance(address delegate, address token)',
     ]
   >
 >;
@@ -397,16 +420,47 @@ const REQUIRED_SIGNER_FACTORY_FUNCTIONS = [
   { name: 'getSigner', inputs: ['uint256', 'uint256', 'uint176'] },
 ] as const;
 
+type AbiFunctionItem = {
+  type?: string;
+  name?: string;
+  inputs?: ReadonlyArray<{ type?: string }>;
+};
+
+/**
+ * Throws unless every entry of {@link required} has a matching function
+ * signature in {@link abi}. Shared by every "load an ABI from
+ * `@safe-global/safe-modules-deployments` and pin it to a self-declared type"
+ * helper in this file - the package types `Deployment.abi` as `any[]`, so this
+ * runtime check is what catches an upstream rename or removal that a type cast
+ * alone would miss.
+ */
+function assertAbiHasFunctions(args: {
+  abi: ReadonlyArray<AbiFunctionItem>;
+  required: ReadonlyArray<{ name: string; inputs: ReadonlyArray<string> }>;
+  contractLabel: string;
+}): void {
+  for (const required of args.required) {
+    const match = args.abi.find(
+      (item) => item.type === 'function' && item.name === required.name,
+    );
+    const inputTypes = match?.inputs?.map((i) => i.type) ?? [];
+    const matches =
+      inputTypes.length === required.inputs.length &&
+      inputTypes.every((t, idx) => t === required.inputs[idx]);
+    if (!matches) {
+      throw new Error(
+        `${args.contractLabel} ABI no longer matches the expected ${required.name}(${required.inputs.join(',')}) signature. The @safe-global/safe-modules-deployments package may have changed.`,
+      );
+    }
+  }
+}
+
 /**
  * Returns the SafeWebAuthnSignerFactory ABI as published by
  * `@safe-global/safe-modules-deployments`, pinned to
  * {@link SUPPORTED_SIGNER_FACTORY_VERSION}. Throws if the package is missing
  * the deployment or if its ABI no longer contains the function signatures
  * encoded in {@link SignerFactoryAbi}.
- *
- * The runtime check guards against silent drift: the package types
- * `Deployment.abi` as `any[]`, so the type cast can't catch upstream changes
- * by itself.
  */
 export function getSignerFactoryAbi(): SignerFactoryAbi {
   const deployment = getSafeWebAuthnSignerFactoryDeployment({
@@ -418,26 +472,87 @@ export function getSignerFactoryAbi(): SignerFactoryAbi {
     );
   }
 
-  type AbiFunctionItem = {
-    type?: string;
-    name?: string;
-    inputs?: ReadonlyArray<{ type?: string }>;
-  };
   const abi = deployment.abi as ReadonlyArray<AbiFunctionItem>;
-  for (const required of REQUIRED_SIGNER_FACTORY_FUNCTIONS) {
-    const match = abi.find(
-      (item) => item.type === 'function' && item.name === required.name,
-    );
-    const inputTypes = match?.inputs?.map((i) => i.type) ?? [];
-    const matches =
-      inputTypes.length === required.inputs.length &&
-      inputTypes.every((t, idx) => t === required.inputs[idx]);
-    if (!matches) {
-      throw new Error(
-        `SafeWebAuthnSignerFactory v${SUPPORTED_SIGNER_FACTORY_VERSION} ABI no longer matches the expected ${required.name}(${required.inputs.join(',')}) signature. The @safe-global/safe-modules-deployments package may have changed; update SignerFactoryAbi and SUPPORTED_SIGNER_FACTORY_VERSION accordingly.`,
-      );
-    }
-  }
+  assertAbiHasFunctions({
+    abi,
+    required: REQUIRED_SIGNER_FACTORY_FUNCTIONS,
+    contractLabel: `SafeWebAuthnSignerFactory v${SUPPORTED_SIGNER_FACTORY_VERSION}`,
+  });
 
   return abi as unknown as SignerFactoryAbi;
+}
+
+/**
+ * Published Allowance Module versions, latest first - mirrors the order
+ * `@safe-global/safe-modules-deployments` ships internally. The package exposes
+ * no "every version" query, so this list is hand-maintained; add to it when a
+ * new version is published upstream and should be treated as "known" here.
+ */
+const ALLOWANCE_MODULE_VERSIONS = ['0.1.1', '0.1.0'] as const;
+
+/**
+ * Returns every official Allowance Module address deployed on a chain, across
+ * every published version.
+ *
+ * Unlike {@link getSignerFactoryDeployments}, this does not pin to one version:
+ * the Allowance Module is not a same-address singleton, and a chain can run more
+ * than one version at once with independent storage (see
+ * `SpendingLimitPolicyData`), so "known" has to mean "any published version".
+ */
+export function getAllowanceModuleDeployments(args: {
+  chainId: string;
+}): Array<Address> {
+  const addresses: Array<Address> = [];
+  for (const version of ALLOWANCE_MODULE_VERSIONS) {
+    const deployment = getAllowanceModuleDeployment({
+      network: args.chainId,
+      version,
+    });
+    const address = deployment?.networkAddresses[args.chainId];
+    if (address) {
+      addresses.push(getAddress(address));
+    }
+  }
+  return addresses;
+}
+
+/**
+ * Function signatures the pending-policies decoder depends on. Verified at
+ * module load by {@link getAllowanceModuleAbi} so a future package release that
+ * drops/renames one of them fails fast instead of silently.
+ */
+const REQUIRED_ALLOWANCE_MODULE_FUNCTIONS = [
+  { name: 'addDelegate', inputs: ['address'] },
+  { name: 'removeDelegate', inputs: ['address', 'bool'] },
+  {
+    name: 'setAllowance',
+    inputs: ['address', 'address', 'uint96', 'uint16', 'uint32'],
+  },
+  { name: 'resetAllowance', inputs: ['address', 'address'] },
+  { name: 'deleteAllowance', inputs: ['address', 'address'] },
+] as const;
+
+/**
+ * Returns the Allowance Module ABI as published by
+ * `@safe-global/safe-modules-deployments`. Function selectors are determined
+ * solely by name and parameter types, which have been stable across every
+ * published version, so the latest released version's ABI is used to decode
+ * calls to any of them - there is no per-version decoder.
+ */
+export function getAllowanceModuleAbi(): AllowanceModuleAbi {
+  const deployment = getAllowanceModuleDeployment();
+  if (!deployment) {
+    throw new Error(
+      'Allowance Module deployment not found in @safe-global/safe-modules-deployments',
+    );
+  }
+
+  const abi = deployment.abi as ReadonlyArray<AbiFunctionItem>;
+  assertAbiHasFunctions({
+    abi,
+    required: REQUIRED_ALLOWANCE_MODULE_FUNCTIONS,
+    contractLabel: 'Allowance Module',
+  });
+
+  return abi as unknown as AllowanceModuleAbi;
 }
