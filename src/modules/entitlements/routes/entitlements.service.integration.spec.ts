@@ -107,6 +107,11 @@ const FEATURE_FIXTURES = [
     .with('freePeriod', SPONSORED_PERIOD_DAYS)
     .build(),
   featureBuilder()
+    .with('key', 'policies')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
+  featureBuilder()
     .with('key', 'swap_fee_tier')
     .with('type', FeatureType.Value)
     .with('freeEnabled', true)

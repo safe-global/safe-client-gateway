@@ -14,6 +14,7 @@ export const FEATURE_KEYS = [
   SAFE_SEATS_FEATURE_KEY,
   'copilot_scans',
   'sponsored_transactions',
+  'policies',
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];
