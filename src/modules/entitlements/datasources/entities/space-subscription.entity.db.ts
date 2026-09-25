@@ -56,6 +56,9 @@ export class SpaceSubscription implements DomainSpaceSubscription {
   @Column({ name: 'plan_name', type: 'varchar', length: 255, nullable: true })
   public readonly planName!: string | null;
 
+  @Column({ name: 'plan_code', type: 'varchar', length: 255, nullable: true })
+  public readonly planCode!: string | null;
+
   // Anchor for quota resets; advanced by renewal webhooks.
   @Column({
     name: 'current_period_start',

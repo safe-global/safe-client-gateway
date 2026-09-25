@@ -175,6 +175,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       event: args.event,
       featureTypeByKey,
       onWarning: (message) => this.loggingService.warn(message),
+      onError: (message) => this.loggingService.error(message),
     });
 
     if (eventSubscription !== null && eventAt !== null) {
@@ -258,6 +259,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       }),
       featureTypeByKey: args.featureTypeByKey,
       onWarning: (message) => this.loggingService.warn(message),
+      onError: (message) => this.loggingService.error(message),
     });
     return { observedEventAt, subscriptions };
   }
