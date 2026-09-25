@@ -221,16 +221,10 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.postConfirmation(args);
     }
 
-    await Promise.all([
-      this.clearMultisigTransaction({
-        chainId: args.chainId,
-        safeTransactionHash: args.safeTxHash,
-      }),
-      this.clearMultisigTransactions({
-        chainId: args.chainId,
-        safeAddress: transaction.safe,
-      }),
-    ]);
+    await this.clearMultisigTransaction({
+      chainId: args.chainId,
+      safeTransactionHash: args.safeTxHash,
+    });
   }
 
   async getModuleTransaction(args: {
@@ -980,46 +974,27 @@ export class SafeRepository implements ISafeRepository {
       transaction,
     });
 
-    let proposed: unknown;
     if (this.safeQueueEnabled) {
-      proposed = await this.safeQueueService.proposeTransaction({
+      return await this.safeQueueService.proposeTransaction({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         proposeTransactionDto: args.proposeTransactionDto,
       });
-    } else {
-      // The tx service has no notion of nested transactions: forwarding would
-      // store the parent without its child, and the queue service's
-      // conflict-on-either-hash means that parent could never gain the child
-      // later. Reject rather than silently dropping the child.
-      if (args.proposeTransactionDto.nestedTransaction) {
-        throw new HttpExceptionNoLog(
-          'Nested transactions are not supported',
-          HttpStatus.UNPROCESSABLE_ENTITY,
-        );
-      }
-      proposed = await transactionService.postMultisigTransaction({
-        address: args.safeAddress,
-        data: args.proposeTransactionDto,
-      });
     }
-
-    // Clear what the PENDING_MULTISIG_TRANSACTION webhook clears, so the change
-    // is visible immediately (and at all, where no webhook reaches the
-    // gateway): the transaction itself and the Safe's queue that `txQueuedTag`
-    // is read from. Each reused method settles all its cache layers before
-    // rejecting.
-    await Promise.all([
-      this.clearMultisigTransaction({
-        chainId: args.chainId,
-        safeTransactionHash: args.proposeTransactionDto.safeTxHash,
-      }),
-      this.clearMultisigTransactions({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      }),
-    ]);
-    return proposed;
+    // The tx service has no notion of nested transactions: forwarding would
+    // store the parent without its child, and the queue service's
+    // conflict-on-either-hash means that parent could never gain the child
+    // later. Reject rather than silently dropping the child.
+    if (args.proposeTransactionDto.nestedTransaction) {
+      throw new HttpExceptionNoLog(
+        'Nested transactions are not supported',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    return transactionService.postMultisigTransaction({
+      address: args.safeAddress,
+      data: args.proposeTransactionDto,
+    });
   }
 
   async getNonces(args: {
