@@ -51,18 +51,6 @@ on:
           do with the service being healthy.
         type: string
         required: true
-      moving_tag:
-        description: >-
-          Additionally push a MOVING tag (e.g. "staging"). Transitional only:
-          argocd-image-updater on the legacy devstaging Application watches
-          ghcr.io/safe-global/safe-client-gateway:staging with
-          `update-strategy: digest`, and it is the only thing deploying staging
-          until the new ArgoCD Application is applied. Without this, swapping CI
-          would leave staging with no deploy path at all.
-          Drop it once devstaging renders from safe-client-gateway-infra-tf.
-        type: string
-        default: ""
-
       also_tag_latest:
         description: >-
           Also push a :latest tag alongside the immutable one. Production
@@ -113,16 +101,13 @@ jobs:
           DOCKER: ${{ inputs.docker_image }}
           TAG: ${{ inputs.image_tag }}
           LATEST: ${{ inputs.also_tag_latest }}
-          MOVING: ${{ inputs.moving_tag }}
         run: |
           set -euo pipefail
           TAGS="${GHCR}:${TAG}"
           [ "$LATEST" = "true" ] && TAGS="${TAGS}"$'\n'"${GHCR}:latest"
-          [ -n "$MOVING" ] && TAGS="${TAGS}"$'\n'"${GHCR}:${MOVING}"
           if [ -n "$DOCKER" ]; then
             TAGS="${TAGS}"$'\n'"${DOCKER}:${TAG}"
             [ "$LATEST" = "true" ] && TAGS="${TAGS}"$'\n'"${DOCKER}:latest"
-            [ -n "$MOVING" ] && TAGS="${TAGS}"$'\n'"${DOCKER}:${MOVING}"
           fi
           {
             echo "tags<<EOF"
