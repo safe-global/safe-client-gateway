@@ -469,9 +469,9 @@ describe('Space Policies Controller', () => {
         .expect([]);
     });
 
-    it('should fail when the delegates api is unavailable', async () => {
-      // Atomic, like the rest of the page: a Safe whose proposers could not be
-      // read must not report as having none.
+    it('should omit the proposer policy for a safe whose delegates api is unavailable', async () => {
+      // Tolerate partial failure: a Safe whose proposers could not be read
+      // is skipped rather than failing the whole request.
       mockUpstream({ delegatesUnavailable: true });
       mockIndexer(rawPolicyIndexerResponse({}));
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -482,7 +482,8 @@ describe('Space Policies Controller', () => {
         .get(`/v1/spaces/${spaceId}/policies/active`)
         .query({ types: policyTypes })
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(503);
+        .expect(200)
+        .expect([]);
     });
 
     it('should report a reset ahead of now', async () => {
