@@ -53,12 +53,30 @@ export type SpendingLimitAllowance = {
 };
 
 /**
+ * `proposer`: who may propose transactions on the Safe without being able to
+ * sign or execute one. Nothing on chain enforces it - the grant is a delegate
+ * registration held by the Transaction Service.
+ *
+ * One policy per Safe, built from the delegates API's registrations.
+ */
+export type ProposerPolicyData = {
+  proposers: Array<{
+    proposer: Address;
+    /**
+     * The owners who granted it, each with the label they gave. The label is
+     * stored per `(delegate, delegator)` row and two owners can label the same
+     * proposer differently, so it cannot be flattened to one.
+     */
+    delegatedBy: Array<{ delegator: Address; label: string }>;
+  }>;
+};
+
+/**
  * The configuration a policy reports, discriminated by the item's `type`.
  *
- * Only the allowance module's spending limits are reported today; the remaining
- * policy types join the union as the code reading them lands.
+ * The remaining policy types join the union as the code reading them lands.
  */
-export type ActivePolicyData = SpendingLimitPolicyData;
+export type ActivePolicyData = SpendingLimitPolicyData | ProposerPolicyData;
 
 /**
  * A policy in effect on a Safe.

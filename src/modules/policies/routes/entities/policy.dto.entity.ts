@@ -4,6 +4,7 @@ import type { Address } from 'viem';
 import type {
   ActivePolicy,
   ActivePolicyData,
+  ProposerPolicyData,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '@/modules/policies/domain/entities/active-policy.entity';
@@ -132,8 +133,38 @@ export class SpendingLimitPolicyDataDto implements SpendingLimitPolicyData {
   public readonly spenders!: SpendingLimitPolicyData['spenders'];
 }
 
+export class ProposerGrantDto {
+  @ApiProperty({ description: 'The owner that granted the proposer' })
+  public readonly delegator!: Address;
+  @ApiProperty({
+    description:
+      'The label this owner gave the proposer; empty when unlabelled',
+  })
+  public readonly label!: string;
+}
+
+export class ProposerDto {
+  @ApiProperty({ description: 'The address allowed to propose transactions' })
+  public readonly proposer!: Address;
+  @ApiProperty({
+    type: ProposerGrantDto,
+    isArray: true,
+    description:
+      'The owners that granted it, each with the label they gave. The label is stored per grant, so two owners can label the same proposer differently',
+  })
+  public readonly delegatedBy!: ProposerPolicyData['proposers'][number]['delegatedBy'];
+}
+
+export class ProposerPolicyDataDto implements ProposerPolicyData {
+  @ApiProperty({ type: ProposerDto, isArray: true })
+  public readonly proposers!: ProposerPolicyData['proposers'];
+}
+
 const PolicyDataSchema = {
-  oneOf: [{ $ref: getSchemaPath(SpendingLimitPolicyDataDto) }],
+  oneOf: [
+    { $ref: getSchemaPath(SpendingLimitPolicyDataDto) },
+    { $ref: getSchemaPath(ProposerPolicyDataDto) },
+  ],
 };
 
 @ApiExtraModels(
@@ -141,6 +172,7 @@ const PolicyDataSchema = {
   GuardEnforcementDto,
   OffChainEnforcementDto,
   SpendingLimitPolicyDataDto,
+  ProposerPolicyDataDto,
 )
 export class ActivePolicyDto implements ActivePolicy {
   @ApiProperty({ enum: Object.values(PolicyType) })

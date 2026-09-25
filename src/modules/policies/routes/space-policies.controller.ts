@@ -20,7 +20,12 @@ import {
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import { ActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
+import {
+  type PolicyTypes,
+  PolicyTypesSchema,
+} from '@/modules/policies/routes/entities/schemas/policy-types.schema';
 import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { Auth } from '@/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
@@ -52,7 +57,7 @@ export class SpacePoliciesController {
   @ApiOperation({
     summary: 'Get the active policies on Safes in a Space',
     description:
-      'Returns the policies of every Safe in the Space. All of them load or the request fails.',
+      'Returns the policies of every Safe in the Space. A Safe whose spending-limit or proposer data could not be read is omitted from the corresponding policies.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -67,10 +72,19 @@ export class SpacePoliciesController {
       "Narrow the read to a subset of the Space's Safes, comma-separated as `{chainId}:{safeAddress}`",
     example: '11155111:0x0000000000000000000000000000000000000000',
   })
+  @ApiQuery({
+    name: 'types',
+    required: true,
+    isArray: true,
+    enum: Object.values(PolicyType),
+    description: 'The policy types to report, comma-separated.',
+    example: 'spending-limit,proposer',
+  })
   @ApiOkResponse({ type: ActivePolicyDto, isArray: true })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
-    description: 'Invalid CAIP-10 address, or a Safe outside this space',
+    description:
+      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
   })
   @ApiForbiddenResponse({
     description:
@@ -83,12 +97,15 @@ export class SpacePoliciesController {
   public async getActivePolicies(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
+    @Query('types', new ValidationPipe(PolicyTypesSchema))
+    types: PolicyTypes,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
   ): Promise<Array<ActivePolicyDto>> {
     return await this.policiesService.getSpaceActivePolicies({
       spaceId,
       safes,
+      types,
       authPayload,
     });
   }
