@@ -20,6 +20,7 @@ import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-tr
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
+import { getLastModified } from '@/modules/safe/domain/helpers/last-modified.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
@@ -256,15 +257,25 @@ export class SafesService {
     chainId: string,
     safe: Safe,
   ): Promise<Date | null> {
-    const lastQueuedTransaction = await this.safeRepository
+    const queue = await this.safeRepository
       .getTransactionQueueByModified({
         chainId,
         safe,
         limit: 1,
       })
-      .catch(() => null);
+      .catch((error) => {
+        // A null tag is indistinguishable from an empty queue for the client,
+        // so leave a trace of why the queue could not be read.
+        this.loggingService.warn(
+          `Error while getting the queued transactions tag: ${asError(error)} `,
+        );
+        return null;
+      });
 
-    return lastQueuedTransaction?.results[0]?.modified ?? null;
+    const lastQueuedTransaction = queue?.results[0];
+    return lastQueuedTransaction
+      ? getLastModified(lastQueuedTransaction)
+      : null;
   }
 
   /**

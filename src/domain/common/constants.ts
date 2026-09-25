@@ -13,6 +13,11 @@ export const DB_MAX_SAFE_INTEGER = 2 ** 31 - 1;
 export const SAFE_TRANSACTION_SERVICE_MAX_LIMIT = 200;
 
 /**
+ * The default pagination limit on the Safe Queue Service.
+ */
+export const SAFE_QUEUE_SERVICE_MAX_LIMIT = 100;
+
+/**
  * Matches a canonical UUID (8-4-4-4-12 hex), case-insensitive.
  */
 export const UUID_REGEX =
