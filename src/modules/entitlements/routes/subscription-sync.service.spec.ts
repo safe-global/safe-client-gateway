@@ -92,7 +92,10 @@ describe('SubscriptionSyncService', () => {
         customer: customerBuilder.build(),
         // An active payload without a package is not a complete snapshot, so
         // the baseline carries one to exercise the direct-payload path.
-        metadata: { FEATURE_SAFE_SEATS: '10' },
+        metadata: {
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+        },
         ...overrides?.data,
       },
     };
@@ -440,7 +443,11 @@ describe('SubscriptionSyncService', () => {
       data: {
         currentPeriodStart: 1_786_460_184,
         currentPeriodEnd: 1_789_138_584,
-        metadata: { planName: 'Business', FEATURE_SAFE_SEATS: '10' },
+        metadata: {
+          planName: 'Business',
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+        },
       },
     });
 
@@ -460,6 +467,7 @@ describe('SubscriptionSyncService', () => {
         status: 'active',
         planId: event.data?.planId,
         planName: 'Business',
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date(1_786_460_184_000),
         currentPeriodEnd: new Date(1_789_138_584_000),
         entitlements: [
@@ -472,6 +480,27 @@ describe('SubscriptionSyncService', () => {
         ],
       },
     });
+  });
+
+  it('logs an error when the subscription carries no plan code', async () => {
+    const event = webhookEvent({
+      type: 'customer.subscription.created',
+      data: {
+        currentPeriodStart: 1_786_460_184,
+        metadata: { FEATURE_SAFE_SEATS: '10' },
+      },
+    });
+
+    await target.handleWebhook(event);
+
+    expect(loggingService.error).toHaveBeenCalledExactlyOnceWith(
+      `Subscription ${event.data?.subscriptionId} carries no planCode in its metadata`,
+    );
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription: expect.objectContaining({ planCode: null }),
+      }),
+    );
   });
 
   it.each([

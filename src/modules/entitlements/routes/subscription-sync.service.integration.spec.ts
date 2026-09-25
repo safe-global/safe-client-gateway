@@ -229,6 +229,7 @@ describe('Billing webhook → entitlements materialization', () => {
       .with('currentPeriodEnd', PERIOD_END)
       .with('plan', subscriptionPlanBuilder().build())
       .with('metadata', {
+        planCode: 'BUS-10-A',
         FEATURE_SAFE_SEATS: '10',
         FEATURE_SECURITY_HUB: 'true',
       })
@@ -258,6 +259,7 @@ describe('Billing webhook → entitlements materialization', () => {
       status: 'active',
       planId: subscription.plan.id,
       planName: subscription.plan.name,
+      planCode: 'BUS-10-A',
       // Epoch seconds converted to timestamptz on the way in.
       currentPeriodStart: new Date(PERIOD_START * 1_000),
       currentPeriodEnd: new Date(PERIOD_END * 1_000),
@@ -294,6 +296,7 @@ describe('Billing webhook → entitlements materialization', () => {
             currentPeriodEnd: PERIOD_END,
             metadata: {
               planName: 'Business',
+              planCode: 'BUS-10-A',
               FEATURE_SAFE_SEATS: '10',
               FEATURE_SECURITY_HUB: 'true',
             },
@@ -316,6 +319,7 @@ describe('Billing webhook → entitlements materialization', () => {
       status: 'active',
       planId,
       planName: 'Business',
+      planCode: 'BUS-10-A',
       currentPeriodStart: new Date(PERIOD_START * 1_000),
       currentPeriodEnd: new Date(PERIOD_END * 1_000),
     });
@@ -332,6 +336,58 @@ describe('Billing webhook → entitlements materialization', () => {
         { key: 'security_hub', enabled: true, quota: null, value: null },
       ]),
     );
+  });
+
+  // A plan change keeps the subscription id: upstream swaps the price and the
+  // metadata in place, so the row is updated rather than a new one added.
+  it('updates the plan code when a plan change arrives for the same subscription', async () => {
+    const { spaceId, spaceUuid } = await seedSpace();
+    const subscriptionId = faker.string.uuid();
+
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(
+        webhookEventFor(spaceUuid, {
+          type: 'customer.subscription.created',
+          subscriptionId,
+          created: UPDATED_AT,
+          data: {
+            planId: faker.string.alphanumeric(24),
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            metadata: { planCode: 'BUS-10-A', FEATURE_SAFE_SEATS: '10' },
+          },
+        }),
+      )
+      .expect(202);
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(
+        webhookEventFor(spaceUuid, {
+          type: 'customer.subscription.updated',
+          subscriptionId,
+          created: UPDATED_AT + 10,
+          data: {
+            planId: faker.string.alphanumeric(24),
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            metadata: { planCode: 'BUS-20-A', FEATURE_SAFE_SEATS: '20' },
+          },
+        }),
+      )
+      .expect(202);
+
+    const subscriptionRepo =
+      await postgresDatabaseService.getRepository(SpaceSubscription);
+    const rows = await subscriptionRepo.find({
+      where: { space: { id: spaceId } },
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      upstreamSubscriptionId: subscriptionId,
+      planCode: 'BUS-20-A',
+    });
   });
 
   // The whole point of the ordering mark: a delivery order that contradicts

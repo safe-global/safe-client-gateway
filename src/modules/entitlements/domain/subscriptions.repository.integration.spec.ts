@@ -149,6 +149,7 @@ describe('SubscriptionsRepository', () => {
         status,
         planId,
         planName: nameBuilder(),
+        planCode: faker.string.alphanumeric(8),
         currentPeriodStart: null,
         currentPeriodEnd: null,
         lastEventAt: null,

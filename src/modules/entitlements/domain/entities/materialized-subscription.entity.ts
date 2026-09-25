@@ -28,6 +28,7 @@ export const MaterializedSubscriptionSchema = z.object({
   status: SubscriptionStatusSchema,
   planId: z.string(),
   planName: z.string().nullable(),
+  planCode: z.string().nullable(),
   currentPeriodStart: z.date().nullable(),
   currentPeriodEnd: z.date().nullable(),
   entitlements: z.array(ParsedEntitlementSchema).nullable(),
