@@ -4,9 +4,9 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import chunk from 'lodash/chunk';
 import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import chunk from 'lodash/chunk';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
