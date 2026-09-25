@@ -57,9 +57,6 @@ jobs:
       # APPLICATION_VERSION, /about reports it, and _deploy.yml polls that
       # endpoint until it matches.
       version: ${{ needs.prepare.outputs.tag }}
-      # Also published as safeglobal/safe-client-gateway-nest:staging, which is
-      # public. Nothing in the cluster reads it.
-      moving_tag: staging
     secrets:
       docker_user: ${{ secrets.DOCKER_USER }}
       docker_password: ${{ secrets.DOCKER_PASSWORD }}
@@ -74,9 +71,9 @@ jobs:
       values_file: apps/safe-client-gateway/values-staging.yaml
       image_tag_path: .client.imageTag
       health_url: https://safe-client.staging.5afe.dev/health/ready
-      # If set, the path is /about — /v1/about 404s: AboutController declares
-      # no version and app.provider.ts enables URI versioning with no default.
-      version_check_url: ""
+      # /about, not /v1/about: AboutController declares no version and
+      # app.provider.ts enables URI versioning with no default, so /v1/about 404s.
+      version_check_url: https://safe-client.staging.5afe.dev/about
       # Staging gets the smoke test only, not the full production gate (no
       # ArgoCD wait, no rollback).
       health_gate: false
