@@ -48,6 +48,7 @@ export class ZerionPositionsApi implements IPositionsApi {
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly fiatCodes: Array<string>;
+  private readonly testnetsEnabled: boolean;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -71,6 +72,9 @@ export class ZerionPositionsApi implements IPositionsApi {
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
     );
+    this.testnetsEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.zerionTestnets',
+    );
   }
 
   async getPositions(args: {
@@ -85,6 +89,10 @@ export class ZerionPositionsApi implements IPositionsApi {
         `Unsupported currency code: ${args.fiatCode}`,
         400,
       );
+    }
+
+    if (args.chain.isTestnet && !this.testnetsEnabled) {
+      return rawify([]);
     }
 
     const cacheDir = CacheRouter.getZerionPositionsCacheDir({

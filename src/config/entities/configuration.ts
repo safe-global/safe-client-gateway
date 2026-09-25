@@ -425,6 +425,10 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
     zerion: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
+    // Zerion has no fiat prices for testnet assets, so testnets are served by
+    // the balances provider unless this is explicitly turned on.
+    zerionTestnets:
+      process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',

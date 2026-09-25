@@ -67,6 +67,7 @@ describe('ZerionPortfolioApi', () => {
       'balances.providers.zerion.currencies',
       supportedFiatCodes,
     );
+    fakeConfigurationService.set('features.zerionTestnets', false);
 
     service = new ZerionPortfolioApi(
       mockNetworkService,
@@ -79,6 +80,23 @@ describe('ZerionPortfolioApi', () => {
   });
 
   describe('getPortfolio', () => {
+    it('returns an empty portfolio and calls no upstream for testnet chains', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const portfolio = await service.getPortfolio({
+        address,
+        fiatCode: 'USD',
+        isTestnet: true,
+      });
+
+      expect(portfolio).toMatchObject({
+        totalBalanceFiat: '0',
+        tokenBalances: [],
+        positionBalances: [],
+      });
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
+    });
+
     it.each([true, false])(
       'should log portfolio request failures with trusted=%s',
       async (trusted) => {
