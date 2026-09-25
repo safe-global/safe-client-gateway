@@ -7,26 +7,9 @@
 # No manual steps. workflow_dispatch allows a staging deploy without a code
 # commit, for soak testing and hotfix verification.
 #
-# This replaces ci.yml's `docker-publish-staging` + `autodeploy` jobs.
-#
-# The image tag is immutable. ci.yml only ever pushed the moving `:staging` tag,
-# so `/about` reported version "main" for every build ever made and no tag could
-# be pinned or rolled back. Each build now gets main-<short-sha>.
-#
-# Since the 2026-09-25 cutover, `deploy-staging` is the ONLY path to staging:
-# the devstaging Application and argocd-image-updater were retired, and the
-# ArgoCD Application in safe-client-gateway-infra-tf renders `client.imageTag`
-# straight from the values file this job bumps. Two transitional pieces are
-# still here on purpose, each waiting on its own ticket:
-#
-#   * `moving_tag: staging` (WA-3428). Nothing in the cluster consumes it any
-#     more, but _build-image.yml publishes a moving tag to BOTH registries, and
-#     the Docker Hub one is public. It stays until the external-consumer
-#     inventory says who, if anyone, still pulls it.
-#   * `version_check_url: ""` (WA-3629). The poll runs after the deploy PR is
-#     merged, and that merge currently fails, so switching the gate on would
-#     change nothing. Turn it on once deploys merge and the timeout can be
-#     sized against a real rollout.
+# `deploy-staging` is the only path to staging: the ArgoCD Application in
+# safe-client-gateway-infra-tf renders `client.imageTag` from the values file
+# that job bumps.
 # -----------------------------------------------------------------------------
 name: Staging
 
@@ -74,12 +57,8 @@ jobs:
       # APPLICATION_VERSION, /about reports it, and _deploy.yml polls that
       # endpoint until it matches.
       version: ${{ needs.prepare.outputs.tag }}
-      # Transitional, and no longer consumed by anything in the cluster:
-      # argocd-image-updater was retired at the cutover. It stays only because
-      # _build-image.yml publishes the moving tag to both registries and the
-      # Docker Hub one is public — dropping it would stop publishing
-      # safeglobal/safe-client-gateway-nest:staging too. Remove once WA-3428
-      # establishes whether anyone outside still pulls that tag.
+      # Also published as safeglobal/safe-client-gateway-nest:staging, which is
+      # public. Nothing in the cluster reads it.
       moving_tag: staging
     secrets:
       docker_user: ${{ secrets.DOCKER_USER }}
@@ -95,25 +74,8 @@ jobs:
       values_file: apps/safe-client-gateway/values-staging.yaml
       image_tag_path: .client.imageTag
       health_url: https://safe-client.staging.5afe.dev/health/ready
-      # The version poll stays OFF until the new ArgoCD Application is applied,
-      # and is switched on in the cutover PR. Two reasons, both about honesty:
-      #
-      #   * It would not be gating this job's own work. Until the cutover, the
-      #     tag bump above is inert and staging rolls because image-updater sees
-      #     the :staging tag. A step named "Wait for version rollout", sitting
-      #     right after the bump, would be reporting on a deploy it did not do.
-      #   * Its budget is 10 min (40 x 15s) and unmeasured. The HPA floor is 2
-      #     replicas, readinessProbe runs every 30s with no initialDelay, and
-      #     the app runs TypeORM migrations at boot — add image-updater's poll
-      #     and ArgoCD's sync and a realistic rollout is 3-8 min. A red job on
-      #     every merge to main, for a reason unrelated to the merge, costs more
-      #     trust than the check is worth.
-      #
-      # At cutover: set this to https://safe-client.staging.5afe.dev/about — the
-      # path is /about, NOT /v1/about, because app.provider.ts enables URI
-      # versioning with no defaultVersion and AboutController declares no
-      # version, so the route is registered unversioned and /v1/about 404s.
-      # Size the timeout from the first few real rollouts before relying on it.
+      # If set, the path is /about — /v1/about 404s: AboutController declares
+      # no version and app.provider.ts enables URI versioning with no default.
       version_check_url: ""
       # Staging gets the smoke test only, not the full production gate (no
       # ArgoCD wait, no rollback).
