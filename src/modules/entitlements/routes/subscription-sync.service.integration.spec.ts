@@ -343,6 +343,8 @@ describe('Billing webhook → entitlements materialization', () => {
   it('updates the plan code when a plan change arrives for the same subscription', async () => {
     const { spaceId, spaceUuid } = await seedSpace();
     const subscriptionId = faker.string.uuid();
+    const initialPlanCode = 'BUS-10-A';
+    const updatedPlanCode = 'BUS-20-A';
 
     await request(app.getHttpServer())
       .post(WEBHOOK_PATH)
@@ -355,7 +357,7 @@ describe('Billing webhook → entitlements materialization', () => {
             planId: faker.string.alphanumeric(24),
             currentPeriodStart: PERIOD_START,
             currentPeriodEnd: PERIOD_END,
-            metadata: { planCode: 'BUS-10-A', FEATURE_SAFE_SEATS: '10' },
+            metadata: { planCode: initialPlanCode, FEATURE_SAFE_SEATS: '10' },
           },
         }),
       )
@@ -371,7 +373,7 @@ describe('Billing webhook → entitlements materialization', () => {
             planId: faker.string.alphanumeric(24),
             currentPeriodStart: PERIOD_START,
             currentPeriodEnd: PERIOD_END,
-            metadata: { planCode: 'BUS-20-A', FEATURE_SAFE_SEATS: '20' },
+            metadata: { planCode: updatedPlanCode, FEATURE_SAFE_SEATS: '20' },
           },
         }),
       )
@@ -386,7 +388,7 @@ describe('Billing webhook → entitlements materialization', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       upstreamSubscriptionId: subscriptionId,
-      planCode: 'BUS-20-A',
+      planCode: updatedPlanCode,
     });
   });
 
