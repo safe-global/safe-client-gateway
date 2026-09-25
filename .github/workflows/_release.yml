@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# REUSABLE: Automated release via release-please (replaces manual release.yml)
+# =============================================================================
+# Runs on every push to main. release-please maintains ONE rolling "Release PR"
+# whose version + CHANGELOG are derived from Conventional Commits. Merging that
+# PR tags the commit and publishes a GitHub Release.
+#
+# CRITICAL — the release is created with a GitHub App token, NOT GITHUB_TOKEN:
+# a release created by GITHUB_TOKEN does NOT emit a `release: published` event
+# (GitHub loop-prevention), so production.yml would never fire. The App token
+# makes the event propagate → fully event-driven prod deploy, zero manual steps.
+# -----------------------------------------------------------------------------
+name: _release
+
+on:
+  workflow_call:
+    inputs:
+      release_type:
+        description: release-please release type (node for this repo).
+        type: string
+        default: node
+      auto_merge_release:
+        description: >-
+          Auto-merge the Release PR so cutting a release (and the prod deploy it
+          triggers) needs no second human action. Requires the CI GitHub App to
+          be a review-bypass actor on main for its own PRs (see CICD-IMPLEMENTATION.md).
+          Set false to make merging the Release PR the deliberate release gate.
+        type: boolean
+        default: true
+    secrets:
+      app_id:
+        description: GitHub App ID (App installed on this repo, contents+PRs write).
+        required: true
+      app_private_key:
+        description: GitHub App private key (PEM).
+        required: true
+    outputs:
+      release_created:
+        description: "'true' when a release was just published (string!)."
+        value: ${{ jobs.release-please.outputs.release_created }}
+      tag_name:
+        value: ${{ jobs.release-please.outputs.tag_name }}
+      version:
+        value: ${{ jobs.release-please.outputs.version }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          app-id: ${{ secrets.app_id }}
+          private-key: ${{ secrets.app_private_key }}
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          release-type: ${{ inputs.release_type }}
+          token: ${{ steps.app-token.outputs.token }}
+
+      # When a Release PR is (re)opened, turn on auto-merge so it merges itself
+      # once CI is green — no human needed. The merge publishes the Release,
+      # which fires production.yml. Feature PRs still require their human review.
+      - name: Enable auto-merge on the Release PR
+        if: ${{ inputs.auto_merge_release && steps.release.outputs.prs_created == 'true' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_JSON: ${{ steps.release.outputs.pr }}
+        run: |
+          set -euo pipefail
+          PR_NUMBER=$(echo "$PR_JSON" | jq -r '.number')
+          gh pr merge --auto --squash "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"
+
+      # Self-healing safety-net for the recurring "stuck Release PR" problem.
+      # This repo locks PRs on merge (org-wide policy), so after publishing a
+      # Release, release-please's attempt to COMMENT on the just-merged Release PR
+      # fails ("issue is locked") and it aborts BEFORE swapping that PR's label
+      # 'autorelease: pending' -> 'autorelease: tagged'. Left pending, the NEXT run
+      # retries creating the already-published release and the whole job FAILS —
+      # which is exactly why a fix gated on release success is useless: it never
+      # runs (the failure happens first). So this step runs ALWAYS, independent of
+      # release-please's outcome: it finds every MERGED Release PR still on
+      # 'autorelease: pending' whose release tag ALREADY EXISTS and flips it to
+      # 'tagged'. Editing labels is allowed on a locked PR (only commenting is
+      # blocked). Idempotent; genuinely unreleased PRs are left untouched.
+      - name: Heal stuck Release PR labels (locked-PR workaround)
+        if: ${{ !cancelled() && steps.app-token.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          gh pr list --repo "${GITHUB_REPOSITORY}" --state merged \
+            --label "autorelease: pending" --json number,title \
+            --jq '.[] | "\(.number)\t\(.title)"' | while IFS=$'\t' read -r pr title; do
+            version="${title##*release }" # "chore(main): release X.Y.Z" -> "X.Y.Z"
+            if gh release view "v${version}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              echo "Release v${version} exists — flipping PR #${pr}: 'pending' -> 'tagged'"
+              gh pr edit "$pr" --repo "${GITHUB_REPOSITORY}" \
+                --remove-label "autorelease: pending" \
+                --add-label "autorelease: tagged"
+            else
+              echo "Release v${version} not yet published — leaving PR #${pr} pending."
+            fi
+          done
