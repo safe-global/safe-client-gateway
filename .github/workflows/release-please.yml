@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# CALLER: release-please → automated release PR + GitHub Release
+# =============================================================================
+# Gated on a SUCCESSFUL staging deploy: runs only after the Staging workflow
+# (triggered by the same push to main) completes green. Staging validates the
+# exact source before we cut a release, so we never promote to production
+# something staging rejected.
+#
+# Note: a workflow_run job checks out the default-branch HEAD at trigger time,
+# not the exact SHA staging validated. If main advances between staging turning
+# green and this firing, release-please runs against the newer commit. Mostly
+# self-correcting — Staging uses cancel-in-progress, so a newer push cancels the
+# in-flight staging and must earn its own green run — but the guarantee is
+# strict only while main does not advance in that window.
+#
+# The release MUST be created with the App token: a release created by
+# GITHUB_TOKEN does not emit `release: published` (GitHub loop-prevention), so
+# production.yml would never fire. linear-release.yml depends on that event too.
+# -----------------------------------------------------------------------------
+name: Release Please
+
+on:
+  workflow_run:
+    workflows: ["Staging"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    # Only when the push-triggered staging deploy passed. Manual staging
+    # dispatches don't cut releases.
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' }}
+    uses: ./.github/workflows/_release.yml
+    with:
+      release_type: node
+      # Manual production gate: the Release PR is NOT auto-merged. Merging it is
+      # the "promote to production" decision.
+      auto_merge_release: false
+    secrets:
+      app_id: ${{ secrets.CI_APP_ID }}
+      app_private_key: ${{ secrets.CI_APP_PRIVATE_KEY }}

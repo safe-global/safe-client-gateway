@@ -2,6 +2,7 @@
   "name": "safe-client-gateway",
   "description": "",
   "private": true,
+  "version": "1.125.0",
   "license": "MIT",
   "scripts": {
     "build": "yarn generate-abis && nest build",
