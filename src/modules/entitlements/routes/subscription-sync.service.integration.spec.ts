@@ -390,6 +390,49 @@ describe('Billing webhook → entitlements materialization', () => {
     });
   });
 
+  // A missing code is logged, not fatal: the subscription and its package are
+  // still written, only with the code unset.
+  it('stores a subscription without a plan code, with the code unset', async () => {
+    const { spaceId, spaceUuid } = await seedSpace();
+    const subscriptionId = faker.string.uuid();
+
+    await request(app.getHttpServer())
+      .post(WEBHOOK_PATH)
+      .send(
+        webhookEventFor(spaceUuid, {
+          type: 'customer.subscription.created',
+          subscriptionId,
+          data: {
+            planId: faker.string.alphanumeric(24),
+            currentPeriodStart: PERIOD_START,
+            currentPeriodEnd: PERIOD_END,
+            metadata: { FEATURE_SAFE_SEATS: '10' },
+          },
+        }),
+      )
+      .expect(202);
+
+    const subscriptionRepo =
+      await postgresDatabaseService.getRepository(SpaceSubscription);
+    const rows = await subscriptionRepo.find({
+      where: { space: { id: spaceId } },
+      relations: { entitlements: { feature: true } },
+    });
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      upstreamSubscriptionId: subscriptionId,
+      status: 'active',
+      planCode: null,
+    });
+    expect(
+      rows[0].entitlements?.map((entitlement) => ({
+        key: entitlement.feature.key,
+        quota: entitlement.quota,
+      })),
+    ).toStrictEqual([{ key: 'safe_seats', quota: 10 }]);
+  });
+
   // The whole point of the ordering mark: a delivery order that contradicts
   // event order must not resurrect a deleted subscription.
   it('does not let an update delivered after a deletion reactivate the subscription', async () => {
