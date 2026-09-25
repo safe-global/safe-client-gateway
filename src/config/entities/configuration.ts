@@ -830,16 +830,9 @@ export default () => ({
     indexer: {
       baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
     },
-    // How many Safes' delegates, or enabled modules, are read from the
-    // Transaction Service at once.
+    // How many Safes' delegates, enabled modules, or transaction queues are
+    // read at once.
     batchSize: Number.parseInt(process.env.POLICY_BATCH_SIZE ?? `${1}`, 10),
-    pending: {
-      // How many Safes' queues are read and decoded at once.
-      batchSize: Number.parseInt(
-        process.env.POLICIES_PENDING_BATCH_SIZE ?? `${1}`,
-        10,
-      ),
-    },
   },
   safeDataDecoder: {
     baseUri:

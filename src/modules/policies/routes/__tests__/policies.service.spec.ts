@@ -116,14 +116,10 @@ describe('PoliciesService', () => {
    */
   function policiesService(
     size: number,
-    args?: { pendingBatchSize?: number; safeQueueServiceEnabled?: boolean },
+    args?: { safeQueueServiceEnabled?: boolean },
   ): PoliciesService {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('policies.batchSize', size);
-    fakeConfigurationService.set(
-      'policies.pending.batchSize',
-      args?.pendingBatchSize ?? size,
-    );
     fakeConfigurationService.set(
       'features.safeQueueService',
       args?.safeQueueServiceEnabled ?? false,
@@ -803,7 +799,7 @@ describe('PoliciesService', () => {
       );
     });
 
-    it('should read no more safes at once than the pending batch size', async () => {
+    it('should read no more safes at once than the batch size', async () => {
       const safes = Array.from({ length: 7 }, () =>
         getAddress(faker.finance.ethereumAddress()),
       );
@@ -819,7 +815,7 @@ describe('PoliciesService', () => {
         inFlight -= 1;
         return pageBuilder<MultisigTransaction>().with('results', []).build();
       });
-      target = policiesService(batchSize, { pendingBatchSize: 3 });
+      target = policiesService(3);
 
       await target.getSpacePendingPolicies(pendingRequest);
 

@@ -455,9 +455,6 @@ export default (): ReturnType<typeof configuration> => ({
       baseUri: faker.internet.url({ appendSlash: false }),
     },
     batchSize: faker.number.int({ min: 1, max: 10 }),
-    pending: {
-      batchSize: faker.number.int({ min: 1, max: 10 }),
-    },
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),

@@ -4,7 +4,6 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import chunk from 'lodash/chunk';
 import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -50,7 +49,6 @@ type SpacePolicyRequest = {
 @Injectable()
 export class PoliciesService {
   private readonly batchSize: number;
-  private readonly pendingBatchSize: number;
   private readonly safeQueueServiceEnabled: boolean;
 
   constructor(
@@ -74,9 +72,6 @@ export class PoliciesService {
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
-    this.pendingBatchSize = this.configurationService.getOrThrow<number>(
-      'policies.pending.batchSize',
-    );
     this.safeQueueServiceEnabled =
       this.configurationService.getOrThrow<boolean>(
         'features.safeQueueService',
@@ -225,6 +220,10 @@ export class PoliciesService {
    *
    * `spending-limit` is the only pending type detected today - a proposer grant is
    * off-chain and immediate, so it never has a queued state.
+   *
+   * Concurrency is capped at `policies.batchSize`. A Safe
+   * whose queue could not be read is skipped rather than failing the whole
+   * request - the caller loses just that Safe's pending policies.
    */
   private async resolvePendingPolicies(
     safes: ReadonlyArray<SafeRef>,
@@ -242,13 +241,25 @@ export class PoliciesService {
       ? SAFE_QUEUE_SERVICE_MAX_LIMIT
       : SAFE_TRANSACTION_SERVICE_MAX_LIMIT;
 
+    const settled = await batched(safes, this.batchSize, (safe) =>
+      this.pendingPoliciesForSafe(safe, queueLimit),
+    );
+
     const policies: Array<PendingPolicy> = [];
 
-    for (const batch of chunk(safes, this.pendingBatchSize)) {
-      const batchPolicies = await Promise.all(
-        batch.map((safe) => this.pendingPoliciesForSafe(safe, queueLimit)),
-      );
-      policies.push(...batchPolicies.flat());
+    for (const [index, result] of settled.entries()) {
+      if (result.status === 'fulfilled') {
+        policies.push(...result.value);
+        continue;
+      }
+
+      const safe = safes[index];
+      this.loggingService.warn({
+        message: 'Could not read the transaction queue of a Safe',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        error: asError(result.reason).message,
+      });
     }
 
     return policies;
