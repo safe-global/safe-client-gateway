@@ -67,6 +67,7 @@ export class SpacePoliciesController {
   })
   @ApiQuery({
     name: 'safes',
+    type: String,
     required: false,
     description:
       "Narrow the read to a subset of the Space's Safes, comma-separated as `{chainId}:{safeAddress}`",

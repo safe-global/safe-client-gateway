@@ -28,16 +28,20 @@ export type SafeRefResponse = { chainId: string; address: Address };
 export class SafeRefDto implements SafeRefResponse {
   @ApiProperty()
   public readonly chainId!: string;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly address!: Address;
 }
 
 export class PolicyContractsDto implements PolicyContracts {
   @ApiProperty({
+    type: String,
     description: 'The policy implementation the guard delegates to',
   })
   public readonly policyContract!: Address;
-  @ApiProperty({ description: 'The SafePolicyGuard deployment' })
+  @ApiProperty({
+    type: String,
+    description: 'The SafePolicyGuard deployment',
+  })
   public readonly safePolicyGuard!: Address;
 }
 
@@ -51,7 +55,10 @@ export class GuardSlotsDto implements GuardSlots {
 export class ModuleEnforcementDto implements ModuleEnforcement {
   @ApiProperty({ enum: [PolicyEnforcementKind.Module] })
   public readonly via!: typeof PolicyEnforcementKind.Module;
-  @ApiProperty({ description: 'The module enforcing the policy' })
+  @ApiProperty({
+    type: String,
+    description: 'The module enforcing the policy',
+  })
   public readonly moduleAddress!: Address;
 }
 
@@ -79,11 +86,19 @@ const EnforcementSchema = {
     { $ref: getSchemaPath(GuardEnforcementDto) },
     { $ref: getSchemaPath(OffChainEnforcementDto) },
   ],
-  discriminator: { propertyName: 'via' },
+  discriminator: {
+    propertyName: 'via',
+    mapping: {
+      [PolicyEnforcementKind.Module]: getSchemaPath(ModuleEnforcementDto),
+      [PolicyEnforcementKind.Guard]: getSchemaPath(GuardEnforcementDto),
+      [PolicyEnforcementKind.OffChain]: getSchemaPath(OffChainEnforcementDto),
+    },
+  },
 };
 
 export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   @ApiProperty({
+    type: String,
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly tokenAddress!: Address;
@@ -114,6 +129,7 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
 
 export class SpendingLimitSpenderDto {
   @ApiProperty({
+    type: String,
     description: 'Name resolved by the client, never carried here',
   })
   public readonly spender!: Address;
@@ -127,14 +143,20 @@ export class SpendingLimitSpenderDto {
 }
 
 export class SpendingLimitPolicyDataDto implements SpendingLimitPolicyData {
-  @ApiProperty({ description: 'The allowance module holding this state' })
+  @ApiProperty({
+    type: String,
+    description: 'The allowance module holding this state',
+  })
   public readonly module!: Address;
   @ApiProperty({ type: SpendingLimitSpenderDto, isArray: true })
   public readonly spenders!: SpendingLimitPolicyData['spenders'];
 }
 
 export class ProposerGrantDto {
-  @ApiProperty({ description: 'The owner that granted the proposer' })
+  @ApiProperty({
+    type: String,
+    description: 'The owner that granted the proposer',
+  })
   public readonly delegator!: Address;
   @ApiProperty({
     description:
@@ -144,7 +166,10 @@ export class ProposerGrantDto {
 }
 
 export class ProposerDto {
-  @ApiProperty({ description: 'The address allowed to propose transactions' })
+  @ApiProperty({
+    type: String,
+    description: 'The address allowed to propose transactions',
+  })
   public readonly proposer!: Address;
   @ApiProperty({
     type: ProposerGrantDto,
