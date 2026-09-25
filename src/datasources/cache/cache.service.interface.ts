@@ -17,6 +17,8 @@ export interface ICacheService {
 
   deleteByKey(key: string): Promise<number>;
 
+  getInvalidationTimeMs(key: string): Promise<number | null>;
+
   increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
