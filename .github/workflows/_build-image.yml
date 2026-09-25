@@ -1,0 +1,180 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# REUSABLE: Build & push a single, IMMUTABLE multi-registry image
+# =============================================================================
+# Replaces the inline docker-publish-staging / docker-publish-release jobs.
+# Always pushes an immutable tag (main-<sha> or vX.Y.Z) — never a moving tag
+# like :staging, so a GitOps controller can pin and roll back cleanly.
+#
+# Two differences from the safe-config-service equivalent, both deliberate:
+#
+#   * Native arm64. Production runs arm64 only, so this builds single-arch on an
+#     arm64 runner instead of emulating through QEMU. Faster, and the artifact
+#     is what actually ships.
+#   * Dual registry. The image is published to GHCR and to Docker Hub while
+#     external consumers of the public Docker Hub image are still being
+#     inventoried. Drop `docker_image` to publish to GHCR only.
+# -----------------------------------------------------------------------------
+name: _build-image
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        description: GHCR image path WITHOUT tag, e.g. ghcr.io/safe-global/safe-client-gateway.
+        type: string
+        required: true
+      image_tag:
+        description: Immutable tag to publish (e.g. main-abc1234 or v1.126.0).
+        type: string
+        required: true
+      docker_image:
+        description: >-
+          Docker Hub image path WITHOUT tag. Published alongside image_name while
+          the old registry is still in use. Empty = GHCR only.
+        type: string
+        default: ""
+      ref:
+        description: >-
+          Git ref (tag/branch/SHA) to check out and build. Empty = the ref that
+          triggered the workflow. Set explicitly when the caller runs from a
+          different ref than the source to build (e.g. a manual redeploy of an
+          existing tag dispatched from the default branch).
+        type: string
+        default: ""
+      version:
+        description: >-
+          Passed through as the VERSION build-arg. MUST equal image_tag: the
+          Dockerfile turns it into APPLICATION_VERSION, /v1/about reports it, and
+          _deploy.yml polls that endpoint until it matches the deployed tag. Pass
+          anything else and every deploy times out on a gate that has nothing to
+          do with the service being healthy.
+        type: string
+        required: true
+      moving_tag:
+        description: >-
+          Additionally push a MOVING tag (e.g. "staging"). Transitional only:
+          argocd-image-updater on the legacy devstaging Application watches
+          ghcr.io/safe-global/safe-client-gateway:staging with
+          `update-strategy: digest`, and it is the only thing deploying staging
+          until the new ArgoCD Application is applied. Without this, swapping CI
+          would leave staging with no deploy path at all.
+          Drop it once devstaging renders from safe-client-gateway-infra-tf.
+        type: string
+        default: ""
+
+      also_tag_latest:
+        description: >-
+          Also push a :latest tag alongside the immutable one. Production
+          releases only — :latest on a main-<sha> build is meaningless.
+        type: boolean
+        default: false
+    secrets:
+      docker_user:
+        description: Docker Hub username. Required while docker_image is set.
+        required: false
+      docker_password:
+        description: Docker Hub token. Required while docker_image is set.
+        required: false
+    outputs:
+      image:
+        description: Fully-qualified GHCR reference that was built.
+        value: ${{ jobs.build.outputs.image }}
+      digest:
+        description: Image digest (sha256:...).
+        value: ${{ jobs.build.outputs.digest }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    # Native arm64: production runs arm64 only, so no QEMU emulation.
+    runs-on: ubuntu-24.04-arm
+    outputs:
+      image: ${{ inputs.image_name }}:${{ inputs.image_tag }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Compute BUILD_NUMBER
+        id: build_number
+        env:
+          SHA: ${{ github.sha }}
+        run: echo "value=${SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute image tags
+        id: tags
+        env:
+          GHCR: ${{ inputs.image_name }}
+          DOCKER: ${{ inputs.docker_image }}
+          TAG: ${{ inputs.image_tag }}
+          LATEST: ${{ inputs.also_tag_latest }}
+          MOVING: ${{ inputs.moving_tag }}
+        run: |
+          set -euo pipefail
+          TAGS="${GHCR}:${TAG}"
+          [ "$LATEST" = "true" ] && TAGS="${TAGS}"$'\n'"${GHCR}:latest"
+          [ -n "$MOVING" ] && TAGS="${TAGS}"$'\n'"${GHCR}:${MOVING}"
+          if [ -n "$DOCKER" ]; then
+            TAGS="${TAGS}"$'\n'"${DOCKER}:${TAG}"
+            [ "$LATEST" = "true" ] && TAGS="${TAGS}"$'\n'"${DOCKER}:latest"
+            [ -n "$MOVING" ] && TAGS="${TAGS}"$'\n'"${DOCKER}:${MOVING}"
+          fi
+          {
+            echo "tags<<EOF"
+            echo "$TAGS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Docker Hub
+        if: ${{ inputs.docker_image != '' }}
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.docker_user }}
+          password: ${{ secrets.docker_password }}
+
+      - name: Build & push
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ${{ steps.tags.outputs.tags }}
+          build-args: |
+            VERSION=${{ inputs.version }}
+            BUILD_NUMBER=${{ steps.build_number.outputs.value }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          # Trade-off, taken deliberately: with provenance on, buildx pushes an
+          # OCI image index plus an attestation manifest even for a single
+          # platform. Consumers that expect a plain image manifest — including
+          # argocd-image-updater's digest strategy, which is what deploys
+          # staging today — then resolve the index digest rather than the
+          # image's. Turning it off costs SLSA provenance; revisit once nothing
+          # pins this image by digest.
+          provenance: false
+
+      - name: Summary
+        env:
+          TAGS: ${{ steps.tags.outputs.tags }}
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          {
+            echo "### Image"
+            echo "$TAGS" | sed 's/^/- `/; s/$/`/'
+            echo "- digest: \`${DIGEST}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

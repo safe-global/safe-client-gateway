@@ -189,7 +189,7 @@ If the principal is already correct, check the KMS key policy as well as the ide
 
 Read the reason from `kubectl -n <ns> describe pod -l job-name=billing-token-mint`:
 
-- `no match for platform` — the pod landed on an amd64 node. Published images are **arm64 only** (see [`ci.yml`](../../../.github/workflows/ci.yml)), so the Job needs `nodeSelector: kubernetes.io/arch: arm64`.
+- `no match for platform` — the pod landed on an amd64 node. Published images are **arm64 only** (see [`_build-image.yml`](../../../.github/workflows/_build-image.yml)), so the Job needs `nodeSelector: kubernetes.io/arch: arm64`.
 - `unauthorized` / `pull access denied` — the Job has no registry credentials. Pull secrets are often attached to the *service account*, and the new mint SA has none; copy `imagePullSecrets` from the CGW deployment.
 
 ### Webhook calls return `401 Unauthorized`
