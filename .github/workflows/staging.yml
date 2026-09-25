@@ -7,26 +7,26 @@
 # No manual steps. workflow_dispatch allows a staging deploy without a code
 # commit, for soak testing and hotfix verification.
 #
-# This replaces ci.yml's `docker-publish-staging` + `autodeploy` jobs. Two
-# things about the transition are worth knowing before reading the jobs:
+# This replaces ci.yml's `docker-publish-staging` + `autodeploy` jobs.
 #
-#   * The image tag becomes immutable. ci.yml only ever pushed the moving
-#     `:staging` tag, so `/about` reported version "main" for every build ever
-#     made and no tag could be pinned or rolled back. Now each build gets
-#     main-<short-sha>, and `:staging` is pushed alongside it (see below).
-#   * Staging is still deployed by the LEGACY path. argocd-image-updater on the
-#     devstaging Application watches ghcr.io/safe-global/safe-client-gateway
-#     :staging with `update-strategy: digest`; the new ArgoCD Application that
-#     reads safe-client-gateway-infra-tf is not applied yet (blocked on the
-#     infrasec review). So `deploy-staging` below commits the tag bump that the
-#     new Application will consume, but that bump does not move the cluster yet
-#     — image-updater does. What the job is really worth today is proving the
-#     GitOps write path end to end (App token, GPG signature, cross-repo
-#     squash-merge) and keeping values-staging.yaml tracking the real tag, so
-#     the cutover is a no-op rather than the first test of any of it. Its
-#     version gate is off for exactly that reason; see `deploy-staging`.
-#     `moving_tag`, the legacy nudge job and that gate all change together when
-#     the new Application goes live.
+# The image tag is immutable. ci.yml only ever pushed the moving `:staging` tag,
+# so `/about` reported version "main" for every build ever made and no tag could
+# be pinned or rolled back. Each build now gets main-<short-sha>.
+#
+# Since the 2026-09-25 cutover, `deploy-staging` is the ONLY path to staging:
+# the devstaging Application and argocd-image-updater were retired, and the
+# ArgoCD Application in safe-client-gateway-infra-tf renders `client.imageTag`
+# straight from the values file this job bumps. Two transitional pieces are
+# still here on purpose, each waiting on its own ticket:
+#
+#   * `moving_tag: staging` (WA-3428). Nothing in the cluster consumes it any
+#     more, but _build-image.yml publishes a moving tag to BOTH registries, and
+#     the Docker Hub one is public. It stays until the external-consumer
+#     inventory says who, if anyone, still pulls it.
+#   * `version_check_url: ""` (WA-3629). The poll runs after the deploy PR is
+#     merged, and that merge currently fails, so switching the gate on would
+#     change nothing. Turn it on once deploys merge and the timeout can be
+#     sized against a real rollout.
 # -----------------------------------------------------------------------------
 name: Staging
 
@@ -74,32 +74,16 @@ jobs:
       # APPLICATION_VERSION, /about reports it, and _deploy.yml polls that
       # endpoint until it matches.
       version: ${{ needs.prepare.outputs.tag }}
-      # Transitional: the only thing deploying staging today is
-      # argocd-image-updater watching this moving tag. Remove together with the
-      # legacy nudge job once devstaging renders from safe-client-gateway-infra-tf.
+      # Transitional, and no longer consumed by anything in the cluster:
+      # argocd-image-updater was retired at the cutover. It stays only because
+      # _build-image.yml publishes the moving tag to both registries and the
+      # Docker Hub one is public — dropping it would stop publishing
+      # safeglobal/safe-client-gateway-nest:staging too. Remove once WA-3428
+      # establishes whether anyone outside still pulls that tag.
       moving_tag: staging
     secrets:
       docker_user: ${{ secrets.DOCKER_USER }}
       docker_password: ${{ secrets.DOCKER_PASSWORD }}
-
-  # Transitional, carried over from ci.yml's `autodeploy` job unchanged. Posts a
-  # Docker-Hub-webhook-shaped payload that nudges the legacy controller to pull
-  # the new :staging image instead of waiting out its own poll interval. It is
-  # belt-and-braces — image-updater's digest strategy polls the registry on its
-  # own — but removing it in the same change that swaps the build would have
-  # meant swapping the build AND the deploy trigger in one step, with no way to
-  # tell which one broke. Deleted in P4 alongside moving_tag.
-  notify-legacy-deploy:
-    needs: [build]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Nudge legacy staging deploy
-        run: bash scripts/autodeploy.sh
-        env:
-          AUTODEPLOY_URL: ${{ secrets.AUTODEPLOY_URL }}
-          AUTODEPLOY_TOKEN: ${{ secrets.AUTODEPLOY_TOKEN }}
-          TARGET_ENV: 'staging'
 
   deploy-staging:
     needs: [prepare, build]
