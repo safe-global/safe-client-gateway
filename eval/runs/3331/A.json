@@ -1,0 +1,19 @@
+{
+  "pr": 3331,
+  "reviewSha": "cb8a2dea563d51ab36dbc94c0479c7665c40dacb",
+  "baseSha": "227605e5c8a077d78b24456a38bd7cc65bae6fc1",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 18,
+    "outputTokens": 3495,
+    "cacheReadTokens": 509721,
+    "cacheWriteTokens": 51194,
+    "turns": 10,
+    "wallSeconds": 59,
+    "apiEquivalentUsd": 0.5814682
+  },
+  "output": "I ran `/code-conventions --review-pr` on the diff and found nothing to flag.\n\nThe diff is one commit (`cb8a2dea5`) that changes one file, `.github/workflows/architecture-check.yml` (+8 −4). It moves the `concurrency` block out of the workflow level and into the `architecture-check` job, at `.github/workflows/architecture-check.yml:53-55`, with a comment explaining why at `:48-52`.\n\n## Checklist\n- I generated the all-rules checklist from `docs/engineering/sources/rules.json` into the scratchpad, not the repo, and considered every rule. No tracked files were changed.\n- **Rules that applied (all pass):**\n  - **CHANGE-01 / CHANGE-02 (smallest change, no unrelated edits):** only the concurrency block moved. The group key and `cancel-in-progress: true` are unchanged.\n  - **CHANGE-03 (tooling keeps its behaviour):** runs from real `@claude arch-review` comments still cancel each other per PR, as before. The one change is intended. Comments that fail the `if` guard (like the bot's own verdict comment) now skip the job without entering the group, so they no longer cancel the review in progress.\n  - **PR-02 (docs match behaviour):** `docs/agents/agent-tooling.md:59` describes this workflow but says nothing about concurrency, so no doc is now out of date.\n  - **STYLE-01 (non-trivial code is documented):** the new comment at `:48-52` explains why the block sits at the job level. That reasoning holds: a workflow-level group is entered before any job-level `if` is checked, and comments posted with the Claude App token do start new workflow runs.\n  - **CONFIG-05 (CI pins match runtime):** no action pins or env metadata changed.\n- **Repo consistency:** the new placement matches `.github/workflows/claude-code-review.yml:47-49`, which already uses a job-level `concurrency` block with the same `issue.number || pull_request.number` key.\n- **Not applicable:** every other rule (the MOD, TYPE, AUTH, ROUTE, DB, CACHE, CONFIG-01…04, PERF, TEST, LOG, SEC, DATA and RESILIENCE rules). They cover TypeScript, API, database and test code, and none of that is in the diff.\n- **Zoom:** I didn't need to look up past review learnings for any rule.\n\n## Findings\nNone."
+}
