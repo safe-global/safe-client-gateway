@@ -4,9 +4,22 @@ import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
+import { SignatureType } from '@/domain/common/entities/signature-type.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import type {
+  SafeQueueConfirmation,
+  SafeQueueMultisigTransactionEntity,
+} from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
+
+export function safeQueueConfirmationBuilder(): IBuilder<SafeQueueConfirmation> {
+  return new Builder<SafeQueueConfirmation>()
+    .with('owner', getAddress(faker.finance.ethereumAddress()))
+    .with('signature', faker.string.hexadecimal({ length: 130 }) as Hex)
+    .with('signatureType', SignatureType.Eoa)
+    .with('created', faker.date.recent())
+    .with('modified', faker.date.recent());
+}
 
 export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisigTransactionEntity> {
   return new Builder<SafeQueueMultisigTransactionEntity>()
