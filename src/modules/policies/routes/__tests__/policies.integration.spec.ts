@@ -20,6 +20,7 @@ import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { addDelegateEncoder } from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
@@ -37,7 +38,10 @@ import {
   rawIndexerSafeDelegateBuilder,
 } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -115,10 +119,12 @@ describe('Space Policies Controller', () => {
       modules?: Array<`0x${string}`>;
       delegates?: Array<Delegate>;
       delegatesUnavailable?: boolean;
+      queuedTransactions?: Array<MultisigTransaction>;
     } = {},
   ): void {
     const modules = args.modules ?? [allowanceModule];
     const delegates = args.delegates ?? [];
+    const queuedTransactions = args.queuedTransactions ?? [];
     const safe = safeBuilder()
       .with('address', safeAddress)
       .with('modules', modules)
@@ -163,6 +169,21 @@ describe('Space Policies Controller', () => {
         return Promise.resolve({
           data: rawify(
             pageBuilder<Delegate>().with('results', delegates).build(),
+          ),
+          status: 200,
+        });
+      }
+      // The pending half - queued (unexecuted) transactions, read while the
+      // Queue Service is switched off.
+      if (
+        url ===
+        `${txServiceUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`
+      ) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder<MultisigTransaction>()
+              .with('results', queuedTransactions)
+              .build(),
           ),
           status: 200,
         });
@@ -709,6 +730,110 @@ describe('Space Policies Controller', () => {
         .query({ types: '' })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(422);
+    });
+  });
+
+  describe('GET /v1/spaces/:spaceId/policies/pending', () => {
+    // Sepolia's only Allowance Module deployment, per
+    // @safe-global/safe-modules-deployments - the mapper only recognises real,
+    // published deployments, so the random `allowanceModule` used by the
+    // active-policy tests above never matches here.
+    const SEPOLIA_ALLOWANCE_MODULE = getAddress(
+      '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
+    );
+
+    it('should detect a spending-limit change queued for a safe in the space', async () => {
+      const addDelegate = addDelegateEncoder();
+      const addDelegateArgs = addDelegate.build();
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', addDelegate.encode())
+        .build();
+      mockUpstream({ queuedTransactions: [transaction] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.SpendingLimit })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toEqual([
+        expect.objectContaining({
+          kind: 'queued-transaction',
+          type: PolicyType.SpendingLimit,
+          safeTxHash: transaction.safeTxHash,
+          data: {
+            module: SEPOLIA_ALLOWANCE_MODULE,
+            changes: [
+              {
+                kind: 'add-delegate',
+                operation: 'create',
+                delegate: addDelegateArgs.delegate,
+              },
+            ],
+          },
+        }),
+      ]);
+    });
+
+    it('should return an empty page for a safe with no queued spending-limit changes', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.SpendingLimit })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect([]);
+    });
+
+    it('should return nothing for a policy type with no pending detection', async () => {
+      const addDelegate = addDelegateEncoder();
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', addDelegate.encode())
+        .build();
+      mockUpstream({ queuedTransactions: [transaction] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.Proposer })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect([]);
+    });
+
+    it('should return 422 for an unknown policy type', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: 'not-a-policy-type' })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('should return 403 without authentication', async () => {
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.SpendingLimit })
+        .expect(403);
     });
   });
 });
