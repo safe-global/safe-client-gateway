@@ -10,7 +10,7 @@ import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delega
 import { EarnModule } from '@/modules/earn/earn.module';
 import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
 import { MessagesModule } from '@/modules/messages/messages.module';
-import { PoliciesModule } from '@/modules/policies/policies.module';
+import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { StakingModule } from '@/modules/staking/staking.module';
@@ -26,7 +26,7 @@ import { ZerionModule } from '@/modules/zerion/zerion.module';
     DelegatesV3RepositoryModule,
     EarnModule,
     MessagesModule,
-    PoliciesModule,
+    PolicyIndexerRepositoryModule,
     SafeAppsModule,
     SafeRepositoryModule,
     StakingModule,

@@ -1,0 +1,50 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
+import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+
+const Caip10AddressPartsSchema = z.object({
+  chainId: ChainIdSchema,
+  address: AddressSchema,
+});
+
+/**
+ * An address scoped to the chain it lives on, CAIP-10 shaped:
+ * `{chainId}:{address}`.
+ *
+ * Note: a lower-cased address is accepted and checksummed, mirroring every
+ * other address in a CGW route. Anything else that is not a valid address is
+ * rejected with a 422 by the `ValidationPipe`.
+ */
+export const Caip10AddressSchema = z
+  .string()
+  .transform((value, ctx) => {
+    const parts = value.split(':');
+
+    if (parts.length !== 2) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Invalid CAIP-10 address, expected {chainId}:{address}',
+      });
+      return z.NEVER;
+    }
+
+    const [chainId, address] = parts;
+    return { chainId, address };
+  })
+  // Piped rather than parsed inside the transform, so each part's own issue -
+  // and its path - reaches the 422 body unaltered.
+  .pipe(Caip10AddressPartsSchema);
+
+export type Caip10Address = z.infer<typeof Caip10AddressSchema>;
+
+/**
+ * A comma-separated list of CAIP-10 addresses, as a cross-chain route accepts
+ * them: `?safes=11155111:0xAAA,137:0xBBB`.
+ */
+export const Caip10AddressesSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(Caip10AddressSchema).nonempty());
+
+export type Caip10Addresses = z.infer<typeof Caip10AddressesSchema>;
