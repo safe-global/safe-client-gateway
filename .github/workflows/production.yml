@@ -1,0 +1,127 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# CALLER: GitHub Release → PRODUCTION
+# =============================================================================
+# Triggered when release-please publishes a GitHub Release (tag vX.Y.Z). Runs CI
+# on the release commit, builds an immutable image tagged with the release
+# version, then GitOps-deploys it to production with a health gate: ArgoCD wait
+# + /about version poll + smoke test.
+#
+# The gate does NOT auto-rollback on a release: it fails loudly and recovery is
+# roll-forward. This service ships TypeORM migrations, and reverting the image
+# across a migration leaves code and schema mismatched.
+#
+# workflow_dispatch is a manual recovery path: it runs THIS (fixed) workflow
+# from the default branch while building/deploying the tag you pass as `tag`.
+# -----------------------------------------------------------------------------
+name: Production
+
+on:
+  # `released`, not `published`, matching ci.yml and linear-release.yml. The two
+  # differ in more than pre-release coverage: `published` does not fire again
+  # when a pre-release is promoted to a full release, so that flow would tag a
+  # release and silently never deploy it. `released` covers the promotion.
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Git tag / version to build and deploy (e.g. v1.126.0).
+        type: string
+        required: true
+      auto_rollback:
+        description: >-
+          Revert the image bump if the health gate fails (ArgoCD rolls back to
+          the previous tag). Leave OFF when the tag carries a DB migration —
+          reverting across a migration breaks the service (recover forward).
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/_ci-node.yml
+    secrets: inherit
+
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+      auto_rollback: ${{ steps.rollback.outputs.auto_rollback }}
+    steps:
+      - id: tag
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+
+      # Roll-forward by default. A failed health gate fails loudly and is
+      # recovered FORWARD, never auto-reverted. Auto-rollback is opt-in and only
+      # via manual dispatch, for a deploy the operator knows is migration-free.
+      - id: rollback
+        env:
+          EVENT: ${{ github.event_name }}
+          DISPATCH_ROLLBACK: ${{ inputs.auto_rollback }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            echo "Manual dispatch — auto_rollback=${DISPATCH_ROLLBACK} (operator opt-in)."
+            echo "auto_rollback=${DISPATCH_ROLLBACK}" >> "$GITHUB_OUTPUT"
+          else
+            echo "Release event — auto_rollback=false (roll forward on failure)."
+            echo "auto_rollback=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: [ci, prepare]
+    # Build on manual dispatch, or on any non-prerelease GitHub Release.
+    if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      image_name: ghcr.io/safe-global/safe-client-gateway
+      docker_image: safeglobal/safe-client-gateway-nest
+      image_tag: ${{ needs.prepare.outputs.tag }}
+      # Must equal image_tag — /about reports it and _deploy.yml polls for it.
+      version: ${{ needs.prepare.outputs.tag }}
+      also_tag_latest: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
+      # On dispatch, build the exact tagged source, not the default branch HEAD.
+      ref: ${{ github.event.release.tag_name || inputs.tag }}
+    secrets:
+      docker_user: ${{ secrets.DOCKER_USER }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+
+  deploy-production:
+    needs: [prepare, build]
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: production
+      image_tag: ${{ needs.prepare.outputs.tag }}
+      infra_repo: safe-global/safe-client-gateway-infra-tf
+      values_file: apps/safe-client-gateway/values-production.yaml
+      image_tag_path: .client.imageTag
+      argocd_app: safe-client-gateway
+      health_url: https://safe-client.safe.global/health/ready
+      # VPN-free rollout confirmation in addition to the ArgoCD wait. /about, not
+      # /v1/about: AboutController declares no version and app.provider.ts enables
+      # URI versioning with no default, so /v1/about 404s. Production also sits
+      # behind CloudFront, which rejects any User-Agent that does not look like a
+      # browser's — _deploy.yml sends one that satisfies it.
+      version_check_url: https://safe-client.safe.global/about
+      health_gate: true
+      auto_rollback: ${{ needs.prepare.outputs.auto_rollback == 'true' }}
+    secrets:
+      app_id: ${{ secrets.CI_APP_ID }}
+      app_private_key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+      gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
+      argocd_server: ${{ secrets.ARGOCD_SERVER }}
+      vpn_secret: ${{ secrets.VPN_SECRET_NAME }}
+      aws_role_arn: ${{ secrets.AWS_ROLE_ARN }}
+      argocd_token_secret: ${{ secrets.ARGOCD_TOKEN_SECRET_NAME }}
