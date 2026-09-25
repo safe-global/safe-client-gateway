@@ -1,0 +1,141 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# CALLER: Trunk pipeline → STAGING (event: push to main or manual dispatch)
+# =============================================================================
+# Every merge to main: re-run the quality gate on the merge result, build an
+# IMMUTABLE image tagged main-<short-sha>, then GitOps-deploy it to staging.
+# No manual steps. workflow_dispatch allows a staging deploy without a code
+# commit, for soak testing and hotfix verification.
+#
+# This replaces ci.yml's `docker-publish-staging` + `autodeploy` jobs. Two
+# things about the transition are worth knowing before reading the jobs:
+#
+#   * The image tag becomes immutable. ci.yml only ever pushed the moving
+#     `:staging` tag, so `/about` reported version "main" for every build ever
+#     made and no tag could be pinned or rolled back. Now each build gets
+#     main-<short-sha>, and `:staging` is pushed alongside it (see below).
+#   * Staging is still deployed by the LEGACY path. argocd-image-updater on the
+#     devstaging Application watches ghcr.io/safe-global/safe-client-gateway
+#     :staging with `update-strategy: digest`; the new ArgoCD Application that
+#     reads safe-client-gateway-infra-tf is not applied yet (blocked on the
+#     infrasec review). So `deploy-staging` below commits the tag bump that the
+#     new Application will consume, but that bump does not move the cluster yet
+#     — image-updater does. What the job is really worth today is proving the
+#     GitOps write path end to end (App token, GPG signature, cross-repo
+#     squash-merge) and keeping values-staging.yaml tracking the real tag, so
+#     the cutover is a no-op rather than the first test of any of it. Its
+#     version gate is off for exactly that reason; see `deploy-staging`.
+#     `moving_tag`, the legacy nudge job and that gate all change together when
+#     the new Application goes live.
+# -----------------------------------------------------------------------------
+name: Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+# Deploys are queued, never cancelled: ci.yml deliberately exempted main from
+# cancellation so a follow-up merge could not kill an in-flight staging deploy,
+# and cancelling the parent would cancel the reusable deploy job mid-rollout.
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+jobs:
+  # Same reusable the PR gate calls. Reported as `ci / <job>`.
+  ci:
+    uses: ./.github/workflows/_ci-node.yml
+    secrets: inherit
+
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        run: echo "tag=main-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [ci, prepare]
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      image_name: ghcr.io/safe-global/safe-client-gateway
+      # Dual-push while external consumers of the public Docker Hub image are
+      # still being inventoried. Drop once that inventory is done.
+      docker_image: safeglobal/safe-client-gateway-nest
+      image_tag: ${{ needs.prepare.outputs.tag }}
+      # MUST equal image_tag: the Dockerfile turns VERSION into
+      # APPLICATION_VERSION, /about reports it, and _deploy.yml polls that
+      # endpoint until it matches.
+      version: ${{ needs.prepare.outputs.tag }}
+      # Transitional: the only thing deploying staging today is
+      # argocd-image-updater watching this moving tag. Remove together with the
+      # legacy nudge job once devstaging renders from safe-client-gateway-infra-tf.
+      moving_tag: staging
+    secrets:
+      docker_user: ${{ secrets.DOCKER_USER }}
+      docker_password: ${{ secrets.DOCKER_PASSWORD }}
+
+  # Transitional, carried over from ci.yml's `autodeploy` job unchanged. Posts a
+  # Docker-Hub-webhook-shaped payload that nudges the legacy controller to pull
+  # the new :staging image instead of waiting out its own poll interval. It is
+  # belt-and-braces — image-updater's digest strategy polls the registry on its
+  # own — but removing it in the same change that swaps the build would have
+  # meant swapping the build AND the deploy trigger in one step, with no way to
+  # tell which one broke. Deleted in P4 alongside moving_tag.
+  notify-legacy-deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Nudge legacy staging deploy
+        run: bash scripts/autodeploy.sh
+        env:
+          AUTODEPLOY_URL: ${{ secrets.AUTODEPLOY_URL }}
+          AUTODEPLOY_TOKEN: ${{ secrets.AUTODEPLOY_TOKEN }}
+          TARGET_ENV: 'staging'
+
+  deploy-staging:
+    needs: [prepare, build]
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: staging
+      image_tag: ${{ needs.prepare.outputs.tag }}
+      infra_repo: safe-global/safe-client-gateway-infra-tf
+      values_file: apps/safe-client-gateway/values-staging.yaml
+      image_tag_path: .client.imageTag
+      health_url: https://safe-client.staging.5afe.dev/health/ready
+      # The version poll stays OFF until the new ArgoCD Application is applied,
+      # and is switched on in the cutover PR. Two reasons, both about honesty:
+      #
+      #   * It would not be gating this job's own work. Until the cutover, the
+      #     tag bump above is inert and staging rolls because image-updater sees
+      #     the :staging tag. A step named "Wait for version rollout", sitting
+      #     right after the bump, would be reporting on a deploy it did not do.
+      #   * Its budget is 10 min (40 x 15s) and unmeasured. The HPA floor is 2
+      #     replicas, readinessProbe runs every 30s with no initialDelay, and
+      #     the app runs TypeORM migrations at boot — add image-updater's poll
+      #     and ArgoCD's sync and a realistic rollout is 3-8 min. A red job on
+      #     every merge to main, for a reason unrelated to the merge, costs more
+      #     trust than the check is worth.
+      #
+      # At cutover: set this to https://safe-client.staging.5afe.dev/about — the
+      # path is /about, NOT /v1/about, because app.provider.ts enables URI
+      # versioning with no defaultVersion and AboutController declares no
+      # version, so the route is registered unversioned and /v1/about 404s.
+      # Size the timeout from the first few real rollouts before relying on it.
+      version_check_url: ""
+      # Staging gets the smoke test only, not the full production gate (no
+      # ArgoCD wait, no rollback).
+      health_gate: false
+    secrets:
+      app_id: ${{ secrets.CI_APP_ID }}
+      app_private_key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+      gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}
