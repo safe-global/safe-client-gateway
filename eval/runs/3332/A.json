@@ -1,0 +1,19 @@
+{
+  "pr": 3332,
+  "reviewSha": "17f4589bedf361e62e56aabff36a4acee17292f7",
+  "baseSha": "d1f57d81b1b6ad20cdeaa182b4d7048397f55d36",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 16,
+    "outputTokens": 4146,
+    "cacheReadTokens": 505807,
+    "cacheWriteTokens": 63941,
+    "turns": 9,
+    "wallSeconds": 59,
+    "apiEquivalentUsd": 0.6956734
+  },
+  "output": "I ran `/code-conventions --review-pr` on `d1f57d81b...HEAD`, which is one commit (`17f4589be`, *build(deps): bump @safe-global/safe-deployments to 1.37.62*) touching 4 files. Nothing is blocking. There are three low-severity findings, all about the `.yarnrc.yml` change that this dependency bump carries along. The checklist covered all 58 rules in `rules.json` and every item was ticked off. I wrote it to the scratchpad instead of `docs/engineering/`, so no tracked files changed, and I didn't run any tests, `gh` commands or installs.\n\n**Rules that applied:**\n- **CHANGE-01 / CHANGE-02 (scope) and CHANGE-03 (tooling parity):** produced the findings below. I read the CHANGE-02 example.\n- **CONFIG-05 / PR-02 (config and docs match behaviour):** one finding below.\n- **CONFIG-04 (exact pins):** passes. `package.json` pins `1.37.62` exactly and `yarn.lock` matches.\n- **REUSE-01:** passes. The spec checks the output of `getDeploymentVersionsByChainIds`, which reads from safe-deployments, and doesn't hardcode version lists in production code. I read the REUSE-01 example.\n- **TEST-01 / TEST-08 (fixtures and test names):** passes. The literal version arrays follow the file's existing way of checking package data, and the test names still match what they assert.\n- **SPDX headers:** passes. The header was added to the spec, and `.yarnrc.yml` already had one.\n\nNone of the other rules (modules, DB, cache, auth, routes, logging, security, resilience, etc.) are touched by this diff. I didn't need to look up any review learnings or GitHub sources, and no rule failures are left open apart from the findings.\n\n## Findings\n\n1. **`.yarnrc.yml:20`: preapproves a package this PR doesn't bump (CHANGE-01 / CHANGE-02, low)**\n   - The commit says the exemption exists \"so the pin is installable\". Only `@safe-global/safe-deployments` is bumped, though.\n   - `@safe-global/safe-modules-deployments` stays at `3.0.8`, which Dependabot already brought in (#3320) and which installs under the 7-day gate.\n   - Adding it here goes beyond what the bump needs. Either drop the line or move it into its own PR with its own reason.\n\n2. **`.yarnrc.yml:17-20`: a lasting supply-chain policy change inside a routine bump (CHANGE-02 / CHANGE-03, low)**\n   - `npmPreapprovedPackages` permanently exempts these packages from `npmMinimalAgeGate`. It isn't a one-time unblock for 1.37.62, but the PR is framed as a `build(deps)` bump.\n   - Loosening the hardened-install policy deserves its own `chore`/`ci` PR, so it gets reviewed deliberately and a later bisect or audit finds it easily.\n   - The other option is to leave the gate alone and wait out the 7 days before bumping.\n\n3. **`.github/dependabot.yml:12`: the cooldown comment is now partly wrong (CONFIG-05 / PR-02, low)**\n   - The comment reads `default-days: 7 # Aligns with minimumReleaseAge / npmMinimalAgeGate`. The age gate now has exemptions for the two `@safe-global` packages, but Dependabot still waits 7 days for them.\n   - That's harmless, but the \"aligns with\" claim is no longer fully true.\n   - Either add a Dependabot `cooldown.exclude` entry for the preapproved packages, or note the exemption in the comment, so the two settings don't quietly drift apart."
+}
