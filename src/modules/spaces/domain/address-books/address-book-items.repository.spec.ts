@@ -6,8 +6,6 @@ import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
@@ -18,8 +16,7 @@ import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 describe('AddressBookItemsRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const spaceUuid = fakeUuid();
-  const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-  const userId = Number(authPayload.sub);
+  const userId = faker.number.int({ min: 1, max: 100_000 });
 
   let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
@@ -97,9 +94,9 @@ describe('AddressBookItemsRepository', () => {
         decrypted,
       );
 
-      await expect(
-        target.findAllBySpaceId({ authPayload, spaceId }),
-      ).resolves.toStrictEqual(decrypted);
+      await expect(target.findAllBySpaceId(spaceId)).resolves.toStrictEqual(
+        decrypted,
+      );
       expect(
         spaceEncryptionService.decryptAddressBookItems,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
@@ -118,7 +115,7 @@ describe('AddressBookItemsRepository', () => {
       });
 
       await target.upsertMany({
-        authPayload,
+        userId,
         spaceId,
         addressBookItems: [{ address, name, chainIds }],
       });
@@ -168,7 +165,7 @@ describe('AddressBookItemsRepository', () => {
       });
 
       await target.upsertMany({
-        authPayload,
+        userId,
         spaceId,
         addressBookItems: [{ address, name, chainIds }],
       });
@@ -205,7 +202,7 @@ describe('AddressBookItemsRepository', () => {
       const chainIds = ['1'];
 
       await target.upsertMany({
-        authPayload,
+        userId,
         spaceId,
         addressBookItems: [{ address, name, chainIds }],
       });
@@ -234,7 +231,7 @@ describe('AddressBookItemsRepository', () => {
         decrypted,
       );
 
-      await target.deleteByAddress({ authPayload, spaceId, address });
+      await target.deleteByAddress({ userId, spaceId, address });
 
       expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(
         DbAddressBookItem,
@@ -266,7 +263,7 @@ describe('AddressBookItemsRepository', () => {
         name: 'Alice',
       });
 
-      await target.deleteByAddress({ authPayload, spaceId, address });
+      await target.deleteByAddress({ userId, spaceId, address });
 
       expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(
         DbAddressBookItem,

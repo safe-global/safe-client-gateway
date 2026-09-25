@@ -33,7 +33,6 @@ import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
 const spacesRepositoryMock = {
   create: vi.fn(),
   find: vi.fn(),
-  findOne: vi.fn(),
   findOneOrFail: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
@@ -926,8 +925,8 @@ describe('SpacesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
 
-      spacesRepositoryMock.findOne.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
       );
       spacesRepositoryMock.update.mockResolvedValue({
         uuid: spaceUuid,
@@ -947,7 +946,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw when %s user is not admin', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.update({
@@ -967,8 +966,8 @@ describe('SpacesService', () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(builder().build());
 
-      spacesRepositoryMock.findOne.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).build(),
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
       );
 
       await service.delete({ id: spaceId, authPayload });
@@ -984,7 +983,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw when %s user is not admin', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.delete({

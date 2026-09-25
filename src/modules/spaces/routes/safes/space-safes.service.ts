@@ -13,7 +13,6 @@ import {
   assertAdmin,
   assertMember,
 } from '@/modules/spaces/domain/space-assert.utils';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { CreateSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
@@ -24,8 +23,6 @@ export class SpaceSafesService {
   public constructor(
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafesRepository: ISpaceSafesRepository,
-    @Inject(ISpacesRepository)
-    private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
     @Inject(IEntitlementEnforcement)
@@ -40,7 +37,7 @@ export class SpaceSafesService {
     payload: Array<CreateSpaceSafeDto>;
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.spaceId, userId);
+    await assertAdmin(this.membersRepository, args.spaceId, userId);
 
     // The use case owns the transaction, so the seat check and the insert it
     // admits share one. What each step needs is resolved before it opens:
@@ -102,7 +99,7 @@ export class SpaceSafesService {
     payload: Array<DeleteSpaceSafeDto>;
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.spaceId, userId);
+    await assertAdmin(this.membersRepository, args.spaceId, userId);
 
     await this.spaceSafesRepository.delete({
       spaceId: args.spaceId,

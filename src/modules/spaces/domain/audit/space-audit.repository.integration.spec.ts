@@ -264,7 +264,7 @@ describe('SpaceAuditRepository', () => {
       const invitee = await inviteUser({ spaceId, adminAuthPayload });
 
       await membersRepository.updateRole({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
         role: 'ADMIN',
@@ -449,11 +449,12 @@ describe('SpaceAuditRepository', () => {
 
   describe('findBySpaceId', () => {
     it('should order newest-first by default, scope by space and reverse with asc', async () => {
-      const { spaceId, adminAuthPayload } = await createSpaceWithAdmin();
+      const { spaceId, adminUserId, adminAuthPayload } =
+        await createSpaceWithAdmin();
       const other = await createSpaceWithAdmin();
       const invitee = await inviteUser({ spaceId, adminAuthPayload });
       await membersRepository.updateRole({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
         role: 'ADMIN',
@@ -532,7 +533,7 @@ describe('SpaceAuditRepository', () => {
         await createSpaceWithAdmin();
       const invitee = await inviteUser({ spaceId, adminAuthPayload });
       await membersRepository.updateRole({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
         role: 'ADMIN',
@@ -606,7 +607,7 @@ describe('SpaceAuditRepository', () => {
         payload: { name: nameBuilder() },
       });
       await membersRepository.removeUser({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
       });
