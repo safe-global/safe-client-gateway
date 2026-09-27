@@ -397,7 +397,9 @@ async function fetchFailedTestDetails(
 		await sleep(DELAY_MS);
 
 		try {
-			const log = ghExec(`gh api "repos/${REPO}/actions/jobs/${job.id}/logs"`);
+			const log = ghExec(
+				`gh api --allow-escape-sequences "repos/${REPO}/actions/jobs/${job.id}/logs"`,
+			);
 			const tests = parseFailedTestsFromLog(log);
 			allFailedTests.push(...tests);
 		} catch {
@@ -969,8 +971,18 @@ async function main(): Promise<void> {
 			? Math.round((mergedFlakyCommits / mergedTotalCommits) * 1000) / 10
 			: 0;
 
-	// 8. Fetch test-related PRs (always re-fetch, cheap)
-	const fixPrs = await fetchTestFixPrs();
+	// 8. Fetch test-related PRs (always re-fetch, cheap). The listing only
+	// covers the 500 most recently updated PRs, so keep earlier-found ones.
+	const fetchedPrs = await fetchTestFixPrs();
+	const fetchedNumbers = new Set(fetchedPrs.map((pr) => pr.number));
+	const fixPrsPath = path.join(OUTPUT_DIR, "fix-prs.json");
+	const previousPrs: Array<FixPr> = fs.existsSync(fixPrsPath)
+		? (JSON.parse(fs.readFileSync(fixPrsPath, "utf-8")).prs ?? [])
+		: [];
+	const fixPrs = [
+		...fetchedPrs,
+		...previousPrs.filter((pr) => !fetchedNumbers.has(pr.number)),
+	];
 	console.log(`Found ${fixPrs.length} test-related PRs`);
 
 	// 9. Build flaky tests list with PR correlation
@@ -1039,10 +1051,7 @@ async function main(): Promise<void> {
 		path.join(OUTPUT_DIR, "flaky-tests.json"),
 		JSON.stringify(flakyTestsData, null, 2) + "\n",
 	);
-	fs.writeFileSync(
-		path.join(OUTPUT_DIR, "fix-prs.json"),
-		JSON.stringify(fixPrsData, null, 2) + "\n",
-	);
+	fs.writeFileSync(fixPrsPath, JSON.stringify(fixPrsData, null, 2) + "\n");
 
 	const report = generateReport({
 		period,
@@ -1062,7 +1071,7 @@ async function main(): Promise<void> {
 	console.log("\nDone! Files written:");
 	console.log(`  ${path.join(OUTPUT_DIR, "ci-runs.json")}`);
 	console.log(`  ${path.join(OUTPUT_DIR, "flaky-tests.json")}`);
-	console.log(`  ${path.join(OUTPUT_DIR, "fix-prs.json")}`);
+	console.log(`  ${fixPrsPath}`);
 	console.log(`  ${path.join(OUTPUT_DIR, "REPORT.md")}`);
 }
 
