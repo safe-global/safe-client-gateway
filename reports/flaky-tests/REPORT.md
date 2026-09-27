@@ -1,14 +1,14 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-07-14T14:29:12.303Z | Period: 2026-01-16 to 2026-07-14
+Generated: 2026-09-20T23:59:59.000Z | Period: 2026-01-16 to 2026-09-20
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 1792 |
-| Flaky commits (pass + fail on same SHA) | 126 |
-| Flakiness rate | 7% |
+| Total unique commits | 2441 |
+| Flaky commits (pass + fail on same SHA) | 141 |
+| Flakiness rate | 5.8% |
 | Cascade baseline | 1 failures (7 tests) |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
@@ -52,7 +52,16 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-06-29 | 81 | 3 | 3.7% |
 | 2026-07-05 | 6 | 0 | 0% |
 | 2026-07-06 | 95 | 2 | 2.1% |
-| 2026-07-13 | 63 | 1 | 1.6% |
+| 2026-07-13 | 102 | 1 | 1% |
+| 2026-07-20 | 74 | 2 | 2.7% |
+| 2026-07-27 | 50 | 1 | 2% |
+| 2026-08-03 | 54 | 0 | 0% |
+| 2026-08-10 | 46 | 0 | 0% |
+| 2026-08-17 | 108 | 6 | 5.6% |
+| 2026-08-24 | 75 | 0 | 0% |
+| 2026-08-31 | 12 | 0 | 0% |
+| 2026-09-07 | 48 | 3 | 6.3% |
+| 2026-09-14 | 143 | 3 | 2.1% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -82,7 +91,16 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 06-22   5.6%  n=71   ████████████
 06-29   3.7%  n=81   ████████
 07-06   2.1%  n=95   ████
-07-13   1.6%  n=63   ███
+07-13   1.0%  n=102  ██
+07-20   2.7%  n=74   ██████
+07-27   2.0%  n=50   ████
+08-03   0.0%  n=54   ▏
+08-10   0.0%  n=46   ▏
+08-17   5.6%  n=108  ████████████
+08-24   0.0%  n=75   ▏
+08-31   0.0%  n=12   ▏
+09-07   6.3%  n=48   █████████████
+09-14   2.1%  n=143  ████
 ```
 
 ## Clean Streak
@@ -100,19 +118,20 @@ Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-c
 | `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 12 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/datasources/cache/redis.cache.service.integration.spec.ts` | 11 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 10 | Open | [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) |
+| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
+| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | Fixed | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
 | `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | Open | - |
-| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 8 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 8 | Fixed | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
+| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 9 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/modules/users/domain/users.repository.integration.spec.ts` | 8 | Open | - |
 | `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
-| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 6 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
+| `src/domain/common/entities/safe-signature.spec.ts` | 6 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/users/domain/users.repository.integration.spec.ts` | 5 | Open | - |
-| `src/domain/common/entities/safe-signature.spec.ts` | 4 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
+| `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts` | 5 | Fixed | [#2913](https://github.com/safe-global/safe-client-gateway/pull/2913) |
 | `src/modules/auth/utils/auth-redirect.helper.spec.ts` | 3 | Fixed | [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) |
 | `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 3 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | Open | - |
-| `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts` | 2 | Fixed | [#2913](https://github.com/safe-global/safe-client-gateway/pull/2913) |
+| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 
 ## Cascade Tests
 
@@ -133,6 +152,8 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 ## Fix PRs
 
+- [#3447](https://github.com/safe-global/safe-client-gateway/pull/3447) - feat: derive zerion support from its chain list, excluding testnets (Open)
+- [#3444](https://github.com/safe-global/safe-client-gateway/pull/3444) - fix(circuit-breaker): replace deprecated done() callback with Date.now mocking (Open)
 - [#3262](https://github.com/safe-global/safe-client-gateway/pull/3262) - fix: await Fastify ready when initializing test apps (Merged)
 - [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) - fix(tests): resolve remaining flaky tests after Vitest migration (Merged)
 - [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) - chore(tests): reduce CI flakiness (clearMocks + seeded faker) (Merged)
@@ -158,7 +179,7 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 - `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (10 failures)
 - `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (9 failures)
-- `src/modules/users/domain/users.repository.integration.spec.ts` (5 failures)
+- `src/modules/users/domain/users.repository.integration.spec.ts` (8 failures)
 - `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures)
 
 ---

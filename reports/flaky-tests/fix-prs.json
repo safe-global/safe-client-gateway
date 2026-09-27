@@ -1,6 +1,28 @@
 {
-  "generated_at": "2026-07-14T14:29:12.297Z",
+  "generated_at": "2026-09-20T23:59:59.000Z",
   "prs": [
+    {
+      "number": 3447,
+      "title": "feat: derive zerion support from its chain list, excluding testnets",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3447",
+      "merged_at": null,
+      "tests_fixed": [
+        "src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.spec.ts",
+        "src/modules/portfolio/datasources/zerion-portfolio-api.service.spec.ts",
+        "src/modules/positions/datasources/zerion-positions-api.service.spec.ts",
+        "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts",
+        "src/modules/safe/routes/v2/safes.v2.service.spec.ts"
+      ]
+    },
+    {
+      "number": 3444,
+      "title": "fix(circuit-breaker): replace deprecated done() callback with Date.now mocking",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3444",
+      "merged_at": null,
+      "tests_fixed": [
+        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts"
+      ]
+    },
     {
       "number": 3262,
       "title": "fix: await Fastify ready when initializing test apps",

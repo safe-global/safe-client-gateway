@@ -1,11 +1,12 @@
 {
-  "generated_at": "2026-07-14T14:29:12.297Z",
-  "last_checked_at": "2026-07-14T14:29:12.297Z",
+  "generated_at": "2026-09-20T23:59:59.000Z",
+  "last_checked_at": "2026-09-20T23:59:59.000Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-07-14"
+    "to": "2026-09-20"
   },
   "flaky_shas": [
+    "9b8f387",
     "9ebe58e",
     "76ce6b8",
     "c2bce16",
@@ -157,9 +158,289 @@
     "47477af",
     "dc3acbd",
     "ab8c16f",
-    "9b8f387"
+    "b648aef",
+    "fce0ef3",
+    "693e14c",
+    "4583cb3",
+    "dd402c0",
+    "094a7b7",
+    "d4546a1",
+    "b67f5d7",
+    "5c85b7a",
+    "4a0b8c9",
+    "f65de72",
+    "3f674b7",
+    "a23fd1d",
+    "3eee9a0",
+    "21153d5"
   ],
   "runs": [
+    {
+      "id": 35347380038,
+      "sha": "4a0b8c9",
+      "branch": "feat/policies-03-active-allowance",
+      "conclusion": "failure",
+      "created_at": "2026-09-18T12:56:54Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+          "name": "TransactionVerifierHelper > verifyProposal > should throw if a CONTRACT_SIGNATURE signature is invalid",
+          "error": "AssertionError: expected a thrown error to be Error: Could not recover address"
+        }
+      ]
+    },
+    {
+      "id": 35334102515,
+      "sha": "f65de72",
+      "branch": "wa-2984-zerion-chain-list-without-testnets",
+      "conclusion": "failure",
+      "created_at": "2026-09-18T10:19:28Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository > findOrCreateByWalletAddress > should return the existing user id on concurrent duplicate insert",
+          "error": "AssertionError: expected 28 to be 29 // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 34901873793,
+      "sha": "3f674b7",
+      "branch": "dependabot/npm_and_yarn/types/node-26.5.0",
+      "conclusion": "failure",
+      "created_at": "2026-09-14T22:00:31Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
+          "name": "MessageVerifierHelper > verifyCreation > should throw if an address cannot be recovered from an CONTRACT_SIGNATURE signature",
+          "error": "AssertionError: expected [Function] to throw error including 'Could not recover address' but got 'Insufficient length for dynamic part …'"
+        }
+      ]
+    },
+    {
+      "id": 34579113367,
+      "sha": "a23fd1d",
+      "branch": "claude/laughing-shannon-n25ioe",
+      "conclusion": "failure",
+      "created_at": "2026-09-11T08:25:32Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
+          "name": "Notifications Controller V2 > GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress > authentication > should return 403 if token is invalid",
+          "error": "AssertionError: expected [Function] to throw error including 'jwt malformed' but got 'invalid token'"
+        }
+      ]
+    },
+    {
+      "id": 34466392734,
+      "sha": "3eee9a0",
+      "branch": "feat/tokens-by-address",
+      "conclusion": "failure",
+      "created_at": "2026-09-10T10:30:16Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
+          "name": "Notifications Controller V2 > GET /v2/chains/:chainId/notifications/devices/:deviceUuid/safes/:safeAddress > authentication > should return 403 if token is invalid",
+          "error": "AssertionError: expected [Function] to throw error including 'jwt malformed' but got 'invalid token'"
+        }
+      ]
+    },
+    {
+      "id": 34339563253,
+      "sha": "21153d5",
+      "branch": "felipe/pla-1950-cgw-subscription-upgradedowngrade-preview-update-update",
+      "conclusion": "failure",
+      "created_at": "2026-09-09T10:19:03Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+          "name": "TransactionVerifierHelper > verifyApiTransaction > should throw if a confirmation contains an invalid CONTRACT_SIGNATURE signature",
+          "error": "AssertionError: expected a thrown error to be Error: Could not recover address"
+        }
+      ]
+    },
+    {
+      "id": 32501148377,
+      "sha": "4583cb3",
+      "branch": "chore/leftovers-from-PR3244",
+      "conclusion": "failure",
+      "created_at": "2026-08-21T16:05:57Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
+          "name": "SurveysController",
+          "error": "QueryFailedError: duplicate key value violates unique constraint \"pg_class_relname_nsp_index\""
+        }
+      ]
+    },
+    {
+      "id": 32275742757,
+      "sha": "dd402c0",
+      "branch": "docs-agents-staged-delivery-guides",
+      "conclusion": "failure",
+      "created_at": "2026-08-19T16:24:38Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository > findOrCreateByWalletAddress > should return the existing user id on concurrent duplicate insert",
+          "error": "AssertionError: expected 28 to be 29 // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 32243456134,
+      "sha": "094a7b7",
+      "branch": "feat-add-subscriptions-model",
+      "conclusion": "failure",
+      "created_at": "2026-08-19T10:35:51Z",
+      "failed_jobs": [
+        "unit-tests",
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+          "name": "RecipientAnalysisService > analyze > should analyze BridgeAndSwap with recipient same as Safe address",
+          "error": "AssertionError: expected {} to deeply equal { …(1) }"
+        },
+        {
+          "file": "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+          "name": "TransactionVerifierHelper > verifyApiTransaction > should throw if a confirmation contains an invalid CONTRACT_SIGNATURE signature",
+          "error": "AssertionError: expected a thrown error to be Error: Could not recover address"
+        }
+      ]
+    },
+    {
+      "id": 32241901398,
+      "sha": "d4546a1",
+      "branch": "tongyao/wa-2933-cgw-recognise-the-150-migration-as-an-official-mastercopy",
+      "conclusion": "failure",
+      "created_at": "2026-08-19T10:16:51Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
+          "name": "MessageVerifierHelper > verifyCreation > should throw if an address cannot be recovered from an CONTRACT_SIGNATURE signature",
+          "error": "AssertionError: expected [Function] to throw error including 'Could not recover address' but got 'Insufficient length for dynamic part …'"
+        }
+      ]
+    },
+    {
+      "id": 32157673864,
+      "sha": "b67f5d7",
+      "branch": "tongyao/wa-2936-remove-age-gate-exemption",
+      "conclusion": "failure",
+      "created_at": "2026-08-18T15:58:31Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
+          "name": "MessageVerifierHelper > verifyCreation > should throw if an address cannot be recovered from an CONTRACT_SIGNATURE signature",
+          "error": "AssertionError: expected [Function] to throw error including 'Could not recover address' but got 'Insufficient length for dynamic part …'"
+        }
+      ]
+    },
+    {
+      "id": 32073914676,
+      "sha": "5c85b7a",
+      "branch": "dependabot/npm_and_yarn/aws-sdk-19c496c46c",
+      "conclusion": "failure",
+      "created_at": "2026-08-17T21:59:55Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/domain/common/entities/safe-signature.spec.ts",
+          "name": "SafeSignature > should return the v value",
+          "error": "Error: Insufficient length for dynamic part length field"
+        }
+      ]
+    },
+    {
+      "id": 30557416286,
+      "sha": "693e14c",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-07-30T15:35:17Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
+          "name": "SurveysController",
+          "error": "QueryFailedError: duplicate key value violates unique constraint \"pg_class_relname_nsp_index\""
+        },
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository > findOrCreateByWalletAddress > should return the existing user id on concurrent duplicate insert",
+          "error": "AssertionError: expected 28 to be 29 // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 29945804060,
+      "sha": "b648aef",
+      "branch": "fix/sca-production-vulnerabilities",
+      "conclusion": "failure",
+      "created_at": "2026-07-22T18:14:22Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+          "name": "RecipientAnalysisService > Safe Setup Comparison > should handle Safe setup comparison with different owners",
+          "error": "AssertionError: expected {} to deeply equal { …(1) }"
+        }
+      ]
+    },
+    {
+      "id": 29942908331,
+      "sha": "fce0ef3",
+      "branch": "fix/tmp-version-bump",
+      "conclusion": "failure",
+      "created_at": "2026-07-22T17:34:22Z",
+      "failed_jobs": [
+        "unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/domain/common/entities/safe-signature.spec.ts",
+          "name": "SafeSignature > should return the v value",
+          "error": "Error: Insufficient length for dynamic part length field"
+        }
+      ]
+    },
     {
       "id": 29338034912,
       "sha": "9b8f387",
