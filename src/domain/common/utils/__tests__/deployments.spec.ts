@@ -118,8 +118,7 @@ describe('deployments', () => {
 
   describe('getAllowanceModuleDeployments', () => {
     it('should return the addresses of every published version deployed on the chain', () => {
-      // Gnosis Chain runs both v0.1.0 and v0.1.1 of the Allowance Module, at
-      // different addresses - the union this function exists to return.
+      // Gnosis Chain has both v0.1.0 and v0.1.1 of the Allowance Module.
       const GNOSIS_CHAIN_ID = '100';
 
       expect(
@@ -133,7 +132,6 @@ describe('deployments', () => {
     });
 
     it('should return only the versions actually deployed on the chain', () => {
-      // Sepolia only ever received v0.1.0 - v0.1.1 was never deployed there.
       const SEPOLIA_CHAIN_ID = '11155111';
 
       expect(

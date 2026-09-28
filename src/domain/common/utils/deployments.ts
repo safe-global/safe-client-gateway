@@ -62,12 +62,10 @@ export type SignerFactoryAbi = ReturnType<
 >;
 
 /**
- * Type-only declaration of the Allowance Module functions the pending-policies
- * decoder depends on. Same rationale as {@link SignerFactoryAbi}: the runtime ABI
- * comes from `@safe-global/safe-modules-deployments`, typed `any[]` upstream, so
- * this self-declared shape is what gives viem's `AbiDecoder` a literal Abi to work
- * with. Verified against the package's actual ABI at load time by
- * {@link getAllowanceModuleAbi}.
+ * Type-only declaration of the AllowanceModule functions the pending-policies
+ * decoder depends on. The runtime ABI is loadded from `@safe-global/safe-modules-deployments`,
+ * typed `any[]` upstream, so this self-declared shape is what gives viem's `AbiDecoder` a literal Abi to work
+ * with.
  */
 export type AllowanceModuleAbi = ReturnType<
   typeof parseAbi<
@@ -483,21 +481,19 @@ export function getSignerFactoryAbi(): SignerFactoryAbi {
 }
 
 /**
- * Published Allowance Module versions, latest first - mirrors the order
- * `@safe-global/safe-modules-deployments` ships internally. The package exposes
+ * Published Allowance Module versions. The package exposes
  * no "every version" query, so this list is hand-maintained; add to it when a
  * new version is published upstream and should be treated as "known" here.
  */
-const ALLOWANCE_MODULE_VERSIONS = ['0.1.1', '0.1.0'] as const;
+const ALLOWANCE_MODULE_VERSIONS = ['1.0.0', '0.1.1', '0.1.0'] as const;
 
 /**
  * Returns every official Allowance Module address deployed on a chain, across
  * every published version.
  *
  * Unlike {@link getSignerFactoryDeployments}, this does not pin to one version:
- * the Allowance Module is not a same-address singleton, and a chain can run more
- * than one version at once with independent storage (see
- * `SpendingLimitPolicyData`), so "known" has to mean "any published version".
+ * the Allowance Module is not a same-address singleton, and a chain can have more
+ * than one version at once.
  */
 export function getAllowanceModuleDeployments(args: {
   chainId: string;
@@ -530,7 +526,7 @@ const REQUIRED_ALLOWANCE_MODULE_FUNCTIONS = [
   },
   { name: 'resetAllowance', inputs: ['address', 'address'] },
   { name: 'deleteAllowance', inputs: ['address', 'address'] },
-] as const;
+];
 
 /**
  * Returns the Allowance Module ABI as published by
@@ -554,5 +550,5 @@ export function getAllowanceModuleAbi(): AllowanceModuleAbi {
     contractLabel: 'Allowance Module',
   });
 
-  return abi as unknown as AllowanceModuleAbi;
+  return abi as AllowanceModuleAbi;
 }
