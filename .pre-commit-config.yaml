@@ -31,7 +31,10 @@ repos:
         files: \.(md)$
         # .claude/ markdown files are Claude Code skills and commands: their YAML
         # frontmatter must be the first line, so a header cannot be prepended.
-        exclude: (node_modules/|dist/|coverage/|abis/|\.claude/)
+        # CHANGELOG.md is generated and rewritten by release-please on every
+        # Release PR, and it will never carry the header — without this, every
+        # Release PR fails license-headers forever.
+        exclude: (node_modules/|dist/|coverage/|abis/|\.claude/|^CHANGELOG\.md$)
         stages: [pre-commit]
         args:
           - --license-filepath
