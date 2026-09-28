@@ -21,6 +21,7 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import { PendingPolicyDto } from '@/modules/policies/routes/entities/pending-policy.dto.entity';
 import { ActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
 import {
   type PolicyTypes,
@@ -104,6 +105,63 @@ export class SpacePoliciesController {
     safes?: Caip10Addresses,
   ): Promise<Array<ActivePolicyDto>> {
     return await this.policiesService.getSpaceActivePolicies({
+      spaceId,
+      safes,
+      types,
+      authPayload,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Get the pending policy changes on Safes in a Space',
+    description:
+      'Returns the spending-limit changes in the transaction queue of every Safe in the Space. Detects only direct AllowanceModule calls and calls found one level inside a MultiSend batch, and only against known AllowanceModule deployments (@safe-global/safe-modules-deployments) - a change made through a nested MultiSend, a custom batching contract, a Safe module bypassing the owner queue, or an unofficial AllowanceModule fork is not detected.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiQuery({
+    name: 'safes',
+    required: false,
+    description:
+      "Narrow the read to a subset of the Space's Safes, comma-separated as `{chainId}:{safeAddress}`",
+    example: '11155111:0x0000000000000000000000000000000000000000',
+  })
+  @ApiQuery({
+    name: 'types',
+    required: true,
+    isArray: true,
+    enum: Object.values(PolicyType),
+    description:
+      'The policy types to report, comma-separated. Only `spending-limit` yields pending items today; other types are accepted and return none.',
+    example: 'spending-limit',
+  })
+  @ApiOkResponse({ type: PendingPolicyDto, isArray: true })
+  @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @ApiUnprocessableEntityResponse({
+    description:
+      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - authentication missing or invalid, or user is not a member of this space',
+  })
+  @ApiServiceUnavailableResponse({
+    description: 'The policy api is unavailable',
+  })
+  @Get('pending')
+  public async getPendingPolicies(
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Auth() authPayload: AuthPayload,
+    @Query('types', new ValidationPipe(PolicyTypesSchema))
+    types: PolicyTypes,
+    @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
+    safes?: Caip10Addresses,
+  ): Promise<Array<PendingPolicyDto>> {
+    return await this.policiesService.getSpacePendingPolicies({
       spaceId,
       safes,
       types,
