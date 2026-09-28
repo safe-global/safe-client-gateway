@@ -1,0 +1,19 @@
+{
+  "pr": 3333,
+  "reviewSha": "1c47f828d759708da0bf141bdfe3e3b9eb0dd816",
+  "baseSha": "d96f1ecef532737939305369803474361c88daed",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 20,
+    "outputTokens": 4745,
+    "cacheReadTokens": 666145,
+    "cacheWriteTokens": 66899,
+    "turns": 11,
+    "wallSeconds": 85,
+    "apiEquivalentUsd": 0.7634010000000001
+  },
+  "output": "No convention violations found. The two commits (a `@safe-global/safe-deployments` version bump plus test updates) pass all the rules I checked them against.\n\n**Scope reviewed:** `git diff d96f1ecef5…HEAD`, which starts at the shared base commit `d1f57d81b` and covers two commits (`17f4589be` and `1c47f828d`). Three files changed:\n- `package.json:65`: bumps `@safe-global/safe-deployments` from 1.37.58 to 1.37.62.\n- `yarn.lock:2015-2020, 6291`: the matching lockfile entries and checksum.\n- `src/__tests__/deployments.helper.spec.ts:1, 13-157`: adds the license header and updates the expected version lists for chain `100`.\n\nThe `.yarnrc.yml` age-gate exemption is added in the first commit and removed in the second, so it cancels out of the diff.\n\nI generated the checklist of all 58 rules into the scratchpad with `--out`, so the working tree is unchanged, and marked every item checked. I didn't need to look up any review-learning history.\n\n## Rules that applied\n| Rule | Location | Verdict |\n|---|---|---|\n| CONFIG-04: dependency versions pinned exactly | `package.json:65` | Pass. Exact `1.37.62`, no range. |\n| CONFIG-04: lockfile consistent | `yarn.lock:2015`, `yarn.lock:6291` | Pass. The resolution, checksum and workspace dependency all move together. Only one copy of the package remains. |\n| CHANGE-01 / CHANGE-02: smallest change, no unrelated edits | whole diff | Pass. It's just the bump plus the test updates it forces. The temporary `.yarnrc.yml` exemption is reverted within the same range. |\n| REUSE-01: take version lists from safe-deployments, don't hard-code them | `src/__tests__/deployments.helper.spec.ts:13-157` | Pass. The rule's example is about production constants. This spec is meant to snapshot what the helper reads from the package, so updating its expectations on a bump is correct. |\n| TEST-01 / non-negotiable 6: builders and faker | same | Doesn't apply. The expected values are real package data, not entity fixtures. |\n| TEST-08: test names match assertions | same | Pass. Only the assertions changed and the titles still fit. |\n| License header | `src/__tests__/deployments.helper.spec.ts:1` | Pass. `// SPDX-License-Identifier: FSL-1.1-MIT` added. JSON and lockfiles don't need one. |\n| PR-02: docs match behaviour | repo-wide search | Pass. No docs mention the old version. |\n\nNone of the other rules (modules, types, auth, routes, database, cache, logging, security, resilience, performance) are touched by this diff.\n\n## Notes (not findings)\n- **Not verified:** I didn't install packages or run tests, as asked. So I haven't confirmed that the other suites still pass now that 1.5.0 is on more chains.\n- **Outside the diff:** the alias comments in `src/__tests__/deployments.helper.ts:17-63` (for example `// 1.3.0, 1.4.1`) no longer list 1.5.0. This predates the PR.\n- **Merge interaction:** `main` at `d96f1ecef` still has the `npmPreapprovedPackages` exemption in `.yarnrc.yml`, while this branch's second commit argues for having none. Removing it from `main` isn't part of this diff.\n\n**Findings: none.**"
+}
