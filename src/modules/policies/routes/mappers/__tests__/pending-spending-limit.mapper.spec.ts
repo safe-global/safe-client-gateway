@@ -19,12 +19,12 @@ import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pe
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
-// Sepolia's only Allowance Module deployment (v0.1.0), per @safe-global/safe-modules-deployments.
+// Sepolia's only AllowanceModule deployment (v0.1.0), per @safe-global/safe-modules-deployments.
 const SEPOLIA_CHAIN_ID = '11155111';
 const SEPOLIA_ALLOWANCE_MODULE = getAddress(
   '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
 );
-// No Allowance Module has ever been deployed here.
+// No AllowanceModule has ever been deployed here.
 const CHAIN_ID_WITHOUT_ALLOWANCE_MODULE = '999999999';
 
 const mockLoggingService = {
@@ -43,7 +43,7 @@ describe('PendingSpendingLimitMapper', () => {
     );
   });
 
-  it('returns nothing on a chain with no known Allowance Module deployment', () => {
+  it('returns nothing on a chain with no known AllowanceModule deployment', () => {
     const safe = {
       chainId: CHAIN_ID_WITHOUT_ALLOWANCE_MODULE,
       address: getAddress(faker.finance.ethereumAddress()),
@@ -153,7 +153,7 @@ describe('PendingSpendingLimitMapper', () => {
     });
   });
 
-  it('ignores a MultiSend sub-call to an address that is not a known Allowance Module', () => {
+  it('ignores a MultiSend sub-call to an address that is not a known AllowanceModule', () => {
     const safe = {
       chainId: SEPOLIA_CHAIN_ID,
       address: getAddress(faker.finance.ethereumAddress()),
@@ -178,7 +178,7 @@ describe('PendingSpendingLimitMapper', () => {
     expect(target.map({ safe, transactions: [transaction] })).toEqual([]);
   });
 
-  it('detects an enableModule call naming a known Allowance Module', () => {
+  it('detects an enableModule call naming a known AllowanceModule', () => {
     const safe = {
       chainId: SEPOLIA_CHAIN_ID,
       address: getAddress(faker.finance.ethereumAddress()),
@@ -201,7 +201,7 @@ describe('PendingSpendingLimitMapper', () => {
     });
   });
 
-  it('ignores an enableModule call naming an address that is not a known Allowance Module', () => {
+  it('ignores an enableModule call naming an address that is not a known AllowanceModule', () => {
     const safe = {
       chainId: SEPOLIA_CHAIN_ID,
       address: getAddress(faker.finance.ethereumAddress()),
@@ -215,7 +215,7 @@ describe('PendingSpendingLimitMapper', () => {
     expect(target.map({ safe, transactions: [transaction] })).toEqual([]);
   });
 
-  it('ignores a delegatecall to a known Allowance Module selector', () => {
+  it('ignores a delegatecall to a known AllowanceModule selector', () => {
     const safe = {
       chainId: SEPOLIA_CHAIN_ID,
       address: getAddress(faker.finance.ethereumAddress()),

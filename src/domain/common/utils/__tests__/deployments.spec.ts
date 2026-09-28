@@ -118,7 +118,7 @@ describe('deployments', () => {
 
   describe('getAllowanceModuleDeployments', () => {
     it('should return the addresses of every published version deployed on the chain', () => {
-      // Gnosis Chain has both v0.1.0 and v0.1.1 of the Allowance Module.
+      // Gnosis Chain has both v0.1.0 and v0.1.1 of the AllowanceModule.
       const GNOSIS_CHAIN_ID = '100';
 
       expect(
@@ -139,7 +139,7 @@ describe('deployments', () => {
       ).toEqual([getAddress('0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134')]);
     });
 
-    it('should return an empty array for a chain with no Allowance Module deployment', () => {
+    it('should return an empty array for a chain with no AllowanceModule deployment', () => {
       expect(getAllowanceModuleDeployments({ chainId: '999999999' })).toEqual(
         [],
       );

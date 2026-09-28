@@ -20,12 +20,12 @@ type ModuleChange = { module: Address; change: PendingSpendingLimitChange };
 
 /**
  * Finds spending-limit changes in a Safe's queued transactions: direct calls to a
- * known Allowance Module deployment, an `enableModule` call for one, and either
+ * known AllowanceModule deployment, an `enableModule` call for one, and either
  * one level inside a MultiSend batch.
  *
  * See the `pending` endpoint's documented limitations for what this does not
  * detect (a nested MultiSend, an unofficial module fork, a module-executed
- * change bypassing the queue, a delegatecall dressed up as a module call).
+ * change bypassing the queue, a delegatecall).
  */
 @Injectable()
 export class PendingSpendingLimitMapper {
@@ -52,7 +52,7 @@ export class PendingSpendingLimitMapper {
   }
 
   /**
-   * One `PendingQueuedPolicy` per Allowance Module deployment this transaction
+   * One `PendingQueuedPolicy` per AllowanceModule deployment this transaction
    * touches - a single transaction bundling changes to two deployments (an
    * edge case) reports one item per deployment, all sharing the same
    * `safeTxHash`.
@@ -91,7 +91,7 @@ export class PendingSpendingLimitMapper {
    * sub-transaction of a MultiSend batch.
    *
    * `Operation.DELEGATE` candidates are dropped: a delegatecall to an
-   * Allowance Module selector runs against the Safe's own storage, not the
+   * AllowanceModule selector runs against the Safe's own storage, not the
    * module's, so it cannot be a real allowance change - treating it as one
    * would be actively misleading (it is also a known way to disguise an
    * unrelated malicious call as an innocuous module call).
@@ -212,8 +212,8 @@ export class PendingSpendingLimitMapper {
           };
       }
     } catch {
-      // A call to a known module that isn't one of the five we track, e.g.
-      // `executeAllowanceTransfer` - not a policy change, just not one of ours.
+      // A call to a known module that isn't one of the five tracked, e.g.
+      // `executeAllowanceTransfer` - not a policy change.
       return null;
     }
   }

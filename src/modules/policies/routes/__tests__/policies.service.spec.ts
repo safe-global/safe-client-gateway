@@ -677,7 +677,7 @@ describe('PoliciesService', () => {
   });
 
   describe('pending policies', () => {
-    // Sepolia's only Allowance Module deployment, per
+    // Sepolia's only AllowanceModule deployment, per
     // @safe-global/safe-modules-deployments - the mapper only recognises real,
     // published deployments, so a random address never matches.
     const SEPOLIA_ALLOWANCE_MODULE = getAddress(

@@ -97,13 +97,13 @@ const PendingSpendingLimitChangeSchema = {
 )
 export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   @ApiProperty({
-    description: 'The Allowance Module deployment holding this state',
+    description: 'The AllowanceModule deployment holding this state',
   })
   public readonly module!: Address;
   @ApiProperty({
     isArray: true,
     ...PendingSpendingLimitChangeSchema,
-    description: 'The Allowance Module calls this transaction decodes to',
+    description: 'The AllowanceModule calls this transaction decodes to',
   })
   public readonly changes!: Array<PendingSpendingLimitChange>;
 }

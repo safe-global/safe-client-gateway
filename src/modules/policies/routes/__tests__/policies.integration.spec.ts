@@ -734,7 +734,7 @@ describe('Space Policies Controller', () => {
   });
 
   describe('GET /v1/spaces/:spaceId/policies/pending', () => {
-    // Sepolia's only Allowance Module deployment, per
+    // Sepolia's only AllowanceModule deployment, per
     // @safe-global/safe-modules-deployments - the mapper only recognises real,
     // published deployments, so the random `allowanceModule` used by the
     // active-policy tests above never matches here.

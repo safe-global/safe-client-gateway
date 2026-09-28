@@ -481,18 +481,18 @@ export function getSignerFactoryAbi(): SignerFactoryAbi {
 }
 
 /**
- * Published Allowance Module versions. The package exposes
+ * Published AllowanceModule versions. The package exposes
  * no "every version" query, so this list is hand-maintained; add to it when a
  * new version is published upstream and should be treated as "known" here.
  */
 const ALLOWANCE_MODULE_VERSIONS = ['1.0.0', '0.1.1', '0.1.0'] as const;
 
 /**
- * Returns every official Allowance Module address deployed on a chain, across
+ * Returns every official AllowanceModule address deployed on a chain, across
  * every published version.
  *
  * Unlike {@link getSignerFactoryDeployments}, this does not pin to one version:
- * the Allowance Module is not a same-address singleton, and a chain can have more
+ * the AllowanceModule is not a same-address singleton, and a chain can have more
  * than one version at once.
  */
 export function getAllowanceModuleDeployments(args: {
@@ -529,7 +529,7 @@ const REQUIRED_ALLOWANCE_MODULE_FUNCTIONS = [
 ];
 
 /**
- * Returns the Allowance Module ABI as published by
+ * Returns the AllowanceModule ABI as published by
  * `@safe-global/safe-modules-deployments`. Function selectors are determined
  * solely by name and parameter types, which have been stable across every
  * published version, so the latest released version's ABI is used to decode
@@ -539,7 +539,7 @@ export function getAllowanceModuleAbi(): AllowanceModuleAbi {
   const deployment = getAllowanceModuleDeployment();
   if (!deployment) {
     throw new Error(
-      'Allowance Module deployment not found in @safe-global/safe-modules-deployments',
+      'AllowanceModule deployment not found in @safe-global/safe-modules-deployments',
     );
   }
 
@@ -547,7 +547,7 @@ export function getAllowanceModuleAbi(): AllowanceModuleAbi {
   assertAbiHasFunctions({
     abi,
     required: REQUIRED_ALLOWANCE_MODULE_FUNCTIONS,
-    contractLabel: 'Allowance Module',
+    contractLabel: 'AllowanceModule',
   });
 
   return abi as AllowanceModuleAbi;

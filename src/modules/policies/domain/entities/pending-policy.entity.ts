@@ -38,7 +38,7 @@ export const PendingSpendingLimitChangeKind = {
 };
 
 /**
- * One decoded Allowance Module call found in a queued transaction (directly, or as
+ * One decoded AllowanceModule call found in a queued transaction (directly, or as
  * a batched transaction using MultiSend contract).
  */
 export type PendingSpendingLimitChange =
