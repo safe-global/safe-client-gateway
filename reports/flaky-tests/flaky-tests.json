@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-09-20T23:59:59.000Z",
+  "generated_at": "2026-09-28T12:41:17.763Z",
   "summary": {
-    "total_commits": 2441,
-    "flaky_commits": 141,
-    "flakiness_rate": 5.8,
+    "total_commits": 2422,
+    "flaky_commits": 142,
+    "flakiness_rate": 5.9,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-09-20"
+      "to": "2026-09-28"
     }
   },
   "weekly_trend": [
@@ -276,9 +276,15 @@
     },
     {
       "week": "2026-09-14",
-      "commits": 143,
-      "flaky": 3,
-      "rate": 2.1
+      "commits": 52,
+      "flaky": 2,
+      "rate": 3.8
+    },
+    {
+      "week": "2026-09-21",
+      "commits": 72,
+      "flaky": 2,
+      "rate": 2.8
     }
   ],
   "tests": [
@@ -484,6 +490,16 @@
       }
     },
     {
+      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts",
+      "failure_count": 2,
+      "is_cascade": false,
+      "status": "fixed",
+      "fix_pr": {
+        "number": 2890,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
+      }
+    },
+    {
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts",
       "failure_count": 1,
       "is_cascade": true,
@@ -528,7 +544,14 @@
       }
     },
     {
-      "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts",
+      "file": "src/domain/common/entities/name.builder.spec.ts",
+      "failure_count": 1,
+      "is_cascade": true,
+      "status": "open",
+      "fix_pr": null
+    },
+    {
+      "file": "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
       "failure_count": 1,
       "is_cascade": true,
       "status": "fixed",
@@ -536,13 +559,6 @@
         "number": 2890,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/2890"
       }
-    },
-    {
-      "file": "src/domain/common/entities/name.builder.spec.ts",
-      "failure_count": 1,
-      "is_cascade": true,
-      "status": "open",
-      "fix_pr": null
     }
   ],
   "cascade_baseline": 1,
