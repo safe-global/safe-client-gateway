@@ -6,10 +6,6 @@ import {
 } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import {
-  SAFE_QUEUE_SERVICE_MAX_LIMIT,
-  SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-} from '@/domain/common/constants';
 import { batched } from '@/domain/common/utils/batch';
 import {
   type ILoggingService,
@@ -56,7 +52,7 @@ export class PoliciesService {
   static readonly MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
 
   private readonly batchSize: number;
-  private readonly queueLimit: number;
+  private readonly maxPageSize: number;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -80,11 +76,7 @@ export class PoliciesService {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
 
-    this.queueLimit = this.configurationService.getOrThrow<boolean>(
-      'features.safeQueueService',
-    )
-      ? SAFE_QUEUE_SERVICE_MAX_LIMIT
-      : SAFE_TRANSACTION_SERVICE_MAX_LIMIT;
+    this.maxPageSize = this.safeRepository.getTransactionQueueMaxPageSize();
   }
 
   /**
@@ -292,8 +284,8 @@ export class PoliciesService {
       const queue = await this.safeRepository.getTransactionQueue({
         chainId: safe.chainId,
         safe: safeInfo,
-        limit: this.queueLimit,
-        offset: page * this.queueLimit,
+        limit: this.maxPageSize,
+        offset: page * this.maxPageSize,
       });
       transactions.push(...queue.results);
       next = queue.next;
@@ -353,15 +345,12 @@ export class PoliciesService {
   /**
    * The addresses registered as delegates of the Safe - what a proposer grant
    * is.
-   *
-   * Read at the Queue Service's max page size i.e 100. That limit is lower
-   * than the Transaction Service i.e. 200.
    */
   private async delegates(safe: SafeRef): Promise<Array<Delegate>> {
     const { results } = await this.delegatesV3Repository.getDelegates({
       chainId: safe.chainId,
       safeAddress: safe.address,
-      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      limit: this.maxPageSize,
     });
 
     return results;

@@ -45,6 +45,7 @@ const mockPolicyIndexerRepository = {
 const mockSafeRepository = {
   getSafe: vi.fn(),
   getTransactionQueue: vi.fn(),
+  getTransactionQueueMaxPageSize: vi.fn(),
 } as unknown as MockedObject<ISafeRepository>;
 
 const mockSpaceSafesRepository = {
@@ -120,9 +121,10 @@ describe('PoliciesService', () => {
   ): PoliciesService {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('policies.batchSize', size);
-    fakeConfigurationService.set(
-      'features.safeQueueService',
-      args?.safeQueueServiceEnabled ?? false,
+    mockSafeRepository.getTransactionQueueMaxPageSize.mockReturnValue(
+      args?.safeQueueServiceEnabled
+        ? SAFE_QUEUE_SERVICE_MAX_LIMIT
+        : SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
     );
 
     return new PoliciesService(
@@ -458,13 +460,27 @@ describe('PoliciesService', () => {
   });
 
   describe('proposers', () => {
-    it('should read the delegates api for the safe, at the Queue Service max page size', async () => {
+    it('should read the delegates api for the safe, at the Queue Service max page size when the queue service flag is set true', async () => {
+      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+
       await target.getSpaceActivePolicies(policyRequest);
 
       expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledWith({
         chainId: SEPOLIA,
         safeAddress,
         limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      });
+    });
+
+    it('should read the delegates api for the safe, at the Transaction Service max page size when the queue service flag is set false', async () => {
+      target = policiesService(batchSize, { safeQueueServiceEnabled: false });
+
+      await target.getSpaceActivePolicies(policyRequest);
+
+      expect(mockDelegatesV3Repository.getDelegates).toHaveBeenCalledWith({
+        chainId: SEPOLIA,
+        safeAddress,
+        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
       });
     });
 
