@@ -22,6 +22,7 @@ export function materializedSubscriptionBuilder(): IBuilder<MaterializedSubscrip
     .with('status', faker.helpers.arrayElement(SubscriptionStatuses))
     .with('planId', faker.lorem.slug())
     .with('planName', faker.commerce.productName())
+    .with('planCode', faker.string.alphanumeric({ length: 8, casing: 'upper' }))
     .with('currentPeriodStart', faker.date.recent())
     .with('currentPeriodEnd', faker.date.future())
     .with('entitlements', []);

@@ -20,9 +20,11 @@ const PERIOD_END = 1_702_592_000;
 
 describe('subscription.mapper', () => {
   let onWarning: (message: string) => void;
+  let onError: (message: string) => void;
 
   beforeEach(() => {
     onWarning = vi.fn<(message: string) => void>();
+    onError = vi.fn<(message: string) => void>();
   });
 
   describe('mapEventToSubscription', () => {
@@ -47,16 +49,21 @@ describe('subscription.mapper', () => {
         status: 'active',
         currentPeriodStart: PERIOD_START,
         currentPeriodEnd: PERIOD_END,
-        metadata: { FEATURE_SAFE_SEATS: '10', FEATURE_SECURITY_HUB: 'true' },
+        metadata: {
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+          FEATURE_SECURITY_HUB: 'true',
+        },
       });
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toStrictEqual({
         upstreamSubscriptionId: event.data?.subscriptionId,
         status: 'active',
         planId: event.data?.planId,
         planName: null,
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date(PERIOD_START * 1_000),
         currentPeriodEnd: new Date(PERIOD_END * 1_000),
         entitlements: [
@@ -70,6 +77,19 @@ describe('subscription.mapper', () => {
         ],
       });
       expect(onWarning).not.toHaveBeenCalled();
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    // Every payment link carries one, so its absence is an upstream anomaly.
+    it('leaves the plan code null and logs an error when the metadata omits it', () => {
+      const event = eventWith({ metadata: { FEATURE_SAFE_SEATS: '10' } });
+
+      expect(
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
+      ).toMatchObject({ planCode: null });
+      expect(onError).toHaveBeenCalledExactlyOnceWith(
+        `Subscription ${event.data?.subscriptionId} carries no planCode in its metadata`,
+      );
     });
 
     it('takes the plan name from the metadata', () => {
@@ -78,7 +98,7 @@ describe('subscription.mapper', () => {
       });
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toMatchObject({ planName: 'Business' });
     });
 
@@ -101,7 +121,7 @@ describe('subscription.mapper', () => {
       const event = eventWith(data);
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toBeNull();
     });
 
@@ -109,7 +129,7 @@ describe('subscription.mapper', () => {
       const event = eventWith({ status: 'something.new' });
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toBeNull();
       expect(onWarning).toHaveBeenCalledTimes(1);
     });
@@ -123,7 +143,7 @@ describe('subscription.mapper', () => {
       });
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toBeNull();
       expect(onWarning).toHaveBeenCalledTimes(1);
     });
@@ -135,7 +155,7 @@ describe('subscription.mapper', () => {
       });
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toMatchObject({ currentPeriodEnd: null });
       expect(onWarning).not.toHaveBeenCalled();
     });
@@ -147,7 +167,7 @@ describe('subscription.mapper', () => {
       });
 
       expect(
-        mapEventToSubscription({ event, featureTypeByKey, onWarning }),
+        mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toMatchObject({ status: 'canceled', entitlements: null });
     });
   });
@@ -159,6 +179,7 @@ describe('subscription.mapper', () => {
           subscriptions: [],
           featureTypeByKey,
           onWarning,
+          onError,
         }),
       ).toStrictEqual([]);
     });
@@ -170,17 +191,21 @@ describe('subscription.mapper', () => {
         .with('plan', plan)
         .with('currentPeriodStart', PERIOD_START)
         .with('currentPeriodEnd', PERIOD_END)
-        .with('metadata', { FEATURE_SAFE_SEATS: '10' })
+        .with('metadata', { planCode: 'BUS-10-A', FEATURE_SAFE_SEATS: '10' })
         .build();
       const canceled = subscriptionBuilder()
         .with('status', 'canceled')
-        .with('metadata', { FEATURE_SAFE_SEATS: '99' })
+        .with('metadata', {
+          planCode: 'BUS-99-A',
+          FEATURE_SAFE_SEATS: '99',
+        })
         .build();
 
       const result = mapUpstreamSubscriptions({
         subscriptions: [active, canceled],
         featureTypeByKey,
         onWarning,
+        onError,
       });
 
       expect(result[0]).toStrictEqual({
@@ -188,6 +213,7 @@ describe('subscription.mapper', () => {
         status: 'active',
         planId: plan.id,
         planName: plan.name,
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date(PERIOD_START * 1_000),
         currentPeriodEnd: new Date(PERIOD_END * 1_000),
         entitlements: [
@@ -201,6 +227,26 @@ describe('subscription.mapper', () => {
         status: 'canceled',
         entitlements: null,
       });
+      expect(onError).not.toHaveBeenCalled();
+    });
+
+    it('leaves the plan code null and logs an error when the metadata omits it', () => {
+      const subscription = subscriptionBuilder()
+        .with('status', 'canceled')
+        .with('metadata', null)
+        .build();
+
+      expect(
+        mapUpstreamSubscriptions({
+          subscriptions: [subscription],
+          featureTypeByKey,
+          onWarning,
+          onError,
+        })[0],
+      ).toMatchObject({ planCode: null });
+      expect(onError).toHaveBeenCalledExactlyOnceWith(
+        `Subscription ${subscription.id} carries no planCode in its metadata`,
+      );
     });
 
     it('keeps the newest active subscription and demotes the surplus', () => {
@@ -219,6 +265,7 @@ describe('subscription.mapper', () => {
         subscriptions: [older, newer],
         featureTypeByKey,
         onWarning,
+        onError,
       });
 
       // The surplus one is demoted rather than dropped, so `materialize`
@@ -256,6 +303,7 @@ describe('subscription.mapper', () => {
         subscriptions: [lower, higher],
         featureTypeByKey,
         onWarning,
+        onError,
       });
 
       expect(result).toStrictEqual([
@@ -282,6 +330,7 @@ describe('subscription.mapper', () => {
           subscriptions: [subscription],
           featureTypeByKey,
           onWarning,
+          onError,
         })[0],
       ).toMatchObject({ planName: null });
     });
@@ -301,6 +350,7 @@ describe('subscription.mapper', () => {
           subscriptions: [subscription],
           featureTypeByKey,
           onWarning,
+          onError,
         })[0],
       ).toMatchObject({ currentPeriodStart: null, currentPeriodEnd: null });
       expect(onWarning).toHaveBeenCalledTimes(1);
@@ -319,6 +369,7 @@ describe('subscription.mapper', () => {
           subscriptions: [subscription],
           featureTypeByKey,
           onWarning,
+          onError,
         })[0],
       ).toMatchObject({ currentPeriodStart: null, currentPeriodEnd: null });
       expect(onWarning).not.toHaveBeenCalled();

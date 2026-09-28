@@ -691,6 +691,7 @@ describe('EntitlementsService', () => {
         .with('status', 'active')
         .with('planId', 'business')
         .with('planName', 'Business')
+        .with('planCode', 'BUS-10-A')
         .with('currentPeriodStart', new Date('2026-07-01T00:00:00Z'))
         .with('currentPeriodEnd', new Date('2026-08-01T00:00:00Z'))
         .with('entitlements', [
@@ -712,6 +713,7 @@ describe('EntitlementsService', () => {
         status: 'active',
         planId: 'business',
         planName: 'Business',
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date('2026-07-01T00:00:00Z'),
         currentPeriodEnd: new Date('2026-08-01T00:00:00Z'),
       });
