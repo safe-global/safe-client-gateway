@@ -210,10 +210,13 @@ export class PendingSpendingLimitMapper {
             delegate: decoded.args[0],
             token: decoded.args[1],
           };
+        default:
+          // A call to a known AllowanceModule function this mapper doesn't
+          // track, e.g. `executeAllowanceTransfer` - not a policy change.
+          return null;
       }
     } catch {
-      // A call to a known module that isn't one of the five tracked, e.g.
-      // `executeAllowanceTransfer` - not a policy change.
+      // Not a call this decoder recognises at all.
       return null;
     }
   }

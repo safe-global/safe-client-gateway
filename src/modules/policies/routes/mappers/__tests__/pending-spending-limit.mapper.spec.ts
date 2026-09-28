@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
@@ -223,6 +224,20 @@ describe('PendingSpendingLimitMapper', () => {
       .with('to', SEPOLIA_ALLOWANCE_MODULE)
       .with('operation', Operation.DELEGATE)
       .with('data', setAllowanceEncoder().encode())
+      .build();
+
+    expect(target.map({ safe, transactions: [transaction] })).toEqual([]);
+  });
+
+  it('ignores a call to a known AllowanceModule that cannot be decoded', () => {
+    const safe = {
+      chainId: SEPOLIA_CHAIN_ID,
+      address: getAddress(faker.finance.ethereumAddress()),
+    };
+    const transaction = multisigTransactionBuilder()
+      .with('to', SEPOLIA_ALLOWANCE_MODULE)
+      .with('operation', Operation.CALL)
+      .with('data', faker.string.hexadecimal({ length: 64 }) as Hex)
       .build();
 
     expect(target.map({ safe, transactions: [transaction] })).toEqual([]);
