@@ -688,11 +688,12 @@ describe('PoliciesService', () => {
       types: [PolicyType.SpendingLimit],
     };
 
-    /** Reports `transactions` as the first page of the safe's queue. */
+    /** Reports `transactions` as the whole (one-page) queue of the safe. */
     function withQueue(transactions: Array<MultisigTransaction>): void {
       mockSafeRepository.getTransactionQueue.mockResolvedValue(
         pageBuilder<MultisigTransaction>()
           .with('results', transactions)
+          .with('next', null)
           .build(),
       );
     }
@@ -798,6 +799,80 @@ describe('PoliciesService', () => {
       );
     });
 
+    it('should read every page of a queue longer than one page', async () => {
+      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+      const addDelegate = addDelegateEncoder();
+      const addDelegateArgs = addDelegate.build();
+      const firstPage = Array.from(
+        { length: SAFE_QUEUE_SERVICE_MAX_LIMIT },
+        () => multisigTransactionBuilder().build(),
+      );
+      const changeOnSecondPage = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', addDelegate.encode())
+        .build();
+      mockSafeRepository.getTransactionQueue
+        .mockResolvedValueOnce(
+          pageBuilder<MultisigTransaction>()
+            .with('results', firstPage)
+            .with('next', faker.internet.url())
+            .build(),
+        )
+        .mockResolvedValueOnce(
+          pageBuilder<MultisigTransaction>()
+            .with('results', [changeOnSecondPage])
+            .with('next', null)
+            .build(),
+        );
+
+      const policies = await target.getSpacePendingPolicies(pendingRequest);
+
+      expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledTimes(2);
+      expect(mockSafeRepository.getTransactionQueue).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ offset: 0 }),
+      );
+      expect(mockSafeRepository.getTransactionQueue).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ offset: SAFE_QUEUE_SERVICE_MAX_LIMIT }),
+      );
+      expect(policies).toEqual([
+        expect.objectContaining({
+          data: {
+            module: SEPOLIA_ALLOWANCE_MODULE,
+            changes: [
+              { kind: 'add-delegate', delegate: addDelegateArgs.delegate },
+            ],
+          },
+        }),
+      ]);
+    });
+
+    it('should stop reading a queue at the page cap and warn', async () => {
+      target = policiesService(batchSize, { safeQueueServiceEnabled: true });
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [])
+          .with('next', faker.internet.url())
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies(pendingRequest);
+
+      expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledTimes(
+        PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+      );
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Truncated a Safe transaction queue at the page cap',
+          chainId: SEPOLIA,
+          safeAddress,
+          pages: PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+        }),
+      );
+    });
+
     it('should read no more safes at once than the batch size', async () => {
       const safes = Array.from({ length: 7 }, () =>
         getAddress(faker.finance.ethereumAddress()),
@@ -812,7 +887,10 @@ describe('PoliciesService', () => {
         mostInFlight = Math.max(mostInFlight, inFlight);
         await Promise.resolve();
         inFlight -= 1;
-        return pageBuilder<MultisigTransaction>().with('results', []).build();
+        return pageBuilder<MultisigTransaction>()
+          .with('results', [])
+          .with('next', null)
+          .build();
       });
       target = policiesService(3);
 

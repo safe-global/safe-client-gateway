@@ -183,6 +183,7 @@ describe('Space Policies Controller', () => {
           data: rawify(
             pageBuilder<MultisigTransaction>()
               .with('results', queuedTransactions)
+              .with('next', null)
               .build(),
           ),
           status: 200,
