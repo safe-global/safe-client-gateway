@@ -150,11 +150,8 @@ describe('AddressBookItemsRepository', () => {
 
   describe('findAllBySpaceId', () => {
     it('should return an empty array if no address book items exist for the given Space ID', async () => {
-      const { spaceId, authPayload } = await createSpaceAsAdmin();
-      const result = await addressBookItemsRepository.findAllBySpaceId({
-        authPayload,
-        spaceId,
-      });
+      const { spaceId } = await createSpaceAsAdmin();
+      const result = await addressBookItemsRepository.findAllBySpaceId(spaceId);
       expect(result).toEqual([]);
     });
 
@@ -173,10 +170,7 @@ describe('AddressBookItemsRepository', () => {
         items.map((item) => dbAddressBookItemsRepository.insert(item)),
       );
 
-      const result = await addressBookItemsRepository.findAllBySpaceId({
-        authPayload,
-        spaceId,
-      });
+      const result = await addressBookItemsRepository.findAllBySpaceId(spaceId);
 
       expect(result).toHaveLength(items.length);
       expect(result).toEqual(
@@ -194,104 +188,11 @@ describe('AddressBookItemsRepository', () => {
       );
     });
 
-    it('should return an array of address book items for the given Space ID for a Space Member', async () => {
-      const { spaceId, authPayload: adminAuthPayload } =
-        await createSpaceAsAdmin();
-      const adminUserId = Number(adminAuthPayload.sub);
-      const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
-      const items = range(1, 5).map(() => ({
-        chainIds: range(2, 5).map(() => faker.string.numeric()),
-        address: getAddress(faker.finance.ethereumAddress()),
-        name: nameBuilder(),
-        space: { id: spaceId },
-        createdBy: adminUserId,
-        lastUpdatedBy: adminUserId,
-      }));
-      await Promise.all(
-        items.map((item) => dbAddressBookItemsRepository.insert(item)),
+    it('should return an empty array for a Space ID that does not exist', async () => {
+      const result = await addressBookItemsRepository.findAllBySpaceId(
+        faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
       );
-
-      const result = await addressBookItemsRepository.findAllBySpaceId({
-        authPayload,
-        spaceId,
-      });
-
-      expect(result).toHaveLength(items.length);
-      expect(result).toEqual(
-        expect.arrayContaining(
-          items.map((item) =>
-            expect.objectContaining({
-              chainIds: item.chainIds,
-              address: item.address,
-              name: item.name,
-              createdBy: item.createdBy,
-              lastUpdatedBy: item.lastUpdatedBy,
-            }),
-          ),
-        ),
-      );
-    });
-
-    it('should return a NotFoundException if the space does not exist', async () => {
-      const { authPayload } = await createUser();
-      await expect(
-        addressBookItemsRepository.findAllBySpaceId({
-          authPayload,
-          spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
-    });
-
-    it('should throw a NotFoundException if the user is not a member', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const { authPayload } = await createUser();
-      await expect(
-        addressBookItemsRepository.findAllBySpaceId({
-          authPayload,
-          spaceId,
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
-    });
-
-    it('should throw a NotFoundException if the user declined the membership', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const authPayload = await addMemberToSpaceWithStatus(spaceId, 'DECLINED');
-      await expect(
-        addressBookItemsRepository.findAllBySpaceId({
-          authPayload,
-          spaceId,
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
-    });
-
-    it('should throw a NotFoundException if the user invitation has expired', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const authPayload = await addMemberToSpaceWithStatus(
-        spaceId,
-        'INVITED',
-        faker.date.past(),
-      );
-      await expect(
-        addressBookItemsRepository.findAllBySpaceId({
-          authPayload,
-          spaceId,
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
-    });
-
-    it('should throw a NotFoundException for a pending member', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const authPayload = await addMemberToSpaceWithStatus(
-        spaceId,
-        'INVITED',
-        faker.date.future(),
-      );
-      await expect(
-        addressBookItemsRepository.findAllBySpaceId({
-          authPayload,
-          spaceId,
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
+      expect(result).toEqual([]);
     });
   });
 
@@ -327,7 +228,7 @@ describe('AddressBookItemsRepository', () => {
       }));
 
       const actual = await addressBookItemsRepository.upsertMany({
-        authPayload: newAdminAuthPayload,
+        userId: secondAdminUserId,
         spaceId,
         addressBookItems: modifiedAddressBookItems.concat(newAddressBookItems),
       });
@@ -389,7 +290,7 @@ describe('AddressBookItemsRepository', () => {
 
       await expect(
         addressBookItemsRepository.upsertMany({
-          authPayload: authPayload,
+          userId,
           spaceId,
           addressBookItems: newAddressBookItems,
         }),
@@ -401,29 +302,14 @@ describe('AddressBookItemsRepository', () => {
     });
 
     it('should return a NotFoundException if the space does not exist', async () => {
-      const { authPayload } = await createUser();
+      const { user } = await createUser();
       const addressBookItems = faker.helpers.multiple(() =>
         addressBookItemBuilder().build(),
       );
       await expect(
         addressBookItemsRepository.upsertMany({
-          authPayload,
+          userId: user.id,
           spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
-          addressBookItems,
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
-    });
-
-    it('should throw NotFoundException if the user is not an admin', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
-      const addressBookItems = faker.helpers.multiple(() =>
-        addressBookItemBuilder().build(),
-      );
-      await expect(
-        addressBookItemsRepository.upsertMany({
-          authPayload,
-          spaceId,
           addressBookItems,
         }),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
@@ -438,7 +324,7 @@ describe('AddressBookItemsRepository', () => {
       );
 
       const actual = await addressBookItemsRepository.upsertMany({
-        authPayload,
+        userId,
         spaceId,
         addressBookItems: newItems,
       });
@@ -467,7 +353,7 @@ describe('AddressBookItemsRepository', () => {
       const items = [addressBookItemBuilder().build()];
 
       const result = await addressBookItemsRepository.upsertMany({
-        authPayload: adminAuthPayload,
+        userId: adminUserId,
         spaceId,
         addressBookItems: items,
         createdByOverride: requesterUserId,
@@ -492,7 +378,7 @@ describe('AddressBookItemsRepository', () => {
       await dbAddressBookItemsRepository.insert(addressBookItem);
 
       await addressBookItemsRepository.deleteByAddress({
-        authPayload,
+        userId,
         spaceId,
         address: addressBookItem.address,
       });
@@ -528,7 +414,7 @@ describe('AddressBookItemsRepository', () => {
       await dbAddressBookItemsRepository.insert(addressBookItem2);
 
       await addressBookItemsRepository.deleteByAddress({
-        authPayload: authPayload1,
+        userId: userId1,
         spaceId: spaceId1,
         address: addressBookItem1.address,
       });
@@ -553,27 +439,13 @@ describe('AddressBookItemsRepository', () => {
     });
 
     it('should throw a NotFoundException if the space does not exist', async () => {
-      const { authPayload } = await createUser();
+      const { user } = await createUser();
       const addressBookItem = addressBookItemBuilder().build();
 
       await expect(
         addressBookItemsRepository.deleteByAddress({
-          authPayload,
+          userId: user.id,
           spaceId: faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }),
-          address: addressBookItem.address,
-        }),
-      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
-    });
-
-    it('should throw NotFoundException if the user is not an ADMIN', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const authPayload = await addMemberToSpaceWithStatus(spaceId, 'ACTIVE');
-      const addressBookItem = addressBookItemBuilder().build();
-
-      await expect(
-        addressBookItemsRepository.deleteByAddress({
-          authPayload,
-          spaceId,
           address: addressBookItem.address,
         }),
       ).rejects.toThrow(new NotFoundException('Workspace not found.'));
@@ -590,7 +462,7 @@ describe('AddressBookItemsRepository', () => {
       await dbAddressBookItemsRepository.insert(addressBookItem);
 
       await addressBookItemsRepository.deleteByAddress({
-        authPayload,
+        userId,
         spaceId,
         address: addressBookItem.address,
       });
@@ -638,26 +510,6 @@ describe('AddressBookItemsRepository', () => {
       status: 'ACTIVE',
       role: 'ADMIN',
       invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-    });
-    return authPayload;
-  };
-
-  const addMemberToSpaceWithStatus = async (
-    spaceId: Space['id'],
-    memberStatus: 'ACTIVE' | 'INVITED' | 'DECLINED',
-    inviteExpiresAt: Date | null = null,
-  ): Promise<AuthPayload> => {
-    const { user, authPayload } = await createUser();
-    const space = await dbSpacesRepository.findOneBy({ id: spaceId });
-    if (!space) throw new NotFoundException('Workspace not found.');
-    await dbMembersRepository.insert({
-      user,
-      space,
-      name: nameBuilder(),
-      status: memberStatus,
-      role: 'MEMBER',
-      invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      inviteExpiresAt,
     });
     return authPayload;
   };

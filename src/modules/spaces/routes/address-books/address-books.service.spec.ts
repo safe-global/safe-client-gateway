@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { UnauthorizedException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
@@ -14,7 +14,9 @@ import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/addres
 import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '@/modules/spaces/routes/address-books/address-books.service';
+import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/wallets.entity.db.builder';
@@ -45,6 +47,10 @@ const spacesRepositoryMock = {
   findUuidById: vi.fn(),
 } as MockedObject<ISpacesRepository>;
 
+const membersRepositoryMock = {
+  findOne: vi.fn(),
+} as MockedObject<IMembersRepository>;
+
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
@@ -54,6 +60,11 @@ describe('AddressBooksService', () => {
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
     spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
+    // Default: the caller is an active admin, so both the member-gated read
+    // and the admin-gated writes pass unless a spec overrides this.
+    membersRepositoryMock.findOne.mockResolvedValue(
+      memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
+    );
     service = new AddressBooksService(
       repositoryMock,
       new UserIdentityResolverService(
@@ -63,6 +74,7 @@ describe('AddressBooksService', () => {
       ),
       configurationServiceMock,
       spacesRepositoryMock,
+      membersRepositoryMock,
     );
   });
 
@@ -82,23 +94,51 @@ describe('AddressBooksService', () => {
 
         expect(result.spaceUuid).toEqual(expect.any(String));
         expect(result.data).toHaveLength(1);
-        expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith({
-          authPayload,
-          spaceId,
-        });
+        expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith(spaceId);
       },
     );
+
+    it('should allow an active MEMBER to read the address book', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'MEMBER').with('status', 'ACTIVE').build(),
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([]);
+
+      await expect(
+        service.findAllBySpaceId(authPayload, spaceId),
+      ).resolves.toEqual(expect.objectContaining({ data: [] }));
+
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: Number(authPayload.sub) },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+      });
+    });
+
+    it('should throw ForbiddenException when the caller is not an active member', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.findAllBySpaceId(authPayload, spaceId),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+      expect(repositoryMock.findAllBySpaceId).not.toHaveBeenCalled();
+    });
 
     it('should throw for unauthenticated user', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload();
-      repositoryMock.findAllBySpaceId.mockRejectedValue(
-        new UnauthorizedException('Not authenticated'),
-      );
 
       await expect(
         service.findAllBySpaceId(authPayload, spaceId),
       ).rejects.toThrow(UnauthorizedException);
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(repositoryMock.findAllBySpaceId).not.toHaveBeenCalled();
     });
   });
 
@@ -106,38 +146,61 @@ describe('AddressBooksService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)('should upsert items for %s user', async (_label, builder) => {
+    ] as const)('should upsert items for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(builder().build());
       const items = faker.helpers.multiple(
         () => addressBookItemBuilder().build(),
         { count: { min: 2, max: 5 } },
       );
+      const payload = items.map((i) => ({
+        address: i.address,
+        name: i.name,
+        chainIds: i.chainIds,
+      }));
       repositoryMock.upsertMany.mockResolvedValue(items);
 
       const result = await service.upsertMany(authPayload, spaceId, {
-        items: items.map((i) => ({
-          address: i.address,
-          name: i.name,
-          chainIds: i.chainIds,
-        })),
+        items: payload,
       });
 
       expect(result.spaceUuid).toEqual(expect.any(String));
       expect(result.data).toHaveLength(items.length);
-      expect(repositoryMock.upsertMany).toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: Number(authPayload.sub) },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      });
+      expect(repositoryMock.upsertMany).toHaveBeenCalledWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        addressBookItems: payload,
+      });
     });
 
-    it('should propagate UnauthorizedException for unauthenticated user', async () => {
+    it('should throw ForbiddenException when the caller is not an admin', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.upsertMany(authPayload, spaceId, { items: [] }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not an admin of this workspace'),
+      );
+      expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload();
-      repositoryMock.upsertMany.mockRejectedValue(
-        new UnauthorizedException('Not authenticated'),
-      );
 
       await expect(
         service.upsertMany(authPayload, spaceId, { items: [] }),
       ).rejects.toThrow(UnauthorizedException);
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
     });
   });
 
@@ -283,7 +346,7 @@ describe('AddressBooksService', () => {
     it.each([
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
-    ] as const)('should delete for %s user', async (_label, builder) => {
+    ] as const)('should delete for %s admin', async (_label, builder) => {
       const spaceId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload(builder().build());
@@ -291,24 +354,43 @@ describe('AddressBooksService', () => {
 
       await service.deleteByAddress({ authPayload, spaceId, address });
 
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: Number(authPayload.sub) },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      });
       expect(repositoryMock.deleteByAddress).toHaveBeenCalledWith({
-        authPayload,
+        userId: Number(authPayload.sub),
         spaceId,
         address,
       });
     });
 
-    it('should propagate UnauthorizedException for unauthenticated user', async () => {
+    it('should throw ForbiddenException when the caller is not an admin', async () => {
+      const spaceId = faker.number.int();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.deleteByAddress({ authPayload, spaceId, address }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not an admin of this workspace'),
+      );
+      expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
       const spaceId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload();
-      repositoryMock.deleteByAddress.mockRejectedValue(
-        new UnauthorizedException('Not authenticated'),
-      );
 
       await expect(
         service.deleteByAddress({ authPayload, spaceId, address }),
       ).rejects.toThrow(UnauthorizedException);
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
     });
   });
 });

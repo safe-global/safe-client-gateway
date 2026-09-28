@@ -143,23 +143,6 @@ export class MembersRepository implements IMembersRepository {
     return await this.decryptMemberUserEmails(members);
   }
 
-  public async findActiveAdmin(args: {
-    userId: User['id'];
-    spaceId: Space['id'];
-  }): Promise<DbMember | null> {
-    const membersRepository =
-      await this.postgresDatabaseService.getRepository(DbMember);
-
-    return await membersRepository.findOne({
-      where: {
-        user: { id: args.userId },
-        space: { id: args.spaceId },
-        status: 'ACTIVE',
-        role: 'ADMIN',
-      },
-    });
-  }
-
   public async inviteUsers(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
@@ -497,22 +480,18 @@ export class MembersRepository implements IMembersRepository {
   }
 
   public async updateRole(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     userId: User['id'];
     role: Member['role'];
   }): Promise<void> {
-    const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
-
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
-    const isSelf = actingUserId === args.userId;
+    // A space must keep at least one active admin. The caller verified the
+    // actor is one, so demoting someone else can never remove the last admin;
+    // the admin list is only loaded for a self-demotion.
+    const isSelf = args.actorUserId === args.userId;
     if (isSelf && args.role !== 'ADMIN') {
-      this.assertIsNotLastAdmin({
-        members: activeAdmins,
-        userId: actingUserId,
-      });
+      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
+      this.assertIsNotLastAdmin({ members: activeAdmins, userId: args.userId });
     }
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
@@ -533,7 +512,7 @@ export class MembersRepository implements IMembersRepository {
         spaceId: space.id,
         spaceUuid: space.uuid,
         eventType: SpaceAuditEventType.MEMBER_ROLE_UPDATED,
-        actorUserId: actingUserId,
+        actorUserId: args.actorUserId,
         payload: {
           targetUserId: args.userId,
           oldRole: member.role,
@@ -589,21 +568,14 @@ export class MembersRepository implements IMembersRepository {
   }
 
   public async removeUser(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     userId: User['id'];
     spaceId: Space['id'];
   }): Promise<void> {
-    const actingUserId = getAuthenticatedUserIdOrFail(args.authPayload);
-
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsActiveAdmin({ members: activeAdmins, userId: actingUserId });
-    const isSelf = actingUserId === args.userId;
-    if (isSelf) {
-      this.assertIsNotLastAdmin({
-        members: activeAdmins,
-        userId: actingUserId,
-      });
+    // Same as `updateRole`: only a self-removal can hit the last admin.
+    if (args.actorUserId === args.userId) {
+      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
+      this.assertIsNotLastAdmin({ members: activeAdmins, userId: args.userId });
     }
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
@@ -624,7 +596,7 @@ export class MembersRepository implements IMembersRepository {
         spaceId: space.id,
         spaceUuid: space.uuid,
         eventType: SpaceAuditEventType.MEMBER_REMOVED,
-        actorUserId: actingUserId,
+        actorUserId: args.actorUserId,
         payload: { targetUserId: args.userId },
       });
     });
@@ -662,19 +634,6 @@ export class MembersRepository implements IMembersRepository {
         payload: { targetUserId: userId },
       });
     });
-  }
-
-  private assertIsActiveAdmin(args: {
-    members: Array<DbMember>;
-    userId: User['id'];
-  }): void {
-    if (
-      !args.members.some((member) => {
-        return this.isActiveAdmin(member) && member.user.id === args.userId;
-      })
-    ) {
-      throw new ForbiddenException('User is not an active admin.');
-    }
   }
 
   private assertIsNotLastAdmin(args: {

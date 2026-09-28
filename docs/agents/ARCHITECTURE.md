@@ -61,6 +61,7 @@ Each `@Param`/`@Query`/`@Body` argument is independently validated through a `Va
 For example, `src/modules/balances/routes/balances.controller.ts` validates the `safeAddress` route param in place, as `@Param('safeAddress', new ValidationPipe(AddressSchema)) safeAddress: Address`, rather than trusting the raw string.
 Controllers (`src/modules/*/routes/*.controller.ts`) are thin: they declare Swagger metadata and delegate straight to a route service, as `BalancesController.getBalances` does to `BalancesService.getBalances`.
 The route service calls the module's repository (`src/modules/*/domain/`), which in turn calls a datasource.
+Caller-scoped authorization also lives in the route service, not the repository: a Workspace handler resolves the user id from the `AuthPayload` and calls `assertMember` or `assertAdmin` (`src/modules/spaces/domain/space-assert.utils.ts`) before touching data, and the repository receives the resolved `userId` — see `security.md`'s "Workspace authorization through the shared assertions only" rule.
 Datasources return `Raw<T>` — compile-time-unusable, unvalidated data — and it is the repository that calls `Schema.parse()` to turn it into a trusted domain entity; `BalancesRepository` calling `BalancesSchema.parse(balances)` is one such instance.
 Datasources that talk to an external API funnel their HTTP and caching through `CacheFirstDataSource` (`src/datasources/cache/cache.first.data.source.ts`), which is the only path to an upstream API for that data.
 
