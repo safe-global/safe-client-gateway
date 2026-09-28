@@ -775,7 +775,37 @@ describe('PoliciesService', () => {
       ]);
     });
 
-    it('should read the queue at the Transaction Service page size when the queue service is off', async () => {
+    it('should skip the safe in the pending results when its queue cannot be read, and log it', async () => {
+      mockSafeRepository.getTransactionQueue.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+
+      const policies = await target.getSpacePendingPolicies(pendingRequest);
+
+      expect(policies).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainId: SEPOLIA,
+          safeAddress,
+        }),
+      );
+    });
+
+    it('should skip the safe in the pending results when the safe itself cannot be read, and log it', async () => {
+      mockSafeRepository.getSafe.mockRejectedValue(new Error('Not found'));
+
+      const policies = await target.getSpacePendingPolicies(pendingRequest);
+
+      expect(policies).toStrictEqual([]);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          chainId: SEPOLIA,
+          safeAddress,
+        }),
+      );
+    });
+
+    it('should read the queue at the Transaction Service page size when the queue service flag is set false', async () => {
       target = policiesService(batchSize, { safeQueueServiceEnabled: false });
 
       await target.getSpacePendingPolicies(pendingRequest);
@@ -787,7 +817,7 @@ describe('PoliciesService', () => {
       );
     });
 
-    it('should read the queue at the Queue Service page size when the queue service is on', async () => {
+    it('should read the queue at the Queue Service page size when the queue service flag is set true', async () => {
       target = policiesService(batchSize, { safeQueueServiceEnabled: true });
 
       await target.getSpacePendingPolicies(pendingRequest);
