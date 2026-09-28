@@ -52,6 +52,9 @@ jobs:
     secrets: inherit
 
   prepare:
+    # Same guard as `build` below: nothing downstream runs for a prerelease, so
+    # there is no reason to spend a runner on this either.
+    if: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
@@ -60,7 +63,18 @@ jobs:
       - id: tag
         env:
           TAG: ${{ github.event.release.tag_name || inputs.tag }}
-        run: echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # On a dispatch the tag is typed by hand. Without this, a typo travels
+          # through the whole quality gate and only fails minutes later, at the
+          # checkout inside _build-image.yml. A release event needs no check: the
+          # tag is what fired it.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1 \
+              || { echo "::error::Tag ${TAG} does not exist in ${GITHUB_REPOSITORY}"; exit 1; }
+          fi
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
 
       # Roll-forward by default. A failed health gate fails loudly and is
       # recovered FORWARD, never auto-reverted. Auto-rollback is opt-in and only
@@ -90,6 +104,10 @@ jobs:
       image_tag: ${{ needs.prepare.outputs.tag }}
       # Must equal image_tag — /about reports it and _deploy.yml polls for it.
       version: ${{ needs.prepare.outputs.tag }}
+      # Always true whenever this job runs, since it repeats the guard above —
+      # kept rather than hard-coded because it states the rule at the point of
+      # use. On a dispatch it is deliberate: a dispatch deploys to production
+      # too, so `latest` must follow whatever production ends up running.
       also_tag_latest: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
       # On dispatch, build the exact tagged source, not the default branch HEAD.
       ref: ${{ github.event.release.tag_name || inputs.tag }}
