@@ -173,7 +173,7 @@ describe('Space Policies Controller', () => {
           status: 200,
         });
       }
-      // The queued transactions, read while the Queue Service is flag is set false.
+      // The queued transactions, read while the Queue Service flag is set false.
       if (
         url ===
         `${txServiceUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`
@@ -775,7 +775,7 @@ describe('Space Policies Controller', () => {
       ]);
     });
 
-    it('should return an empty page for a safe with no queued spending-limit changes', async () => {
+    it('should return an empty page for a safe with an empty queue', async () => {
       mockUpstream();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
