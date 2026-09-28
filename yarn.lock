@@ -881,18 +881,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/static@npm:^10.1.3":
-  version: 10.1.3
-  resolution: "@fastify/static@npm:10.1.3"
+"@fastify/static@npm:^10.1.4":
+  version: 10.1.4
+  resolution: "@fastify/static@npm:10.1.4"
   dependencies:
     "@fastify/accept-negotiator": "npm:^2.0.0"
     "@fastify/error": "npm:^4.0.0"
     "@fastify/send": "npm:^4.0.0"
-    content-disposition: "npm:^2.0.1"
+    content-disposition: "npm:^3.0.0"
     fastify-plugin: "npm:^6.0.0"
     fastq: "npm:^1.17.1"
     glob: "npm:^13.0.0"
-  checksum: 10/f106909357b3b23f6d665152387fbbe1c1252943bc352c58895c9ad89526d44f6f40c64821c758a7d232a834091596230ebdd46605d35a1b077945302e56eee5
+  checksum: 10/db674c8d9196796900f5bfd3e44104211d2c23ffba50b743f32d2f138db551700decaee1b87aab5daf6de0e5fb6beccc73017aa9b781d3b93de6f427330e2d2a
   languageName: node
   linkType: hard
 
@@ -3368,10 +3368,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"content-disposition@npm:^2.0.1":
-  version: 2.0.1
-  resolution: "content-disposition@npm:2.0.1"
-  checksum: 10/d3981346fdcc5c72514c3b44e08137312f6969b55d151840222e0a75ecfe295e506cc1f4f4339eaad20c170634cbc673913a04d836089fbfe5a08cd4468f2e23
+"content-disposition@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "content-disposition@npm:3.0.0"
+  checksum: 10/3ce58867a5b25b9043d70ff9a7c922f162f009f381c72983349736ed315c89fcbb578471c24e2d42d640fbd71603389bcdb1c7b71f49a87e0f84f9f93c86eee0
   languageName: node
   linkType: hard
 
@@ -5830,7 +5830,7 @@ __metadata:
     "@blockaid/client": "npm:^1.8.0"
     "@faker-js/faker": "npm:10.6.0"
     "@fastify/cookie": "npm:^11.1.2"
-    "@fastify/static": "npm:^10.1.3"
+    "@fastify/static": "npm:^10.1.4"
     "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.12.0"
     "@nestjs/bullmq": "npm:^12.0.0"
     "@nestjs/cache-manager": "npm:12.0.0"
