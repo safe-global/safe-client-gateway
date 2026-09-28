@@ -67,7 +67,14 @@ export type ProposerPolicyData = {
      * stored per `(delegate, delegator)` row and two owners can label the same
      * proposer differently, so it cannot be flattened to one.
      */
-    delegatedBy: Array<{ delegator: Address; label: string }>;
+    delegatedBy: Array<{
+      delegator: Address;
+      label: string;
+      /** `null` when the grant came from the Transaction Service, which does not report it. */
+      createdAt: Date | null;
+      /** `null` when the grant came from the Transaction Service, which does not report it. */
+      updatedAt: Date | null;
+    }>;
   }>;
 };
 

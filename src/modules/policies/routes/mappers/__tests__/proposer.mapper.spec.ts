@@ -65,11 +65,25 @@ describe('ProposerMapper', () => {
       expect(proposerData(policies[0]).proposers).toStrictEqual([
         {
           proposer: first.delegate,
-          delegatedBy: [{ delegator: first.delegator, label: first.label }],
+          delegatedBy: [
+            {
+              delegator: first.delegator,
+              label: first.label,
+              createdAt: first.created,
+              updatedAt: first.modified,
+            },
+          ],
         },
         {
           proposer: second.delegate,
-          delegatedBy: [{ delegator: second.delegator, label: second.label }],
+          delegatedBy: [
+            {
+              delegator: second.delegator,
+              label: second.label,
+              createdAt: second.created,
+              updatedAt: second.modified,
+            },
+          ],
         },
       ]);
     });
@@ -120,8 +134,18 @@ describe('ProposerMapper', () => {
         {
           proposer,
           delegatedBy: [
-            { delegator: byFirst.delegator, label: byFirst.label },
-            { delegator: bySecond.delegator, label: bySecond.label },
+            {
+              delegator: byFirst.delegator,
+              label: byFirst.label,
+              createdAt: byFirst.created,
+              updatedAt: byFirst.modified,
+            },
+            {
+              delegator: bySecond.delegator,
+              label: bySecond.label,
+              createdAt: bySecond.created,
+              updatedAt: bySecond.modified,
+            },
           ],
         },
       ]);
@@ -173,8 +197,41 @@ describe('ProposerMapper', () => {
       const [policy] = map([unlabelled]);
 
       expect(proposerData(policy).proposers[0].delegatedBy).toStrictEqual([
-        { delegator: unlabelled.delegator, label: '' },
+        {
+          delegator: unlabelled.delegator,
+          label: '',
+          createdAt: unlabelled.created,
+          updatedAt: unlabelled.modified,
+        },
       ]);
+    });
+  });
+
+  describe('grant timestamps', () => {
+    it('should report null timestamps for a registration held by the Transaction Service', () => {
+      const delegate = delegateBuilder().with('safe', safe.address).build();
+
+      const [policy] = map([delegate]);
+
+      const [grant] = proposerData(policy).proposers[0].delegatedBy;
+      expect(grant.createdAt).toBeNull();
+      expect(grant.updatedAt).toBeNull();
+    });
+
+    it('should carry the Queue Service’s timestamps through for its registrations', () => {
+      const created = faker.date.past();
+      const modified = faker.date.recent();
+      const delegate = delegateBuilder()
+        .with('safe', safe.address)
+        .with('created', created)
+        .with('modified', modified)
+        .build();
+
+      const [policy] = map([delegate]);
+
+      const [grant] = proposerData(policy).proposers[0].delegatedBy;
+      expect(grant.createdAt).toBe(created);
+      expect(grant.updatedAt).toBe(modified);
     });
   });
 });

@@ -163,6 +163,20 @@ export class ProposerGrantDto {
       'The label this owner gave the proposer; empty when unlabelled',
   })
   public readonly label!: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'When the grant was created; null when served from the Transaction Service, which does not report it',
+  })
+  public readonly createdAt!: Date | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'When the grant was last updated; null when served from the Transaction Service, which does not report it',
+  })
+  public readonly updatedAt!: Date | null;
 }
 
 export class ProposerDto {

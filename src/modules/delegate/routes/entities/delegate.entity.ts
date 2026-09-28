@@ -10,4 +10,18 @@ export class Delegate {
   delegator!: string;
   @ApiProperty()
   label!: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'When the delegate was registered; null when served from the Transaction Service, which does not report it',
+  })
+  created!: Date | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'When the delegate was last updated; null when served from the Transaction Service, which does not report it',
+  })
+  modified!: Date | null;
 }
