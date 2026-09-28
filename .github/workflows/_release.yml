@@ -26,8 +26,10 @@ on:
           triggers) needs no second human action. Requires the CI GitHub App to
           be a review-bypass actor on main for its own PRs (see CICD-IMPLEMENTATION.md).
           Set false to make merging the Release PR the deliberate release gate.
+          Defaults to false: a caller that forgets this input gets the manual
+          gate, not an unattended production release.
         type: boolean
-        default: true
+        default: false
     secrets:
       app_id:
         description: GitHub App ID (App installed on this repo, contents+PRs write).
@@ -104,6 +106,14 @@ jobs:
             --label "autorelease: pending" --json number,title \
             --jq '.[] | "\(.number)\t\(.title)"' | while IFS=$'\t' read -r pr title; do
             version="${title##*release }" # "chore(main): release X.Y.Z" -> "X.Y.Z"
+            # Without this, a title that does not match that shape leaves $version
+            # as the whole title; `gh release view` then fails and the else branch
+            # below reports "not yet published". The heal would stop working and
+            # say nothing. Fail loudly on drift instead.
+            if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+              echo "::warning::Cannot derive a version from Release PR title: ${title}"
+              continue
+            fi
             if gh release view "v${version}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
               echo "Release v${version} exists — flipping PR #${pr}: 'pending' -> 'tagged'"
               gh pr edit "$pr" --repo "${GITHUB_REPOSITORY}" \

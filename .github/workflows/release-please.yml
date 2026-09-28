@@ -29,6 +29,14 @@ permissions:
   contents: write
   pull-requests: write
 
+# Staging runs are serialised, so two of these overlapping is unlikely — but two
+# runs reconciling the same rolling Release PR would race on its labels and body
+# for no benefit. Queue rather than cancel: a skipped run would leave the Release
+# PR stale until the next push.
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
 jobs:
   release:
     # Only when the push-triggered staging deploy passed. Manual staging
