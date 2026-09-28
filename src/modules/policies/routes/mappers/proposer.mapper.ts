@@ -68,8 +68,8 @@ export class ProposerMapper {
         delegatedBy: grants.map((grant) => ({
           delegator: grant.delegator,
           label: grant.label,
-          createdAt: grant.created,
-          updatedAt: grant.modified,
+          created: grant.created,
+          modified: grant.modified,
         })),
       });
     }

@@ -11,14 +11,14 @@ export class Delegate {
   @ApiProperty()
   label!: string;
   @ApiProperty({
-    type: String,
+    type: Date,
     nullable: true,
     description:
       'When the delegate was registered; null when served from the Transaction Service, which does not report it',
   })
   created!: Date | null;
   @ApiProperty({
-    type: String,
+    type: Date,
     nullable: true,
     description:
       'When the delegate was last updated; null when served from the Transaction Service, which does not report it',

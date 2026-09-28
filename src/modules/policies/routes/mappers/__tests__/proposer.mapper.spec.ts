@@ -69,8 +69,8 @@ describe('ProposerMapper', () => {
             {
               delegator: first.delegator,
               label: first.label,
-              createdAt: first.created,
-              updatedAt: first.modified,
+              created: first.created,
+              modified: first.modified,
             },
           ],
         },
@@ -80,8 +80,8 @@ describe('ProposerMapper', () => {
             {
               delegator: second.delegator,
               label: second.label,
-              createdAt: second.created,
-              updatedAt: second.modified,
+              created: second.created,
+              modified: second.modified,
             },
           ],
         },
@@ -118,14 +118,21 @@ describe('ProposerMapper', () => {
 
   describe('nesting the registrations by proposer', () => {
     it('should collapse one proposer granted by two owners into one entry', () => {
+      // Each owner's grant keeps its own timestamps - a grant must never
+      // report another grant's dates, e.g. by indexing the first grant of
+      // the group instead of the one being mapped.
       const proposer = getAddress(faker.finance.ethereumAddress());
       const byFirst = delegateBuilder()
         .with('safe', safe.address)
         .with('delegate', proposer)
+        .with('created', faker.date.past())
+        .with('modified', faker.date.recent())
         .build();
       const bySecond = delegateBuilder()
         .with('safe', safe.address)
         .with('delegate', proposer)
+        .with('created', faker.date.past())
+        .with('modified', faker.date.recent())
         .build();
 
       const [policy] = map([byFirst, bySecond]);
@@ -137,14 +144,14 @@ describe('ProposerMapper', () => {
             {
               delegator: byFirst.delegator,
               label: byFirst.label,
-              createdAt: byFirst.created,
-              updatedAt: byFirst.modified,
+              created: byFirst.created,
+              modified: byFirst.modified,
             },
             {
               delegator: bySecond.delegator,
               label: bySecond.label,
-              createdAt: bySecond.created,
-              updatedAt: bySecond.modified,
+              created: bySecond.created,
+              modified: bySecond.modified,
             },
           ],
         },
@@ -200,8 +207,8 @@ describe('ProposerMapper', () => {
         {
           delegator: unlabelled.delegator,
           label: '',
-          createdAt: unlabelled.created,
-          updatedAt: unlabelled.modified,
+          created: unlabelled.created,
+          modified: unlabelled.modified,
         },
       ]);
     });
@@ -214,8 +221,8 @@ describe('ProposerMapper', () => {
       const [policy] = map([delegate]);
 
       const [grant] = proposerData(policy).proposers[0].delegatedBy;
-      expect(grant.createdAt).toBeNull();
-      expect(grant.updatedAt).toBeNull();
+      expect(grant.created).toBeNull();
+      expect(grant.modified).toBeNull();
     });
 
     it('should carry the Queue Service’s timestamps through for its registrations', () => {
@@ -230,8 +237,8 @@ describe('ProposerMapper', () => {
       const [policy] = map([delegate]);
 
       const [grant] = proposerData(policy).proposers[0].delegatedBy;
-      expect(grant.createdAt).toBe(created);
-      expect(grant.updatedAt).toBe(modified);
+      expect(grant.created).toBe(created);
+      expect(grant.modified).toBe(modified);
     });
   });
 });

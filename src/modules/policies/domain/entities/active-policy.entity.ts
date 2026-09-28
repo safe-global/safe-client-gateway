@@ -71,9 +71,9 @@ export type ProposerPolicyData = {
       delegator: Address;
       label: string;
       /** `null` when the grant came from the Transaction Service, which does not report it. */
-      createdAt: Date | null;
+      created: Date | null;
       /** `null` when the grant came from the Transaction Service, which does not report it. */
-      updatedAt: Date | null;
+      modified: Date | null;
     }>;
   }>;
 };

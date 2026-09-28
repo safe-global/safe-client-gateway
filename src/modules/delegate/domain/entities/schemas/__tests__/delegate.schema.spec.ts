@@ -26,13 +26,15 @@ describe('DelegateSchema', () => {
     expect(result.success && result.data.modified).toBeNull();
   });
 
-  it('should coerce created and modified when present', () => {
+  it('should coerce created and modified from the ISO strings the Queue Service sends', () => {
     const created = faker.date.past();
     const modified = faker.date.recent();
-    const delegate = delegateBuilder()
-      .with('created', created)
-      .with('modified', modified)
-      .build();
+    const delegate = delegateBuilder().build();
+    // @ts-expect-error - inferred type doesn't allow a raw string, but the
+    // Queue Service sends one and z.coerce.date() must parse it
+    delegate.created = created.toISOString();
+    // @ts-expect-error - same as above
+    delegate.modified = modified.toISOString();
 
     const result = DelegateSchema.safeParse(delegate);
 
