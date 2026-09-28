@@ -315,7 +315,9 @@ export class UsersRepository implements IUsersRepository {
         .orIgnore()
         .execute();
 
-      if (insert.identifiers.length > 0) {
+      // TypeORM pushes one identifier per value even when ON CONFLICT DO
+      // NOTHING skipped the row; a skipped row's identifier is undefined.
+      if (insert.identifiers[0]) {
         return userId;
       }
 
