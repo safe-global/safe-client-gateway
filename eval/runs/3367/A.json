@@ -1,0 +1,19 @@
+{
+  "pr": 3367,
+  "reviewSha": "39baaa3d7ea612adef97ffe690b0d5369a83cceb",
+  "baseSha": "d96f1ecef532737939305369803474361c88daed",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 18,
+    "outputTokens": 4625,
+    "cacheReadTokens": 560193,
+    "cacheWriteTokens": 58418,
+    "turns": 10,
+    "wallSeconds": 68,
+    "apiEquivalentUsd": 0.6719546
+  },
+  "output": "I ran `/code-conventions --review-pr` against `d96f1ecef…HEAD` and found **no convention violations in the diff**. I went through all 60 rules in the checklist. The checklist was written to my scratchpad instead of `docs/engineering/`, because that path isn't in `.gitignore` here. I didn't modify any tracked files.\n\n**What the diff contains:** one commit, `39baaa3d7 build(deps): resolve open dependabot advisories`. It touches `package.json` (+1/−1) and `yarn.lock` (+45/−74).\n- `package.json:60` bumps `@nestjs/platform-fastify` from 11.1.28 to 11.1.29, still pinned to an exact version.\n- The lockfile moves packages to newer versions within their existing ranges: brace-expansion, fast-uri, js-yaml 4.x, nanoid, postcss, tar and undici. It also merges duplicate entries for find-my-way, postcss and undici into one each.\n- The Nest bump also pulls in fastify 5.11.0, @fastify/cors 11.3.0 and find-my-way 9.7.0 (`yarn.lock:1634-1660`).\n\n## Rules that applied\n\n| Rule | Result | Evidence |\n|---|---|---|\n| CONFIG-04: runtime deps pinned exactly | Pass | `package.json:60` is pinned exactly (`11.1.29`, no `^`). It now matches `@nestjs/common` and `@nestjs/core` at 11.1.29 (`package.json:57,59`) and `@nestjs/testing` (`package.json:95`). |\n| CHANGE-01: smallest correct change | Pass | Only one line changes in `package.json`. Everything else is lockfile resolution. No overrides are added to `resolutions` (`package.json:120-122` is unchanged). |\n| CHANGE-02: no unrelated edits | Pass | Nothing outside the dependency files changes. |\n| CONFIG-05: env/tool metadata matches runtime | Pass | No change to the toolchain, Docker, CI or `.env.sample`. |\n| PR-02: docs match behaviour | Pass | No docs are affected. The commit body explains why the js-yaml 5.2.1 advisory is left open: `@nestjs/swagger` 11.4.6 pins it exactly (`yarn.lock:1721`). |\n| License headers | Not applicable | No source files change. |\n\nThe other 54 rules (modules, types, auth, routes, DB, cache, tests, logging, security, resilience, and so on) don't apply to a dependency-only diff. I didn't need to look up the review history behind any rule.\n\n## Findings\n\n**Blocking: none.**\n\n**Notes (not violations, no action needed for this PR):**\n\n1. **Peer range at `yarn.lock:1649`.** `@nestjs/platform-fastify` 11.1.29 now declares `@fastify/static: ^10.1.2`. The installed `@fastify/static` 10.1.3 (`package.json:53`, `yarn.lock:797`) satisfies it, and 11.1.28 declared `^8 || ^9`, so this bump fixes a peer mismatch. A mismatch that was already there remains: `@nestjs/serve-static` 5.0.5 still declares `^8.0.4 || ^9.0.0` (`yarn.lock:1699`), which 10.1.3 doesn't satisfy. `ServeStaticModule` is used in `src/app.module.ts`. This PR didn't cause it.\n2. **Older CONFIG-04 exceptions at `package.json:52-53`.** `@fastify/cookie` (`^11.1.1`) and `@fastify/static` (`^10.1.3`) use caret ranges instead of exact pins. They're unchanged by this diff, so they're out of scope. At most they're a follow-up.\n3. **Commit wording.** The commit body says it will \"lift the transitive resolutions\". That could be read as adding Yarn `resolutions` entries, but none were added: the upgrades are lockfile-only, within existing semver ranges. If this text becomes the PR body, \"re-resolve transitive dependencies in yarn.lock\" would say it more clearly.\n\n**Unresolved rule failures or questions: none.**"
+}
