@@ -129,6 +129,10 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
     description: 'Unix seconds this allowance was (re-)established',
   })
   public readonly createdAt!: number;
+  @ApiProperty({
+    description: 'Unix seconds of the last event that changed this allowance',
+  })
+  public readonly updatedAt!: number;
 }
 
 export class SpendingLimitSpenderDto {

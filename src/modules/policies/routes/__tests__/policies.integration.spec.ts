@@ -433,6 +433,7 @@ describe('Space Policies Controller', () => {
                     resetBoundaryIsExact: true,
                     isDelegateActive: true,
                     createdAt: Number(allowance.createdAt),
+                    updatedAt: Number(allowance.updatedAt),
                   },
                 ],
               },

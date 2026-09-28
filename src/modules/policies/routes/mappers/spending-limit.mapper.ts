@@ -104,6 +104,7 @@ export class SpendingLimitMapper {
       resetBoundaryIsExact: allowance.resetPhase === 'EXACT',
       isDelegateActive: allowance.isDelegateActive,
       createdAt: allowance.createdAt,
+      updatedAt: allowance.updatedAt,
     };
   }
 

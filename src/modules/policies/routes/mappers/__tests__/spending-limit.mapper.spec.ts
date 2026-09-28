@@ -395,5 +395,16 @@ describe('SpendingLimitMapper', () => {
         spendingLimitData(policy).spenders[0].allowances[0].createdAt,
       ).toBe(createdAt);
     });
+
+    it('should keep the last-updated time unchanged', () => {
+      const updatedAt = faker.number.int();
+      const row = allowance().with('updatedAt', updatedAt).build();
+
+      const [policy] = map([row]);
+
+      expect(
+        spendingLimitData(policy).spenders[0].allowances[0].updatedAt,
+      ).toBe(updatedAt);
+    });
   });
 });
