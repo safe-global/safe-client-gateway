@@ -689,6 +689,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
                   status: subscription.status,
                   planId: subscription.planId,
                   planName: subscription.planName,
+                  planCode: subscription.planCode,
                   currentPeriodStart: subscription.currentPeriodStart,
                   currentPeriodEnd: subscription.currentPeriodEnd,
                   lastEventAt,

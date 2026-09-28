@@ -11,6 +11,7 @@ export const SpaceSubscriptionSchema = RowSchema.extend({
   status: SubscriptionStatusSchema,
   planId: z.string(),
   planName: z.string().nullable(),
+  planCode: z.string().nullable(),
   currentPeriodStart: z.date().nullable(),
   currentPeriodEnd: z.date().nullable(),
   lastEventAt: z.date().nullable(),
@@ -23,6 +24,7 @@ export type SubscriptionValues = Pick<
   | 'status'
   | 'planId'
   | 'planName'
+  | 'planCode'
   | 'currentPeriodStart'
   | 'currentPeriodEnd'
   | 'lastEventAt'
