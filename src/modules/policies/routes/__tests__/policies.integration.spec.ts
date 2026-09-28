@@ -173,8 +173,7 @@ describe('Space Policies Controller', () => {
           status: 200,
         });
       }
-      // The pending half - queued (unexecuted) transactions, read while the
-      // Queue Service is switched off.
+      // The queued transactions, read while the Queue Service is flag is set false.
       if (
         url ===
         `${txServiceUrl}/api/v2/safes/${safeAddress}/multisig-transactions/`
@@ -735,10 +734,6 @@ describe('Space Policies Controller', () => {
   });
 
   describe('GET /v1/spaces/:spaceId/policies/pending', () => {
-    // Sepolia's only AllowanceModule deployment, per
-    // @safe-global/safe-modules-deployments - the mapper only recognises real,
-    // published deployments, so the random `allowanceModule` used by the
-    // active-policy tests above never matches here.
     const SEPOLIA_ALLOWANCE_MODULE = getAddress(
       '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
     );
