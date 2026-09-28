@@ -41,8 +41,10 @@ for sys in $systems; do
       ;;
     B)
       [ -n "${SAFE_ENG_PLUGIN_DIR:-}" ] && plugin_args=(--plugin-dir "$SAFE_ENG_PLUGIN_DIR")
-      prompt="Run the /safe-engineering-plugin:safe-code-review skill. $common"
-      version="safe-engineering-plugin@$(node -p "require('${SAFE_ENG_PLUGIN_DIR:-.}/.claude-plugin/plugin.json').version" 2>/dev/null || echo unknown)"
+      # Capped from batch 6 on to save usage: at most 2 subagents, medium effort.
+      plugin_args+=(--effort medium)
+      prompt="Run the /safe-engineering-plugin:safe-code-review skill. Use at most 2 subagents in total and run any other passes yourself. $common"
+      version="safe-engineering-plugin@$(node -p "require('${SAFE_ENG_PLUGIN_DIR:-.}/.claude-plugin/plugin.json').version" 2>/dev/null || echo unknown)+max2agents+effort-medium"
       ;;
     *) echo "unknown system $sys" >&2; exit 1 ;;
   esac
