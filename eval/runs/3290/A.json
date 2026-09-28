@@ -1,0 +1,19 @@
+{
+  "pr": 3290,
+  "reviewSha": "d670542b2277fbbc076d7d4252c3d1a830319de0",
+  "baseSha": "f666c95c7c4c9a1b0bffc278e8b30e73d5b2d51f",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 26,
+    "outputTokens": 5158,
+    "cacheReadTokens": 860097,
+    "cacheWriteTokens": 63181,
+    "turns": 14,
+    "wallSeconds": 108,
+    "apiEquivalentUsd": 0.7807314
+  },
+  "output": "I ran `/code-conventions --review-pr` against `f666c95c7...HEAD`, the typeorm 0.3.28 → 1.1.0 upgrade. It finds one medium-confidence issue: two integration-test calls were not converted to the new relations syntax. I didn't change any tracked files. I wrote the checklist to the scratchpad instead of `docs/engineering/`.\n\n**Checklist:** I considered every rule in `rules.json`. The diff is a dependency bump plus rewriting typeorm's `relations: ['x']` array form to the object form `{ x: true }` in 6 source files, so most rules didn't apply (auth, routes, cache, config tunables, logging, security, resilience, DTOs). I didn't need to look up the review history behind any rule.\n\n**Rules that applied**\n\n| Rule | Result |\n|---|---|\n| CHANGE-01 / CHANGE-02 (small, focused change) | Pass. Only the typeorm bump, its lockfile fallout and the call sites it forced. |\n| CONFIG-04 (pin versions exactly) | Pass. `\"typeorm\": \"1.1.0\"` is pinned exactly (`package.json:84`). The `@nestjs/typeorm@11.0.3` peer range `^0.3.0 \\|\\| ^1.0.0-dev` accepts 1.1.0. |\n| CONFIG-05 (tool versions match runtime) | Pass. The Docker image uses Node 24.11.0, and nothing in the lockfile conflicts with it. |\n| AGENTS.md license headers | Pass. All 6 changed `.ts` files start with `// SPDX-License-Identifier: FSL-1.1-MIT`. |\n| TEST-03 (no mocking of internal query chains) | Pass. `spaces.service.spec.ts:137` is an existing assertion on a repository-call argument, updated to match the new code. |\n| DB-05 (repository integration tests agree with code) | **Fail**, see finding 1. |\n| PR-02 (docs match behaviour) | Pass. No docs or README mention a typeorm version or the array syntax. |\n\n**Findings**\n\n1. **`src/modules/notifications/domain/v2/notifications.repository.integration.spec.ts:436` and `:515`** (DB-05, and the diff is inconsistent with itself). Confidence: medium.\n   - **What:** the PR converts every `relations: [...]` array to the object form in the source files and in `spaces.service.spec.ts`. These two real TypeORM calls in the notifications integration spec still use the old array form:\n     - line 436: `relations: ['push_notification_device']`\n     - line 515: `relations: ['notification_type', 'notification_subscription']`\n   - **Why it matters:** the PR converted the syntax everywhere else, which suggests typeorm 1.x removed or deprecated the array form. If so, these calls will fail to type-check or will load no relations, and this integration suite will break or pass for the wrong reason. The matching repository code at `notifications.repository.ts:382` was already converted.\n   - **Why medium:** `node_modules` isn't installed, so I couldn't check the 1.1.0 type definitions. `tsconfig.build.json` excludes `*spec.ts` from the build, so a type error would only show up in the test run.\n   - **Fix:** change them to `relations: { push_notification_device: true }` and `relations: { notification_type: true, notification_subscription: true }`.\n\nNo other rule failures or open questions."
+}
