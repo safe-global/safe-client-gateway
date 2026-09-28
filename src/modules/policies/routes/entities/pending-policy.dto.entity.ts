@@ -19,24 +19,21 @@ import {
 export class EnableModuleChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.EnableModule] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.EnableModule;
-  @ApiProperty({ enum: ['create'] })
-  public readonly operation!: 'create';
 }
 
 export class AddDelegateChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.AddDelegate] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.AddDelegate;
-  @ApiProperty({ enum: ['create'] })
-  public readonly operation!: 'create';
-  @ApiProperty({ description: 'The address being added as a delegate in AllowanceModule contract' })
+  @ApiProperty({
+    description:
+      'The address being added as a delegate in AllowanceModule contract',
+  })
   public readonly delegate!: Address;
 }
 
 export class RemoveDelegateChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.RemoveDelegate] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.RemoveDelegate;
-  @ApiProperty({ enum: ['remove'] })
-  public readonly operation!: 'remove';
   @ApiProperty({ description: 'The delegate being removed' })
   public readonly delegate!: Address;
   @ApiProperty({
@@ -48,8 +45,6 @@ export class RemoveDelegateChangeDto {
 export class SetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.SetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.SetAllowance;
-  @ApiProperty({ enum: ['update'] })
-  public readonly operation!: 'update';
   @ApiProperty()
   public readonly delegate!: Address;
   @ApiProperty({
@@ -65,8 +60,6 @@ export class SetAllowanceChangeDto {
 export class ResetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.ResetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.ResetAllowance;
-  @ApiProperty({ enum: ['update'] })
-  public readonly operation!: 'update';
   @ApiProperty()
   public readonly delegate!: Address;
   @ApiProperty()
@@ -76,8 +69,6 @@ export class ResetAllowanceChangeDto {
 export class DeleteAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.DeleteAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
-  @ApiProperty({ enum: ['remove'] })
-  public readonly operation!: 'remove';
   @ApiProperty()
   public readonly delegate!: Address;
   @ApiProperty()

@@ -87,7 +87,6 @@ describe('PendingSpendingLimitMapper', () => {
           changes: [
             {
               kind: 'set-allowance',
-              operation: 'update',
               delegate: setAllowanceArgs.delegate,
               token: setAllowanceArgs.token,
               amount: setAllowanceArgs.allowanceAmount.toString(),
@@ -141,12 +140,10 @@ describe('PendingSpendingLimitMapper', () => {
       changes: [
         {
           kind: 'add-delegate',
-          operation: 'create',
           delegate: addDelegateArgs.delegate,
         },
         {
           kind: 'set-allowance',
-          operation: 'update',
           delegate: setAllowanceArgs.delegate,
           token: setAllowanceArgs.token,
           amount: setAllowanceArgs.allowanceAmount.toString(),
@@ -200,7 +197,7 @@ describe('PendingSpendingLimitMapper', () => {
     expect(result).toHaveLength(1);
     expect(result[0].data).toEqual({
       module: SEPOLIA_ALLOWANCE_MODULE,
-      changes: [{ kind: 'enable-module', operation: 'create' }],
+      changes: [{ kind: 'enable-module' }],
     });
   });
 
@@ -283,7 +280,6 @@ describe('PendingSpendingLimitMapper', () => {
       changes: [
         {
           kind: 'add-delegate',
-          operation: 'create',
           delegate: addDelegateArgs.delegate,
         },
       ],

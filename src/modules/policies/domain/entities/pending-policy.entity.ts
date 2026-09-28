@@ -4,7 +4,6 @@ import type { ModuleEnforcement } from '@/modules/policies/domain/entities/polic
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 
-
 export type PendingPolicy = PendingQueuedPolicy;
 
 /**
@@ -45,22 +44,18 @@ export const PendingSpendingLimitChangeKind = {
 export type PendingSpendingLimitChange =
   | {
       kind: typeof PendingSpendingLimitChangeKind.EnableModule;
-      operation: 'create';
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.AddDelegate;
-      operation: 'create';
       delegate: Address;
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.RemoveDelegate;
-      operation: 'remove';
       delegate: Address;
       removeAllowances: boolean;
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.SetAllowance;
-      operation: 'update';
       delegate: Address;
       token: Address;
       amount: string;
@@ -68,13 +63,11 @@ export type PendingSpendingLimitChange =
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.ResetAllowance;
-      operation: 'update';
       delegate: Address;
       token: Address;
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
-      operation: 'remove';
       delegate: Address;
       token: Address;
     };

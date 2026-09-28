@@ -162,7 +162,6 @@ export class PendingSpendingLimitMapper {
               module,
               change: {
                 kind: PendingSpendingLimitChangeKind.EnableModule,
-                operation: 'create',
               },
             },
           ]
@@ -183,20 +182,17 @@ export class PendingSpendingLimitMapper {
         case 'addDelegate':
           return {
             kind: PendingSpendingLimitChangeKind.AddDelegate,
-            operation: 'create',
             delegate: decoded.args[0],
           };
         case 'removeDelegate':
           return {
             kind: PendingSpendingLimitChangeKind.RemoveDelegate,
-            operation: 'remove',
             delegate: decoded.args[0],
             removeAllowances: decoded.args[1],
           };
         case 'setAllowance':
           return {
             kind: PendingSpendingLimitChangeKind.SetAllowance,
-            operation: 'update',
             delegate: decoded.args[0],
             token: decoded.args[1],
             amount: decoded.args[2].toString(),
@@ -205,14 +201,12 @@ export class PendingSpendingLimitMapper {
         case 'resetAllowance':
           return {
             kind: PendingSpendingLimitChangeKind.ResetAllowance,
-            operation: 'update',
             delegate: decoded.args[0],
             token: decoded.args[1],
           };
         case 'deleteAllowance':
           return {
             kind: PendingSpendingLimitChangeKind.DeleteAllowance,
-            operation: 'remove',
             delegate: decoded.args[0],
             token: decoded.args[1],
           };

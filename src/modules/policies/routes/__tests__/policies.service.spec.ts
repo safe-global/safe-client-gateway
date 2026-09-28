@@ -766,7 +766,6 @@ describe('PoliciesService', () => {
             changes: [
               {
                 kind: 'add-delegate',
-                operation: 'create',
                 delegate: addDelegateArgs.delegate,
               },
             ],

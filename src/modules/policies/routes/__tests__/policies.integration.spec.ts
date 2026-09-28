@@ -771,7 +771,6 @@ describe('Space Policies Controller', () => {
             changes: [
               {
                 kind: 'add-delegate',
-                operation: 'create',
                 delegate: addDelegateArgs.delegate,
               },
             ],

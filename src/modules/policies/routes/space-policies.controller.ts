@@ -115,7 +115,7 @@ export class SpacePoliciesController {
   @ApiOperation({
     summary: 'Get the pending policy changes on Safes in a Space',
     description:
-      "Returns the spending-limit changes in the transaction queue of every Safe in the Space. Detects only direct Allowance Module calls and calls found one level inside a MultiSend batch, and only against known Allowance Module deployments (@safe-global/safe-modules-deployments) - a change made through a nested MultiSend, a custom batching contract, a Safe module bypassing the owner queue, or an unofficial Allowance Module fork is not detected.",
+      'Returns the spending-limit changes in the transaction queue of every Safe in the Space. Detects only direct Allowance Module calls and calls found one level inside a MultiSend batch, and only against known Allowance Module deployments (@safe-global/safe-modules-deployments) - a change made through a nested MultiSend, a custom batching contract, a Safe module bypassing the owner queue, or an unofficial Allowance Module fork is not detected.',
   })
   @ApiParam({
     name: 'spaceId',
