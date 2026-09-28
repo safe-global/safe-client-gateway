@@ -125,6 +125,10 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
       "False when the spender's delegate registration was removed: nothing is spendable now, but the allowance returns to effect if the delegate is re-added",
   })
   public readonly isDelegateActive!: boolean;
+  @ApiProperty({
+    description: 'Unix seconds this allowance was (re-)established',
+  })
+  public readonly createdAt!: number;
 }
 
 export class SpendingLimitSpenderDto {
