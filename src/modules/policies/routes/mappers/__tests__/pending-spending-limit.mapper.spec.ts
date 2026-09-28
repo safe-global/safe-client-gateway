@@ -35,7 +35,6 @@ describe('PendingSpendingLimitMapper', () => {
   let target: PendingSpendingLimitMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
     target = new PendingSpendingLimitMapper(
       new MultiSendDecoder(mockLoggingService),
       new SafeDecoder(),
