@@ -97,12 +97,29 @@ export class RedisCacheService
     const result = await this.client.unlink(keyWithPrefix);
 
     await this.hSet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      RedisCacheService.invalidationTimeMsCacheDir(key),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
       0,
     );
     return result;
+  }
+
+  async getInvalidationTimeMs(key: string): Promise<number | null> {
+    const value = await this.hGet(
+      RedisCacheService.invalidationTimeMsCacheDir(key),
+    );
+
+    if (!value) {
+      return null;
+    }
+
+    const invalidationTimeMs = Number(value);
+    return Number.isInteger(invalidationTimeMs) ? invalidationTimeMs : null;
+  }
+
+  private static invalidationTimeMsCacheDir(key: string): CacheDir {
+    return new CacheDir(`invalidationTimeMs:${key}`, '');
   }
 
   async increment(
