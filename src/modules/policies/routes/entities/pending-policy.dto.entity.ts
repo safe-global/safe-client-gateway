@@ -28,7 +28,7 @@ export class AddDelegateChangeDto {
   public readonly kind!: typeof PendingSpendingLimitChangeKind.AddDelegate;
   @ApiProperty({ enum: ['create'] })
   public readonly operation!: 'create';
-  @ApiProperty({ description: 'The address being granted a delegate slot' })
+  @ApiProperty({ description: 'The address being added as a delegate in AllowanceModule contract' })
   public readonly delegate!: Address;
 }
 
