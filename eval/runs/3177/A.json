@@ -1,0 +1,19 @@
+{
+  "pr": 3177,
+  "reviewSha": "3e2d6af06aed89464ec3cadde20ab8c8fbf28848",
+  "baseSha": "ecd385fcc93d6f80144048862d1b5720ef7b457d",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 18,
+    "outputTokens": 4162,
+    "cacheReadTokens": 523252,
+    "cacheWriteTokens": 53927,
+    "turns": 10,
+    "wallSeconds": 60,
+    "apiEquivalentUsd": 0.6193784000000001
+  },
+  "output": "I ran `/code-conventions --review-pr` against `ecd385fcc...HEAD`. I considered all 60 rules and found no convention violations, only two low-severity nits in `.github/workflows/ci.yml`.\n\nThe diff is one commit (`3e2d6af06 fix(ci): use release payload tag for Docker publish`) and changes only that file (+10/−2), all inside the `docker-publish-release` job. Nothing in the repo was changed: I wrote the generated checklist to the scratchpad, since the repo's `.gitignore` doesn't list it. I didn't need to zoom into any rule's review learnings or GitHub source.\n\n## Rules that apply\n- **CHANGE-01, CHANGE-02** (small change, no drive-by edits): pass. The change stays inside the one job, with no unrelated edits.\n- **CHANGE-03** (tooling work keeps its behavior): pass. On a `release` event, `github.ref_name` is already the tag name, so the image tag, the `:latest` tag and `VERSION` are unchanged.\n- **CHANGE-04** (external contracts versioned): pass. The published image tags are unchanged.\n- **CONFIG-04, CONFIG-05** (pinned versions, build args match runtime): pass. Actions stay SHA-pinned, and the `VERSION` build arg gets the same value as before.\n- **SEC-02** (sensitive values handled safely): pass. The tag reaches the shell through `env` (`$RELEASE_TAG`) rather than being inserted into the `run:` script with `${{ }}`, which is the safe pattern.\n- **PR-02** (docs match behavior): pass. No docs or runbooks mention the release publish.\n- **PR-01, STYLE-01, NAME-01** (new code justified, no dead branches, honest names): see the two findings below.\n\nThe other 51 rules cover application code (modules, auth, database, cache, tests, logging and so on), so they don't apply to a CI-only change.\n\n## Findings\n\n1. **`.github/workflows/ci.yml:301-306`: the empty-tag guard can never fail (STYLE-01, PR-01). Low.**\n   - The job only runs when `github.event_name == 'release' && github.event.action == 'released'` (`ci.yml:292`). A GitHub release always has a `tag_name`, so `$RELEASE_TAG` can't be empty and `exit 1` never runs.\n   - STYLE-01 asks for no dead branches, and PR-01 asks that every new piece have a real reason to exist.\n   - The step name \"Validate release tag\" also promises more than the step does (NAME-01). It doesn't check that the tag is a valid Docker tag (`[A-Za-z0-9_.-]`, at most 128 characters), which is the only thing that could actually break the push.\n   - Fix: drop the step, or make it check the Docker tag format so the name is accurate.\n\n2. **`.github/workflows/ci.yml:294-295` (used at `:318` and `:320`): the switch from `github.ref_name` to `github.event.release.tag_name` has no explanation (STYLE-01, CHANGE-01). Low.**\n   - On `release` events the two values are the same, so the change has no visible effect.\n   - This file usually explains choices like this in a comment: see the notes at `ci.yml:6-9`, `:262-263` and `:265-267`. Here there's no comment, and the commit message has no body.\n   - The next person to read this won't know why it differs from `docker-publish-staging` (`ci.yml:284`), which still uses `github.ref_name`.\n   - Fix: add a one-line comment above `RELEASE_TAG` giving the reason (for example, the release's tag is the source of truth even if the workflow is re-run or triggered from a different ref).\n\nNo finding blocks merging."
+}
