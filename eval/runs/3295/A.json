@@ -1,0 +1,19 @@
+{
+  "pr": 3295,
+  "reviewSha": "b648aef105dfbc08fb6eff519d45e3aa8941c44e",
+  "baseSha": "f27c3ad9be7b1fd7bf7c94d7b4f38a39843c02ba",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 24,
+    "outputTokens": 5684,
+    "cacheReadTokens": 770899,
+    "cacheWriteTokens": 62144,
+    "turns": 13,
+    "wallSeconds": 94,
+    "apiEquivalentUsd": 0.7651078
+  },
+  "output": "I found no convention violations in this PR.\n\n**What the PR contains:** the only file changed in `f27c3ad9…HEAD` is `yarn.lock` (+245 / −717). It's 15 dependency-bump commits: 3 are security fixes (postcss, brace-expansion 5.0.7, fast-uri 3.1.4) and the rest are build(deps) bumps or dedupes (qs, picomatch, path-to-regexp, lodash, @nestjs/schematics, ajv, diff, minimatch, brace-expansion, vite, socks, node-gyp). `package.json` is unchanged.\n\n**Checklist:** I generated all 60 rules and checked every one. The checklist went to my scratchpad, not `docs/engineering/`. I didn't need to look up any review learnings or GitHub sources, and I changed nothing.\n\n| Rule | Applies? | Result |\n|---|---|---|\n| CHANGE-01 Smallest correct change | Yes | Pass. Every commit is a dependency bump or dedupe; nothing else is bundled in. |\n| CHANGE-02 No unrelated drive-by edits | Yes | Pass. Only the lockfile changed. |\n| CHANGE-03 Tooling parity preserved | Yes (build tooling) | Pass on conventions. No config or docs changed. |\n| CONFIG-04 Pinned runtime versions | Yes | Pass. I checked every `dependencies`/`devDependencies` entry in `package.json` against `yarn.lock`: each one has a matching lock entry, and exact pins resolve to exactly that version (0 missing, 0 mismatched). For example, `lodash@npm:4.18.1` and `undici@npm:8.7.0` are still exact. |\n| CONFIG-05 Env and toolchain metadata matches runtime | Yes | Pass. Node stays at 24.11.0 in `.nvmrc` and the `Dockerfile`, and `packageManager` stays `yarn@4.14.1`. |\n| License headers (AGENTS.md) | No | `yarn.lock` isn't a file type that needs a header. |\n| The other 54 rules | No | They cover source code (modules, routes, DB, cache, auth, tests, logging, security, resilience), and no source files changed. |\n\n**Not convention findings, but worth knowing:**\n- Some commit messages don't match the final versions, because later commits moved them again. The minimatch commit says 3.1.4 / 9.0.8, but the lockfile ends at 3.1.5 / 9.0.9 (`yarn.lock:5674`, `yarn.lock:5683`). The postcss commit says 8.5.15, but vite's copy resolves to 8.5.19 (`yarn.lock:6227`). The `^8.3.11` copy is still at 8.5.15 (`yarn.lock:6216`).\n- node-gyp `latest` jumps a major version, from 10.2.0 to 13.0.1 (`yarn.lock:5849`). That swaps in tar 7, nopt 10 and which 7, so native module builds change. It should be compatible with Node 24.11, but I didn't confirm it by building.\n- You asked me not to install or run anything, so I didn't run `yarn install --immutable`. CI will have to confirm the lockfile is consistent.\n\n## Findings report\n\n| # | Rule | File:line | Finding |\n|---|---|---|---|\n| — | — | — | None. No rule in `rules.json` or AGENTS.md is broken by this diff. |"
+}

@@ -1,0 +1,19 @@
+{
+  "pr": 3455,
+  "reviewSha": "132aa734c88c62cc774d55af4c72151691843388",
+  "baseSha": "12bb3a6d62170c9c047b803fd3d2b7e8110b5551",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 20,
+    "outputTokens": 5246,
+    "cacheReadTokens": 610613,
+    "cacheWriteTokens": 57988,
+    "turns": 12,
+    "wallSeconds": 78,
+    "apiEquivalentUsd": 0.6910266
+  },
+  "output": "I ran `/code-conventions --review-pr` on `git diff 12bb3a6d6...HEAD`. That range is one commit (`132aa734c`) touching 2 files, +52/−1. I found no rule failures, two minor findings and one open question.\n\n**How I ran it**\n- I generated the all-rules checklist (61 rules from `docs/engineering/sources/rules.json`) and went through every rule. The generated file is gitignored, and I deleted it afterwards; the working tree is as it started.\n- I didn't need to look up any review learnings or GitHub sources behind a rule.\n- I changed no tracked files, ran no tests or installs, and didn't use `gh`.\n\n**Rules that applied and pass**\n- **TYPE-02 / TYPE-03:** The null-to-zero-address mapping sits in the Queue Service entity schema, where the data is validated. It uses `.nullish()` rather than `.nullable().optional()`, as the rule asks. `src/modules/safe-queue/entities/multisig-transaction.entity.ts:46`\n- **TYPE-01:** It uses the shared `AddressSchema` and viem's `zeroAddress`.\n- **REUSE-01:** `?? zeroAddress` matches existing code at `src/modules/relay/domain/relay-transaction-helper.ts:572`.\n- **TEST-01:** Each test builds a fresh `safeQueueMultisigTransactionBuilder()` and uses faker data, with no literal fixtures.\n- **TEST-02:** It's a schema unit test at the lowest layer, and the `*.entity.spec.ts` name under `entities/__tests__/` matches the repo pattern.\n- **TEST-08 / TEST-09:** The four test names match their assertions. They cover null, missing, checksummed and invalid `to`, so both sides of the change are tested.\n- **CHANGE-01 / CHANGE-02:** The change is minimal, with no unrelated edits.\n- **License header:** Both files have the SPDX header.\n- **Not applicable:** Rules for routes, auth, database, cache, config, logging, resilience and performance don't apply to this diff.\n\n**Findings**\n\n1. **TYPE-06 / test cast style (minor):** `src/modules/safe-queue/entities/__tests__/multisig-transaction.entity.spec.ts:31` casts with `` as `0x${string}` ``. Nowhere else in the repo's specs uses that form, while `toLowerCase() as Address` appears 52 times (for example `src/modules/safe/domain/entities/schemas/__tests__/safe.schema.spec.ts:41`). Suggest `import type { Address } from 'viem'` and `as Address`.\n\n2. **STYLE-01 / PR-02, missing explanation (minor):** `src/modules/safe-queue/entities/multisig-transaction.entity.ts:46` silently turns an upstream `null` into a real-looking address, and nothing records why. There's no comment, and the commit message has no body. Every other nullable address field in this schema uses `NullableAddressSchema`, so the difference is deliberate but unexplained. Suggest a one-line comment, for example that the Queue Service returns `null` where the Transaction Service returns the zero address, so callers keep the non-nullable `to`.\n\n**Open question**\n- **ROUTE-03 / LOG-01:** At `multisig-transaction.entity.ts:46`, is zero address the correct meaning of a null `to`? `LOG-01` warns against fallbacks that return \"a plausible-looking wrong value\". The mapper passes `tx.to` straight through (`src/modules/safe-queue/mappers/transaction.mapper.ts:40`), so clients will see `0x000…000` as the recipient. If `null` can mean something other than \"sent to the zero address\", this hides it. It's fine if the Queue Service contract confirms the two are equivalent; worth stating that in the comment from finding 2."
+}
