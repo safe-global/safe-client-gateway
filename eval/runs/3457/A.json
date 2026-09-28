@@ -1,0 +1,19 @@
+{
+  "pr": 3457,
+  "reviewSha": "629c23c60759f24dfa82a3aa382713c381539728",
+  "baseSha": "2f860c445d2815b9f4bf9ea03a692102cb2d2d50",
+  "system": "A",
+  "version": "ebad134244e7c88989937e7e11e33936561d2550",
+  "model": "claude-opus-5-5[1m]",
+  "runner": "valleXYZ",
+  "usage": {
+    "inputTokens": 18,
+    "outputTokens": 4038,
+    "cacheReadTokens": 549850,
+    "cacheWriteTokens": 56523,
+    "turns": 10,
+    "wallSeconds": 63,
+    "apiEquivalentUsd": 0.6429860000000001
+  },
+  "output": "I ran `/code-conventions --review-pr` on `2f860c445...HEAD` and found no blocking issues. The diff touches 2 files and is a rename follow-up: it switches `billing.service.ts` and its spec from the old repository method `countBySpaceId` to the new `countSeatsBySpaceId`.\n\n**Checklist:** I generated all 425 lines from `rules.json` into the scratchpad, using `--out` so nothing was written to the repo, and went through every rule. I didn't need to look up the review history behind any rule. I edited no files and ran no tests.\n\n**Rules that applied and pass:**\n- **CHANGE-01 / CHANGE-02:** the change is as small as it can be and has no unrelated edits. No code under `src/` still calls `countBySpaceId`, and the new method exists on `ISpaceSafesRepository` (`src/modules/spaces/domain/safes/space-safes.repository.interface.ts:86`).\n- **MOD-06:** the route service still calls the repository, not the datasource.\n- **TEST-01:** the spec still uses builders, faker and `MockedObject<ISpaceSafesRepository>` (`billing.service.spec.ts:82-84`).\n- **Licence headers:** both files have the SPDX line.\n- All other rules (auth, database, cache, config, logging, security, performance) don't touch this diff.\n\n## Findings\n\n1. **Low – PR-02 / STYLE-01 (docs match behaviour):** `src/modules/billing/routes/billing.service.ts:421-423`. The comment on `assertSafeSeatCapacity` still says it checks the plan against \"the workspace's current Safe count\". The call now counts seats: one per Safe address, however many chains that Safe is on (see #3446). The error message at `billing.service.ts:442` (\"…current Safes\") has the same problem. Suggested fix: say \"seat count (distinct Safe addresses)\" in both.\n\n2. **Low – TEST-09 (edge cases and side effects covered):** `src/modules/billing/routes/billing.service.spec.ts:711`, `:742`, `:965`, `:985`. The renamed mock is only given a return value and is never checked for its argument. If the service passed the wrong ID (for example `spaceUuid` or another number instead of `args.spaceId`), every seat-capacity test would still pass. Suggested fix: in at least one checkout test and one plan-change test, add `expect(spaceSafesRepositoryMock.countSeatsBySpaceId).toHaveBeenCalledWith(spaceId)`. This gap existed before the diff, but the diff edits these exact lines.\n\n3. **Info – TEST-08 (test names match assertions):** `src/modules/billing/routes/billing.service.spec.ts:702`, `:731`, `:958`, `:979`. The test names say \"…the workspace's current Safes\", but the thing being compared is now a seat count. Renaming them to \"…current seats\" would keep the names accurate. It's optional and could be done together with finding 1."
+}
