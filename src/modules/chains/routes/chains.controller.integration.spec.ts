@@ -23,10 +23,12 @@ import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { gasPriceResponseBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-response.builder';
 import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
+import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
 import type { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -357,6 +359,28 @@ describe('Chains Controller', () => {
         .get(`/v1/chains/${chainId}`)
         .expect(200)
         .expect(expectedResult);
+    });
+
+    it('should serve the gas payment options the Config Service lists', async () => {
+      const chainId = faker.string.numeric();
+      const relayer = relayerBuilder()
+        .with('type', null)
+        .with('gasPaymentOptions', [GasPaymentOption.SUBSCRIPTION])
+        .build();
+      const chainDomain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayer)
+        .build();
+      networkService.get.mockResolvedValueOnce({
+        data: rawify(chainDomain),
+        status: 200,
+      });
+
+      const response = await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}`)
+        .expect(200);
+
+      expect(response.body.relayer).toStrictEqual(relayer);
     });
 
     it('Should return not Not found', async () => {
