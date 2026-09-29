@@ -5,7 +5,7 @@ import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-  TokenMetadata,
+  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
@@ -14,7 +14,7 @@ import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
-} from '@/modules/policies/domain/utils/token-metadata-key.util';
+} from '@/modules/policies/domain/utils/token-metadata-key.utils';
 
 const MILLISECONDS_IN_MINUTE = 60_000;
 
@@ -44,7 +44,7 @@ export class SpendingLimitMapper {
      * here, never fetched - a Safe's allowances can repeat a token across
      * spenders, and fetching per-entry would repeat the same lookup.
      */
-    tokens: ReadonlyMap<TokenMetadataKey, TokenMetadata>;
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>;
   }): Array<ActivePolicy> {
     const nonZeroAllowances = args.allowances.filter(
       (allowance) => BigInt(allowance.amount) > 0n,
@@ -62,7 +62,7 @@ export class SpendingLimitMapper {
         enabled: args.enabledModules.some((enabled) =>
           isAddressEqual(enabled, module),
         ),
-        data: { module, spenders: this.toSpenders(limits, args.tokens) },
+        data: { module, spenders: this.toSpenders(limits, args.tokenMetadata) },
         safe: args.safe,
       });
     }
@@ -76,7 +76,7 @@ export class SpendingLimitMapper {
    */
   private toSpenders(
     allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
-    tokens: ReadonlyMap<TokenMetadataKey, TokenMetadata>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>,
   ): SpendingLimitPolicyData['spenders'] {
     const limitsBySpender = this.groupByDelegate(allowances);
 
@@ -88,7 +88,7 @@ export class SpendingLimitMapper {
         // Every row of one `(module, delegate)` carries the same registration.
         isActive: spenderLimits[0].isDelegateActive,
         allowances: spenderLimits.map((limit) =>
-          this.toAllowance(limit, tokens),
+          this.toAllowance(limit, tokenMetadata),
         ),
       });
     }
@@ -102,15 +102,15 @@ export class SpendingLimitMapper {
    */
   private toAllowance(
     allowance: PolicyIndexerSafeAllowance,
-    tokens: ReadonlyMap<TokenMetadataKey, TokenMetadata>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>,
   ): SpendingLimitAllowance {
     const resetsPeriodically = allowance.resetTimeMinutes > 0;
     const hasReset = resetsPeriodically && this.hasWindowElapsed(allowance);
 
     return {
       tokenAddress: allowance.token,
-      token:
-        tokens.get(
+      tokenMetadata:
+        tokenMetadata.get(
           tokenMetadataKey({
             chainId: allowance.chainId,
             address: allowance.token,

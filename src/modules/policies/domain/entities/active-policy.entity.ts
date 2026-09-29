@@ -3,6 +3,10 @@ import type { Address } from 'viem';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type {
+  Erc20Token,
+  NativeToken,
+} from '@/modules/tokens/domain/entities/token.entity';
 
 /**
  * `spending-limit`: what each spender may still withdraw, and on what schedule.
@@ -25,20 +29,17 @@ export type SpendingLimitPolicyData = {
 };
 
 /**
- * A token's identifying metadata, independent of any one holder's balance or
- * allowance of it.
+ * A spending limit is always a fungible amount, so its token is never
+ * ERC721 - unlike the general `Token` union a token repository lookup can
+ * resolve an address to.
  */
-export type TokenMetadata = {
-  name: string;
-  symbol: string;
-  decimals: number;
-};
+export type SpendingLimitToken = NativeToken | Erc20Token;
 
 export type SpendingLimitAllowance = {
   /** The zero address is the native currency. */
   tokenAddress: Address;
   /** Metadata of {@link tokenAddress}; `null` when it could not be resolved. */
-  token: TokenMetadata | null;
+  tokenMetadata: SpendingLimitToken | null;
   /** Per-window ceiling, in base units. */
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */

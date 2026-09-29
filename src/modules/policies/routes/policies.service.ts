@@ -19,7 +19,7 @@ import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entit
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type {
   ActivePolicy,
-  TokenMetadata,
+  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
@@ -29,7 +29,7 @@ import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-index
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
-} from '@/modules/policies/domain/utils/token-metadata-key.util';
+} from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -39,6 +39,7 @@ import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
+import type { NativeToken } from '@/modules/tokens/domain/entities/token.entity';
 import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
@@ -194,9 +195,9 @@ export class PoliciesService {
     const enabledModulesPerSafe = spendingLimitsRequested
       ? await this.enabledModulesPerSafe(safes)
       : null;
-    const tokens = state
+    const tokenMetadata = state
       ? await this.getTokenMetadata(state.allowances)
-      : new Map<TokenMetadataKey, TokenMetadata>();
+      : new Map<TokenMetadataKey, SpendingLimitToken>();
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
       : null;
@@ -214,7 +215,7 @@ export class PoliciesService {
               safe,
               allowances: this.getAllowancesBySafe(state.allowances, safe),
               enabledModules,
-              tokens,
+              tokenMetadata,
             }),
           );
         }
@@ -234,34 +235,30 @@ export class PoliciesService {
   }
 
   /**
-   * The metadata of every token referenced by a non-zero allowance in
+   * The metadata of every token referenced by an allowance in
    * {@link allowances}, keyed by {@link tokenMetadataKey} so the mapper can
    * look up each allowance's token without fetching it again.
    *
-   * A zeroed-out allowance is not a real limit - the mapper drops these too -
-   * so its token is never fetched.
-   *
    * The native currency (`address(0)`) has no ERC20 metadata to fetch: the
    * transaction service's token endpoint only indexes ERC20/ERC721 and 404s on
-   * the zero address, so its name/symbol/decimals come from the chain's own
-   * config (`chain.nativeCurrency`) instead of `ITokenRepository`.
+   * the zero address, so it is represented as a `NativeToken` built from the
+   * chain's own config (`chain.nativeCurrency`) instead of one read through
+   * `ITokenRepository`.
    *
-   * A lookup failure - an unknown token, a chain that could not be read, any
-   * other error - is left out of the map rather than failing the request; the
-   * affected allowances report `token: null`.
+   * A lookup failure - an unknown token, a chain that could not be read, an
+   * ERC721 (an allowance is always a fungible amount, so this should never
+   * happen), any other error - is left out of the map rather than failing
+   * the request; the affected allowances report `tokenMetadata: null`.
    */
   private async getTokenMetadata(
     allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
-  ): Promise<Map<TokenMetadataKey, TokenMetadata>> {
-    const configuredAllowances = allowances.filter(
-      (allowance) => BigInt(allowance.amount) > 0n,
-    );
+  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
     const isNativeCurrency = (allowance: PolicyIndexerSafeAllowance): boolean =>
       isAddressEqual(allowance.token, zeroAddress);
 
     const nativeCurrencyChainIds = [
       ...new Set(
-        configuredAllowances
+        allowances
           .filter(isNativeCurrency)
           .map((allowance) => allowance.chainId),
       ),
@@ -274,7 +271,7 @@ export class PoliciesService {
       TokenMetadataKey,
       { chainId: string; address: Address }
     >();
-    for (const allowance of configuredAllowances) {
+    for (const allowance of allowances) {
       if (isNativeCurrency(allowance)) {
         continue;
       }
@@ -282,7 +279,7 @@ export class PoliciesService {
       erc20TokensByKey.set(tokenMetadataKey(pair), pair);
     }
 
-    const tokens = new Map<TokenMetadataKey, TokenMetadata>();
+    const tokenMetadata = new Map<TokenMetadataKey, SpendingLimitToken>();
 
     const chainResults = await batched(
       nativeCurrencyChainIds,
@@ -290,16 +287,26 @@ export class PoliciesService {
       (chainId) => this.chainsRepository.getChain(chainId),
     );
     chainResults.forEach((result, index) => {
+      const chainId = nativeCurrencyChainIds[index];
       if (result.status !== 'fulfilled') {
+        this.loggingService.debug({
+          message: "Could not read a chain's native currency",
+          chainId,
+          error: asError(result.reason).message,
+        });
         return;
       }
-      const { name, symbol, decimals } = result.value.nativeCurrency;
-      tokens.set(
-        tokenMetadataKey({
-          chainId: nativeCurrencyChainIds[index],
-          address: zeroAddress,
-        }),
-        { name, symbol, decimals },
+      const nativeToken: NativeToken = {
+        type: 'NATIVE_TOKEN',
+        address: zeroAddress,
+        ...result.value.nativeCurrency,
+        // Not a Transaction Service token-list membership - the native
+        // currency is trusted by definition.
+        trusted: true,
+      };
+      tokenMetadata.set(
+        tokenMetadataKey({ chainId, address: zeroAddress }),
+        nativeToken,
       );
     });
 
@@ -308,18 +315,33 @@ export class PoliciesService {
       this.tokenRepository.getToken(pair),
     );
     tokenResults.forEach((result, index) => {
+      const pair = erc20Pairs[index];
       if (result.status !== 'fulfilled') {
+        this.loggingService.debug({
+          message: 'Could not read a token',
+          chainId: pair.chainId,
+          address: pair.address,
+          error: asError(result.reason).message,
+        });
         return;
       }
-      const { name, symbol, decimals } = result.value;
-      tokens.set(tokenMetadataKey(erc20Pairs[index]), {
-        name,
-        symbol,
-        decimals,
-      });
+      if (result.value.type === 'ERC721') {
+        // An allowance is always a fungible amount, so an address the
+        // allowance module points at should never resolve to an NFT - if it
+        // does, the token repository's answer is not usable as a spending
+        // limit's metadata.
+        this.loggingService.debug({
+          message:
+            "An allowance's token resolved to an ERC721, not a fungible token",
+          chainId: pair.chainId,
+          address: pair.address,
+        });
+        return;
+      }
+      tokenMetadata.set(tokenMetadataKey(pair), result.value);
     });
 
-    return tokens;
+    return tokenMetadata;
   }
 
   /**

@@ -5,12 +5,18 @@ import type { IBuilder } from '@/__tests__/builder';
 import type {
   ActivePolicy,
   SpendingLimitPolicyData,
+  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import {
+  type TokenMetadataKey,
+  tokenMetadataKey,
+} from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 
 const SEPOLIA = '11155111';
 const DAY_IN_MINUTES = 1440;
@@ -52,12 +58,19 @@ describe('SpendingLimitMapper', () => {
       .with('spent', '0');
   }
 
-  /** The policies built from `allowances`, with `allowanceModule` enabled. */
+  /**
+   * The policies built from `allowances`, with `allowanceModule` enabled and
+   * no token metadata unless a case supplies its own `tokenMetadata` map.
+   */
   function map(
     allowances: Array<PolicyIndexerSafeAllowance>,
     enabledModules: Array<Address> = [allowanceModule],
+    tokenMetadata: ReadonlyMap<
+      TokenMetadataKey,
+      SpendingLimitToken
+    > = new Map(),
   ): Array<ActivePolicy> {
-    return target.map({ safe, allowances, enabledModules });
+    return target.map({ safe, allowances, enabledModules, tokenMetadata });
   }
 
   describe('nesting the indexer rows into one policy per module', () => {
@@ -405,6 +418,75 @@ describe('SpendingLimitMapper', () => {
       expect(
         spendingLimitData(policy).spenders[0].allowances[0].updatedAt,
       ).toBe(updatedAt);
+    });
+  });
+
+  describe('attaching token metadata', () => {
+    it("should attach the token found under the allowance's chain and address", () => {
+      const row = allowance().build();
+      const metadata = erc20TokenBuilder().build();
+      const tokenMetadata = new Map([
+        [
+          tokenMetadataKey({ chainId: row.chainId, address: row.token }),
+          metadata,
+        ],
+      ]);
+
+      const [policy] = map([row], [allowanceModule], tokenMetadata);
+
+      expect(
+        spendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
+      ).toStrictEqual(metadata);
+    });
+
+    it('should report null when no metadata was fetched for the token', () => {
+      const row = allowance().build();
+
+      const [policy] = map([row], [allowanceModule], new Map());
+
+      expect(
+        spendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
+      ).toBeNull();
+    });
+
+    it("should not attach another token's metadata to this allowance", () => {
+      const row = allowance().build();
+      const otherToken = getAddress(faker.finance.ethereumAddress());
+      const tokenMetadata = new Map([
+        [
+          tokenMetadataKey({ chainId: row.chainId, address: otherToken }),
+          erc20TokenBuilder().build(),
+        ],
+      ]);
+
+      const [policy] = map([row], [allowanceModule], tokenMetadata);
+
+      expect(
+        spendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
+      ).toBeNull();
+    });
+
+    it('should look the token up case-insensitively', () => {
+      const row = allowance()
+        .with('token', getAddress(faker.finance.ethereumAddress()))
+        .build();
+      const metadata = erc20TokenBuilder().build();
+      const lowercasedAddress: `0x${string}` = `0x${row.token.slice(2).toLowerCase()}`;
+      const tokenMetadata = new Map([
+        [
+          tokenMetadataKey({
+            chainId: row.chainId,
+            address: lowercasedAddress,
+          }),
+          metadata,
+        ],
+      ]);
+
+      const [policy] = map([row], [allowanceModule], tokenMetadata);
+
+      expect(
+        spendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
+      ).toStrictEqual(metadata);
     });
   });
 });

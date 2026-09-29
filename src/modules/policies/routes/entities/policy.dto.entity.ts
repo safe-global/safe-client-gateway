@@ -7,7 +7,7 @@ import type {
   ProposerPolicyData,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-  TokenMetadata,
+  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type {
   GuardSlots,
@@ -20,6 +20,10 @@ import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
+import type {
+  Erc20Token,
+  NativeToken,
+} from '@/modules/tokens/domain/entities/token.entity';
 
 /**
  * Which Safe an item belongs to.
@@ -97,15 +101,62 @@ const EnforcementSchema = {
   },
 };
 
-export class TokenMetadataDto implements TokenMetadata {
+/**
+ * Mirrors the token module's own `BaseTokenMetadata`/`*TokenMetadata` DTOs
+ * (`src/modules/tokens/routes/entities/token.dto.entity.ts`) - not imported
+ * from there directly, since a module reaches another only through its
+ * `domain/` (see `docs/agents/module-structure.md`).
+ */
+class BaseTokenMetadataDto {
+  @ApiProperty({ type: String })
+  public readonly address!: Address;
+  @ApiProperty()
+  public readonly decimals!: number;
+  @ApiProperty()
+  public readonly logoUri!: string;
   @ApiProperty()
   public readonly name!: string;
   @ApiProperty()
   public readonly symbol!: string;
-  @ApiProperty()
-  public readonly decimals!: number;
+  @ApiProperty({
+    description:
+      'Whether the Transaction Service lists the token in one of its imported token lists',
+  })
+  public readonly trusted!: boolean;
 }
 
+export class NativeTokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements NativeToken
+{
+  @ApiProperty({ enum: ['NATIVE_TOKEN'] })
+  public readonly type!: 'NATIVE_TOKEN';
+}
+
+export class Erc20TokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements Erc20Token
+{
+  @ApiProperty({ enum: ['ERC20'] })
+  public readonly type!: 'ERC20';
+}
+
+/** ERC721 never applies: a spending limit is always a fungible amount. */
+const TokenMetadataSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(NativeTokenMetadataDto) },
+    { $ref: getSchemaPath(Erc20TokenMetadataDto) },
+  ],
+  discriminator: {
+    propertyName: 'type',
+    mapping: {
+      NATIVE_TOKEN: getSchemaPath(NativeTokenMetadataDto),
+      ERC20: getSchemaPath(Erc20TokenMetadataDto),
+    },
+  },
+};
+
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   @ApiProperty({
     type: String,
@@ -113,12 +164,12 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   })
   public readonly tokenAddress!: Address;
   @ApiProperty({
-    type: TokenMetadataDto,
+    ...TokenMetadataSchema,
     nullable: true,
     description:
       'Metadata of `tokenAddress`; null when it could not be resolved',
   })
-  public readonly token!: TokenMetadata | null;
+  public readonly tokenMetadata!: SpendingLimitToken | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })
