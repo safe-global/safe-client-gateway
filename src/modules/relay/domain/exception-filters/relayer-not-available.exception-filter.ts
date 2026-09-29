@@ -12,14 +12,10 @@ import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-
 @Catch(NoRelayerDefinedError)
 export class RelayerNotAvailableExceptionFilter implements ExceptionFilter {
   catch(exception: NoRelayerDefinedError, host: ArgumentsHost): void {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<FastifyReply>();
-
-    const statusCode = HttpStatus.FORBIDDEN;
-
-    response.status(statusCode).send({
+    const response = host.switchToHttp().getResponse<FastifyReply>();
+    response.status(HttpStatus.FORBIDDEN).send({
       message: exception.message,
-      statusCode,
+      statusCode: HttpStatus.FORBIDDEN,
     });
   }
 }
