@@ -50,6 +50,12 @@ export type SpendingLimitAllowance = {
    * delegate is re-added.
    */
   isDelegateActive: boolean;
+  /**
+   * Unix seconds this allowance was (re-)established.
+   */
+  createdAt: number;
+  /** Unix seconds of the last event that changed this allowance. */
+  updatedAt: number;
 };
 
 /**

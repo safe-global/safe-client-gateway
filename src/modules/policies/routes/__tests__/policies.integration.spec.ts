@@ -432,6 +432,8 @@ describe('Space Policies Controller', () => {
                     resetsAtMinute: windowStart + DAY_IN_MINUTES,
                     resetBoundaryIsExact: true,
                     isDelegateActive: true,
+                    createdAt: Number(allowance.createdAt),
+                    updatedAt: Number(allowance.updatedAt),
                   },
                 ],
               },
