@@ -63,14 +63,6 @@ export class FeesService {
         });
         return FeePreviewResponse.fromRelayFees(txFeesResponse);
       }
-      case RelayerType.GTF: {
-        const gtfFeesResponse = await this.feeServiceApi.getGtfFees({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
-          request: args.feePreviewDto,
-        });
-        return FeePreviewResponse.fromGtfFees(gtfFeesResponse);
-      }
       default:
         throw new BadRequestException(
           'Fee preview is not available for this chain',

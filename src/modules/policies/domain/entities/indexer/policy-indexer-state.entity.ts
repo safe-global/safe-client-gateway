@@ -89,6 +89,10 @@ export const PolicyIndexerSafeAllowanceSchema = z.object({
   lastResetMin: PolicyIndexerIntegerSchema,
   resetPhase: PolicyIndexerAllowanceResetPhaseSchema,
   nonce: PolicyIndexerBaseUnitsSchema,
+  /**
+   * Unix seconds of the `SetAllowance` that (re-)established this allowance.
+   */
+  createdAt: PolicyIndexerIntegerSchema,
   /** Unix seconds of the last event that moved this row. */
   updatedAt: PolicyIndexerIntegerSchema,
 });

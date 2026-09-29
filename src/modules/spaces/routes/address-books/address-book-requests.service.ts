@@ -13,7 +13,6 @@ import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/e
 import {
   assertAdmin,
   assertMember,
-  isAdmin,
 } from '@/modules/spaces/domain/space-assert.utils';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import {
@@ -53,20 +52,19 @@ export class AddressBookRequestsService {
     spaceId: Space['id'],
   ): Promise<AddressBookRequestsDto> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertMember(this.membersRepository, spaceId, userId);
+    const member = await assertMember(this.membersRepository, spaceId, userId);
 
-    const callerIsAdmin = await isAdmin(this.spacesRepository, spaceId, userId);
-
-    const requests = callerIsAdmin
-      ? await this.requestsRepository.findBySpaceId({
-          spaceId,
-          status: 'PENDING',
-        })
-      : await this.requestsRepository.findBySpaceAndRequester({
-          spaceId,
-          requestedById: userId,
-          status: 'PENDING',
-        });
+    const requests =
+      member.role === 'ADMIN'
+        ? await this.requestsRepository.findBySpaceId({
+            spaceId,
+            status: 'PENDING',
+          })
+        : await this.requestsRepository.findBySpaceAndRequester({
+            spaceId,
+            requestedById: userId,
+            status: 'PENDING',
+          });
 
     return this.mapRequests(spaceId, requests);
   }
@@ -105,7 +103,7 @@ export class AddressBookRequestsService {
     requestId: number,
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertAdmin(this.spacesRepository, spaceId, userId);
+    await assertAdmin(this.membersRepository, spaceId, userId);
 
     const request = await this.requestsRepository.findOneOrFail({
       id: requestId,
@@ -125,7 +123,7 @@ export class AddressBookRequestsService {
       }
 
       await this.spaceAddressBookRepository.upsertMany({
-        authPayload,
+        userId,
         spaceId,
         addressBookItems: [
           {
@@ -146,7 +144,7 @@ export class AddressBookRequestsService {
     requestId: number,
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertAdmin(this.spacesRepository, spaceId, userId);
+    await assertAdmin(this.membersRepository, spaceId, userId);
 
     const rejected = await this.requestsRepository.reject({
       id: requestId,

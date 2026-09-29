@@ -62,13 +62,14 @@ export class AddressBooksController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
-    description: 'User, member, or space not found',
+    description: 'Space not found',
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
   })
   @ApiForbiddenResponse({
-    description: 'Access forbidden - user is not a member of this space',
+    description:
+      'Access forbidden - user is not an active member of this space',
   })
   @Get('/:spaceId/address-book')
   @UseGuards(AuthGuard)
@@ -100,14 +101,13 @@ export class AddressBooksController {
     type: SpaceAddressBookDto,
   })
   @ApiNotFoundResponse({
-    description: 'User, member, or space not found',
+    description: 'Space not found',
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
   })
   @ApiForbiddenResponse({
-    description:
-      'Access forbidden - user is not authorized to modify this address book',
+    description: 'Access forbidden - user is not an active admin of this space',
   })
   @ApiBadRequestResponse({
     description: 'Address book items limit exceeded or invalid data provided',
@@ -149,11 +149,10 @@ export class AddressBooksController {
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiNotFoundResponse({
-    description: 'User, member, space, or address book entry not found',
+    description: 'Space not found',
   })
   @ApiForbiddenResponse({
-    description:
-      'Access forbidden - user is not authorized to modify this address book',
+    description: 'Access forbidden - user is not an active admin of this space',
   })
   @Delete('/:spaceId/address-book/:address')
   @UseGuards(AuthGuard, ElevationGuard)

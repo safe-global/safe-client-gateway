@@ -15,10 +15,8 @@ import {
   IEntitlementEnforcement,
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
@@ -79,9 +77,6 @@ export class WorkspaceRelayer {
     // does not apply; only its presence is read here.
     if (!relayer?.type) {
       throw new NoRelayerDefinedError();
-    }
-    if (relayer.type === RelayerType.GTF) {
-      throw new RelayerTypeNotImplementedError(relayer.type);
     }
 
     if (safe !== null) {

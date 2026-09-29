@@ -162,7 +162,7 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): Promise<UpdateSpaceResponse> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.id, userId);
+    await assertAdmin(this.membersRepository, args.id, userId);
 
     return await this.spacesRepository.update({
       id: args.id,
@@ -237,7 +237,7 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): ReturnType<ISpacesRepository['delete']> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.id, userId);
+    await assertAdmin(this.membersRepository, args.id, userId);
 
     return await this.spacesRepository.delete({
       id: args.id,

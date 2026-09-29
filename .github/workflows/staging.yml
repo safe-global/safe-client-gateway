@@ -49,17 +49,12 @@ jobs:
     uses: ./.github/workflows/_build-image.yml
     with:
       image_name: ghcr.io/safe-global/safe-client-gateway
-      # Dual-push while external consumers of the public Docker Hub image are
-      # still being inventoried. Drop once that inventory is done.
-      docker_image: safeglobal/safe-client-gateway-nest
+      # GHCR only, as in production.yml. Nothing outside Safe reads main-<sha>.
       image_tag: ${{ needs.prepare.outputs.tag }}
       # MUST equal image_tag: the Dockerfile turns VERSION into
       # APPLICATION_VERSION, /about reports it, and _deploy.yml polls that
       # endpoint until it matches.
       version: ${{ needs.prepare.outputs.tag }}
-    secrets:
-      docker_user: ${{ secrets.DOCKER_USER }}
-      docker_password: ${{ secrets.DOCKER_PASSWORD }}
 
   deploy-staging:
     needs: [prepare, build]

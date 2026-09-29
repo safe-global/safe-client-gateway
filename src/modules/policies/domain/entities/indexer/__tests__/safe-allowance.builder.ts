@@ -47,6 +47,11 @@ export function rawIndexerSafeAllowanceBuilder(): IBuilder<RawIndexerSafeAllowan
       .with('resetPhase', 'EXACT')
       .with('nonce', faker.number.int({ min: 0, max: 65_535 }).toString())
       .with(
+        'createdAt',
+        // Unix seconds, on or before the window it belongs to.
+        faker.number.int({ min: 1_700_000_000, max: 1_800_000_000 }).toString(),
+      )
+      .with(
         'updatedAt',
         // Unix seconds, so at or after the window it belongs to.
         (
@@ -98,6 +103,7 @@ export function policyIndexerSafeAllowanceBuilder(): IBuilder<PolicyIndexerSafeA
       .with('lastResetMin', Number(raw.lastResetMin))
       .with('resetPhase', raw.resetPhase === 'UNKNOWN' ? 'UNKNOWN' : 'EXACT')
       .with('nonce', raw.nonce)
+      .with('createdAt', Number(raw.createdAt))
       .with('updatedAt', Number(raw.updatedAt))
       // Folded in by the repository, not served by the indexer.
       .with('isDelegateActive', true)

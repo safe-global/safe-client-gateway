@@ -119,6 +119,16 @@ export interface ISafeRepository {
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
 
+  /**
+   * The largest `limit` a {@link getTransactionQueue} page can request.
+   *
+   * Depends on which upstream service is answering the read - the Queue
+   * Service and the Transaction Service accept different maximums - so a
+   * caller that wants every page at the largest possible page size asks the
+   * repository.
+   */
+  getTransactionQueueMaxPageSize(): number;
+
   getCreationTransaction(args: {
     chainId: string;
     safeAddress: Address;

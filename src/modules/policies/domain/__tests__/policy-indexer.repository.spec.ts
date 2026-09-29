@@ -155,6 +155,7 @@ describe('PolicyIndexerRepository', () => {
       const allowance = rawIndexerSafeAllowanceBuilder()
         .with('resetTimeMinutes', '1440')
         .with('lastResetMin', '29793086')
+        .with('createdAt', '1787585100')
         .with('updatedAt', '1787585160')
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
@@ -168,6 +169,7 @@ describe('PolicyIndexerRepository', () => {
       expect(result.allowances[0]).toMatchObject({
         resetTimeMinutes: 1440,
         lastResetMin: 29793086,
+        createdAt: 1787585100,
         updatedAt: 1787585160,
       });
     });
