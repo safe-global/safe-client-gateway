@@ -2,22 +2,25 @@
 # =============================================================================
 # CALLER: GitHub Release → PRODUCTION
 # =============================================================================
-# Triggered when release-please publishes a GitHub Release (tag vX.Y.Z). Runs CI
-# on the release commit, builds an immutable image tagged with the release
-# version, then GitOps-deploys it to production with a health gate: ArgoCD wait
-# + /about version poll + smoke test.
+# Triggered when a GitHub Release is published (tag vX.Y.Z), which is cut by
+# hand. Runs CI on the release commit, builds an immutable image tagged with the
+# release version, then GitOps-deploys it to production with a health gate:
+# ArgoCD wait + /about version poll + smoke test.
 #
 # The gate does NOT auto-rollback on a release: it fails loudly and recovery is
 # roll-forward. This service ships TypeORM migrations, and reverting the image
 # across a migration leaves code and schema mismatched.
 #
-# workflow_dispatch is a manual recovery path: it runs THIS (fixed) workflow
-# from the default branch while building/deploying the tag you pass as `tag`.
+# workflow_dispatch deploys the tag you pass as `tag`, running THIS (fixed)
+# workflow from the default branch. It serves both as the recovery path for a
+# release whose own run was broken, and as a way to ship an existing tag with no
+# Release object behind it. Note that a dispatch emits no `release` event, so
+# linear-release.yml does not run and no release notes are produced.
 # -----------------------------------------------------------------------------
 name: Production
 
 on:
-  # `released`, not `published`, matching ci.yml and linear-release.yml. The two
+  # `released`, not `published`, matching linear-release.yml. The two
   # differ in more than pre-release coverage: `published` does not fire again
   # when a pre-release is promoted to a full release, so that flow would tag a
   # release and silently never deploy it. `released` covers the promotion.
