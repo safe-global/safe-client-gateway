@@ -4,7 +4,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { type Address, isAddressEqual } from 'viem';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { batched } from '@/domain/common/utils/batch';
 import {
@@ -14,14 +14,22 @@ import {
 import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import type {
+  ActivePolicy,
+  TokenMetadata,
+} from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  type TokenMetadataKey,
+  tokenMetadataKey,
+} from '@/modules/policies/domain/utils/token-metadata-key.util';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -31,6 +39,7 @@ import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
 
@@ -65,6 +74,10 @@ export class PoliciesService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IDelegatesV3Repository)
     private readonly delegatesV3Repository: IDelegatesV3Repository,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
@@ -181,6 +194,9 @@ export class PoliciesService {
     const enabledModulesPerSafe = spendingLimitsRequested
       ? await this.enabledModulesPerSafe(safes)
       : null;
+    const tokens = state
+      ? await this.getTokenMetadata(state.allowances)
+      : new Map<TokenMetadataKey, TokenMetadata>();
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
       : null;
@@ -198,6 +214,7 @@ export class PoliciesService {
               safe,
               allowances: this.getAllowancesBySafe(state.allowances, safe),
               enabledModules,
+              tokens,
             }),
           );
         }
@@ -214,6 +231,95 @@ export class PoliciesService {
     }
 
     return policies;
+  }
+
+  /**
+   * The metadata of every token referenced by a non-zero allowance in
+   * {@link allowances}, keyed by {@link tokenMetadataKey} so the mapper can
+   * look up each allowance's token without fetching it again.
+   *
+   * A zeroed-out allowance is not a real limit - the mapper drops these too -
+   * so its token is never fetched.
+   *
+   * The native currency (`address(0)`) has no ERC20 metadata to fetch: the
+   * transaction service's token endpoint only indexes ERC20/ERC721 and 404s on
+   * the zero address, so its name/symbol/decimals come from the chain's own
+   * config (`chain.nativeCurrency`) instead of `ITokenRepository`.
+   *
+   * A lookup failure - an unknown token, a chain that could not be read, any
+   * other error - is left out of the map rather than failing the request; the
+   * affected allowances report `token: null`.
+   */
+  private async getTokenMetadata(
+    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+  ): Promise<Map<TokenMetadataKey, TokenMetadata>> {
+    const configuredAllowances = allowances.filter(
+      (allowance) => BigInt(allowance.amount) > 0n,
+    );
+    const isNativeCurrency = (allowance: PolicyIndexerSafeAllowance): boolean =>
+      isAddressEqual(allowance.token, zeroAddress);
+
+    const nativeCurrencyChainIds = [
+      ...new Set(
+        configuredAllowances
+          .filter(isNativeCurrency)
+          .map((allowance) => allowance.chainId),
+      ),
+    ];
+
+    // Keyed by the same `chainId:address` the result is stored under, so an
+    // allowance repeating a token - another spender, another Safe, same chain
+    // - collapses to the one pair fetched here.
+    const erc20TokensByKey = new Map<
+      TokenMetadataKey,
+      { chainId: string; address: Address }
+    >();
+    for (const allowance of configuredAllowances) {
+      if (isNativeCurrency(allowance)) {
+        continue;
+      }
+      const pair = { chainId: allowance.chainId, address: allowance.token };
+      erc20TokensByKey.set(tokenMetadataKey(pair), pair);
+    }
+
+    const tokens = new Map<TokenMetadataKey, TokenMetadata>();
+
+    const chainResults = await batched(
+      nativeCurrencyChainIds,
+      this.batchSize,
+      (chainId) => this.chainsRepository.getChain(chainId),
+    );
+    chainResults.forEach((result, index) => {
+      if (result.status !== 'fulfilled') {
+        return;
+      }
+      const { name, symbol, decimals } = result.value.nativeCurrency;
+      tokens.set(
+        tokenMetadataKey({
+          chainId: nativeCurrencyChainIds[index],
+          address: zeroAddress,
+        }),
+        { name, symbol, decimals },
+      );
+    });
+
+    const erc20Pairs = [...erc20TokensByKey.values()];
+    const tokenResults = await batched(erc20Pairs, this.batchSize, (pair) =>
+      this.tokenRepository.getToken(pair),
+    );
+    tokenResults.forEach((result, index) => {
+      if (result.status !== 'fulfilled') {
+        return;
+      }
+      const { name, symbol, decimals } = result.value;
+      tokens.set(tokenMetadataKey(erc20Pairs[index]), {
+        name,
+        symbol,
+        decimals,
+      });
+    });
+
+    return tokens;
   }
 
   /**

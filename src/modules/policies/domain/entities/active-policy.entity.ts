@@ -24,9 +24,21 @@ export type SpendingLimitPolicyData = {
   }>;
 };
 
+/**
+ * A token's identifying metadata, independent of any one holder's balance or
+ * allowance of it.
+ */
+export type TokenMetadata = {
+  name: string;
+  symbol: string;
+  decimals: number;
+};
+
 export type SpendingLimitAllowance = {
   /** The zero address is the native currency. */
   tokenAddress: Address;
+  /** Metadata of {@link tokenAddress}; `null` when it could not be resolved. */
+  token: TokenMetadata | null;
   /** Per-window ceiling, in base units. */
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */

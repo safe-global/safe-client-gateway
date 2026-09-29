@@ -7,6 +7,7 @@ import type {
   ProposerPolicyData,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
+  TokenMetadata,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type {
   GuardSlots,
@@ -96,12 +97,28 @@ const EnforcementSchema = {
   },
 };
 
+export class TokenMetadataDto implements TokenMetadata {
+  @ApiProperty()
+  public readonly name!: string;
+  @ApiProperty()
+  public readonly symbol!: string;
+  @ApiProperty()
+  public readonly decimals!: number;
+}
+
 export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   @ApiProperty({
     type: String,
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly tokenAddress!: Address;
+  @ApiProperty({
+    type: TokenMetadataDto,
+    nullable: true,
+    description:
+      'Metadata of `tokenAddress`; null when it could not be resolved',
+  })
+  public readonly token!: TokenMetadata | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { ChainsModule } from '@/modules/chains/chains.module';
 import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
@@ -13,6 +14,7 @@ import { PoliciesService } from '@/modules/policies/routes/policies.service';
 import { SpacePoliciesController } from '@/modules/policies/routes/space-policies.controller';
 import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
+import { TokensModule } from '@/modules/tokens/tokens.module';
 import { UsersModule } from '@/modules/users/users.module';
 
 /**
@@ -24,6 +26,10 @@ import { UsersModule } from '@/modules/users/users.module';
     PolicyIndexerRepositoryModule,
     SafeRepositoryModule,
     DelegatesV3RepositoryModule,
+    // Token metadata for spending-limit allowances: ERC20/ERC721 via
+    // TokensModule, the native currency via ChainsModule.
+    TokensModule,
+    ChainsModule,
     // Space membership and the Safe-in-space check
     forwardRef(() => SpacesModule),
     forwardRef(() => UsersModule),
