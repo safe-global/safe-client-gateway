@@ -103,7 +103,14 @@ jobs:
     uses: ./.github/workflows/_build-image.yml
     with:
       image_name: ghcr.io/safe-global/safe-client-gateway
-      docker_image: safeglobal/safe-client-gateway-nest
+      # GHCR only. Releases are no longer mirrored to the public Docker Hub
+      # image: the licence boundary is 2026-02-16, so everything built from
+      # v1.102.0 onward is FSL-1.1-MIT rather than MIT, and the external
+      # consumers of safeglobal/safe-client-gateway-nest are pinned to MIT-era
+      # tags that already exist there (v1.29.0, v1.96.0 and a digest). Those
+      # tags are immutable and stay published, so nothing breaks by stopping.
+      # _build-image.yml keeps the docker_image input, so restoring the mirror
+      # is one line if that decision changes.
       image_tag: ${{ needs.prepare.outputs.tag }}
       # Must equal image_tag — /about reports it and _deploy.yml polls for it.
       version: ${{ needs.prepare.outputs.tag }}
@@ -114,9 +121,6 @@ jobs:
       also_tag_latest: ${{ github.event_name != 'release' || !github.event.release.prerelease }}
       # On dispatch, build the exact tagged source, not the default branch HEAD.
       ref: ${{ github.event.release.tag_name || inputs.tag }}
-    secrets:
-      docker_user: ${{ secrets.DOCKER_USER }}
-      docker_password: ${{ secrets.DOCKER_PASSWORD }}
 
   deploy-production:
     needs: [prepare, build]
