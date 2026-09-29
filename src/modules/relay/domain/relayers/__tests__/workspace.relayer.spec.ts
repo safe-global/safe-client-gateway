@@ -24,7 +24,6 @@ import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
 import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
 import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
@@ -239,18 +238,6 @@ describe('WorkspaceRelayer', () => {
 
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
-  });
-
-  it('should refuse a relayer type that is not implemented', async () => {
-    const args = relayArgs();
-    recognises(null);
-    relayerConfig(relayerBuilder().with('type', RelayerType.GTF).build());
-
-    await expect(target.relay(args)).rejects.toThrow(
-      RelayerTypeNotImplementedError,
-    );
-
-    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
   });
 
   it('should simulate the transaction against the Safe itself', async () => {

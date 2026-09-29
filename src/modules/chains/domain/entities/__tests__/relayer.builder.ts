@@ -7,9 +7,8 @@ import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity
 
 type Relayer = NonNullable<Chain['relayer']>;
 
-// Defaults to a routable, non-GTF relayer type so that chains built via
-// chainBuilder() route to a real relayer by default. Tests exercising the
-// unroutable paths (`null` → 403, `GTF` → 501) must set `type` explicitly.
+// Defaults to a routable relayer type; tests of the unroutable `null` → 403
+// path must set `type` explicitly.
 const ROUTABLE_RELAYER_TYPES: Array<Relayer['type']> = [
   RelayerType.RELAY_FEE,
   RelayerType.DAILY_LIMIT,
