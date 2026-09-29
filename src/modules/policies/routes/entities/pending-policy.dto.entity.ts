@@ -84,7 +84,28 @@ const PendingSpendingLimitChangeSchema = {
     { $ref: getSchemaPath(ResetAllowanceChangeDto) },
     { $ref: getSchemaPath(DeleteAllowanceChangeDto) },
   ],
-  discriminator: { propertyName: 'kind' },
+  discriminator: {
+    propertyName: 'kind',
+    mapping: {
+      [PendingSpendingLimitChangeKind.EnableModule]: getSchemaPath(
+        EnableModuleChangeDto,
+      ),
+      [PendingSpendingLimitChangeKind.AddDelegate]:
+        getSchemaPath(AddDelegateChangeDto),
+      [PendingSpendingLimitChangeKind.RemoveDelegate]: getSchemaPath(
+        RemoveDelegateChangeDto,
+      ),
+      [PendingSpendingLimitChangeKind.SetAllowance]: getSchemaPath(
+        SetAllowanceChangeDto,
+      ),
+      [PendingSpendingLimitChangeKind.ResetAllowance]: getSchemaPath(
+        ResetAllowanceChangeDto,
+      ),
+      [PendingSpendingLimitChangeKind.DeleteAllowance]: getSchemaPath(
+        DeleteAllowanceChangeDto,
+      ),
+    },
+  },
 };
 
 @ApiExtraModels(
@@ -101,8 +122,8 @@ export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   })
   public readonly module!: Address;
   @ApiProperty({
-    isArray: true,
-    ...PendingSpendingLimitChangeSchema,
+    type: 'array',
+    items: PendingSpendingLimitChangeSchema,
     description: 'The AllowanceModule calls this transaction decodes to',
   })
   public readonly changes!: Array<PendingSpendingLimitChange>;
