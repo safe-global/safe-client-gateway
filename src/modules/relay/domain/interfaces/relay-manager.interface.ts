@@ -19,7 +19,6 @@ export interface IRelayManager {
    *   relayerType routing applies (e.g. for `getRelaysRemaining`).
    * @returns The relayer instance to use.
    * @throws NoRelayerDefinedError when relayerType is null.
-   * @throws RelayerTypeNotImplementedError when relayerType is GTF.
    */
   getRelayer(relayerType: RelayerType | null, data?: Address): IRelayer;
 }

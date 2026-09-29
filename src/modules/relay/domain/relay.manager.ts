@@ -7,7 +7,6 @@ import {
   type RelayerType as RelayerTypeValue,
 } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
@@ -32,7 +31,6 @@ export class RelayManager implements IRelayManager {
    *    - `RELAY_FEE` → {@link RelayFeeRelayer}
    *    - `DAILY_LIMIT` → {@link DailyLimitRelayer}
    *    - `NO_FEE_CAMPAIGN` → {@link NoFeeCampaignRelayer}
-   *    - `GTF` → throws {@link RelayerTypeNotImplementedError}
    *    - `null` → throws {@link NoRelayerDefinedError}
    */
   public getRelayer(
@@ -54,8 +52,6 @@ export class RelayManager implements IRelayManager {
         return this.dailyLimitRelayer;
       case RelayerType.NO_FEE_CAMPAIGN:
         return this.noFeeCampaignRelayer;
-      case RelayerType.GTF:
-        throw new RelayerTypeNotImplementedError(RelayerType.GTF);
       default:
         throw new NoRelayerDefinedError();
     }
