@@ -5,6 +5,7 @@ import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
+import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
 import type { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import type { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
@@ -59,6 +60,12 @@ describe('RelayManager', () => {
     it('should return the no-fee campaign relayer when relayerType is NO_FEE_CAMPAIGN', () => {
       expect(manager.getRelayer(RelayerType.NO_FEE_CAMPAIGN)).toBe(
         mockNoFeeCampaignRelayer,
+      );
+    });
+
+    it('should throw RelayerTypeNotImplementedError when relayerType is GTF', () => {
+      expect(() => manager.getRelayer(RelayerType.GTF)).toThrow(
+        RelayerTypeNotImplementedError,
       );
     });
 

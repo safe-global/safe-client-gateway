@@ -183,6 +183,80 @@ describe('CacheRouter', () => {
         expect(dirDefaulted.field).toBe(dirExplicit.field);
       });
     });
+
+    describe('getGtfFeePreviewCacheDir', () => {
+      const baseArgs = {
+        chainId,
+        safeAddress,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '1000000000000000000',
+        data: '0x',
+        operation: 0,
+        nonce: '0',
+        gasToken: zeroAddress,
+        threshold: 1,
+        origin: Origin.NATIVE,
+      };
+
+      it('should produce correct cache dir key', () => {
+        const dir = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
+
+        expect(dir.key).toBe(`${chainId}_gtf_fee_preview_${safeAddress}`);
+        expect(dir.field.length).toBe(64); // sha256 hex
+      });
+
+      it.each([
+        ['to', getAddress(faker.finance.ethereumAddress())],
+        ['nonce', '1'],
+        ['origin', Origin.SAFE_APP],
+      ] as const)(
+        'should produce a different hash when %s differs',
+        (field, value) => {
+          const dir1 = CacheRouter.getGtfFeePreviewCacheDir(baseArgs);
+          const dir2 = CacheRouter.getGtfFeePreviewCacheDir({
+            ...baseArgs,
+            [field]: value,
+          });
+
+          expect(dir1.key).toBe(dir2.key);
+          expect(dir1.field).not.toBe(dir2.field);
+        },
+      );
+
+      it('should default origin the same as its explicit value', () => {
+        const { origin, ...rest } = baseArgs;
+        const dirDefaulted = CacheRouter.getGtfFeePreviewCacheDir(rest);
+        const dirExplicit = CacheRouter.getGtfFeePreviewCacheDir({
+          ...rest,
+          origin: Origin.NATIVE,
+        });
+
+        expect(dirDefaulted.field).toBe(dirExplicit.field);
+      });
+    });
+
+    it('should not collide between relay and GTF cache dirs for the same transaction', () => {
+      const shared = {
+        chainId,
+        safeAddress,
+        to: getAddress(faker.finance.ethereumAddress()),
+        value: '1000000000000000000',
+        data: '0x',
+        operation: 0,
+        nonce: '0',
+        gasToken: zeroAddress,
+        threshold: 1,
+        origin: Origin.NATIVE,
+      };
+
+      const relayDir = CacheRouter.getRelayFeePreviewCacheDir({
+        ...shared,
+        fiatCode: 'USD',
+      });
+      const gtfDir = CacheRouter.getGtfFeePreviewCacheDir(shared);
+
+      expect(relayDir.key).not.toBe(gtfDir.key);
+    });
   });
 
   describe('getSafeQueueMultisigTransactionCacheDir', () => {
