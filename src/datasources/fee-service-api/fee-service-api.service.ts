@@ -16,14 +16,6 @@ import {
   type CanRelayResponse,
   CanRelayResponseSchema,
 } from '@/modules/fees/domain/entities/can-relay-response.entity';
-import {
-  type GtfFeesRequest,
-  GtfFeesRequestSchema,
-} from '@/modules/fees/domain/entities/gtf-fees-request.entity';
-import {
-  type GtfFeesResponse,
-  GtfFeesResponseSchema,
-} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
 import { Origin } from '@/modules/fees/domain/entities/origin.entity';
 import {
   type TxFeesRequest,
@@ -111,43 +103,6 @@ export class FeeServiceApi implements IFeeServiceApi {
         origin: args.request.origin ?? Origin.NATIVE,
       }),
       responseSchema: TxFeesResponseSchema,
-    });
-  }
-
-  /**
-   * {@inheritdoc IFeeServiceApi.getGtfFees}
-   *
-   * Uses {@link CacheFirstDataSource} keyed on chain, safe address, and
-   * transaction parameters — serves from cache on hit, writes through on miss.
-   */
-  getGtfFees(args: {
-    chainId: string;
-    safeAddress: Address;
-    request: GtfFeesRequest;
-  }): Promise<GtfFeesResponse> {
-    const cacheDir = CacheRouter.getGtfFeePreviewCacheDir({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      to: args.request.to,
-      value: args.request.value,
-      data: args.request.data,
-      operation: args.request.operation,
-      nonce: args.request.nonce,
-      gasToken: args.request.gasToken,
-      threshold: args.request.numberSignatures,
-      origin: args.request.origin,
-    });
-    const url = `${this.relayFeeConfiguration.baseUri}/v1/chains/${args.chainId}/safes/${args.safeAddress}/transactions/gtf/fees`;
-
-    return this.postFeeRequest({
-      cacheDir,
-      url,
-      // origin is mandatory for this fee endpoint; parsed to strip fields outside its contract.
-      data: GtfFeesRequestSchema.parse({
-        ...args.request,
-        origin: args.request.origin ?? Origin.NATIVE,
-      }),
-      responseSchema: GtfFeesResponseSchema,
     });
   }
 
