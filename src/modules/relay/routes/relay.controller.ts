@@ -175,10 +175,8 @@ export class RelayController {
   @ApiOperation({
     summary: 'Get remaining relays',
     description:
-      'Retrieves the number of remaining relay transactions available for a specific Safe on the given chain. ' +
-      'On relay-fee chains, safeTxHash is forwarded to the fee service to determine per-transaction eligibility ' +
-      '(returns remaining=1 when eligible, 0 when not). ' +
-      'On daily-limit and no-fee-campaign chains, a count-based quota is returned.',
+      'Retrieves the free relays left for a specific Safe on the given chain: ' +
+      'the no-fee campaign quota where the chain lists NO_FEE_CAMPAIGN, otherwise the daily limit where it lists FREE_DAILY_LIMIT.',
   })
   @ApiParam({
     name: 'chainId',
@@ -195,13 +193,15 @@ export class RelayController {
     name: 'safeTxHash',
     required: false,
     description:
-      'Safe transaction hash (0x prefixed hex string). ' +
-      'Required on relay-fee chains to check per-transaction eligibility with the fee service. ' +
-      'Optional on daily-limit and no-fee-campaign chains.',
+      'Safe transaction hash (0x prefixed hex string). Ignored; kept so existing clients do not break.',
   })
   @ApiOkResponse({
     type: RelaysRemaining,
     description: 'Remaining relay quota retrieved successfully',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'The chain has no relayer or lists no free option, such as a chain that only lists PAY_FROM_SAFE',
   })
   @Get(':safeAddress')
   @UseFilters(RelayerNotAvailableExceptionFilter)

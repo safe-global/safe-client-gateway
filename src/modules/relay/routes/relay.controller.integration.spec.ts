@@ -3407,6 +3407,43 @@ describe('Relay controller', () => {
           .expect(403)
           .expect({ message: 'No relayer defined', statusCode: 403 });
       });
+
+      it('should return 403 for the remaining relays on a PAY_FROM_SAFE-only chain, without asking the fee service', async () => {
+        const payFromSafeChain = chainBuilder()
+          .with('chainId', chainId)
+          .with(
+            'relayer',
+            relayerBuilder()
+              .with('type', RelayerType.RELAY_FEE)
+              .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+              .build(),
+          )
+          .build();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const safeTxHash = faker.string.hexadecimal({ length: 64 });
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+              return Promise.resolve({
+                data: rawify(payFromSafeChain),
+                status: 200,
+              });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/relay/${safeAddress}`)
+          .query({ safeTxHash })
+          .expect(403)
+          .expect({ message: 'No relayer defined', statusCode: 403 });
+        expect(networkService.get).not.toHaveBeenCalledWith(
+          expect.objectContaining({
+            url: expect.stringContaining('/can-relay'),
+          }),
+        );
+      });
     });
   });
 
