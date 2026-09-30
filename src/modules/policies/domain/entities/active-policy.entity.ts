@@ -28,11 +28,6 @@ export type SpendingLimitPolicyData = {
   }>;
 };
 
-/**
- * A spending limit is always a fungible amount, so its token is never
- * ERC721 - unlike the general `Token` union a token repository lookup can
- * resolve an address to.
- */
 export type SpendingLimitToken = NativeToken | Erc20Token;
 
 export type SpendingLimitAllowance = {
