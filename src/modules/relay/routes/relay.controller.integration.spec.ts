@@ -58,6 +58,7 @@ import {
 } from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
@@ -96,12 +97,21 @@ function relayerTypeForChainId(chainId: string): RelayerType | null {
   return null;
 }
 
-// Builds the chain's nested `relayer` object for the given chain, routing on
-// the same logic as relayerTypeForChainId. Tenderly simulation is left disabled
-// since these tests do not exercise the simulation gate.
+// Builds the chain's nested `relayer` object for the given chain: the free
+// option matching relayerTypeForChainId, and sponsored Safe creation. Tenderly
+// simulation is left disabled since these tests do not exercise the simulation
+// gate.
 function relayerForChainId(chainId: string): NonNullable<Chain['relayer']> {
+  const type = relayerTypeForChainId(chainId);
   return relayerBuilder()
-    .with('type', relayerTypeForChainId(chainId))
+    .with('type', type)
+    .with(
+      'gasPaymentOptions',
+      type === RelayerType.NO_FEE_CAMPAIGN
+        ? [GasPaymentOption.NO_FEE_CAMPAIGN]
+        : [GasPaymentOption.FREE_DAILY_LIMIT],
+    )
+    .with('safeCreationSponsored', true)
     .with('enableTenderlySimulationBeforeRelay', false)
     .build();
 }
@@ -2778,7 +2788,10 @@ describe('Relay controller', () => {
           .with('chainId', differentChainId)
           .with(
             'relayer',
-            relayerBuilder().with('type', RelayerType.DAILY_LIMIT).build(),
+            relayerBuilder()
+              .with('type', RelayerType.DAILY_LIMIT)
+              .with('gasPaymentOptions', [GasPaymentOption.FREE_DAILY_LIMIT])
+              .build(),
           )
           .build();
         const safe = safeBuilder().build();
@@ -3073,6 +3086,211 @@ describe('Relay controller', () => {
             remaining: 0,
             limit: relayLimit,
           });
+      });
+    });
+  });
+
+  describe('Gas payment options', () => {
+    // Version supported by all contracts
+    const version = '1.3.0';
+    let chainId: string;
+
+    beforeEach(() => {
+      chainId = faker.helpers.arrayElement(dailyLimitChainIds);
+    });
+
+    it('should route on the listed options, not on the relayer type', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with(
+          'relayer',
+          relayerBuilder()
+            .with('type', RelayerType.RELAY_FEE)
+            .with('gasPaymentOptions', [GasPaymentOption.FREE_DAILY_LIMIT])
+            .with('enableTenderlySimulationBeforeRelay', false)
+            .build(),
+        )
+        .build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .encode();
+      const taskId = faker.string.uuid();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            // Official mastercopy
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${relayUrl}/safe-transactions`:
+            return Promise.resolve({ data: rawify({ taskId }), status: 201 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to: safeAddress, data })
+        .expect(201)
+        .expect({ taskId });
+      await request(app.getHttpServer())
+        .get(`/v1/chains/${chainId}/relay/${safeAddress}`)
+        .expect(200)
+        .expect({ remaining: relayLimit - 1, limit: relayLimit });
+    });
+
+    it('should return 403 for a Safe creation the chain does not sponsor', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with(
+          'relayer',
+          relayerBuilder()
+            .with('gasPaymentOptions', [GasPaymentOption.FREE_DAILY_LIMIT])
+            .with('safeCreationSponsored', false)
+            .build(),
+        )
+        .build();
+      const to = faker.helpers.arrayElement(
+        getProxyFactoryDeployments({ version, chainId }),
+      );
+      const singleton = faker.helpers.arrayElement(
+        getSafeSingletonDeployments({ version, chainId }),
+      );
+      const data = createProxyWithNonceEncoder()
+        .with('singleton', getAddress(singleton))
+        .encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(403)
+        .expect({
+          message: 'No relayer defined',
+          statusCode: 403,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 403 for a refunding execTransaction when PAY_FROM_SAFE is not listed', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+        .encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            // Official mastercopy
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to: safeAddress, data })
+        .expect(403)
+        .expect({
+          message: 'No relayer defined',
+          statusCode: 403,
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    describe('with no free option listed', () => {
+      let chain: Chain;
+
+      beforeEach(() => {
+        chain = chainBuilder()
+          .with('chainId', chainId)
+          .with(
+            'relayer',
+            relayerBuilder()
+              .with('type', RelayerType.DAILY_LIMIT)
+              .with(
+                'gasPaymentOptions',
+                faker.helpers.arrayElements(
+                  [
+                    GasPaymentOption.PAY_FROM_SAFE,
+                    GasPaymentOption.SUBSCRIPTION,
+                  ],
+                  { min: 0, max: 2 },
+                ),
+              )
+              .build(),
+          )
+          .build();
+      });
+
+      it('should return 403 for a gasless execTransaction', async () => {
+        const safe = safeBuilder().build();
+        const safeAddress = getAddress(safe.address);
+        const data = execTransactionEncoder()
+          .with('value', faker.number.bigInt())
+          .encode();
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+              // Official mastercopy
+              return Promise.resolve({ data: rawify(safe), status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(`/v1/chains/${chainId}/relay`)
+          .send({ version, to: safeAddress, data })
+          .expect(403)
+          .expect({
+            message: 'No relayer defined',
+            statusCode: 403,
+          });
+        expect(networkService.post).not.toHaveBeenCalled();
+      });
+
+      it('should return 403 for the remaining relays', async () => {
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/relay/${safeAddress}`)
+          .expect(403)
+          .expect({ message: 'No relayer defined', statusCode: 403 });
       });
     });
   });
