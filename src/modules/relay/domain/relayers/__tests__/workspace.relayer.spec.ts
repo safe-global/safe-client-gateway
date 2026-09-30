@@ -25,7 +25,6 @@ import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
 import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
 import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
@@ -306,19 +305,6 @@ describe('WorkspaceRelayer', () => {
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
-  it('should refuse a relayer type that is not implemented', async () => {
-    const args = relayArgs();
-    recognises(address());
-    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
-    relayerConfig(relayerBuilder().with('type', RelayerType.GTF).build());
-
-    await expect(target.relay(args)).rejects.toThrow(
-      RelayerTypeNotImplementedError,
-    );
-
-    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
-  });
-
   it('should refuse a relay on a chain that does not list SUBSCRIPTION before spending', async () => {
     const args = relayArgs();
     recognises(address());
@@ -345,22 +331,31 @@ describe('WorkspaceRelayer', () => {
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
-  it('should relay on a chain that lists SUBSCRIPTION without a relayer type', async () => {
-    const args = relayArgs();
-    const taskId = faker.string.uuid();
-    recognises(address());
-    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
-    relayerConfig(
-      relayerBuilder()
-        .with('type', null)
-        .with('gasPaymentOptions', [GasPaymentOption.SUBSCRIPTION])
-        .with('enableTenderlySimulationBeforeRelay', false)
-        .build(),
-    );
-    mockRelayApi.relay.mockResolvedValue({ taskId });
+  it.each([
+    [RelayerType.GTF],
+    [RelayerType.RELAY_FEE],
+    [RelayerType.DAILY_LIMIT],
+    [RelayerType.NO_FEE_CAMPAIGN],
+    [null],
+  ])(
+    'should relay on a chain that lists SUBSCRIPTION whatever its relayer type (%s)',
+    async (type) => {
+      const args = relayArgs();
+      const taskId = faker.string.uuid();
+      recognises(address());
+      mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
+      relayerConfig(
+        relayerBuilder()
+          .with('type', type)
+          .with('gasPaymentOptions', [GasPaymentOption.SUBSCRIPTION])
+          .with('enableTenderlySimulationBeforeRelay', false)
+          .build(),
+      );
+      mockRelayApi.relay.mockResolvedValue({ taskId });
 
-    await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
-  });
+      await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
+    },
+  );
 
   it('should simulate the transaction against the Safe itself', async () => {
     const args = relayArgs();

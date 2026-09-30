@@ -16,10 +16,8 @@ import {
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
@@ -78,15 +76,9 @@ export class WorkspaceRelayer {
       this.chainsRepository.getChain(args.chainId),
     ]);
 
-    // `null` only when the Config Service omits or malforms the relayer; a
-    // chain without relaying lists no options, refused below with the rest.
-    if (!relayer) {
-      throw new NoRelayerDefinedError();
-    }
-    if (relayer.type === RelayerType.GTF) {
-      throw new RelayerTypeNotImplementedError(relayer.type);
-    }
-    if (!relayer.gasPaymentOptions.includes(GasPaymentOption.SUBSCRIPTION)) {
+    // Only a chain that offers the workspace allowance as a way to pay. A
+    // missing relayer, or a chain without relaying, lists no options.
+    if (!relayer?.gasPaymentOptions.includes(GasPaymentOption.SUBSCRIPTION)) {
       throw new NoRelayerDefinedError();
     }
 
