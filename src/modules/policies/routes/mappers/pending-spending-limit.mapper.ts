@@ -5,14 +5,18 @@ import { getAllowanceModuleDeployments } from '@/domain/common/utils/deployments
 import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import type { SpendingLimitToken } from '@/modules/policies/domain/entities/active-policy.entity';
 import {
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
+  pendingChangeHasToken,
 } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { TokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
+import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
@@ -35,6 +39,14 @@ export class PendingSpendingLimitMapper {
     private readonly allowanceModuleDecoder: AllowanceModuleDecoder,
   ) {}
 
+  /**
+   * Decodes {@link args.transactions} into their spending-limit changes.
+   *
+   * A change's `tokenMetadata` is always `null` here: decoding is what first
+   * reveals which tokens a transaction references, so nothing can have been
+   * fetched yet. The caller fetches metadata for every decoded change across
+   * every Safe in one pass, then calls {@link attachTokenMetadata}.
+   */
   public map(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
@@ -49,6 +61,37 @@ export class PendingSpendingLimitMapper {
     return args.transactions.flatMap((transaction) =>
       this.mapTransaction({ safe: args.safe, transaction, knownModules }),
     );
+  }
+
+  /**
+   * {@link policies}, with every change's `tokenMetadata` filled in from
+   * {@link tokenMetadata} - looked up here, never fetched.
+   */
+  public attachTokenMetadata(
+    policies: ReadonlyArray<PendingQueuedPolicy>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>,
+  ): Array<PendingQueuedPolicy> {
+    return policies.map((policy) => ({
+      ...policy,
+      data: {
+        ...policy.data,
+        changes: policy.data.changes.map((change) => {
+          if (!pendingChangeHasToken(change)) {
+            return change;
+          }
+          return {
+            ...change,
+            tokenMetadata:
+              tokenMetadata.get(
+                tokenMetadataKey({
+                  chainId: policy.safe.chainId,
+                  address: change.token,
+                }),
+              ) ?? null,
+          };
+        }),
+      },
+    }));
   }
 
   /**
@@ -195,6 +238,7 @@ export class PendingSpendingLimitMapper {
             kind: PendingSpendingLimitChangeKind.SetAllowance,
             delegate: decoded.args[0],
             token: decoded.args[1],
+            tokenMetadata: null,
             amount: decoded.args[2].toString(),
             resetPeriodMinutes: decoded.args[3],
           };
@@ -203,12 +247,14 @@ export class PendingSpendingLimitMapper {
             kind: PendingSpendingLimitChangeKind.ResetAllowance,
             delegate: decoded.args[0],
             token: decoded.args[1],
+            tokenMetadata: null,
           };
         case 'deleteAllowance':
           return {
             kind: PendingSpendingLimitChangeKind.DeleteAllowance,
             delegate: decoded.args[0],
             token: decoded.args[1],
+            tokenMetadata: null,
           };
         default:
           // A call to a known AllowanceModule function this mapper doesn't

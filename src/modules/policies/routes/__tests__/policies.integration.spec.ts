@@ -21,7 +21,10 @@ import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { addDelegateEncoder } from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import {
+  addDelegateEncoder,
+  setAllowanceEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
@@ -881,6 +884,34 @@ describe('Space Policies Controller', () => {
               },
             ],
           },
+        }),
+      ]);
+    });
+
+    it("should attach the token's metadata to a decoded setAllowance change", async () => {
+      const token = erc20TokenBuilder().build();
+      const setAllowance = setAllowanceEncoder().with('token', token.address);
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', setAllowance.encode())
+        .build();
+      mockUpstream({ queuedTransactions: [transaction], tokens: [token] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.SpendingLimit })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toEqual([
+        expect.objectContaining({
+          data: expect.objectContaining({
+            changes: [expect.objectContaining({ tokenMetadata: token })],
+          }),
         }),
       ]);
     });

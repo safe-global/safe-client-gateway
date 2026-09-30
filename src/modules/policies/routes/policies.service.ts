@@ -22,7 +22,10 @@ import type {
   SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
+import {
+  type PendingPolicy,
+  pendingChangeHasToken,
+} from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
@@ -408,7 +411,71 @@ export class PoliciesService {
       });
     }
 
-    return policies;
+    const tokenMetadata = await this.getPendingTokenMetadata(policies);
+    return this.pendingSpendingLimitMapper.attachTokenMetadata(
+      policies,
+      tokenMetadata,
+    );
+  }
+
+  /**
+   * The metadata of every token a change in {@link policies} references.
+   *
+   * Unlike {@link getTokenMetadata}, the tokens to fetch are only known once
+   * every Safe's queue has already been decoded - decoding calldata is what
+   * reveals a change's token in the first place - so this always runs after
+   * {@link pendingPoliciesForSafe} has settled for every Safe, never before.
+   */
+  private async getPendingTokenMetadata(
+    policies: ReadonlyArray<PendingPolicy>,
+  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
+    const nativeTokens = await this.fetchNativeTokens(
+      this.pendingNativeCurrencyChainIds(policies),
+    );
+    const erc20Tokens = await this.fetchErc20Tokens(
+      this.pendingErc20TokensToFetch(policies),
+    );
+
+    return new Map([...nativeTokens, ...erc20Tokens]);
+  }
+
+  /** The distinct chains a native-currency change in {@link policies} is on. */
+  private pendingNativeCurrencyChainIds(
+    policies: ReadonlyArray<PendingPolicy>,
+  ): Array<string> {
+    return [
+      ...new Set(
+        policies.flatMap((policy) =>
+          policy.data.changes
+            .filter(pendingChangeHasToken)
+            .filter((change) => isAddressEqual(change.token, zeroAddress))
+            .map(() => policy.safe.chainId),
+        ),
+      ),
+    ];
+  }
+
+  /**
+   * The distinct `(chainId, address)` pairs an ERC20 change in
+   * {@link policies} references.
+   */
+  private pendingErc20TokensToFetch(
+    policies: ReadonlyArray<PendingPolicy>,
+  ): Array<{ chainId: string; address: Address }> {
+    const byKey = new Map<
+      TokenMetadataKey,
+      { chainId: string; address: Address }
+    >();
+    for (const policy of policies) {
+      for (const change of policy.data.changes.filter(pendingChangeHasToken)) {
+        if (isAddressEqual(change.token, zeroAddress)) {
+          continue;
+        }
+        const pair = { chainId: policy.safe.chainId, address: change.token };
+        byKey.set(tokenMetadataKey(pair), pair);
+      }
+    }
+    return [...byKey.values()];
   }
 
   /**

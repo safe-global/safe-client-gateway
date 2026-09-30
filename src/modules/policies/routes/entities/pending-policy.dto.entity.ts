@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
+import type { SpendingLimitToken } from '@/modules/policies/domain/entities/active-policy.entity';
 import {
   type PendingPolicy,
   type PendingQueuedPolicy,
@@ -11,9 +12,12 @@ import {
 import type { ModuleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import {
+  Erc20TokenMetadataDto,
   ModuleEnforcementDto,
+  NativeTokenMetadataDto,
   SafeRefDto,
   SafeRefResponse,
+  TokenMetadataSchema,
 } from '@/modules/policies/routes/entities/policy.dto.entity';
 
 export class EnableModuleChangeDto {
@@ -42,6 +46,7 @@ export class RemoveDelegateChangeDto {
   public readonly removeAllowances!: boolean;
 }
 
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class SetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.SetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.SetAllowance;
@@ -51,12 +56,19 @@ export class SetAllowanceChangeDto {
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly token!: Address;
+  @ApiProperty({
+    ...TokenMetadataSchema,
+    nullable: true,
+    description: 'Metadata of `token`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: SpendingLimitToken | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Window length in minutes; 0 never resets' })
   public readonly resetPeriodMinutes!: number;
 }
 
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class ResetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.ResetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.ResetAllowance;
@@ -64,8 +76,15 @@ export class ResetAllowanceChangeDto {
   public readonly delegate!: Address;
   @ApiProperty()
   public readonly token!: Address;
+  @ApiProperty({
+    ...TokenMetadataSchema,
+    nullable: true,
+    description: 'Metadata of `token`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: SpendingLimitToken | null;
 }
 
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class DeleteAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.DeleteAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
@@ -73,6 +92,12 @@ export class DeleteAllowanceChangeDto {
   public readonly delegate!: Address;
   @ApiProperty()
   public readonly token!: Address;
+  @ApiProperty({
+    ...TokenMetadataSchema,
+    nullable: true,
+    description: 'Metadata of `token`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: SpendingLimitToken | null;
 }
 
 const PendingSpendingLimitChangeSchema = {

@@ -13,7 +13,12 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { addDelegateEncoder } from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import {
+  addDelegateEncoder,
+  deleteAllowanceEncoder,
+  resetAllowanceEncoder,
+  setAllowanceEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
 import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
@@ -1117,6 +1122,131 @@ describe('PoliciesService', () => {
       expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledTimes(
         safes.length,
       );
+    });
+
+    describe('token metadata', () => {
+      it('should attach the fetched metadata to a decoded setAllowance change', async () => {
+        const setAllowance = setAllowanceEncoder();
+        const setAllowanceArgs = setAllowance.build();
+        const token = erc20TokenBuilder()
+          .with('address', setAllowanceArgs.token)
+          .build();
+        mockTokenRepository.getToken.mockResolvedValue(token);
+        withQueue([
+          multisigTransactionBuilder()
+            .with('to', SEPOLIA_ALLOWANCE_MODULE)
+            .with('operation', Operation.CALL)
+            .with('data', setAllowance.encode())
+            .build(),
+        ]);
+
+        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+
+        expect(policy.data.changes).toStrictEqual([
+          expect.objectContaining({
+            kind: 'set-allowance',
+            tokenMetadata: token,
+          }),
+        ]);
+      });
+
+      it('should fetch a token shared by two changes only once', async () => {
+        const sharedToken = getAddress(faker.finance.ethereumAddress());
+        const first = setAllowanceEncoder().with('token', sharedToken);
+        const second = setAllowanceEncoder().with('token', sharedToken);
+        withQueue([
+          multisigTransactionBuilder()
+            .with('to', SEPOLIA_ALLOWANCE_MODULE)
+            .with('operation', Operation.CALL)
+            .with('data', first.encode())
+            .build(),
+          multisigTransactionBuilder()
+            .with('to', SEPOLIA_ALLOWANCE_MODULE)
+            .with('operation', Operation.CALL)
+            .with('data', second.encode())
+            .build(),
+        ]);
+
+        await target.getSpacePendingPolicies(pendingRequest);
+
+        expect(mockTokenRepository.getToken).toHaveBeenCalledTimes(1);
+        expect(mockTokenRepository.getToken).toHaveBeenCalledWith({
+          chainId: SEPOLIA,
+          address: sharedToken,
+        });
+      });
+
+      it('should resolve the native currency from the chain, not the token repository', async () => {
+        const chain = chainBuilder().build();
+        mockChainsRepository.getChain.mockResolvedValue(chain);
+        const resetAllowance = resetAllowanceEncoder().with(
+          'token',
+          zeroAddress,
+        );
+        withQueue([
+          multisigTransactionBuilder()
+            .with('to', SEPOLIA_ALLOWANCE_MODULE)
+            .with('operation', Operation.CALL)
+            .with('data', resetAllowance.encode())
+            .build(),
+        ]);
+
+        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+
+        expect(policy.data.changes).toStrictEqual([
+          expect.objectContaining({
+            kind: 'reset-allowance',
+            tokenMetadata: {
+              type: 'NATIVE_TOKEN',
+              address: zeroAddress,
+              name: chain.nativeCurrency.name,
+              symbol: chain.nativeCurrency.symbol,
+              decimals: chain.nativeCurrency.decimals,
+              logoUri: chain.nativeCurrency.logoUri,
+              trusted: true,
+            },
+          }),
+        ]);
+        expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
+      });
+
+      it('should report a null token rather than fail the request when the lookup fails', async () => {
+        mockTokenRepository.getToken.mockRejectedValue(new Error('Not found'));
+        const deleteAllowance = deleteAllowanceEncoder();
+        withQueue([
+          multisigTransactionBuilder()
+            .with('to', SEPOLIA_ALLOWANCE_MODULE)
+            .with('operation', Operation.CALL)
+            .with('data', deleteAllowance.encode())
+            .build(),
+        ]);
+
+        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+
+        expect(policy.data.changes).toStrictEqual([
+          expect.objectContaining({
+            kind: 'delete-allowance',
+            tokenMetadata: null,
+          }),
+        ]);
+      });
+
+      it('should not attach token metadata to a change with no token', async () => {
+        const addDelegate = addDelegateEncoder();
+        withQueue([
+          multisigTransactionBuilder()
+            .with('to', SEPOLIA_ALLOWANCE_MODULE)
+            .with('operation', Operation.CALL)
+            .with('data', addDelegate.encode())
+            .build(),
+        ]);
+
+        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+
+        expect(policy.data.changes[0]).not.toHaveProperty('tokenMetadata');
+        expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
+        expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+      });
     });
   });
 });

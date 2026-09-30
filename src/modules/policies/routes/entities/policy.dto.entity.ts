@@ -142,7 +142,7 @@ export class Erc20TokenMetadataDto
 }
 
 /** ERC721 never applies: a spending limit is always a fungible amount. */
-const TokenMetadataSchema = {
+export const TokenMetadataSchema = {
   oneOf: [
     { $ref: getSchemaPath(NativeTokenMetadataDto) },
     { $ref: getSchemaPath(Erc20TokenMetadataDto) },

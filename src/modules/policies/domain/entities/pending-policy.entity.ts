@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
+import type { SpendingLimitToken } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { ModuleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
@@ -58,6 +59,8 @@ export type PendingSpendingLimitChange =
       kind: typeof PendingSpendingLimitChangeKind.SetAllowance;
       delegate: Address;
       token: Address;
+      /** Metadata of {@link token}; `null` when it could not be resolved. */
+      tokenMetadata: SpendingLimitToken | null;
       amount: string;
       resetPeriodMinutes: number;
     }
@@ -65,9 +68,23 @@ export type PendingSpendingLimitChange =
       kind: typeof PendingSpendingLimitChangeKind.ResetAllowance;
       delegate: Address;
       token: Address;
+      /** Metadata of {@link token}; `null` when it could not be resolved. */
+      tokenMetadata: SpendingLimitToken | null;
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
       delegate: Address;
       token: Address;
+      /** Metadata of {@link token}; `null` when it could not be resolved. */
+      tokenMetadata: SpendingLimitToken | null;
     };
+
+/**
+ * Narrows to the three change kinds that reference a token - the ones a
+ * spending limit's ceiling, reset, or removal is actually about.
+ */
+export function pendingChangeHasToken(
+  change: PendingSpendingLimitChange,
+): change is Extract<PendingSpendingLimitChange, { token: Address }> {
+  return 'token' in change;
+}
