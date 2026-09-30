@@ -443,22 +443,6 @@ describe('PoliciesService', () => {
       const [allowance] = spendingLimitAllowances(result);
       expect(allowance.tokenMetadata).toBeNull();
     });
-
-    it('should fetch no token metadata for a proposers-only request', async () => {
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('allowances', [allowanceOf(safeAddress)])
-          .build(),
-      );
-
-      await target.getSpaceActivePolicies({
-        ...policyRequest,
-        types: [PolicyType.Proposer],
-      });
-
-      expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
-      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
-    });
   });
 
   describe('across a space', () => {

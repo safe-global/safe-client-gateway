@@ -26,8 +26,6 @@ import { UsersModule } from '@/modules/users/users.module';
     PolicyIndexerRepositoryModule,
     SafeRepositoryModule,
     DelegatesV3RepositoryModule,
-    // Token metadata for spending-limit allowances: ERC20 via TokensModule,
-    // the native currency via ChainsModule.
     TokensModule,
     ChainsModule,
     // Space membership and the Safe-in-space check

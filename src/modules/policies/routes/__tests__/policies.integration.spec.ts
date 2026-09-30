@@ -126,9 +126,7 @@ describe('Space Policies Controller', () => {
       delegates?: Array<Delegate>;
       delegatesUnavailable?: boolean;
       queuedTransactions?: Array<MultisigTransaction>;
-      /** Resolves at `${txServiceUrl}/api/v1/tokens/:address}` when requested. */
       tokens?: Array<Token>;
-      /** 404s at `${txServiceUrl}/api/v1/tokens/:address}` when requested. */
       tokenNotFoundAddresses?: Array<string>;
     } = {},
   ): void {

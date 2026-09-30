@@ -42,10 +42,8 @@ export class PendingSpendingLimitMapper {
   /**
    * Decodes {@link args.transactions} into their spending-limit changes.
    *
-   * A change's `tokenMetadata` is always `null` here: decoding is what first
-   * reveals which tokens a transaction references, so nothing can have been
-   * fetched yet. The caller fetches metadata for every decoded change across
-   * every Safe in one pass, then calls {@link attachTokenMetadata}.
+   * A allowance change's `tokenMetadata` is `null` here becauase decoding is what first
+   * reveals which tokens a transaction references.
    */
   public map(args: {
     safe: SafeRef;
@@ -64,8 +62,8 @@ export class PendingSpendingLimitMapper {
   }
 
   /**
-   * {@link policies}, with every change's `tokenMetadata` filled in from
-   * {@link tokenMetadata} - looked up here, never fetched.
+   * {@link policies}, with every allowance change's `tokenMetadata` filled in from
+   * {@link tokenMetadata}.
    */
   public attachTokenMetadata(
     policies: ReadonlyArray<PendingQueuedPolicy>,

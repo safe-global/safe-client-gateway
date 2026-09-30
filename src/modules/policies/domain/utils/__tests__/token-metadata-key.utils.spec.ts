@@ -23,10 +23,6 @@ describe('tokenMetadataKey', () => {
   });
 
   it('should build the same key from a lowercase and an uppercase address, once each is checksummed', () => {
-    // EIP-55: an all-lowercase or all-uppercase address carries no checksum to
-    // validate, so `getAddress` accepts either and returns the same mixed-case
-    // result - this is what every `Address` in this codebase already goes
-    // through, which is why `tokenMetadataKey` itself never has to normalize.
     const chainId = faker.string.numeric();
     const hexBody = faker.finance.ethereumAddress().slice(2);
 

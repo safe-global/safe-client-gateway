@@ -59,7 +59,6 @@ export type PendingSpendingLimitChange =
       kind: typeof PendingSpendingLimitChangeKind.SetAllowance;
       delegate: Address;
       token: Address;
-      /** Metadata of {@link token}; `null` when it could not be resolved. */
       tokenMetadata: Token | null;
       amount: string;
       resetPeriodMinutes: number;
@@ -68,14 +67,12 @@ export type PendingSpendingLimitChange =
       kind: typeof PendingSpendingLimitChangeKind.ResetAllowance;
       delegate: Address;
       token: Address;
-      /** Metadata of {@link token}; `null` when it could not be resolved. */
       tokenMetadata: Token | null;
     }
   | {
       kind: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
       delegate: Address;
       token: Address;
-      /** Metadata of {@link token}; `null` when it could not be resolved. */
       tokenMetadata: Token | null;
     };
 

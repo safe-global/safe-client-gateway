@@ -142,7 +142,7 @@ export class Erc20TokenMetadataDto
 }
 
 /** ERC721 never applies: a spending limit is always a fungible amount. */
-export const TokenMetadataSchema = {
+export const SpendingLimitTokenMetadataSchema = {
   oneOf: [
     { $ref: getSchemaPath(NativeTokenMetadataDto) },
     { $ref: getSchemaPath(Erc20TokenMetadataDto) },
@@ -164,7 +164,7 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   })
   public readonly tokenAddress!: Address;
   @ApiProperty({
-    ...TokenMetadataSchema,
+    ...SpendingLimitTokenMetadataSchema,
     nullable: true,
     description:
       'Metadata of `tokenAddress`; null when it could not be resolved',

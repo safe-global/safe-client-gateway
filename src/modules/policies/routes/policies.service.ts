@@ -314,8 +314,6 @@ export class PoliciesService {
         type: 'NATIVE_TOKEN',
         address: zeroAddress,
         ...result.value.nativeCurrency,
-        // Not a Transaction Service token-list membership - the native
-        // currency is trusted by definition.
         trusted: true,
       };
       tokens.set(
@@ -401,7 +399,7 @@ export class PoliciesService {
     }
 
     const tokenMetadata = await this.getTokenMetadata(
-      this.pendingTokenReferences(policies),
+      this.pendingSpendingLimitTokenReferences(policies),
     );
     return this.pendingSpendingLimitMapper.attachTokenMetadata(
       policies,
@@ -413,7 +411,7 @@ export class PoliciesService {
    * Every decoded change in {@link policies}, reduced to
    * {@link TokenReference} so {@link getTokenMetadata} can fetch it.
    */
-  private pendingTokenReferences(
+  private pendingSpendingLimitTokenReferences(
     policies: ReadonlyArray<PendingPolicy>,
   ): Array<TokenReference> {
     return policies.flatMap((policy) =>

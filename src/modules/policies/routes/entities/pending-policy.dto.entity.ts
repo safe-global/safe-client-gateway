@@ -17,7 +17,7 @@ import {
   NativeTokenMetadataDto,
   SafeRefDto,
   SafeRefResponse,
-  TokenMetadataSchema,
+  SpendingLimitTokenMetadataSchema,
 } from '@/modules/policies/routes/entities/policy.dto.entity';
 
 export class EnableModuleChangeDto {
@@ -62,7 +62,7 @@ export class SetAllowanceChangeDto {
   })
   public readonly token!: Address;
   @ApiProperty({
-    ...TokenMetadataSchema,
+    ...SpendingLimitTokenMetadataSchema,
     nullable: true,
     description: 'Metadata of `token`; null when it could not be resolved',
   })
@@ -82,7 +82,7 @@ export class ResetAllowanceChangeDto {
   @ApiProperty({ type: String })
   public readonly token!: Address;
   @ApiProperty({
-    ...TokenMetadataSchema,
+    ...SpendingLimitTokenMetadataSchema,
     nullable: true,
     description: 'Metadata of `token`; null when it could not be resolved',
   })
@@ -98,7 +98,7 @@ export class DeleteAllowanceChangeDto {
   @ApiProperty({ type: String })
   public readonly token!: Address;
   @ApiProperty({
-    ...TokenMetadataSchema,
+    ...SpendingLimitTokenMetadataSchema,
     nullable: true,
     description: 'Metadata of `token`; null when it could not be resolved',
   })
