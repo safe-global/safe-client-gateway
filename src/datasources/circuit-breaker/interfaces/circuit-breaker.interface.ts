@@ -68,6 +68,23 @@ export interface ICircuitMetrics {
    * Timestamp of the last success or failure, used for stale circuit cleanup
    */
   lastActivityTime?: number;
+
+  /**
+   * Timestamp when the circuit first opened in the current outage.
+   * Kept across HALF_OPEN → OPEN re-trips so the outage duration can be reported
+   */
+  openedAt?: number;
+
+  /**
+   * Number of HALF_OPEN → OPEN re-trips in the current outage
+   */
+  reopenCount: number;
+
+  /**
+   * Number of requests rejected in the current outage, reported on state
+   * transitions instead of being logged per request
+   */
+  blockedRequests: number;
 }
 
 /**
