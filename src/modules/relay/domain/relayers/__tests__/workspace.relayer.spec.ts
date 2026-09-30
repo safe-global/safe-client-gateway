@@ -214,6 +214,10 @@ describe('WorkspaceRelayer', () => {
       new RelayDeniedError(args.to, 'not a Safe of this workspace'),
     );
 
+    expect(
+      mockRelayTransactionHelper.hasRefundingTransaction,
+    ).not.toHaveBeenCalled();
+    expect(mockSpaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
@@ -229,8 +233,43 @@ describe('WorkspaceRelayer', () => {
     expect(
       mockRelayTransactionHelper.hasRefundingTransaction,
     ).toHaveBeenCalledWith(args.data);
+    // Refused on the calldata alone, before looking the Safe up.
+    expect(mockSpaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a refunding transaction even for a Safe the workspace does not hold', async () => {
+    const args = relayArgs();
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(false);
+    mockRelayTransactionHelper.hasRefundingTransaction.mockReturnValue(true);
+
+    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
+    expect(mockRelayApi.relay).not.toHaveBeenCalled();
+  });
+
+  it('should check a gasless transaction of a held Safe for refunds before relaying it', async () => {
+    const args = relayArgs();
+    const safe = address();
+    const taskId = faker.string.uuid();
+    recognises(safe);
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
+    mockRelayTransactionHelper.hasRefundingTransaction.mockReturnValue(false);
+    mockRelayApi.relay.mockResolvedValue({ taskId });
+
+    await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
+
+    expect(
+      mockRelayTransactionHelper.hasRefundingTransaction,
+    ).toHaveBeenCalledWith(args.data);
+    expect(mockSpaceSafesRepository.existsInSpace).toHaveBeenCalledWith({
+      spaceId: args.spaceId,
+      chainId: args.chainId,
+      address: safe,
+    });
   });
 
   it('should not relay once the allowance is spent', async () => {
