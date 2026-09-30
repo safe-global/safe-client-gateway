@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
 #
 # BUILD CONTAINER
 #
@@ -38,4 +39,7 @@ COPY --chown=node:node --from=base /app/node_modules ./node_modules
 COPY --chown=node:node --from=base /app/dist ./dist
 COPY --chown=node:node --from=base /app/assets ./assets
 COPY --chown=node:node --from=base /app/migrations ./migrations
-CMD [ "node", "dist/src/main.js" ]
+# `--import` loads the Datadog tracer before the app and hooks both `require`
+# and ESM `import`. Keep it: without it, ESM-only dependencies (e.g. Nest 12's
+# Fastify adapter) load untraced and their spans silently disappear.
+CMD [ "node", "--import", "dd-trace/initialize.mjs", "dist/src/main.js" ]

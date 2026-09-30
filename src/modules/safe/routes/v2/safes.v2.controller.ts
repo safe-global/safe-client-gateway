@@ -13,12 +13,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
-} from '@/modules/safe/routes/entities/caip-10-addresses.entity';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+} from '@/validation/entities/schemas/caip-10-addresses.schema';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import { SafesV2Service } from './safes.v2.service';
 

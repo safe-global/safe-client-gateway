@@ -53,6 +53,7 @@ import { HooksModule } from '@/modules/hooks/hooks.module';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { NotificationsModule } from '@/modules/notifications/notifications.module';
 import { OwnersModule } from '@/modules/owners/owners.module';
+import { PoliciesModule } from '@/modules/policies/policies.module';
 import { PortfolioModule } from '@/modules/portfolio/portfolio.module';
 import { PositionsModule } from '@/modules/positions/positions.module';
 import { RecoveryModule } from '@/modules/recovery/recovery.module';
@@ -62,6 +63,7 @@ import { RootModule } from '@/modules/root/root.module';
 import { SafeModule } from '@/modules/safe/safe.module';
 import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
 import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
+import { SpaceSafeShieldModule } from '@/modules/safe-shield/space-safe-shield.module';
 import { SpacesModule } from '@/modules/spaces/spaces.module';
 import { SurveysModule } from '@/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '@/modules/targeted-messaging/targeted-messaging.module';
@@ -120,6 +122,8 @@ export class AppModule implements NestModule {
               UsersModule,
               SpacesModule,
               CounterfactualSafesModule,
+              SpaceSafeShieldModule,
+              PoliciesModule,
               SurveysModule,
             ]
           : []),

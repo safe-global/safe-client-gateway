@@ -15,7 +15,7 @@ async function bootstrap(): Promise<void> {
   const appConfiguration = configuration();
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule.register(),
-    createFastifyAdapterFromConfiguration(appConfiguration.express),
+    createFastifyAdapterFromConfiguration(appConfiguration.httpServer),
   );
 
   for (const configure of DEFAULT_CONFIGURATION) {

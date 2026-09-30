@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
-import { Inject } from '@nestjs/common/decorators';
+import { Inject, Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
 import type winston from 'winston';
 import { IConfigurationService } from '@/config/configuration.service.interface';

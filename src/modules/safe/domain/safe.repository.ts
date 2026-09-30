@@ -4,7 +4,10 @@ import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
 import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import {
+  SAFE_QUEUE_SERVICE_MAX_LIMIT,
+  SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+} from '@/domain/common/constants';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { Page } from '@/domain/entities/page.entity';
 import { DataSourceError } from '@/domain/errors/data-source.error';
@@ -286,6 +289,12 @@ export class SafeRepository implements ISafeRepository {
       ...args,
       ordering: '-modified',
     });
+  }
+
+  getTransactionQueueMaxPageSize(): number {
+    return this.safeQueueEnabled
+      ? SAFE_QUEUE_SERVICE_MAX_LIMIT
+      : SAFE_TRANSACTION_SERVICE_MAX_LIMIT;
   }
 
   private async _getTransactionQueue(args: {

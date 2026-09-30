@@ -1,0 +1,79 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+# =============================================================================
+# CALLER: Trunk pipeline → STAGING (event: push to main or manual dispatch)
+# =============================================================================
+# Every merge to main: re-run the quality gate on the merge result, build an
+# IMMUTABLE image tagged main-<short-sha>, then GitOps-deploy it to staging.
+# No manual steps. workflow_dispatch allows a staging deploy without a code
+# commit, for soak testing and hotfix verification.
+#
+# `deploy-staging` is the only path to staging: the ArgoCD Application in
+# safe-client-gateway-infra-tf renders `client.imageTag` from the values file
+# that job bumps.
+# -----------------------------------------------------------------------------
+name: Staging
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+# Deploys are queued, never cancelled: ci.yml deliberately exempted main from
+# cancellation so a follow-up merge could not kill an in-flight staging deploy,
+# and cancelling the parent would cancel the reusable deploy job mid-rollout.
+concurrency:
+  group: staging
+  cancel-in-progress: false
+
+jobs:
+  # Same reusable the PR gate calls. Reported as `ci / <job>`.
+  ci:
+    uses: ./.github/workflows/_ci-node.yml
+    secrets: inherit
+
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - id: tag
+        run: echo "tag=main-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [ci, prepare]
+    uses: ./.github/workflows/_build-image.yml
+    with:
+      image_name: ghcr.io/safe-global/safe-client-gateway
+      # GHCR only, as in production.yml. Nothing outside Safe reads main-<sha>.
+      image_tag: ${{ needs.prepare.outputs.tag }}
+      # MUST equal image_tag: the Dockerfile turns VERSION into
+      # APPLICATION_VERSION, /about reports it, and _deploy.yml polls that
+      # endpoint until it matches.
+      version: ${{ needs.prepare.outputs.tag }}
+
+  deploy-staging:
+    needs: [prepare, build]
+    uses: ./.github/workflows/_deploy.yml
+    with:
+      environment: staging
+      image_tag: ${{ needs.prepare.outputs.tag }}
+      infra_repo: safe-global/safe-client-gateway-infra-tf
+      values_file: apps/safe-client-gateway/values-staging.yaml
+      image_tag_path: .client.imageTag
+      health_url: https://safe-client.staging.5afe.dev/health/ready
+      # /about, not /v1/about: AboutController declares no version and
+      # app.provider.ts enables URI versioning with no default, so /v1/about 404s.
+      version_check_url: https://safe-client.staging.5afe.dev/about
+      # Staging gets the smoke test only, not the full production gate (no
+      # ArgoCD wait, no rollback).
+      health_gate: false
+    secrets:
+      app_id: ${{ secrets.CI_APP_ID }}
+      app_private_key: ${{ secrets.CI_APP_PRIVATE_KEY }}
+      gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
+      gpg_passphrase: ${{ secrets.GPG_PASSPHRASE }}

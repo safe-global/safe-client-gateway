@@ -31,6 +31,14 @@ export function isStockMeteredFeatureKey(
   return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
 }
 
+/** Features the plan grants or does not, with no usage to measure. */
+export const BINARY_FEATURES = [
+  'copilot_scans',
+  'policies',
+] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
+
+export type BinaryFeature = (typeof BINARY_FEATURES)[number];
+
 export function isStockMeteredFeature<T extends { key: string }>(
   feature: T,
 ): feature is T & { key: StockMeteredFeature } {
@@ -89,6 +97,13 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 
 export const PLAN_NAME_METADATA_KEY = 'planName';
+
+/**
+ * Metadata key identifying the offer a subscription was sold under, e.g.
+ * `BUS-10-A`. Upstream copies it from the payment link onto the subscription
+ * on checkout and on every plan change, so it moves with the price.
+ */
+export const PLAN_CODE_METADATA_KEY = 'planCode';
 
 /**
  * Metadata key marking which trial a payment link offers: `'true'` for the

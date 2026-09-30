@@ -5,7 +5,10 @@ import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+import {
+  SAFE_QUEUE_SERVICE_MAX_LIMIT,
+  SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+} from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -1234,6 +1237,24 @@ describe('SafeRepository', () => {
     });
   });
 
+  describe('getTransactionQueueMaxPageSize', () => {
+    it('should report the Queue Service max page size when FF_SAFE_QUEUE_SERVICE is true', () => {
+      const repo = createRepository({ safeQueueEnabled: true });
+
+      expect(repo.getTransactionQueueMaxPageSize()).toBe(
+        SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      );
+    });
+
+    it('should report the Transaction Service max page size when FF_SAFE_QUEUE_SERVICE is false', () => {
+      const repo = createRepository({ safeQueueEnabled: false });
+
+      expect(repo.getTransactionQueueMaxPageSize()).toBe(
+        SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+      );
+    });
+  });
+
   describe('deleteTransaction', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -1480,7 +1501,7 @@ describe('SafeRepository', () => {
         rawify(queueTx),
       );
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
-      mockSafeQueueService.postConfirmation.mockResolvedValue(rawify({}));
+      mockSafeQueueService.postConfirmation.mockResolvedValue();
 
       await repository.addConfirmation({
         chainId,

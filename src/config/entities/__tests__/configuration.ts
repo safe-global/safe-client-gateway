@@ -207,6 +207,7 @@ export default (): ReturnType<typeof configuration> => ({
     rpc: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
+    policyIndexer: faker.number.int({ min: 1, max: 60 }),
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
@@ -217,7 +218,7 @@ export default (): ReturnType<typeof configuration> => ({
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
+  httpServer: { bodyLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
   features: {
     email: false,
     sesEmail: false,
@@ -251,6 +252,7 @@ export default (): ReturnType<typeof configuration> => ({
     cacheInFlightRequests: false,
     spaceAuditLog: true,
     mfaStepUp: true,
+    safeShieldCoreDisabled: false,
     safeQueueService: false,
   },
   httpClient: {
@@ -448,6 +450,12 @@ export default (): ReturnType<typeof configuration> => ({
       maxSequentialPages: faker.number.int(),
     },
     cgwServiceKey: 'CGW',
+  },
+  policies: {
+    indexer: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+    },
+    batchSize: faker.number.int({ min: 1, max: 10 }),
   },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),

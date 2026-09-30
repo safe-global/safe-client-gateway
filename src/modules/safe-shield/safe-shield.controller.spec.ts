@@ -6,6 +6,9 @@ import { Test } from '@nestjs/testing';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { Mocked } from 'vitest';
+import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SafeShieldCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
@@ -18,6 +21,7 @@ import {
   ContractStatusGroup,
   RecipientStatusGroup,
 } from '@/modules/safe-shield/entities/status-group.entity';
+import { SafeShieldCoreGatingGuard } from '@/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
 import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 import {
   counterpartyAnalysisRequestDtoBuilder,
@@ -34,6 +38,19 @@ import {
 import { SafeShieldController } from './safe-shield.controller';
 import { SafeShieldService } from './safe-shield.service';
 
+/** Nest's metadata keys as literals, like `check-guard.ts` uses. */
+const GUARDS_METADATA = '__guards__';
+const EXCEPTION_FILTERS_METADATA = '__exceptionFilters__';
+
+function appliedNames(
+  metadataKey: string,
+  handler: (...args: Array<never>) => unknown,
+): Array<string> {
+  const enhancers: Array<{ name: string }> =
+    Reflect.getMetadata(metadataKey, handler) ?? [];
+  return enhancers.map((enhancer) => enhancer.name);
+}
+
 describe('SafeShieldController (Unit)', () => {
   let controller: SafeShieldController;
   let safeShieldService: Mocked<SafeShieldService>;
@@ -46,6 +63,9 @@ describe('SafeShieldController (Unit)', () => {
   beforeEach(async () => {
     vi.resetAllMocks();
 
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('features.safeShieldCoreDisabled', false);
+
     moduleRef = await Test.createTestingModule({
       controllers: [SafeShieldController],
       providers: [
@@ -56,6 +76,10 @@ describe('SafeShieldController (Unit)', () => {
             analyzeCounterparty: vi.fn(),
             analyzeThreats: vi.fn(),
           },
+        },
+        {
+          provide: IConfigurationService,
+          useValue: fakeConfigurationService,
         },
       ],
     }).compile();
@@ -333,5 +357,34 @@ describe('SafeShieldController (Unit)', () => {
 
       expect(() => pipe.transform(invalidRequest)).toThrow();
     });
+  });
+
+  describe('Safe Shield Core gating', () => {
+    it.each([
+      ['analyzeRecipient', SafeShieldController.prototype.analyzeRecipient],
+    ] as const)('gates %s on the Core disable flag', (_name, handler) => {
+      expect(appliedNames(GUARDS_METADATA, handler)).toContain(
+        SafeShieldCoreGatingGuard.name,
+      );
+      expect(appliedNames(EXCEPTION_FILTERS_METADATA, handler)).toContain(
+        SafeShieldCoreDisabledExceptionFilter.name,
+      );
+    });
+
+    it.each([
+      [
+        'analyzeCounterparty',
+        SafeShieldController.prototype.analyzeCounterparty,
+      ],
+      ['analyzeThreat', SafeShieldController.prototype.analyzeThreat],
+      ['reportFalseResult', SafeShieldController.prototype.reportFalseResult],
+    ] as const)(
+      'does not gate %s on the Core disable flag',
+      (_name, handler) => {
+        expect(appliedNames(GUARDS_METADATA, handler)).not.toContain(
+          SafeShieldCoreGatingGuard.name,
+        );
+      },
+    );
   });
 });

@@ -93,6 +93,38 @@ describe('BillingRepository', () => {
         }),
       ).resolves.toEqual([{ ...subscription, plan }]);
     });
+
+    it.each([true, false])(
+      'should keep hasPaymentMethod when it is %s',
+      async (hasPaymentMethod) => {
+        const subscription = subscriptionBuilder()
+          .with('hasPaymentMethod', hasPaymentMethod)
+          .build();
+        billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+          rawify({ subscriptions: [subscription] }),
+        );
+
+        const [result] = await target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        });
+
+        expect(result.hasPaymentMethod).toBe(hasPaymentMethod);
+      },
+    );
+
+    it('should omit hasPaymentMethod when the billing service does not send it', async () => {
+      const { hasPaymentMethod: _, ...subscriptionFromOlderBillingService } =
+        subscriptionBuilder().build();
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+        rawify({ subscriptions: [subscriptionFromOlderBillingService] }),
+      );
+
+      const [result] = await target.getSubscriptionsByCustomerId({
+        upstreamCustomerId: faker.string.uuid(),
+      });
+
+      expect(result).not.toHaveProperty('hasPaymentMethod');
+    });
   });
 
   describe('rejecting a malformed response', () => {

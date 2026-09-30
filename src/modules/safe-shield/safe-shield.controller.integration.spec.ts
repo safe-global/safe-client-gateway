@@ -2,7 +2,8 @@
 
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
+import { HttpStatus, type INestApplication } from '@nestjs/common';
+import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
@@ -18,7 +19,10 @@ import { NetworkService } from '@/datasources/network/network.service.interface'
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import { rawify } from '@/validation/entities/raw.entity';
-import { threatAnalysisRequestBuilder } from './entities/__tests__/builders/analysis-requests.builder';
+import {
+  counterpartyAnalysisRequestDtoBuilder,
+  threatAnalysisRequestBuilder,
+} from './entities/__tests__/builders/analysis-requests.builder';
 import { TestBlockaidApiModule } from './threat-analysis/blockaid/__tests__/test.blockaid-api.module';
 import { FF_RISK_MITIGATION } from './threat-analysis/blockaid/blockaid-api.constants';
 import { IBlockaidApi } from './threat-analysis/blockaid/blockaid-api.interface';
@@ -30,19 +34,11 @@ describe('SafeShieldController', () => {
   let networkService: MockedObject<INetworkService>;
   let blockaidApi: MockedObject<IBlockaidApi>;
 
-  beforeEach(async () => {
-    vi.resetAllMocks();
+  async function initApp(config: typeof configuration): Promise<void> {
+    await app?.close();
 
-    const defaultConfiguration = configuration();
-    const testConfiguration = (): typeof defaultConfiguration => ({
-      ...defaultConfiguration,
-      features: {
-        ...defaultConfiguration.features,
-      },
-    });
-
-    const moduleFixture = await createTestModule({
-      config: testConfiguration,
+    const moduleFixture: TestingModule = await createTestModule({
+      config,
       modules: [
         {
           originalModule: BlockaidApiModule,
@@ -60,11 +56,31 @@ describe('SafeShieldController', () => {
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
+  }
+
+  beforeEach(async () => {
+    vi.resetAllMocks();
+
+    const defaultConfiguration = configuration();
+    const testConfiguration = (): typeof defaultConfiguration => ({
+      ...defaultConfiguration,
+      features: {
+        ...defaultConfiguration.features,
+      },
+    });
+
+    await initApp(testConfiguration);
   });
 
   afterEach(async () => {
     await app?.close();
   });
+
+  function rejectAllNetworkCalls(): void {
+    networkService.get.mockImplementation(({ url }) =>
+      Promise.reject(new Error(`No matching rule for url: ${url}`)),
+    );
+  }
 
   describe('POST /v1/chains/:chainId/security/:safeAddress/threat-analysis', () => {
     it('should return 422 for invalid request body', async () => {
@@ -188,6 +204,152 @@ describe('SafeShieldController', () => {
       expect(response.body.THREAT).toBeInstanceOf(Array);
       expect(response.body.THREAT[0]).toHaveProperty('type', 'FAILED');
       expect(blockaidApi.scanTransaction).toHaveBeenCalled();
+    });
+
+    it('should still return 200 when Safe Shield is disabled on Core', async () => {
+      const defaultConfiguration = configuration();
+      await initApp(() => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          safeShieldCoreDisabled: true,
+        },
+      }));
+      const chain = chainBuilder().with('features', []).build();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const requestBody = threatAnalysisRequestBuilder().build();
+
+      networkService.get.mockImplementation(({ url }) => {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+        return Promise.reject(new Error(`No matching rule for url: ${url}`));
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/security/${safeAddress}/threat-analysis`,
+        )
+        .send(requestBody)
+        .expect(200)
+        .expect({});
+    });
+  });
+
+  describe('GET /v1/chains/:chainId/security/:safeAddress/recipient/:recipientAddress', () => {
+    it('should return 200 today, degrading gracefully when upstream is unavailable', async () => {
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const recipientAddress = getAddress(faker.finance.ethereumAddress());
+      rejectAllNetworkCalls();
+
+      const response = await request(app.getHttpServer())
+        .get(
+          `/v1/chains/${chainId}/security/${safeAddress}/recipient/${recipientAddress}`,
+        )
+        .expect(200);
+
+      expect(response.body).toHaveProperty('isSafe', false);
+      expect(response.body.RECIPIENT_INTERACTION[0]).toHaveProperty(
+        'type',
+        'FAILED',
+      );
+      expect(response.body.RECIPIENT_ACTIVITY[0]).toHaveProperty(
+        'type',
+        'FAILED',
+      );
+    });
+
+    it('should return 402 when Safe Shield is disabled on Core', async () => {
+      const defaultConfiguration = configuration();
+      await initApp(() => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          safeShieldCoreDisabled: true,
+        },
+      }));
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const recipientAddress = getAddress(faker.finance.ethereumAddress());
+
+      const response = await request(app.getHttpServer()).get(
+        `/v1/chains/${chainId}/security/${safeAddress}/recipient/${recipientAddress}`,
+      );
+
+      expect(response.status).toBe(HttpStatus.PAYMENT_REQUIRED);
+      expect(response.body).toMatchObject({
+        code: 'SAFE_SHIELD_DISABLED_ON_CORE',
+      });
+    });
+  });
+
+  describe('POST /v1/chains/:chainId/security/:safeAddress/counterparty-analysis', () => {
+    it('should return 200 today, degrading gracefully when upstream is unavailable', async () => {
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const requestBody = counterpartyAnalysisRequestDtoBuilder().build();
+      rejectAllNetworkCalls();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chainId}/security/${safeAddress}/counterparty-analysis`,
+        )
+        .send(requestBody)
+        .expect(200)
+        .expect({ recipient: {}, contract: {}, deadlock: {} });
+    });
+
+    it('should still return 200 when Safe Shield is disabled on Core', async () => {
+      const defaultConfiguration = configuration();
+      await initApp(() => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          safeShieldCoreDisabled: true,
+        },
+      }));
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const requestBody = counterpartyAnalysisRequestDtoBuilder().build();
+      rejectAllNetworkCalls();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chainId}/security/${safeAddress}/counterparty-analysis`,
+        )
+        .send(requestBody)
+        .expect(200)
+        .expect({ recipient: {}, contract: {}, deadlock: {} });
+    });
+  });
+
+  describe('POST /v1/chains/:chainId/security/:safeAddress/report-false-result', () => {
+    it('should still accept reports when Safe Shield is disabled on Core', async () => {
+      const defaultConfiguration = configuration();
+      await initApp(() => ({
+        ...defaultConfiguration,
+        features: {
+          ...defaultConfiguration.features,
+          safeShieldCoreDisabled: true,
+        },
+      }));
+      const chainId = faker.string.numeric();
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+      blockaidApi.reportTransaction.mockResolvedValue(undefined);
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chainId}/security/${safeAddress}/report-false-result`,
+        )
+        .send({
+          event: 'FALSE_POSITIVE',
+          request_id: faker.string.uuid(),
+          details: faker.lorem.sentence(),
+        })
+        .expect(200)
+        .expect({ success: true });
     });
   });
 });

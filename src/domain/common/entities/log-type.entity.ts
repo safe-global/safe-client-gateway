@@ -19,6 +19,7 @@ export enum LogType {
   ExternalRequestCacheError = 'EXTERNAL_REQUEST_CACHE_ERROR',
   ExternalRequestCacheHit = 'EXTERNAL_REQUEST_CACHE_HIT',
   ExternalRequestCacheMiss = 'EXTERNAL_REQUEST_CACHE_MISS',
+  FeatureNotGranted = 'FEATURE_NOT_GRANTED',
   InvalidIp = 'INVALID_IP',
   JobError = 'JOB_ERROR',
   JobEvent = 'JOB_EVENT',

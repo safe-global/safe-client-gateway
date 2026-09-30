@@ -41,7 +41,6 @@ import { AddConfirmationDtoSchema } from '@/modules/transactions/routes/entities
 import { DeleteTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/delete-transaction.dto.schema';
 import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import { ProposeTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
-import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
 import { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
@@ -324,7 +323,7 @@ export class TransactionsController {
       'Confirmation signature from a Safe owner proving their approval of the transaction',
   })
   @ApiOkResponse({
-    type: Transaction,
+    type: TransactionDetails,
     description: 'Transaction details with updated confirmation status',
   })
   @ApiBadRequestResponse({

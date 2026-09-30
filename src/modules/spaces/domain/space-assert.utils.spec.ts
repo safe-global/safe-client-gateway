@@ -3,18 +3,12 @@
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import {
   assertAdmin,
   assertMember,
 } from '@/modules/spaces/domain/space-assert.utils';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-
-const spacesRepositoryMock = {
-  findOne: vi.fn(),
-} as MockedObject<ISpacesRepository>;
 
 const membersRepositoryMock = {
   findOne: vi.fn(),
@@ -26,34 +20,36 @@ describe('space-assert.utils', () => {
   });
 
   describe('assertAdmin', () => {
-    it('should resolve when user is admin', async () => {
+    it('should return the membership row when user is an active admin', async () => {
       const spaceId = faker.number.int();
       const userId = faker.number.int();
+      const member = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
 
-      spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(member);
 
       await expect(
-        assertAdmin(spacesRepositoryMock, spaceId, userId),
-      ).resolves.toBeUndefined();
+        assertAdmin(membersRepositoryMock, spaceId, userId),
+      ).resolves.toBe(member);
 
-      expect(spacesRepositoryMock.findOne).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({
-            id: spaceId,
-            members: expect.objectContaining({
-              user: { id: userId },
-            }),
-          }),
-        }),
-      );
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: userId },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      });
     });
 
     it('should throw ForbiddenException when user is not admin', async () => {
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      // findOne is queried with role ADMIN and status ACTIVE, so a MEMBER,
+      // a pending admin and a non-member all yield null
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         assertAdmin(
-          spacesRepositoryMock,
+          membersRepositoryMock,
           faker.number.int(),
           faker.number.int(),
         ),

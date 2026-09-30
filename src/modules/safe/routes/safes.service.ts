@@ -21,7 +21,6 @@ import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisi
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
 import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { Caip10Addresses } from '@/modules/safe/routes/entities/caip-10-addresses.entity';
 import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
 import {
   MasterCopyVersionState,
@@ -31,6 +30,7 @@ import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entit
 import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '@/routes/common/constants';
 import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
 
 @Injectable()
 export class SafesService {
@@ -135,7 +135,7 @@ export class SafesService {
 
   async getSafeOverview(args: {
     currency: string;
-    addresses: Caip10Addresses;
+    addresses: ReadonlyArray<Caip10Address>;
     trusted: boolean;
     excludeSpam: boolean;
     walletAddress?: Address;

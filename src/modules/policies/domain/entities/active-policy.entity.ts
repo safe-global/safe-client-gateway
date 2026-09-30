@@ -1,0 +1,100 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address } from 'viem';
+import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
+import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+
+/**
+ * `spending-limit`: what each spender may still withdraw, and on what schedule.
+ *
+ * One policy per `(safe, module deployment)`. The allowance module is not a
+ * same-address singleton and a chain can run more than one version at once with
+ * independent storage, so a Safe holding limits on both holds two policies.
+ */
+export type SpendingLimitPolicyData = {
+  module: Address;
+  spenders: Array<{
+    spender: Address;
+    /**
+     * `false` when the delegate is disabled: nothing is spendable now, but
+     * the allowances survive and return to effect if it is re-enabled.
+     */
+    isActive: boolean;
+    allowances: Array<SpendingLimitAllowance>;
+  }>;
+};
+
+export type SpendingLimitAllowance = {
+  /** The zero address is the native currency. */
+  tokenAddress: Address;
+  /** Per-window ceiling, in base units. */
+  amount: string;
+  /** Spent in the window that began at the last reset, in base units. */
+  spent: string;
+  /** Window length in minutes, the module's own unit. `0` never resets. */
+  resetPeriodMinutes: number;
+  /**
+   * The next reset, in minutes since the epoch - the module counts windows in
+   * whole minutes, so a boundary is never finer than one. `null` when it never
+   * resets.
+   */
+  resetsAtMinute: number | null;
+  /**
+   * `false` when the reset boundary could not be recovered from the configuring
+   * call, so `resetsAtMinute` may be up to one period out.
+   */
+  resetBoundaryIsExact: boolean;
+  /**
+   * `false` when the spender's delegate registration was removed: nothing is
+   * spendable now, but the allowance survives and returns to effect if the
+   * delegate is re-added.
+   */
+  isDelegateActive: boolean;
+  /**
+   * Unix seconds this allowance was (re-)established.
+   */
+  createdAt: number;
+  /** Unix seconds of the last event that changed this allowance. */
+  updatedAt: number;
+};
+
+/**
+ * `proposer`: who may propose transactions on the Safe without being able to
+ * sign or execute one. Nothing on chain enforces it - the grant is a delegate
+ * registration held by the Transaction Service.
+ *
+ * One policy per Safe, built from the delegates API's registrations.
+ */
+export type ProposerPolicyData = {
+  proposers: Array<{
+    proposer: Address;
+    /**
+     * The owners who granted it, each with the label they gave. The label is
+     * stored per `(delegate, delegator)` row and two owners can label the same
+     * proposer differently, so it cannot be flattened to one.
+     */
+    delegatedBy: Array<{ delegator: Address; label: string }>;
+  }>;
+};
+
+/**
+ * The configuration a policy reports, discriminated by the item's `type`.
+ *
+ * The remaining policy types join the union as the code reading them lands.
+ */
+export type ActivePolicyData = SpendingLimitPolicyData | ProposerPolicyData;
+
+/**
+ * A policy in effect on a Safe.
+ *
+ * `enabled` is `false` when the policy is configured but not enforced - for a
+ * module type, the module is not enabled on the Safe. The wallet uses it to
+ * render a policy as configured-but-unenforced rather than hiding it.
+ */
+export type ActivePolicy = {
+  type: PolicyType;
+  enforcement: PolicyEnforcement;
+  enabled: boolean;
+  data: ActivePolicyData;
+  safe: SafeRef;
+};

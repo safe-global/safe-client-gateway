@@ -139,6 +139,7 @@ export const RootConfigurationSchema = z
     FF_SES_EMAIL: z.string().optional(),
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
+    FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -207,6 +208,14 @@ export const RootConfigurationSchema = z
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
+    // Policy indexer configuration
+    POLICY_INDEXER_BASE_URI: z.url().optional(),
+    POLICY_INDEXER_EXPIRE_TIME_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    POLICY_BATCH_SIZE: z.coerce.number().int().min(1).optional(),
     // Safe billing service configuration
     SAFE_BILLING_SERVICE_BASE_URI: z.url().optional(),
     SAFE_BILLING_SERVICE_API_TOKEN: z.string().optional(),

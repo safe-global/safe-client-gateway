@@ -33,7 +33,7 @@ Commands, all defined in `package.json` and all resolving `vitest.config.ts`'s n
 - `yarn test --reporter=verbose` — the `unit` project with per-test output instead of the default reporter.
 - `yarn test:e2e` / `yarn test:e2e:cov` — the `e2e` project; exists as a script, but nothing in CI runs it (see below).
 
-In GitHub Actions (`.github/workflows/ci.yml`), `unit-tests` and `integration-tests` run as separate parallel jobs, each reporting to Coveralls, with a `tests` job gating branch protection on both. Both jobs provision Postgres, Redis, and RabbitMQ as GitHub Actions `services:` — including `unit-tests`, even though every unit spec mocks its own I/O and never reaches them; `integration-tests` is the job that actually needs the services, running real migrations against the job's Postgres service (database `test-db`) after a full `yarn build` (a plain `generate-abis` is enough for `unit-tests`, since Vitest transforms straight from `src`). Neither job runs the `e2e` project — nothing in `ci.yml` references `*.e2e-spec.ts` today.
+In GitHub Actions (`.github/workflows/_ci-node.yml`, called by `pull-request.yml`, `staging.yml` and `production.yml`), `unit-tests` and `integration-tests` run as separate parallel jobs, each reporting to Coveralls, with a `tests` job gating branch protection on both. Both jobs provision Postgres, Redis, and RabbitMQ as GitHub Actions `services:` — including `unit-tests`, even though every unit spec mocks its own I/O and never reaches them; `integration-tests` is the job that actually needs the services, running real migrations against the job's Postgres service (database `test-db`) after a full `yarn build` (a plain `generate-abis` is enough for `unit-tests`, since Vitest transforms straight from `src`). Neither job runs the `e2e` project — nothing in `_ci-node.yml` references `*.e2e-spec.ts` today.
 
 Running integration tests locally needs the same backing services running through Docker Compose — the Postgres service they connect to is named `db-test` (matching the `POSTGRES_TEST_*` variables below), not `postgres`:
 
@@ -95,7 +95,7 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 ### Test taxonomy
 
-**Rule:** `*.spec.ts` mocks all I/O; `*.integration.spec.ts` runs against real Postgres, Redis, and RabbitMQ; `*.e2e-spec.ts` boots the whole app, and is not run in CI today (see Running tests locally above — nothing in `ci.yml` references it). A spec is co-located with the code it exercises, never gathered into a parallel test tree; its builders live under a `__tests__/` directory next to the entity they build.
+**Rule:** `*.spec.ts` mocks all I/O; `*.integration.spec.ts` runs against real Postgres, Redis, and RabbitMQ; `*.e2e-spec.ts` boots the whole app, and is not run in CI today (see Running tests locally above — nothing in `_ci-node.yml` references it). A spec is co-located with the code it exercises, never gathered into a parallel test tree; its builders live under a `__tests__/` directory next to the entity they build.
 
 **Why:** the three suffixes are how `vitest.config.ts` routes a file to the right project at all — the `unit` project's `include`/`exclude` globs are exactly what makes it safe to run without Docker. Misnaming a file's suffix silently moves it into the wrong project, or out of every project's `include` glob entirely.
 

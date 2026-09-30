@@ -20,5 +20,6 @@ export function subscriptionBuilder(): IBuilder<Subscription> {
     .with('cancelAt', null)
     .with('currentPeriodStart', toSecondsTimestamp(faker.date.recent()))
     .with('currentPeriodEnd', toSecondsTimestamp(faker.date.soon()))
-    .with('metadata', { [faker.word.noun()]: faker.word.sample() });
+    .with('metadata', { [faker.word.noun()]: faker.word.sample() })
+    .with('hasPaymentMethod', faker.datatype.boolean());
 }

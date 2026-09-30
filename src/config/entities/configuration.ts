@@ -390,6 +390,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`,
       10,
     ),
+    policyIndexer: Number.parseInt(
+      process.env.POLICY_INDEXER_EXPIRE_TIME_SECONDS ?? `${60}`,
+      10,
+    ),
     staking: Number.parseInt(
       process.env.EXPIRATION_TIME_STAKING_SECONDS ?? `${60}`,
       10,
@@ -420,23 +424,6 @@ export default () => ({
         10,
       ),
     },
-  },
-  express: {
-    // Controls the maximum request body size for the Fastify JSON parser. A
-    // bare number is interpreted as bytes; a string accepts an optional unit
-    // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
-    // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
-    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
-    // are retained for backwards compatibility after the Express->Fastify
-    // migration; rename deferred to avoid a breaking configuration change.
-    jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
-    // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
-    // header set by upstream proxies instead of the direct socket address.
-    // A comma-separated list of trusted subnets/presets, or an integer hop
-    // count ("0" disables it). `||` (not `??`) so an empty value falls back to
-    // the default rather than disabling it.
-    // https://expressjs.com/en/guide/behind-proxies.html
-    trustProxy: process.env.EXPRESS_TRUST_PROXY || 'loopback, uniquelocal',
   },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
@@ -496,6 +483,12 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
+    // Owner: Copilot plan gating (PLA-1964). Temporary disable of Core's
+    // recipient-check and counterparty-analysis while the plan-gated Space
+    // endpoints take over; the ticket does not yet set a removal condition
+    // for the flag or `SafeShieldCoreGatingGuard` — see PLA-1964 for status.
+    safeShieldCoreDisabled:
+      process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
     safeQueueService:
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
   },
@@ -510,6 +503,21 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
       10,
     ),
+  },
+  httpServer: {
+    // Maximum inbound request body size, applied to the JSON and urlencoded
+    // parsers. A bare number is interpreted as bytes; a string accepts an
+    // optional unit suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g.
+    // '1mb'. Parsed by `parseBodyLimit` in `src/app.provider.ts`.
+    bodyLimit: process.env.HTTP_SERVER_BODY_LIMIT ?? '1mb',
+    // Fastify `trustProxy` value: resolves request.ip from the
+    // X-Forwarded-For header set by upstream proxies instead of the direct
+    // socket address. A comma-separated list of trusted subnets/presets; "0"
+    // disables it and integer hop counts are rejected by `parseTrustProxy`.
+    // `||` (not `??`) so an empty value falls back to the default rather than
+    // disabling it.
+    // https://fastify.dev/docs/latest/Reference/Server/#trustproxy
+    trustProxy: process.env.HTTP_SERVER_TRUST_PROXY || 'loopback, uniquelocal',
   },
   undici: {
     // Maximum number of connections per origin. Defaults to 100.
@@ -821,6 +829,12 @@ export default () => ({
       ),
     },
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
+  },
+  policies: {
+    indexer: {
+      baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
+    },
+    batchSize: Number.parseInt(process.env.POLICY_BATCH_SIZE ?? `${1}`, 10),
   },
   safeDataDecoder: {
     baseUri:
