@@ -16,8 +16,7 @@ import {
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
+import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
@@ -76,17 +75,37 @@ export class WorkspaceRelayer {
       this.chainsRepository.getChain(args.chainId),
     ]);
 
-    if (!relayer?.gasPaymentOptions.includes(GasPaymentOption.SUBSCRIPTION)) {
-      throw new NoRelayerDefinedError();
+    if (!relayer) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NO_RELAYER',
+        available: [],
+      });
+    }
+    const available = relayer.gasPaymentOptions;
+    if (!available.includes(GasPaymentOption.SUBSCRIPTION)) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_LISTED',
+        available,
+      });
     }
 
     // The Safe would repay gas to the relayer on top of the credit spent.
     if (this.relayTransactionHelper.hasRefundingTransaction(args.data)) {
-      throw new NoRelayerDefinedError();
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'REFUNDING_TRANSACTION',
+        available,
+      });
     }
 
-    if (safe !== null) {
-      await this.assertHoldsSafe({ ...args, safe });
+    if (safe !== null && !(await this.holdsSafe({ ...args, safe }))) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_A_WORKSPACE_SAFE',
+        available,
+      });
     }
 
     // Refused early; `consumeQuota` below is what decides.
@@ -176,18 +195,15 @@ export class WorkspaceRelayer {
    * a Safe creation, a passkey signer deployment — are admitted as they are on
    * the public route: there is nothing to hold yet.
    */
-  private async assertHoldsSafe(args: {
+  private async holdsSafe(args: {
     spaceId: Space['id'];
     chainId: string;
     safe: Address;
-  }): Promise<void> {
-    const holdsSafe = await this.spaceSafesRepository.existsInSpace({
+  }): Promise<boolean> {
+    return await this.spaceSafesRepository.existsInSpace({
       spaceId: args.spaceId,
       chainId: args.chainId,
       address: args.safe,
     });
-    if (!holdsSafe) {
-      throw new RelayDeniedError(args.safe, 'not a Safe of this workspace');
-    }
   }
 }

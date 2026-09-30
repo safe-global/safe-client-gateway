@@ -21,8 +21,7 @@ import type {
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
+import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
 import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
@@ -191,7 +190,11 @@ describe('WorkspaceRelayer', () => {
     mockSpaceSafesRepository.existsInSpace.mockResolvedValue(false);
 
     await expect(target.relay(args)).rejects.toThrow(
-      new RelayDeniedError(safe, 'not a Safe of this workspace'),
+      new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_A_WORKSPACE_SAFE',
+        available: [GasPaymentOption.SUBSCRIPTION],
+      }),
     );
 
     expect(mockSpaceSafesRepository.existsInSpace).toHaveBeenCalledWith({
@@ -225,7 +228,13 @@ describe('WorkspaceRelayer', () => {
     mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     mockRelayTransactionHelper.hasRefundingTransaction.mockReturnValue(true);
 
-    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+    await expect(target.relay(args)).rejects.toThrow(
+      new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'REFUNDING_TRANSACTION',
+        available: [GasPaymentOption.SUBSCRIPTION],
+      }),
+    );
 
     expect(
       mockRelayTransactionHelper.hasRefundingTransaction,
@@ -242,7 +251,13 @@ describe('WorkspaceRelayer', () => {
     mockSpaceSafesRepository.existsInSpace.mockResolvedValue(false);
     mockRelayTransactionHelper.hasRefundingTransaction.mockReturnValue(true);
 
-    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+    await expect(target.relay(args)).rejects.toThrow(
+      new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'REFUNDING_TRANSACTION',
+        available: [GasPaymentOption.SUBSCRIPTION],
+      }),
+    );
 
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
@@ -297,7 +312,13 @@ describe('WorkspaceRelayer', () => {
     mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     relayerConfig(null);
 
-    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+    await expect(target.relay(args)).rejects.toThrow(
+      new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NO_RELAYER',
+        available: [],
+      }),
+    );
 
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
@@ -307,23 +328,28 @@ describe('WorkspaceRelayer', () => {
     const args = relayArgs();
     recognises(address());
     mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
-    relayerConfig(
-      relayerBuilder()
-        .with(
-          'gasPaymentOptions',
-          faker.helpers.arrayElements(
-            [
-              GasPaymentOption.FREE_DAILY_LIMIT,
-              GasPaymentOption.NO_FEE_CAMPAIGN,
-              GasPaymentOption.PAY_FROM_SAFE,
-            ],
-            { min: 0, max: 3 },
-          ),
-        )
-        .build(),
-    );
+    const relayer = relayerBuilder()
+      .with(
+        'gasPaymentOptions',
+        faker.helpers.arrayElements(
+          [
+            GasPaymentOption.FREE_DAILY_LIMIT,
+            GasPaymentOption.NO_FEE_CAMPAIGN,
+            GasPaymentOption.PAY_FROM_SAFE,
+          ],
+          { min: 0, max: 3 },
+        ),
+      )
+      .build();
+    relayerConfig(relayer);
 
-    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+    await expect(target.relay(args)).rejects.toThrow(
+      new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_LISTED',
+        available: relayer.gasPaymentOptions,
+      }),
+    );
 
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
     expect(mockRelayApi.relay).not.toHaveBeenCalled();

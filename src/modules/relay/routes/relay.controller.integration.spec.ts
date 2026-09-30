@@ -3188,7 +3188,7 @@ describe('Relay controller', () => {
       expect(networkService.post).not.toHaveBeenCalled();
     });
 
-    it('should return 403 for a refunding execTransaction when PAY_FROM_SAFE is not listed', async () => {
+    it('should return 409 for a refunding execTransaction when PAY_FROM_SAFE is not listed', async () => {
       const chain = chainBuilder()
         .with('chainId', chainId)
         .with('relayer', relayerForChainId(chainId))
@@ -3214,15 +3214,59 @@ describe('Relay controller', () => {
       await request(app.getHttpServer())
         .post(`/v1/chains/${chainId}/relay`)
         .send({ version, to: safeAddress, data })
-        .expect(403)
+        .expect(409)
         .expect({
-          message: 'No relayer defined',
-          statusCode: 403,
+          code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
+          message:
+            'Gas payment option PAY_FROM_SAFE is unavailable: NOT_LISTED',
+          statusCode: 409,
+          requested: GasPaymentOption.PAY_FROM_SAFE,
+          reason: 'NOT_LISTED',
+          available: chain.relayer?.gasPaymentOptions,
         });
       expect(networkService.post).not.toHaveBeenCalled();
     });
 
-    it('should return 403 for a MultiSend carrying a refunding execTransaction when PAY_FROM_SAFE is not listed', async () => {
+    it('should return 409 for a refunding execTransaction on a chain without a relayer', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', null)
+        .build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+        .encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            // Official mastercopy
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to: safeAddress, data })
+        .expect(409)
+        .expect({
+          code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
+          message:
+            'Gas payment option PAY_FROM_SAFE is unavailable: NO_RELAYER',
+          statusCode: 409,
+          requested: GasPaymentOption.PAY_FROM_SAFE,
+          reason: 'NO_RELAYER',
+          available: [],
+        });
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
+    it('should return 409 for a MultiSend carrying a refunding execTransaction when PAY_FROM_SAFE is not listed', async () => {
       const chain = chainBuilder()
         .with('chainId', chainId)
         .with('relayer', relayerForChainId(chainId))
@@ -3278,8 +3322,16 @@ describe('Relay controller', () => {
       await request(app.getHttpServer())
         .post(`/v1/chains/${chainId}/relay`)
         .send({ version, to, data })
-        .expect(403)
-        .expect({ message: 'No relayer defined', statusCode: 403 });
+        .expect(409)
+        .expect({
+          code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
+          message:
+            'Gas payment option PAY_FROM_SAFE is unavailable: NOT_LISTED',
+          statusCode: 409,
+          requested: GasPaymentOption.PAY_FROM_SAFE,
+          reason: 'NOT_LISTED',
+          available: chain.relayer?.gasPaymentOptions,
+        });
       expect(networkService.post).not.toHaveBeenCalledWith(
         expect.objectContaining({ url: `${relayUrl}/safe-transactions` }),
       );

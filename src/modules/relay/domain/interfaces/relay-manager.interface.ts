@@ -14,6 +14,8 @@ export interface IRelayManager {
    *   when the chain has no relayer configured.
    * @param args.data - Transaction calldata.
    * @returns The relayer instance to use.
+   * @throws GasPaymentOptionUnavailableError when a refunding transaction can't
+   *   use `PAY_FROM_SAFE`.
    * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
    * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
    */

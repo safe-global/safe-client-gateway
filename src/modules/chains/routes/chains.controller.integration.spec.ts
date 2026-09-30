@@ -23,10 +23,7 @@ import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { gasPriceResponseBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-response.builder';
 import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
-import {
-  relayerBuilder,
-  servedRelayer,
-} from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
@@ -128,7 +125,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[0].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
-              relayer: servedRelayer(chainsResponse.results[0].relayer),
+              relayer: chainsResponse.results[0].relayer,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -158,7 +155,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[1].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
-              relayer: servedRelayer(chainsResponse.results[1].relayer),
+              relayer: chainsResponse.results[1].relayer,
             },
           ],
         });
@@ -247,7 +244,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[0].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[0].recommendedMasterCopyVersion,
-              relayer: servedRelayer(chainsResponse.results[0].relayer),
+              relayer: chainsResponse.results[0].relayer,
             },
             {
               chainId: chainsResponse.results[1].chainId,
@@ -277,7 +274,7 @@ describe('Chains Controller', () => {
               balancesProvider: chainsResponse.results[1].balancesProvider,
               recommendedMasterCopyVersion:
                 chainsResponse.results[1].recommendedMasterCopyVersion,
-              relayer: servedRelayer(chainsResponse.results[1].relayer),
+              relayer: chainsResponse.results[1].relayer,
             },
           ],
         });
@@ -351,7 +348,7 @@ describe('Chains Controller', () => {
           : chainDomain.ensRegistryAddress,
         balancesProvider: chainDomain.balancesProvider,
         recommendedMasterCopyVersion: chainDomain.recommendedMasterCopyVersion,
-        relayer: servedRelayer(chainDomain.relayer),
+        relayer: chainDomain.relayer,
       };
       networkService.get.mockResolvedValueOnce({
         data: rawify(chainDomain),
@@ -364,21 +361,16 @@ describe('Chains Controller', () => {
         .expect(expectedResult);
     });
 
-    it('should not serve the gas payment options', async () => {
+    it('should serve the gas payment options', async () => {
       const chainId = faker.string.numeric();
+      const gasPaymentOptions = faker.helpers.arrayElements(
+        Object.values(GasPaymentOption),
+      );
       const chainDomain = chainBuilder()
         .with('chainId', chainId)
         .with(
           'relayer',
-          relayerBuilder()
-            .with(
-              'gasPaymentOptions',
-              faker.helpers.arrayElements(Object.values(GasPaymentOption), {
-                min: 1,
-                max: 4,
-              }),
-            )
-            .build(),
+          relayerBuilder().with('gasPaymentOptions', gasPaymentOptions).build(),
         )
         .build();
       networkService.get.mockResolvedValueOnce({
@@ -390,7 +382,9 @@ describe('Chains Controller', () => {
         .get(`/v1/chains/${chainId}`)
         .expect(200);
 
-      expect(response.body.relayer).not.toHaveProperty('gasPaymentOptions');
+      expect(response.body.relayer.gasPaymentOptions).toStrictEqual(
+        gasPaymentOptions,
+      );
     });
 
     it('Should return not Not found', async () => {

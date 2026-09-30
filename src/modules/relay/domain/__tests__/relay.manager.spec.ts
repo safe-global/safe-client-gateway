@@ -21,6 +21,7 @@ import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/p
 import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
@@ -222,7 +223,23 @@ describe('RelayManager', () => {
         const data = encode();
 
         expect(() => manager.getRelayer({ relayer, data })).toThrow(
-          NoRelayerDefinedError,
+          new GasPaymentOptionUnavailableError({
+            requested: GasPaymentOption.PAY_FROM_SAFE,
+            reason: 'NOT_LISTED',
+            available: relayer.gasPaymentOptions,
+          }),
+        );
+      });
+
+      it('should refuse it on a chain without a relayer', () => {
+        const data = encode();
+
+        expect(() => manager.getRelayer({ relayer: null, data })).toThrow(
+          new GasPaymentOptionUnavailableError({
+            requested: GasPaymentOption.PAY_FROM_SAFE,
+            reason: 'NO_RELAYER',
+            available: [],
+          }),
         );
       });
     });

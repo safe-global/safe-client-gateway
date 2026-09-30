@@ -11,6 +11,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
@@ -26,6 +27,7 @@ import { RelayCalldataExceptionFilters } from '@/modules/relay/domain/exception-
 import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
 import { RelayerNotAvailableExceptionFilter } from '@/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
 import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
+import { GasPaymentOptionUnavailableResponse } from '@/modules/relay/routes/entities/gas-payment-option-unavailable-response.entity';
 import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import { RelayErrorResponse } from '@/modules/relay/routes/entities/relay-error-response.entity';
@@ -79,6 +81,11 @@ export class RelayController {
   @ApiForbiddenResponse({
     description:
       'Relay denied: safeTxHash missing, fee service rejected, or unofficial proxy factory',
+  })
+  @ApiConflictResponse({
+    type: GasPaymentOptionUnavailableResponse,
+    description:
+      'A transaction that refunds gas (`gasPrice` > 0) needs PAY_FROM_SAFE, which the chain does not offer.',
   })
   @ApiUnprocessableEntityResponse({
     type: RelayErrorResponse,

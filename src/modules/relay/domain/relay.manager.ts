@@ -5,6 +5,7 @@ import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
@@ -43,6 +44,8 @@ export class RelayManager implements IRelayManager {
    * - refunding transaction → {@link RelayFeeRelayer} if `PAY_FROM_SAFE` is listed
    * - any other transaction → the free relayer, see {@link getFreeRelayer}
    *
+   * @throws GasPaymentOptionUnavailableError when a refunding transaction can't
+   *   use `PAY_FROM_SAFE`.
    * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
    * @throws RelayerTypeNotImplementedError when the relayer type is GTF, except
    *   for signer creation.
@@ -63,7 +66,7 @@ export class RelayManager implements IRelayManager {
         return this.getSafeCreationRelayer(this.requireRelayer(relayer));
       // Paid by the Safe only when the chain lists `PAY_FROM_SAFE`.
       case RelayCall.REFUNDING_TRANSACTION:
-        return this.getRefundingRelayer(this.requireRelayer(relayer));
+        return this.getRefundingRelayer(relayer);
       // Free only when the chain lists a free option.
       case RelayCall.TRANSACTION:
         return this.getFreeRelayer(relayer);
@@ -95,9 +98,21 @@ export class RelayManager implements IRelayManager {
     return this.dailyLimitRelayer;
   }
 
-  private getRefundingRelayer(relayer: ChainRelayer): IRelayer {
-    if (!relayer.gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)) {
-      throw new NoRelayerDefinedError();
+  private getRefundingRelayer(relayer: Chain['relayer']): IRelayer {
+    if (!relayer) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.PAY_FROM_SAFE,
+        reason: 'NO_RELAYER',
+        available: [],
+      });
+    }
+    const { gasPaymentOptions } = this.requireRelayer(relayer);
+    if (!gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.PAY_FROM_SAFE,
+        reason: 'NOT_LISTED',
+        available: gasPaymentOptions,
+      });
     }
     return this.relayFeeRelayer;
   }
