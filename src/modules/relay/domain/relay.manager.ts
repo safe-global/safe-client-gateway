@@ -14,7 +14,7 @@ import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.r
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
 
-type Relayer = NonNullable<Chain['relayer']>;
+type ChainRelayer = NonNullable<Chain['relayer']>;
 
 /** What a relayed calldata does, which determines who may pay for it. */
 const RelayCall = {
@@ -44,7 +44,8 @@ export class RelayManager implements IRelayManager {
    * - any other transaction → the free relayer, see {@link getFreeRelayer}
    *
    * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
-   * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
+   * @throws RelayerTypeNotImplementedError when the relayer type is GTF, except
+   *   for signer creation.
    */
   public getRelayer({
     relayer,
@@ -87,14 +88,14 @@ export class RelayManager implements IRelayManager {
     throw new NoRelayerDefinedError();
   }
 
-  private getSafeCreationRelayer(relayer: Relayer): IRelayer {
+  private getSafeCreationRelayer(relayer: ChainRelayer): IRelayer {
     if (!relayer.safeCreationSponsored) {
       throw new NoRelayerDefinedError();
     }
     return this.dailyLimitRelayer;
   }
 
-  private getRefundingRelayer(relayer: Relayer): IRelayer {
+  private getRefundingRelayer(relayer: ChainRelayer): IRelayer {
     if (!relayer.gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)) {
       throw new NoRelayerDefinedError();
     }
@@ -114,7 +115,7 @@ export class RelayManager implements IRelayManager {
     return RelayCall.TRANSACTION;
   }
 
-  private requireRelayer(relayer: Chain['relayer']): Relayer {
+  private requireRelayer(relayer: Chain['relayer']): ChainRelayer {
     if (!relayer) {
       throw new NoRelayerDefinedError();
     }

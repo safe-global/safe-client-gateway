@@ -98,7 +98,7 @@ export class WorkspaceRelayer {
       await this.assertSimulates({
         ...args,
         safe: sponsoredSafe,
-        enabled: relayer.enableTenderlySimulationBeforeRelay ?? false,
+        enabled: relayer.enableTenderlySimulationBeforeRelay,
       });
     }
 
