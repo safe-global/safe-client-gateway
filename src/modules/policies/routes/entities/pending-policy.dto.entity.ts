@@ -29,6 +29,7 @@ export class AddDelegateChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.AddDelegate] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.AddDelegate;
   @ApiProperty({
+    type: String,
     description:
       'The address being added as a delegate in AllowanceModule contract',
   })
@@ -38,7 +39,10 @@ export class AddDelegateChangeDto {
 export class RemoveDelegateChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.RemoveDelegate] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.RemoveDelegate;
-  @ApiProperty({ description: 'The delegate being removed' })
+  @ApiProperty({
+    type: String,
+    description: 'The delegate being removed',
+  })
   public readonly delegate!: Address;
   @ApiProperty({
     description: "Whether the delegate's allowances are deleted along with it",
@@ -50,9 +54,10 @@ export class RemoveDelegateChangeDto {
 export class SetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.SetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.SetAllowance;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly delegate!: Address;
   @ApiProperty({
+    type: String,
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly token!: Address;
@@ -72,9 +77,9 @@ export class SetAllowanceChangeDto {
 export class ResetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.ResetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.ResetAllowance;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly delegate!: Address;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly token!: Address;
   @ApiProperty({
     ...TokenMetadataSchema,
@@ -88,9 +93,9 @@ export class ResetAllowanceChangeDto {
 export class DeleteAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.DeleteAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly delegate!: Address;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly token!: Address;
   @ApiProperty({
     ...TokenMetadataSchema,
@@ -143,6 +148,7 @@ const PendingSpendingLimitChangeSchema = {
 )
 export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   @ApiProperty({
+    type: String,
     description: 'The AllowanceModule deployment holding this state',
   })
   public readonly module!: Address;
