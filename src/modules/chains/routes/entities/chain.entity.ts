@@ -10,6 +10,7 @@ import {
   BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
   type BeaconChainExplorerUriTemplate,
 } from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
+import type { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
 import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
 import {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
@@ -124,7 +125,7 @@ export class Chain {
     chainLogoUri: string | null;
     balancesProvider: BalancesProvider;
     recommendedMasterCopyVersion: string | null;
-    relayer: Relayer | null;
+    relayer: NonNullable<DomainChain['relayer']> | null;
   }) {
     this.chainId = args.chainId;
     this.chainName = args.chainName;
@@ -148,6 +149,6 @@ export class Chain {
     this.theme = args.theme;
     this.balancesProvider = args.balancesProvider;
     this.recommendedMasterCopyVersion = args.recommendedMasterCopyVersion;
-    this.relayer = args.relayer;
+    this.relayer = args.relayer ? new Relayer(args.relayer) : null;
   }
 }

@@ -17,6 +17,7 @@ import type { Page } from '@/domain/entities/page.entity';
 import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+import { servedRelayer } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -141,7 +142,9 @@ describe('Chains V2 Controller', () => {
           expect(res.body).toHaveProperty('chainId');
           expect(res.body.chainId).toBe(chainResponse.chainId);
           expect(res.body).toHaveProperty('relayer');
-          expect(res.body.relayer).toStrictEqual(chainResponse.relayer);
+          expect(res.body.relayer).toStrictEqual(
+            servedRelayer(chainResponse.relayer),
+          );
         });
 
       expect(networkService.get).toHaveBeenCalledWith(

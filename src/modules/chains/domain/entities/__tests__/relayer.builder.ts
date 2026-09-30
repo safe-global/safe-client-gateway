@@ -28,3 +28,14 @@ export function relayerBuilder(): IBuilder<Relayer> {
     .with('safeTransactionSponsored', faker.datatype.boolean())
     .with('enableTenderlySimulationBeforeRelay', faker.datatype.boolean());
 }
+
+/** The relayer as the chains routes serve it, without the internal `gasPaymentOptions`. */
+export function servedRelayer(
+  relayer: Chain['relayer'],
+): Omit<NonNullable<Chain['relayer']>, 'gasPaymentOptions'> | null {
+  if (!relayer) {
+    return null;
+  }
+  const { gasPaymentOptions: _, ...served } = relayer;
+  return served;
+}
