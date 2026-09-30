@@ -41,6 +41,7 @@ import { UserEncryptionService } from '@/modules/users/domain/user-encryption.se
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -52,6 +53,8 @@ export class MembersRepository implements IMembersRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
     private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
     private readonly memberEncryptionService: MemberEncryptionService,
@@ -72,6 +75,64 @@ export class MembersRepository implements IMembersRepository {
     return members.map((member) =>
       member.user
         ? { ...member, user: usersById.get(member.user.id) ?? member.user }
+        : member,
+    );
+  }
+
+  /**
+   * Returns copies of loaded members whose hydrated users carry a decrypted
+   * wallet `address` — deterministically the user's lowest-`id` wallet — or
+   * `null` for users without one. Members loaded without the `user` relation
+   * are returned as-is.
+   *
+   * The members query does not hydrate `User.wallets`; addresses are fetched
+   * through the wallets repository keyed on user ids instead, mirroring
+   * `UserIdentityResolverService.resolveMany`.
+   */
+  private async attachMemberUserAddresses(
+    members: Array<Member>,
+  ): Promise<Array<Member>> {
+    const userIds = [
+      ...new Set(
+        members.flatMap((member) => (member.user ? [member.user.id] : [])),
+      ),
+    ];
+    if (userIds.length === 0) {
+      return members;
+    }
+    const wallets = await this.walletsRepository.find({
+      where: { user: { id: In(userIds) } },
+      relations: { user: true },
+    });
+    // Lowest wallet id per user so the address does not shift between
+    // requests for a user holding several wallets.
+    const walletByUserId = new Map<User['id'], Wallet>();
+    for (const wallet of [...wallets].sort((a, b) => a.id - b.id)) {
+      if (!walletByUserId.has(wallet.user.id)) {
+        walletByUserId.set(wallet.user.id, wallet);
+      }
+    }
+    const addressEntries = await Promise.all(
+      [...walletByUserId.entries()].map(
+        async ([userId, wallet]): Promise<[User['id'], string]> => [
+          userId,
+          await this.walletEncryptionService.decryptAddress(
+            userId,
+            wallet.address,
+          ),
+        ],
+      ),
+    );
+    const addressByUserId = new Map(addressEntries);
+    return members.map((member) =>
+      member.user
+        ? {
+            ...member,
+            user: {
+              ...member.user,
+              address: addressByUserId.get(member.user.id) ?? null,
+            },
+          }
         : member,
     );
   }
@@ -457,10 +518,11 @@ export class MembersRepository implements IMembersRepository {
     });
 
     const emailDecrypted = await this.decryptMemberUserEmails(space.members);
-    return await this.memberEncryptionService.decryptMembers(
+    const decrypted = await this.memberEncryptionService.decryptMembers(
       args.spaceId,
       emailDecrypted,
     );
+    return await this.attachMemberUserAddresses(decrypted);
   }
 
   public async findSelfMembershipOrFail(args: {
@@ -686,6 +748,9 @@ export class MembersRepository implements IMembersRepository {
       args.spaceId,
       [emailDecrypted],
     );
-    return decryptedMember;
+    const [memberWithAddress] = await this.attachMemberUserAddresses([
+      decryptedMember,
+    ]);
+    return memberWithAddress;
   }
 }

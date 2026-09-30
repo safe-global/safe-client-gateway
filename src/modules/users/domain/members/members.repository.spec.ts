@@ -24,6 +24,7 @@ import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 describe('MembersRepository', () => {
   const usersRepository = {
@@ -34,6 +35,9 @@ describe('MembersRepository', () => {
   const spacesRepository = {
     findOneOrFail: vi.fn(),
   } as MockedObject<ISpacesRepository>;
+  const walletsRepository = {
+    find: vi.fn(),
+  } as MockedObject<IWalletsRepository>;
 
   let entityManager: Mocked<
     Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
@@ -70,6 +74,8 @@ describe('MembersRepository', () => {
       getRepository: vi.fn().mockResolvedValue(dbMembersRepository),
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
+    // No wallets by default: read paths attach `address: null`.
+    walletsRepository.find.mockResolvedValue([]);
 
     // Created after resetAllMocks so the passthrough implementations survive.
     walletEncryptionService = createMockWalletEncryptionService();
@@ -80,6 +86,7 @@ describe('MembersRepository', () => {
       usersRepository,
       spacesRepository,
       createMockSpaceAuditRepository(),
+      walletsRepository,
       createMockUserEncryptionService(),
       walletEncryptionService,
       memberEncryptionService,

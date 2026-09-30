@@ -152,6 +152,7 @@ describe('SpaceAuditRepository', () => {
       usersRepository,
       spacesRepository,
       spaceAuditRepository,
+      walletsRepository,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),

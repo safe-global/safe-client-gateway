@@ -21,6 +21,9 @@ class MemberUser implements Pick<User, 'id' | 'email'> {
 
   @ApiProperty({ type: String, nullable: true })
   email!: User['email'];
+
+  @ApiProperty({ type: String, nullable: true })
+  address!: string | null;
 }
 
 export class MemberDto {

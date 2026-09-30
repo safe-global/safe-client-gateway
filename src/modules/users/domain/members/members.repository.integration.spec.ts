@@ -158,6 +158,7 @@ describe('MembersRepository', () => {
         createMockMemberEncryptionService(),
       ),
       createMockSpaceAuditRepository(),
+      walletsRepo,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
@@ -3432,6 +3433,10 @@ describe('MembersRepository', () => {
           createMockMemberEncryptionService(),
         ),
         createMockSpaceAuditRepository(),
+        new WalletsRepository(
+          postgresDatabaseService,
+          createMockWalletEncryptionService(),
+        ),
         userEncryptionService,
         createMockWalletEncryptionService(),
         createMockMemberEncryptionService(),

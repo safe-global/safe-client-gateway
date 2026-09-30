@@ -173,17 +173,20 @@ export class MembersService {
         member.status === 'ACTIVE',
     );
     return {
-      members: members.map((member) => ({
-        ...member,
-        user: this.toMemberUser(
-          member.user,
-          // Until the member accepted the invite, only expose their email
-          // to active admins.
-          member.status === 'ACTIVE' || isActiveAdmin
-            ? member.user.email
-            : null,
-        ),
-      })),
+      members: members.map((member) => {
+        // Until the member accepted the invite, only expose their
+        // identifiers (email, wallet address) to active admins. One
+        // predicate feeds both fields: a single rule, not two.
+        const isVisible = member.status === 'ACTIVE' || isActiveAdmin;
+        return {
+          ...member,
+          user: this.toMemberUser(
+            member.user,
+            isVisible ? member.user.email : null,
+            isVisible ? (member.user.address ?? null) : null,
+          ),
+        };
+      }),
     };
   }
 
@@ -197,7 +200,13 @@ export class MembersService {
     });
     return {
       ...member,
-      user: this.toMemberUser(member.user, member.user.email),
+      user: this.toMemberUser(
+        member.user,
+        // The caller is reading their own row, so both identifiers are
+        // exposed unconditionally.
+        member.user.email,
+        member.user.address ?? null,
+      ),
     };
   }
 
@@ -205,11 +214,16 @@ export class MembersService {
    * Maps a domain user to the public shape exposed in member responses,
    * explicitly omitting sensitive fields such as `extUserId`.
    */
-  private toMemberUser(user: User, email: User['email']): MemberDto['user'] {
+  private toMemberUser(
+    user: User,
+    email: User['email'],
+    address: string | null,
+  ): MemberDto['user'] {
     return {
       id: user.id,
       status: user.status,
       email,
+      address,
     };
   }
 
