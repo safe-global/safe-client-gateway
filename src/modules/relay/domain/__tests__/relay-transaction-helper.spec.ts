@@ -484,6 +484,30 @@ describe('RelayTransactionHelper', () => {
     });
   });
 
+  describe('isRefundingExecTransaction', () => {
+    it('should return true for an execTransaction with gasPrice above zero', () => {
+      const data = execTransactionEncoder()
+        .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+        .encode();
+
+      expect(helper.isRefundingExecTransaction(data)).toBe(true);
+    });
+
+    it('should return false for an execTransaction with zero gasPrice', () => {
+      const data = execTransactionEncoder()
+        .with('gasPrice', BigInt(0))
+        .encode();
+
+      expect(helper.isRefundingExecTransaction(data)).toBe(false);
+    });
+
+    it('should return false for non-execTransaction calldata', () => {
+      const data = erc20TransferEncoder().encode();
+
+      expect(helper.isRefundingExecTransaction(data)).toBe(false);
+    });
+  });
+
   describe('isOwnerManagementTransaction', () => {
     it.each([
       ['addOwnerWithThreshold', addOwnerWithThresholdEncoder],

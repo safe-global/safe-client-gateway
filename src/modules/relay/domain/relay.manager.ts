@@ -1,18 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import {
-  RelayerType,
-  type RelayerType as RelayerTypeValue,
-} from '@/modules/relay/domain/entities/relayer-type.entity';
+import type { Hex } from 'viem';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
 import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+
+type Relayer = NonNullable<Chain['relayer']>;
+
+/** What a relayed calldata does, which decides who may pay for it. */
+const RelayCall = {
+  SIGNER_CREATION: 'SIGNER_CREATION',
+  SAFE_CREATION: 'SAFE_CREATION',
+  REFUNDING_TRANSACTION: 'REFUNDING_TRANSACTION',
+  TRANSACTION: 'TRANSACTION',
+} as const;
+
+type RelayCall = (typeof RelayCall)[keyof typeof RelayCall];
 
 @Injectable()
 export class RelayManager implements IRelayManager {
@@ -20,44 +32,87 @@ export class RelayManager implements IRelayManager {
     private readonly dailyLimitRelayer: DailyLimitRelayer,
     private readonly noFeeCampaignRelayer: NoFeeCampaignRelayer,
     private readonly relayFeeRelayer: RelayFeeRelayer,
-    private readonly signerFactoryDecoder: SignerFactoryDecoder,
+    private readonly proxyFactoryDecoder: ProxyFactoryDecoder,
+    private readonly relayTransactionHelper: RelayTransactionHelper,
   ) {}
 
   /**
-   * Returns the appropriate relayer for the given chain's relayer type and
-   * (optionally) the transaction calldata. Routing:
-   * 1. {@link DailyLimitRelayer} — for `createSigner` calls (passkey signer
-   *    deployment is always sponsored, regardless of chain config)
-   * 2. Otherwise dispatch on `relayerType`:
-   *    - `RELAY_FEE` → {@link RelayFeeRelayer}
-   *    - `DAILY_LIMIT` → {@link DailyLimitRelayer}
-   *    - `NO_FEE_CAMPAIGN` → {@link NoFeeCampaignRelayer}
-   *    - `GTF` → throws {@link RelayerTypeNotImplementedError}
-   *    - `null` → throws {@link NoRelayerDefinedError}
+   * Returns the relayer that pays for the calldata on the chain:
+   * - signer creation → {@link DailyLimitRelayer}, whatever the chain config
+   * - Safe creation → {@link DailyLimitRelayer} if `safeCreationSponsored`
+   * - refunding transaction → {@link RelayFeeRelayer} if `PAY_FROM_SAFE` is listed
+   * - any other transaction → the free relayer, see {@link getFreeRelayer}
+   *
+   * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
+   * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
    */
-  public getRelayer(
-    relayerType: RelayerTypeValue | null,
-    data?: Address,
-  ): IRelayer {
-    // Passkey signer deployment via SafeWebAuthnSignerFactory.createSigner is
-    // always sponsored — it must bypass the chain-configured relayer, so route
-    // it straight to the daily-limit relayer regardless of relayerType. The
-    // factory address is verified downstream in LimitAddressesMapper.
-    if (data && this.signerFactoryDecoder.helpers.isCreateSigner(data)) {
+  public getRelayer(args: { relayer: Chain['relayer']; data: Hex }): IRelayer {
+    switch (this.getRelayCall(args.data)) {
+      case RelayCall.SIGNER_CREATION: {
+        // Passkey signer deployment is always sponsored. The factory address
+        // is verified downstream in LimitAddressesMapper.
+        return this.dailyLimitRelayer;
+      }
+      case RelayCall.SAFE_CREATION: {
+        const relayer = this.getAvailableRelayer(args.relayer);
+        if (!relayer.safeCreationSponsored) {
+          throw new NoRelayerDefinedError();
+        }
+        return this.dailyLimitRelayer;
+      }
+      case RelayCall.REFUNDING_TRANSACTION: {
+        const relayer = this.getAvailableRelayer(args.relayer);
+        if (
+          !relayer.gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)
+        ) {
+          throw new NoRelayerDefinedError();
+        }
+        return this.relayFeeRelayer;
+      }
+      case RelayCall.TRANSACTION: {
+        return this.getFreeRelayer(args.relayer);
+      }
+    }
+  }
+
+  /**
+   * Returns the relayer whose free quota the chain offers.
+   *
+   * @throws NoRelayerDefinedError when the chain lists no free option.
+   * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
+   */
+  public getFreeRelayer(relayer: Chain['relayer']): IRelayer {
+    const { gasPaymentOptions } = this.getAvailableRelayer(relayer);
+    // The no-fee campaign takes precedence over the daily limit.
+    if (gasPaymentOptions.includes(GasPaymentOption.NO_FEE_CAMPAIGN)) {
+      return this.noFeeCampaignRelayer;
+    }
+    if (gasPaymentOptions.includes(GasPaymentOption.FREE_DAILY_LIMIT)) {
       return this.dailyLimitRelayer;
     }
+    throw new NoRelayerDefinedError();
+  }
 
-    switch (relayerType) {
-      case RelayerType.RELAY_FEE:
-        return this.relayFeeRelayer;
-      case RelayerType.DAILY_LIMIT:
-        return this.dailyLimitRelayer;
-      case RelayerType.NO_FEE_CAMPAIGN:
-        return this.noFeeCampaignRelayer;
-      case RelayerType.GTF:
-        throw new RelayerTypeNotImplementedError(RelayerType.GTF);
-      default:
-        throw new NoRelayerDefinedError();
+  private getRelayCall(data: Hex): RelayCall {
+    if (this.relayTransactionHelper.isCreateSigner(data)) {
+      return RelayCall.SIGNER_CREATION;
     }
+    if (this.proxyFactoryDecoder.helpers.isCreateProxyWithNonce(data)) {
+      return RelayCall.SAFE_CREATION;
+    }
+    if (this.relayTransactionHelper.isRefundingExecTransaction(data)) {
+      return RelayCall.REFUNDING_TRANSACTION;
+    }
+    return RelayCall.TRANSACTION;
+  }
+
+  private getAvailableRelayer(relayer: Chain['relayer']): Relayer {
+    if (!relayer) {
+      throw new NoRelayerDefinedError();
+    }
+    if (relayer.type === RelayerType.GTF) {
+      throw new RelayerTypeNotImplementedError(RelayerType.GTF);
+    }
+    return relayer;
   }
 }

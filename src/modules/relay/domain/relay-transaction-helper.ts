@@ -429,6 +429,12 @@ export class RelayTransactionHelper {
     return [{ to: args.address, data: args.data }];
   }
 
+  /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */
+  isRefundingExecTransaction(data: Hex): boolean {
+    const decoded = this.decodeExecTransaction(data);
+    return decoded !== null && decoded.gasPrice > BigInt(0);
+  }
+
   /**
    * Checks if the data of a transaction is an owner management transaction
    * @param {string} data - Data of the transaction
